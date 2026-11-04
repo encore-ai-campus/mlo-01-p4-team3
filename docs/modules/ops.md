@@ -55,7 +55,7 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 - 이 결과는 **기준 PC 한 대(11/4)**의 것이다. 다른 노트북은 `ops/compose/README.md` 5절 점검표로 각자 확인해야 한다.
 - 이미지 버전 중 Mongo 8.0.34, Kafka 4.3.2, MySQL 8.4.13은 VM 실측(C-05-01) 전의 잠정값이다. VM 버전과 다르면 맞춘다.
 - Spark 4.1.3에는 Delta 기본 jar(`delta-spark_2.13:4.4.1`, Spark 4.2.0용)가 맞지 않는다. Spark 4.1용 jar(`delta-spark_4.1_2.13:4.4.1`)로만 확인했다. 계약(`tech_stack.md`) 반영은 PM 승인 대기다.
-- Python은 PM 결정으로 3.14를 기준으로 했다. 태스크 문서의 "Python 3.12" 문구는 아직 바뀌지 않았다.
+- Python은 3.14를 먼저 실측했다(C-05-03 조건 2, 11/4 PM 결정). 필수 5개가 모두 성공해 3.12 재시도는 하지 않았다. ML·LLM Python 버전 확정과 `tech_stack.md`·CI `core` 반영은 PM 승인 대기다.
 - Python 3.14 필수 5개는 **Windows 휠로만** 확인했다. ML 학습·LLM이 돌 Ubuntu VM(nifi-01, llm-01)의 Linux 휠, 특히 llama-cpp-python(빌드 도구 없이 미리 빌드된 휠에 기댄다)은 확인하지 않았다. VM에서 실패하면 VM만 3.12로 두는 선택지가 남아 있다.
 - `requirements/`의 조사 항목(scikit-learn, shap, mlflow, langgraph, Django, pymongo, PyMySQL, confluent-kafka, prometheus-client, delta-spark)은 3.14 휠이 있는지만 확인했고(`pip --dry-run`), import는 하지 않았다.
 - Prometheus는 Mongo·Kafka·MySQL 지표를 아직 수집하지 않는다(익스포터 없음, C-08-01).

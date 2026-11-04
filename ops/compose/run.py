@@ -202,7 +202,7 @@ def check_kafka(dc: Compose, env: dict) -> tuple[bool, str]:
 
 def check_mysql(dc: Compose, env: dict) -> tuple[bool, str]:
     """앱 계정으로 paldo_ads 접속, 버전 조회."""
-    r = dc.sh("mysql", 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -h127.0.0.1 -u"$MYSQL_USER" paldo_ads -N '
+    r = dc.sh("mysql", 'MYSQL_PWD="${MYSQL_PASSWORD}" mysql -h127.0.0.1 -u"$MYSQL_USER" paldo_ads -N '
                        '-e "SELECT VERSION(), DATABASE()"')
     out = (r.stdout + r.stderr).strip()
     return r.returncode == 0 and "paldo_ads" in out, out[-400:]

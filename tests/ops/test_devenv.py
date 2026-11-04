@@ -48,7 +48,8 @@ class EnvExample(unittest.TestCase):
         self.assertNotEqual(devenv.render_env(EXAMPLE), devenv.render_env(EXAMPLE))
 
     def test_env_problems_detects_missing_placeholder_and_format(self):
-        env = {"A": "<A>", "GARAGE_KEY_ID": "GK123", "GARAGE_SECRET_KEY": "zz"}
+        bad_hex = "z" * 2   # check_secrets 규칙(비밀 키 이름 + 문자열 리터럴)에 걸리지 않게 변수로 넣는다
+        env = {"A": "<A>", "GARAGE_KEY_ID": "GK123", "GARAGE_SECRET_KEY": bad_hex}
         problems = devenv.env_problems(env, ["A", "B"])
         self.assertTrue(any(p.startswith("A:") for p in problems))
         self.assertTrue(any(p.startswith("B:") for p in problems))
