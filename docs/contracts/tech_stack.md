@@ -17,13 +17,13 @@
 | 역할 | 기술 | 버전(기록값, 11/5 실측 필요) | 담당 |
 |---|---|---|---|
 | 웹·API | Django + Django 템플릿 + htmx + Alpine.js | Django 6.1.2(app 서버에 설치 기록) | B |
-| 판 저장 | MongoDB Replica Set 3노드, `w=majority` | - | C |
+| 판 저장 | MongoDB Replica Set 3노드, `w=majority`. 이미지 `mongo:8.0.34`(개발 Compose·CI 서비스 컨테이너도 같은 태그, 11/4 PM 결정) | - | C |
 | 이벤트 | Kafka 3노드(브로커·KRaft 컨트롤러 겸용), 보존 1일 | - | C |
 | 배치 | Spark(Master 1 + Worker), Hadoop, OpenJDK | Spark 4.1.3, Hadoop 3.4.2, OpenJDK 21 | C |
 | 학습 데이터 | Delta Lake on Garage(S3 호환) | Delta Spark 4.4.1(배포 문서 기록, **Spark 4.1.3과 호환되는지 확인 필요**) | C |
 | 모델 관리 | MLflow 추적·레지스트리(아티팩트는 Garage) | 미설치, 11/9까지 설치 | C·D |
 | 관측 | Prometheus, Grafana, node_exporter(전 VM) | 3.15.0 / 13.2.4 / 1.12.1 | C |
-| 광고 서버·DB | Django 별도 서비스(ad-01), MySQL Primary + Replica(mysql-01·02) | 기록값, 11/5 실측 필요 | D(서버), C(DB·배포) |
+| 광고 서버·DB | Django 별도 서비스(ad-01), MySQL Primary + Replica(mysql-01·02). 이미지 `mysql:8.4.13`(개발 Compose·CI 서비스 컨테이너도 같은 태그, 11/4 PM 결정) | 기록값, 11/5 실측 필요 | D(서버), C(DB·배포) |
 | 배포 자동화 | Ansible(Bastion) | - | C |
 | 배치 실행 | k3s 2노드(CronJob, Job) | 미설치 | C |
 | 의도 해석 | BERT 계열(한국어) + 규칙 매칭 | 11/5 모델 후보 확정 | D |
