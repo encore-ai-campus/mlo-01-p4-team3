@@ -197,12 +197,13 @@ def missing_titles(text: str, titles: list[str]) -> list[str]:
     heads: set[str] = set()
     in_fence = False
     for line in text.splitlines():
-        if line.lstrip().startswith("```"):
+        if line.lstrip().startswith(("```", "~~~")):  # 백틱·물결 코드 울타리
             in_fence = not in_fence
             continue
-        m = None if in_fence else re.match(r"^#{1,6}\s+(.*?)\s*#*\s*$", line)
+        m = None if in_fence else re.match(r"^#{1,6}\s+(.*?)\s*$", line)
         if m:
-            heads.add(m.group(1).strip())
+            # 닫는 `#` 열은 앞에 공백이 있을 때만 뺀다(`C#`은 제목의 일부)
+            heads.add(re.sub(r"\s+#+$", "", m.group(1)).strip())
     return [t for t in titles if t not in heads]
 
 

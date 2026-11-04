@@ -233,6 +233,10 @@ class Rule3DocOutput(unittest.TestCase):
         repo.files["docs/presentation/slides/E.md"] = "# E\n## 담당\n### 구현\n## 트러블 ##\n## 산출물·검증 수치\n"
         self.assertEqual(cd.check_task("E-10-05", repo, TASKS), [])
 
+    def test_missing_titles_fences_and_trailing_hash(self):
+        self.assertEqual(cd.missing_titles("~~~\n## 담당\n~~~\n", ["담당"]), ["담당"])
+        self.assertEqual(cd.missing_titles("## C#\n## 구현 ##\n", ["C#", "구현"]), [])
+
     def test_task_without_output_path_fails(self):
         self.assertIn("`산출물:` 경로가 없음", cd.check_task("E-10-04", FakeRepo(self.files("E-10-04")), TASKS)[0])
 
