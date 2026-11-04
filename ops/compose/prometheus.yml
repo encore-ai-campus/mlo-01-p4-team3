@@ -1,0 +1,14 @@
+# 로컬 개발용 Prometheus 수집 대상(ops/compose/dev.yml). 서비스 /metrics 수집·경보는 C-08-01에서 늘린다.
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]
+  - job_name: garage
+    static_configs:
+      - targets: ["garage:3903"]

@@ -1,0 +1,11 @@
+# ML(D): 의도 해석기, 씐 자 확률 모델, 광고 CTR. Python 3.14, CPU 전용
+# 설치: .venv\Scripts\python -m pip install -r requirements/ml.txt
+# C-05-03(11/4 사전 작업): torch·transformers·lightgbm은 Windows 3.14에서 설치·import·동작 실측(ops/compose/pycheck.py).
+#   scikit-learn·shap·mlflow는 3.14 휠 존재만 확인(pip --dry-run)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.15.0+cpu
+transformers==5.22.1
+lightgbm==4.7.0
+scikit-learn==1.9.1
+shap==0.54.1
+mlflow==3.18.0

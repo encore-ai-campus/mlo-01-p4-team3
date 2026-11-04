@@ -35,6 +35,8 @@ server/infra (인프라) → engine (포트 구현)
 | `server/api/`, `web/` | 표현 | B | Django 뷰, 템플릿, htmx 조각, 뷰 모델(`viewmodels.py`), 웹소켓 Consumer(`consumers.py`, 예정) |
 | `server/infra/` | 인프라 | C | Mongo 저장소, 아웃박스 발행기, 모델·LLM 어댑터(예정) |
 | `pipeline/`, `ops/` | 인프라 | C | Kafka → Spark → Delta, 배포·관측, HTTPS 프록시 `ops/proxy/`(예정) |
+| `ops/compose/` | 인프라 | C | 로컬 개발용 Compose(`dev.yml`), `.env` 생성·Garage 초기화·스모크(`run.py`), 패키지 확인(`pycheck.py`), 팀원 절차·점검표(`README.md`) |
+| `requirements/` | 의존성 | 공용 | 영역별 Python 패키지(`web`·`ml`·`llm`·`pipeline`, Python 3.14) |
 | `intent/`, `ml/` | 인프라(모델) | D | 의도 해석기, 씐 자 확률 모델(예정) |
 | `content/` | 데이터 | E | 인물, 비밀, 단서, 템플릿(예정) |
 | `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E(규격·스타일 가이드·임시 파일·검사), B(실제 파일·생성 기록·`pixelize.py`, 11/4 결정) | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
@@ -69,6 +71,7 @@ server/infra (인프라) → engine (포트 구현)
 | 콘텐츠 추가 | `docs/contracts/content.md` |
 | 개인정보 처리 | `docs/contracts/privacy.md` |
 | 서버와 버전 | `docs/contracts/tech_stack.md`, 기획서 6.3 |
+| 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
 | 새 파일·폴더를 어디에 만들지 | `docs/contracts/structure.md` |
 | 다른 영역을 어떻게 부르는지(포트·HTTP·토픽·주소 변수·가짜·통합 시점) | `docs/contracts/integration.md` |

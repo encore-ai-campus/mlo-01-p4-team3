@@ -1,0 +1,8 @@
+# 웹·API(B), 저장소·발행기(C), 광고 서버(D). Python 3.14(app·ad VM의 시스템 Python과 같다)
+# 설치: py -3.14 -m venv .venv  →  .venv\Scripts\python -m pip install -r requirements/web.txt
+# C-05-03(11/4 사전 작업): 아래는 Windows 3.14용 휠 존재만 확인했다(pip --dry-run). import 실측은 하지 않았다
+Django==6.1.2              # tech_stack.md 2절 기록값(app 서버)
+pymongo==4.19.0
+PyMySQL==1.2.3             # 순수 파이썬. mysqlclient 2.3.0도 3.14 휠이 있다(선택은 D)
+confluent-kafka==2.16.1    # Kafka 클라이언트 후보(확정은 C-06-02)
+prometheus-client==0.26.0

@@ -1,0 +1,9 @@
+# 파이프라인(C): Kafka → Spark → Delta. Python 3.14 + Java 17 이상(JAVA_HOME)
+# 설치: .venv\Scripts\python -m pip install -r requirements/pipeline.txt
+# C-05-03(11/4 사전 작업): pyspark 4.1.3은 Windows 3.14에서 설치·import·로컬 세션 실측.
+#   Delta jar는 Spark 4.1용 io.delta:delta-spark_4.1_2.13:4.4.1을 쓴다(기본 delta-spark_2.13:4.4.1은 Spark 4.2.0용이라 Spark 4.1.3에서 쓰기 실패).
+#   조합 확정은 PM 승인 뒤 tech_stack.md(계약 변경). 증빙 docs/evidence/C-05-03.md
+pyspark==4.1.3
+delta-spark==4.4.1         # 파이썬 패키지. pyspark>=4.0.1,<=4.2.0을 요구
+# configure_spark_with_delta_pip(builder)는 설치된 pyspark 버전으로 jar를 고른다(4.1.3 → io.delta:delta-spark_4.1_2.13:4.4.1,
+#   delta/pip_utils.py). spark-submit --packages로 직접 넣을 때만 위 좌표를 손으로 적는다
