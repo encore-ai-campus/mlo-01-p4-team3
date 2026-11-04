@@ -1,0 +1,54 @@
+name: 태스크
+description: docs/tasks/의 태스크 하나. 보통은 tools/tasks_to_issues.py가 만든다. 손으로 만들 때만 이 양식을 쓴다.
+title: "[A-05-01] 제목"
+labels: ["type:task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        태스크 정의의 원본은 저장소의 마크다운(`docs/tasks/<흐름>.md`)이다. 조건을 바꾸려면 마크다운을 고치는 PR을 낸다(docs/tasks/README.md 11절).
+        이 이슈는 진행 관리용이다. 이슈는 `Closes #번호`가 적힌 PR이 `check_evidence --complete`를 통과해 병합될 때만 닫힌다.
+  - type: input
+    id: task_id
+    attributes: { label: 태스크 ID, placeholder: "A-05-01" }
+    validations: { required: true }
+  - type: dropdown
+    id: flow
+    attributes:
+      label: 흐름
+      options: ["A 엔진", "B 웹·API", "C 인프라", "D ML·광고", "E PM", "통합"]
+    validations: { required: true }
+  - type: input
+    id: date
+    attributes: { label: 날짜, placeholder: "11-05" }
+    validations: { required: true }
+  - type: input
+    id: hours
+    attributes: { label: 예상 시간(태스크 + 문서화), placeholder: "3.5h + 0.5h" }
+    validations: { required: true }
+  - type: input
+    id: deps
+    attributes: { label: 선행 태스크·결정 대기, placeholder: "E-05-01, P-01" }
+  - type: textarea
+    id: todo
+    attributes: { label: 할 일, description: 입력·산출물 경로 포함 }
+    validations: { required: true }
+  - type: textarea
+    id: conditions
+    attributes:
+      label: 완료 조건
+      description: 태스크 문서의 번호 그대로. 공통 완료 정의 ①~⑦(README 3절)도 만족해야 한다.
+      value: |
+        - [ ] 1.
+        - [ ] 공통 ①~⑦
+    validations: { required: true }
+  - type: input
+    id: evidence
+    attributes: { label: 증빙 경로, value: "docs/evidence/<ID>.md" }
+    validations: { required: true }
+  - type: textarea
+    id: docs
+    attributes:
+      label: 문서화 경로
+      description: 모듈 문서(docs/modules/), 트러블 기록(docs/troubles/<흐름>.md), 계약 문서, 라우팅 README(README 10절)
+    validations: { required: true }

@@ -1,0 +1,27 @@
+name: 막는 결함 (blocker)
+description: 시연 장면 4개·끝에서 끝까지 흐름 2개·통합(INT) 항목을 막는 결함. 보류로 닫을 수 없다(docs/tasks/README.md 3절).
+title: "[blocker] 증상 한 줄"
+labels: ["blocker", "bug"]
+body:
+  - type: input
+    id: blocked
+    attributes: { label: 막히는 것, description: "시연 장면 번호, INT 항목(예: INT-09 #1), 또는 태스크 ID" }
+    validations: { required: true }
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영역
+      options: ["engine", "web", "infra", "ml", "ads", "content", "llm"]
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes: { label: 재현 방법, description: "명령·입력·커밋 SHA. 로그는 request_id·game_id로 찾은 발췌" }
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes: { label: 기대 결과와 실제 결과 }
+    validations: { required: true }
+  - type: markdown
+    attributes:
+      value: |
+        애매하면 blocker로 둔다. 원인과 대응은 담당 흐름의 트러블 기록(docs/troubles/<흐름>.md)에도 남긴다.

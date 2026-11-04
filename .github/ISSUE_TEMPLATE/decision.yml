@@ -1,0 +1,25 @@
+name: 결정 대기 (P-xx)
+description: PM이 정해야 하는 값. 정해지기 전에는 걸린 태스크를 완료 처리하지 않는다(docs/tasks/README.md 7절).
+title: "[P-00] 결정할 것"
+labels: ["type:decision"]
+body:
+  - type: input
+    id: decision_id
+    attributes: { label: 결정 ID, placeholder: "P-23" }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: 결정할 것, description: 무엇을 왜 정해야 하는지. 선택지와 각 선택지의 영향 }
+    validations: { required: true }
+  - type: input
+    id: blocks
+    attributes: { label: 막히는 태스크, placeholder: "A-06-02, B-07-03" }
+    validations: { required: true }
+  - type: input
+    id: deadline
+    attributes: { label: 기한, placeholder: "11/6 12:00" }
+    validations: { required: true }
+  - type: markdown
+    attributes:
+      value: |
+        결정이 나면 README 7절 "확정된 결정"에 기록하는 PR을 내고, PR 본문에 `Task: P-xx`와 `Closes #번호`를 쓴다.
