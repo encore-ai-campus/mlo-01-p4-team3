@@ -19,7 +19,7 @@ from engine.ports import CommandCandidate, ParseFailure, PlayerView, RenderStatu
 # ---------------------------------------------------------------- 판 시작·조회
 @dataclass
 class StartGameInput:
-    player_pseudonym: str
+    player_pseudonym: str  # 서버가 로그인 계정의 가명 ID로 채운다. 요청 본문에 있으면 400(api.md 2-1절)
     preset_id: str
     session_id: str
     mudang_variant: str                 # 주인공 초상 "f"(여) | "m"(남). 표시 전용, 규칙과 NPC 대사에 영향 없음(11/4 PM 결정)

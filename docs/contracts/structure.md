@@ -33,6 +33,7 @@ paldo/
 ├─ server/                         게임 웹 Django 프로젝트 · B (infra는 C·E)
 │  ├─ manage.py                    [B-05-01]
 │  ├─ paldo_web/                   settings.py, middleware.py [B-05-01]
+│  ├─ accounts/                    계정(표현·인프라): models.py(계정·가명), validators.py(비밀번호 규칙), lockout.py(5회 실패 15분 잠금), views.py(가입·로그인·로그아웃) [B-06-04]
 │  ├─ api/                         표현: viewmodels.py (있음), views.py [B-05-02], consent.py [B-06-03]
 │  ├─ app/                         응용: dto.py, ads_port.py (있음), usecases.py [B-05-02], presets_enabled.json [B-08-02]
 │  ├─ infra/                       인프라(C 저장소·발행기·조회, E LLM 렌더러, B 광고 HTTP 클라이언트·모델 선택 적용)
@@ -42,7 +43,7 @@ paldo/
 │  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03]
 │  │  ├─ ad_client.py              AdProvider HTTP 구현 [B-08-03] 결정 #6
 │  │  └─ model_selector.py         ModelSelector 최소 구현 [D-08-04] → 카나리아·고정 [B-09-01], 레지스트리 [C-09-01] 결정 #5
-│  └─ tests/                       Django 테스트: test_api.py [B-05-02], test_idempotency.py [B-06-02]
+│  └─ tests/                       Django 테스트: test_api.py [B-05-02], test_idempotency.py [B-06-02], test_accounts.py [B-06-04]
 ├─ web/
 │  └─ templates/                   meeting.html와 htmx 조각 [B-05-03], 이후 화면 [B-06-01 …]
 │
