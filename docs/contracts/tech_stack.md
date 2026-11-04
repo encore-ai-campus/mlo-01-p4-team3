@@ -17,6 +17,8 @@
 | 역할 | 기술 | 버전(기록값, 11/5 실측 필요) | 담당 |
 |---|---|---|---|
 | 웹·API | Django + Django 템플릿 + htmx + Alpine.js | Django 6.1.2(app 서버에 설치 기록) | B |
+| 웹소켓(광고 신호, 11/4 PM 결정) | Django Channels + Daphne(ASGI 서버), 채널 계층 `InMemoryChannelLayer`, 게임 웹 프로세스 1개 | **잠정 범위** `channels>=4.3.2,<5`, `daphne>=4.2.3,<5`(하한은 로컬에서 설치를 확인한 버전. 이전 Daphne의 보안 수정이 빠지지 않게 하한을 올림). Python 3.14·Django 6.1 조합은 미확인이고 설치 성공만으로 호환을 확정하지 않는다. B-07-05에서 대상 VM에 설치해 기동·로그인·웹소켓·기존 HTTP 테스트를 통과시킨 뒤 정확한 버전을 고정·기록 | B |
+| HTTPS 프록시(11/4 PM 결정) | Caddy 리버스 프록시, `tls internal` 자체 서명, wss 통과, HSTS 끔 | 버전 미정(C-07-04에서 설치 버전 기록) | C |
 | 판 저장 | MongoDB Replica Set 3노드, `w=majority`. 이미지 `mongo:8.0.34`(개발 Compose·CI 서비스 컨테이너도 같은 태그, 11/4 PM 결정) | - | C |
 | 이벤트 | Kafka 3노드(브로커·KRaft 컨트롤러 겸용), 보존 1일 | - | C |
 | 배치 | Spark(Master 1 + Worker), Hadoop, OpenJDK | Spark 4.1.3, Hadoop 3.4.2, OpenJDK 21 | C |

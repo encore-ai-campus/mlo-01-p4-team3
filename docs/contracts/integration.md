@@ -56,10 +56,10 @@
 | G7 | 게임 웹 응용(B) → LLM 서비스(E) | ① `LineRenderer` → `server/infra/llm_renderer.py`가 ②로 전달 | `submit`, `poll`, `cancel` → `POST /v1/renders`, `GET /v1/renders/{job_id}`, `POST /v1/renders/{job_id}/cancel`(404는 `failed`, 결정 #3) | [ports.md 4절](ports.md), [api.md 5절](api.md) | 마감 `deadline_ms` 기본 15초, 넘으면 `timeout`·실제 생성 취소. 단계가 넘어가면 응용이 `cancel`. 화면은 폴백 먼저, 1초 폴링 | `PALDO_LLM_URL` | `FakeLineRenderer` | E-07-01(11/7) → B-07-01 #7 → INT-09 #5 |
 | G8 | LLM 서비스 → llama.cpp | E 내부 | - | E-07-01, E-06-07 | 큐 우선순위 0 캐묻기 > 1 복기 > 2 운영 분석 | - | - | E-07-01 |
 | G9 | 게임 웹 응용(B) → 모델 선택(C 레지스트리, B 적용) | ①→④ `ModelSelector` | `select`(판 시작 때만), `suspicion_model(v)`, `intent_parser(v)` | [ml_lifecycle.md 4절](ml_lifecycle.md), [ports.md 3절](ports.md) | 고른 버전을 `GameMeta.model_versions`에 고정. 이전 버전은 최대 2개 메모리 유지 | `PALDO_MLFLOW_URI` | `FakeModelSelector`, MLflow 전에는 로컬 `mlruns/` | D-08-04(11/8)가 `server/infra/model_selector.py` 최소 구현(`mlruns/`)을 만들고 v0 50판 재현(결정 #5). C-09-01이 레지스트리 조회로 교체. B-09-01(11/9)이 카나리아·버전 고정·업데이트 화면 → INT-11 #3 |
-| G10 | 브라우저 → 게임 웹 광고 칸 → `AdGateway` → 광고 서버(D) | 브라우저→게임 웹 ②, 게임 웹→광고 서버 ② | `GET /ads/slot/{slot}`(htmx `load`) → `POST /ads/v1/serve` | [ports.md 5절](ports.md), [ads.md 3절](ads.md) | 연결 100ms, 전체 300ms, 동시 8, 재시도 없음, 연속 실패 5회면 30초 생략. 어떤 실패든 빈 광고 | `PALDO_ADS_INTERNAL_URL` | `FakeAdProvider` | D-08-03(11/8 오전) → B-08-03(`server/infra/ad_client.py`, 결정 #6) → INT-09 #2·#9 |
-| G11 | 브라우저 → 광고 서버(D) | ② | `POST /ads/v1/impression`, `GET /ads/v1/click?t=` → 가상 랜딩 `/ads/landing/<creative_id>` | [ads.md 3·6절](ads.md) | 비콘은 면적 50% 이상 1초 이상 보일 때 1회. 클릭은 판정과 무관하게 항상 302 | `PALDO_ADS_PUBLIC_URL` | `FakeAdProvider`의 토큰·링크 | D-05-03, B-07-03 → INT-09 #2. 광고 서버에 직접, 비콘 `sendBeacon` `text/plain`, CSRF 제외(결정 #2) |
+| G10 | 브라우저 → 게임 웹 광고 칸 → `AdGateway` → 광고 서버(D) | 브라우저→게임 웹 ②, 게임 웹→광고 서버 ② | `GET /ads/slot/{slot}`(htmx `load`) → `POST /ads/v1/serve`. 응답 조각의 클릭 링크는 게임 웹 `/ads/click`, 비콘은 웹소켓(G11) | [ports.md 5절](ports.md), [ads.md 3절](ads.md) | 연결 100ms, 전체 300ms, 동시 8, 재시도 없음, 연속 실패 5회면 30초 생략. 어떤 실패든 빈 광고 | `PALDO_ADS_INTERNAL_URL` | `FakeAdProvider` | D-08-03(11/8 오전) → B-08-03(`server/infra/ad_client.py`, 결정 #6) → INT-09 #2·#9 |
+| G11 | 브라우저 → 게임 웹(웹소켓·중계 경로) → `AdGateway` → 광고 서버(D) | 브라우저→게임 웹 ②(웹소켓 `/ws/game/`, HTTP), 게임 웹→광고 서버 ② | `ad.impression` 메시지 → `POST /ads/v1/impression`, `GET /ads/click?t=` → `GET /ads/v1/click?t=` → 302 `/ads/landing/<creative_id>` → `GET /ads/landing/<creative_id>` | [api.md 7절](api.md), [ports.md 5절](ports.md), [ads.md 3·6절](ads.md) | 비콘은 면적 50% 이상 1초 이상 보일 때 1회. 중계는 serve와 같은 시간 제한, 재시도 없음, 실패한 비콘은 손실. 클릭은 판정·실패와 무관하게 항상 302 | `PALDO_ADS_INTERNAL_URL`, `PALDO_PUBLIC_ORIGIN` | `FakeAdProvider` 중계 가짜 | B-07-05(11/7 오전, 가짜) → B-07-03 → D-08-03 → B-08-03 → INT-09 #2. 브라우저는 게임 웹 출처에만 접속, CSRF 제외는 광고 서버 비콘·클릭 엔드포인트(결정 #2, 11/4 변경) |
 | G13 | 복기: 게임 웹 → 엔진 `review_trace`(A) → LLM 복기 해설(E) → 화면 폴링(B), 승리 확률(D) | ① `review_trace(game)`, ② 해설 생성(LLM 서비스 우선순위 1), 화면은 폴링 | `GET /games/{id}/review`(종료 후만) | [api.md 2절](api.md), A-10-02, E-10-01, B-10-01, D-10-03 | 해설의 근거 ID는 모두 `review_trace`에 있어야 함, 실패 시 템플릿 해설. `win_prob`가 없으면 그래프 숨김 | `PALDO_LLM_URL` | `fixtures/review/review_trace_sample.json` | 11/10 10:00 A-10-02 형식·샘플 → B·E, 12:00 E-10-01 해설 응답 형식 → B-10-01. 해설은 렌더 폴링 재사용, 우선순위 1(결정 #17) |
-| G12 | 게임 웹 화면 → 이미지 | ④ `content/images/manifest.json` 파일 읽기 + 정적 파일 | `asset_url(content_id)`, `/static/assets/<kind>/…`, 광고는 응답의 `image_path`(`/static/ads/…`) | B-05-03 #4·#5, E-05-05, [ads.md 2절](ads.md) | manifest에 없는 ID는 기본 이미지 + 경고 로그 | - | E의 임시 에셋(같은 경로) | E-05-05(11/5 12:00) → 실제 에셋 덮어쓰기 → E-11-06 |
+| G12 | 게임 웹 화면 → 이미지 | ④ `content/images/manifest.json` 파일 읽기 + 정적 파일 | `asset_url(content_id)`, `/static/assets/<kind>/…`, 광고는 응답의 `image_path`(`/static/ads/…`) | B-05-03 #4·#5, E-05-05, [ads.md 2절](ads.md) | manifest에 없는 ID는 기본 이미지 + 경고 로그 | - | E의 임시 에셋(같은 경로) | E-05-05(11/5 12:00) → B 실제 에셋 덮어쓰기(B-09-05 ~ B-11-05, 11/4 담당 이전) → E-11-06 |
 
 ### 3.2 이벤트·데이터·학습 경로
 
@@ -102,8 +102,8 @@
 | `PALDO_S3_ENDPOINT`, `PALDO_S3_ACCESS_KEY`, `PALDO_S3_SECRET_KEY` | Spark, 학습, MLflow, 조회 | Garage(S3 호환) |
 | `PALDO_MLFLOW_URI` | 학습, 관문, `ModelSelector` | MLflow 추적·레지스트리 |
 | `PALDO_LLM_URL` | `llm_renderer.py` | LLM 서비스 기본 주소 |
-| `PALDO_ADS_INTERNAL_URL` | 게임 웹 `AdGateway` | 광고 서버 내부 주소(serve) |
-| `PALDO_ADS_PUBLIC_URL` | 광고 서버(클릭 링크 생성), 게임 웹 템플릿(비콘 주소) | 브라우저가 닿는 광고 서버 주소 |
+| `PALDO_ADS_INTERNAL_URL` | 게임 웹 `AdGateway` | 광고 서버 내부 주소(serve와 비콘·클릭·랜딩 중계) |
+| `PALDO_PUBLIC_ORIGIN` | 게임 웹(`ALLOWED_HOSTS`·`CSRF_TRUSTED_ORIGINS`·웹소켓 출처 검사·보안 쿠키), C 프록시 | 브라우저가 닿는 게임 웹 출처(예 `https://<게임 웹 주소>`). `https://`이면 보안 쿠키를 켠다(B-07-05). 브라우저용 광고 서버 주소 변수(옛 `PALDO_ADS_PUBLIC_URL`)는 11/4 결정 #2 변경으로 폐지 |
 | `PALDO_ADS_DB_HOST`, `_PORT`, `_NAME`, `_USER`, `_PASSWORD` | 광고 서버 | 광고 MySQL. `_PORT`는 비어 있으면 3306(VM·AWS 기본). 로컬 Compose는 Windows MySQL과 겹치지 않게 호스트 포트를 바꿔 쓸 수 있고(이 PC는 3316), 그 값은 `.env`에만 둔다(11/4 PM 결정) |
 | `PALDO_ADS_TOKEN_KEY` | 광고 서버 | serve 토큰 서명 키(ads.md 3절 "인프라 비밀 저장소") |
 | `PALDO_AUTH_DB_HOST`, `_PORT`, `_NAME`, `_USER`, `_PASSWORD` | 게임 웹(계정) | 계정 저장소 MySQL(계정 전용 스키마·DB 계정, 광고와 분리, privacy.md 5절). `_PORT`는 비어 있으면 3306. 로컬 값은 `.env`에만(11/4 PM 결정) |
@@ -128,15 +128,16 @@
 
 ### 4.5 개인정보 경계
 - 광고 서버에는 세션 가명 ID만 보낸다. 플레이어 가명 ID와 판 내용은 보내지 않는다([ads.md 9절](ads.md), [privacy.md](privacy.md)).
+- 브라우저는 광고 서버에 직접 접속하지 않으므로(G11) 광고 서버는 참가자 접속 주소를 받지 않는다.
 - 원문 자유 입력은 마스킹 후 이벤트에만 넣고, 로그에는 넣지 않는다.
 
 ## 5. 환경별 차이
 
 | 환경 | 구성 | 다른 점 |
 |---|---|---|
-| 개발(각자 PC) | Compose `paldo-dev`: Mongo 1노드 레플리카셋, Kafka 1노드, MySQL 1노드, S3 호환 저장소, Prometheus, Grafana(C-05-03) + 로컬 Django | 상대 흐름은 가짜. LLM은 `FakeLineRenderer` 또는 작은 모델(기획서 6.3 개발 시간대) |
-| 통합·사용자 테스트(VM) | 2절 표 | 실제 구현으로 교체. 사용자 테스트 중에는 llm-01·ad-01·app-01에 학습 작업을 올리지 않는다(기획서 6.3) |
-| 시연·외부 공개(AWS) | 결정 대기 P-05 | 범위가 정해지면 이 표에 추가한다 |
+| 개발(각자 PC) | Compose `paldo-dev`: Mongo 1노드 레플리카셋, Kafka 1노드, MySQL 1노드, S3 호환 저장소, Prometheus, Grafana(C-05-03) + 로컬 Django(11/7 B-07-05부터 Daphne ASGI, HTTP) | 상대 흐름은 가짜. LLM은 `FakeLineRenderer` 또는 작은 모델(기획서 6.3 개발 시간대) |
+| 통합·사용자 테스트(VM) | 2절 표 + app-01 게임 웹 앞 Caddy HTTPS 프록시(C-07-04, 자체 서명, wss 통과) | 실제 구현으로 교체. 사용자 테스트 중에는 llm-01·ad-01·app-01에 학습 작업을 올리지 않는다(기획서 6.3). 참가자는 첫 접속 때 인증서 경고를 한 번 넘긴다(C-07-04 안내) |
+| 시연·외부 공개(AWS) | 결정 대기 P-05 | 범위가 정해지면 이 표에 추가한다. 게임 웹은 HTTPS(C-10-02 5번), 광고 서버는 공개하지 않는다 |
 
 ## 6. 통합 시점 요약
 
@@ -144,7 +145,7 @@
 |---|---|---|
 | 11/5 | 임시 에셋 manifest(G12) | E-05-05 → B·D |
 | 11/6 | 광고 MySQL(A1), 광고 이벤트 Kafka(A2), 게임 이벤트 Kafka(D2), 실제 엔진 소량 판(D7) | INT-07 사전 |
-| 11/7 | 엔진(G2), Mongo 저장소(G5), 기준선 의도 해석기(G4), LLM 서비스(G7), Spark → Delta → 첫 학습(D3·D4) | INT-07 |
+| 11/7 | 엔진(G2), Mongo 저장소(G5), 기준선 의도 해석기(G4), LLM 서비스(G7), Spark → Delta → 첫 학습(D3·D4), 웹소켓 비콘·클릭 중계(G11, 가짜 광고, B-07-05), HTTPS 프록시(C-07-04) | INT-07 |
 | 11/8 | 의심 모델 v0(G3)와 최소 모델 선택(G9), 실제 광고 서버(G10·G11), 광고 gold → 갱신(A3·A4), 대량 시뮬레이션(D8) | INT-09 준비 |
 | 11/9 | BERT 해석기(G4), 모델 선택 적용(G9), 밴딧(D12), 끝에서 끝까지 흐름 1·2 | INT-09 |
 | 11/10 | 운영 조회 → 운영 분석 에이전트(D9), 재학습 → 승격·롤백(D5·D6), 복기(G13), 광고 CTR 모델·자동 입찰(A6) | INT-11 준비 |
@@ -157,7 +158,7 @@
 | # | 항목 | 선택지 | 결정과 이유 | 반영 위치 |
 |---|---|---|---|---|
 | 1 | 광고 서버 Django 프로젝트 위치 | (a) `ads/project/`(settings·urls) + `ads/manage.py`로 독립 (b) `server/paldo_web`에 `ads.web` 앱을 넣고 설정 모듈만 분리 | **(a)**. 계약이 "Django 별도 서비스(ad-01)"이고 DB·비밀 키가 다르다. B와 D가 같은 settings 파일을 동시에 고치지 않는다 | D-05-03, C-10-02 |
-| 2 | 브라우저 → 광고 서버(비콘·클릭)의 출처 처리 | (a) 광고 서버에 직접. 클릭은 링크 이동이라 출처 문제가 없다. 비콘은 `navigator.sendBeacon`으로 `text/plain` 본문(JSON 문자열)을 보내 사전 요청을 피한다 (b) 리버스 프록시로 같은 출처 (c) 게임 웹이 비콘을 받아 넘김 | **(a)**. 새 구성요소가 없고 광고 트래픽이 게임 웹 부하에 섞이지 않는다. 조건: 광고 서버가 `text/plain` 본문을 직접 파싱하고, 비콘·클릭 엔드포인트는 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다. `PALDO_ADS_PUBLIC_URL`(AWS는 HTTPS 공개 주소)이 필요하다. 서로 다른 출처에서 실제 동작을 확인한다(B-08-03). (c)도 게임 명령 경로 밖이면 기획서 14.7 위반은 아니지만 광고 장애 시험 범위가 넓어진다 | B-07-03, D-05-03, B-08-03, C-10-02 |
+| 2 | 브라우저 → 광고 서버(비콘·클릭)의 출처 처리 | (a) 광고 서버에 직접. 클릭은 링크 이동이라 출처 문제가 없다. 비콘은 `navigator.sendBeacon`으로 `text/plain` 본문(JSON 문자열)을 보내 사전 요청을 피한다 (b) 리버스 프록시로 같은 출처 (c) 게임 웹이 비콘을 받아 넘김 | **11/4 같은 날 (a) → (c)로 변경(웹소켓)**: 내부 사용자 테스트를 HTTPS로 하기로 해(BRD `BR-OQ-023`) 게임만 HTTPS면 HTTP 광고 서버로 가는 비콘이 혼합 콘텐츠로 막히고, 클릭은 HTTPS 화면에서 HTTP 주소로 빠져나간다. 그래서 브라우저는 게임 웹 출처에만 접속하고, 노출 비콘은 Django Channels·Daphne 웹소켓 `/ws/game/`, 클릭·랜딩은 게임 웹 HTTP 경로로 받아 게임 웹이 광고 서버에 내부 HTTP로 넘긴다(api.md 7절, ports.md 5절). 서버 간 API 형식은 그대로(`ads-0.3`). `PALDO_ADS_PUBLIC_URL` 폐지, `PALDO_PUBLIC_ORIGIN` 추가. 광고 장애 시험 범위가 중계까지 넓어진다(B-08-03 2번). 반영: B-07-05(신설), B-07-03, B-08-03, D-05-03, C-07-04(신설), C-10-02. 아래는 처음 (a)를 고른 이유와 그때의 조건이며 **폐기된 이력**이다(지금 유효한 조건은 api.md 7절·ports.md 5절·ads.md 3절). **(a)**. 새 구성요소가 없고 광고 트래픽이 게임 웹 부하에 섞이지 않는다. 조건: 광고 서버가 `text/plain` 본문을 직접 파싱하고, 비콘·클릭 엔드포인트는 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다. `PALDO_ADS_PUBLIC_URL`(AWS는 HTTPS 공개 주소)이 필요하다. 서로 다른 출처에서 실제 동작을 확인한다(B-08-03). (c)도 게임 명령 경로 밖이면 기획서 14.7 위반은 아니지만 광고 장애 시험 범위가 넓어진다 | B-07-05, B-07-03, D-05-03, B-08-03, C-07-04, C-10-02 |
 | 3 | LLM 서비스 HTTP 형식 | `POST /v1/renders`(`RenderRequest` JSON → 202), `GET /v1/renders/{job_id}`(`RenderResult` JSON), `POST /v1/renders/{job_id}/cancel`(→ 204). 작업 상태는 서비스 메모리. 재시작으로 작업이 없으면 404 → 렌더러가 `failed`로 보고, 화면은 폴백 | **이 형식으로 확정**. `LineRenderer` 메서드 3개와 1:1이라 렌더러가 얇다. 우선순위·마감은 서비스 큐가 맡는다. 렌더러의 HTTP 시간 제한 값은 E-06-07 벤치 뒤 정한다 | ports.md 4절, E-07-01, B-07-01 #7 |
 | 4 | ML 추론의 프로세스 경계(의도 해석기·의심 모델) | (a) 게임 웹 프로세스 안에서 import(포트가 같은 프로세스 호출로 설계됨. 기획서 6.3의 "app-01 추론"은 VM 위치만 정한다) (b) 별도 추론 프로세스·서비스(HTTP) | **(a)를 먼저 시험**. 조건: 게임 웹(Django)과 PyTorch·transformers·LightGBM이 한 Python 환경에서 함께 설치되고(C-05-03 실측), 의심 모델 100ms 제한(D-08-01 #3)을 지킨다. 성립하지 않거나 p95 100ms를 넘으면 (b)안을 측정값과 함께 PM에 보고. 의도 해석의 시간 제한과 예외 처리(예: 예외 → `unparseable`)도 함께 정한다 | C-05-03, B-07-01, B-09-02, D-08-01 |
 | 5 | `ModelSelector` 실제 구현 위치·담당·시점 | 포트 표는 "C(레지스트리), B(적용)"이지만 구현 파일·태스크가 없다. D-08-04(11/8)가 이미 Selector 설정으로 v0를 불러야 한다 | `server/infra/model_selector.py`. **11/8 D-08-04 인계 전에 `mlruns/`를 읽는 최소 구현**이 필요하다. 담당은 D-08-04(+0.5h, 모델 형식을 아는 쪽). B-09-01은 카나리아·버전 고정·업데이트 화면, C-09-01은 MLflow 레지스트리 조회로 교체 | D-08-04, B-09-01, C-09-01 |
