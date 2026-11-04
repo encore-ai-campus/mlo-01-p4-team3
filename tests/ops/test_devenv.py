@@ -22,6 +22,9 @@ class EnvExample(unittest.TestCase):
         env = devenv.parse_env(EXAMPLE)
         self.assertGreaterEqual(len(env), 10)
         for key, value in env.items():
+            if key == "PALDO_SIGNUP_INVITE_CODE":   # 파일럿은 설정하지 않는다(공개 가입)
+                self.assertEqual(value, "", key)
+                continue
             self.assertRegex(value, r"^<[A-Z][A-Z0-9_]*>$", key)
 
     def test_dotenv_is_gitignored(self):
@@ -81,7 +84,38 @@ class EnvExample(unittest.TestCase):
                          "@localhost:27117/?replicaSet=rs0&authSource=admin")
         self.assertEqual(env["PALDO_ADS_DB_PORT"], "3316")
         self.assertEqual(env["PALDO_MLFLOW_URI"], "")
+        self.assertEqual(env["PALDO_SIGNUP_INVITE_CODE"], "")
+        self.assertEqual(env["PALDO_AUTH_DB_HOST"], env["PALDO_ADS_DB_HOST"])   # 같은 MySQL
+        self.assertEqual(env["PALDO_AUTH_DB_PORT"], env["PALDO_ADS_DB_PORT"])
         self.assertNotEqual(env["DJANGO_SECRET_KEY"], env["PALDO_ADS_TOKEN_KEY"])
+
+    def test_auth_store_local_values(self):
+        env = devenv.parse_env(devenv.render_env(EXAMPLE))
+        self.assertEqual(env["PALDO_AUTH_DB_NAME"], "paldo_auth")
+        self.assertEqual(env["PALDO_AUTH_DB_USER"], "paldo_auth_dev")
+        self.assertNotEqual(env["PALDO_AUTH_DB_PASSWORD"], env["PALDO_ADS_DB_PASSWORD"])
+        self.assertEqual(env["PALDO_PUBLIC_ORIGIN"], "http://localhost:8000")
+        self.assertNotIn("PALDO_ADS_PUBLIC_URL", env)   # 11/4 결정 #2 변경으로 폐지
+
+    def test_env_problems_rejects_shared_ads_and_auth_account(self):
+        env = devenv.parse_env(devenv.render_env(EXAMPLE))
+        env["PALDO_AUTH_DB_USER"] = env["PALDO_ADS_DB_USER"]
+        env["PALDO_AUTH_DB_NAME"] = env["PALDO_ADS_DB_NAME"]
+        problems = devenv.env_problems(env, devenv.parse_env(EXAMPLE))
+        self.assertEqual(sorted(p.split(":")[0] for p in problems), ["PALDO_AUTH_DB_NAME", "PALDO_AUTH_DB_USER"])
+
+    def test_env_problems_auth_port_follows_ads_port(self):
+        env = devenv.parse_env(devenv.render_env(EXAMPLE))
+        env["PALDO_ADS_DB_PORT"] = "3326"   # 포트를 바꾸면서 계정 저장소 포트를 잊은 경우
+        problems = devenv.env_problems(env, devenv.parse_env(EXAMPLE))
+        self.assertEqual([p.split(":")[0] for p in problems], ["PALDO_AUTH_DB_PORT"])
+
+    def test_env_problems_rejects_sql_unsafe_auth_values(self):
+        env = devenv.parse_env(devenv.render_env(EXAMPLE))
+        quote_value = "a'b"
+        env["PALDO_AUTH_DB_PASSWORD"] = quote_value
+        problems = devenv.env_problems(env, devenv.parse_env(EXAMPLE))
+        self.assertEqual([p.split(":")[0] for p in problems], ["PALDO_AUTH_DB_PASSWORD"])
 
     def test_compose_env_carries_only_compose_vars(self):
         env = devenv.parse_env(devenv.render_env(EXAMPLE))
@@ -91,9 +125,9 @@ class EnvExample(unittest.TestCase):
     def test_empty_allowed_only_for_unavailable_services(self):
         env = devenv.parse_env(devenv.render_env(EXAMPLE))
         env["PALDO_LLM_URL"] = ""
-        env["PALDO_ADS_DB_HOST"] = ""
+        env["PALDO_ADS_DB_HOST"] = env["PALDO_AUTH_DB_HOST"] = ""
         problems = devenv.env_problems(env, devenv.parse_env(EXAMPLE))
-        self.assertEqual(problems, ["PALDO_ADS_DB_HOST: 값이 없다"])
+        self.assertEqual(problems, ["PALDO_ADS_DB_HOST: 값이 없다", "PALDO_AUTH_DB_HOST: 값이 없다"])
 
     def test_compose_mysql_port_uses_env_variable(self):
         self.assertIn("${PALDO_ADS_DB_PORT:-3316}:3306", DEV_YML)
@@ -118,6 +152,13 @@ class Checks(unittest.TestCase):
         self.assertEqual(devenv.compose_unhealthy(lines, SERVICES), {"grafana": "없음"})
         listed = json.dumps([{"Service": "mongo", "State": "running", "Health": "starting"}])
         self.assertEqual(devenv.compose_unhealthy(listed, ["mongo"]), {"mongo": "starting"})
+
+    def test_mysql_access_denied(self):
+        self.assertTrue(devenv.mysql_access_denied(
+            "ERROR 1044 (42000): Access denied for user 'paldo_dev'@'%' to database 'paldo_auth'"))
+        self.assertFalse(devenv.mysql_access_denied(
+            "ERROR 1045 (28000): Access denied for user 'paldo_dev'@'localhost' (using password: YES)"))   # 비밀번호 오류는 거부 확인이 아니다
+        self.assertFalse(devenv.mysql_access_denied("8.4.13\tpaldo_auth"))
 
     def test_prometheus_down_jobs(self):
         def res(*pairs):
@@ -168,6 +209,12 @@ class ComposeFile(unittest.TestCase):
 
     def test_no_inline_secrets(self):
         self.assertNotRegex(DEV_YML, r"(?im)(PASSWORD|SECRET|TOKEN)\w*\s*:\s*\S")
+
+    def test_mysql_creates_auth_schema_with_own_grant(self):
+        self.assertIn("/docker-entrypoint-initdb.d/10-auth.sh", DEV_YML)
+        self.assertIn("GRANT ALL PRIVILEGES ON \\`$${db_grant}\\`.* TO '$${PALDO_AUTH_DB_USER}'", DEV_YML)
+        self.assertIn(r"sed 's/_/\\_/g'", DEV_YML)   # 스키마 이름의 _ 와일드카드 이스케이프
+        self.assertNotRegex(DEV_YML, r"GRANT [^\n]* ON \*\.\*")   # 전체 권한 금지
 
     def test_mongo_replica_set(self):
         self.assertIn("--replSet rs0", DEV_YML)

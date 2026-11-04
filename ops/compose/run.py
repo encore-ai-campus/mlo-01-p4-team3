@@ -213,12 +213,32 @@ def check_kafka(dc: Compose, env: dict) -> tuple[bool, str]:
     return r.returncode == 0 and marker in out, out[-400:]
 
 
+MYSQL_ACCOUNTS = {   # 이름 → (사용자 변수, 비밀번호 변수, 스키마 변수). 컨테이너 안 환경 변수(env_file) 이름과 같다
+    "ads": ("PALDO_ADS_DB_USER", "PALDO_ADS_DB_PASSWORD", "PALDO_ADS_DB_NAME"),
+    "auth": ("PALDO_AUTH_DB_USER", "PALDO_AUTH_DB_PASSWORD", "PALDO_AUTH_DB_NAME"),
+}
+
+
+def _mysql_as(dc: Compose, account: str, schema_var: str):
+    user, pw, _ = MYSQL_ACCOUNTS[account]
+    return dc.sh("mysql", f'MYSQL_PWD="${{{pw}}}" mysql -h127.0.0.1 -u"${{{user}}}" "${{{schema_var}}}" -N '
+                          '-e "SELECT VERSION(), DATABASE()"')
+
+
 def check_mysql(dc: Compose, env: dict) -> tuple[bool, str]:
-    """앱 계정으로 paldo_ads 접속, 버전 조회."""
-    r = dc.sh("mysql", 'MYSQL_PWD="${MYSQL_PASSWORD}" mysql -h127.0.0.1 -u"$MYSQL_USER" paldo_ads -N '
-                       '-e "SELECT VERSION(), DATABASE()"')
-    out = (r.stdout + r.stderr).strip()
-    return r.returncode == 0 and "paldo_ads" in out, out[-400:]
+    """광고·계정 DB 계정이 각자 스키마에는 붙고, 서로의 스키마에는 거부되는지(두 방향)."""
+    parts, ok = [], True
+    for account, (_, _, own) in MYSQL_ACCOUNTS.items():
+        r = _mysql_as(dc, account, own)
+        good = r.returncode == 0 and env[own] in r.stdout
+        ok &= good
+        parts.append(f"{account}→{env[own]} " + ("접속" if good else "실패: " + (r.stdout + r.stderr).strip()[-200:]))
+        other = MYSQL_ACCOUNTS["auth" if account == "ads" else "ads"][2]
+        r = _mysql_as(dc, account, other)
+        denied = r.returncode != 0 and devenv.mysql_access_denied(r.stderr)
+        ok &= denied
+        parts.append(f"{account}→{env[other]} " + ("거부" if denied else "거부 안 됨: " + (r.stdout + r.stderr).strip()[-200:]))
+    return ok, ", ".join(parts)
 
 
 def check_garage(dc: Compose, env: dict) -> tuple[bool, str]:

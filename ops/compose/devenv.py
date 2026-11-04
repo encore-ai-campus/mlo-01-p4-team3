@@ -20,6 +20,7 @@ SERVICE_NAME = "devenv"
 PLACEHOLDER_RE = re.compile(r"<([A-Z][A-Z0-9_]*)>")
 S3_KEY_ID_RE = re.compile(r"^GK[0-9a-f]{24}$")   # Garage 키 ID 형식
 HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+SQL_SAFE_RE = re.compile(r"^[A-Za-z0-9_-]+$")   # dev.yml initdb SQL에 넣는 값(계정 저장소 이름·계정·비밀번호)
 
 # 로컬 Compose에서 고정인 값(자리표시자 이름 → 값). 빈 값은 "로컬 Compose에 없음, 가짜 구현을 쓴다"는 뜻이다.
 LOCAL_FIXED = {
@@ -29,10 +30,12 @@ LOCAL_FIXED = {
     "ADS_DB_HOST": "127.0.0.1",
     "ADS_DB_PORT": "3316",          # Windows MySQL(3306)과 겹치지 않게(11/4 PM 결정, integration.md 4.1)
     "ADS_DB_NAME": "paldo_ads",
+    "AUTH_DB_NAME": "paldo_auth",   # 계정 저장소 스키마(광고와 같은 MySQL, 다른 스키마·계정. 11/4 PM 답)
+    "AUTH_DB_USER": "paldo_auth_dev",
+    "PUBLIC_ORIGIN": "http://localhost:8000",   # Django 개발 서버 기본 포트. 브라우저도 이 주소로(127.0.0.1이면 웹소켓 거부)
     "MLFLOW_URI": "",               # 로컬은 mlruns/(가짜 → 진짜 교체표)
     "LLM_URL": "",                  # 로컬은 LLM 폴백 템플릿
     "ADS_INTERNAL_URL": "",         # 로컬은 FakeAdProvider
-    "ADS_PUBLIC_URL": "",
 }
 # 다른 자리표시자 값으로 만드는 값.
 DERIVED = {
@@ -41,7 +44,8 @@ DERIVED = {
 # Compose 변수 치환에 필요해 ops/compose/.env로 복사하는 변수(Compose는 저장소 루트 .env를 치환에 쓰지 않는다).
 COMPOSE_VARS = ("PALDO_ADS_DB_PORT",)
 # 로컬에서 비어 있어도 되는 변수.
-MAY_BE_EMPTY = ("PALDO_MLFLOW_URI", "PALDO_LLM_URL", "PALDO_ADS_INTERNAL_URL", "PALDO_ADS_PUBLIC_URL")
+MAY_BE_EMPTY = ("PALDO_MLFLOW_URI", "PALDO_LLM_URL", "PALDO_ADS_INTERNAL_URL",
+                "PALDO_SIGNUP_INVITE_CODE")   # 초대 코드: 비면 공개 가입(파일럿)
 
 
 # ---------------------------------------------------------------- .env 생성 규칙
@@ -123,6 +127,17 @@ def env_problems(env: dict[str, str], required: Iterable[str]) -> list[str]:
         problems.append("PALDO_S3_ACCESS_KEY: GK + 16진수 24자가 아니다(Garage 키 ID 형식)")
     if env.get("PALDO_ADS_DB_PORT") and not env["PALDO_ADS_DB_PORT"].isdigit():
         problems.append("PALDO_ADS_DB_PORT: 숫자가 아니다")
+    for key in ("PALDO_ADS_DB_USER", "PALDO_ADS_DB_NAME"):
+        auth = key.replace("_ADS_", "_AUTH_")
+        if env.get(key) and env.get(auth) == env[key]:
+            problems.append(f"{auth}: 광고와 같다(계정 저장소는 전용 스키마·계정, privacy.md 5절)")
+    for key in ("PALDO_ADS_DB_HOST", "PALDO_ADS_DB_PORT"):
+        auth = key.replace("_ADS_", "_AUTH_")
+        if key in env and auth in env and env[auth] != env[key]:
+            problems.append(f"{auth}: {key}와 다르다(로컬은 같은 MySQL. 포트를 바꾸면 둘 다 고친다)")
+    for key in ("PALDO_AUTH_DB_NAME", "PALDO_AUTH_DB_USER", "PALDO_AUTH_DB_PASSWORD"):
+        if env.get(key) and not SQL_SAFE_RE.match(env[key]):
+            problems.append(f"{key}: 영문·숫자·_·-만 쓴다(MySQL 초기화 SQL에 그대로 들어간다)")
     for key in ("PALDO_S3_SECRET_KEY", "GARAGE_RPC_SECRET"):
         if env.get(key) and not HEX64_RE.match(env[key]):
             problems.append(f"{key}: 16진수 64자가 아니다")
@@ -151,6 +166,11 @@ def prometheus_down_jobs(query_result: dict, expected: Iterable[str] = PROMETHEU
         job = r.get("metric", {}).get("job", "")
         up[job] = up.get(job, True) and r.get("value", [None, "0"])[1] == "1"
     return [j for j in expected if not up.get(j, False)]
+
+
+def mysql_access_denied(output: str) -> bool:
+    """mysql 클라이언트 출력이 스키마 접근 거부(ERROR 1044 또는 1142)인지."""
+    return bool(re.search(r"ERROR (1044|1142) ", output))
 
 
 def garage_node_id(output: str) -> str:
