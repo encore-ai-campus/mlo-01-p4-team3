@@ -1,0 +1,64 @@
+# 필수 체크 4개(docs/tasks/README.md 3절 ②, E-05-02). 설명은 docs/modules/ci.md.
+# PR 본문은 셸 명령에 직접 넣지 않고 환경 변수 PR_BODY로 넘긴다(README 11절).
+name: ci
+on: [pull_request, push]
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }   # 잠정값. C-05-03 결과로 PM이 정하면 같은 값으로 바꾼다
+      - run: python -m unittest discover -s tests -t .
+      - run: python -m tools.check_secrets
+
+  django:
+    runs-on: ubuntu-latest
+    services:
+      mongo: { image: "mongo:7", ports: ["27017:27017"] }
+      mysql: { image: "mysql:8.4", env: { MYSQL_ALLOW_EMPTY_PASSWORD: "yes" }, ports: ["3306:3306"] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      # server/manage.py가 생기기 전의 빈 단계(E-05-02 조건 1). B-05-01 병합과 함께 아래 두 줄로 바꾼다.
+      #   - run: pip install -r server/requirements.txt
+      #   - run: cd server && python manage.py test
+      - name: Django 테스트(빈 단계, B-05-01 전)
+        run: echo "server/manage.py 없음. B-05-01 병합 때 python manage.py test로 바꾼다."
+
+  evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: PR 본문의 태스크 ID로 증빙 검사
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python -m tools.check_evidence --pr-body-env PR_BODY --changed "$BASE_SHA"
+      - name: push에서 바뀐 증빙 형식 검사
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: python -m tools.check_evidence --changed "$BEFORE_SHA"
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: 문서화 검사(PR 변경분)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python -m tools.check_docs --diff "$BASE_SHA"
