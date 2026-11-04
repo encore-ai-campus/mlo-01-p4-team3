@@ -337,12 +337,12 @@
 **검사 규칙**(`tools/check_docs.py`, E-05-02가 구현. 태스크 정보는 `tools/tasks_md.py`로 읽는다)
 1. `--task <ID>`(모든 태스크): `docs/troubles/<흐름>.md`에 `### <ID>` 항목이 있고 4줄 형식이거나 `- 없음`이다. 증빙 문서의 "트러블" 절이 그 항목을 링크한다.
 2. `--task <ID>`(일괄 갱신 줄이 있는 태스크 = 그날 흐름의 마지막 태스크): 줄의 "모듈"에 적힌 모듈 문서마다 필수 절 6개가 순서대로 있다. `변경 이력` 표에 "대상" 태스크마다 `| <ID> | <그날 날짜> |` 행이 있다. "코드를 바꿨다면" 태스크는 그 태스크 증빙의 커밋이 모듈 코드(모듈 → 코드 대응은 `docs/modules/README.md` 표)를 바꿨을 때만 행을 요구한다. 대상 태스크 중 아직 "완료된 태스크"(위 정의)가 아닌 것(밀린 태스크)은 이 검사에서 빼고, 그 태스크가 끝나는 날의 일괄 갱신 대상으로 옮겨 적는다(태스크 문서 수정 PR). 그래서 그날 마지막 태스크의 이슈는 일괄 갱신까지 끝나야 닫힌다.
-3. `--task <ID>`: 문서 산출 태스크(문서화 +0h, "산출물 자체가 문서다")는 산출물 파일이 있고, 태스크 완료 조건에 적힌 구간 제목이 모두 있다.
+3. `--task <ID>`: 문서 산출 태스크(문서화 +0h, "산출물 자체가 문서다")는 태스크의 `산출물:` 줄에 적힌 파일이 있다. 태스크에 `- 필수 제목:` 줄(제목 문자열을 백틱으로 나열)이 있으면 그 제목이 파일에 모두 있어야 한다. 이 줄이 없으면 파일 존재만 본다(11/4 PM 결정: 기계가 읽을 형식이 없던 "구간 제목"을 이 줄로 대체).
 4. `--all --until <날짜>`: 예정일이 그 날짜까지인 태스크 중 "완료된 태스크"(위 정의)이면서 일괄 갱신 "대상"에 든 태스크마다 어느 모듈 문서의 `변경 이력`에든 그 ID 행이 있다(일괄 갱신에서 빠진 태스크를 잡는다).
 5. `--diff <base>`: 변경된 `.py`의 공개 함수·클래스(이름이 `_`로 시작하지 않는 최상위 정의와 공개 클래스의 공개 메서드)에 docstring이 있다(`ast`로 검사. `tests/`와 마이그레이션 제외).
 6. `--diff <base>`: 계약 파일(`engine/domain/{model,events,serde,content}.py`, `engine/ports.py`, `server/app/dto.py`, `server/app/ads_port.py`, `server/api/viewmodels.py`, `ads/domain/*.py`, `contracts/datasets.py`)이 바뀌면 `docs/contracts/` 아래 문서도 같은 PR에서 바뀐다. 최상위 또는 두 번째 단계의 새 폴더가 생기면 `paldo/README.md`도 같은 PR에서 바뀐다.
 
-통합 태스크(INT-xx)의 문서는 판정 결과(`docs/evidence/INT-xx.md`)이고, 미통과 항목의 원인은 담당 흐름의 트러블 기록에 남긴다. 시간은 주관 태스크(E-07-03, E-09-04, E-11-01)에 들어 있다.
+통합 태스크(INT-xx)에는 검사 규칙 1~4를 적용하지 않는다(11/4 PM 결정). INT-xx의 문서는 판정 결과(`docs/evidence/INT-xx.md`)이고, 미통과 항목의 원인은 담당 흐름의 트러블 기록에 남긴다. 시간은 주관 태스크(E-07-03, E-09-04, E-11-01)에 들어 있다.
 
 ## 11. GitHub Issues로 관리하기
 
@@ -383,6 +383,7 @@ python -m tools.hours_report --until 11-05                     # 계획 대비 �
 - **PR 하나 = 태스크 하나.** PR 템플릿([`.github/pull_request_template.md`](../../.github/pull_request_template.md))의 `Task:` 줄은 본문에 **정확히 1개**, ID도 1개다(`Task: E-05-02`). 결정 반영 PR은 `Task: P-xx`.
 - 이슈 연결 줄은 `Closes #<번호>` 또는 `Refs #<번호>` 중 **정확히 하나**만 쓴다. 다른 닫기 키워드(`Fixes`, `Resolves`, `Close`, `Closed` 등)를 쓰면 `evidence` 체크가 실패한다(검사를 거치지 않고 이슈가 닫히는 것을 막는다).
 - 조건을 모두 만족한 PR은 `Closes #<이슈 번호>`를 쓴다. CI `evidence` 체크가 그 태스크 ID로 `check_evidence --complete`를 돌려, 실패하면 병합이 막힌다. 그래서 **이슈는 `--complete`를 통과한 PR의 병합으로만 닫힌다.**
+- **커밋 메시지의 닫기 키워드 금지**(11/4 PM 결정): GitHub는 기본 브랜치에 들어온 커밋 메시지의 닫기 키워드로도 이슈를 닫는다. 그래서 `evidence` 체크는 PR base 이후 커밋 메시지(`git log <base>..HEAD`, `fetch-depth: 0`)에 닫기 키워드(`Closes` 포함)가 하나라도 있으면 실패한다. 이슈는 PR 본문의 `Closes #` 한 줄로만 닫힌다. 보조로 저장소 설정의 squash 커밋 메시지 기본값을 "PR 제목·본문"으로 둔다(E-05-01 보호 규칙 설정 때).
 - 일부만 했거나 `상태: 실패` 증빙을 병합하는 PR은 `Refs #<번호>`를 쓰고 이슈에 `evidence-fail` 라벨을 붙인다. `Refs` PR은 바뀐 증빙에 `--format`만 돌린다.
 - PR 본문은 워크플로에서 환경 변수(`PR_BODY`)로 넘기고 셸 명령에 직접 넣지 않는다. 변경 파일 비교 기준은 PR의 base 커밋(`github.event.pull_request.base.sha`)이다.
 - **push 이벤트**(병합 뒤 `main`에 올라온 커밋)에는 PR 본문이 없으므로 테스트 체크(`core`, `django`)와 "그 push에서 바뀐 증빙"의 `--format`만 돌린다(비교 기준은 `github.event.before`). `evidence`의 PR 본문 검사와 `docs --diff`는 `pull_request`에서만 돌린다.
