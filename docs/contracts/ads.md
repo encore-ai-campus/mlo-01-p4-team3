@@ -44,13 +44,15 @@
 | 호출 | 경로 | 입력 → 출력 |
 |---|---|---|
 | 게임 서버 → 광고 서버(내부 HTTP) | POST `/ads/v1/serve` | `AdRequest` → `AdResponse`(JSON) |
-| 브라우저 → 광고 서버 | POST `/ads/v1/impression` | `{token, visible_ratio, visible_ms, occurred_at_ms}` → 204 |
-| 브라우저 → 광고 서버 | GET `/ads/v1/click?t=토큰` | 302로 소재 랜딩(판정 결과와 무관하게 항상 이동) |
+| 게임 서버 → 광고 서버(내부 HTTP, 비콘 중계) | POST `/ads/v1/impression` | `{token, visible_ratio, visible_ms, occurred_at_ms}` → 204 |
+| 게임 서버 → 광고 서버(내부 HTTP, 클릭 중계) | GET `/ads/v1/click?t=토큰` | 302, `Location`은 상대 경로 `/ads/landing/<creative_id>`(판정 결과와 무관하게 항상 이동). 브라우저 기준으로는 보통 소재 랜딩, 광고 서버 실패·시간 초과·회로 차단 때는 게임 서버가 302 `/`로 보낸다(ports.md 5절) |
+| 게임 서버 → 광고 서버(내부 HTTP, 랜딩 중계) | GET `/ads/landing/<creative_id>` | 가상 랜딩 HTML |
 | 브라우저 → 게임 서버 | GET `/ads/slot/{slot}` | htmx 지연 로드 조각. 안에서 `AdGateway.fetch`를 호출한다 |
+| 브라우저 → 게임 서버 | 웹소켓 `/ws/game/`의 `ad.impression` 메시지, GET `/ads/click?t=토큰`, GET `/ads/landing/<creative_id>` | 게임 서버가 위 세 내부 호출로 넘긴다([api.md 7절](api.md)) |
 
 - **serve 토큰**(HMAC-SHA256): serve ID, 세션 가명 ID, 지면, 발급 시각, 만료(30분)를 담는다. 서버가 발급했다는 것만 증명한다. 서명 키는 인프라 비밀 저장소에 두고 저장소에는 넣지 않는다.
-- **비콘**: 브라우저는 광고 면적의 50% 이상이 1초 이상 보였을 때 보낸다.
-- **브라우저 직접 호출**(11/4 PM 결정 #2): 브라우저는 비콘·클릭을 광고 서버 공개 주소(`PALDO_ADS_PUBLIC_URL`)로 직접 보낸다. 비콘은 `navigator.sendBeacon`의 `text/plain` 본문(JSON 문자열)이고 광고 서버가 직접 파싱한다. 비콘·클릭은 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다.
+- **비콘**: 브라우저는 광고 면적의 50% 이상이 1초 이상 보였을 때 게임 서버 웹소켓으로 보내고, 게임 서버가 광고 서버에 넘긴다.
+- **게임 서버 중계**(11/4 PM 결정 #2를 같은 날 (a) 브라우저 직접 호출에서 (c)로 변경): 브라우저는 게임 서버 출처에만 접속한다. 내부 사용자 테스트를 HTTPS로 하면 HTTP 광고 서버로 가는 비콘(페이지 안 요청)이 혼합 콘텐츠로 막히고, 클릭은 막히지는 않지만 HTTPS 화면에서 HTTP 주소로 빠져나가기 때문이다. 비콘·클릭·랜딩은 게임 서버가 내부 주소(`PALDO_ADS_INTERNAL_URL`)로 부른다. 광고 서버는 비콘 본문을 `Content-Type`과 무관하게 JSON으로 파싱하고, 비콘·클릭은 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다. 브라우저용 공개 주소는 두지 않는다. **경로·본문·응답 형식은 그대로라 `ads-0.3`을 유지한다**(바뀐 것은 호출 주체와 출처 처리, 클릭 `Location`의 상대 경로).
 - 게임 서버의 serve 호출에는 `X-Request-ID`가 붙고, 광고 서버는 그 값을 로그 `request_id`로 남긴다(결정 #14).
 
 ## 4. 경매 (`run_auction`)
@@ -130,3 +132,4 @@
 
 ## 9. 개인정보
 - 광고는 세션 가명 ID만 쓴다(privacy.md). 게임 쪽 플레이어 가명 ID나 판 내용(입력 문장 등)은 광고 서버에 보내지 않는다. 타기팅 맥락은 프리셋, 승패, 재방문 여부, 시간대뿐이다.
+- 브라우저가 광고 서버에 직접 접속하지 않고(3절 게임 서버 중계), 게임 서버가 중계 요청 헤더를 새로 만들어 참가자의 `Cookie`·`X-Forwarded-For`·`User-Agent`·`Referer`를 넘기지 않으므로(ports.md 5절) 광고 서버는 참가자의 접속 주소·브라우저 정보를 받지 않는다.

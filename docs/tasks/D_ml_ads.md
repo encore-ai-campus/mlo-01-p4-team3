@@ -44,7 +44,7 @@
   5. 캠페인·소재·예산을 Django admin에서 관리: admin으로 캠페인을 만들면 다음 serve부터 후보가 되고, 중지하면 빠짐(테스트). admin은 로그인 필수.
   6. 클릭 리다이렉트의 도착지는 사이트 안 가상 랜딩(`/ads/landing/<creative_id>`). 외부 URL로 나가지 않음(테스트).
   7. 소재 이미지는 캠페인 데이터의 `image_path`(E 임시 소재와 같은 경로·이름·규격, E-05-05)로만 가리킨다. 광고 서버 코드에 이미지 파일명 없음, 실제 소재로 덮어써도 테스트가 코드 수정 없이 통과(E-11-06가 검사).
-  8. 브라우저 직접 호출(11/4 PM 결정 #2·#14): 노출 비콘은 `text/plain` 본문(JSON 문자열)을 직접 파싱하고, 비콘·클릭 엔드포인트는 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다(테스트: CSRF 토큰 없는 `text/plain` 비콘이 204). 클릭 링크는 `PALDO_ADS_PUBLIC_URL` 기준으로 만든다. 게임 웹이 serve 요청에 넘긴 `X-Request-ID`를 로그 `request_id`로 남긴다([integration.md](../contracts/integration.md) 4.2절).
+  8. 게임 웹 중계(11/4 PM 결정 #2 변경, #14): 브라우저는 광고 서버에 직접 접속하지 않는다. 비콘·클릭·랜딩은 게임 웹 서버가 내부 주소(`PALDO_ADS_INTERNAL_URL`)로 부른다. 비콘 본문은 ads.md 3절의 JSON이고 `Content-Type`과 무관하게 파싱한다(게임 웹은 `application/json`으로 보냄). 비콘·클릭 엔드포인트는 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다(테스트: CSRF 토큰 없는 JSON 비콘이 204). 클릭 응답의 `Location`은 상대 경로 `/ads/landing/<creative_id>`다(게임 웹이 같은 경로로 중계). 게임 웹이 넘긴 `X-Request-ID`를 로그 `request_id`로 남긴다([integration.md](../contracts/integration.md) 4.2절).
 - 근거: 기획서 14.3, 14.4 / ads.md
 
 ## 11/6(금)

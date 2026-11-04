@@ -32,12 +32,12 @@ server/infra (인프라) → engine (포트 구현)
 | `engine/testing/` | 테스트 지원 | 공용 | 모든 포트의 가짜 구현 |
 | `engine/sim/` | 도메인 사용 | D | 봇 정책, 시뮬레이터(예정). 결정 층 최적화는 A가 `engine/domain`에서 맡는다 |
 | `server/app/` | 응용 | B | 유스케이스와 DTO(`dto.py`) |
-| `server/api/`, `web/` | 표현 | B | Django 뷰, 템플릿, htmx 조각, 뷰 모델(`viewmodels.py`) |
+| `server/api/`, `web/` | 표현 | B | Django 뷰, 템플릿, htmx 조각, 뷰 모델(`viewmodels.py`), 웹소켓 Consumer(`consumers.py`, 예정) |
 | `server/infra/` | 인프라 | C | Mongo 저장소, 아웃박스 발행기, 모델·LLM 어댑터(예정) |
-| `pipeline/`, `ops/` | 인프라 | C | Kafka → Spark → Delta, 배포·관측(예정) |
+| `pipeline/`, `ops/` | 인프라 | C | Kafka → Spark → Delta, 배포·관측, HTTPS 프록시 `ops/proxy/`(예정) |
 | `intent/`, `ml/` | 인프라(모델) | D | 의도 해석기, 씐 자 확률 모델(예정) |
 | `content/` | 데이터 | E | 인물, 비밀, 단서, 템플릿(예정) |
-| `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
+| `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E(규격·스타일 가이드·임시 파일·검사), B(실제 파일·생성 기록·`pixelize.py`, 11/4 결정) | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
 | `ads/domain/` | 광고 도메인 | D | 경매, 2등 가격, 예산 예약·확정·해제, 페이싱, CTR, 유효 판정, 대사, 지면 규격(`SLOT_SIZES`)(표준 라이브러리만) |
 | `ads/app/`, `ads/infra/`, `ads/web/` | 광고 응용, 인프라, 표현 | D | 요청·비콘·클릭 흐름, MySQL 원장·아웃박스·Kafka, Django 뷰·admin(예정) |
 | `ads/testing/` | 테스트 지원 | D | `FakeAdProvider` |
@@ -75,10 +75,12 @@ server/infra (인프라) → engine (포트 구현)
 | 이슈 만들기·동기화, 오늘 열린 태스크 보기 | `python -m tools.tasks_to_issues --dry-run`, `docs/tasks/README.md` 11절 |
 | 태스크 조건 바꾸기 | `docs/tasks/<흐름>.md`를 고치는 PR(이슈 본문은 직접 고치지 않음) |
 | 로그·지표 이름 정하기 | `docs/tasks/README.md` 5절 |
-| 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(`docs/tasks/E_pm.md` `[에셋]`) |
+| 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/B_web.md` `[에셋]`) |
 | 아침 실종 발표·피해 장소 공개, 알리바이 명제 | `engine/domain/model.py`(`DisappearanceRecord`, `alibi_propositions`), `docs/contracts/domain.md` 6절 |
 | 경매·과금·광고 판정 규칙 변경 | 광고 도메인 `ads/domain/`, `docs/contracts/ads.md` |
 | 광고 지면을 게임 화면에 붙이기 | `server/app/ads_port.py`, `docs/contracts/ports.md` 5절 |
+| 광고 비콘·클릭 중계(웹소켓) | 표현 `server/api/consumers.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py` → 인프라 `server/infra/ad_client.py`, `docs/contracts/api.md` 7절 |
+| HTTPS·인증서 경고 안내 | `ops/proxy/`(C-07-04), `docs/contracts/integration.md` 5절 |
 
 ## 명령
 
