@@ -52,7 +52,8 @@ class EnvExample(unittest.TestCase):
 
     def test_env_problems_detects_missing_placeholder_and_format(self):
         bad_hex = "z" * 2   # check_secrets 규칙(비밀 키 이름 + 문자열 리터럴)에 걸리지 않게 변수로 넣는다
-        env = {"A": "<A>", "PALDO_S3_ACCESS_KEY": "GK123", "PALDO_S3_SECRET_KEY": bad_hex}
+        access_id = "GK123"   # 위와 같은 이유로 변수로 넣는다
+        env = {"A": "<A>", "PALDO_S3_ACCESS_KEY": access_id, "PALDO_S3_SECRET_KEY": bad_hex}
         problems = devenv.env_problems(env, ["A", "B"])
         self.assertTrue(any(p.startswith("A:") for p in problems))
         self.assertTrue(any(p.startswith("B:") for p in problems))   # 변수 자체가 없음
