@@ -1,6 +1,6 @@
 """광고 픽스처 생성(build_fixtures.py가 호출). 결과: fixtures/ads/ — 기준: 기획서 14.3~14.7
 
-- campaigns.json: 가상 광고주 캠페인 4개 + 지면 정책
+- campaigns.json: 가상 광고주 캠페인 4개 + 지면 정책 + 지면 규격(P-19, `slot_sizes`)
 - auction_cases.json: 경매 입력과 기대 결과(2등 가격 T, 청구 단가, 경계 조건)
 - validity_cases.json: serve·노출·클릭 도착 순서와 기대 판정·과금(클릭 먼저 도착, 무효 공격 포함)
 - budget_cases.json: 예산 예약 → 확정 → 해제, 환입, 건별 대사
@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 from ads.domain.model import (
-    AdSlot, BillingType, Campaign, CampaignStatus, Creative, GameOutcome, SlotPolicy, Targeting, won,
+    SLOT_SIZES, AdSlot, BillingType, Campaign, CampaignStatus, Creative, GameOutcome, SlotPolicy, Targeting, won,
 )
 from engine.domain import serde
 
@@ -164,7 +164,8 @@ def main(fx: Path) -> None:
     def dump(name, obj):
         (d / name).write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    dump("campaigns.json", {"campaigns": serde.to_jsonable(campaigns()), "slot_policies": serde.to_jsonable(slot_policies())})
+    dump("campaigns.json", {"campaigns": serde.to_jsonable(campaigns()), "slot_policies": serde.to_jsonable(slot_policies()),
+                            "slot_sizes": {slot.value: list(wh) for slot, wh in SLOT_SIZES.items()}})
     dump("auction_cases.json", auction_cases())
     dump("validity_cases.json", validity_cases())
     dump("budget_cases.json", budget_cases())

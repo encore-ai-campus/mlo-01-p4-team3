@@ -10,7 +10,7 @@ import enum
 from dataclasses import dataclass, field
 from typing import Optional
 
-AD_CONTRACT_VERSION = "ads-0.2"
+AD_CONTRACT_VERSION = "ads-0.3"
 MW_PER_WON = 1000
 
 
@@ -24,6 +24,28 @@ class AdSlot(str, enum.Enum):
     LLM_WAIT = "llm_wait"
     RESULT_BANNER = "result_banner"
     REVIEW_SIDE = "review_side"
+
+
+# 지면 규격(P-19, 11/5 PM 잠정 확정): 지면 → (가로, 세로) 픽셀. 소재 이미지는 지면이 아니라 **규격마다 1장**이다.
+SLOT_SIZES: dict[AdSlot, tuple[int, int]] = {
+    AdSlot.LOBBY_BANNER: (728, 90),
+    AdSlot.RESULT_BANNER: (728, 90),
+    AdSlot.LLM_WAIT: (300, 250),
+    AdSlot.REVIEW_SIDE: (300, 250),
+}
+
+
+def slot_image_path(image_path: str, slot: AdSlot) -> str:
+    """소재 기본 경로(`Creative.image_path`) → 그 지면 규격의 실제 이미지 경로.
+
+    예: `/static/ads/gat.png`, `lobby_banner` → `/static/ads/gat__728x90.png`.
+    광고 서버는 `AdCreativeView.image_path`에 이 값을 넣고, 에셋(E)은 이 이름으로 파일을 만든다.
+    """
+    w, h = SLOT_SIZES[AdSlot(slot)]
+    head, dot, ext = image_path.rpartition(".")
+    if not dot or "/" in ext:
+        return f"{image_path}__{w}x{h}"
+    return f"{head}__{w}x{h}.{ext}"
 
 
 class BillingType(str, enum.Enum):
@@ -73,7 +95,7 @@ class Creative:
     campaign_id: str
     title: str
     body: str
-    image_path: str                 # 사이트 안 정적 경로
+    image_path: str                 # 사이트 안 정적 기본 경로. 지면별 실제 파일은 slot_image_path(image_path, slot)
     landing_path: str               # 사이트 안 가상 랜딩 페이지(외부 URL 금지)
 
 
@@ -128,7 +150,7 @@ class AdCreativeView:
     creative_id: str
     title: str
     body: str
-    image_path: str
+    image_path: str                 # 요청 지면 규격의 실제 경로(slot_image_path 결과). 크기는 SLOT_SIZES[slot]
     label: str = "광고"
 
 

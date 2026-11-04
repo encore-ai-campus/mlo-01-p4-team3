@@ -26,6 +26,16 @@
   - 캠페인 속성: 지면, 과금 방식(cpc, cpm), `max_bid_mw`, `daily_budget_mw`, `Targeting`(프리셋, 판 결과, 재방문, 시간대), 기간, 상태
   - 소재의 랜딩은 사이트 안 가상 경로다. 화면에는 "광고"로 표시한다.
 - **지면(`AdSlot`)**: `lobby_banner`, `llm_wait`, `result_banner`, `review_side` 네 곳이다. 회의, 투표, 밤 화면에는 광고를 넣지 않는다.
+- **지면 규격(`SLOT_SIZES`, P-19, 11/5 PM 잠정 확정, `ads-0.3`)**:
+
+  | 지면 | 규격(가로×세로 px) |
+  |---|---|
+  | `lobby_banner`, `result_banner` | 728×90 |
+  | `llm_wait`, `review_side` | 300×250 |
+
+  - 소재 이미지는 지면이 아니라 **규격마다 1장**이다. `Creative.image_path`는 기본 경로이고, 지면별 실제 파일은 `slot_image_path(image_path, slot)`이다(예: `/static/ads/gat.png` → `/static/ads/gat__728x90.png`). 소재가 나가는 지면들의 규격 수만큼 파일이 있다.
+  - 광고 서버는 `AdCreativeView.image_path`에 요청 지면의 `slot_image_path` 결과를 넣는다(`FakeAdProvider`도 같다). 화면(B)은 그 경로를 그대로 쓰고, 이미지 크기는 `SLOT_SIZES[slot]`로 잡는다.
+  - 픽스처 `fixtures/ads/campaigns.json`의 `slot_sizes`는 같은 값의 사본이다(에셋 검사 도구가 파이썬 import 없이 읽는다). 규격을 바꾸면 `SLOT_SIZES`를 고치고 픽스처를 다시 만든다.
 - **`SlotPolicy`**: 지면 최저 eCPM, 사전 CTR μ, 사전 강도 κ(기본 200), 빈도 제한(세션당 같은 소재 serve 3회).
 
 ## 3. API

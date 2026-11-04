@@ -7,8 +7,8 @@ import unittest
 from ads.domain import rules
 from ads.domain.events import AdClickEvent, AdImpressionEvent, AdServeEvent
 from ads.domain.model import (
-    AdContext, AdRequest, AdSlot, Bidder, BillingType, Campaign, CampaignStatus, ChargeState, JudgeStatus,
-    ServeClaims, ServeRecord, SlotPolicy, Targeting, won,
+    SLOT_SIZES, AdContext, AdRequest, AdSlot, Bidder, BillingType, Campaign, CampaignStatus, ChargeState, JudgeStatus,
+    ServeClaims, ServeRecord, SlotPolicy, Targeting, slot_image_path, won,
 )
 from ads.testing.fakes import FakeAdProvider
 from engine.domain import serde
@@ -29,6 +29,38 @@ class Fixtures(unittest.TestCase):
             for cr in c.creatives:
                 self.assertEqual(cr.campaign_id, c.campaign_id)
                 self.assertTrue(cr.landing_path.startswith("/"), "랜딩은 사이트 안 경로")
+
+
+class SlotSizes(unittest.TestCase):
+    """P-19(11/5 잠정): 지면 규격과 규격별 소재 이미지 경로."""
+
+    def test_sizes_cover_every_slot(self):
+        self.assertEqual(set(SLOT_SIZES), set(AdSlot))
+        self.assertEqual(SLOT_SIZES[AdSlot.LOBBY_BANNER], (728, 90))
+        self.assertEqual(SLOT_SIZES[AdSlot.RESULT_BANNER], (728, 90))
+        self.assertEqual(SLOT_SIZES[AdSlot.LLM_WAIT], (300, 250))
+        self.assertEqual(SLOT_SIZES[AdSlot.REVIEW_SIDE], (300, 250))
+
+    def test_fixture_copy_matches(self):
+        d = load_json("fixtures/ads/campaigns.json")
+        self.assertEqual({k: tuple(v) for k, v in d["slot_sizes"].items()},
+                         {s.value: wh for s, wh in SLOT_SIZES.items()})
+
+    def test_slot_image_path(self):
+        self.assertEqual(slot_image_path("/static/ads/gat.png", AdSlot.LOBBY_BANNER), "/static/ads/gat__728x90.png")
+        self.assertEqual(slot_image_path("/static/ads/gat.png", "review_side"), "/static/ads/gat__300x250.png")
+
+    def test_one_file_per_creative_and_size(self):
+        d = load_json("fixtures/ads/campaigns.json")
+        for c in (strict(Campaign, x) for x in d["campaigns"]):
+            for cr in c.creatives:
+                paths = {slot_image_path(cr.image_path, s) for s in c.slots}
+                self.assertEqual(len(paths), len({SLOT_SIZES[s] for s in c.slots}), cr.creative_id)
+
+    def test_fake_returns_slot_sized_path(self):
+        req = AdRequest("r1", AdSlot.LLM_WAIT, "p1", AdContext("base6", None, False, 12))
+        resp = FakeAdProvider().request_ad(req, 50, 120)
+        self.assertTrue(resp.creative.image_path.endswith("__300x250.png"))
 
 
 class Auction(unittest.TestCase):

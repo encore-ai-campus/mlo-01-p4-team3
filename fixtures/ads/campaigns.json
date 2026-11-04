@@ -175,5 +175,23 @@
       "prior_strength": 200.0,
       "frequency_cap": 3
     }
-  ]
+  ],
+  "slot_sizes": {
+    "lobby_banner": [
+      728,
+      90
+    ],
+    "result_banner": [
+      728,
+      90
+    ],
+    "llm_wait": [
+      300,
+      250
+    ],
+    "review_side": [
+      300,
+      250
+    ]
+  }
 }
