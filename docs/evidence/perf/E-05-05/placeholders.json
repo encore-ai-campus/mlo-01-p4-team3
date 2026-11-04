@@ -1,0 +1,60 @@
+{
+  "task": "E-05-05",
+  "commit": "5e86e2cc2075134edfd1af2d9b862bba6aecffb7",
+  "generated_at": "2026-11-04T12:36:51Z",
+  "source": "python -m tools.assets.make_placeholders --result",
+  "metrics": {
+    "expected_portrait": {
+      "value": 13,
+      "unit": "개"
+    },
+    "expected_place": {
+      "value": 5,
+      "unit": "개"
+    },
+    "expected_ui": {
+      "value": 10,
+      "unit": "개"
+    },
+    "expected_map": {
+      "value": 1,
+      "unit": "개"
+    },
+    "expected_ad": {
+      "value": 8,
+      "unit": "개"
+    },
+    "expected_total": {
+      "value": 37,
+      "unit": "개"
+    },
+    "manifest_total": {
+      "value": 37,
+      "unit": "개"
+    },
+    "files_total": {
+      "value": 37,
+      "unit": "개"
+    },
+    "missing_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "extra_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "manifest_mismatch_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "bad_file_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "max_file_bytes": {
+      "value": 5788,
+      "unit": "바이트"
+    }
+  }
+}
