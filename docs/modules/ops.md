@@ -58,7 +58,7 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 - 이미지 `mongo:8.0.34`·`mysql:8.4.13`은 11/4 PM 결정(CI 서비스 컨테이너와 같은 태그)이다. `apache/kafka:4.3.2`는 VM 실측(C-05-01) 전의 잠정값이다.
 - Spark 4.1.3에는 Delta 기본 jar(`delta-spark_2.13:4.4.1`, Spark 4.2.0용)가 맞지 않는다. Spark 4.1용 jar(`delta-spark_4.1_2.13:4.4.1`)로만 확인했다. 계약(`tech_stack.md`) 반영은 PM 승인 대기다.
 - Python은 3.14를 먼저 실측했다(C-05-03 조건 2, 11/4 PM 결정). 필수 5개가 모두 성공해 3.12 재시도는 하지 않았다. ML·LLM Python 버전 확정과 `tech_stack.md`·CI `core` 반영은 PM 승인 대기다.
-- Python 3.14 필수 5개는 **Windows 휠로만** 확인했다. ML 학습·LLM이 돌 Ubuntu VM(nifi-01, llm-01)의 Linux 휠, 특히 llama-cpp-python(빌드 도구 없이 미리 빌드된 휠에 기댄다)은 확인하지 않았다. VM에서 실패하면 VM만 3.12로 두는 선택지가 남아 있다.
+- Python 3.14 필수 5개는 Windows 네이티브와 Linux 컨테이너(`python:3.14`, Debian 13, glibc 2.41)에서 확인했다. Ubuntu VM(nifi-01, llm-01) 자체에서는 확인하지 않았다(manylinux 휠이라 glibc 2.28 이상이면 같을 것으로 보지만 실측 전이다).
 - `requirements/`의 조사 항목(scikit-learn, shap, mlflow, langgraph, Django, pymongo, PyMySQL, confluent-kafka, prometheus-client, delta-spark)은 3.14 휠이 있는지만 확인했고(`pip --dry-run`), import는 하지 않았다.
 - Prometheus는 Mongo·Kafka·MySQL 지표를 아직 수집하지 않는다(익스포터 없음, C-08-01).
 - 루트 `.env`와 Compose 치환용 `ops/compose/.env` 두 파일이 있다(명령을 바꾸지 않으려고). `make-env`가 맞추고 smoke가 어긋남을 잡는다.
