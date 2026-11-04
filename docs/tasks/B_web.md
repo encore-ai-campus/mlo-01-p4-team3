@@ -94,7 +94,7 @@
   4. `intent_attempt` 이벤트가 아웃박스에 들어가고 원문은 마스킹(privacy.md 2).
   5. 입력창 옆에 지원 예시·미지원 예시 표시(기획서 4.5).
   6. 해석 요청 지연 p95(`paldo_intent_parse_duration_seconds`) 노출.
-  7. 추궁 답변 표시(api.md 5절, PRD `FR-WEB-006`): 폴백 문장을 먼저 보여 주고 `GET /games/{id}/renders/{job_id}`를 1초 간격으로 htmx 폴링, `final`이면 폴링 중지하고 문장 교체, 단계가 넘어가면 미완료 작업의 폴링 중지. 11/7 오전에는 가짜 렌더러(`LineRenderer` 계약의 폴백)로 개발하고, E-07-01 인계 뒤 설정만 바꿔 같은 테스트가 통과. 테스트: 폴백 먼저 표시, `final` 후 추가 요청 0건, 단계 전환 후 추가 요청 0건.
+  7. 추궁 답변 표시(api.md 5절, PRD `FR-WEB-006`): 폴백 문장을 먼저 보여 주고 `GET /games/{id}/renders/{job_id}`를 1초 간격으로 htmx 폴링, `final`이면 폴링 중지하고 문장 교체, 단계가 넘어가면 미완료 작업의 폴링 중지. 11/7 오전에는 가짜 렌더러(`LineRenderer` 계약의 폴백)로 개발하고, E-07-01 인계 뒤 설정만 바꿔 같은 테스트가 통과. 테스트: 폴백 먼저 표시, `final` 후 추가 요청 0건, 단계 전환 후 추가 요청 0건. `render_job` 기록(11/4 PM 결정 #18): 응용이 `poll` 결과의 상태 변화와, 단계가 넘어가 미완료 작업을 `cancel`할 때의 최종 상태를 `append_events`로 남긴다(`dedup_key = render:<job_id>:<status>`, `RenderResult.quantization`·`fallback` 포함). 테스트: 폴링이 멈춘 작업도 단계 전환 때 최종 상태가 1건 기록됨.
 - 근거: 기획서 4.5, 9.1 실행 정책 / api.md 4·5, intent.md
 
 ### B-07-02 수첩·확신도·판 종료 설문
@@ -108,7 +108,7 @@
 - 완료 조건:
   1. 지면 4곳(`lobby_banner`, `llm_wait`, `result_banner`, `review_side`)만, 회의·투표·밤 화면에는 없음(테스트). 지면 칸 크기는 계약 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `llm_wait`·`review_side`, ads.md 2절)에서 읽고, 소재 이미지는 광고 응답의 `image_path`(지면 규격별 경로, E 임시 소재)를 그대로 쓴다. 모든 광고 칸에 "광고" 표시(테스트: 렌더된 광고 조각마다 표시 문구 존재).
   2. 광고 칸은 `GET /ads/slot/{slot}` + `hx-trigger="load"` 지연 로드. 게임 명령 처리 경로에서 광고 호출 0회(테스트: 명령 처리 중 `FakeAdProvider` 호출 수 0).
-  3. 노출 비콘: 광고 면적 50% 이상 1초 이상 보이면 1회 전송(IntersectionObserver). 클릭은 서명 토큰이 붙은 리다이렉트 링크.
+  3. 노출 비콘: 광고 면적 50% 이상 1초 이상 보이면 1회 전송(IntersectionObserver). 클릭은 서명 토큰이 붙은 리다이렉트 링크. 비콘은 `navigator.sendBeacon`으로 `text/plain` 본문(JSON 문자열)을 광고 서버 공개 주소(`PALDO_ADS_PUBLIC_URL`)에 직접 보낸다(11/4 PM 결정 #2).
   4. 결과 코드(ok, empty, timeout, error, busy, circuit_open) 지표 `paldo_ad_fetch_total{result}`.
 - 근거: 기획서 14.2, 14.7 / ports.md 5
 
@@ -133,11 +133,12 @@
 ### B-08-03 실제 광고 서버 연결과 장애 시험
 - 2h · 선행: D-08-03(광고 서버 인계)
 - 문서화(+0.25h, 공통 ⑦): [트러블 B](../troubles/B.md)에 `### B-08-03` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`web`](../modules/web.md)는 그날 일괄 갱신(B-08-04)
-- 산출물: `tools/perf/ad_fault_test.py`
+- 산출물: `server/infra/ad_client.py`(`AdProvider` HTTP 구현, 11/4 PM 결정 #6), `tools/perf/ad_fault_test.py`
 - 완료 조건:
   1. 실제 광고 서버로 지면 4곳에서 serve → 노출 비콘 → 클릭 리다이렉트가 동작하고, 광고 서버 로그와 `serve_id`로 이어짐(증빙에 같은 `serve_id`의 웹·광고 로그 각 1줄).
   2. 장애 4종(중단, 무응답, 3초 지연, 오류 응답)을 주입하고 각 5분간 `api_bench.py` 부하: **게임 API p95 증가 50ms 이하, 게임 오류율 증가 0**(정상 대비 표).
   3. 회로 차단 동작(5회 실패 → 30초 생략)이 지표로 확인됨.
+  4. 출처가 다른 실제 배치(게임 웹 ↔ 광고 서버)에서 비콘·클릭이 동작하고(결정 #2), serve 호출에 `X-Request-ID`를 넘겨 광고 서버 로그에 같은 `request_id`가 남음(결정 #14).
 - 근거: 기획서 14.7 / ports.md 5
 
 ### B-08-04 사용자 테스트 후보 버전 리허설 지원
@@ -151,7 +152,7 @@
 - 2h · 입력: `ModelSelector`, ml_lifecycle.md 4
 - 문서화(+0.25h, 공통 ⑦): [트러블 B](../troubles/B.md)에 `### B-09-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`web`](../modules/web.md)는 그날 일괄 갱신(B-09-04)
 - 완료 조건:
-  1. 판 시작 시에만 모델 버전 선택, `GameMeta.model_versions` 고정, 진행 중 판은 롤백돼도 유지(테스트).
+  1. 판 시작 시에만 모델 버전 선택, `GameMeta.model_versions` 고정, 진행 중 판은 롤백돼도 유지(테스트). 모델 선택은 D-08-04가 만든 `server/infra/model_selector.py`를 이어받아 카나리아·버전 고정·업데이트 화면을 붙이고, C-09-01의 레지스트리 조회로 바꾼다(11/4 PM 결정 #5). 판 시작 때 밴딧 비율을 읽어 엔진에 주입하고 그 버전을 `GameMeta.model_versions["bandit"]`에 고정한다(결정 #16, D-09-02).
   2. 사용자 테스트 세션에서는 카나리아 꺼짐(테스트).
   3. 게임 안 "업데이트 내역" 화면(세계관 문구: "창귀가 무당들의 수법을 기억했다") — 레지스트리 승격 기록을 읽어 표시.
   4. `ParseResult.versions["model"]`과 판 메타 불일치 시 경보 로그(`level=warning`).
@@ -160,7 +161,7 @@
 ### B-09-02 BERT 해석기 연결
 - 1.5h · 선행: D-09-01
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 B](../troubles/B.md)에 `### B-09-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 공개 함수·클래스 docstring(CI `docs` 검사) · 모듈 문서 [`web`](../modules/web.md)는 그날 일괄 갱신(B-09-04)
-- 완료 조건: 설정 한 줄로 기준선 ↔ BERT 전환, 전환 후 B-07-01 테스트 전부 통과, 해석 지연 p95(실제 BERT) 기록. 게임 API p95 1초 이하 유지(해석 요청 포함 측정).
+- 완료 조건: 설정 한 줄로 기준선 ↔ BERT 전환, 전환 후 B-07-01 테스트 전부 통과, 해석 지연 p95(실제 BERT) 기록. 게임 API p95 1초 이하 유지(해석 요청 포함 측정). BERT 추론은 게임 웹과 같은 프로세스에서 먼저 시험하고(11/4 PM 결정 #4), 같은 Python 환경에 설치되지 않거나 게임 API p95 1초를 못 지키면 별도 프로세스안을 측정값과 함께 PM에 보고한다.
 
 ### B-09-03 정식 사용자 테스트 지원·수정
 - 2.5h · 완료 조건: 11/9 18:00까지 `bug`+`web` 이슈 종료 또는 보류 사유(`blocker`는 보류 불가, README 3절). 수정마다 회귀 테스트.

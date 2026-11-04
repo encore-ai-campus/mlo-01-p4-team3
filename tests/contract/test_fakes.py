@@ -101,13 +101,17 @@ class Renderer(unittest.TestCase):
                              ("fail", RenderStatus.FAILED)):
             r = FakeLineRenderer(mode)
             r.submit(self.req())
-            self.assertIs(r.poll("j1").status, status)
+            res = r.poll("j1")
+            self.assertIs(res.status, status)
+            # 폴백 여부는 DONE이 아닐 때만 True(11/4 PM 결정 #18)
+            self.assertEqual(res.fallback, status is not RenderStatus.DONE)
 
     def test_cancel(self):
         r = FakeLineRenderer()
         r.submit(self.req())
         r.cancel("j1")
         self.assertIs(r.poll("j1").status, RenderStatus.CANCELLED)
+        self.assertTrue(r.poll("j1").fallback)
 
 
 class Repository(unittest.TestCase):

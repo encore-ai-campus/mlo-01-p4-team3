@@ -58,6 +58,7 @@
 - 캐묻기가 수락되면, 응답 화면의 해당 발언 자리에 폴백 문장이 먼저 표시된다. 그 자리에 `hx-get="/games/{id}/renders/{job_id}" hx-trigger="every 1s"` 조각이 붙는다.
 - `RenderOutput.final`이 true이면(done, timeout, failed, cancelled, discarded) 폴링 속성이 없는 조각으로 바꿔 폴링을 멈춘다. done이 아니면 `text`는 폴백 문장이다.
 - 판이 다음 단계로 넘어가면 응용 계층이 미완료 작업을 취소한다. 그 뒤의 폴링 응답은 `final=true`(폴백)다.
+- 복기 해설(`GET /games/{id}/review`의 해설 칸)도 같은 폴링 조각(`/games/{id}/renders/{job_id}`)을 쓴다(11/4 PM 결정 #17). LLM 서비스와의 전송은 [ports.md 4절](ports.md).
 
 ## 6. 화면 정보 제한
 - 플레이어 화면에 들어가는 것은 `PlayerView`의 정보뿐이다(domain.md 7절).

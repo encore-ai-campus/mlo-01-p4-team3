@@ -2,7 +2,7 @@
   "game_id": "g_base6_001",
   "preset_id": "base6",
   "source": "scripted",
-  "contract_version": "contract-0.2",
+  "contract_version": "contract-0.3",
   "steps": [
     {
       "request": null,
