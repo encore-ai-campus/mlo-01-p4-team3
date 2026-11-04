@@ -8,8 +8,8 @@
 |---|---|---|
 | 서버 | 3차 VMware VM 20대(노트북 5대에 분산) | VM 사양 후보 2 vCPU / 4GB(재확인 전). 배치는 기획서 6.3 |
 | OS | Ubuntu Server 26.04 | 기록값, 11/5 실측 필요 |
-| 시스템 Python | 3.14.4 | 기록값, 11/5 실측 필요 |
-| ML·LLM Python | **3.12 별도 가상환경 또는 컨테이너(권장안)** | PyTorch, transformers, LightGBM, llama-cpp-python이 3.14 휠을 지원하는지 확인되지 않았다. 11/5 측정 목록에 넣는다 |
+| 시스템 Python | 3.14.6 | 11/4 이 PC 실측(`python --version`). 다른 노트북은 C-05-03 점검표로 확인 |
+| ML·LLM Python | **3.14 우선, 실패한 패키지만 3.12 가상환경(잠정)** | 3.14 지원은 미확인. C-05-03 조건 2가 3.14에서 먼저 실측하고, 결과로 PM이 확정한다 |
 | 엔진·계약 코드 | 표준 라이브러리만 사용, Python 3.12와 3.14 둘 다 지원 | `engine/`, `contracts/`, `tools/`는 외부 패키지를 import하지 않는다 |
 
 ## 2. 구성 요소
@@ -37,7 +37,7 @@
 ## 4. 11/5 실측 목록
 1. VM 20대 기동 여부와 실제 vCPU·RAM·디스크
 2. OS와 Python 버전
-3. Python 3.12 환경에 PyTorch, transformers, LightGBM, llama-cpp-python 설치
+3. 시스템 Python 3.14에서 먼저 PyTorch, transformers, LightGBM, llama-cpp-python, pyspark 설치·import, 실패한 패키지만 Python 3.12 가상환경에서 재시도(C-05-03 조건 2)
 4. Spark 4.1.3 + Delta Spark 4.4.1 조합으로 쓰기·읽기 시험
 5. Kafka와 Mongo 클러스터 상태
 6. LLM 노트북에서 VM 실행과 Windows 직접 실행의 토큰 속도 비교
