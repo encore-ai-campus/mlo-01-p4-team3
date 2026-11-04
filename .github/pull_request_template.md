@@ -1,5 +1,7 @@
 <!-- docs/tasks/README.md 11절. 아래 Task 줄은 CI evidence 체크가 읽는다. 지우지 않는다. -->
 Task: A-05-01
+<!-- 필수. 이 PR의 태스크에 쓴 시간(문서화 포함, 공통 시간 제외). 숫자만. 증빙 문서의 같은 줄과 같은 값 -->
+실제 소요 시간(h): 
 
 <!-- 조건을 모두 만족했으면 Closes, 일부·실패 증빙이면 Refs. Closes면 CI가 check_evidence --complete를 돌린다. -->
 Closes #

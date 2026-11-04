@@ -7,7 +7,7 @@
 - 계약 문서: [`docs/contracts/`](docs/contracts/)
 - **일자별·담당자별 태스크와 완료 조건**: [`docs/tasks/`](docs/tasks/README.md) (공통 완료 정의, 증빙 양식, 로그·계측 규칙, 결정 대기, 통합 판정 표)
 - 태스크 증빙: `docs/evidence/<태스크ID>.md`, 발표 기록: `docs/presentation/`, 리포트: `docs/reports/`
-- 모듈 문서(무엇을·왜·사용법·설정값·한계): [`docs/modules/`](docs/modules/README.md), 트러블 기록: `docs/troubles/<흐름>.md`. 기준은 `docs/tasks/README.md` 10절
+- 모듈 문서(무엇을·왜·사용법·설정값·한계): [`docs/modules/`](docs/modules/README.md), 트러블 기록: `docs/troubles/<흐름>.md`(발표 트랙은 `S.md`). 기준은 `docs/tasks/README.md` 10절
 - 진행 관리: GitHub Issues(태스크 마크다운에서 생성, `docs/tasks/README.md` 11절)
 
 ## 계층과 의존 방향
@@ -44,7 +44,7 @@ server/infra (인프라) → engine (포트 구현)
 | `llm/` | 인프라 | E | LLM 서비스, LangGraph(예정) |
 | `contracts/` | 데이터 계약 | 공용 | 학습 행, 의도 예시, 시나리오 스키마 |
 | `fixtures/` | 생성물 | 공용 | 계약 예시. `tools/build_fixtures.py`가 만든다 |
-| `tools/` | 도구 | 공용 | 픽스처 생성, 합성 데이터 생성, 태스크 문서 파서(`tasks_md.py`)·이슈 동기화(`tasks_to_issues.py`) |
+| `tools/` | 도구 | 공용 | 픽스처 생성, 합성 데이터 생성, 태스크 문서 파서(`tasks_md.py`)·이슈 동기화(`tasks_to_issues.py`)·계획 대비 실제 시간 요약(`hours_report.py`) |
 | `tests/contract/` | 테스트 | 공용 | 계약 테스트(unittest) |
 | `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화) |
 | `.github/` | 저장소 운영 | E | 이슈 양식(`ISSUE_TEMPLATE/`), 라벨 정의(`labels.yml`), PR 양식, CI 워크플로(E-05-02) |
@@ -66,8 +66,8 @@ server/infra (인프라) → engine (포트 구현)
 | 개인정보 처리 | `docs/contracts/privacy.md` |
 | 서버와 버전 | `docs/contracts/tech_stack.md`, 기획서 6.3 |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
-| 오늘 내가 할 일과 완료 조건 | `docs/tasks/<흐름>.md`(A_engine, B_web, C_infra, D_ml_ads, E_pm) |
-| 태스크 완료 증빙 쓰기 | `docs/tasks/README.md` 4절 양식 → `docs/evidence/` |
+| 오늘 내가 할 일과 완료 조건 | `docs/tasks/<흐름>.md`(A_engine, B_web, C_infra, D_ml_ads, E_pm), 발표 작업은 발표 트랙 `docs/tasks/P_presentation.md`(S-xx, 담당 P-24) |
+| 태스크 완료 증빙 쓰기(실제 소요 시간 포함) | `docs/tasks/README.md` 4절 양식 → `docs/evidence/` |
 | 태스크 문서화(트러블·docstring은 태스크마다, 모듈 문서는 흐름별 하루 1회 일괄 갱신) | `docs/tasks/README.md` 10절 → `docs/modules/`, `docs/troubles/` |
 | 이슈 만들기·동기화, 오늘 열린 태스크 보기 | `python -m tools.tasks_to_issues --dry-run`, `docs/tasks/README.md` 11절 |
 | 태스크 조건 바꾸기 | `docs/tasks/<흐름>.md`를 고치는 PR(이슈 본문은 직접 고치지 않음) |
@@ -84,7 +84,8 @@ python -m unittest discover -s tests -t .                 # 계약 테스트
 python -m tools.build_fixtures                            # 픽스처 재생성(계약 변경 후)
 python -m tools.gen_synthetic --games 50 --seed 7 --ads 20000 --out out/synthetic
 python -m tools.tasks_to_issues --dry-run                 # 태스크 → 이슈 계획(실제 생성은 --apply --repo)
-python -m tools.tasks_to_issues --hours                   # 흐름별 일별 시간(문서화·일괄 갱신 포함, 흐름별 한도)
+python -m tools.tasks_to_issues --hours                   # 흐름별 일별 시간(문서화·일괄 갱신 포함, 흐름별 한도, 발표 트랙은 별도 줄)
+python -m tools.hours_report --until 11-05                # 계획 대비 실제 소요 시간(증빙의 "실제 소요 시간(h)")
 ```
 
 접속 정보(IP, 계정, 비밀번호)는 이 저장소에 넣지 않는다.

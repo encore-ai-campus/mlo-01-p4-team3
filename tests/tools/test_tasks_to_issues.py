@@ -4,10 +4,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.tasks_md import FLOW_FILES, TASK_LIMITS, hours_table, load_all, parse_decisions, parse_task_file
+from tools.tasks_md import (
+    FLOW_FILES, TASK_LIMITS, UNASSIGNED_FLOWS, hours_table, load_all, parse_decisions, parse_task_file,
+)
 from tools.tasks_to_issues import (
     MILESTONES, ExistingIssue, apply_plan, desired_issues, milestone_for, parse_assign,
-    parse_labels_yml, render_body,
+    parse_labels_yml, plan_orphans, render_body,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -98,7 +100,7 @@ class FakeGh:
         self.calls.append("milestone")
 
     def list_issues(self):
-        return [ExistingIssue(i.number, i.title, i.body, list(i.labels), i.milestone, list(i.assignees))
+        return [ExistingIssue(i.number, i.title, i.body, list(i.labels), i.milestone, list(i.assignees), i.state)
                 for i in self.issues.values()]
 
     def create_issue(self, title, body, labels, milestone):
@@ -256,6 +258,20 @@ class ApplyPlan(unittest.TestCase):
         again = apply_plan(gh, desired, self.labels, {}, log=lambda *_: None)
         self.assertEqual(again["updated"], 0)
 
+    def test_orphan_issues_reported_not_closed(self):
+        """태스크 ID를 옮기면(예: E-11-02 → S-11-06) 옛 이슈는 자동으로 닫지 않고 목록으로만 알린다."""
+        gh = FakeGh()
+        apply_plan(gh, self.desired, self.labels, {}, log=lambda *_: None)
+        old = gh.create_issue("[E-99-01] 옮겨진 태스크", "<!-- task-id: E-99-01 -->", [], None)
+        closed = gh.create_issue("[E-99-02] 닫힌 옛 태스크", "<!-- task-id: E-99-02 -->", [], None)
+        gh.issues[closed].state = "CLOSED"
+        self.assertEqual(plan_orphans(self.desired, gh.list_issues()), [(old, "E-99-01")])
+        logs = []
+        summary = apply_plan(gh, self.desired, self.labels, {}, log=logs.append)
+        self.assertEqual(summary["orphans"], 1)
+        self.assertTrue(any("E-99-01" in l for l in logs))
+        self.assertEqual(gh.issues[old].state, "OPEN")
+
     def test_assign_by_flow_once(self):
         gh = FakeGh()
         apply_plan(gh, self.desired, self.labels, {"A": "alice", "E": "pm"}, log=lambda *_: None)
@@ -293,6 +309,9 @@ class RealTaskDocs(unittest.TestCase):
             if t.kind == "task" and t.date:
                 days.setdefault((t.flow, t.date), []).append(t)
         for (flow, date), ts in days.items():
+            if flow in UNASSIGNED_FLOWS:
+                self.assertFalse([t.task_id for t in ts if t.batch_hours], "발표 트랙은 모듈 문서가 없다")
+                continue
             with self.subTest(flow=flow, date=date):
                 with_batch = [t.task_id for t in ts if t.batch_hours > 0]
                 self.assertEqual(with_batch, [ts[-1].task_id], "일괄 갱신 줄은 그날 마지막 태스크 하나에만")
@@ -317,6 +336,37 @@ class RealTaskDocs(unittest.TestCase):
                     self.assertEqual(t.doc_hours, 0.0)
                 if t.task_id in {x for o in self.tasks for x in o.batch_conditional}:
                     self.assertIn("트러블만", t.body)
+
+    def test_presentation_track(self):
+        """11/5 PM 결정 ②안: 발표 작업은 S 트랙. A~E에는 발표 자료·리허설 태스크가 남지 않는다."""
+        s_tasks = [t for t in self.tasks if t.flow == "S"]
+        self.assertTrue(s_tasks)
+        for t in s_tasks:
+            self.assertRegex(t.task_id, r"^S-\d{2}-\d{2}$")
+            self.assertIn("../troubles/S.md", t.body)
+        for t in self.tasks:
+            if t.flow in "ABCDE" and t.kind == "task":
+                self.assertNotRegex(t.title, r"발표 자료|발표 구간|구성안|시연 영상|리허설·(시연|발표)", t.task_id)
+        labels = {l for d in desired_issues(self.tasks, self.decisions) if d.key.startswith("S-") for l in d.labels}
+        self.assertIn("flow:presentation", labels)
+        self.assertIn("P-24", {d.decision_id for d in self.decisions})
+
+    def test_presentation_hours_outside_flow_limits(self):
+        import io
+        from tools.tasks_to_issues import print_hours
+        buf = io.StringIO()
+        print_hours(self.tasks, buf)
+        s_row = next(l for l in buf.getvalue().splitlines() if l.startswith("S("))
+        self.assertTrue(s_row.endswith("| - | -"))
+
+    def test_llm_bench_before_llm_server(self):
+        by_id = {t.task_id: t for t in self.tasks}
+        bench = by_id["E-06-07"]
+        self.assertEqual(bench.date, "11-06")
+        self.assertIn("E-06-07", by_id["E-07-01"].deps)
+        self.assertIn("E-06-07", by_id["C-06-04"].deps)
+        self.assertEqual(by_id["C-06-04"].date, "11-06")
+        self.assertNotIn("E-05-04", by_id)
 
     def test_limits(self):
         self.assertEqual(TASK_LIMITS["E"], 9.0)

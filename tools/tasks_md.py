@@ -13,10 +13,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 # 한글 조사가 바로 붙는 경우("D-10-01의")도 잡도록 \b 대신 앞뒤 문자를 직접 본다.
-TASK_ID_RE = re.compile(r"(?<![A-Za-z0-9-])(?:[A-E]-\d{2}-\d{2}|INT-\d{2})(?!\d)")
+# 흐름 A~E, 발표 트랙 S(11/5 PM 결정 ②안. 결정 대기 P-xx와 겹치지 않게 S), 통합 INT
+TASK_ID_RE = re.compile(r"(?<![A-Za-z0-9-])(?:[A-ES]-\d{2}-\d{2}|INT-\d{2})(?!\d)")
 DECISION_ID_RE = re.compile(r"(?<![A-Za-z0-9-])P-\d{2}(?!\d)")
 _TABLE_NUM_RE = re.compile(r"^\|\s*(\d+)\s*\|")
-_HEADING_TASK_RE = re.compile(r"^###\s+((?:[A-E]-\d{2}-\d{2})|(?:INT-\d{2}))\s+(.*)$")
+_HEADING_TASK_RE = re.compile(r"^###\s+((?:[A-ES]-\d{2}-\d{2})|(?:INT-\d{2}))\s+(.*)$")
 _DATE_HEADING_RE = re.compile(r"^##\s+(\d{1,2})/(\d{1,2})\(")
 _INT_DATE_RE = re.compile(r"\((\d{1,2})/(\d{1,2})\)")
 _HOURS_RE = re.compile(r"^-\s+(\d+(?:\.\d+)?)h\b")
@@ -26,10 +27,13 @@ _BATCH_RE = re.compile(r"^-\s+모듈 문서 일괄 갱신\(\+(\d+(?:\.\d+)?)h")
 _MODULE_LINK_RE = re.compile(r"docs/modules/(\w+)\.md|\.\./modules/(\w+)\.md")
 _COND_RE = re.compile(r"^\s{2,}(\d+)\.\s")
 _COND_LABEL_RE = re.compile(r"(?:완료 조건[^:\n]*|(?:^|·\s*)조건):")
-_SAME_AS_RE = re.compile(r"조건은 ((?:[A-E]-\d{2}-\d{2})(?:\s*\+\s*[A-E]-\d{2}-\d{2})*)")
-FLOW_FILES = {"A": "A_engine.md", "B": "B_web.md", "C": "C_infra.md", "D": "D_ml_ads.md", "E": "E_pm.md"}
+_SAME_AS_RE = re.compile(r"조건은 ((?:[A-ES]-\d{2}-\d{2})(?:\s*\+\s*[A-ES]-\d{2}-\d{2})*)")
+FLOW_FILES = {"A": "A_engine.md", "B": "B_web.md", "C": "C_infra.md", "D": "D_ml_ads.md", "E": "E_pm.md",
+              "S": "P_presentation.md"}
 # 하루 태스크 한도(공통 1.5h 제외). E는 P-22(11/5 PM 결정)로 근무 10.5h = 태스크 9h + 공통 1.5h.
 TASK_LIMITS = {"A": 7.5, "B": 7.5, "C": 7.5, "D": 7.5, "E": 9.0}
+# 담당이 정해지지 않은 트랙: 흐름별 한도 계산에서 빼고 시간표에 별도 줄로만 보인다(발표 트랙, P-24).
+UNASSIGNED_FLOWS = {"S"}
 
 
 @dataclass
@@ -38,7 +42,7 @@ class Task:
 
     task_id: str
     title: str
-    flow: str  # A~E, 통합은 "INT"
+    flow: str  # A~E, 발표 트랙 "S", 통합은 "INT"
     date: str | None  # "11-05" 형식. 날짜를 알 수 없으면 None
     hours: float
     doc_hours: float

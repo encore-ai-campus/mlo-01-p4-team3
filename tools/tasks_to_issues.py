@@ -25,7 +25,7 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from tools.tasks_md import TASK_LIMITS, Decision, Task, hours_table, load_all
+from tools.tasks_md import TASK_LIMITS, UNASSIGNED_FLOWS, Decision, Task, hours_table, load_all
 
 ROOT = Path(__file__).resolve().parents[1]
 YEAR = 2026
@@ -39,7 +39,10 @@ MILESTONES = [
     ("통합 3 (11/11)", "11-11"),
     ("발표 (11/12)", "11-12"),
 ]
-FLOW_NAMES = {"A": "A 엔진", "B": "B 웹·API", "C": "C 인프라", "D": "D ML·광고", "E": "E PM", "INT": "통합"}
+FLOW_NAMES = {"A": "A 엔진", "B": "B 웹·API", "C": "C 인프라", "D": "D ML·광고", "E": "E PM", "S": "발표 트랙",
+              "INT": "통합"}
+# 흐름 → 라벨. 발표 트랙(S)은 담당이 P-24로 정해질 때까지 흐름 라벨 대신 트랙 라벨을 쓴다.
+FLOW_LABELS = {"A": "flow:A", "B": "flow:B", "C": "flow:C", "D": "flow:D", "E": "flow:E", "S": "flow:presentation"}
 
 
 # ---------------------------------------------------------------- 계획(순수 함수)
@@ -65,6 +68,7 @@ class ExistingIssue:
     labels: list[str]
     milestone: str | None
     assignees: list[str]
+    state: str = "OPEN"  # OPEN | CLOSED (gh issue list --json state)
 
 
 @dataclass
@@ -107,8 +111,8 @@ def desired_issues(tasks: list[Task], decisions: list[Decision], repo: str | Non
     out: list[DesiredIssue] = []
     for t in tasks:
         labels = [f"type:{t.kind}"]
-        if t.flow in ("A", "B", "C", "D", "E"):
-            labels.append(f"flow:{t.flow}")
+        if t.flow in FLOW_LABELS:
+            labels.append(FLOW_LABELS[t.flow])
         if t.date:
             labels.append(f"day:{t.date}")
         if "검수" in t.tags:
@@ -118,7 +122,8 @@ def desired_issues(tasks: list[Task], decisions: list[Decision], repo: str | Non
         refs = " · ".join(f"{{{{ref:{d}}}}}" for d in t.deps) or "없음"
         decs = " · ".join(f"{{{{ref:{p}}}}}" for p in t.decisions) or "없음"
         date_txt = f"{int(t.date[:2])}/{int(t.date[3:])}" if t.date else "-"
-        hours_txt = f"{t.hours:g}h + 문서화 {t.doc_hours:g}h" if t.kind == "task" else "주관 태스크 시간에 포함"
+        hours_txt = (f"{t.hours:g}h + 문서화 {t.doc_hours + t.batch_hours:g}h" if t.kind == "task"
+                     else "주관 태스크 시간에 포함")
         conds = ", ".join(t.conditions) or "-"
         body = "\n".join([
             f"<!-- task-id: {t.task_id} -->",
@@ -181,6 +186,20 @@ def index_existing(issues: list[ExistingIssue]) -> dict[str, ExistingIssue]:
         if m and m.group(1) not in found:
             found[m.group(1)] = iss
     return found
+
+
+def plan_orphans(desired: list[DesiredIssue], existing: list[ExistingIssue]) -> list[tuple[int, str]]:
+    """표식이 있는데 원본 마크다운에 더는 없는 **열린** 이슈(번호, 키). 태스크 ID를 바꾸거나 옮기면 생긴다.
+
+    자동으로 닫지 않는다(밖으로 나가는 동작이고 이력·담당이 걸려 있다). 출력만 하고 PM이 처리한다(README 11절).
+    """
+    want = {d.key for d in desired}
+    out = []
+    for iss in sorted(existing, key=lambda i: i.number):
+        m = MARKER_RE.search(iss.body or "")
+        if m and m.group(1) not in want and iss.state.upper() == "OPEN":
+            out.append((iss.number, m.group(1)))
+    return out
 
 
 def _managed(label: str) -> bool:
@@ -282,13 +301,14 @@ class GhClient:
 
     def list_issues(self) -> list[ExistingIssue]:
         out = self._run(["issue", "list", "--repo", self.repo, "--state", "all", "--limit", "1000",
-                         "--json", "number,title,body,labels,milestone,assignees"])
+                         "--json", "number,title,body,labels,milestone,assignees,state"])
         items = json.loads(out or "[]")
         return [ExistingIssue(
             number=i["number"], title=i["title"], body=i.get("body") or "",
             labels=[l["name"] for l in i.get("labels") or []],
             milestone=(i.get("milestone") or {}).get("title"),
             assignees=[a["login"] for a in i.get("assignees") or []],
+            state=i.get("state") or "OPEN",
         ) for i in items]
 
     def ensure_label(self, name: str, color: str, description: str) -> None:
@@ -375,19 +395,27 @@ def apply_plan(gh, desired: list[DesiredIssue], labels: list[dict[str, str]],
         elif a.kind == "assign":
             gh.edit_issue(a.number, None, None, [], [], None, assignee=a.assignee)
             n_asg += 1
+    orphans = plan_orphans(desired, gh.list_issues())
+    for num, key in orphans:
+        log(f"원본에 없는 열린 이슈 #{num} {key} — 새 ID 이슈에 링크를 댓글로 남기고 닫을지 PM이 정한다(README 11절)")
     return {"labels": len(labels), "milestones_created": ms_created, "created": len(creates),
-            "updated": n_upd, "assigned": n_asg}
+            "updated": n_upd, "assigned": n_asg, "orphans": len(orphans)}
 
 
 def print_hours(tasks: list[Task], out=sys.stdout) -> None:
     table = hours_table(tasks)
     days = sorted({d for f in table.values() for d in f})
     out.write("흐름 | " + " | ".join(d[3:] for d in days) + " | 한도 | 초과 합계\n")
-    for flow in sorted(table):
+    for flow in sorted(table, key=lambda f: (f in UNASSIGNED_FLOWS, f)):
         row = table[flow]
+        cells = " | ".join(f"{row.get(d, 0.0):g}" for d in days)
+        if flow in UNASSIGNED_FLOWS:
+            # 담당 미정(P-24): 어느 흐름의 한도에도 넣지 않고 별도 줄로만 보인다.
+            out.write(f"{flow}(발표 트랙, 담당 미정) | {cells} | - | -\n")
+            continue
         limit = TASK_LIMITS.get(flow, 7.5)
         over = sum(max(0.0, row.get(d, 0.0) - limit) for d in days)
-        out.write(f"{flow} | " + " | ".join(f"{row.get(d, 0.0):g}" for d in days) + f" | {limit:g} | {over:g}\n")
+        out.write(f"{flow} | {cells} | {limit:g} | {over:g}\n")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -432,7 +460,8 @@ def main(argv: list[str] | None = None) -> int:
         p.error("--apply에는 --repo OWNER/NAME이 필요하다")
     summary = apply_plan(GhClient(args.repo), desired, labels, assign)
     print(f"[apply] {args.repo}: 라벨 {summary['labels']}개 보장, 마일스톤 {summary['milestones_created']}개 생성, "
-          f"이슈 {summary['created']}개 생성, {summary['updated']}개 갱신, 담당 지정 {summary['assigned']}건")
+          f"이슈 {summary['created']}개 생성, {summary['updated']}개 갱신, 담당 지정 {summary['assigned']}건, "
+          f"원본에 없는 열린 이슈 {summary['orphans']}건")
     return 0
 
 
