@@ -1,0 +1,108 @@
+[
+  {
+    "case_id": "reserve_blocks_overspend",
+    "note": "예산 120원, CPC 50원: 예약 2건(100원) 뒤 세 번째 예약 거부 → 1건 확정·1건 해제 시각(serve+30분+유예 2분) 경과로 해제 → 다시 예약 가능",
+    "daily_budget_mw": 120000,
+    "billing": "cpc",
+    "price_mw": 50000,
+    "steps": [
+      {
+        "op": "reserve",
+        "serve": "s1",
+        "at_ms": 0,
+        "expect": true
+      },
+      {
+        "op": "reserve",
+        "serve": "s2",
+        "at_ms": 10,
+        "expect": true
+      },
+      {
+        "op": "reserve",
+        "serve": "s3",
+        "at_ms": 20,
+        "expect": false
+      },
+      {
+        "op": "confirm",
+        "serve": "s1",
+        "event": "e1",
+        "expect": true
+      },
+      {
+        "op": "confirm",
+        "serve": "s1",
+        "event": "e1",
+        "expect": false
+      },
+      {
+        "op": "release",
+        "now_ms": 1860000,
+        "expect_released": []
+      },
+      {
+        "op": "release",
+        "now_ms": 1980000,
+        "expect_released": [
+          "s2:click"
+        ]
+      },
+      {
+        "op": "reserve",
+        "serve": "s4",
+        "at_ms": 1980000,
+        "expect": true
+      },
+      {
+        "op": "refund",
+        "serve": "s1",
+        "event": "e1_rejudged",
+        "expect_amount_mw": -50000
+      }
+    ],
+    "expect_committed_mw": 50000
+  },
+  {
+    "case_id": "reconcile_itemized",
+    "note": "건별 대사: 합계가 같아도 건별 불일치를 찾는다. Delta에만 있는 중복도 중복으로 센다",
+    "ledger": {
+      "a:click": 50000,
+      "b:click": 75000,
+      "c:click": 30000,
+      "e:click": 40000
+    },
+    "delta": {
+      "a:click": [
+        50000
+      ],
+      "b:click": [
+        75000,
+        75000
+      ],
+      "d:click": [
+        30000,
+        30000
+      ],
+      "c:click": [],
+      "e:click": [
+        45000
+      ]
+    },
+    "expect": {
+      "ledger_only": [
+        "c:click"
+      ],
+      "delta_only": [
+        "d:click"
+      ],
+      "duplicate": [
+        "b:click",
+        "d:click"
+      ],
+      "amount_mismatch": [
+        "e:click"
+      ]
+    }
+  }
+]

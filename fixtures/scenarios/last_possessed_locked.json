@@ -1,0 +1,39 @@
+{
+  "scenario_id": "last_possessed_locked",
+  "description": "창귀 2명 판에서 남은 마지막 씐 자를 가두면 즉시 마을 승리, 밤 생략.",
+  "preset_id": "duo9",
+  "source": "scripted",
+  "setup": {},
+  "steps": [],
+  "checks": [
+    {
+      "type": "end_check",
+      "input": {
+        "g": 1,
+        "v": 4,
+        "mudang_active": true,
+        "mudang_locked": false
+      },
+      "expect": {
+        "reason": null,
+        "night_runs": true
+      },
+      "note": "첫 씐 자 감금 후(감금 공개로 남은 수 1)"
+    },
+    {
+      "type": "end_check",
+      "input": {
+        "g": 0,
+        "v": 3,
+        "mudang_active": true,
+        "mudang_locked": false
+      },
+      "expect": {
+        "reason": "all_possessed_locked",
+        "winner": "village",
+        "night_runs": false
+      },
+      "note": ""
+    }
+  ]
+}

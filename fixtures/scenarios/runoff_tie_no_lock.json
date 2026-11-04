@@ -1,0 +1,72 @@
+{
+  "scenario_id": "runoff_tie_no_lock",
+  "description": "본투표 동점 → 결선도 동점 → 무감금. 밤은 진행된다.",
+  "preset_id": "base6",
+  "source": "scripted",
+  "setup": {},
+  "steps": [],
+  "checks": [
+    {
+      "type": "vote",
+      "input": {
+        "main": {
+          "mudang": "jumo",
+          "hunjang": "jumo",
+          "jumo": "yakcho",
+          "blacksmith": "yakcho",
+          "meosum": "hunjang",
+          "yakcho": "hunjang"
+        }
+      },
+      "expect": {
+        "locked": null,
+        "runoff_candidates": [
+          "hunjang",
+          "jumo",
+          "yakcho"
+        ]
+      },
+      "note": ""
+    },
+    {
+      "type": "vote",
+      "input": {
+        "main": {
+          "mudang": "jumo",
+          "hunjang": "jumo",
+          "jumo": "yakcho",
+          "blacksmith": "yakcho",
+          "meosum": "hunjang",
+          "yakcho": "hunjang"
+        },
+        "runoff": {
+          "mudang": "jumo",
+          "hunjang": "jumo",
+          "jumo": "yakcho",
+          "blacksmith": "yakcho",
+          "meosum": "hunjang",
+          "yakcho": "hunjang"
+        }
+      },
+      "expect": {
+        "locked": null,
+        "runoff_candidates": []
+      },
+      "note": ""
+    },
+    {
+      "type": "end_check",
+      "input": {
+        "g": 1,
+        "v": 4,
+        "mudang_active": true,
+        "mudang_locked": false
+      },
+      "expect": {
+        "reason": null,
+        "night_runs": true
+      },
+      "note": ""
+    }
+  ]
+}

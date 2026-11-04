@@ -1,0 +1,177 @@
+[
+  {
+    "case_id": "design_example_ctr2_t1000",
+    "note": "기획서 예: 승자 CTR 2%, T=1000원 → 청구 CPC 50원",
+    "request_id": "req_a1",
+    "reserve_ecpm_mw": 500000,
+    "bidders": [
+      {
+        "campaign_id": "cp_gukbap",
+        "creative_id": "cr_gukbap_a",
+        "billing": "cpc",
+        "bid_mw": 300000,
+        "rank_ctr": 0.02
+      },
+      {
+        "campaign_id": "cp_bujeok",
+        "creative_id": "cr_bujeok",
+        "billing": "cpm",
+        "bid_mw": 1000000,
+        "rank_ctr": 0.0
+      }
+    ],
+    "expect": {
+      "winner": "cp_gukbap",
+      "winner_ecpm_mw": 6000000,
+      "threshold_ecpm_mw": 1000000,
+      "price_mw": 50000,
+      "capped": false
+    }
+  },
+  {
+    "case_id": "high_ctr_low_bid_wins",
+    "note": "시나리오 2: 150원×8%=eCPM 12000원이 300원×2%=6000원을 이김. CPC = 6000/(1000×0.08) = 75원",
+    "request_id": "req_a2",
+    "reserve_ecpm_mw": 500000,
+    "bidders": [
+      {
+        "campaign_id": "cp_gukbap",
+        "creative_id": "cr_gukbap_b",
+        "billing": "cpc",
+        "bid_mw": 300000,
+        "rank_ctr": 0.02
+      },
+      {
+        "campaign_id": "cp_yakcho",
+        "creative_id": "cr_yakcho",
+        "billing": "cpc",
+        "bid_mw": 150000,
+        "rank_ctr": 0.08
+      }
+    ],
+    "expect": {
+      "winner": "cp_yakcho",
+      "winner_ecpm_mw": 12000000,
+      "threshold_ecpm_mw": 6000000,
+      "price_mw": 75000,
+      "capped": false
+    }
+  },
+  {
+    "case_id": "cpm_winner_pays_t",
+    "note": "CPM 승자 청구 CPM = T",
+    "request_id": "req_a3",
+    "reserve_ecpm_mw": 600000,
+    "bidders": [
+      {
+        "campaign_id": "cp_bujeok",
+        "creative_id": "cr_bujeok",
+        "billing": "cpm",
+        "bid_mw": 4000000,
+        "rank_ctr": 0.0
+      },
+      {
+        "campaign_id": "cp_yakcho",
+        "creative_id": "cr_yakcho",
+        "billing": "cpc",
+        "bid_mw": 150000,
+        "rank_ctr": 0.01
+      }
+    ],
+    "expect": {
+      "winner": "cp_bujeok",
+      "winner_ecpm_mw": 4000000,
+      "threshold_ecpm_mw": 1500000,
+      "price_mw": 1500000,
+      "capped": false
+    }
+  },
+  {
+    "case_id": "single_bidder_uses_reserve",
+    "note": "후보 1개면 T = 지면 최저 eCPM",
+    "request_id": "req_a4",
+    "reserve_ecpm_mw": 600000,
+    "bidders": [
+      {
+        "campaign_id": "cp_bujeok",
+        "creative_id": "cr_bujeok",
+        "billing": "cpm",
+        "bid_mw": 4000000,
+        "rank_ctr": 0.0
+      }
+    ],
+    "expect": {
+      "winner": "cp_bujeok",
+      "winner_ecpm_mw": 4000000,
+      "threshold_ecpm_mw": 600000,
+      "price_mw": 600000,
+      "capped": false
+    }
+  },
+  {
+    "case_id": "below_reserve_no_fill",
+    "note": "모두 최저 eCPM 미만이면 광고 없음",
+    "request_id": "req_a5",
+    "reserve_ecpm_mw": 800000,
+    "bidders": [
+      {
+        "campaign_id": "cp_yakcho",
+        "creative_id": "cr_yakcho",
+        "billing": "cpc",
+        "bid_mw": 150000,
+        "rank_ctr": 0.005
+      }
+    ],
+    "expect": {
+      "winner": null
+    }
+  },
+  {
+    "case_id": "zero_ctr_floor_below_reserve",
+    "note": "CTR 0은 하한 0.0001로 계산 → eCPM 30원 < 최저 eCPM → 광고 없음",
+    "request_id": "req_a6",
+    "reserve_ecpm_mw": 500000,
+    "bidders": [
+      {
+        "campaign_id": "cp_gukbap",
+        "creative_id": "cr_gukbap_a",
+        "billing": "cpc",
+        "bid_mw": 300000,
+        "rank_ctr": 0.0
+      }
+    ],
+    "expect": {
+      "winner": null
+    }
+  },
+  {
+    "case_id": "cap_when_second_close",
+    "note": "동점이면 T=1등 eCPM → 청구 단가 = 입찰가(상한 경계). 승자는 요청 ID 해시로 정해진다",
+    "request_id": "req_a7",
+    "reserve_ecpm_mw": 500000,
+    "bidders": [
+      {
+        "campaign_id": "cp_gukbap",
+        "creative_id": "cr_gukbap_a",
+        "billing": "cpc",
+        "bid_mw": 300000,
+        "rank_ctr": 0.02
+      },
+      {
+        "campaign_id": "cp_bujeok",
+        "creative_id": "cr_bujeok",
+        "billing": "cpm",
+        "bid_mw": 6000000,
+        "rank_ctr": 0.0
+      }
+    ],
+    "expect_any_winner": [
+      "cp_gukbap",
+      "cp_bujeok"
+    ],
+    "expect": {
+      "threshold_ecpm_mw": 6000000,
+      "capped": false
+    }
+  }
+]

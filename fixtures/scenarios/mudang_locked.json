@@ -1,0 +1,43 @@
+{
+  "scenario_id": "mudang_locked",
+  "description": "NPC 다수가 무당에게 투표 → 무당 감금 → 인원과 무관하게 창귀 승리.",
+  "preset_id": "base6",
+  "source": "scripted",
+  "setup": {},
+  "steps": [],
+  "checks": [
+    {
+      "type": "vote",
+      "input": {
+        "main": {
+          "hunjang": "mudang",
+          "jumo": "mudang",
+          "blacksmith": "mudang",
+          "meosum": "jumo",
+          "yakcho": "mudang",
+          "mudang": "blacksmith"
+        }
+      },
+      "expect": {
+        "locked": "mudang",
+        "runoff_candidates": []
+      },
+      "note": ""
+    },
+    {
+      "type": "end_check",
+      "input": {
+        "g": 1,
+        "v": 4,
+        "mudang_active": false,
+        "mudang_locked": true
+      },
+      "expect": {
+        "reason": "mudang_locked",
+        "winner": "changgwi",
+        "night_runs": false
+      },
+      "note": ""
+    }
+  ]
+}

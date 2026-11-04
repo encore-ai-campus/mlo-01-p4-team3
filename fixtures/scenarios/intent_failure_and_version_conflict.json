@@ -1,0 +1,110 @@
+{
+  "scenario_id": "intent_failure_and_version_conflict",
+  "description": "자유 입력 실패 상태와 오래된 상태 버전 명령 거부. 둘 다 행동을 소비하지 않는다.",
+  "preset_id": "base6",
+  "source": "scripted",
+  "setup": {},
+  "steps": [],
+  "checks": [
+    {
+      "type": "parse",
+      "input": {
+        "text": "",
+        "phase": "round1"
+      },
+      "expect": {
+        "failure": "empty_input",
+        "kinds": []
+      },
+      "note": ""
+    },
+    {
+      "type": "parse",
+      "input": {
+        "text": "오늘 날씨가 어떻소?",
+        "phase": "round1"
+      },
+      "expect": {
+        "failure": "unsupported_intent",
+        "kinds": []
+      },
+      "note": ""
+    },
+    {
+      "type": "parse",
+      "input": {
+        "text": "수상하다",
+        "phase": "round1"
+      },
+      "expect": {
+        "failure": "missing_target",
+        "kinds": [
+          "suspect"
+        ]
+      },
+      "note": ""
+    },
+    {
+      "type": "parse",
+      "input": {
+        "text": "훈장은 수상하지만 머슴은 결백해",
+        "phase": "round1"
+      },
+      "expect": {
+        "failure": null,
+        "kinds": [
+          "defend",
+          "suspect"
+        ]
+      },
+      "note": "다중 의도: 카드 2장, 플레이어가 하나 선택"
+    },
+    {
+      "type": "repo_commit",
+      "input": {
+        "stored_version": 5,
+        "expected_version": 4
+      },
+      "expect": {
+        "error": "state_version_conflict"
+      },
+      "note": ""
+    },
+    {
+      "type": "repo_commit",
+      "input": {
+        "stored_version": 5,
+        "expected_version": 5
+      },
+      "expect": {
+        "error": null
+      },
+      "note": ""
+    },
+    {
+      "type": "idempotent",
+      "input": {
+        "command_id": "c005",
+        "repeat": 2
+      },
+      "expect": {
+        "commits": 1,
+        "same_response": true
+      },
+      "note": ""
+    },
+    {
+      "type": "limit",
+      "input": {
+        "player": {
+          "interrogations_left": 0
+        },
+        "kind": "interrogate"
+      },
+      "expect": {
+        "reject": "limit_exceeded"
+      },
+      "note": ""
+    }
+  ]
+}

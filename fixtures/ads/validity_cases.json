@@ -1,0 +1,170 @@
+[
+  {
+    "case_id": "click_arrives_before_impression",
+    "note": "클릭이 비콘보다 먼저 도착 → 클릭 유효, 노출도 인정. 늦게 온 비콘은 중복",
+    "billing": "cpc",
+    "price_mw": 50000,
+    "steps": [
+      {
+        "op": "serve",
+        "token": "t1",
+        "session": "s1"
+      },
+      {
+        "op": "click",
+        "token": "t1",
+        "at_ms": 800,
+        "expect": "valid",
+        "expect_implied": true
+      },
+      {
+        "op": "impression",
+        "token": "t1",
+        "at_ms": 1200,
+        "recv_ms": 1500,
+        "visible_ratio": 1.0,
+        "visible_ms": 1200,
+        "expect": "invalid:duplicate"
+      }
+    ],
+    "expect_confirmed_mw": 50000
+  },
+  {
+    "case_id": "cpc_attacks",
+    "note": "시나리오 5: 토큰 재사용·위조·만료는 무효, 빠른 연속 클릭은 의심 표시만",
+    "billing": "cpc",
+    "price_mw": 100000,
+    "steps": [
+      {
+        "op": "serve",
+        "token": "t1",
+        "session": "s1"
+      },
+      {
+        "op": "serve",
+        "token": "t2",
+        "session": "s1"
+      },
+      {
+        "op": "impression",
+        "token": "t1",
+        "at_ms": 1500,
+        "visible_ratio": 0.3,
+        "visible_ms": 2000,
+        "expect": "invalid:not_viewable"
+      },
+      {
+        "op": "impression",
+        "token": "t1",
+        "at_ms": 2500,
+        "visible_ratio": 0.8,
+        "visible_ms": 1200,
+        "expect": "valid"
+      },
+      {
+        "op": "click",
+        "token": "t1",
+        "at_ms": 5000,
+        "expect": "valid"
+      },
+      {
+        "op": "click",
+        "token": "t2",
+        "at_ms": 5300,
+        "expect": "valid",
+        "expect_suspect": true,
+        "expect_implied": true
+      },
+      {
+        "op": "click",
+        "token": "t1",
+        "at_ms": 9000,
+        "expect": "invalid:duplicate"
+      },
+      {
+        "op": "click",
+        "token": "forged:t1",
+        "at_ms": 9500,
+        "expect": "invalid:bad_signature"
+      },
+      {
+        "op": "click",
+        "token": "t2",
+        "at_ms": 1860000,
+        "expect": "invalid:expired"
+      }
+    ],
+    "expect_confirmed_mw": 200000
+  },
+  {
+    "case_id": "unknown_serve_pending_then_invalid",
+    "note": "서빙 기록이 안 보이면 최초 수신 후 유예 2분 동안 pending, 재판정 시점(judge_ms)에 지났으면 no_serve",
+    "billing": "cpm",
+    "price_mw": 1500000,
+    "steps": [
+      {
+        "op": "impression",
+        "token": "t_unserved",
+        "at_ms": 100,
+        "recv_ms": 200,
+        "visible_ratio": 1.0,
+        "visible_ms": 2000,
+        "expect": "pending"
+      },
+      {
+        "op": "impression",
+        "token": "t_unserved",
+        "at_ms": 100,
+        "recv_ms": 200,
+        "judge_ms": 200000,
+        "visible_ratio": 1.0,
+        "visible_ms": 2000,
+        "expect": "invalid:no_serve"
+      }
+    ],
+    "expect_confirmed_mw": 0
+  },
+  {
+    "case_id": "cpm_charges_per_valid_impression",
+    "note": "CPM은 유효 노출 1건마다 청구 CPM/1000. 클릭은 과금 없음",
+    "billing": "cpm",
+    "price_mw": 1500000,
+    "steps": [
+      {
+        "op": "serve",
+        "token": "t1",
+        "session": "s2"
+      },
+      {
+        "op": "serve",
+        "token": "t2",
+        "session": "s2"
+      },
+      {
+        "op": "impression",
+        "token": "t1",
+        "at_ms": 1000,
+        "visible_ratio": 1.0,
+        "visible_ms": 1500,
+        "expect": "valid"
+      },
+      {
+        "op": "click",
+        "token": "t2",
+        "at_ms": 3000,
+        "expect": "valid",
+        "expect_implied": true
+      },
+      {
+        "op": "impression",
+        "token": "t2",
+        "at_ms": 2000,
+        "recv_ms": 3500,
+        "visible_ratio": 1.0,
+        "visible_ms": 1500,
+        "expect": "invalid:duplicate"
+      }
+    ],
+    "expect_confirmed_mw": 3000
+  }
+]

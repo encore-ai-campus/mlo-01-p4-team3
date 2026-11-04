@@ -1,0 +1,4399 @@
+{
+  "game_id": "g_base6_001",
+  "preset_id": "base6",
+  "source": "scripted",
+  "contract_version": "contract-0.1",
+  "steps": [
+    {
+      "request": null,
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 0,
+        "day": 1,
+        "phase": "morning",
+        "active": [
+          "mudang",
+          "hunjang",
+          "jumo",
+          "blacksmith",
+          "meosum",
+          "yakcho"
+        ],
+        "locked": [],
+        "missing": [
+          "gwabu"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            }
+          ],
+          "speeches": [],
+          "votes": [],
+          "locks": [],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 2,
+          "reveals_left_today": 1,
+          "talk_used_this_round": false,
+          "divinations": {},
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "advance"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "game_started",
+          "day": 1,
+          "phase": "morning",
+          "payload": {
+            "preset_id": "base6"
+          }
+        },
+        {
+          "event_type": "morning_announced",
+          "day": 1,
+          "phase": "morning",
+          "payload": {
+            "missing": [
+              "gwabu"
+            ],
+            "claims": [
+              "cl01",
+              "cl02",
+              "cl03",
+              "cl04",
+              "cl05",
+              "cl06"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c001",
+        "expected_state_version": 0,
+        "command": {
+          "kind": "advance",
+          "actor": "mudang",
+          "target": null,
+          "addressee": null,
+          "evidence": [],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 1,
+        "day": 1,
+        "phase": "round1",
+        "active": [
+          "mudang",
+          "hunjang",
+          "jumo",
+          "blacksmith",
+          "meosum",
+          "yakcho"
+        ],
+        "locked": [],
+        "missing": [
+          "gwabu"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            }
+          ],
+          "votes": [],
+          "locks": [],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 2,
+          "reveals_left_today": 1,
+          "talk_used_this_round": false,
+          "divinations": {},
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "suspect",
+          "defend",
+          "point_contradiction",
+          "explain",
+          "silence",
+          "reveal_divination"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "speech_made",
+          "day": 1,
+          "phase": "round1",
+          "payload": {
+            "speech_id": "sp01"
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c002",
+        "expected_state_version": 1,
+        "command": {
+          "kind": "suspect",
+          "actor": "mudang",
+          "target": "jumo",
+          "addressee": null,
+          "evidence": [
+            {
+              "type": "claim",
+              "record_id": "cl03"
+            }
+          ],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 2,
+        "day": 1,
+        "phase": "interrogation",
+        "active": [
+          "mudang",
+          "hunjang",
+          "jumo",
+          "blacksmith",
+          "meosum",
+          "yakcho"
+        ],
+        "locked": [],
+        "missing": [
+          "gwabu"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            }
+          ],
+          "votes": [],
+          "locks": [],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 2,
+          "reveals_left_today": 1,
+          "talk_used_this_round": false,
+          "divinations": {},
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "interrogate",
+          "advance"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "speech_made",
+          "day": 1,
+          "phase": "round1",
+          "payload": {
+            "speech_id": "sp02"
+          }
+        },
+        {
+          "event_type": "speech_made",
+          "day": 1,
+          "phase": "round1",
+          "payload": {
+            "speech_id": "sp03"
+          }
+        },
+        {
+          "event_type": "speech_made",
+          "day": 1,
+          "phase": "round1",
+          "payload": {
+            "speech_id": "sp04"
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c003",
+        "expected_state_version": 2,
+        "command": {
+          "kind": "interrogate",
+          "actor": "mudang",
+          "target": null,
+          "addressee": "jumo",
+          "evidence": [],
+          "interrogation_kind": "whereabouts",
+          "divination": null,
+          "night_plan": null,
+          "night": 0,
+          "slot": "midnight"
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 3,
+        "day": 1,
+        "phase": "interrogation",
+        "active": [
+          "mudang",
+          "hunjang",
+          "jumo",
+          "blacksmith",
+          "meosum",
+          "yakcho"
+        ],
+        "locked": [],
+        "missing": [
+          "gwabu"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            }
+          ],
+          "votes": [],
+          "locks": [],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 1,
+          "reveals_left_today": 1,
+          "talk_used_this_round": false,
+          "divinations": {},
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "interrogate",
+          "advance"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [
+          "job_001"
+        ],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "interrogation_answered",
+          "day": 1,
+          "phase": "interrogation",
+          "payload": {
+            "speech_id": "sp05",
+            "reaction": "evade",
+            "render_job_id": "job_001"
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c004",
+        "expected_state_version": 3,
+        "command": {
+          "kind": "advance",
+          "actor": "mudang",
+          "target": null,
+          "addressee": null,
+          "evidence": [],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 4,
+        "day": 1,
+        "phase": "round2",
+        "active": [
+          "mudang",
+          "hunjang",
+          "jumo",
+          "blacksmith",
+          "meosum",
+          "yakcho"
+        ],
+        "locked": [],
+        "missing": [
+          "gwabu"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            },
+            {
+              "speech_id": "sp06",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "meosum",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "야, 약초꾼 영감님이… 수상합니다요.",
+              "render_job_id": null
+            }
+          ],
+          "votes": [],
+          "locks": [],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 1,
+          "reveals_left_today": 1,
+          "talk_used_this_round": false,
+          "divinations": {},
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "suspect",
+          "defend",
+          "point_contradiction",
+          "explain",
+          "silence",
+          "reveal_divination"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "speech_made",
+          "day": 1,
+          "phase": "round2",
+          "payload": {
+            "speech_id": "sp06"
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c005",
+        "expected_state_version": 4,
+        "command": {
+          "kind": "silence",
+          "actor": "mudang",
+          "target": null,
+          "addressee": null,
+          "evidence": [],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 5,
+        "day": 1,
+        "phase": "vote",
+        "active": [
+          "mudang",
+          "hunjang",
+          "jumo",
+          "blacksmith",
+          "meosum",
+          "yakcho"
+        ],
+        "locked": [],
+        "missing": [
+          "gwabu"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            },
+            {
+              "speech_id": "sp06",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "meosum",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "야, 약초꾼 영감님이… 수상합니다요.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp07",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "silence",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "……",
+              "render_job_id": null
+            }
+          ],
+          "votes": [],
+          "locks": [],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 1,
+          "reveals_left_today": 1,
+          "talk_used_this_round": false,
+          "divinations": {},
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "vote"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "speech_made",
+          "day": 1,
+          "phase": "round2",
+          "payload": {
+            "speech_id": "sp07"
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c006",
+        "expected_state_version": 5,
+        "command": {
+          "kind": "vote",
+          "actor": "mudang",
+          "target": "yakcho",
+          "addressee": null,
+          "evidence": [],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 6,
+        "day": 1,
+        "phase": "night",
+        "active": [
+          "mudang",
+          "hunjang",
+          "jumo",
+          "blacksmith",
+          "meosum"
+        ],
+        "locked": [
+          "yakcho"
+        ],
+        "missing": [
+          "gwabu"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            },
+            {
+              "speech_id": "sp06",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "meosum",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "야, 약초꾼 영감님이… 수상합니다요.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp07",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "silence",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "……",
+              "render_job_id": null
+            }
+          ],
+          "votes": [
+            {
+              "vote_id": "v1_0",
+              "day": 1,
+              "round": "main",
+              "voter": "mudang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_1",
+              "day": 1,
+              "round": "main",
+              "voter": "hunjang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_2",
+              "day": 1,
+              "round": "main",
+              "voter": "jumo",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_3",
+              "day": 1,
+              "round": "main",
+              "voter": "blacksmith",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_4",
+              "day": 1,
+              "round": "main",
+              "voter": "meosum",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_5",
+              "day": 1,
+              "round": "main",
+              "voter": "yakcho",
+              "target": "jumo"
+            }
+          ],
+          "locks": [
+            {
+              "day": 1,
+              "locked": "yakcho",
+              "revealed_possessed": false
+            }
+          ],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 1,
+          "reveals_left_today": 1,
+          "talk_used_this_round": false,
+          "divinations": {},
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "divine"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "votes_revealed",
+          "day": 1,
+          "phase": "vote",
+          "payload": {
+            "round": "main"
+          }
+        },
+        {
+          "event_type": "lock_resolved",
+          "day": 1,
+          "phase": "vote",
+          "payload": {
+            "locked": "yakcho",
+            "revealed_possessed": false,
+            "end": null
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c007",
+        "expected_state_version": 6,
+        "command": {
+          "kind": "divine",
+          "actor": "mudang",
+          "target": "blacksmith",
+          "addressee": null,
+          "evidence": [],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 7,
+        "day": 2,
+        "phase": "morning",
+        "active": [
+          "mudang",
+          "jumo",
+          "blacksmith",
+          "meosum"
+        ],
+        "locked": [
+          "yakcho"
+        ],
+        "missing": [
+          "gwabu",
+          "hunjang"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl07",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 1,
+              "slot": "midnight",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl08",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl09",
+              "speaker": "meosum",
+              "claim_type": "non_sighting",
+              "subject": "meosum",
+              "night": 1,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "deny",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            },
+            {
+              "speech_id": "sp06",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "meosum",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "야, 약초꾼 영감님이… 수상합니다요.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp07",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "silence",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "……",
+              "render_job_id": null
+            }
+          ],
+          "votes": [
+            {
+              "vote_id": "v1_0",
+              "day": 1,
+              "round": "main",
+              "voter": "mudang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_1",
+              "day": 1,
+              "round": "main",
+              "voter": "hunjang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_2",
+              "day": 1,
+              "round": "main",
+              "voter": "jumo",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_3",
+              "day": 1,
+              "round": "main",
+              "voter": "blacksmith",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_4",
+              "day": 1,
+              "round": "main",
+              "voter": "meosum",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_5",
+              "day": 1,
+              "round": "main",
+              "voter": "yakcho",
+              "target": "jumo"
+            }
+          ],
+          "locks": [
+            {
+              "day": 1,
+              "locked": "yakcho",
+              "revealed_possessed": false
+            }
+          ],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            },
+            {
+              "night": 1,
+              "victim": "hunjang"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 2,
+          "reveals_left_today": 1,
+          "talk_used_this_round": false,
+          "divinations": {
+            "1": {
+              "blacksmith": "murky"
+            }
+          },
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "advance"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "divination_done",
+          "day": 1,
+          "phase": "night",
+          "payload": {
+            "target": "blacksmith",
+            "result": "murky"
+          }
+        },
+        {
+          "event_type": "night_resolved",
+          "day": 1,
+          "phase": "night",
+          "payload": {
+            "victim": "hunjang",
+            "end": null
+          }
+        },
+        {
+          "event_type": "morning_announced",
+          "day": 2,
+          "phase": "morning",
+          "payload": {
+            "missing": [
+              "hunjang"
+            ],
+            "claims": [
+              "cl07",
+              "cl08",
+              "cl09"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c008",
+        "expected_state_version": 7,
+        "command": {
+          "kind": "advance",
+          "actor": "mudang",
+          "target": null,
+          "addressee": null,
+          "evidence": [],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 8,
+        "day": 2,
+        "phase": "round1",
+        "active": [
+          "mudang",
+          "jumo",
+          "blacksmith",
+          "meosum"
+        ],
+        "locked": [
+          "yakcho"
+        ],
+        "missing": [
+          "gwabu",
+          "hunjang"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl07",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 1,
+              "slot": "midnight",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl08",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl09",
+              "speaker": "meosum",
+              "claim_type": "non_sighting",
+              "subject": "meosum",
+              "night": 1,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "deny",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            },
+            {
+              "speech_id": "sp06",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "meosum",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "야, 약초꾼 영감님이… 수상합니다요.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp07",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "silence",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "……",
+              "render_job_id": null
+            }
+          ],
+          "votes": [
+            {
+              "vote_id": "v1_0",
+              "day": 1,
+              "round": "main",
+              "voter": "mudang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_1",
+              "day": 1,
+              "round": "main",
+              "voter": "hunjang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_2",
+              "day": 1,
+              "round": "main",
+              "voter": "jumo",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_3",
+              "day": 1,
+              "round": "main",
+              "voter": "blacksmith",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_4",
+              "day": 1,
+              "round": "main",
+              "voter": "meosum",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_5",
+              "day": 1,
+              "round": "main",
+              "voter": "yakcho",
+              "target": "jumo"
+            }
+          ],
+          "locks": [
+            {
+              "day": 1,
+              "locked": "yakcho",
+              "revealed_possessed": false
+            }
+          ],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            },
+            {
+              "night": 1,
+              "victim": "hunjang"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 2,
+          "reveals_left_today": 1,
+          "talk_used_this_round": false,
+          "divinations": {
+            "1": {
+              "blacksmith": "murky"
+            }
+          },
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "suspect",
+          "defend",
+          "point_contradiction",
+          "explain",
+          "silence",
+          "reveal_divination"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": []
+    },
+    {
+      "request": {
+        "command_id": "c009",
+        "expected_state_version": 8,
+        "command": {
+          "kind": "reveal_divination",
+          "actor": "mudang",
+          "target": null,
+          "addressee": null,
+          "evidence": [],
+          "interrogation_kind": null,
+          "divination": {
+            "target": "blacksmith",
+            "night": 1,
+            "result": "murky"
+          },
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 9,
+        "day": 2,
+        "phase": "interrogation",
+        "active": [
+          "mudang",
+          "jumo",
+          "blacksmith",
+          "meosum"
+        ],
+        "locked": [
+          "yakcho"
+        ],
+        "missing": [
+          "gwabu",
+          "hunjang"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl07",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 1,
+              "slot": "midnight",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl08",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl09",
+              "speaker": "meosum",
+              "claim_type": "non_sighting",
+              "subject": "meosum",
+              "night": 1,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "deny",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl10",
+              "speaker": "mudang",
+              "claim_type": "divination_reveal",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": null,
+              "place": null,
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": "murky",
+              "day": 2
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            },
+            {
+              "speech_id": "sp06",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "meosum",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "야, 약초꾼 영감님이… 수상합니다요.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp07",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "silence",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "……",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp08",
+              "day": 2,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "reveal_divination",
+              "target": "blacksmith",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [
+                "cl10"
+              ],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "간밤 대장장이의 점괘는 탁함이었소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp09",
+              "day": 2,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "mudang",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "저 무당이 오고 나서부터 사람이 사라지오!",
+              "render_job_id": null
+            }
+          ],
+          "votes": [
+            {
+              "vote_id": "v1_0",
+              "day": 1,
+              "round": "main",
+              "voter": "mudang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_1",
+              "day": 1,
+              "round": "main",
+              "voter": "hunjang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_2",
+              "day": 1,
+              "round": "main",
+              "voter": "jumo",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_3",
+              "day": 1,
+              "round": "main",
+              "voter": "blacksmith",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_4",
+              "day": 1,
+              "round": "main",
+              "voter": "meosum",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_5",
+              "day": 1,
+              "round": "main",
+              "voter": "yakcho",
+              "target": "jumo"
+            }
+          ],
+          "locks": [
+            {
+              "day": 1,
+              "locked": "yakcho",
+              "revealed_possessed": false
+            }
+          ],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            },
+            {
+              "night": 1,
+              "victim": "hunjang"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 2,
+          "reveals_left_today": 0,
+          "talk_used_this_round": false,
+          "divinations": {
+            "1": {
+              "blacksmith": "murky"
+            }
+          },
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "interrogate",
+          "advance"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "claim_made",
+          "day": 2,
+          "phase": "round1",
+          "payload": {
+            "claim_id": "cl10"
+          }
+        },
+        {
+          "event_type": "speech_made",
+          "day": 2,
+          "phase": "round1",
+          "payload": {
+            "speech_id": "sp08"
+          }
+        },
+        {
+          "event_type": "speech_made",
+          "day": 2,
+          "phase": "round1",
+          "payload": {
+            "speech_id": "sp09"
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c010",
+        "expected_state_version": 9,
+        "command": {
+          "kind": "advance",
+          "actor": "mudang",
+          "target": null,
+          "addressee": null,
+          "evidence": [],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 10,
+        "day": 2,
+        "phase": "round2",
+        "active": [
+          "mudang",
+          "jumo",
+          "blacksmith",
+          "meosum"
+        ],
+        "locked": [
+          "yakcho"
+        ],
+        "missing": [
+          "gwabu",
+          "hunjang"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl07",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 1,
+              "slot": "midnight",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl08",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl09",
+              "speaker": "meosum",
+              "claim_type": "non_sighting",
+              "subject": "meosum",
+              "night": 1,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "deny",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl10",
+              "speaker": "mudang",
+              "claim_type": "divination_reveal",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": null,
+              "place": null,
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": "murky",
+              "day": 2
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            },
+            {
+              "speech_id": "sp06",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "meosum",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "야, 약초꾼 영감님이… 수상합니다요.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp07",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "silence",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "……",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp08",
+              "day": 2,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "reveal_divination",
+              "target": "blacksmith",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [
+                "cl10"
+              ],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "간밤 대장장이의 점괘는 탁함이었소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp09",
+              "day": 2,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "mudang",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "저 무당이 오고 나서부터 사람이 사라지오!",
+              "render_job_id": null
+            }
+          ],
+          "votes": [
+            {
+              "vote_id": "v1_0",
+              "day": 1,
+              "round": "main",
+              "voter": "mudang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_1",
+              "day": 1,
+              "round": "main",
+              "voter": "hunjang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_2",
+              "day": 1,
+              "round": "main",
+              "voter": "jumo",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_3",
+              "day": 1,
+              "round": "main",
+              "voter": "blacksmith",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_4",
+              "day": 1,
+              "round": "main",
+              "voter": "meosum",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_5",
+              "day": 1,
+              "round": "main",
+              "voter": "yakcho",
+              "target": "jumo"
+            }
+          ],
+          "locks": [
+            {
+              "day": 1,
+              "locked": "yakcho",
+              "revealed_possessed": false
+            }
+          ],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            },
+            {
+              "night": 1,
+              "victim": "hunjang"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 2,
+          "reveals_left_today": 0,
+          "talk_used_this_round": false,
+          "divinations": {
+            "1": {
+              "blacksmith": "murky"
+            }
+          },
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "suspect",
+          "defend",
+          "point_contradiction",
+          "explain",
+          "silence"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": []
+    },
+    {
+      "request": {
+        "command_id": "c011",
+        "expected_state_version": 10,
+        "command": {
+          "kind": "suspect",
+          "actor": "mudang",
+          "target": "blacksmith",
+          "addressee": null,
+          "evidence": [
+            {
+              "type": "divination",
+              "record_id": "cl10"
+            }
+          ],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 11,
+        "day": 2,
+        "phase": "vote",
+        "active": [
+          "mudang",
+          "jumo",
+          "blacksmith",
+          "meosum"
+        ],
+        "locked": [
+          "yakcho"
+        ],
+        "missing": [
+          "gwabu",
+          "hunjang"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl07",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 1,
+              "slot": "midnight",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl08",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl09",
+              "speaker": "meosum",
+              "claim_type": "non_sighting",
+              "subject": "meosum",
+              "night": 1,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "deny",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl10",
+              "speaker": "mudang",
+              "claim_type": "divination_reveal",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": null,
+              "place": null,
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": "murky",
+              "day": 2
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            },
+            {
+              "speech_id": "sp06",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "meosum",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "야, 약초꾼 영감님이… 수상합니다요.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp07",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "silence",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "……",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp08",
+              "day": 2,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "reveal_divination",
+              "target": "blacksmith",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [
+                "cl10"
+              ],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "간밤 대장장이의 점괘는 탁함이었소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp09",
+              "day": 2,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "mudang",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "저 무당이 오고 나서부터 사람이 사라지오!",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp10",
+              "day": 2,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "blacksmith",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "divination",
+                  "record_id": "cl10"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "대장장이, 자네 점괘가 탁하네.",
+              "render_job_id": null
+            }
+          ],
+          "votes": [
+            {
+              "vote_id": "v1_0",
+              "day": 1,
+              "round": "main",
+              "voter": "mudang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_1",
+              "day": 1,
+              "round": "main",
+              "voter": "hunjang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_2",
+              "day": 1,
+              "round": "main",
+              "voter": "jumo",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_3",
+              "day": 1,
+              "round": "main",
+              "voter": "blacksmith",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_4",
+              "day": 1,
+              "round": "main",
+              "voter": "meosum",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_5",
+              "day": 1,
+              "round": "main",
+              "voter": "yakcho",
+              "target": "jumo"
+            }
+          ],
+          "locks": [
+            {
+              "day": 1,
+              "locked": "yakcho",
+              "revealed_possessed": false
+            }
+          ],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            },
+            {
+              "night": 1,
+              "victim": "hunjang"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 2,
+          "reveals_left_today": 0,
+          "talk_used_this_round": false,
+          "divinations": {
+            "1": {
+              "blacksmith": "murky"
+            }
+          },
+          "notebook": {}
+        },
+        "legal_kinds": [
+          "vote"
+        ],
+        "awaiting": "mudang",
+        "runoff_candidates": [],
+        "result": null,
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "speech_made",
+          "day": 2,
+          "phase": "round2",
+          "payload": {
+            "speech_id": "sp10"
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "command_id": "c012",
+        "expected_state_version": 11,
+        "command": {
+          "kind": "vote",
+          "actor": "mudang",
+          "target": "blacksmith",
+          "addressee": null,
+          "evidence": [],
+          "interrogation_kind": null,
+          "divination": null,
+          "night_plan": null,
+          "night": null,
+          "slot": null
+        }
+      },
+      "view": {
+        "game_id": "g_base6_001",
+        "state_version": 12,
+        "day": 2,
+        "phase": "ended",
+        "active": [
+          "mudang",
+          "jumo",
+          "meosum"
+        ],
+        "locked": [
+          "yakcho",
+          "blacksmith"
+        ],
+        "missing": [
+          "gwabu",
+          "hunjang"
+        ],
+        "public": {
+          "claims": [
+            {
+              "claim_id": "cl01",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl02",
+              "speaker": "hunjang",
+              "claim_type": "whereabouts",
+              "subject": "hunjang",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl03",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 0,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl04",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl05",
+              "speaker": "meosum",
+              "claim_type": "sighting",
+              "subject": "meosum",
+              "night": 0,
+              "slot": "evening",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [
+                "hunjang",
+                "jumo"
+              ],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl06",
+              "speaker": "yakcho",
+              "claim_type": "whereabouts",
+              "subject": "yakcho",
+              "night": 0,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 1
+            },
+            {
+              "claim_id": "cl07",
+              "speaker": "jumo",
+              "claim_type": "whereabouts",
+              "subject": "jumo",
+              "night": 1,
+              "slot": "midnight",
+              "place": "tavern",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl08",
+              "speaker": "blacksmith",
+              "claim_type": "whereabouts",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": "midnight",
+              "place": "home",
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl09",
+              "speaker": "meosum",
+              "claim_type": "non_sighting",
+              "subject": "meosum",
+              "night": 1,
+              "slot": "midnight",
+              "place": "well",
+              "polarity": "deny",
+              "seen": [],
+              "corrects": null,
+              "divination_result": null,
+              "day": 2
+            },
+            {
+              "claim_id": "cl10",
+              "speaker": "mudang",
+              "claim_type": "divination_reveal",
+              "subject": "blacksmith",
+              "night": 1,
+              "slot": null,
+              "place": null,
+              "polarity": "affirm",
+              "seen": [],
+              "corrects": null,
+              "divination_result": "murky",
+              "day": 2
+            }
+          ],
+          "speeches": [
+            {
+              "speech_id": "sp01",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "hunjang",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp02",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "jumo",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "claim",
+                  "record_id": "cl03"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "주모의 한밤 행적이 미덥지 않소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp03",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "jumo",
+              "kind": "explain",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "나는 귀신과 상관없소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp04",
+              "day": 1,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "약초꾼이 수상하오.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp05",
+              "day": 1,
+              "phase": "interrogation",
+              "speaker": "jumo",
+              "kind": "interrogate",
+              "target": null,
+              "addressee": "mudang",
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": "evade",
+              "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+              "line_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+              "render_job_id": "job_001"
+            },
+            {
+              "speech_id": "sp06",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "meosum",
+              "kind": "suspect",
+              "target": "yakcho",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "야, 약초꾼 영감님이… 수상합니다요.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp07",
+              "day": 1,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "silence",
+              "target": null,
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "……",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp08",
+              "day": 2,
+              "phase": "round1",
+              "speaker": "mudang",
+              "kind": "reveal_divination",
+              "target": "blacksmith",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [
+                "cl10"
+              ],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "간밤 대장장이의 점괘는 탁함이었소.",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp09",
+              "day": 2,
+              "phase": "round1",
+              "speaker": "blacksmith",
+              "kind": "suspect",
+              "target": "mudang",
+              "addressee": null,
+              "evidence": [],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "저 무당이 오고 나서부터 사람이 사라지오!",
+              "render_job_id": null
+            },
+            {
+              "speech_id": "sp10",
+              "day": 2,
+              "phase": "round2",
+              "speaker": "mudang",
+              "kind": "suspect",
+              "target": "blacksmith",
+              "addressee": null,
+              "evidence": [
+                {
+                  "type": "divination",
+                  "record_id": "cl10"
+                }
+              ],
+              "claim_ids": [],
+              "reaction": null,
+              "fact_sentence": null,
+              "line_text": "대장장이, 자네 점괘가 탁하네.",
+              "render_job_id": null
+            }
+          ],
+          "votes": [
+            {
+              "vote_id": "v1_0",
+              "day": 1,
+              "round": "main",
+              "voter": "mudang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_1",
+              "day": 1,
+              "round": "main",
+              "voter": "hunjang",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_2",
+              "day": 1,
+              "round": "main",
+              "voter": "jumo",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_3",
+              "day": 1,
+              "round": "main",
+              "voter": "blacksmith",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_4",
+              "day": 1,
+              "round": "main",
+              "voter": "meosum",
+              "target": "yakcho"
+            },
+            {
+              "vote_id": "v1_5",
+              "day": 1,
+              "round": "main",
+              "voter": "yakcho",
+              "target": "jumo"
+            },
+            {
+              "vote_id": "v2_0",
+              "day": 2,
+              "round": "main",
+              "voter": "mudang",
+              "target": "blacksmith"
+            },
+            {
+              "vote_id": "v2_1",
+              "day": 2,
+              "round": "main",
+              "voter": "jumo",
+              "target": "blacksmith"
+            },
+            {
+              "vote_id": "v2_2",
+              "day": 2,
+              "round": "main",
+              "voter": "meosum",
+              "target": "blacksmith"
+            },
+            {
+              "vote_id": "v2_3",
+              "day": 2,
+              "round": "main",
+              "voter": "blacksmith",
+              "target": "mudang"
+            }
+          ],
+          "locks": [
+            {
+              "day": 1,
+              "locked": "yakcho",
+              "revealed_possessed": false
+            },
+            {
+              "day": 2,
+              "locked": "blacksmith",
+              "revealed_possessed": true
+            }
+          ],
+          "disappearances": [
+            {
+              "night": 0,
+              "victim": "gwabu"
+            },
+            {
+              "night": 1,
+              "victim": "hunjang"
+            }
+          ],
+          "confessions": [],
+          "tells": []
+        },
+        "player": {
+          "interrogations_left": 2,
+          "reveals_left_today": 0,
+          "talk_used_this_round": false,
+          "divinations": {
+            "1": {
+              "blacksmith": "murky"
+            }
+          },
+          "notebook": {}
+        },
+        "legal_kinds": [],
+        "awaiting": null,
+        "runoff_candidates": [],
+        "result": {
+          "winner": "village",
+          "reason": "all_possessed_locked",
+          "day": 2,
+          "completed": true
+        },
+        "names": {
+          "hunjang": "훈장",
+          "jumo": "주모",
+          "blacksmith": "대장장이",
+          "meosum": "머슴",
+          "yakcho": "약초꾼",
+          "gwabu": "과부"
+        },
+        "pending_render_jobs": [],
+        "speech_groups": []
+      },
+      "events": [
+        {
+          "event_type": "votes_revealed",
+          "day": 2,
+          "phase": "vote",
+          "payload": {
+            "round": "main"
+          }
+        },
+        {
+          "event_type": "lock_resolved",
+          "day": 2,
+          "phase": "vote",
+          "payload": {
+            "locked": "blacksmith",
+            "revealed_possessed": true,
+            "end": "all_possessed_locked"
+          }
+        },
+        {
+          "event_type": "game_ended",
+          "day": 2,
+          "phase": "ended",
+          "payload": {
+            "winner": "village",
+            "reason": "all_possessed_locked"
+          }
+        }
+      ]
+    }
+  ]
+}

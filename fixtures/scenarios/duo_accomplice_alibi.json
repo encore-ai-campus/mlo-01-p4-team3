@@ -1,0 +1,72 @@
+{
+  "scenario_id": "duo_accomplice_alibi",
+  "description": "창귀 2명(9인). 실행자 대장장이, 비실행 공범 퇴기는 주막에서 목격됨 → '실행자 아님'까지만.",
+  "preset_id": "duo9",
+  "source": "scripted",
+  "setup": {
+    "assignment": "fixtures/assignment/valid_duo9.json"
+  },
+  "steps": [],
+  "checks": [
+    {
+      "type": "alibi",
+      "input": {
+        "n_possessed": 2
+      },
+      "expect": {
+        "proposition_kind": "not_executor"
+      },
+      "note": ""
+    },
+    {
+      "type": "alibi",
+      "input": {
+        "n_possessed": 1
+      },
+      "expect": {
+        "proposition_kind": "not_possessed"
+      },
+      "note": ""
+    },
+    {
+      "type": "assignment",
+      "input": {
+        "preset_id": "duo9",
+        "assignment": "fixtures/assignment/valid_duo9.json"
+      },
+      "expect": {
+        "violations": []
+      },
+      "note": ""
+    },
+    {
+      "type": "end_check",
+      "input": {
+        "g": 2,
+        "v": 2,
+        "mudang_active": true,
+        "mudang_locked": false
+      },
+      "expect": {
+        "reason": null,
+        "night_runs": true
+      },
+      "note": "창귀2 + 주민2 + 무당: 아직 창귀 승리 아님"
+    },
+    {
+      "type": "end_check",
+      "input": {
+        "g": 2,
+        "v": 1,
+        "mudang_active": true,
+        "mudang_locked": false
+      },
+      "expect": {
+        "reason": "possessed_parity",
+        "winner": "changgwi",
+        "night_runs": false
+      },
+      "note": ""
+    }
+  ]
+}
