@@ -413,8 +413,8 @@ flowchart LR
 - LLM VM의 vCPU는 호스트 물리 코어 수를 넘기지 않는다(초과 할당은 오히려 느려진다).
 - 대안: 그 노트북의 Windows에서 llama.cpp를 직접 실행한다(가상화 오버헤드 없음). 11/5 벤치마크에서 VM 실행과 비교한다.
 
-- 기록된 설치 버전(재확인 필요): Ubuntu 26.04, 시스템 Python 3.14.4, Spark 4.1.3·Hadoop 3.4.2·OpenJDK 21, Delta Spark 4.4.1, Kafka KRaft 3대, Prometheus 3.15.0, Grafana 13.2.4.
-- 시스템 Python 3.14에서 ML·LLM 라이브러리(PyTorch, transformers, LightGBM 등)의 지원은 미확인이다. ML·LLM 작업은 Python 3.12 가상환경 또는 컨테이너로 분리하는 것을 권장안으로 두고, 11/5에 확인한다.
+- 기록된 설치 버전(재확인 필요): Ubuntu 26.04, 시스템 Python 3.14.6(11/4 PM 노트북 실측), Spark 4.1.3·Hadoop 3.4.2·OpenJDK 21, Delta Spark 4.4.1, Kafka KRaft 3대, Prometheus 3.15.0, Grafana 13.2.4.
+- 시스템 Python 3.14에서 ML·LLM 라이브러리(PyTorch, transformers, LightGBM, llama-cpp-python, pyspark)의 지원은 미확인이다. **3.14에서 먼저 실측하고, 실패한 패키지만 Python 3.12 가상환경으로 분리**한다(`contracts/tech_stack.md`, C-05-03 조건 2, 11/4 PM 결정).
 - 사용자 테스트 중에는 llm-01(LLM)·ad-01(광고)·app-01(웹)에 학습 작업을 올리지 않는다. 학습·시뮬레이션은 nifi-01과 k3s 노드에서 돌린다.
 
 ---

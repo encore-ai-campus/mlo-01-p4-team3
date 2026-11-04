@@ -4,7 +4,7 @@
 - 원본 우선순위: 태스크 문서(`docs/tasks/*.md`)의 산출물 경로 > 이 문서. 둘이 다르면 태스크 문서를 따르고 이 문서를 고친다.
 - 계층 규칙과 의존 방향: [루트 README "계층과 의존 방향"](../../README.md#계층과-의존-방향). 이 문서는 위치만 적는다.
 - 영역 사이 호출 방법: [integration.md](integration.md).
-- 표기: `(있음)` = 11/4 기준 저장소에 있음. `[ID]` = 그 태스크가 만든다. `(제안)` = 태스크에 없는 경로라 PM 승인 전까지 확정이 아니다(아래 "결정 필요").
+- 표기: `(있음)` = 11/4 기준 저장소에 있음. `[ID]` = 그 태스크가 만든다. `결정 #N` = 11/4 PM 영역 간 호출 결정([integration.md 7절](integration.md#7-114-pm-결정-영역-간-호출-19건))으로 태스크에 더한 경로.
 
 ## 1. 전체 트리
 
@@ -40,13 +40,14 @@ paldo/
 │  │  ├─ outbox_publisher.py       [C-06-02]
 │  │  ├─ llm_renderer.py           LineRenderer 구현 [E-07-01]
 │  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03]
-│  │  ├─ ad_client.py              AdProvider HTTP 구현 (제안, 결정 필요 #6)
-│  │  └─ model_selector.py         ModelSelector 실제 구현 (제안, 결정 필요 #5)
+│  │  ├─ ad_client.py              AdProvider HTTP 구현 [B-08-03] 결정 #6
+│  │  └─ model_selector.py         ModelSelector 최소 구현 [D-08-04] → 카나리아·고정 [B-09-01], 레지스트리 [C-09-01] 결정 #5
 │  └─ tests/                       Django 테스트: test_api.py [B-05-02], test_idempotency.py [B-06-02]
 ├─ web/
 │  └─ templates/                   meeting.html와 htmx 조각 [B-05-03], 이후 화면 [B-06-01 …]
 │
 ├─ ads/                            광고 서버 · D (별도 Django 서비스, ad-01)
+│  ├─ manage.py, project/          광고 서버 전용 Django 설정·URL [D-05-03] 결정 #1
 │  ├─ domain/                      model.py, rules.py, events.py (있음)
 │  ├─ app/                         serve.py, beacon.py, click.py [D-05-03]
 │  │                               expire_reservations.py, refund_consumer.py [D-06-02]
@@ -69,6 +70,7 @@ paldo/
 │
 ├─ pipeline/                       데이터 파이프라인 · C
 │  ├─ topics.yaml, consumers/      [C-06-02]
+│  ├─ sinks/kafka_sink.py          시뮬레이터용 EventSink Kafka 구현 [C-08-03] 결정 #10
 │  ├─ spark/                       ingest_bronze.py, build_silver.py, join_labels.py [C-07-01]
 │  │                               ads_silver.py, ads_gold.py, ads_reconcile.py [C-08-02]
 │  └─ README.md                    집계 정의 [C-07-01, C-08-02]
@@ -95,6 +97,7 @@ paldo/
 │  │  tasks_md.py, tasks_to_issues.py, hours_report.py   (있음)
 │  ├─ check_evidence.py, check_docs.py, check_secrets.py, secrets_allowlist.txt, evidence_result.py [E-05-02]
 │  ├─ run_engine_games.py, check_handoff_a06.py [A-06-03], optimize_decision.py [A-08-03]
+│  ├─ load_content.py [C-06-01] 결정 #8, replay_progress.py [C-09-04] 결정 #19
 │  ├─ reconcile_game_events.py [C-07-02], ml_gate.py [C-09-01], privacy_delete.py, privacy_retention.py [C-09-02]
 │  ├─ ad_traffic_sim.py [D-06-03], ad_scenarios.py [D-08-02], demo_retrain.sh [D-10-01]
 │  ├─ perf/                        engine_bench.py [A-05-01], vm_probe.sh [C-05-01], api_bench.py [B-06-02], ad_fault_test.py [B-08-03]
@@ -118,11 +121,11 @@ paldo/
 | `server/app/` | 응용 | B | app-01 |
 | `server/infra/` | 인프라 | C(저장소·발행기·조회), E(LLM 렌더러), B(광고 HTTP 클라이언트·모델 선택 적용) | app-01 |
 | `ads/` | 광고 서버 전 계층 | D | ad-01 |
-| `intent/`, `ml/` | 인프라(모델) | D | 추론은 app-01(게임 웹과 같은 프로세스인지는 결정 필요 #4), 학습은 nifi-01·k3s |
+| `intent/`, `ml/` | 인프라(모델) | D | 추론은 app-01(게임 웹과 같은 프로세스로 먼저 시험, 결정 #4), 학습은 nifi-01·k3s |
 | `llm/` | 인프라(별도 서비스) | E | llm-01(또는 노트북 3 Windows 직접 실행) |
 | `pipeline/` | 인프라(배치) | C | spark-master-01, spark-worker-01 |
 | `ops/` | 배포·관측 설정 | C | 각 VM |
-| `content/` | 데이터 | E | Mongo에 적재해 사용(결정 필요 #8) |
+| `content/` | 데이터 | E | `tools/load_content.py`로 Mongo에 적재해 사용(결정 #8) |
 | `contracts/`, `fixtures/` | 계약·생성물 | 공용 | - |
 | `tools/` | 도구 | 공용 | 개발 PC, Bastion |
 
@@ -155,17 +158,18 @@ VM 이름과 배치의 원본은 기획서 6.3이다. 실제 노트북 대응은
 
 - 새 테스트 폴더에는 빈 `__init__.py`를 둔다. 없으면 unittest가 그 폴더를 건너뛴다.
 - 테스트 파일 이름은 `test_*.py`다.
-- 태스크가 정한 위치는 `tests/infra/`(Mongo, C-06-01), `tests/ads/`(광고 Django·MySQL, D-05-03·D-06-02), `server/tests/`(게임 Django)다. 그런데 CI `core`는 서비스 없이 `tests/` 전체를 discover하고, CI `django` 예시는 `server/tests/`만 돈다(E-05-02 워크플로 예시). 그대로 두면 `tests/infra/`·`tests/ads/`는 `core`에서 import 단계부터 실패하고 서비스 CI에서는 돌지 않는다. 처리 방법은 결정 필요 #12.
+- 태스크가 정한 위치는 `tests/infra/`(Mongo, C-06-01), `tests/ads/`(광고 Django·MySQL, D-05-03·D-06-02), `server/tests/`(게임 Django)다. 그런데 CI `core`는 서비스 없이 `tests/` 전체를 discover하고, CI `django` 예시는 `server/tests/`만 돈다(E-05-02 워크플로 예시). 그래서 `core`는 `tests/infra/`·`tests/ads/`를 discover에서 빼고(그 폴더의 `load_tests`가 `PALDO_SERVICE_TESTS` 없으면 빈 묶음), 서비스 CI 작업이 세 폴더를 경로별로 실행한다(결정 #12, E-05-02).
 
-## 5. 결정 필요 (이 문서 관련)
+## 5. 11/4 PM 결정 (이 문서 관련)
 
-번호는 [integration.md 7절](integration.md#7-결정-필요) 표와 같다. 여기서는 위치에 관한 것만 요약한다.
+번호는 [integration.md 7절](integration.md#7-114-pm-결정-영역-간-호출-19건) 표와 같다. 여기서는 위치에 관한 것만 요약한다.
 
-| # | 항목 | 추천 |
+| # | 항목 | 결정 |
 |---|---|---|
 | 1 | 광고 서버 Django 프로젝트 위치 | `ads/project/`(settings·urls) + `ads/manage.py`. 게임 웹 프로젝트와 설정을 공유하지 않는다 |
 | 5 | `ModelSelector` 실제 구현 파일 | `server/infra/model_selector.py` |
 | 6 | `AdProvider` HTTP 클라이언트 파일 | `server/infra/ad_client.py` |
 | 8 | 콘텐츠 적재 도구 | `tools/load_content.py` |
 | 10 | 시뮬레이터 Kafka `EventSink` | `pipeline/sinks/kafka_sink.py` |
+| 19 | 진척 재처리 도구 | `tools/replay_progress.py`(C-09-04) |
 | 12 | 외부 서비스가 필요한 테스트 실행 | `core`에서 제외하고 서비스 CI에서 경로별로 명시 실행(integration.md 7절 #12) |

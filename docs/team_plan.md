@@ -63,7 +63,7 @@
 | 흐름 | 필요한 입력 | 그동안 쓰는 가짜 | 진짜로 교체 |
 |---|---|---|---|
 | A | 콘텐츠 | `fixtures/content_min` | 11/6 E의 초안, 11/8 확장분 |
-| A | 의심 모델, LLM, 저장소 | `engine/testing/fakes.py` | 11/8 모델 v0, 11/9 LLM |
+| A | 의심 모델, LLM, 저장소 | `engine/testing/fakes.py` | 11/8 모델 v0, 11/7 LLM(E-07-01 인계 → B-07-01 7번, 11/4 PM 결정) |
 | B | 엔진 응답 | 녹화 판 픽스처, 가짜 엔진 | 11/7 통합 1 |
 | B | 의도 해석기 | 가짜 해석기(규칙) | 11/7 기준선, 11/9 BERT |
 | C | 이벤트 | `fixtures/events`, `tools/gen_synthetic.py` | 11/6 실제 엔진 이벤트 |

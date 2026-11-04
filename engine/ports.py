@@ -133,6 +133,8 @@ class RenderResult:
     failure_reason: Optional[str] = None
     model_version: str = ""
     prompt_version: str = ""
+    quantization: str = ""       # 양자화 종류(예: Q4_K_M). render_job 이벤트용(11/4 PM 결정 #18)
+    fallback: bool = False       # 화면에 폴백 문장을 썼는지(DONE이 아니면 True)
 
 
 @runtime_checkable

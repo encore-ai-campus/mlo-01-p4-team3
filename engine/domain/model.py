@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 PLAYER_ID = "mudang"  # 플레이어(무당)의 참가자 ID. 주민 NPC ID와 겹치지 않는다.
-CONTRACT_VERSION = "contract-0.2"
+CONTRACT_VERSION = "contract-0.3"
 
 
 # ---------------------------------------------------------------- 열거형

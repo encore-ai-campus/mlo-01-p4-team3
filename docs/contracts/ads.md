@@ -18,6 +18,7 @@
 | `ads/testing/` | 테스트 지원 | `FakeAdProvider` |
 
 - 의존 방향: `ads/web → ads/app → ads/domain`, `ads/infra → ads/domain`.
+- 실행(11/4 PM 결정 #1·#15): 광고 서버는 독립 Django 프로젝트(`ads/project/` 설정·URL, `ads/manage.py`)로 ad-01에서 돈다. 게임 웹 설정과 공유하지 않는다. 예약 만료 해제, 환입 소비자, 광고 아웃박스 발행기는 웹 서버와 별도 프로세스다.
 - 게임 엔진(`engine/`)과 광고는 서로 import하지 않는다. 게임 서버는 `server/app/ads_port.py`의 `AdProvider` 포트만 쓴다. 포트에서 `ads.domain.model`의 요청·응답 DTO만 공유한다.
 
 ## 2. 데이터 모델
@@ -49,6 +50,8 @@
 
 - **serve 토큰**(HMAC-SHA256): serve ID, 세션 가명 ID, 지면, 발급 시각, 만료(30분)를 담는다. 서버가 발급했다는 것만 증명한다. 서명 키는 인프라 비밀 저장소에 두고 저장소에는 넣지 않는다.
 - **비콘**: 브라우저는 광고 면적의 50% 이상이 1초 이상 보였을 때 보낸다.
+- **브라우저 직접 호출**(11/4 PM 결정 #2): 브라우저는 비콘·클릭을 광고 서버 공개 주소(`PALDO_ADS_PUBLIC_URL`)로 직접 보낸다. 비콘은 `navigator.sendBeacon`의 `text/plain` 본문(JSON 문자열)이고 광고 서버가 직접 파싱한다. 비콘·클릭은 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다.
+- 게임 서버의 serve 호출에는 `X-Request-ID`가 붙고, 광고 서버는 그 값을 로그 `request_id`로 남긴다(결정 #14).
 
 ## 4. 경매 (`run_auction`)
 1. **후보 필터**를 통과하지 못하면 `ServeCandidate.filtered`에 사유를 남긴다.
@@ -82,12 +85,13 @@
   - 청구 단가는 0 이상, 최대 입찰가 이하
   - serve의 캠페인·과금 방식이 캠페인과 일치
 - **귀속일**은 serve 시각 기준이다.
-- **환입**: 확정 뒤 silver가 무효로 다시 판정하면, 원래 행은 그대로 두고 음수 환입 행(`:refund`)을 추가한다.
+- **환입**: 확정 뒤 silver가 무효로 다시 판정하면, 원래 행은 그대로 두고 음수 환입 행(`:refund`)을 추가한다. 재판정 결과는 `ad.rejudge` 토픽으로 오고 환입 소비자가 처리한다(events.md 5절, 11/4 PM 결정 #11).
 - **저장**: 예약, 확정, 해제, 환입과 이벤트 아웃박스 행은 **같은 MySQL 트랜잭션**으로 Primary에 쓴다. 발행기가 Kafka로 보낸다.
 - **페이싱**(`next_pacing_probability`):
   - 소진액은 확정과 예약을 합한 값이다.
   - 목표 곡선은 균등 또는 트래픽 비례다.
   - 참여 확률은 0.05~1.0 범위이고, 5분마다 조정하며, 한 번의 조정 폭은 ±0.2다.
+- **갱신 값 반영**(11/4 PM 결정 #9): CTR, 페이싱 계수, 자동 입찰가는 갱신 작업이 MySQL에 버전 행(`ctr_version`, `policy_version`, `bid_version`)으로 쓰고, 광고 서버가 60초마다 다시 읽어 메모리 캐시를 바꾼다. 광고 서버를 다시 띄워도 최신 버전 행을 읽는다.
 
 ## 6. 유효 판정 (pending → valid / invalid)
 

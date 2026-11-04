@@ -76,12 +76,13 @@
 - 2.5h · 산출물: `.github/workflows/ci.yml`, `tools/check_evidence.py`, `tools/check_docs.py`, `tools/check_secrets.py`, `tools/secrets_allowlist.txt`, `tools/evidence_result.py`
 - 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-05-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ci`](../modules/ci.md)는 그날 일괄 갱신(E-05-05)
 - 완료 조건:
-  1. PR마다 필수 체크 4개(README 3절 ②): `core`(Python 3.12. 엔진·계약·도구 코드는 3.12·3.14 겸용이라 잠정값이며, C-05-03 결과로 PM이 ML·LLM 버전을 정하면 같은 값으로 바꾼다, `python -m unittest discover -s tests -t .`, `python -m tools.check_secrets`), `django`(Mongo·MySQL 서비스 컨테이너 + `python manage.py test`; `server/manage.py`가 생기기 전에는 "건너뜀" 대신 실패하지 않는 빈 단계로 두고, B-05-01 병합과 함께 실제 실행으로 바꿈), `evidence`(아래 3번), `docs`(아래 4번). 네 체크를 `main` 보호 규칙의 필수 체크로 등록.
+  1. PR마다 필수 체크 4개(README 3절 ②): `core`(Python 3.12. 엔진·계약·도구 코드는 3.12·3.14 겸용이라 잠정값이며, C-05-03 결과로 PM이 ML·LLM 버전을 정하면 같은 값으로 바꾼다, `python -m unittest discover -s tests -t .`, `python -m tools.check_secrets`), `django`(Mongo·MySQL 서비스 컨테이너 + `python manage.py test`; `server/manage.py`가 생기기 전에는 "건너뜀" 대신 실패하지 않는 빈 단계로 두고, B-05-01 병합과 함께 실제 실행으로 바꿈), `evidence`(아래 3번), `docs`(아래 4번). 네 체크를 `main` 보호 규칙의 필수 체크로 등록. 테스트 경로(11/4 PM 결정 #12): `core`는 외부 서비스가 필요한 `tests/infra/`·`tests/ads/`를 discover에서 뺀다(예: 그 폴더의 `__init__.py`에 `load_tests`를 두어 `PALDO_SERVICE_TESTS` 환경 변수가 없으면 빈 묶음 반환). `django` 작업이 서비스 컨테이너와 그 변수를 주고 `tests/infra/`, `tests/ads/`, `server/tests/`를 경로별로 따로 실행한다. 광고 테스트는 `ads/project` 설정(결정 #1)으로 돈다.
   2. `check_evidence`: `--format`은 README 4절 양식 제목이 모두 있고(`## 검수`는 `[검수]` 태스크만), `- 작성자(흐름):` 값이 A~E·S 중 하나이며, `- 실제 소요 시간(h):` 값이 숫자 형식인지만 본다(`상태: 실패` 문서도 통과). `--complete <ID>`는 README 4절 "검사 규칙" 1~6을 모두 검사한다(조건 번호 누락, 통과 아님, `상태: 실패`, 결과 JSON과 다른 측정값·단위, 해석할 수 없는 기준 칸, 없는 커밋 SHA, 검수 기록 누락·검수자 흐름 = 작성자 흐름, **문서화 검사(`check_docs --task <ID>`) 실패**면 실패). 결과 JSON·기준 문법·반올림 대조는 README 4절 "결과 JSON 형식"·"수치 표 작성 규칙"을 그대로 따른다. `--all --until <날짜>`는 예정일이 그 날짜까지인 태스크 전부를 `--complete`로 검사(GitHub 조회 없음). `tools/evidence_result.py`의 `write_result(task, name, metrics, source)`는 4절 형식의 결과 JSON을 쓰고 `commit`·`generated_at`을 채운다. 규칙마다 실패 사례 자체 테스트 포함.
   3. `evidence` 체크(PR 본문 연결, README 11절 "PR과 이슈 잇기"): `--pr-body-env PR_BODY`로 환경 변수에서 본문을 읽는다. `Task:` 줄이 정확히 1개, ID가 1개이고 태스크 문서에 있어야 한다(없거나 여러 개면 실패). 연결 줄은 `Closes #` 또는 `Refs #` 중 정확히 하나(둘 다·둘 다 없음·다른 닫기 키워드 `Fixes`/`Resolves` 등이면 실패). `Closes #`면 그 ID로 `check_evidence --complete`, `Refs #`면 `--changed <base>`로 PR base 커밋 이후 바뀐 증빙에 `--format`만 돌린다. push 이벤트에서는 PR 본문 검사를 하지 않고 `--changed <github.event.before>`로 바뀐 증빙의 `--format`만 돌린다. 본문의 `실제 소요 시간(h):` 줄이 없거나 숫자 형식이 아니면 실패(`Task: P-xx`는 제외). `Task: P-xx`(결정 대기)는 README 7절 "확정된 결정"에 그 ID가 기록됐는지만 본다. 이 체크가 실패하면 병합이 막히므로, 이슈는 `--complete`를 통과한 PR의 병합으로만 닫힌다.
   4. `check_docs`(README 10절 검사 규칙 1~6, 태스크 정보는 `tools/tasks_md.py`로 읽는다): `--task <ID>`는 트러블 항목(규칙 1), 그 태스크에 "모듈 문서 일괄 갱신" 줄이 있으면 줄에 적힌 모듈 문서의 필수 절과 대상 태스크마다 그날 날짜(태스크 예정일, README 10절)의 `변경 이력` 행(규칙 2, "코드를 바꿨다면" 태스크는 그 증빙 커밋이 모듈 코드를 바꿨을 때만), 문서 산출 태스크의 제목 규칙(규칙 3)을 검사. `--all --until <날짜>`는 "완료된 태스크"(README 10절 정의: 증빙 있음, `상태: 실패` 없음, 통과 칸 전부 "예". `check_evidence`를 부르지 않고 GitHub도 조회하지 않음)인 구현 태스크마다 `변경 이력` 행이 있는지(규칙 4). `--diff <base>`는 PR 변경분에 대해 공개 함수·클래스 docstring, 계약 파일 ↔ 계약 문서 동시 변경, 새 폴더 ↔ `paldo/README.md` 동시 변경을 검사. 규칙마다 실패 사례 자체 테스트 포함.
   5. `check_secrets`(11/4 PM 결정으로 규칙 확정. 원래 문구는 이 저장소에서 오탐이 나서 아래로 대체): 검사 대상은 **Git이 추적하는 텍스트 파일만**(`git ls-files`, 바이너리 제외, `tests/fixtures/secrets/`는 제외). 아래 셋 중 하나를 찾으면 실패하고, 파일:줄과 이유를 출력한다.
-     - 사설 IP 대역(10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+     - 사설 IP 대역(10/8, 172.16/12, 192.168/16 대역의 점 네 개 IPv4 주소)
+     - 검출 규칙: 점 네 개로 된 IPv4 주소 중 위 대역에 드는 것. 문서에 대역을 적을 때는 점 네 개 형식을 쓰지 않는다(예외 목록은 키 이름용이라 IP를 예외로 넣을 수 없다).
      - 개인 키 헤더(`-----BEGIN … PRIVATE KEY-----`)
      - **비밀 키 이름 + 문자열 값**: 키 이름을 `_`·`-`·`.`·camelCase 경계로 나눈 **마지막 조각**이 `password`, `passwd`, `pwd`, `secret`, `token`, `apikey`, `credential(s)` 중 하나이거나, 마지막 두 조각이 `api_key`, `access_key`, `private_key`, `secret_key`, `signing_key`, `hmac_key` 중 하나다(부분 문자열 일치가 아니다. 게임 용어 `secret_id`, `secrets`, `TOKEN_TTL_MS`는 대상이 아니다). 값은 따옴표 문자열 리터럴, 또는 줄 전체가 `KEY=값`·`KEY: 값` 형태인 따옴표 없는 값만 본다(타입 표기·변수·함수 호출은 대상이 아니다).
      - 허용: 빈 값, `${VAR}`, `<자리표시자>`, `{`가 들어간 템플릿 값과 f-string, 그리고 **예외 목록 `tools/secrets_allowlist.txt`**의 항목.
@@ -120,6 +121,10 @@ jobs:
         with: { python-version: "3.12" }
       - run: pip install -r server/requirements.txt
       - run: cd server && python manage.py test
+      - run: python -m unittest discover -s tests/infra -t .
+        env: { PALDO_SERVICE_TESTS: "1", PALDO_MONGO_URI: "mongodb://localhost:27017/?directConnection=true" }
+      - run: python -m unittest discover -s tests/ads -t .
+        env: { PALDO_SERVICE_TESTS: "1", DJANGO_SETTINGS_MODULE: "ads.project.settings" }
   evidence:
     runs-on: ubuntu-latest
     steps:
@@ -219,10 +224,10 @@ jobs:
 - 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-07-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`llm`](../modules/llm.md)는 그날 일괄 갱신(E-07-05)
 - 산출물: `llm/service/`(HTTP 서비스), `llm/graph.py`(LangGraph: 요청 → 프롬프트 → 생성 → 검증 → 폴백), `server/infra/llm_renderer.py`(`LineRenderer` 구현, C와 협의)
 - 완료 조건:
-  1. `LineRenderer` 계약(ports.md 4절) 준수: 수명주기 6상태, `deadline_ms` 초과 시 실제 생성 취소(llama.cpp 요청 중단 확인 로그), 판 단계가 넘어가면 취소, 늦은 결과 `discarded`.
+  1. `LineRenderer` 계약(ports.md 4절) 준수: 수명주기 6상태, `deadline_ms` 초과 시 실제 생성 취소(llama.cpp 요청 중단 확인 로그), 판 단계가 넘어가면 취소, 늦은 결과 `discarded`. 전송(11/4 PM 결정 #3·#14): `server/infra/llm_renderer.py`가 `POST /v1/renders`(`RenderRequest` JSON → 202), `GET /v1/renders/{job_id}`(`RenderResult` JSON), `POST /v1/renders/{job_id}/cancel`(→ 204)로 서비스를 부른다. 서비스에 작업이 없으면(재시작 등, 404) `failed`로 본다. `X-Request-ID`를 넘기고 서비스 로그에 같은 값을 남긴다.
   2. 큐 우선순위(캐묻기 0 > 복기 1 > 운영 분석 2).
   3. 지표: `paldo_llm_queue_wait_seconds`, `paldo_llm_render_duration_seconds{stage}`, `paldo_llm_render_total{status}`(done/timeout/failed/cancelled/discarded).
-  4. `render_job` 이벤트(`paldo.llm`)에 모델·양자화·프롬프트 버전, 대기·생성 시간, 실패 사유, 폴백 여부.
+  4. `render_job` 이벤트(`paldo.llm`)에 모델·양자화·프롬프트 버전, 대기·생성 시간, 실패 사유, 폴백 여부. 양자화 버전과 폴백 여부는 `RenderResult.quantization`·`fallback`(계약 contract-0.3)으로 응용에 넘기고, 이벤트 기록은 응용이 한다(B-07-01 7번, 11/4 PM 결정 #18).
 - 근거: 기획서 7.2, 7.3
 
 ### E-07-02 사전 테스트 운영
@@ -314,14 +319,14 @@ jobs:
 - 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-10-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`llm`](../modules/llm.md)는 그날 일괄 갱신(E-10-07)
 - 인계: 12:00까지 해설 응답 형식(폴링 API의 JSON)과 샘플 → B-10-01
 - 완료 조건:
-  1. `review_trace`의 이유 코드·근거 ID만으로 해설 생성(사후 합리화 금지: 해설에 나온 근거 ID가 모두 `review_trace`에 있는지 검사), 실패 시 템플릿 해설. 판 20개에서 검사 통과율·지연 p95 기록.
+  1. `review_trace`의 이유 코드·근거 ID만으로 해설 생성(사후 합리화 금지: 해설에 나온 근거 ID가 모두 `review_trace`에 있는지 검사), 실패 시 템플릿 해설. 판 20개에서 검사 통과율·지연 p95 기록. 해설은 추궁 답변과 같은 렌더 경로(`LineRenderer`, 우선순위 1)와 화면 폴링(`/games/{id}/renders/{job_id}`)을 재사용한다(11/4 PM 결정 #17). 응답 형식이 달라야 하면 api.md를 고치는 계약 변경으로 한다.
   2. 검수자(A)가 해설 10개를 기준표(근거를 반대로 설명하지 않음, `review_trace`에 없는 인과를 만들지 않음)로 판정. 위반이 있으면 프롬프트·검증기 수정 후 다시 10개.
 - 근거: 기획서 7.1(복기)
 
 ### E-10-02 운영 분석 에이전트
 - 2.5h · 선행: C-10-03
 - 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-10-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`llm`](../modules/llm.md)는 그날 일괄 갱신(E-10-07)
-- 완료 조건: LangGraph 에이전트가 C의 조회 인터페이스(읽기 전용)로 지표를 읽고 밸런스·콘텐츠 개선안 리포트를 생성(비동기, 우선순위 2). 리포트의 모든 수치가 조회 결과와 일치하는지 검사(불일치 0건). 실행 3회 결과를 `docs/reports/ops_agent/`에.
+- 완료 조건: LangGraph 에이전트가 C의 조회 인터페이스(읽기 전용)로 지표를 읽고 밸런스·콘텐츠 개선안 리포트를 생성(비동기, 우선순위 2). 리포트의 모든 수치가 조회 결과와 일치하는지 검사(불일치 0건). 실행 3회 결과를 `docs/reports/ops_agent/`에. 실행(11/4 PM 결정 #13): k3s Job으로 돌리고 생성은 LLM 서비스 우선순위 2로 요청한다. 사용자 테스트·시연 시간대에는 실행하지 않는다(C-05-02 실행 시간표에 표시). 캐묻기와 섞인 부하에서 캐묻기 지연 p95를 함께 기록한다.
 - 근거: 기획서 7.1(운영 분석)
 
 ### E-10-03 설문·플레이 리포트
@@ -412,7 +417,7 @@ jobs:
 | 1 | 프리셋별 리포트(시드·판 수·정책·콘텐츠 버전), 6인 판 승률 40~60% | A·D | A-10-01·D-10-03 재생성 |
 | 2 | 확장 콘텐츠·결말·큰 판 화면 | A·B·E | 11인 판 1판 완주, 한풀이 결말 1회 |
 | 3 | 재학습: 데이터 버전·전후 평가, 미달 시 기존 유지, 카나리아·롤백, 밴딧 중복 보상 방지 | D·C | D-10-01·D-11-01 |
-| 4 | **원본·메시지·집계 대조**: 게임(상태 seq 합 = 발행 수 = bronze), 광고(원장 = Delta 건별 대사 불일치 0) | C | 대조표 |
+| 4 | **원본·메시지·집계 대조**: 게임(판별 `next_seq` = 중복 제거 후 고유 발행 건수 = bronze 행 수, PRD 정의), 광고(원장 = Delta 건별 대사 불일치 0) | C | 대조표 |
 | 5 | **중지·재개 정합성**: 발행기·소비자·Spark 중지 후 재개, 유실·중복 0 | C | 대조표 |
 | 6 | **처리량·지연**: 측정 조건(부하, 시간, 데이터 크기)과 결과(게임 API p95, 발행 지연, 배치 시간, LLM p95, 광고 p95) | C·B·E·D | 지표 표 |
 | 7 | **장애 복구**: C-11-01의 6가지 | C | 유실·중복 0, 복구 시간 |
