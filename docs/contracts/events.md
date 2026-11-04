@@ -58,6 +58,7 @@
 | `ad.serve` | `AdServeEvent` | 경매 응답 시점. 노출이 아니다. 광고 없음도 기록한다 |
 | `ad.impression` | `AdImpressionEvent` | 비콘 도착 시점, 또는 클릭이 노출 증거가 된 시점(`implied_by_click`) |
 | `ad.click` | `AdClickEvent` | 클릭 리다이렉트를 지나는 시점 |
+| `ad.rejudge` | silver 재판정 무효 이벤트(원본 `source_event_id`, `charge_id`, `invalid_reason`, `judge_version`) | Spark silver 재판정이 확정 과금 건을 무효로 바꾼 시점(C-08-02). 소비자는 광고 서버 환입 소비자(D-06-02), 11/4 PM 결정 #11 |
 
 - **공통 필드**:
   - 식별: `event_id`(MERGE 키), `request_id`, `serve_id`

@@ -142,13 +142,14 @@ class FakeLineRenderer:
     def poll(self, job_id: str) -> RenderResult:
         req = self.jobs[job_id]
         if job_id in self.cancelled:
-            return RenderResult(job_id, RenderStatus.CANCELLED, None)
+            return RenderResult(job_id, RenderStatus.CANCELLED, None, fallback=True)
         if self.mode == "timeout":
-            return RenderResult(job_id, RenderStatus.TIMEOUT, None, failure_reason="deadline")
+            return RenderResult(job_id, RenderStatus.TIMEOUT, None, failure_reason="deadline", fallback=True)
         if self.mode == "fail":
-            return RenderResult(job_id, RenderStatus.FAILED, None, failure_reason="fake")
+            return RenderResult(job_id, RenderStatus.FAILED, None, failure_reason="fake", fallback=True)
         return RenderResult(job_id, RenderStatus.DONE, f"{req.fact_sentence} …(가짜 표현)",
-                            latency_ms=1, queue_ms=0, model_version="fake-llm", prompt_version="fake")
+                            latency_ms=1, queue_ms=0, model_version="fake-llm", prompt_version="fake",
+                            quantization="fake", fallback=False)
 
     def cancel(self, job_id: str) -> None:
         self.cancelled.add(job_id)
