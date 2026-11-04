@@ -32,20 +32,21 @@ paldo/
 │
 ├─ server/                         게임 웹 Django 프로젝트 · B (infra는 C·E)
 │  ├─ manage.py                    [B-05-01]
-│  ├─ paldo_web/                   settings.py, middleware.py [B-05-01]
+│  ├─ paldo_web/                   settings.py, middleware.py [B-05-01], asgi.py(HTTP·웹소켓 분기) [B-07-05]
 │  ├─ accounts/                    계정(표현·인프라): models.py(계정·가명), validators.py(비밀번호 규칙), lockout.py(5회 실패 15분 잠금), views.py(가입·로그인·로그아웃) [B-06-04]
-│  ├─ api/                         표현: viewmodels.py (있음), views.py [B-05-02], consent.py [B-06-03]
-│  ├─ app/                         응용: dto.py, ads_port.py (있음), usecases.py [B-05-02], presets_enabled.json [B-08-02]
+│  ├─ api/                         표현: viewmodels.py (있음), views.py [B-05-02], consent.py [B-06-03], routing.py·consumers.py(웹소켓 받기·검증) [B-07-05]
+│  ├─ app/                         응용: dto.py, ads_port.py (있음, 중계 메서드 [B-07-05]), usecases.py [B-05-02], ad_events.py(광고 신호 중계) [B-07-05], presets_enabled.json [B-08-02]
 │  ├─ infra/                       인프라(C 저장소·발행기·조회, E LLM 렌더러, B 광고 HTTP 클라이언트·모델 선택 적용)
 │  │  ├─ mongo_repo.py, content_store.py   [C-06-01]
 │  │  ├─ outbox_publisher.py       [C-06-02]
 │  │  ├─ llm_renderer.py           LineRenderer 구현 [E-07-01]
 │  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03]
-│  │  ├─ ad_client.py              AdProvider HTTP 구현 [B-08-03] 결정 #6
+│  │  ├─ ad_client.py              AdProvider HTTP 구현(serve·비콘·클릭·랜딩 중계) [B-08-03] 결정 #2·#6
 │  │  └─ model_selector.py         ModelSelector 최소 구현 [D-08-04] → 카나리아·고정 [B-09-01], 레지스트리 [C-09-01] 결정 #5
-│  └─ tests/                       Django 테스트: test_api.py [B-05-02], test_idempotency.py [B-06-02], test_accounts.py [B-06-04]
+│  └─ tests/                       Django 테스트: test_api.py [B-05-02], test_idempotency.py [B-06-02], test_accounts.py [B-06-04], test_ws.py [B-07-05]
 ├─ web/
-│  └─ templates/                   meeting.html와 htmx 조각 [B-05-03], 이후 화면 [B-06-01 …]
+│  ├─ templates/                   meeting.html와 htmx 조각 [B-05-03], 이후 화면 [B-06-01 …]
+│  └─ static/js/paldo_ws.js        웹소켓 연결·재연결·비콘 대기열 [B-07-05]
 │
 ├─ ads/                            광고 서버 · D (별도 Django 서비스, ad-01)
 │  ├─ manage.py, project/          광고 서버 전용 Django 설정·URL [D-05-03] 결정 #1
@@ -79,6 +80,7 @@ paldo/
 │  ├─ inventory_check.md           [C-05-01]
 │  ├─ compose/                     dev.yml, README.md(팀원별 점검표) [C-05-03]
 │  ├─ mysql/                       [C-06-03]
+│  ├─ proxy/                       Caddyfile, README.md(HTTPS·wss, 인증서 경고 안내) [C-07-04]
 │  ├─ prometheus/ (alerts.yml), grafana/dashboards/*.json   [C-08-01]
 │  ├─ k3s/                         jobs/sim-job.yaml, images/sim/Dockerfile [C-08-03], cronjobs/retrain.yaml [C-10-01]
 │  ├─ mlflow/                      [C-09-01]
@@ -89,7 +91,7 @@ paldo/
 ├─ content/                        콘텐츠 데이터 · E
 │  ├─ bundle_v1.json, README.md    [E-05-03]
 │  ├─ intent/examples_v1.jsonl     [E-06-02]
-│  └─ images/                      <kind>/<id>.png(임시·실제 같은 경로), manifest.json [E-05-05], SOURCES.md(생성 기록)
+│  └─ images/                      <kind>/<id>.png(임시 [E-05-05]·실제 [B-09-05 …] 같은 경로), manifest.json [E-05-05], SOURCES.md(생성 기록) [B-08-05]
 ├─ contracts/datasets.py           데이터셋 계약 (있음)
 ├─ fixtures/                       생성물(`tools/build_fixtures.py`) (있음) + review/review_trace_sample.json [A-10-02]
 │
@@ -102,11 +104,11 @@ paldo/
 │  ├─ reconcile_game_events.py [C-07-02], ml_gate.py [C-09-01], privacy_delete.py, privacy_retention.py [C-09-02]
 │  ├─ ad_traffic_sim.py [D-06-03], ad_scenarios.py [D-08-02], demo_retrain.sh [D-10-01]
 │  ├─ perf/                        engine_bench.py [A-05-01], vm_probe.sh [C-05-01], api_bench.py [B-06-02], ad_fault_test.py [B-08-03]
-│  └─ assets/                      make_placeholders.py [E-05-05], check_assets.py [E-08-07]
+│  └─ assets/                      make_placeholders.py [E-05-05], check_assets.py [E-08-07], pixelize.py [B-08-05]
 │
 ├─ tests/                          unittest 루트(`python -m unittest discover -s tests -t .`)
 │  ├─ contract/, tools/            (있음)
-│  ├─ engine/ [A], sim/ [D-06-01], intent/ [D-05-01], ads/ [D-05-03], infra/ [C-06-01], assets/ [E-05-05, E-08-07]
+│  ├─ engine/ [A], sim/ [D-06-01], intent/ [D-05-01], ads/ [D-05-03], infra/ [C-06-01], assets/ [E-05-05, E-08-07, B-08-05]
 │  └─ fixtures/secrets/            탐지 시험용 가짜 값(검사 제외 경로). 개별 예외는 tools/secrets_allowlist.txt [E-05-02]
 │
 ├─ docs/                           문서 (3절)
@@ -118,7 +120,7 @@ paldo/
 | 폴더 | 계층 | 담당 | 실행 위치(통합 환경) |
 |---|---|---|---|
 | `engine/` | 도메인 | A(시뮬레이터 `engine/sim/`은 D) | 게임 웹 프로세스 안, 시뮬레이터 Job 안(라이브러리) |
-| `server/api/`, `web/` | 표현 | B | app-01 |
+| `server/api/`, `web/` | 표현(HTTP 뷰·웹소켓 Consumer) | B | app-01(Daphne 프로세스 1개, 앞에 HTTPS 프록시 `ops/proxy/`) |
 | `server/app/` | 응용 | B | app-01 |
 | `server/infra/` | 인프라 | C(저장소·발행기·조회), E(LLM 렌더러), B(광고 HTTP 클라이언트·모델 선택 적용) | app-01 |
 | `ads/` | 광고 서버 전 계층 | D | ad-01 |
@@ -127,6 +129,7 @@ paldo/
 | `pipeline/` | 인프라(배치) | C | spark-master-01, spark-worker-01 |
 | `ops/` | 배포·관측 설정 | C | 각 VM |
 | `content/` | 데이터 | E | `tools/load_content.py`로 Mongo에 적재해 사용(결정 #8) |
+| `content/images/` 실제 파일, `tools/assets/pixelize.py` | 데이터(에셋) | B(실제 에셋 제작, 11/4 이전). 규격·임시·검사는 E | 정적 파일 |
 | `contracts/`, `fixtures/` | 계약·생성물 | 공용 | - |
 | `tools/` | 도구 | 공용 | 개발 PC, Bastion |
 
@@ -170,6 +173,7 @@ VM 이름과 배치의 원본은 기획서 6.3이다. 실제 노트북 대응은
 | 1 | 광고 서버 Django 프로젝트 위치 | `ads/project/`(settings·urls) + `ads/manage.py`. 게임 웹 프로젝트와 설정을 공유하지 않는다 |
 | 5 | `ModelSelector` 실제 구현 파일 | `server/infra/model_selector.py` |
 | 6 | `AdProvider` HTTP 클라이언트 파일 | `server/infra/ad_client.py` |
+| 2 | 브라우저 광고 신호 경로(11/4 변경) | 웹소켓 표현 `server/api/consumers.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py` → 인프라 `server/infra/ad_client.py`. ASGI 진입점 `server/paldo_web/asgi.py`, 프록시 `ops/proxy/` |
 | 8 | 콘텐츠 적재 도구 | `tools/load_content.py` |
 | 10 | 시뮬레이터 Kafka `EventSink` | `pipeline/sinks/kafka_sink.py` |
 | 19 | 진척 재처리 도구 | `tools/replay_progress.py`(C-09-04) |
