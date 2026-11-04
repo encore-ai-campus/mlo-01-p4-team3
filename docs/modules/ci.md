@@ -56,7 +56,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
-| CI Python | `3.12` | `ci.yml`의 `setup-python` | 잠정값. C-05-03 결과로 PM이 ML·LLM 버전을 정하면 같은 값으로 바꾼다(조건 1) |
+| CI Python | `3.12` | `ci.yml`의 `setup-python` | 잠정값. ML·LLM 런타임은 11/5 3.14 단일로 확정했고(`tech_stack.md`), CI `core` 버전은 그 결정에 묶지 않고 PM이 따로 정한다(조건 1) |
 | 서비스 이미지 | `mongo:8.0.34`, `mysql:8.4.13` | `django` 체크의 서비스 컨테이너 | `tech_stack.md`의 태그(개발 Compose와 같음). 바꿀 때는 tech_stack.md와 함께 |
 | `PR_BODY` | - | `evidence` 체크가 읽는 PR 본문 환경 변수 | 이름을 바꾸면 `--pr-body-env` 인자도 같이 바꾼다 |
 | `PALDO_LOG_DIR` | `out/logs` | 구조화 로그 파일 폴더(`ci.jsonl`) | 로그만 옮겨진다. 검사 결과와 무관 |

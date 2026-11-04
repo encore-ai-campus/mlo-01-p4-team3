@@ -415,7 +415,7 @@ flowchart LR
 - 대안: 그 노트북의 Windows에서 llama.cpp를 직접 실행한다(가상화 오버헤드 없음). 11/5 벤치마크에서 VM 실행과 비교한다.
 
 - 기록된 설치 버전(재확인 필요): Ubuntu 26.04, 시스템 Python 3.14.6(11/4 PM 노트북 실측), Spark 4.1.3·Hadoop 3.4.2·OpenJDK 21, Delta Spark 4.4.1, Kafka KRaft 3대, Prometheus 3.15.0, Grafana 13.2.4.
-- 시스템 Python 3.14에서 ML·LLM 라이브러리(PyTorch, transformers, LightGBM, llama-cpp-python, pyspark)의 지원은 미확인이다. **3.14에서 먼저 실측하고, 실패한 패키지만 Python 3.12 가상환경으로 분리**한다(`contracts/tech_stack.md`, C-05-03 조건 2, 11/4 PM 결정).
+- ML·LLM 라이브러리(PyTorch, transformers, LightGBM, llama-cpp-python, pyspark)도 시스템 Python **3.14 단일**로 돌린다(11/5 PM 확정, C-05-03 조건 2 실측에서 5개 모두 성공, `contracts/tech_stack.md`). Delta는 Maven 좌표 `io.delta:delta-spark_4.1_2.13:4.4.1`(C-05-03 조건 3). Ubuntu VM에서는 아직 확인하지 않았다.
 - 사용자 테스트 중에는 llm-01(LLM)·ad-01(광고)·app-01(웹)에 학습 작업을 올리지 않는다. 학습·시뮬레이션은 nifi-01과 k3s 노드에서 돌린다.
 
 ---

@@ -3,7 +3,7 @@
 - 담당자: (P-01) · 노트북: (P-01)
 - 폴더: `intent/`(의도 해석기), `ml/`(씐 자 확률 모델, 평가 관문, 밴딧), `engine/sim/`(봇 정책·시뮬레이터), `ads/`(광고 서버 전체: `ads/domain` 규칙, `ads/app` 흐름, `ads/infra` MySQL·Kafka, `ads/web` Django)
 - 늘 볼 문서: `docs/contracts/intent.md`, `ml_lifecycle.md`, `events.md` 3·5절, `ads.md`, `ports.md` 3·5절, 기획서 9장·14장.
-- ML·광고 코드는 Python 3.12 환경(C-05-03)에서 돌린다. `ads/domain`은 표준 라이브러리만.
+- ML·광고 코드는 Python 3.14 단일 환경(11/5 PM 확정, C-05-03 실측, `contracts/tech_stack.md`)에서 돌린다. `ads/domain`은 표준 라이브러리만.
 - 공통 완료 정의·증빙·로그 규칙: [README.md](README.md) 3~5절. 모든 학습·평가 실행은 MLflow(11/9 전에는 로컬 `mlruns/`)에 데이터 버전·특징 버전·코드 커밋을 남긴다.
 
 ---

@@ -59,7 +59,7 @@
 | G10 | 브라우저 → 게임 웹 광고 칸 → `AdGateway` → 광고 서버(D) | 브라우저→게임 웹 ②, 게임 웹→광고 서버 ② | `GET /ads/slot/{slot}`(htmx `load`) → `POST /ads/v1/serve`. 응답 조각의 클릭 링크는 게임 웹 `/ads/click`, 비콘은 웹소켓(G11) | [ports.md 5절](ports.md), [ads.md 3절](ads.md) | 연결 100ms, 전체 300ms, 동시 8, 재시도 없음, 연속 실패 5회면 30초 생략. 어떤 실패든 빈 광고 | `PALDO_ADS_INTERNAL_URL` | `FakeAdProvider` | D-08-03(11/8 오전) → B-08-03(`server/infra/ad_client.py`, 결정 #6) → INT-09 #2·#9 |
 | G11 | 브라우저 → 게임 웹(웹소켓·중계 경로) → `AdGateway` → 광고 서버(D) | 브라우저→게임 웹 ②(웹소켓 `/ws/game/`, HTTP), 게임 웹→광고 서버 ② | `ad.impression` 메시지 → `POST /ads/v1/impression`, `GET /ads/click?t=` → `GET /ads/v1/click?t=` → 302 `/ads/landing/<creative_id>` → `GET /ads/landing/<creative_id>` | [api.md 7절](api.md), [ports.md 5절](ports.md), [ads.md 3·6절](ads.md) | 비콘은 면적 50% 이상 1초 이상 보일 때 1회. 중계는 serve와 같은 시간 제한, 재시도 없음, 실패한 비콘은 손실. 클릭은 판정·실패와 무관하게 항상 302 | `PALDO_ADS_INTERNAL_URL`, `PALDO_PUBLIC_ORIGIN` | `FakeAdProvider` 중계 가짜 | B-07-05(11/7 오전, 가짜) → B-07-03 → D-08-03 → B-08-03 → INT-09 #2. 브라우저는 게임 웹 출처에만 접속, CSRF 제외는 광고 서버 비콘·클릭 엔드포인트(결정 #2, 11/4 변경) |
 | G13 | 복기: 게임 웹 → 엔진 `review_trace`(A) → LLM 복기 해설(E) → 화면 폴링(B), 승리 확률(D) | ① `review_trace(game)`, ② 해설 생성(LLM 서비스 우선순위 1), 화면은 폴링 | `GET /games/{id}/review`(종료 후만) | [api.md 2절](api.md), A-10-02, E-10-01, B-10-01, D-10-03 | 해설의 근거 ID는 모두 `review_trace`에 있어야 함, 실패 시 템플릿 해설. `win_prob`가 없으면 그래프 숨김 | `PALDO_LLM_URL` | `fixtures/review/review_trace_sample.json` | 11/10 10:00 A-10-02 형식·샘플 → B·E, 12:00 E-10-01 해설 응답 형식 → B-10-01. 해설은 렌더 폴링 재사용, 우선순위 1(결정 #17) |
-| G12 | 게임 웹 화면 → 이미지 | ④ `content/images/manifest.json` 파일 읽기 + 정적 파일 | `asset_url(content_id)`, `/static/assets/<kind>/…`, 광고는 응답의 `image_path`(`/static/ads/…`) | B-05-03 #4·#5, E-05-05, [ads.md 2절](ads.md) | manifest에 없는 ID는 기본 이미지 + 경고 로그 | - | E의 임시 에셋(같은 경로) | E-05-05(11/5 12:00) → B 실제 에셋 덮어쓰기(B-09-05 ~ B-11-05, 11/4 담당 이전) → E-11-06 |
+| G12 | 게임 웹 화면 → 이미지 | ④ `content/images/manifest.json` 파일 읽기 + 정적 파일 | `asset_url(content_id)`, `/static/assets/<kind>/…`, 광고는 응답의 `image_path`(`/static/ads/…`) | B-05-03 #4·#5, E-05-05, [ads.md 2절](ads.md) | manifest에 없는 ID는 기본 이미지 + 경고 로그 | - | E의 임시 에셋(같은 경로) | E-05-05(11/5 12:00) → B 실제 에셋 덮어쓰기(B-09-05 ~ B-11-04, 11/4 담당 이전) → E-11-10(일괄 검수·교체 확정) → E-11-06 |
 
 ### 3.2 이벤트·데이터·학습 경로
 
@@ -185,7 +185,7 @@
 |---|---|---|---|
 | LLM 실제 연결일 | team_plan 4절: A의 LLM 교체 11/9 | E-07-01(11/7) 인계 뒤 B-07-01 #7에서 연결 | 11/7로 맞춤(team_plan 4절 수정) |
 | 광고 잠정 마감 시점 | ads.md 7절: 귀속일 다음 날 | C-08-02 #5: 당일 | ads.md 7절로 맞춤(C-08-02 #5 수정) |
-| ML Python 버전 | 기획서 6.3 끝: 3.12 가상환경 권장, 시스템 3.14.4 | tech_stack.md(11/4 갱신): 3.14 우선, 시스템 3.14.6 | tech_stack.md로 맞춤(기획서 6.3 수정) |
+| ML Python 버전 | 기획서 6.3 끝: 3.12 가상환경 권장, 시스템 3.14.4 | tech_stack.md(11/5 확정): ML·LLM도 3.14 단일(C-05-03 실측), 시스템 3.14.6 | tech_stack.md로 맞춤(기획서 6.3 수정) |
 | 렌더 이벤트 필드 | E-07-01 #4: 양자화 버전·폴백 여부 포함 | `engine/ports.py` `RenderResult`: 해당 필드 없음 | `quantization`·`fallback` 추가(contract-0.3, 결정 #18) |
 | 복기 샘플 위치 | A-10-02: `fixtures/review/review_trace_sample.json`을 산출 | parallel_dev.md 4절: 픽스처는 `tools/build_fixtures.py`가 만들고 손으로 고치지 않음 | `build_fixtures.py`가 생성(A-10-02 산출물 수정) |
 | 게임 이벤트 대조식 | INT-11 #4: "상태 `seq` 합" | PRD: `next_seq` = 고유 발행 건수 = bronze 행 수 | PRD 정의로 맞춤(C-07-02 #1, INT-11 #4 수정) |

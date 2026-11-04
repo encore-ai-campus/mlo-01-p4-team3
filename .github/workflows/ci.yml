@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }   # 잠정값. C-05-03 결과로 PM이 정하면 같은 값으로 바꾼다
+        with: { python-version: "3.12" }   # 잠정값. ML·LLM 런타임(3.14 단일, 11/5 확정)과 별도로 PM이 정한다
       - run: python -m unittest discover -s tests -t .
       - run: python -m tools.check_secrets
 
