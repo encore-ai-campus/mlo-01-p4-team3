@@ -69,7 +69,9 @@
 - **취소**: 판이 다음 단계로 넘어가면 응용 계층이 그 판의 미완료 작업을 `cancel`한다. 화면에는 폴백이 남는다.
 - **큐 우선순위**: 0 = 캐묻기(대화 중), 1 = 복기, 2 = 운영 분석이다. 같은 우선순위끼리는 먼저 온 순서대로 처리한다. 캐묻기 작업이 기다리고 있으면 우선순위 2 작업을 새로 시작하지 않는다.
 - **폴백 동등성**: 폴백 문장은 `fact_sentence`를 그대로 포함한다. 따라서 생성 실패 여부와 관계없이 플레이어가 얻는 정보가 같다. 생성문이 사실 문장의 장소, 시간, 인물을 바꾸거나 빼면 E의 검증기가 `failed`로 처리한다.
-- 작업 기록은 `render_job` 이벤트(`paldo.llm`)로 남긴다. 상태, 지연, 대기 시간, 모델·프롬프트 버전이 포함된다.
+- 작업 기록은 `render_job` 이벤트(`paldo.llm`)로 남긴다. 상태, 지연, 대기 시간, 모델·프롬프트·양자화 버전, 폴백 여부가 포함된다. 값은 `RenderResult`(`quantization`, `fallback` 필드는 contract-0.3에서 추가)로 응용에 오고, 기록은 응용이 `poll` 결과의 상태 변화와 단계 전환 때 `cancel`한 작업의 최종 상태를 `append_events`로 남긴다(11/4 PM 결정 #18).
+- **전송**(11/4 PM 결정 #3): 실제 렌더러 `server/infra/llm_renderer.py`는 LLM 서비스 HTTP로 옮긴다. `POST /v1/renders`(`RenderRequest` JSON → 202), `GET /v1/renders/{job_id}`(`RenderResult` JSON), `POST /v1/renders/{job_id}/cancel`(→ 204). 서비스에 작업이 없으면(404) `failed`로 본다. 주소는 `PALDO_LLM_URL`([integration.md](integration.md) G7).
+- **복기 해설**도 같은 포트·같은 폴링을 우선순위 1로 쓴다(11/4 PM 결정 #17).
 
 ## 5. 광고 포트 (`AdProvider`, 게임 경로 보호)
 - 게임 화면은 광고 없이 먼저 그리고, 저장도 먼저 끝낸다. 광고 칸은 페이지가 그려진 뒤 htmx가 별도 요청(`GET /ads/slot/{slot}`, `hx-trigger="load"`)으로 채운다. 게임 명령 처리 경로에서는 광고를 부르지 않는다.
@@ -86,3 +88,4 @@
 - 어떤 실패든 **빈 광고**(`filled=false`)를 돌려주고 예외를 올리지 않는다. 화면은 광고 칸을 비운다. 결과 코드(ok, empty, timeout, error, busy, circuit_open)는 지표로 남긴다.
 - 가짜 `FakeAdProvider(latency_ms, fail, empty)`로 지연, 무응답, 실패를 주입해 시험한다(`tests/contract/test_ads.py::GamePathProtection`).
 - 허용치(기획서 14.7): 광고 장애 중 게임 API p95 증가가 50ms 이하이고, 게임 오류율이 늘지 않아야 한다.
+- 실제 `AdProvider` HTTP 구현은 `server/infra/ad_client.py`(B, B-08-03)다. 주소는 `PALDO_ADS_INTERNAL_URL`이고, 호출마다 `X-Request-ID`를 넘긴다(11/4 PM 결정 #6·#14).

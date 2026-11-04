@@ -44,22 +44,23 @@
   1. `docker compose -p paldo-dev -f ops/compose/dev.yml up -d`로 Mongo(레플리카셋 1노드), Kafka 1노드, MySQL 1노드, S3 호환 저장소, Prometheus, Grafana가 뜨고 상태 확인 명령이 모두 성공(증빙에 출력). Compose 프로젝트 이름은 `paldo-dev`로 고정하고, 고정 `container_name`은 쓰지 않는다. 종료는 `docker compose -p paldo-dev … down`(이 프로젝트만)이고 `docker system prune` 같은 전역 정리는 하지 않는다(볼륨 삭제는 PM 허락 뒤). Mongo의 레플리카셋은 변경 스트림·운영 구성용이다. 상태·진실·아웃박스·명령 기록의 원자성은 계약대로 **판 문서 하나에 한 번에 쓰는 것**으로 보장하며, 다중 문서 트랜잭션은 요구하지 않는다(`ports.md` 2절 ④).
   2. **시스템 Python(이 PC 3.14.6)에서 먼저** 필수 5개(PyTorch, transformers, LightGBM, llama-cpp-python, pyspark) 설치·import를 확인하고, 실패한 패키지만 Python 3.12 가상환경에서 다시 시도한다(11/4 PM 결정, `tech_stack.md` 4절 3번). 표에 OS·실행 방식(네이티브/컨테이너)·Python·패키지 정확한 버전·설치 명령·import 명령·실패 시 오류 발췌를 적는다. 결과로 ML·LLM Python 버전(3.14 단일 또는 3.12 병행)을 제안하고, PM 승인 뒤 `tech_stack.md`와 CI `core`의 Python 버전을 같은 값으로 맞춘다(계약 변경 PR). 그 밖의 패키지 확인은 별도 "조사 항목"으로 두고 이 조건에 넣지 않는다.
   3. Spark 4.1.3 + Delta Spark 4.4.1 조합으로 **실제 Delta 테이블 쓰기·읽기 1회**(명령·출력·버전, 4절 4번). 안 되면 대안 조합을 시험해 보고하고, PM 승인 뒤 `tech_stack.md`를 바꾼다(계약 변경 PR). 승인 전에는 이 조건을 완료로 표시하지 않는다.
-  4. `.env.example`에는 변수 이름과 자리표시자(`<MONGO_PASSWORD>` 등)만 둔다. 실제 값은 Git이 추적하지 않는 `.env`에 둔다(`check_secrets` 통과, 공통 ⑥).
+  4. `.env.example`에는 변수 이름과 자리표시자(`<MONGO_PASSWORD>` 등)만 둔다. 실제 값은 Git이 추적하지 않는 `.env`에 둔다(`check_secrets` 통과, 공통 ⑥). 변수 이름은 [integration.md](../contracts/integration.md) 4.1절 목록(`PALDO_` 접두, 11/4 PM 결정 #7)을 쓴다.
   5. 한 PC의 결과는 같은 기종 Windows용 설치 절차의 **기준 사례**로만 쓴다. `ops/compose/README.md`에 팀원별 점검표(OS·가상화·Docker·Python·Java·디스크 여유·VM 부하 확인, 스모크 테스트 명령과 기대 출력)를 둔다. 이 태스크는 점검표를 만들고 이 PC 결과로 한 번 채우는 데까지다(다른 노트북에서 채우는 시점·담당은 PM이 정한다).
 - 근거: 기획서 6.1(개발용 로컬 실행) / tech_stack.md
 
 ## 11/6(금)
 
 ### C-06-01 Mongo 저장소 (게임·진척·콘텐츠)
-- 3.5h · 입력: `engine/ports.py`, `engine/testing/fakes.py::InMemoryGameRepository`
+- 3.75h(콘텐츠 적재 도구 0.25h 포함, 11/4 PM 결정 #8) · 입력: `engine/ports.py`, `engine/testing/fakes.py::InMemoryGameRepository`
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-06-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`infra`](../modules/infra.md)는 그날 일괄 갱신(C-06-04)
-- 산출물: `server/infra/mongo_repo.py`, `tests/infra/test_mongo_repo.py`
+- 산출물: `server/infra/mongo_repo.py`, `tools/load_content.py`, `tests/infra/test_mongo_repo.py`
 - 완료 조건:
   1. `tests/contract/test_fakes.py`의 `Repository`, `CodexReviewRegressions.test_append_events_dedup_and_seq`, `test_progress_atomic_idempotent`와 **같은 시나리오**를 Mongo 구현으로 통과(테스트를 저장소 구현을 바꿔 끼워 재사용).
   2. `commit`은 CAS(버전 불일치 시 `VersionConflict`), 상태·진실·아웃박스·명령 기록 한 문서 원자 쓰기, `w=majority`.
   3. 동시 commit 20개 경합 테스트에서 성공 1건.
   4. commit 지연 p50·p95를 `paldo_repo_commit_duration_seconds`로 노출하고 VM 레플리카셋에서 측정.
   5. `ContentSource` 실제 구현(`server/infra/content_store.py`): 버전별 콘텐츠 조회, 새 버전 적재 후에도 이전 버전 조회 가능, 단서 ID 삭제 금지(폐기 표시만). 시험: 판 진행 중 콘텐츠 새 버전 적재 → 그 판은 시작 때 고정한 `content_version`으로 끝까지 진행, 새 판은 새 버전(domain.md 9절).
+  6. 콘텐츠 적재 도구 `tools/load_content.py`(11/4 PM 결정 #8): `content/*.json`(E 작성)을 `ContentBundle` 엄격 검증 후 새 `content_version`으로 Mongo에 적재. 이미 있는 버전을 다시 적재하면 거부(테스트). E는 파일만 만든다.
 - 근거: 기획서 6.1 / ports.md 2, domain.md 9
 
 ### C-06-02 아웃박스 발행기·Kafka 토픽·소비자 중복 제거
@@ -67,7 +68,7 @@
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-06-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`infra`](../modules/infra.md)는 그날 일괄 갱신(C-06-04)
 - 완료 조건:
   1. 토픽 표(events.md 2절 + `ad.serve`/`ad.impression`/`ad.click`)마다 파티션 수, 키(`game_id`, 광고는 `serve_id`), 보존 기간, 복제 수를 `topics.yaml`에 정의하고 생성 스크립트로 적용.
-  2. 발행기: 미발행 아웃박스를 순서대로 발행, 발행 확인(acks=all) 후 발행 표시, 실패 시 재시도. 같은 이벤트 재발행은 소비자가 `event_id`로 제거.
+  2. 발행기: 미발행 아웃박스를 순서대로 발행, 발행 확인(acks=all) 후 발행 표시, 실패 시 재시도. 같은 이벤트 재발행은 소비자가 `event_id`로 제거. 발행기는 Django와 별도 프로세스로 돈다(`python -m server.infra.outbox_publisher`, 11/4 PM 결정 #15).
   3. 발행 지연(커밋 → Kafka 기록) p95 지표 `paldo_outbox_publish_lag_seconds`, 미발행 건수 게이지.
   4. 발행·소비 시연 명령과 출력(토픽·파티션·오프셋)을 증빙에.
 - 근거: 기획서 6.1(아웃박스), 8.2 / events.md
@@ -107,7 +108,7 @@
 - 2h · 산출물: `tools/reconcile_game_events.py`
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-07-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`pipeline`](../modules/pipeline.md)는 그날 일괄 갱신(C-07-03)
 - 완료 조건:
-  1. 판 진행 중 Kafka 브로커 3대 중 1대 정지 → 재개, 그리고 발행기 정지 → 재개 두 경우에서 판 상태의 `seq` 합계 = 아웃박스 발행 수 = bronze 행 수, 유실 0·중복 0.
+  1. 판 진행 중 Kafka 브로커 3대 중 1대 정지 → 재개, 그리고 발행기 정지 → 재개 두 경우에서 판별 `next_seq`(마지막 `seq` + 1) = 중복 제거 후 고유 발행 건수 = bronze 행 수(PRD 정의, 판마다 대조), 유실 0·중복 0.
   2. 대조 스크립트가 불일치 시 판 ID·seq 목록을 출력.
   3. 시험 중 게임 API 오류 0(게임 경로는 Kafka와 무관, 기획서 6.1).
 - 근거: 기획서 6.1, 12장(로그 유실·중복)
@@ -139,14 +140,14 @@
   2. gold: 캠페인 × 지면 × 시간대의 노출·클릭·CTR·비용·eCPM·소진율·무효율.
   3. 건별 대사: `charge_id`마다 원장만 있음 / Delta만 있음 / 중복 / 금액 불일치 4종 건수. D의 합성 트래픽 1회분에서 **불일치 0건**.
   4. 원본 이벤트 수 → bronze → silver → gold 합계 대조표.
-  5. 잠정 마감(당일)과 확정 마감(관찰 종료 후)을 따로 계산해 둘 다 저장. silver 재판정으로 무효가 된 과금 건은 무효 판정 이벤트를 내고, D의 환입 소비자(D-06-02 7번)가 환입한 뒤 다시 대사해 불일치 0건(실제 Kafka·MySQL·Delta로 재현).
+  5. 잠정 마감(귀속일 다음 날, ads.md 7절)과 확정 마감(클릭 인정 기한과 판정 유예가 지난 뒤)을 따로 계산해 둘 다 저장. silver 재판정으로 무효가 된 과금 건은 무효 판정 이벤트를 `ad.rejudge` 토픽으로 내고(11/4 PM 결정 #11), D의 환입 소비자(D-06-02 7번)가 환입한 뒤 다시 대사해 불일치 0건(실제 Kafka·MySQL·Delta로 재현).
 - 근거: 기획서 14.4 / ads.md 7
 
 ### C-08-03 k3s·시뮬레이션 대량 실행 기반·자원 재측정
-- 2.5h · 선행: D-06-01(`engine/sim/runner.py`, 11/6 병합분) · 인계: **12:00 → D-08-01**
+- 2.75h(시뮬레이터 Kafka `EventSink` 0.25h 포함, 11/4 PM 결정 #10) · 선행: D-06-01(`engine/sim/runner.py`, 11/6 병합분) · 인계: **12:00 → D-08-01**
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-08-03` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ops`](../modules/ops.md)는 그날 일괄 갱신(이 태스크의 일괄 갱신 줄)
 - 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: C-08-01, C-08-02, C-08-03 · 코드를 바꿨다면: 없음 · 모듈: [`ops`](../modules/ops.md), [`pipeline`](../modules/pipeline.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/8 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
-- 산출물: `ops/k3s/`, `ops/k3s/jobs/sim-job.yaml`, `ops/k3s/images/sim/Dockerfile`(C가 빌드)
+- 산출물: `ops/k3s/`, `ops/k3s/jobs/sim-job.yaml`, `ops/k3s/images/sim/Dockerfile`(C가 빌드), `pipeline/sinks/kafka_sink.py`(시뮬레이터용 `EventSink` Kafka 구현: 판 단위 `event_id` 그대로 발행, 웹 경로는 쓰지 않음)
 - 완료 조건:
   1. k3s 2노드(spark-worker-02, 03) 동작, `kubectl get nodes` 출력.
   2. C가 `engine/sim/runner.py`로 빌드한 시뮬레이터 이미지를 Job으로 실행해 결과가 Kafka(`source=bot`)로 들어가고 bronze까지 적재(D는 이 이미지에 정책·판 수 인자만 넘긴다).
@@ -159,7 +160,7 @@
 - 2.5h · 산출물: `ops/mlflow/`, `tools/ml_gate.py`(D의 평가 함수 호출 래퍼)
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-09-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ml_ops`](../modules/ml_ops.md)는 그날 일괄 갱신(C-09-04)
 - 완료 조건:
-  1. nifi-01에서 MLflow 추적·레지스트리, 아티팩트는 Garage 버킷.
+  1. nifi-01에서 MLflow 추적·레지스트리, 아티팩트는 Garage 버킷. `ModelSelector`(`server/infra/model_selector.py`, D-08-04 최소 구현)의 `mlruns/` 조회를 MLflow 레지스트리 조회로 바꾸는 함수를 제공한다(11/4 PM 결정 #5).
   2. 실행 기록에 데이터 버전(Delta), 특징 버전, 코드 커밋이 필수 태그로 남고, 없으면 등록 실패(테스트).
   3. 관문 실패 시 등록하지 않고 거부 태그를 남기는 흐름 시연(가짜 모델로).
 - 근거: 기획서 6.2, 9.4 / ml_lifecycle.md 3
@@ -185,7 +186,7 @@
 - 근거: 확정 결정(AWS 계정별 6만 원)
 
 ### C-09-04 통합 2 참여
-- 1.5h · 조건: [INT-09](E_pm.md#int-09-통합-2-119) 중 C 항목 전부
+- 2h(진척 재처리 도구 0.5h 포함, 11/4 PM 결정 #19) · 조건: [INT-09](E_pm.md#int-09-통합-2-119) 중 C 항목 전부. 그리고 진척 재처리 도구 `tools/replay_progress.py`: 판 문서 아웃박스의 진척 관련 이벤트를 다시 읽어 A의 `engine/domain/progress.py` 반영 함수로 `ProgressRepository`에 멱등 반영(`source_event_id` 기준, 두 번 돌려도 결과 같음 테스트). A-09-01 4번 시험이 이 도구로 실행된다
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 C](../troubles/C.md)에 `### C-09-04` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 코드를 바꿨다면 모듈 문서 [`ops`](../modules/ops.md) `변경 이력` 행은 그날 일괄 갱신(이 태스크의 일괄 갱신 줄)
 - 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: C-09-01, C-09-02, C-09-03 · 코드를 바꿨다면: C-09-04 · 모듈: [`ml_ops`](../modules/ml_ops.md), [`privacy`](../modules/privacy.md), [`aws`](../modules/aws.md), [`ops`](../modules/ops.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/9 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
 
@@ -261,9 +262,9 @@
 
 | 날짜 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
 |---|---|---|---|---|---|---|---|---|
-| 태스크 | 7 | 8 | 7.5 | 7.5 | 7.5 | 7.5 | 7.5 | 1 |
+| 태스크 | 7 | 8.25 | 7.5 | 7.75 | 8 | 7.5 | 7.5 | 1 |
 | 문서화(태스크별) | 0.5 | 0.5 | 0.5 | 0.75 | 0.5 | 0.5 | 0.5 | 0 |
 | 모듈 문서 일괄 갱신 | 0.5 | 0.5 | 0.5 | 0.5 | 0.5 | 0.5 | 0.5 | 0.25 |
-| **합계** | **8** | **9** | **8.5** | **8.75** | **8.5** | **8.5** | **8.5** | 1.25 |
+| **합계** | **8** | **9.25** | **8.5** | **9** | **9** | **8.5** | **8.5** | 1.25 |
 
-**한도 7.5h 초과 합계: 7.25h** (문서화 7.5h 포함). 임의로 줄이지 않았다. 처리는 PM 결정 P-23(11/6 09:00, 11/5 실제 소요 시간 요약을 보고 결정. README 7절).
+**한도 7.5h 초과 합계: 8.25h** (문서화 7.5h 포함. 11/4 PM 영역 간 호출 결정으로 C-06-01 +0.25h, C-08-03 +0.25h, C-09-04 +0.5h). 임의로 줄이지 않았다. 처리는 PM 결정 P-23(11/6 09:00, 11/5 실제 소요 시간 요약을 보고 결정. README 7절).
