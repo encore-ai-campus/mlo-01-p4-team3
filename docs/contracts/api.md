@@ -26,6 +26,19 @@
 | GET `/games/{id}/review` | - | `ReviewOutput`(종료 후만, 그 전에는 403) | `review` |
 | GET `/players/me/progress` | - | `ProgressOutput` | `progress` |
 
+### 2-1. 계정 (11/4 PM 결정, B-06-04)
+- 위 표의 모든 엔드포인트와 화면은 **로그인 필수**다. 비로그인 요청은 JSON이면 401, 화면 요청이면 로그인 화면으로 이동한다.
+- `/games/{id}/…`는 그 판을 시작한 가명 ID의 계정만 쓸 수 있다. 다른 계정의 판이나 그 판에 속하지 않은 `attempt_id`·`job_id`는 404다. 이 검사는 3절의 멱등 재요청 응답과 409 판정보다 먼저 한다.
+- 계정 엔드포인트는 Django 인증 폼이며 응용 계층 DTO를 쓰지 않는다. Django 세션 인증, CSRF 검사 유지. 규칙은 [privacy.md](privacy.md) 5절.
+
+| 메서드·경로 | 입력 | 결과 |
+|---|---|---|
+| GET·POST `/accounts/signup` | 로그인 ID, 비밀번호, 비밀번호 확인, 동의(privacy.md 3절), 초대 코드(`PALDO_SIGNUP_INVITE_CODE`가 있을 때만, 파일럿은 설정 안 함) | 계정 생성, 가명 ID 발급, 로그인 상태로 이동. 가입 속도 제한 초과는 429(privacy.md 5절) |
+| GET·POST `/accounts/login` | 로그인 ID, 비밀번호 | 세션 시작. 실패·잠금 규칙은 privacy.md 5절 |
+| POST `/accounts/logout` | - | 세션 종료 |
+
+- `StartGameInput.player_pseudonym`은 클라이언트가 보내지 않는다. 표현 계층이 로그인 계정의 가명 ID로 채운다. 요청 본문에 이 필드가 있으면 400이다. `GET /players/me/progress`의 `me`도 로그인 계정의 가명 ID다.
+
 ## 3. 명령과 충돌
 - 모든 명령에는 클라이언트가 만든 `command_id`(UUID)와 `expected_state_version`이 있다. 화면의 각 폼은 현재 `state_version`을 hidden 필드로 갖는다.
 - HTTP 상태 코드는 다음과 같다.
