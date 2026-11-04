@@ -292,6 +292,9 @@ def check_pr_body(body: str, task_ids: set[str], confirmed: set[str]) -> PrCheck
             others += 1
             errors.append(f"허용되지 않은 닫기 키워드 {m.group(1)!r}(`Closes #` 또는 `Refs #`만)")
     refs = len(_REFS_RE.findall(text))
+    for line in text.splitlines():  # 연결 줄 하나에 이슈 번호가 둘 이상이면(`Closes #1, #2`) 검사를 거치지 않고 닫힐 수 있다
+        if (_CLOSING_RE.search(line) or _REFS_RE.search(line)) and len(re.findall(r"#\d+", line)) > 1:
+            errors.append(f"이슈 연결 줄에 이슈 번호가 둘 이상: {line.strip()!r}(번호 하나만)")
     if others == 0 and closes + refs != 1:
         errors.append(f"이슈 연결 줄은 `Closes #<번호>` 또는 `Refs #<번호>` 중 정확히 하나(Closes {closes}, Refs {refs})")
     if not is_decision:

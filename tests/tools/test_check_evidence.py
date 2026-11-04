@@ -316,6 +316,9 @@ class PrBody(unittest.TestCase):
             self.assertTrue(any("닫기 키워드" in e for e in errs), kw)
         self.assertIn("정확히 하나", self.check(BODY_OK + "Refs #13\n").errors[0])
         self.assertIn("정확히 하나", self.check(BODY_OK.replace("Closes #12", "Closes #")).errors[0])
+        for line in ("Closes #12, #13", "Closes #12 and #13", "Refs #12, #13"):
+            errs = self.check(BODY_OK.replace("Closes #12", line)).errors
+            self.assertTrue(any("둘 이상" in e for e in errs), line)
 
     def test_actual_hours(self):
         self.assertIn("줄이 없음", self.check(BODY_OK.replace("실제 소요 시간(h): 2.5\n", "")).errors[0])
