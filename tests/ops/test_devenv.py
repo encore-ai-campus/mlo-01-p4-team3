@@ -119,6 +119,15 @@ class Checks(unittest.TestCase):
         listed = json.dumps([{"Service": "mongo", "State": "running", "Health": "starting"}])
         self.assertEqual(devenv.compose_unhealthy(listed, ["mongo"]), {"mongo": "starting"})
 
+    def test_prometheus_down_jobs(self):
+        def res(*pairs):
+            return {"data": {"result": [{"metric": {"job": j}, "value": [0, v]} for j, v in pairs]}}
+        self.assertEqual(devenv.prometheus_down_jobs(res(("prometheus", "1"), ("grafana", "1"), ("garage", "1"))), [])
+        self.assertEqual(devenv.prometheus_down_jobs(res(("prometheus", "1"), ("grafana", "0"), ("garage", "1"))),
+                         ["grafana"])
+        self.assertEqual(devenv.prometheus_down_jobs(res(("prometheus", "1"))), ["grafana", "garage"])
+        self.assertEqual(devenv.prometheus_down_jobs({}), ["prometheus", "grafana", "garage"])
+
     def test_sigv4_shape_and_determinism(self):
         now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
         args = ("PUT", "127.0.0.1:3900", "/b/k.txt", b"x", "GK" + "0" * 24, "f" * 64, "garage", now)

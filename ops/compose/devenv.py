@@ -141,6 +141,18 @@ class CheckResult:
     duration_ms: int
 
 
+PROMETHEUS_JOBS = ("prometheus", "grafana", "garage")   # ops/compose/prometheus.yml의 수집 대상
+
+
+def prometheus_down_jobs(query_result: dict, expected: Iterable[str] = PROMETHEUS_JOBS) -> list[str]:
+    """`/api/v1/query?query=up` 응답에서 없거나 `up != 1`인 job 이름 목록(빈 목록이면 모두 수집 중)."""
+    up: dict[str, bool] = {}
+    for r in query_result.get("data", {}).get("result", []):
+        job = r.get("metric", {}).get("job", "")
+        up[job] = up.get(job, True) and r.get("value", [None, "0"])[1] == "1"
+    return [j for j in expected if not up.get(j, False)]
+
+
 def garage_node_id(output: str) -> str:
     """`garage node id -q` 출력(`<id>@<주소>`)에서 노드 ID만 꺼낸다."""
     for line in output.splitlines():

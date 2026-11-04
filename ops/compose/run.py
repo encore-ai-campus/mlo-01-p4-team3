@@ -240,14 +240,19 @@ def check_garage(dc: Compose, env: dict) -> tuple[bool, str]:
 
 
 def check_prometheus(dc: Compose, env: dict) -> tuple[bool, str]:
-    """준비 상태와 수집 대상별 up 값."""
+    """준비 상태와, 수집 대상(prometheus·grafana·garage)이 모두 `up == 1`인지. 첫 수집 전이면 최대 30초 다시 본다."""
     base = f"http://127.0.0.1:{port('PALDO_PROMETHEUS_PORT', 9090)}"
     code, _ = http("GET", base + "/-/ready")
-    qc, data = http("GET", base + "/api/v1/query?query=up")
-    ups = []
-    if qc == 200:
-        ups = [f"{r['metric']['job']}={r['value'][1]}" for r in json.loads(data)["data"]["result"]]
-    return code == 200 and qc == 200, f"ready {code}, up: {' '.join(sorted(ups))}"
+    deadline = time.monotonic() + 30
+    while True:
+        qc, data = http("GET", base + "/api/v1/query?query=up")
+        result = json.loads(data) if qc == 200 else {}
+        down = devenv.prometheus_down_jobs(result)
+        if not down or time.monotonic() >= deadline:
+            break
+        time.sleep(5)
+    ups = [f"{r['metric']['job']}={r['value'][1]}" for r in result.get("data", {}).get("result", [])]
+    return code == 200 and qc == 200 and not down, f"ready {code}, up: {' '.join(sorted(ups))}, down: {down}"
 
 
 def check_grafana(dc: Compose, env: dict) -> tuple[bool, str]:
