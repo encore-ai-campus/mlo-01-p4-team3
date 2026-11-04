@@ -81,7 +81,7 @@
 
 | # | 부르는 쪽 → 받는 쪽 | 방식 | 이름 | 계약 | 시간 제한·실패 | 주소 변수 | 그동안 쓰는 가짜 | 진짜로 붙는 태스크 → INT |
 |---|---|---|---|---|---|---|---|---|
-| A1 | 광고 서버(D) → MySQL | ④ DB 연결 | 예약·확정·해제·환입 + 아웃박스 행 | [ads.md 5절](ads.md) | 같은 트랜잭션, `charge_id` 유일 제약, 예약은 조건부 갱신 또는 행 잠금 | `PALDO_ADS_DB_HOST`, `PALDO_ADS_DB_NAME`, `PALDO_ADS_DB_USER`, `PALDO_ADS_DB_PASSWORD` | 메모리 `BudgetBook`, 오전에는 Compose MySQL | C-06-03(11/6 12:00) → D-06-02 → INT-07 #8 |
+| A1 | 광고 서버(D) → MySQL | ④ DB 연결 | 예약·확정·해제·환입 + 아웃박스 행 | [ads.md 5절](ads.md) | 같은 트랜잭션, `charge_id` 유일 제약, 예약은 조건부 갱신 또는 행 잠금 | `PALDO_ADS_DB_HOST`, `PALDO_ADS_DB_PORT`, `PALDO_ADS_DB_NAME`, `PALDO_ADS_DB_USER`, `PALDO_ADS_DB_PASSWORD` | 메모리 `BudgetBook`, 오전에는 Compose MySQL | C-06-03(11/6 12:00) → D-06-02 → INT-07 #8 |
 | A2 | 광고 아웃박스 발행 → Kafka | ③ | `ad.serve`, `ad.impression`, `ad.click`(키 `serve_id`) | [events.md 5절](events.md) | 소비자는 `event_id`로 중복 제거 | `PALDO_KAFKA_BOOTSTRAP` | `fixtures/ads/`, 합성 광고 트래픽 | D-06-02 → INT-07 #8 |
 | A3 | Kafka → Spark 광고 silver·gold·대사(C) | ④ 배치 | silver(판정·조인), gold(캠페인 × 지면 × 시간대), 건별 대사 | [ads.md 6·7절](ads.md) | 광고 작업은 게임 집계와 다른 시간대·자원 한도(기획서 14.7) | `PALDO_KAFKA_BOOTSTRAP`, `PALDO_S3_ENDPOINT` | 생성기가 만든 집계 | C-08-02(11/8 13:00 → D-08-02) → INT-09 #2 |
 | A4 | gold → CTR·페이싱 갱신(D) → 광고 서버 | ④ 갱신 작업이 값을 적재, 광고 서버가 읽음 | `ctr_version`, `policy_version`이 다음 serve 이벤트에 남음 | [ads.md 4·5절](ads.md) | 페이싱 조정 5분마다, 한 번에 ±0.2. MySQL 버전 행, 광고 서버 60초 재적재(결정 #9) | `PALDO_ADS_DB_*` | - | D-08-02 → INT-09 #2 |
@@ -103,7 +103,7 @@
 | `PALDO_LLM_URL` | `llm_renderer.py` | LLM 서비스 기본 주소 |
 | `PALDO_ADS_INTERNAL_URL` | 게임 웹 `AdGateway` | 광고 서버 내부 주소(serve) |
 | `PALDO_ADS_PUBLIC_URL` | 광고 서버(클릭 링크 생성), 게임 웹 템플릿(비콘 주소) | 브라우저가 닿는 광고 서버 주소 |
-| `PALDO_ADS_DB_HOST`, `_NAME`, `_USER`, `_PASSWORD` | 광고 서버 | 광고 MySQL |
+| `PALDO_ADS_DB_HOST`, `_PORT`, `_NAME`, `_USER`, `_PASSWORD` | 광고 서버 | 광고 MySQL. `_PORT`는 비어 있으면 3306(VM·AWS 기본). 로컬 Compose는 Windows MySQL과 겹치지 않게 호스트 포트를 바꿔 쓸 수 있고(이 PC는 3316), 그 값은 `.env`에만 둔다(11/4 PM 결정) |
 | `PALDO_ADS_TOKEN_KEY` | 광고 서버 | serve 토큰 서명 키(ads.md 3절 "인프라 비밀 저장소") |
 | `PALDO_PROMETHEUS_URL` | 운영 조회 | Prometheus 조회 API |
 | `DJANGO_SECRET_KEY` | 게임 웹, 광고 서버(각자 다른 값) | Django 비밀 키 |
