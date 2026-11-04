@@ -48,6 +48,7 @@ server/infra (인프라) → engine (포트 구현)
 | `tools/` | 도구 | 공용 | 픽스처 생성, 합성 데이터 생성, 태스크 문서 파서(`tasks_md.py`)·이슈 동기화(`tasks_to_issues.py`)·계획 대비 실제 시간 요약(`hours_report.py`) |
 | `tests/contract/` | 테스트 | 공용 | 계약 테스트(unittest) |
 | `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화) |
+| `tests/assets/` | 테스트 | E | 에셋 도구 테스트(규격표 해석, 임시 세트 생성·대조) |
 | `.github/` | 저장소 운영 | E | 이슈 양식(`ISSUE_TEMPLATE/`), 라벨 정의(`labels.yml`), PR 양식, CI 워크플로(E-05-02) |
 | `docs/modules/`, `docs/troubles/` | 문서 | 각 흐름 | 모듈 문서, 흐름별 트러블 기록(양식 `_template.md`) |
 

@@ -1,0 +1,293 @@
+[
+  {
+    "kind": "portrait",
+    "id": "blacksmith",
+    "path": "content/images/portrait/blacksmith.png",
+    "url": "/static/assets/portrait/blacksmith.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "boy",
+    "path": "content/images/portrait/boy.png",
+    "url": "/static/assets/portrait/boy.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "ferryman",
+    "path": "content/images/portrait/ferryman.png",
+    "url": "/static/assets/portrait/ferryman.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "gisaeng",
+    "path": "content/images/portrait/gisaeng.png",
+    "url": "/static/assets/portrait/gisaeng.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "gwabu",
+    "path": "content/images/portrait/gwabu.png",
+    "url": "/static/assets/portrait/gwabu.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "hunjang",
+    "path": "content/images/portrait/hunjang.png",
+    "url": "/static/assets/portrait/hunjang.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "hunter",
+    "path": "content/images/portrait/hunter.png",
+    "url": "/static/assets/portrait/hunter.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "jumo",
+    "path": "content/images/portrait/jumo.png",
+    "url": "/static/assets/portrait/jumo.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "meosum",
+    "path": "content/images/portrait/meosum.png",
+    "url": "/static/assets/portrait/meosum.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "monk",
+    "path": "content/images/portrait/monk.png",
+    "url": "/static/assets/portrait/monk.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "mudang_f",
+    "path": "content/images/portrait/mudang_f.png",
+    "url": "/static/assets/portrait/mudang_f.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "mudang_m",
+    "path": "content/images/portrait/mudang_m.png",
+    "url": "/static/assets/portrait/mudang_m.png",
+    "placeholder": true
+  },
+  {
+    "kind": "portrait",
+    "id": "yakcho",
+    "path": "content/images/portrait/yakcho.png",
+    "url": "/static/assets/portrait/yakcho.png",
+    "placeholder": true
+  },
+  {
+    "kind": "place",
+    "id": "gate",
+    "path": "content/images/place/gate.png",
+    "url": "/static/assets/place/gate.png",
+    "placeholder": true
+  },
+  {
+    "kind": "place",
+    "id": "home",
+    "path": "content/images/place/home.png",
+    "url": "/static/assets/place/home.png",
+    "placeholder": true
+  },
+  {
+    "kind": "place",
+    "id": "shrine",
+    "path": "content/images/place/shrine.png",
+    "url": "/static/assets/place/shrine.png",
+    "placeholder": true
+  },
+  {
+    "kind": "place",
+    "id": "tavern",
+    "path": "content/images/place/tavern.png",
+    "url": "/static/assets/place/tavern.png",
+    "placeholder": true
+  },
+  {
+    "kind": "place",
+    "id": "well",
+    "path": "content/images/place/well.png",
+    "url": "/static/assets/place/well.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "confess",
+    "path": "content/images/ui/confess.png",
+    "url": "/static/assets/ui/confess.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "defend",
+    "path": "content/images/ui/defend.png",
+    "url": "/static/assets/ui/defend.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "divination_clear",
+    "path": "content/images/ui/divination_clear.png",
+    "url": "/static/assets/ui/divination_clear.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "divination_murky",
+    "path": "content/images/ui/divination_murky.png",
+    "url": "/static/assets/ui/divination_murky.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "geumjul",
+    "path": "content/images/ui/geumjul.png",
+    "url": "/static/assets/ui/geumjul.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "interrogate",
+    "path": "content/images/ui/interrogate.png",
+    "url": "/static/assets/ui/interrogate.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "missing",
+    "path": "content/images/ui/missing.png",
+    "url": "/static/assets/ui/missing.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "notebook",
+    "path": "content/images/ui/notebook.png",
+    "url": "/static/assets/ui/notebook.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "suspect",
+    "path": "content/images/ui/suspect.png",
+    "url": "/static/assets/ui/suspect.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ui",
+    "id": "vote",
+    "path": "content/images/ui/vote.png",
+    "url": "/static/assets/ui/vote.png",
+    "placeholder": true
+  },
+  {
+    "kind": "map",
+    "id": "village",
+    "path": "content/images/map/village.png",
+    "url": "/static/assets/map/village.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ad",
+    "id": "cr_bujeok",
+    "size": [
+      300,
+      250
+    ],
+    "path": "content/images/ad/bujeok__300x250.png",
+    "url": "/static/ads/bujeok__300x250.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ad",
+    "id": "cr_bujeok",
+    "size": [
+      728,
+      90
+    ],
+    "path": "content/images/ad/bujeok__728x90.png",
+    "url": "/static/ads/bujeok__728x90.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ad",
+    "id": "cr_gat",
+    "size": [
+      300,
+      250
+    ],
+    "path": "content/images/ad/gat__300x250.png",
+    "url": "/static/ads/gat__300x250.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ad",
+    "id": "cr_gukbap_a",
+    "size": [
+      300,
+      250
+    ],
+    "path": "content/images/ad/gukbap_a__300x250.png",
+    "url": "/static/ads/gukbap_a__300x250.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ad",
+    "id": "cr_gukbap_a",
+    "size": [
+      728,
+      90
+    ],
+    "path": "content/images/ad/gukbap_a__728x90.png",
+    "url": "/static/ads/gukbap_a__728x90.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ad",
+    "id": "cr_gukbap_b",
+    "size": [
+      300,
+      250
+    ],
+    "path": "content/images/ad/gukbap_b__300x250.png",
+    "url": "/static/ads/gukbap_b__300x250.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ad",
+    "id": "cr_gukbap_b",
+    "size": [
+      728,
+      90
+    ],
+    "path": "content/images/ad/gukbap_b__728x90.png",
+    "url": "/static/ads/gukbap_b__728x90.png",
+    "placeholder": true
+  },
+  {
+    "kind": "ad",
+    "id": "cr_yakcho",
+    "size": [
+      728,
+      90
+    ],
+    "path": "content/images/ad/yakcho__728x90.png",
+    "url": "/static/ads/yakcho__728x90.png",
+    "placeholder": true
+  }
+]
