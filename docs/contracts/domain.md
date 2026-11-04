@@ -1,7 +1,7 @@
 # 도메인 계약
 
 코드 기준: `engine/domain/model.py`(규칙·상태), `engine/domain/content.py`(콘텐츠·배정 검증기). 문서와 코드가 다르면 코드가 기준이고, 다른 점은 버그로 고친다.
-기획서: `../../../paldo_design_v1.md` 4·5장.
+기획서: `../paldo_design_v1.md` 4·5장.
 
 ## 1. 참가자와 ID
 - 플레이어 ID는 항상 `"mudang"`(`PLAYER_ID`)이다. 주민은 콘텐츠의 `npc_id`(예: `hunjang`)를 쓴다.

@@ -2,8 +2,8 @@
 
 무당이 되어 마을에 숨은 씐 자를 찾는 추리 게임이다.
 
-- 기획서: [`../paldo_design_v1.md`](../paldo_design_v1.md)
-- 팀 일정과 역할: [`../team_plan.md`](../team_plan.md)
+- 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md)
+- 팀 일정과 역할: [`docs/team_plan.md`](docs/team_plan.md)
 - 계약 문서: [`docs/contracts/`](docs/contracts/)
 - **일자별·담당자별 태스크와 완료 조건**: [`docs/tasks/`](docs/tasks/README.md) (공통 완료 정의, 증빙 양식, 로그·계측 규칙, 결정 대기, 통합 판정 표)
 - 태스크 증빙: `docs/evidence/<태스크ID>.md`, 발표 기록: `docs/presentation/`, 리포트: `docs/reports/`
