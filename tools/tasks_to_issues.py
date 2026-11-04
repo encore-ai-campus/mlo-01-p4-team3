@@ -138,7 +138,7 @@ def desired_issues(tasks: list[Task], decisions: list[Decision], repo: str | Non
             "",
             "---",
             "",
-            f"**완료 판정**: 조건 {conds} + 공통 완료 정의 ①~⑦(README 3절). "
+            f"**완료 판정**: 조건 {conds} + 공통 완료 정의 ①~⑧(README 3절). "
             f"`python -m tools.check_evidence {t.task_id} --complete`가 통과한 PR(`Closes #이 이슈`)의 병합으로만 닫힌다.",
             f"**증빙** `docs/evidence/{t.task_id}.md`",
         ])

@@ -37,13 +37,15 @@
 - 근거: 기획서 6.3
 
 ### C-05-03 개발용 Compose와 Python 환경 확인
-- 2.5h · 산출물: `ops/compose/dev.yml`, `ops/compose/README.md`
+- 2.5h · 산출물: `ops/compose/dev.yml`, `ops/compose/README.md`(팀원별 점검표 포함), `.env.example`
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-05-03` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ops`](../modules/ops.md)는 그날 일괄 갱신(이 태스크의 일괄 갱신 줄)
 - 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: C-05-01, C-05-02, C-05-03 · 코드를 바꿨다면: C-05-00 · 모듈: [`ops`](../modules/ops.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/5 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
 - 완료 조건:
-  1. `docker compose -f ops/compose/dev.yml up -d`로 Mongo(레플리카셋 1노드), Kafka 1노드, MySQL 1노드, S3 호환 저장소, Prometheus, Grafana가 뜨고 상태 확인 명령이 모두 성공(증빙에 출력).
-  2. Python 3.12 환경에서 PyTorch, transformers, LightGBM, llama-cpp-python, pyspark 설치·import 성공 여부(`tech_stack.md` 4절 3번).
-  3. Spark 4.1.3 + Delta Spark 4.4.1 조합으로 쓰기·읽기 1회(4절 4번). 안 되면 호환 버전 조합을 정해 `tech_stack.md` 갱신.
+  1. `docker compose -p paldo-dev -f ops/compose/dev.yml up -d`로 Mongo(레플리카셋 1노드), Kafka 1노드, MySQL 1노드, S3 호환 저장소, Prometheus, Grafana가 뜨고 상태 확인 명령이 모두 성공(증빙에 출력). Compose 프로젝트 이름은 `paldo-dev`로 고정하고, 고정 `container_name`은 쓰지 않는다. 종료는 `docker compose -p paldo-dev … down`(이 프로젝트만)이고 `docker system prune` 같은 전역 정리는 하지 않는다(볼륨 삭제는 PM 허락 뒤). Mongo의 레플리카셋은 변경 스트림·운영 구성용이다. 상태·진실·아웃박스·명령 기록의 원자성은 계약대로 **판 문서 하나에 한 번에 쓰는 것**으로 보장하며, 다중 문서 트랜잭션은 요구하지 않는다(`ports.md` 2절 ④).
+  2. Python 3.12 환경에서 **필수 5개**(PyTorch, transformers, LightGBM, llama-cpp-python, pyspark) 설치·import 성공 여부(`tech_stack.md` 4절 3번). 표에 OS·실행 방식(네이티브/컨테이너)·Python·패키지 정확한 버전·설치 명령·import 명령을 적는다. 그 밖의 패키지 확인은 별도 "조사 항목"으로 두고 이 조건에 넣지 않는다.
+  3. Spark 4.1.3 + Delta Spark 4.4.1 조합으로 **실제 Delta 테이블 쓰기·읽기 1회**(명령·출력·버전, 4절 4번). 안 되면 대안 조합을 시험해 보고하고, PM 승인 뒤 `tech_stack.md`를 바꾼다(계약 변경 PR). 승인 전에는 이 조건을 완료로 표시하지 않는다.
+  4. `.env.example`에는 변수 이름과 자리표시자(`<MONGO_PASSWORD>` 등)만 둔다. 실제 값은 Git이 추적하지 않는 `.env`에 둔다(`check_secrets` 통과, 공통 ⑥).
+  5. 한 PC의 결과는 같은 기종 Windows용 설치 절차의 **기준 사례**로만 쓴다. `ops/compose/README.md`에 팀원별 점검표(OS·가상화·Docker·Python·Java·디스크 여유·VM 부하 확인, 스모크 테스트 명령과 기대 출력)를 둔다. 이 태스크는 점검표를 만들고 이 PC 결과로 한 번 채우는 데까지다(다른 노트북에서 채우는 시점·담당은 PM이 정한다).
 - 근거: 기획서 6.1(개발용 로컬 실행) / tech_stack.md
 
 ## 11/6(금)

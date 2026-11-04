@@ -37,10 +37,10 @@ body:
     id: conditions
     attributes:
       label: 완료 조건
-      description: 태스크 문서의 번호 그대로. 공통 완료 정의 ①~⑦(README 3절)도 만족해야 한다.
+      description: 태스크 문서의 번호 그대로. 공통 완료 정의 ①~⑧(README 3절)도 만족해야 한다.
       value: |
         - [ ] 1.
-        - [ ] 공통 ①~⑦
+        - [ ] 공통 ①~⑧
     validations: { required: true }
   - type: input
     id: evidence

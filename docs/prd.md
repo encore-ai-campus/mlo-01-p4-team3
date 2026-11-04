@@ -59,7 +59,8 @@
 | `STK-PRES-001` | S 발표 트랙 | `docs/presentation/` | `tasks/P_presentation.md` | `STK-PM-001` |
 
 - 검토자 짝은 인터페이스가 가장 많이 맞닿는 흐름으로 제안했다. P-01 결정 때 PM이 확정한다.
-- 사람 판단 조건(말투, 의미 보존, 해설 인과, 이미지)의 검수자는 결과물 작성자와 다른 흐름 1명이다(`tasks/README.md` 3절).
+- 사람 판단 조건(말투, 의미 보존, 해설 인과, 이미지)의 검수자는 결과물 작성자와 다른 흐름 1명이다(`tasks/README.md` 3절). 이미지 검수는 11/11 E-11-05에서 한 번에 한다(스타일 가이드 확인만 11/5).
+- 모든 PR은 작성자가 아닌 1명의 승인이 있어야 병합된다(`tasks/README.md` 3절 ⑧, `main` 보호 규칙).
 
 ### 2.2 서비스 흐름
 
@@ -266,7 +267,7 @@
 
 | ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
 |---|---|---|---|---|---|---|---|
-| `FR-GOV-001` | planned | GitHub 저장소(P-11), `main` 보호, 담당 배정, 태스크 → 이슈 생성 | `BR-OBJ-009` | `AC-GOV-001` | E-05-01 | `STK-PM-001` | 11/5 |
+| `FR-GOV-001` | planned | GitHub 저장소(P-11, 교육기관 생성·초대, 공개), `main` 보호(필수 체크 4개, 작성자 외 승인 1명, 관리자 우회 불가), 담당 배정, 태스크 → 이슈 생성 | `BR-OBJ-009` | `AC-GOV-001` | E-05-01 | `STK-PM-001` | 11/5 |
 | `FR-GOV-002` | planned | CI 필수 체크 4개(`core`, `django`, `evidence`, `docs`)와 `check_evidence`·`check_docs`·`check_secrets` | `BR-OBJ-009` | `AC-GOV-001` | E-05-02 | `STK-PM-001` | 11/5 |
 | `FR-GOV-003` | planned | 모든 태스크의 증빙 문서(명령·출력·수치·로그·실제 소요 시간), 흐름별 트러블·검증 기록(발표 트랙 입력), 모듈 문서 일괄 갱신 | `BR-OBJ-009` | `AC-GOV-002` | 전 태스크(공통 완료 정의 ③⑦), A-10-03, B-10-04, C-11-04, D-11-03 | `STK-PM-001` | 11/12 |
 | `FR-GOV-004` | planned | 통합 1·2·3 판정(끝에서 끝까지 흐름 2개, 대조표, 제출 후보 SHA 재검사) | `BR-OBJ-009` | `AC-GOV-003` | INT-07, INT-09, INT-11, E-07-03, E-09-04, E-11-01, A-07-03, A-09-03, A-11-01, B-07-04, B-09-04, B-11-01, C-07-03, C-09-04, D-07-04, D-09-04, D-11-02 | `STK-PM-001` | 11/11 |
@@ -434,7 +435,7 @@
 ## 8. Acceptance criteria
 
 - 상태는 모두 `planned`로 시작한다. 확인하지 못한 항목은 `not_verified`로 둔다.
-- Evidence의 `evidence/<ID>.md`는 `docs/evidence/<태스크ID>.md`이고, 수치는 `docs/evidence/perf/<ID>*.json`과 대조된다.
+- Evidence의 `evidence/<ID>.md`는 `docs/evidence/<태스크ID>.md`이고, 수치는 `docs/evidence/perf/<ID>/<이름>.json`(`tasks/README.md` 4절 "결과 JSON 형식")과 대조된다.
 
 | AC ID | Given | When | Then | Evidence | 상태 |
 |---|---|---|---|---|---|
@@ -496,7 +497,7 @@
 | `AC-SEC-001` | 저장소 전체 | `python -m tools.check_secrets` | 비밀정보 의심 0건, 규칙 위반 PR에서 검사가 실패함 | `evidence/E-05-02.md`, CI `core` | planned |
 | `AC-CONT-001` | 콘텐츠 묶음 | 엄격 검증, 배정 검증기 6인 시드 200개 | 검증 통과, 별칭 고유, 위반 0, 원전 인용 0 | `evidence/E-05-03.md`, `evidence/E-08-02.md` | planned |
 | `AC-CONT-002` | 템플릿·변형 | `tools/check_templates.py`, 검수 | 반응 템플릿 `{fact}` 포함, 자리표시자 오탈자 0, 템플릿당 변형 2개 이상, 사전 생성 변형은 검수 통과분만 | `evidence/E-06-01.md`, `evidence/E-09-03.md` | planned |
-| `AC-ASSET-001` | 규격표·콘텐츠 ID 목록 | `check_assets.py`(임시 `--placeholder`, 실제 기본) | 에셋 유형별 기대 키 집합(인물 ID, `Place`, 아이콘 ID, `creative_id` × 지면 규격)마다 파일 정확히 1개, 누락 0·남는 파일 0, manifest 항목 = 기대 키 수, 규격·용량·생성 기록 위반 0, 스타일 가이드 검수 기록 | `evidence/E-05-05.md`, `evidence/E-08-07.md`, `evidence/E-11-05.md` | planned |
+| `AC-ASSET-001` | 규격표·콘텐츠 ID 목록 | `check_assets.py`(임시 `--placeholder`, 실제 기본) | 에셋 유형별 기대 키 집합(인물 ID, `Place`, 아이콘 ID, `creative_id` × 지면 규격)마다 파일 정확히 1개, 누락 0·남는 파일 0, manifest 항목 = 기대 키 수, 규격·용량·생성 기록 위반 0(임시 에셋은 생성 기록 면제), 스타일 가이드 검수 기록(E-05-05), 모든 실제 파일의 에셋1·5 일괄 검수 기록(E-11-05) | `evidence/E-05-05.md`, `evidence/E-08-07.md`, `evidence/E-11-05.md` | planned |
 | `AC-ASSET-002` | 임시 에셋으로 개발된 화면·광고 | 실제 에셋으로 같은 경로 덮어쓰기 | B·D 코드 이미지 경로 변경 0줄, 화면·광고 테스트 통과 | `evidence/E-11-06.md` | planned |
 | `AC-UT-001` | 테스트 준비 완료(P-12) | 사전·정식 사용자 테스트 | 목표 30명 × 평균 4판 대비 실제 참가자 수·판 수(미달이면 원인), 소요 시간 중앙값 10분 이하, 완주율, 설문 응답률, 원하는 행동 완료율 표 | `evidence/E-06-04.md`, `evidence/E-07-02.md`, `evidence/E-09-01.md`, INT-09 #10 | planned |
 | `AC-UT-002` | 사용자 테스트 데이터 | 수집 확인과 리포트 작성 | 판 수 = 설문 이벤트 수(건너뜀 포함), 설문 평균과 응답 수, 판 번호별 승률, 이탈 지점, 미달 시 원인 분석 | `evidence/D-09-03.md`, `evidence/B-07-02.md`, `docs/reports/user_test.md`, INT-09 #7 | planned |
