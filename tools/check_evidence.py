@@ -253,6 +253,9 @@ _COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 _TASK_LINE_RE = re.compile(r"^\s*Task\s*:(.*)$", re.M)
 _CLOSING_RE = re.compile(r"(?i)\b(close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b\s*:?\s*(?:[\w.-]+/[\w.-]+)?#\d+")
 _REFS_RE = re.compile(r"(?i)\brefs\s*:?\s*(?:[\w.-]+/[\w.-]+)?#\d+")
+# URL 형태 닫기(`Fixes https://github.com/o/r/issues/2`)도 GitHub가 이슈를 닫으므로 허용하지 않는다
+_CLOSING_URL_RE = re.compile(r"(?i)\b(close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b\s*:?\s*https?://\S+/(?:issues|pull)/\d+")
+_ISSUE_REF_RE = re.compile(r"#\d+|/(?:issues|pull)/\d+")
 _PR_HOURS_RE = re.compile(r"^\s*(?:-\s*)?실제 소요 시간\(h\)\s*:[ \t]*(.*?)[ \t]*$", re.M)
 
 
@@ -291,9 +294,12 @@ def check_pr_body(body: str, task_ids: set[str], confirmed: set[str]) -> PrCheck
         else:
             others += 1
             errors.append(f"허용되지 않은 닫기 키워드 {m.group(1)!r}(`Closes #` 또는 `Refs #`만)")
+    for m in _CLOSING_URL_RE.finditer(text):
+        others += 1
+        errors.append(f"URL 형태 닫기 참조 {m.group(0)!r}는 쓸 수 없음(`Closes #<번호>` 또는 `Refs #<번호>`만)")
     refs = len(_REFS_RE.findall(text))
     for line in text.splitlines():  # 연결 줄 하나에 이슈 번호가 둘 이상이면(`Closes #1, #2`) 검사를 거치지 않고 닫힐 수 있다
-        if (_CLOSING_RE.search(line) or _REFS_RE.search(line)) and len(re.findall(r"#\d+", line)) > 1:
+        if (_CLOSING_RE.search(line) or _REFS_RE.search(line)) and len(_ISSUE_REF_RE.findall(line)) > 1:
             errors.append(f"이슈 연결 줄에 이슈 번호가 둘 이상: {line.strip()!r}(번호 하나만)")
     if others == 0 and closes + refs != 1:
         errors.append(f"이슈 연결 줄은 `Closes #<번호>` 또는 `Refs #<번호>` 중 정확히 하나(Closes {closes}, Refs {refs})")

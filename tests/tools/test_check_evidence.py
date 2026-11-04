@@ -316,7 +316,12 @@ class PrBody(unittest.TestCase):
             self.assertTrue(any("닫기 키워드" in e for e in errs), kw)
         self.assertIn("정확히 하나", self.check(BODY_OK + "Refs #13\n").errors[0])
         self.assertIn("정확히 하나", self.check(BODY_OK.replace("Closes #12", "Closes #")).errors[0])
-        for line in ("Closes #12, #13", "Closes #12 and #13", "Refs #12, #13"):
+        url = "Fixes https://github.com/o/r/issues/13"
+        errs = self.check(BODY_OK.replace("Closes #12", "Refs #12") + url + "\n").errors
+        self.assertTrue(any("URL 형태" in e for e in errs), errs)
+        self.assertTrue(any("URL 형태" in e for e in self.check(BODY_OK + url + "\n").errors))
+        for line in ("Closes #12, #13", "Closes #12 and #13", "Refs #12, #13",
+                     "Closes #12 https://github.com/o/r/issues/13"):
             errs = self.check(BODY_OK.replace("Closes #12", line)).errors
             self.assertTrue(any("둘 이상" in e for e in errs), line)
 
