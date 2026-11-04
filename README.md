@@ -49,6 +49,9 @@ server/infra (인프라) → engine (포트 구현)
 | `tests/contract/` | 테스트 | 공용 | 계약 테스트(unittest) |
 | `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화) |
 | `.github/` | 저장소 운영 | E | 이슈 양식(`ISSUE_TEMPLATE/`), 라벨 정의(`labels.yml`), PR 양식, CI 워크플로(E-05-02) |
+| `.github/workflows/` | 저장소 운영(표현) | E | CI 필수 체크 4개 `core`·`django`·`evidence`·`docs`(`ci.yml`). 검사 규칙은 `tools/check_*.py`, 설명은 `docs/modules/ci.md` |
+| `docs/evidence/` | 문서(증빙) | 각 흐름 | 태스크 증빙 `<ID>.md`, 측정 결과 JSON `perf/<ID>/<이름>.json`(`tools/evidence_result.py`로만 쓴다) |
+| `tests/fixtures/secrets/` | 테스트 데이터 | E | `check_secrets` 탐지 테스트용 가짜 비밀값. 비밀정보 검사에서 이 폴더만 제외 |
 | `docs/modules/`, `docs/troubles/` | 문서 | 각 흐름 | 모듈 문서, 흐름별 트러블 기록(양식 `_template.md`) |
 
 "예정"인 폴더는 담당 흐름이 처음 코드를 넣을 때 만든다.
@@ -73,6 +76,7 @@ server/infra (인프라) → engine (포트 구현)
 | 태스크 완료 증빙 쓰기(실제 소요 시간 포함) | `docs/tasks/README.md` 4절 양식 → `docs/evidence/` |
 | 태스크 문서화(트러블·docstring은 태스크마다, 모듈 문서는 흐름별 하루 1회 일괄 갱신) | `docs/tasks/README.md` 10절 → `docs/modules/`, `docs/troubles/` |
 | 이슈 만들기·동기화, 오늘 열린 태스크 보기 | `python -m tools.tasks_to_issues --dry-run`, `docs/tasks/README.md` 11절 |
+| CI 체크·증빙·문서화·비밀정보 검사 규칙 바꾸기 | 표현 `.github/workflows/ci.yml`, 규칙 `tools/check_evidence.py`·`check_docs.py`·`check_secrets.py`, 예외 `tools/secrets_allowlist.txt`, 설명 `docs/modules/ci.md` |
 | 태스크 조건 바꾸기 | `docs/tasks/<흐름>.md`를 고치는 PR(이슈 본문은 직접 고치지 않음) |
 | 로그·지표 이름 정하기 | `docs/tasks/README.md` 5절 |
 | 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/B_web.md` `[에셋]`) |
