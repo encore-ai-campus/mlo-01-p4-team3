@@ -18,25 +18,51 @@ from urllib.parse import quote
 PROJECT = "paldo-dev"
 SERVICE_NAME = "devenv"
 PLACEHOLDER_RE = re.compile(r"<([A-Z][A-Z0-9_]*)>")
-GARAGE_KEY_ID_RE = re.compile(r"^GK[0-9a-f]{24}$")
+S3_KEY_ID_RE = re.compile(r"^GK[0-9a-f]{24}$")   # Garage 키 ID 형식
 HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+
+# 로컬 Compose에서 고정인 값(자리표시자 이름 → 값). 빈 값은 "로컬 Compose에 없음, 가짜 구현을 쓴다"는 뜻이다.
+LOCAL_FIXED = {
+    "KAFKA_BOOTSTRAP": "localhost:9092",
+    "S3_ENDPOINT": "http://localhost:3900",
+    "PROMETHEUS_URL": "http://localhost:9090",
+    "ADS_DB_HOST": "127.0.0.1",
+    "ADS_DB_PORT": "3316",          # Windows MySQL(3306)과 겹치지 않게(11/4 PM 결정, integration.md 4.1)
+    "ADS_DB_NAME": "paldo_ads",
+    "MLFLOW_URI": "",               # 로컬은 mlruns/(가짜 → 진짜 교체표)
+    "LLM_URL": "",                  # 로컬은 LLM 폴백 템플릿
+    "ADS_INTERNAL_URL": "",         # 로컬은 FakeAdProvider
+    "ADS_PUBLIC_URL": "",
+}
+# 다른 자리표시자 값으로 만드는 값.
+DERIVED = {
+    "MONGO_URI": "mongodb://{MONGO_USER}:{MONGO_PASSWORD}@localhost:27117/?replicaSet=rs0&authSource=admin",
+}
+# Compose 변수 치환에 필요해 ops/compose/.env로 복사하는 변수(Compose는 저장소 루트 .env를 치환에 쓰지 않는다).
+COMPOSE_VARS = ("PALDO_ADS_DB_PORT",)
+# 로컬에서 비어 있어도 되는 변수.
+MAY_BE_EMPTY = ("PALDO_MLFLOW_URI", "PALDO_LLM_URL", "PALDO_ADS_INTERNAL_URL", "PALDO_ADS_PUBLIC_URL")
 
 
 # ---------------------------------------------------------------- .env 생성 규칙
 
 def placeholder_value(name: str, token_hex: Callable[[int], str] = secrets.token_hex,
                       token_urlsafe: Callable[[int], str] = secrets.token_urlsafe) -> str:
-    """자리표시자 이름 하나에 넣을 값을 만든다.
+    """자리표시자 이름 하나에 넣을 값을 만든다(`DERIVED`에 있는 이름은 `render_env`가 따로 채운다).
 
-    `*_USER` → 고정 계정 이름 `paldo_dev`, Garage 키 ID → `GK` + 16진수 24자,
-    Garage 비밀 키·RPC 비밀 → 16진수 64자, 그 밖(비밀번호·토큰) → URL 안전 문자 32자.
+    로컬 고정값(`LOCAL_FIXED`) → 그 값, `*_USER` → `paldo_dev`, S3 키 ID → `GK` + 16진수 24자,
+    S3 비밀 키·Garage RPC 비밀·서명 키 → 16진수 64자, 그 밖(비밀번호·토큰·Django 키) → URL 안전 문자.
     """
+    if name in LOCAL_FIXED:
+        return LOCAL_FIXED[name]
     if name.endswith("_USER"):
         return "paldo_dev"
-    if name == "GARAGE_KEY_ID":
+    if name == "S3_ACCESS_KEY":
         return "GK" + token_hex(12)
-    if name in ("GARAGE_SECRET_KEY", "GARAGE_RPC_SECRET"):
+    if name in ("S3_SECRET_KEY", "GARAGE_RPC_SECRET", "ADS_TOKEN_KEY"):
         return token_hex(32)
+    if name == "DJANGO_SECRET_KEY":
+        return token_urlsafe(48)
     return token_urlsafe(24)
 
 
@@ -49,9 +75,24 @@ def find_placeholders(text: str) -> list[str]:
 
 
 def render_env(template: str, make_value: Callable[[str], str] = placeholder_value) -> str:
-    """`.env.example` 내용의 자리표시자를 값으로 바꾼 `.env` 내용을 돌려준다(같은 이름은 같은 값)."""
-    values = {name: make_value(name) for name in find_placeholders(template)}
+    """`.env.example` 내용의 자리표시자를 값으로 바꾼 `.env` 내용을 돌려준다.
+
+    같은 이름은 같은 값이다(예: `MYSQL_USER`와 `PALDO_ADS_DB_USER`가 같은 `<MYSQL_USER>`를 쓴다).
+    `DERIVED`의 이름은 다른 자리표시자 값으로 만든다(예: Mongo 연결 문자열).
+    """
+    names = find_placeholders(template)
+    values = {name: make_value(name) for name in names if name not in DERIVED}
+    for name in names:
+        if name in DERIVED:
+            values[name] = DERIVED[name].format(**values)
     return PLACEHOLDER_RE.sub(lambda m: values[m.group(1)], template)
+
+
+def compose_env(env: dict[str, str]) -> str:
+    """`ops/compose/.env`(Compose 변수 치환용) 내용. 저장소 루트 `.env`에서 `COMPOSE_VARS`만 옮긴다."""
+    lines = ["# 생성 파일(python -m ops.compose.run make-env). 직접 고치지 말고 저장소 루트 .env를 고친 뒤 다시 실행한다."]
+    lines += [f"{k}={env[k]}" for k in COMPOSE_VARS if env.get(k)]
+    return "\n".join(lines) + "\n"
 
 
 def parse_env(text: str) -> dict[str, str]:
@@ -67,17 +108,22 @@ def parse_env(text: str) -> dict[str, str]:
 
 
 def env_problems(env: dict[str, str], required: Iterable[str]) -> list[str]:
-    """`.env` 값의 문제 목록. 빠진 변수, 남은 자리표시자, Garage 키 형식 오류를 찾는다."""
+    """`.env` 값의 문제 목록. 빠진 변수, 남은 자리표시자, S3 키·Garage 비밀 형식 오류를 찾는다."""
     problems = []
     for key in required:
-        value = env.get(key, "")
-        if not value:
+        if key not in env:
+            problems.append(f"{key}: 변수가 없다")
+            continue
+        value = env[key]
+        if not value and key not in MAY_BE_EMPTY:
             problems.append(f"{key}: 값이 없다")
         elif PLACEHOLDER_RE.search(value):
             problems.append(f"{key}: 자리표시자가 남아 있다")
-    if env.get("GARAGE_KEY_ID") and not GARAGE_KEY_ID_RE.match(env["GARAGE_KEY_ID"]):
-        problems.append("GARAGE_KEY_ID: GK + 16진수 24자가 아니다")
-    for key in ("GARAGE_SECRET_KEY", "GARAGE_RPC_SECRET"):
+    if env.get("PALDO_S3_ACCESS_KEY") and not S3_KEY_ID_RE.match(env["PALDO_S3_ACCESS_KEY"]):
+        problems.append("PALDO_S3_ACCESS_KEY: GK + 16진수 24자가 아니다(Garage 키 ID 형식)")
+    if env.get("PALDO_ADS_DB_PORT") and not env["PALDO_ADS_DB_PORT"].isdigit():
+        problems.append("PALDO_ADS_DB_PORT: 숫자가 아니다")
+    for key in ("PALDO_S3_SECRET_KEY", "GARAGE_RPC_SECRET"):
         if env.get(key) and not HEX64_RE.match(env[key]):
             problems.append(f"{key}: 16진수 64자가 아니다")
     return problems

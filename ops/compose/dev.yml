@@ -3,7 +3,8 @@
 # 종료(이 프로젝트만):    docker compose -p paldo-dev -f ops/compose/dev.yml down
 # - 프로젝트 이름은 paldo-dev 고정. 고정 container_name은 쓰지 않는다(다른 Compose 프로젝트와 충돌 방지).
 # - 비밀값은 저장소 루트의 .env(Git 추적 안 함)에서 읽는다. 양식은 .env.example.
-# - 포트는 모두 127.0.0.1에만 연다. 호스트 포트는 환경 변수로 바꿀 수 있다(README "설정값").
+# - 포트는 모두 127.0.0.1에만 연다. MySQL 호스트 포트는 루트 .env의 PALDO_ADS_DB_PORT(make-env가 ops/compose/.env로 옮김),
+#   나머지는 셸 환경 변수 PALDO_*_PORT로 바꿀 수 있다(README 6절).
 # - mem_limit 합계 3.0GB(기준 PC 실사용 약 1.0GB). 32GB 노트북에서 VM 4대와 함께 띄우는 것을 전제로 작게 잡았다.
 name: paldo-dev
 
@@ -82,7 +83,7 @@ services:
       MYSQL_DATABASE: paldo_ads
     command: ["--innodb-buffer-pool-size=64M", "--performance-schema=OFF", "--skip-name-resolve"]
     ports:
-      - "127.0.0.1:${PALDO_MYSQL_PORT:-3316}:3306"
+      - "127.0.0.1:${PALDO_ADS_DB_PORT:-3316}:3306"   # 값은 make-env가 루트 .env에서 ops/compose/.env로 옮긴다
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:

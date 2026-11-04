@@ -39,9 +39,11 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
-| `.env`의 `MONGO_INITDB_ROOT_*`, `MYSQL_*`, `GARAGE_*`, `GF_SECURITY_ADMIN_*` | `make-env`가 무작위로 채움 | 계정·비밀값. 양식은 `.env.example`(자리표시자만) | 첫 기동 뒤 바꾸면 기존 볼륨 계정과 어긋난다. 볼륨을 지우고 다시 띄워야 한다 |
+| `.env`의 `PALDO_*`(integration.md 4.1) | `make-env`가 로컬 값으로 채움(주소·포트는 고정값, 비밀은 무작위, MLflow·LLM·광고 서버 주소는 비움) | 앱이 읽는 주소·비밀. 양식은 `.env.example`(자리표시자만) | 같은 이름을 VM·AWS에서 값만 바꿔 쓴다 |
+| `.env`의 `MONGO_INITDB_ROOT_*`, `MYSQL_*`, `GARAGE_RPC_SECRET`, `GARAGE_ADMIN_TOKEN`, `GF_SECURITY_ADMIN_*` | `make-env`가 무작위로 채움(MySQL 계정은 `PALDO_ADS_DB_USER`·`_PASSWORD`와 같은 값) | 컨테이너 초기화용(이미지가 정한 이름) | 첫 기동 뒤 바꾸면 기존 볼륨 계정과 어긋난다. 볼륨을 지우고 다시 띄워야 한다 |
+| `ops/compose/.env` | `make-env`가 루트 `.env`에서 생성 | Compose 변수 치환용(`PALDO_ADS_DB_PORT`만). Compose는 `-f ops/compose/dev.yml`이면 `ops/compose/`의 `.env`만 치환에 쓴다 | 루트 `.env`를 고치면 `make-env` 재실행. 다르면 smoke가 실패한다 |
 | `PALDO_KAFKA_PORT` | 9092 | Kafka 호스트 포트(광고 주소에도 쓰임) | 클라이언트 주소 변경 |
-| `PALDO_MYSQL_PORT` | 3316 | MySQL 호스트 포트 | 접속 주소 변경 |
+| `PALDO_ADS_DB_PORT` | 3316(로컬). 비면 3306(VM·AWS) | MySQL 호스트 포트(11/4 PM 결정) | Compose 포트와 앱 접속 포트가 함께 바뀐다 |
 | `PALDO_S3_PORT`, `PALDO_GARAGE_ADMIN_PORT` | 3900, 3903 | Garage S3·관리 API | S3 엔드포인트 변경 |
 | `PALDO_PROMETHEUS_PORT`, `PALDO_GRAFANA_PORT` | 9090, 3000 | 관측 UI | 접속 주소 변경 |
 | Mongo 포트 | 27117(고정) | 레플리카셋 멤버 주소 `localhost:27117` | 바꿀 수 없다(멤버 주소와 같아야 한다) |
@@ -53,12 +55,13 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 ## 한계
 
 - 이 결과는 **기준 PC 한 대(11/4)**의 것이다. 다른 노트북은 `ops/compose/README.md` 5절 점검표로 각자 확인해야 한다.
-- 이미지 버전 중 Mongo 8.0.34, Kafka 4.3.2, MySQL 8.4.13은 VM 실측(C-05-01) 전의 잠정값이다. VM 버전과 다르면 맞춘다.
+- 이미지 `mongo:8.0.34`·`mysql:8.4.13`은 11/4 PM 결정(CI 서비스 컨테이너와 같은 태그)이다. `apache/kafka:4.3.2`는 VM 실측(C-05-01) 전의 잠정값이다.
 - Spark 4.1.3에는 Delta 기본 jar(`delta-spark_2.13:4.4.1`, Spark 4.2.0용)가 맞지 않는다. Spark 4.1용 jar(`delta-spark_4.1_2.13:4.4.1`)로만 확인했다. 계약(`tech_stack.md`) 반영은 PM 승인 대기다.
 - Python은 3.14를 먼저 실측했다(C-05-03 조건 2, 11/4 PM 결정). 필수 5개가 모두 성공해 3.12 재시도는 하지 않았다. ML·LLM Python 버전 확정과 `tech_stack.md`·CI `core` 반영은 PM 승인 대기다.
 - Python 3.14 필수 5개는 **Windows 휠로만** 확인했다. ML 학습·LLM이 돌 Ubuntu VM(nifi-01, llm-01)의 Linux 휠, 특히 llama-cpp-python(빌드 도구 없이 미리 빌드된 휠에 기댄다)은 확인하지 않았다. VM에서 실패하면 VM만 3.12로 두는 선택지가 남아 있다.
 - `requirements/`의 조사 항목(scikit-learn, shap, mlflow, langgraph, Django, pymongo, PyMySQL, confluent-kafka, prometheus-client, delta-spark)은 3.14 휠이 있는지만 확인했고(`pip --dry-run`), import는 하지 않았다.
 - Prometheus는 Mongo·Kafka·MySQL 지표를 아직 수집하지 않는다(익스포터 없음, C-08-01).
+- 루트 `.env`와 Compose 치환용 `ops/compose/.env` 두 파일이 있다(명령을 바꾸지 않으려고). `make-env`가 맞추고 smoke가 어긋남을 잡는다.
 - Garage 키를 등록할 때 비밀 키가 `docker compose exec` 인자로 넘어간다. 로컬 프로세스 목록에서 보일 수 있다.
 
 ## 변경 이력

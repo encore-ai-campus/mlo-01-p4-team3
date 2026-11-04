@@ -10,7 +10,7 @@
 |---|---|---|---|---|
 | mongo | `mongo:8.0.34` | `localhost:27117` | 640MB | 판 문서·아웃박스·콘텐츠. 레플리카셋 `rs0` 1노드(인증 + 키 파일) |
 | kafka | `apache/kafka:4.3.2` | `localhost:9092` | 1GB | 이벤트. KRaft 1노드, 보존 24시간 |
-| mysql | `mysql:8.4.13` | `localhost:3316` | 512MB | 광고 DB `paldo_ads` |
+| mysql | `mysql:8.4.13` | `localhost:3316`(`.env`의 `PALDO_ADS_DB_PORT`) | 512MB | 광고 DB `paldo_ads` |
 | garage | `dxflrs/garage:v2.5.0` | S3 `localhost:3900`, 관리 `localhost:3903` | 256MB | Delta·MLflow 버킷(`paldo-lake`, `paldo-mlflow`) |
 | prometheus | `prom/prometheus:v3.15.0` | `localhost:9090` | 256MB | 지표 수집(지금은 자기 자신·Grafana·Garage) |
 | grafana | `grafana/grafana:13.2.4` | `localhost:3000` | 384MB | 대시보드. 데이터 소스 Prometheus 자동 등록 |
@@ -31,7 +31,8 @@ cd C:\encore_project\4rd_project\paldo
 docker version --format '{{.Server.Version}}'
 py -3.14 --version
 
-# 2) 비밀값 파일 만들기(.env, Git 추적 안 함). 이미 있으면 그대로 둔다
+# 2) 주소·비밀값 파일 만들기: 루트 .env(이미 있으면 그대로)와 Compose 치환용 ops/compose/.env. 둘 다 Git 추적 안 함
+#    3306을 이미 쓰는 프로그램(Windows MySQL 등)이 없고 3306을 쓰고 싶으면, .env의 PALDO_ADS_DB_PORT를 고친 뒤 이 명령을 다시 실행
 py -3.14 -m ops.compose.run make-env
 
 # 3) 띄우기 → Garage 초기화(레이아웃·키·버킷, 여러 번 해도 같다) → 상태 확인
@@ -72,15 +73,17 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down        # 내리기(데�
 
 데이터까지 지우는 `down -v`는 PM 허락 뒤에만 한다. `.env`를 다시 만들면 기존 볼륨의 Mongo·MySQL 계정과 달라지므로, 이때도 볼륨을 지워야 한다.
 
-연결 주소(값은 `.env`에서 읽는다. 코드·문서에 비밀번호를 쓰지 않는다):
+연결 정보는 앱이 `.env`의 `PALDO_*` 변수(이름은 `docs/contracts/integration.md` 4.1)로 읽는다. 코드·문서에 값을 쓰지 않는다. `make-env`가 로컬 값을 채운다:
 
-| 대상 | 형태 |
-|---|---|
-| Mongo | `mongodb://<MONGO_INITDB_ROOT_USERNAME>:<…PASSWORD>@localhost:27117/?replicaSet=rs0&authSource=admin` |
-| Kafka | `localhost:9092`(컨테이너끼리는 `kafka:19092`) |
-| MySQL | `<MYSQL_USER>@localhost:3316/paldo_ads` |
-| S3 | `http://localhost:3900`, 리전 `garage`, 경로 방식, 키 `GARAGE_KEY_ID`·`GARAGE_SECRET_KEY` |
-| Grafana | `http://localhost:3000`, `GF_SECURITY_ADMIN_USER`·`…PASSWORD` |
+| 대상 | 변수 | 로컬 값 |
+|---|---|---|
+| Mongo | `PALDO_MONGO_URI` | `mongodb://<계정>:<비밀번호>@localhost:27117/?replicaSet=rs0&authSource=admin` |
+| Kafka | `PALDO_KAFKA_BOOTSTRAP` | `localhost:9092`(컨테이너끼리는 `kafka:19092`) |
+| MySQL | `PALDO_ADS_DB_HOST`·`_PORT`·`_NAME`·`_USER`·`_PASSWORD` | `127.0.0.1`·`3316`·`paldo_ads`·컨테이너 앱 계정과 같은 값 |
+| S3 | `PALDO_S3_ENDPOINT`·`_ACCESS_KEY`·`_SECRET_KEY` | `http://localhost:3900`(리전 `garage`, 경로 방식), `garage-init`이 이 키를 등록 |
+| Prometheus | `PALDO_PROMETHEUS_URL` | `http://localhost:9090` |
+| MLflow·LLM·광고 서버 | `PALDO_MLFLOW_URI`, `PALDO_LLM_URL`, `PALDO_ADS_INTERNAL_URL`·`_PUBLIC_URL` | 비움(로컬 Compose에 없음. 가짜 구현을 쓴다) |
+| Grafana | (앱이 안 씀) `GF_SECURITY_ADMIN_USER`·`…PASSWORD` | `http://localhost:3000` |
 
 ## 4. Spark + Delta 확인 (C 담당, 선택)
 
@@ -110,7 +113,8 @@ docker run --rm --memory 1g -v "${PWD}/ops/compose/spark:/work:ro" apache/spark:
 | 5 | Java | `java -version`; `$env:JAVA_HOME` | 17 이상(pyspark 로컬 실행 때만) | PATH 17.0.20.1, JAVA_HOME은 21.0.12 | | | | | |
 | 6 | 디스크 여유 | `"{0:N1}GB" -f ((Get-PSDrive C).Free/1GB)` | 이미지·venv 설치 뒤 20GB 이상 권장 | 설치 전 68.0GB → 설치 뒤 53.4GB | | | | | |
 | 7 | VM 부하 | `@(Get-Process vmware-vmx).Count`; 여유 RAM `"{0:N1}GB" -f ((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory/1MB)` | 기동 뒤 smoke 성공 | VM 4대 실행 중, 여유 RAM 1.7GB(기동 전) → 1.5GB(기동 뒤) | | | | | |
-| 8 | 포트 충돌 | `netstat -ano \| findstr "LISTENING" \| findstr ":27117 :9092 :3316 :3900 :3903 :9090 :3000"` | 기동 전 출력 없음 | 없음(27017·3306은 Windows용 Mongo·MySQL이 사용) | | | | | |
+| 8 | 포트 충돌 | `netstat -ano \| findstr "LISTENING" \| findstr ":27117 :9092 :3316 :3900 :3903 :9090 :3000"` | 기동 전 출력 없음 | 없음 | | | | | |
+| 8-1 | MySQL 3306 사용 여부 | `netstat -ano \| findstr "LISTENING" \| findstr ":3306 "` | 3306을 이미 쓰는 프로그램(Windows MySQL 등)이 있으면 호스트 포트를 바꾸고 `.env`의 `PALDO_ADS_DB_PORT`에 적은 뒤 `make-env` 재실행(기본 3316) | 3306을 Windows MySQL(`mysqld`)이 사용 → 3316. 27017은 Windows MongoDB(`mongod`)가 사용하지만 Compose Mongo는 27117이라 겹치지 않음 | | | | | |
 | 9 | 스모크 | `py -3.14 -m ops.compose.run smoke` | `결과 6/6 성공`, 종료 코드 0 | 6/6 성공 | | | | | |
 | 10 | Python 패키지 | `.venv\Scripts\python -m ops.compose.pycheck` | `필수 실패 0건`(자기 영역만 설치했으면 그 패키지만 OK) | 필수 5개 OK | | | | | |
 
@@ -120,7 +124,8 @@ docker run --rm --memory 1g -v "${PWD}/ops/compose/spark:/work:ro" apache/spark:
 |---|---|
 | `failed to connect to the docker API … dockerDesktopLinuxEngine` | Docker Desktop이 꺼져 있다. 켜고 1분쯤 기다린다 |
 | `env file …\.env not found` | `py -3.14 -m ops.compose.run make-env`를 먼저 한다 |
-| `ports are not available` | 그 포트를 다른 프로그램이 쓴다. `$env:PALDO_KAFKA_PORT=19092`처럼 바꿔 띄운다(`PALDO_KAFKA_PORT`, `PALDO_MYSQL_PORT`, `PALDO_S3_PORT`, `PALDO_GARAGE_ADMIN_PORT`, `PALDO_PROMETHEUS_PORT`, `PALDO_GRAFANA_PORT`). Mongo 27117은 레플리카셋 주소라 바꿀 수 없다 |
+| smoke가 `ops/compose/.env가 루트 .env와 다르다` | `.env`를 고친 뒤 `make-env`를 다시 실행하고 `up -d` |
+| `ports are not available` | 그 포트를 다른 프로그램이 쓴다. MySQL은 `.env`의 `PALDO_ADS_DB_PORT`를 바꾸고 `make-env` → `up -d`. 나머지는 셸 변수로 바꿔 띄운다(`$env:PALDO_KAFKA_PORT=19092` 등: `PALDO_KAFKA_PORT`, `PALDO_S3_PORT`, `PALDO_GARAGE_ADMIN_PORT`, `PALDO_PROMETHEUS_PORT`, `PALDO_GRAFANA_PORT`). 이때 `.env`의 해당 주소 변수(`PALDO_KAFKA_BOOTSTRAP` 등)도 같이 고친다. Mongo 27117은 레플리카셋 주소라 바꿀 수 없다. 겹친 포트는 PM에게 알린다 |
 | smoke에서 garage FAIL "레이아웃 없음" | `py -3.14 -m ops.compose.run garage-init` |
 | mongo가 계속 `health: starting` | 첫 기동 때 레플리카셋 초기화에 수십 초가 걸린다. 2분이 넘으면 `docker compose -p paldo-dev -f ops/compose/dev.yml logs mongo` |
 | 한글이 깨져 보인다 | 로그는 UTF-8 JSON이다. PowerShell에서는 `[Console]::OutputEncoding=[Text.Encoding]::UTF8` |

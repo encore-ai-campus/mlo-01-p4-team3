@@ -28,6 +28,7 @@ from ops.compose import devenv
 ROOT = Path(__file__).resolve().parents[2]
 COMPOSE_FILE = ROOT / "ops" / "compose" / "dev.yml"
 ENV_FILE = ROOT / ".env"
+COMPOSE_ENV_FILE = ROOT / "ops" / "compose" / ".env"   # Compose 변수 치환용(make-env가 루트 .env에서 만든다)
 ENV_EXAMPLE = ROOT / ".env.example"
 LOG_FILE = ROOT / "out" / "logs" / "devenv.jsonl"
 SERVICES = ("mongo", "kafka", "mysql", "garage", "prometheus", "grafana")
@@ -97,26 +98,38 @@ def tcp_open(p: int, host: str = "127.0.0.1") -> bool:
 
 
 def load_env() -> dict[str, str]:
-    """`.env`를 읽고 형식을 검사한다. 문제가 있으면 종료한다."""
+    """`.env`를 읽고 형식과 `ops/compose/.env` 동기화를 검사한다. 문제가 있으면 종료한다."""
     if not ENV_FILE.exists():
         sys.exit(".env가 없다. 먼저 python -m ops.compose.run make-env")
     env = devenv.parse_env(ENV_FILE.read_text(encoding="utf-8"))
     required = devenv.parse_env(ENV_EXAMPLE.read_text(encoding="utf-8")).keys()
     problems = devenv.env_problems(env, required)
+    compose_now = COMPOSE_ENV_FILE.read_text(encoding="utf-8") if COMPOSE_ENV_FILE.exists() else ""
+    if compose_now != devenv.compose_env(env):
+        problems.append("ops/compose/.env가 루트 .env와 다르다(python -m ops.compose.run make-env로 다시 만든 뒤 up -d)")
     if problems:
         sys.exit(".env 문제: " + "; ".join(problems))
     return env
 
 
+def env_port(env: dict[str, str], name: str, default: int) -> int:
+    """`.env`에 있으면 그 값, 없으면 셸 환경 변수, 그것도 없으면 기본값."""
+    return int(env.get(name) or os.environ.get(name) or default)
+
+
 # ---------------------------------------------------------------- 응용: 명령별 흐름
 
 def cmd_make_env(_args) -> int:
-    """`.env.example`의 자리표시자를 무작위 값으로 채워 `.env`를 만든다. 이미 있으면 바꾸지 않는다."""
+    """루트 `.env`를 만들고(이미 있으면 그대로) Compose 치환용 `ops/compose/.env`를 거기서 다시 만든다."""
     if ENV_FILE.exists():
         print(f"{ENV_FILE.name}가 이미 있어 그대로 둔다(지우고 다시 만들면 기존 볼륨의 계정과 달라진다).")
-        return 0
-    ENV_FILE.write_text(devenv.render_env(ENV_EXAMPLE.read_text(encoding="utf-8")), encoding="utf-8")
-    print(f"{ENV_FILE.name}를 만들었다. Git은 이 파일을 추적하지 않는다(.gitignore).")
+    else:
+        ENV_FILE.write_text(devenv.render_env(ENV_EXAMPLE.read_text(encoding="utf-8")), encoding="utf-8")
+        print(f"{ENV_FILE.name}를 만들었다. Git은 이 파일을 추적하지 않는다(.gitignore).")
+    env = devenv.parse_env(ENV_FILE.read_text(encoding="utf-8"))
+    COMPOSE_ENV_FILE.write_text(devenv.compose_env(env), encoding="utf-8")
+    print("ops/compose/.env를 루트 .env에서 다시 만들었다(" + ", ".join(
+        f"{k}={env.get(k, '')}" for k in devenv.COMPOSE_VARS) + ").")
     return 0
 
 
@@ -147,8 +160,8 @@ def cmd_garage_init(args) -> int:
                           stderr=r.stderr[-500:])
                 return 1
         log.write("info", "garage_init", "레이아웃 배정", node=node[:16])
-    if garage("key", "info", env["GARAGE_KEY_ID"]).returncode != 0:
-        r = garage("key", "import", "--yes", "-n", GARAGE_KEY_NAME, env["GARAGE_KEY_ID"], env["GARAGE_SECRET_KEY"])
+    if garage("key", "info", env["PALDO_S3_ACCESS_KEY"]).returncode != 0:
+        r = garage("key", "import", "--yes", "-n", GARAGE_KEY_NAME, env["PALDO_S3_ACCESS_KEY"], env["PALDO_S3_SECRET_KEY"])
         if r.returncode != 0:
             log.write("error", "garage_init", "키 등록 실패", error_type="garage_key", stderr=r.stderr[-500:])
             return 1
@@ -156,7 +169,7 @@ def cmd_garage_init(args) -> int:
     for bucket in BUCKETS:
         if garage("bucket", "info", bucket).returncode != 0:
             garage("bucket", "create", bucket)
-        r = garage("bucket", "allow", "--read", "--write", "--owner", bucket, "--key", env["GARAGE_KEY_ID"])
+        r = garage("bucket", "allow", "--read", "--write", "--owner", bucket, "--key", env["PALDO_S3_ACCESS_KEY"])
         if r.returncode != 0:
             log.write("error", "garage_init", "버킷 권한 실패", error_type="garage_bucket", bucket=bucket,
                       stderr=r.stderr[-500:])
@@ -218,7 +231,7 @@ def check_garage(dc: Compose, env: dict) -> tuple[bool, str]:
     body = b"paldo smoke"
     results = []
     for method, payload in (("PUT", body), ("GET", b""), ("DELETE", b"")):
-        headers = devenv.sigv4_headers(method, host, path, payload, env["GARAGE_KEY_ID"], env["GARAGE_SECRET_KEY"],
+        headers = devenv.sigv4_headers(method, host, path, payload, env["PALDO_S3_ACCESS_KEY"], env["PALDO_S3_SECRET_KEY"],
                                        "garage", datetime.now(timezone.utc))
         code, data = http(method, f"http://{host}{path}", headers, payload if method == "PUT" else None)
         results.append((method, code, data))
@@ -250,7 +263,7 @@ def check_grafana(dc: Compose, env: dict) -> tuple[bool, str]:
 
 
 CHECKS = {"mongo": (check_mongo, "PALDO_MONGO_PORT", 27117), "kafka": (check_kafka, "PALDO_KAFKA_PORT", 9092),
-          "mysql": (check_mysql, "PALDO_MYSQL_PORT", 3316), "garage": (check_garage, "PALDO_S3_PORT", 3900),
+          "mysql": (check_mysql, "PALDO_ADS_DB_PORT", 3316), "garage": (check_garage, "PALDO_S3_PORT", 3900),
           "prometheus": (check_prometheus, "PALDO_PROMETHEUS_PORT", 9090),
           "grafana": (check_grafana, "PALDO_GRAFANA_PORT", 3000)}
 
@@ -268,7 +281,7 @@ def cmd_smoke(args) -> int:
               **({"error_type": "unhealthy"} if bad else {}))
     failed = 0
     for service, (fn, port_env, default) in CHECKS.items():
-        p = port(port_env, default)
+        p = env_port(env, port_env, default)
         try:
             ok, detail, ms = _timed(lambda: fn(dc, env))
         except Exception as e:  # 점검 하나의 예외가 나머지 점검을 막지 않게 기록하고 계속한다

@@ -49,12 +49,54 @@ class EnvExample(unittest.TestCase):
 
     def test_env_problems_detects_missing_placeholder_and_format(self):
         bad_hex = "z" * 2   # check_secrets 규칙(비밀 키 이름 + 문자열 리터럴)에 걸리지 않게 변수로 넣는다
-        env = {"A": "<A>", "GARAGE_KEY_ID": "GK123", "GARAGE_SECRET_KEY": bad_hex}
+        env = {"A": "<A>", "PALDO_S3_ACCESS_KEY": "GK123", "PALDO_S3_SECRET_KEY": bad_hex}
         problems = devenv.env_problems(env, ["A", "B"])
         self.assertTrue(any(p.startswith("A:") for p in problems))
-        self.assertTrue(any(p.startswith("B:") for p in problems))
-        self.assertTrue(any(p.startswith("GARAGE_KEY_ID") for p in problems))
-        self.assertTrue(any(p.startswith("GARAGE_SECRET_KEY") for p in problems))
+        self.assertTrue(any(p.startswith("B:") for p in problems))   # 변수 자체가 없음
+        self.assertTrue(any(p.startswith("PALDO_S3_ACCESS_KEY") for p in problems))
+        self.assertTrue(any(p.startswith("PALDO_S3_SECRET_KEY") for p in problems))
+
+    def test_app_variable_names_follow_integration_list(self):
+        # integration.md 4.1 표의 변수 이름(`PALDO_ADS_DB_HOST`, `_PORT`처럼 줄임 표기 포함)이 모두 .env.example에 있다
+        text = (ROOT / "docs" / "contracts" / "integration.md").read_text(encoding="utf-8")
+        section = text[text.index("### 4.1"):text.index("### 4.2")]
+        names = set()
+        for row in section.splitlines():
+            if not row.startswith("| `"):
+                continue
+            first = row.split("|")[1]
+            full = re.findall(r"`([A-Z][A-Z0-9_]+)`", first)
+            for short in re.findall(r"`(_[A-Z0-9_]+)`", first):
+                full.append(full[0].rsplit("_", 1)[0] + short)
+            names.update(full)
+        self.assertIn("PALDO_ADS_DB_PORT", names)
+        self.assertEqual(names - set(devenv.parse_env(EXAMPLE)), set())
+
+    def test_rendered_values_are_consistent(self):
+        env = devenv.parse_env(devenv.render_env(EXAMPLE))
+        self.assertEqual(env["PALDO_ADS_DB_USER"], env["MYSQL_USER"])
+        self.assertEqual(env["PALDO_ADS_DB_PASSWORD"], env["MYSQL_PASSWORD"])
+        self.assertEqual(env["PALDO_MONGO_URI"],
+                         f"mongodb://{env['MONGO_INITDB_ROOT_USERNAME']}:{env['MONGO_INITDB_ROOT_PASSWORD']}"
+                         "@localhost:27117/?replicaSet=rs0&authSource=admin")
+        self.assertEqual(env["PALDO_ADS_DB_PORT"], "3316")
+        self.assertEqual(env["PALDO_MLFLOW_URI"], "")
+        self.assertNotEqual(env["DJANGO_SECRET_KEY"], env["PALDO_ADS_TOKEN_KEY"])
+
+    def test_compose_env_carries_only_compose_vars(self):
+        env = devenv.parse_env(devenv.render_env(EXAMPLE))
+        out = devenv.parse_env(devenv.compose_env(env))
+        self.assertEqual(out, {"PALDO_ADS_DB_PORT": "3316"})
+
+    def test_empty_allowed_only_for_unavailable_services(self):
+        env = devenv.parse_env(devenv.render_env(EXAMPLE))
+        env["PALDO_LLM_URL"] = ""
+        env["PALDO_ADS_DB_HOST"] = ""
+        problems = devenv.env_problems(env, devenv.parse_env(EXAMPLE))
+        self.assertEqual(problems, ["PALDO_ADS_DB_HOST: 값이 없다"])
+
+    def test_compose_mysql_port_uses_env_variable(self):
+        self.assertIn("${PALDO_ADS_DB_PORT:-3316}:3306", DEV_YML)
 
     def test_parse_env_skips_comments(self):
         self.assertEqual(devenv.parse_env("# c\n\nA = 1=2\n"), {"A": "1=2"})
