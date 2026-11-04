@@ -40,6 +40,13 @@ class SpeechVM:
 
 
 @dataclass
+class DisappearanceVM:
+    night: int
+    victim_name: str
+    text: str                    # "1일째 아침: 과부의 짚신이 우물가에서 발견됐다(한밤)"
+
+
+@dataclass
 class MeetingVM:
     game_id: str
     state_version: int
@@ -54,6 +61,7 @@ class MeetingVM:
     reveals_left_today: int
     runoff_candidates: list[str] = field(default_factory=list)
     ended: bool = False
+    disappearances: list[DisappearanceVM] = field(default_factory=list)   # 피해 장소 공개(P-02)
 
 
 def build_meeting_vm(v: PlayerView) -> MeetingVM:
@@ -78,6 +86,12 @@ def build_meeting_vm(v: PlayerView) -> MeetingVM:
             else:
                 text = f"{when} · {where} · {'있었다' if c.polarity.value == 'affirm' else '없었다'}"
         claims.append(ClaimCardVM(c.claim_id, v.names.get(c.speaker, c.speaker), text))
+    disappearances = []
+    for d in v.public.disappearances:
+        name = v.names.get(d.victim, d.victim)
+        where = f"{name}의 집" if d.place.value == "home" else PLACE_KO.get(d.place.value, d.place.value)
+        disappearances.append(DisappearanceVM(
+            d.night, name, f"{d.night + 1}일째 아침: {name}의 짚신이 {where}에서 발견됐다({SLOT_KO.get(d.slot.value, '')})"))
     speeches = [SpeechVM(s.speech_id, v.names.get(s.speaker, s.speaker), s.line_text or s.fact_sentence or "",
                          s.render_job_id if s.render_job_id in v.pending_render_jobs else None)
                 for s in v.public.speeches]
@@ -89,4 +103,5 @@ def build_meeting_vm(v: PlayerView) -> MeetingVM:
         interrogations_left=v.player.interrogations_left,
         reveals_left_today=v.player.reveals_left_today,
         runoff_candidates=list(v.runoff_candidates), ended=v.result is not None,
+        disappearances=disappearances,
     )

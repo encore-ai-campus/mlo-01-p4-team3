@@ -2,7 +2,7 @@
   "game_id": "g_base6_001",
   "preset_id": "base6",
   "source": "scripted",
-  "contract_version": "contract-0.1",
+  "contract_version": "contract-0.2",
   "steps": [
     {
       "request": null,
@@ -119,7 +119,9 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -166,6 +168,10 @@
             "missing": [
               "gwabu"
             ],
+            "crime_scene": {
+              "place": "well",
+              "slot": "midnight"
+            },
             "claims": [
               "cl01",
               "cl02",
@@ -324,7 +330,9 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -571,7 +579,9 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -840,7 +850,9 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -1112,7 +1124,9 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -1399,7 +1413,9 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -1731,7 +1747,9 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -2115,11 +2133,15 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             },
             {
               "night": 1,
-              "victim": "hunjang"
+              "victim": "hunjang",
+              "place": "gate",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -2180,6 +2202,10 @@
             "missing": [
               "hunjang"
             ],
+            "crime_scene": {
+              "place": "gate",
+              "slot": "midnight"
+            },
             "claims": [
               "cl07",
               "cl08",
@@ -2522,11 +2548,15 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             },
             {
               "night": 1,
-              "victim": "hunjang"
+              "victim": "hunjang",
+              "place": "gate",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -2950,11 +2980,15 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             },
             {
               "night": 1,
-              "victim": "hunjang"
+              "victim": "hunjang",
+              "place": "gate",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -3395,11 +3429,15 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             },
             {
               "night": 1,
-              "victim": "hunjang"
+              "victim": "hunjang",
+              "place": "gate",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -3843,11 +3881,15 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             },
             {
               "night": 1,
-              "victim": "hunjang"
+              "victim": "hunjang",
+              "place": "gate",
+              "slot": "midnight"
             }
           ],
           "confessions": [],
@@ -4324,11 +4366,15 @@
           "disappearances": [
             {
               "night": 0,
-              "victim": "gwabu"
+              "victim": "gwabu",
+              "place": "well",
+              "slot": "midnight"
             },
             {
               "night": 1,
-              "victim": "hunjang"
+              "victim": "hunjang",
+              "place": "gate",
+              "slot": "midnight"
             }
           ],
           "confessions": [],

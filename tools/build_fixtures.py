@@ -191,7 +191,7 @@ def recorded_game() -> dict:
     active = [PLAYER_ID, "hunjang", "jumo", "blacksmith", "meosum", "yakcho"]
     locked: list[str] = []
     missing = ["gwabu"]
-    pub.disappearances.append(DisappearanceRecord(0, "gwabu"))
+    pub.disappearances.append(DisappearanceRecord(0, "gwabu", W, Slot.MIDNIGHT))   # 0일째 피해 장소 공개(P-02)
     steps: list[dict] = []
     ver = 0
     day = 1
@@ -221,7 +221,7 @@ def recorded_game() -> dict:
     ]
     step(None, view(Phase.MORNING, [K.ADVANCE]),
          [DomainEvent(EventType.GAME_STARTED, 1, Phase.MORNING, {"preset_id": "base6"}),
-          DomainEvent(EventType.MORNING_ANNOUNCED, 1, Phase.MORNING, {"missing": ["gwabu"], "claims": [f"cl0{i}" for i in range(1, 7)]})])
+          DomainEvent(EventType.MORNING_ANNOUNCED, 1, Phase.MORNING, {"missing": ["gwabu"], "crime_scene": {"place": "well", "slot": "midnight"}, "claims": [f"cl0{i}" for i in range(1, 7)]})])
     # 1: 진행 → 1라운드(훈장이 약초꾼 의심)
     ver += 1
     pub.speeches.append(Speech("sp01", 1, Phase.ROUND1, "hunjang", K.SUSPECT, target="yakcho",
@@ -276,7 +276,7 @@ def recorded_game() -> dict:
     day = 2
     player.divinations[1] = {"blacksmith": DivinationResult.MURKY}
     player.interrogations_left = 2
-    pub.disappearances.append(DisappearanceRecord(1, "hunjang"))
+    pub.disappearances.append(DisappearanceRecord(1, "hunjang", G, Slot.MIDNIGHT))   # 피해 장소 공개(P-02)
     active.remove("hunjang"); missing.append("hunjang")
     pub.claims += [
         claim("cl07", "jumo", ClaimType.WHEREABOUTS, 1, Slot.MIDNIGHT, T, day=2),
@@ -286,7 +286,7 @@ def recorded_game() -> dict:
     step(Command(K.DIVINE, PLAYER_ID, target="blacksmith"), view(Phase.MORNING, [K.ADVANCE]),
          [DomainEvent(EventType.DIVINATION_DONE, 1, Phase.NIGHT, {"target": "blacksmith", "result": "murky"}),
           DomainEvent(EventType.NIGHT_RESOLVED, 1, Phase.NIGHT, {"victim": "hunjang", "end": None}),
-          DomainEvent(EventType.MORNING_ANNOUNCED, 2, Phase.MORNING, {"missing": ["hunjang"], "claims": ["cl07", "cl08", "cl09"]})])
+          DomainEvent(EventType.MORNING_ANNOUNCED, 2, Phase.MORNING, {"missing": ["hunjang"], "crime_scene": {"place": "gate", "slot": "midnight"}, "claims": ["cl07", "cl08", "cl09"]})])
     # 8: 진행 → 1라운드
     ver += 1
     step(Command(K.ADVANCE, PLAYER_ID), view(Phase.ROUND1, talk), [])

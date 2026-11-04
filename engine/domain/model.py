@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 PLAYER_ID = "mudang"  # 플레이어(무당)의 참가자 ID. 주민 NPC ID와 겹치지 않는다.
-CONTRACT_VERSION = "contract-0.1"
+CONTRACT_VERSION = "contract-0.2"
 
 
 # ---------------------------------------------------------------- 열거형
@@ -248,8 +248,15 @@ class LockRecord:
 
 @dataclass
 class DisappearanceRecord:
+    """아침 실종 발표(공개 기록). 피해 장소와 시간대도 공개한다(11/4 PM 결정 P-02).
+
+    화면 문구 예: "실종자의 짚신이 우물가에서 발견됐다". place=HOME이면 **피해자의 집**이다.
+    0일째 사건도 같은 방식으로 공개한다. 모든 주민과 플레이어가 같은 내용을 안다.
+    """
     night: int
     victim: str
+    place: Place                  # 피해 장소(5곳 중 하나. HOME = 피해자의 집)
+    slot: Slot = Slot.MIDNIGHT    # 피해 시간대(홀림은 한밤)
 
 
 @dataclass
@@ -496,6 +503,11 @@ def alibi_proposition_kind(n_possessed_total: int) -> PropositionKind:
     return PropositionKind.NOT_POSSESSED if n_possessed_total == 1 else PropositionKind.NOT_EXECUTOR
 
 
+def crime_scene_of(record: "DisappearanceRecord") -> tuple[Place, Optional[str]]:
+    """공개된 피해 장소. HOME이면 (HOME, 피해자 ID) — 피해자의 집이다."""
+    return (record.place, record.victim if record.place is Place.HOME else None)
+
+
 # ---------------------------------------------------------------- NPC 상태(③ 개인 지식, ④ 믿음)
 @dataclass
 class Sighting:
@@ -513,6 +525,33 @@ class Proposition:
     night: Optional[int] = None
     slot: Optional[Slot] = None
     place: Optional[Place] = None
+
+
+def alibi_propositions(record: DisappearanceRecord, own_sightings: list["Sighting"],
+                      n_possessed_total: int, observer: str) -> list[Proposition]:
+    """공개된 피해 장소(record) + 관찰자 **자신의 목격**으로 확정 알리바이 명제를 만든다(5.1).
+
+    - 피해 시각(record.night, record.slot)에 피해 장소가 아닌 공공장소에서 직접 목격한 사람 → 명제.
+      창귀 1명 판: not_possessed, 2명 판: not_executor까지만(후보에서 빼지 않음).
+    - 피해자 본인과 관찰자 자신은 대상에서 뺀다.
+    - 다른 사람의 공개 목격 주장(공개 기록)은 **확정 명제가 아니다**. 같은 계산을 하되 출처를
+      others_claim / mutual_vouch 근거로 믿음 갱신에만 쓴다(기획서 5.1: 확정 명제는 직접 목격만).
+    엔진은 진실의 피해 장소를 넣지 않는다. 오직 공개 기록(record)만 쓴다.
+    """
+    kind = alibi_proposition_kind(n_possessed_total)
+    out: list[Proposition] = []
+    seen_subjects: set[str] = set()
+    for s in own_sightings:
+        if s.night != record.night or s.slot is not record.slot or s.place is record.place:
+            continue
+        if s.place not in PUBLIC_PLACES:  # 계약: "피해 장소가 아닌 **공공장소**"에서의 직접 목격만
+            continue
+        for p in s.seen:
+            if p in (record.victim, observer) or p in seen_subjects:
+                continue
+            seen_subjects.add(p)
+            out.append(Proposition(kind, p, EvidenceSource.OWN_WITNESS, record.night, record.slot, s.place))
+    return out
 
 
 @dataclass
