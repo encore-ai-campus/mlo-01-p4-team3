@@ -5,7 +5,7 @@
 - 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md)
 - 팀 일정과 역할: [`docs/team_plan.md`](docs/team_plan.md)
 - BRD(업무 요구): [`docs/brd.md`](docs/brd.md) · PRD(제품 요구·합격 기준, 요구사항 기준 문서): [`docs/prd.md`](docs/prd.md)
-- 계약 문서: [`docs/contracts/`](docs/contracts/)
+- 계약 문서: [`docs/contracts/`](docs/contracts/) · 디렉터리 트리(새 파일 위치): [`structure.md`](docs/contracts/structure.md) · 영역 간 호출 지도: [`integration.md`](docs/contracts/integration.md)
 - **일자별·담당자별 태스크와 완료 조건**: [`docs/tasks/`](docs/tasks/README.md) (공통 완료 정의, 증빙 양식, 로그·계측 규칙, 결정 대기, 통합 판정 표)
 - 태스크 증빙: `docs/evidence/<태스크ID>.md`, 발표 기록: `docs/presentation/`, 리포트: `docs/reports/`
 - 모듈 문서(무엇을·왜·사용법·설정값·한계): [`docs/modules/`](docs/modules/README.md), 트러블 기록: `docs/troubles/<흐름>.md`(발표 트랙은 `S.md`). 기준은 `docs/tasks/README.md` 10절
@@ -67,6 +67,8 @@ server/infra (인프라) → engine (포트 구현)
 | 개인정보 처리 | `docs/contracts/privacy.md` |
 | 서버와 버전 | `docs/contracts/tech_stack.md`, 기획서 6.3 |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
+| 새 파일·폴더를 어디에 만들지 | `docs/contracts/structure.md` |
+| 다른 영역을 어떻게 부르는지(포트·HTTP·토픽·주소 변수·가짜·통합 시점) | `docs/contracts/integration.md` |
 | 오늘 내가 할 일과 완료 조건 | `docs/tasks/<흐름>.md`(A_engine, B_web, C_infra, D_ml_ads, E_pm), 발표 작업은 발표 트랙 `docs/tasks/P_presentation.md`(S-xx, 담당 P-24) |
 | 태스크 완료 증빙 쓰기(실제 소요 시간 포함) | `docs/tasks/README.md` 4절 양식 → `docs/evidence/` |
 | 태스크 문서화(트러블·docstring은 태스크마다, 모듈 문서는 흐름별 하루 1회 일괄 갱신) | `docs/tasks/README.md` 10절 → `docs/modules/`, `docs/troubles/` |
