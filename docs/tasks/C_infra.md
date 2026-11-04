@@ -136,7 +136,7 @@
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-08-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`pipeline`](../modules/pipeline.md)는 그날 일괄 갱신(C-08-03)
 - 산출물: `pipeline/spark/ads_silver.py`, `ads_gold.py`, `ads_reconcile.py`, `pipeline/README.md` 광고 집계 정의
 - 완료 조건:
-  1. 집계 정의서: 노출일 기준 시간대(Asia/Seoul), 관찰 종료 시각, CTR = 유효 클릭 ÷ 유효 노출, 노출 0건이면 CTR 비움, 유효·무효 분리, 실현 eCPM·CPC 정의(기획서 14.3).
+  1. 집계 정의서: 귀속일(serve 시각 기준, ads.md 4절) 기준 시간대(Asia/Seoul), 관찰 종료 시각, CTR = 유효 클릭 ÷ 유효 노출, 노출 0건이면 CTR 비움, 유효·무효 분리, 실현 eCPM·CPC 정의(기획서 14.3).
   2. gold: 캠페인 × 지면 × 시간대의 노출·클릭·CTR·비용·eCPM·소진율·무효율.
   3. 건별 대사: `charge_id`마다 원장만 있음 / Delta만 있음 / 중복 / 금액 불일치 4종 건수. D의 합성 트래픽 1회분에서 **불일치 0건**.
   4. 원본 이벤트 수 → bronze → silver → gold 합계 대조표.

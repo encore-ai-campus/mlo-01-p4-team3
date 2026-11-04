@@ -206,7 +206,7 @@
 | `FR-AD-003` | planned | MySQL 예산 원장: 원자적 예약, 확정(멱등), 만료 해제 작업, 환입, 원장·아웃박스 같은 트랜잭션, `ad.*` 발행 | `BR-OBJ-006` | `AC-AD-003` | D-06-02, C-06-03 | `STK-MLAD-001` | 11/6 |
 | `FR-AD-004` | planned | 노출·클릭 유효 판정(pending → valid/invalid, 무효 사유 우선순위, 클릭은 노출 증거, 지연 이벤트 비과금) | `BR-OBJ-006` | `AC-AD-003` | D-05-03, D-06-02 | `STK-MLAD-001` | 11/6 |
 | `FR-AD-005` | planned | 합성 트래픽 생성기: 정답 CTR 숨김, 실제 광고 API 경유, 피로 효과, 무효 클릭 주입, `syn:` 격리 | `BR-OBJ-006` | `AC-AD-004` | D-06-03 | `STK-MLAD-001` | 11/6 |
-| `FR-AD-006` | planned | 광고 silver·gold 집계, 건별 대사 4종, 잠정·확정 마감, 원본 → gold 합계 대조 | `BR-OBJ-006`, `BR-OBJ-010` | `AC-AD-005` | C-08-02 | `STK-INFRA-001` | 11/8 |
+| `FR-AD-006` | planned | 광고 silver·gold 집계, 건별 대사 4종, 잠정·확정 마감, 원본 → gold 합계 대조 | `BR-OBJ-006`, `BR-OBJ-010` | `AC-AD-005`, `AC-AD-009` | C-08-02, D-10-02 | `STK-INFRA-001` | 11/8 |
 | `FR-AD-007` | planned | CTR 갱신(베타 사전분포, 확정분 재계산)·톰슨 샘플링·페이싱이 실제 파이프라인을 거쳐 버전과 함께 광고 서버에 반영, 시나리오 1~5 정답 대비 채점 | `BR-OBJ-006` | `AC-AD-006` | D-08-02 | `STK-MLAD-001` | 11/8 |
 | `FR-AD-008` | planned | 실제 광고 서버 연결(웹·광고 로그가 `serve_id`로 이어짐)과 장애 4종 격리, 회로 차단 | `BR-OBJ-006` | `AC-AD-007` | B-08-03, D-08-03 | `STK-WEB-001` | 11/8 |
 | `FR-AD-009` | planned | 시나리오 6(맥락별 CTR), LightGBM CTR 비교와 관문, 페이싱 보정, 자동 입찰(`bid_version`), 사람 트래픽 분리 보고, 최종 리포트 | `BR-OBJ-006`, `BR-OBJ-010` | `AC-AD-006`, `AC-AD-008` | D-10-02, D-11-01 | `STK-MLAD-001` | 11/11 |
@@ -225,7 +225,7 @@
 
 | ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
 |---|---|---|---|---|---|---|---|
-| `FR-OPS-001` | planned | VM 20대 실측·점검표, 파일럿 역할 재배정, LLM 잠정 자원, 실행 시간표·디스크 예산, 개발 Compose와 Python 3.12 환경 | `BR-OBJ-007` | `AC-OPS-001` | A-05-00, B-05-00, C-05-00, D-05-00, E-05-00, C-05-01, C-05-02, C-05-03 | `STK-INFRA-001` | 11/5 |
+| `FR-OPS-001` | planned | VM 20대 실측·점검표, 파일럿 역할 재배정, LLM 잠정 자원, 실행 시간표·디스크 예산, 개발 Compose와 Python 환경(3.14 우선, 실패한 패키지만 3.12, C-05-03) | `BR-OBJ-007` | `AC-OPS-001` | A-05-00, B-05-00, C-05-00, D-05-00, E-05-00, C-05-01, C-05-02, C-05-03 | `STK-INFRA-001` | 11/5 |
 | `FR-OPS-002` | planned | 모든 서비스·배치·스크립트의 구조화 로그(JSON 한 줄, 필수 필드)와 `/metrics` 또는 결과 JSON. 웹은 `request_id`·`X-Request-ID`·`/healthz`·`/readyz` | `BR-OBJ-007` | `AC-OPS-002` | B-05-01, D-05-03, E-07-01, INT-07 | `STK-INFRA-001` | 11/7 |
 | `FR-OPS-003` | planned | Prometheus·Grafana: 전 서비스·VM 수집, 대시보드 6종(게임·LLM·모델·파이프라인·광고·자원), 경보 규칙, 대시보드 JSON 저장 | `BR-OBJ-007` | `AC-OPS-003` | C-08-01 | `STK-INFRA-001` | 11/8 |
 | `FR-OPS-004` | planned | 장애 복구 시험 6종(Kafka 브로커, Mongo Primary, MySQL Primary, 광고 서버, LLM 서버, Spark 배치)과 런북·재실행 절차 | `BR-OBJ-007` | `AC-OPS-004`, `AC-OPS-006` | C-11-01, C-11-03 | `STK-INFRA-001` | 11/11 |
@@ -479,6 +479,7 @@
 | `AC-AD-006` | 시나리오 1~6, 평가용 생성기(시드 3개 이상) | 실제 파이프라인 경유 갱신과 정답 대비 채점 | CTR 상대오차 20% 이내, 소진 오차 10% 이내, 무효 과금 0, 대사 불일치 0, 갱신 버전이 다음 serve에 나타남, 결론 한정 문구 | `evidence/D-08-02.md`, `evidence/D-10-02.md`, `docs/reports/ads_scenarios.md`, INT-09 #2 | planned |
 | `AC-AD-007` | 실제 광고 서버, 장애 4종(중단·무응답·3초 지연·오류) | 각 5분 `api_bench.py` 부하 | 게임 API p95 증가 50ms 이하, 게임 오류율 증가 0, 회로 차단 지표, 같은 `serve_id`의 웹·광고 로그 | `evidence/B-08-03.md`, INT-09 #9 | planned |
 | `AC-AD-008` | 광고 CTR 모델 후보, CPC 캠페인 gold 집계 | LightGBM 관문·카나리아·악화 신호 주입, 입찰가 갱신 작업 실행 | 채택이면 serve 이벤트 `ctr_version`이 새 버전으로 바뀌고 롤백 후 이전 버전으로 돌아옴(거부면 서빙 버전 불변), 입찰가가 상·하한 안에서 바뀌고 `bid_version` 증가가 다음 경매 serve에 나타남, 상한 초과 갱신은 잘림, 실현 CPC와 목표 CPC 차이 표 | `evidence/D-10-02.md` | planned |
+| `AC-AD-009` | 합성 트래픽 시나리오 1~6 결과, C-08-02 집계 정의서 | 광고 수익 지표 요약 표 작성 | 채움률·실현 eCPM·예산 소진율·무효 노출률·무효 클릭률·무효 과금 건수가 시나리오별로 기록되고 무효 과금 0건(목표치 없음, `BR-OBJ-010`) | `docs/reports/ads_scenarios.md`, D-10-02 #7 |
 | `AC-DATA-001` | VM Mongo 레플리카셋 | 동시 commit 20개, 진행 중 판이 있는 상태에서 콘텐츠 새 버전 적재 | 성공 1건, 단일 문서 원자 쓰기, 진행 중 판은 시작 때 고정한 콘텐츠 버전으로 완주하고 새 판은 새 버전을 씀, 이전 버전 조회 가능, commit 지연 p50·p95 | `evidence/C-06-01.md`, INT-11 #14 | planned |
 | `AC-DATA-002` | 토픽 정의 | 발행·소비, 같은 이벤트 재발행 | 토픽표대로 생성, acks=all 후 발행 표시, 중복 제거, 발행 지연 p95·미발행 건수 지표 | `evidence/C-06-02.md` | planned |
 | `AC-DATA-003` | A-06-03의 200판 | bronze·silver 배치 2회 | 행 수 동일(멱등), 이벤트 수 = bronze 행 수, 종료 판 수 = 라벨 붙은 판 수, Delta 버전·오프셋 기록 | `evidence/C-07-01.md`, INT-09 #1 | planned |
