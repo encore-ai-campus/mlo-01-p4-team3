@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.tasks_md import FLOW_FILES, load_all, parse_decisions, parse_task_file
+from tools.tasks_md import FLOW_FILES, TASK_LIMITS, hours_table, load_all, parse_decisions, parse_task_file
 from tools.tasks_to_issues import (
     MILESTONES, ExistingIssue, apply_plan, desired_issues, milestone_for, parse_assign,
     parse_labels_yml, render_body,
@@ -30,6 +30,8 @@ SAMPLE_A = """# A 엔진 태스크
 
 ### A-05-02 같은 조건
 - 1h · 조건은 A-05-01과 같음
+- 문서화(+0h, 공통 ⑦, 트러블만): 트러블
+- 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: A-05-01 · 코드를 바꿨다면: A-05-02 · 모듈: [`engine`](../modules/engine.md), [`sim`](../modules/sim.md) · 할 일: 행
 
 ## 11/11(수) 검증·수정 전용
 
@@ -147,6 +149,15 @@ class ParseTaskFile(unittest.TestCase):
         self.assertEqual(t.conditions, ["1", "2"])
         self.assertEqual(t.tags, ["검수"])
         self.assertEqual(t.title, "판 생성")
+
+    def test_batch_line(self):
+        t = self.by_id["A-05-02"]
+        self.assertEqual((t.doc_hours, t.batch_hours), (0.0, 0.5))
+        self.assertEqual(t.batch_targets, ["A-05-01"])
+        self.assertEqual(t.batch_conditional, ["A-05-02"])
+        self.assertEqual(t.batch_modules, ["engine", "sim"])
+        self.assertEqual(t.deps, [], "일괄 갱신 줄의 ID는 선행이 아니다")
+        self.assertEqual(hours_table(self.tasks)["A"]["11-05"], 3.5 + 0.5 + 1 + 0.5)
 
     def test_inline_condition_counts_as_one(self):
         self.assertEqual(self.by_id["A-11-01"].conditions, ["1"])
@@ -273,7 +284,43 @@ class RealTaskDocs(unittest.TestCase):
                 self.assertTrue(t.conditions, "완료 조건 번호 없음")
                 if t.kind == "task":
                     self.assertGreater(t.hours, 0)
-                    self.assertRegex(t.body, r"(?m)^- 문서화\(\+\d+(\.\d+)?h, 공통 ⑦\)")
+                    self.assertRegex(t.body, r"(?m)^- 문서화\(\+\d+(\.\d+)?h, 공통 ⑦(, 트러블만)?\)")
+
+    def test_batch_line_on_last_task_of_each_flow_day(self):
+        """P-22(가): 흐름별 하루 한 번, 그날 마지막 태스크에 일괄 갱신 줄. 대상은 그날의 문서 산출 외 태스크 전부."""
+        days: dict[tuple[str, str], list] = {}
+        for t in self.tasks:
+            if t.kind == "task" and t.date:
+                days.setdefault((t.flow, t.date), []).append(t)
+        for (flow, date), ts in days.items():
+            with self.subTest(flow=flow, date=date):
+                with_batch = [t.task_id for t in ts if t.batch_hours > 0]
+                self.assertEqual(with_batch, [ts[-1].task_id], "일괄 갱신 줄은 그날 마지막 태스크 하나에만")
+                last = ts[-1]
+                listed = set(last.batch_targets) | set(last.batch_conditional)
+                need = {t.task_id for t in ts if "산출물 자체가 문서다" not in t.body}
+                self.assertEqual(listed, need)
+                self.assertTrue(last.batch_modules)
+                for m in last.batch_modules:
+                    self.assertTrue((ROOT / "docs" / "modules").exists())
+                    self.assertRegex(m, r"^[a-z_]+$")
+                self.assertEqual(last.batch_hours, 0.5 if last.batch_targets else 0.25)
+
+    def test_light_tasks_write_only_troubles(self):
+        """P-22(가): 2h 미만·가벼운 태스크는 +0h(트러블만), 태스크별 문서화 줄에 모듈 문서 갱신 의무가 없다."""
+        for t in self.tasks:
+            if t.kind != "task":
+                continue
+            with self.subTest(task=t.task_id):
+                self.assertNotIn("필수 절 6개 갱신과", t.body, "모듈 문서는 일괄 갱신으로 옮겼다")
+                if "트러블만" in t.body:
+                    self.assertEqual(t.doc_hours, 0.0)
+                if t.task_id in {x for o in self.tasks for x in o.batch_conditional}:
+                    self.assertIn("트러블만", t.body)
+
+    def test_limits(self):
+        self.assertEqual(TASK_LIMITS["E"], 9.0)
+        self.assertTrue(all(TASK_LIMITS[f] == 7.5 for f in "ABCD"))
 
     def test_dependencies_point_to_existing_tasks(self):
         ids = {t.task_id for t in self.tasks}

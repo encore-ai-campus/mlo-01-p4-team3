@@ -15,7 +15,7 @@ Closes #
 
 ## 문서
 
-- 모듈 문서: `docs/modules/<모듈>.md` (변경 이력 행)
+- 모듈 문서: (그날 흐름의 마지막 태스크만) `docs/modules/<모듈>.md` — 일괄 갱신 줄의 대상 태스크마다 변경 이력 행
 - 트러블 기록: `docs/troubles/<흐름>.md#<ID>`
 - 계약 문서: (계약 파일을 바꿨으면) `docs/contracts/…`
 - 라우팅: (새 폴더를 만들었으면) `paldo/README.md`

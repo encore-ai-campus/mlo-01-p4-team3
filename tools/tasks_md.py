@@ -21,10 +21,15 @@ _DATE_HEADING_RE = re.compile(r"^##\s+(\d{1,2})/(\d{1,2})\(")
 _INT_DATE_RE = re.compile(r"\((\d{1,2})/(\d{1,2})\)")
 _HOURS_RE = re.compile(r"^-\s+(\d+(?:\.\d+)?)h\b")
 _DOC_HOURS_RE = re.compile(r"^-\s+문서화\(\+(\d+(?:\.\d+)?)h")
+# 흐름별 하루 마지막 태스크의 "모듈 문서 일괄 갱신" 줄(README 10절)
+_BATCH_RE = re.compile(r"^-\s+모듈 문서 일괄 갱신\(\+(\d+(?:\.\d+)?)h")
+_MODULE_LINK_RE = re.compile(r"docs/modules/(\w+)\.md|\.\./modules/(\w+)\.md")
 _COND_RE = re.compile(r"^\s{2,}(\d+)\.\s")
 _COND_LABEL_RE = re.compile(r"(?:완료 조건[^:\n]*|(?:^|·\s*)조건):")
 _SAME_AS_RE = re.compile(r"조건은 ((?:[A-E]-\d{2}-\d{2})(?:\s*\+\s*[A-E]-\d{2}-\d{2})*)")
 FLOW_FILES = {"A": "A_engine.md", "B": "B_web.md", "C": "C_infra.md", "D": "D_ml_ads.md", "E": "E_pm.md"}
+# 하루 태스크 한도(공통 1.5h 제외). E는 P-22(11/5 PM 결정)로 근무 10.5h = 태스크 9h + 공통 1.5h.
+TASK_LIMITS = {"A": 7.5, "B": 7.5, "C": 7.5, "D": 7.5, "E": 9.0}
 
 
 @dataclass
@@ -44,6 +49,10 @@ class Task:
     conditions: list[str] = field(default_factory=list)  # 완료 조건 번호("1", "2", ...)
     tags: list[str] = field(default_factory=list)  # "에셋", "검수"
     same_as: list[str] = field(default_factory=list)  # "조건은 X와 같음"의 X
+    batch_hours: float = 0.0  # 모듈 문서 일괄 갱신 시간(그날 흐름의 마지막 태스크에만)
+    batch_targets: list[str] = field(default_factory=list)  # 일괄 갱신에서 변경 이력 행이 반드시 있어야 하는 태스크
+    batch_conditional: list[str] = field(default_factory=list)  # 코드를 바꿨을 때만 행이 필요한 태스크
+    batch_modules: list[str] = field(default_factory=list)  # 일괄 갱신 대상 모듈 문서
 
     @property
     def kind(self) -> str:
@@ -133,7 +142,16 @@ def _build_task(tid: str, title: str, flow: str, date: str | None, body: str, so
     lines = body.splitlines()
     hours = 0.0
     doc_hours = 0.0
+    batch = {"hours": 0.0, "targets": [], "conditional": [], "modules": []}
     for ln in lines:
+        b = _BATCH_RE.match(ln)
+        if b:
+            batch = {
+                "hours": float(b.group(1)),
+                "targets": TASK_ID_RE.findall(_first_segment_after("대상:", ln)),
+                "conditional": TASK_ID_RE.findall(_first_segment_after("코드를 바꿨다면:", ln)),
+                "modules": [a or c for a, c in _MODULE_LINK_RE.findall(_first_segment_after("모듈:", ln))],
+            }
         m = _HOURS_RE.match(ln)
         if m and hours == 0.0:
             hours = float(m.group(1))
@@ -152,7 +170,8 @@ def _build_task(tid: str, title: str, flow: str, date: str | None, body: str, so
         task_id=tid, title=clean_title, flow="INT" if tid.startswith("INT-") else flow, date=date,
         hours=hours, doc_hours=doc_hours, body=body, source=source,
         deps=list(dict.fromkeys(deps)), decisions=decisions, conditions=_condition_numbers(lines),
-        tags=tags, same_as=same_as,
+        tags=tags, same_as=same_as, batch_hours=batch["hours"], batch_targets=batch["targets"],
+        batch_conditional=batch["conditional"], batch_modules=batch["modules"],
     )
 
 
@@ -224,11 +243,11 @@ def load_all(tasks_dir: Path) -> tuple[list[Task], list[Decision]]:
 
 
 def hours_table(tasks: list[Task]) -> dict[str, dict[str, float]]:
-    """흐름 → 날짜 → (태스크 시간 + 문서화 시간). 통합(INT)은 주관 태스크 시간에 들어 있어 뺀다."""
+    """흐름 → 날짜 → (태스크 시간 + 문서화 시간 + 일괄 갱신 시간). 통합(INT)은 주관 태스크 시간에 들어 있어 뺀다."""
     table: dict[str, dict[str, float]] = {}
     for t in tasks:
         if t.kind != "task" or t.date is None:
             continue
         table.setdefault(t.flow, {}).setdefault(t.date, 0.0)
-        table[t.flow][t.date] += t.hours + t.doc_hours
+        table[t.flow][t.date] += t.hours + t.doc_hours + t.batch_hours
     return table

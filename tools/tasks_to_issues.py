@@ -25,7 +25,7 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from tools.tasks_md import Decision, Task, hours_table, load_all
+from tools.tasks_md import TASK_LIMITS, Decision, Task, hours_table, load_all
 
 ROOT = Path(__file__).resolve().parents[1]
 YEAR = 2026
@@ -382,11 +382,12 @@ def apply_plan(gh, desired: list[DesiredIssue], labels: list[dict[str, str]],
 def print_hours(tasks: list[Task], out=sys.stdout) -> None:
     table = hours_table(tasks)
     days = sorted({d for f in table.values() for d in f})
-    out.write("흐름 | " + " | ".join(d[3:] for d in days) + " | 한도(7.5h) 초과\n")
+    out.write("흐름 | " + " | ".join(d[3:] for d in days) + " | 한도 | 초과 합계\n")
     for flow in sorted(table):
         row = table[flow]
-        over = sum(max(0.0, row.get(d, 0.0) - 7.5) for d in days)
-        out.write(f"{flow} | " + " | ".join(f"{row.get(d, 0.0):g}" for d in days) + f" | {over:g}\n")
+        limit = TASK_LIMITS.get(flow, 7.5)
+        over = sum(max(0.0, row.get(d, 0.0) - limit) for d in days)
+        out.write(f"{flow} | " + " | ".join(f"{row.get(d, 0.0):g}" for d in days) + f" | {limit:g} | {over:g}\n")
 
 
 def main(argv: list[str] | None = None) -> int:

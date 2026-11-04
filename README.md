@@ -37,7 +37,7 @@ server/infra (인프라) → engine (포트 구현)
 | `intent/`, `ml/` | 인프라(모델) | D | 의도 해석기, 씐 자 확률 모델(예정) |
 | `content/` | 데이터 | E | 인물, 비밀, 단서, 템플릿(예정) |
 | `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
-| `ads/domain/` | 광고 도메인 | D | 경매, 2등 가격, 예산 예약·확정·해제, 페이싱, CTR, 유효 판정, 대사(표준 라이브러리만) |
+| `ads/domain/` | 광고 도메인 | D | 경매, 2등 가격, 예산 예약·확정·해제, 페이싱, CTR, 유효 판정, 대사, 지면 규격(`SLOT_SIZES`)(표준 라이브러리만) |
 | `ads/app/`, `ads/infra/`, `ads/web/` | 광고 응용, 인프라, 표현 | D | 요청·비콘·클릭 흐름, MySQL 원장·아웃박스·Kafka, Django 뷰·admin(예정) |
 | `ads/testing/` | 테스트 지원 | D | `FakeAdProvider` |
 | `server/app/ads_port.py` | 응용(게임 쪽) | B | `AdProvider` 포트와 보호 래퍼 `AdGateway` |
@@ -68,7 +68,7 @@ server/infra (인프라) → engine (포트 구현)
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
 | 오늘 내가 할 일과 완료 조건 | `docs/tasks/<흐름>.md`(A_engine, B_web, C_infra, D_ml_ads, E_pm) |
 | 태스크 완료 증빙 쓰기 | `docs/tasks/README.md` 4절 양식 → `docs/evidence/` |
-| 태스크 문서화(모듈 문서·트러블·docstring) | `docs/tasks/README.md` 10절 → `docs/modules/`, `docs/troubles/` |
+| 태스크 문서화(트러블·docstring은 태스크마다, 모듈 문서는 흐름별 하루 1회 일괄 갱신) | `docs/tasks/README.md` 10절 → `docs/modules/`, `docs/troubles/` |
 | 이슈 만들기·동기화, 오늘 열린 태스크 보기 | `python -m tools.tasks_to_issues --dry-run`, `docs/tasks/README.md` 11절 |
 | 태스크 조건 바꾸기 | `docs/tasks/<흐름>.md`를 고치는 PR(이슈 본문은 직접 고치지 않음) |
 | 로그·지표 이름 정하기 | `docs/tasks/README.md` 5절 |
@@ -84,7 +84,7 @@ python -m unittest discover -s tests -t .                 # 계약 테스트
 python -m tools.build_fixtures                            # 픽스처 재생성(계약 변경 후)
 python -m tools.gen_synthetic --games 50 --seed 7 --ads 20000 --out out/synthetic
 python -m tools.tasks_to_issues --dry-run                 # 태스크 → 이슈 계획(실제 생성은 --apply --repo)
-python -m tools.tasks_to_issues --hours                   # 흐름별 일별 시간(문서화 포함)
+python -m tools.tasks_to_issues --hours                   # 흐름별 일별 시간(문서화·일괄 갱신 포함, 흐름별 한도)
 ```
 
 접속 정보(IP, 계정, 비밀번호)는 이 저장소에 넣지 않는다.
