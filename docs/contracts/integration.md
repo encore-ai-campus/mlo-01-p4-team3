@@ -45,7 +45,8 @@
 
 | # | 부르는 쪽 → 받는 쪽 | 방식 | 이름 | 계약 | 시간 제한·실패 | 주소 변수 | 그동안 쓰는 가짜 | 진짜로 붙는 태스크 → INT |
 |---|---|---|---|---|---|---|---|---|
-| G1 | 브라우저 → 게임 웹(B) | ② | api.md 2절 엔드포인트(htmx 조각 또는 JSON) | [api.md 1~4절](api.md) | 409 버전 충돌, 422 거부, 같은 `command_id` 재요청은 저장된 응답 | - | 녹화 판 `fixtures/api/` | B-05-02 → INT-07 #1 |
+| G1 | 브라우저 → 게임 웹(B) | ② | api.md 2절 엔드포인트(htmx 조각 또는 JSON) | [api.md 1~4절](api.md) | 409 버전 충돌, 422 거부, 같은 `command_id` 재요청은 저장된 응답. 비로그인 401·로그인 화면 이동(api.md 2-1절) | - | 녹화 판 `fixtures/api/` | B-05-02 → INT-07 #1 |
+| G1a | 게임 웹 계정(B) → 계정 MySQL | ④ DB 연결(Django 인증) | 가입·로그인·잠금·세션 | [privacy.md 5절](privacy.md), [api.md 2-1절](api.md) | DB 장애 시 로그인 불가(게임 화면 진입 불가), 오류 로그·지표 | `PALDO_AUTH_DB_HOST`, `PALDO_AUTH_DB_PORT`, `PALDO_AUTH_DB_NAME`, `PALDO_AUTH_DB_USER`, `PALDO_AUTH_DB_PASSWORD` | 로컬 Compose MySQL의 같은 스키마 이름 | C-06-03 4번 → B-06-04 → INT-07 |
 | G2 | 게임 웹 응용(B) → 엔진(A) | ① `GameEngine` | `new_game`, `apply`, `player_view`, `observe` | [ports.md 2절](ports.md), [domain.md](domain.md) | 중복·버전 확인은 응용이 엔진 호출 전에 한다 | - | `ScriptedGameEngine` | A-05-02 → INT-07 #1 |
 | G3 | 엔진(A) → 의심 모델(D) | ① `SuspicionModel` | `estimate(ObservationSnapshot)` | [ports.md 3절](ports.md) | 엔진 측 100ms. 실패·시간 초과는 그 결정만 규칙 v0로 대신하고 `policy_version`에 `-fallback` | - | `FakeSuspicionModel` | D-08-01·D-08-04(11/8) → INT-09 #6 |
 | G4 | 게임 웹 응용(B) → 의도 해석기(D) | ① `IntentParser` | `parse(text, ParseContext)` | [intent.md](intent.md), [api.md 4절](api.md) | 계약에 시간 제한 없음. 같은 프로세스 호출로 먼저 시험(결정 #4), 지연은 B-09-02에서 측정 | - | `FakeIntentParser` | D-07-01(11/7 11:00) → B-07-01, BERT는 D-09-01 → B-09-02 → INT-09 #3·#4 |
@@ -75,7 +76,7 @@
 | D9 | 운영 분석 에이전트(E) → 운영 조회(C) | ① `server/infra/ops_query.py` 함수 호출(읽기 전용) → Prometheus·Delta | 최근 N시간 승률, 판 길이, 폴백률, 의도 수정·취소율, 광고 CTR·소진율 | C-10-03, E-10-02 | 쓰기 권한 없음. 리포트 수치는 조회 결과와 일치해야 함 | `PALDO_PROMETHEUS_URL`, `PALDO_S3_ENDPOINT` | 합성 데이터 집계 | C-10-03(11/10) → E-10-02. k3s Job, 사용자 테스트·시연 중 금지(결정 #13) |
 | D10 | Prometheus(C) → 모든 서비스 | ② pull | 각 서비스 `/metrics`, node_exporter(전 VM) | [tasks/README.md 5절](../tasks/README.md) | 배치·스크립트는 Pushgateway 또는 결과 JSON | - | - | 각 서비스 첫 태스크(B-05-01, D-05-03, E-07-01, C-06-02) → C-08-01 → INT-07 #9 |
 | D12 | 판 종료(엔진·설문) → 밴딧(D) → 씐 자 전략 비율 → 다음 판 엔진 주입(A) | ④ 배치가 보상 계산 → 비율을 버전과 함께 Mongo 저장 → 판 시작 때 응용이 읽어 엔진 주입, `GameMeta.model_versions["bandit"]` 고정(결정 #16) | 거짓말 유형, 누명 대상, 대사 변형, 2명 판 팀 전략 비율 | D-09-02 #2·#3, A-08-01 #2, 기획서 6.2 | 보상식·가중치 상한·최소 판 수는 P-16. 같은 판 보상 중복 반영 금지(판 ID) | - | 고정 비율 | D-09-02(11/9) → INT-11 #3 |
-| D11 | 개인정보 삭제 도구(C) → 모든 저장 위치 | ④ 각 저장소 접근 | Mongo, Kafka 보존, Delta(이전 버전 포함), 광고 MySQL, MLflow, `out/`, AWS 복사본 | [privacy.md](privacy.md), C-09-02 | 광고 기록은 B-06-03의 가명 대응표로 찾는다 | 각 저장소 변수 | - | C-09-02 → INT-11 #9 |
+| D11 | 개인정보 삭제 도구(C) → 모든 저장 위치 | ④ 각 저장소 접근 | Mongo, Kafka 보존, Delta(이전 버전 포함), 광고 MySQL, 계정 MySQL(계정 행), MLflow, `out/`, AWS 복사본 | [privacy.md](privacy.md), C-09-02 | 광고 기록은 B-06-03의 가명 대응표로 찾는다 | 각 저장소 변수 | - | C-09-02 → INT-11 #9 |
 
 ### 3.3 광고 경로
 
@@ -105,6 +106,8 @@
 | `PALDO_ADS_PUBLIC_URL` | 광고 서버(클릭 링크 생성), 게임 웹 템플릿(비콘 주소) | 브라우저가 닿는 광고 서버 주소 |
 | `PALDO_ADS_DB_HOST`, `_PORT`, `_NAME`, `_USER`, `_PASSWORD` | 광고 서버 | 광고 MySQL. `_PORT`는 비어 있으면 3306(VM·AWS 기본). 로컬 Compose는 Windows MySQL과 겹치지 않게 호스트 포트를 바꿔 쓸 수 있고(이 PC는 3316), 그 값은 `.env`에만 둔다(11/4 PM 결정) |
 | `PALDO_ADS_TOKEN_KEY` | 광고 서버 | serve 토큰 서명 키(ads.md 3절 "인프라 비밀 저장소") |
+| `PALDO_AUTH_DB_HOST`, `_PORT`, `_NAME`, `_USER`, `_PASSWORD` | 게임 웹(계정) | 계정 저장소 MySQL(계정 전용 스키마·DB 계정, 광고와 분리, privacy.md 5절). `_PORT`는 비어 있으면 3306. 로컬 값은 `.env`에만(11/4 PM 결정) |
+| `PALDO_SIGNUP_INVITE_CODE` | 게임 웹(가입) | 있으면 가입 때 이 초대 코드를 요구, 없으면 공개 가입. 파일럿은 설정하지 않는다(공개 가입, 11/4 PM 결정, BRD `BR-OQ-022` 닫힘). 값은 `.env`·비밀 저장소에만 |
 | `PALDO_PROMETHEUS_URL` | 운영 조회 | Prometheus 조회 API |
 | `DJANGO_SECRET_KEY` | 게임 웹, 광고 서버(각자 다른 값) | Django 비밀 키 |
 
