@@ -22,6 +22,7 @@ class StartGameInput:
     player_pseudonym: str
     preset_id: str
     session_id: str
+    mudang_variant: str                 # 주인공 초상 "f"(여) | "m"(남). 표시 전용, 규칙과 NPC 대사에 영향 없음(11/4 PM 결정)
     seed: Optional[int] = None          # None이면 서버가 정한다(기록됨)
     ending_choice: str = "exorcism"     # 열린 결말 중 선택(PlayerProgress.endings_unlocked)
 
@@ -30,6 +31,7 @@ class StartGameInput:
 class GameOutput:
     view: PlayerView
     pending_render_jobs: list[str] = field(default_factory=list)
+    mudang_variant: Optional[str] = None    # 판 메타 값. None(녹화 판·시뮬레이터)이면 화면은 기본 이미지
 
 
 # ---------------------------------------------------------------- 명령 실행

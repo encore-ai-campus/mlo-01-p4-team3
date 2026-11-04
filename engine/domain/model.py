@@ -664,6 +664,7 @@ class GameMeta:
     canary: bool = False
     created_at: str = ""
     ending_choice: str = "exorcism"     # 판 시작 시 고른 결말("exorcism" | "haewon:<hypothesis_id>")
+    mudang_variant: Optional[str] = None  # 주인공 초상 "f" | "m"(표시 전용, 엔진 규칙은 읽지 않는다). None = 선택 없음(녹화 판·시뮬레이터)
 
 
 @dataclass
