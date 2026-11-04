@@ -76,3 +76,33 @@
 ## 6. 화면 정보 제한
 - 플레이어 화면에 들어가는 것은 `PlayerView`의 정보뿐이다(domain.md 7절).
 - 템플릿, 뷰 모델, JSON 어디에도 진실, NPC 믿음, 다른 NPC의 개인 지식을 넣지 않는다. `tests/contract/test_fixtures.py::RecordedGame.test_view_has_no_truth`가 녹화 판에 금지 키가 없는지 검사한다.
+
+## 7. 웹소켓과 광고 중계 (11/4 PM 결정, B-07-05)
+- 브라우저는 게임 웹 출처 하나에만 접속한다. 광고 노출 비콘은 웹소켓으로, 클릭·랜딩은 HTTP로 게임 웹에 보내고, 게임 웹이 광고 서버에 넘긴다([ports.md 5절](ports.md), [ads.md 3절](ads.md)). 게임 명령·화면은 지금처럼 HTTP(htmx)이고 웹소켓으로 옮기지 않는다. LLM 답변 폴링(5절)도 그대로다.
+- **연결**: `/ws/game/`(HTTPS 환경에서는 `wss://`), 페이지당 1개, 로그인 필수(2-1절). 구성은 `ProtocolTypeRouter` → `OriginValidator`(허용 출처는 `PALDO_PUBLIC_ORIGIN` 전체 값 하나. `AllowedHostsOriginValidator`는 호스트만 비교해 스킴·포트가 다른 출처를 통과시키므로 쓰지 않는다) → `AuthMiddlewareStack` → `URLRouter`. 채널 계층은 `InMemoryChannelLayer`이고 게임 웹은 Daphne 프로세스 1개로 띄운다. InMemory 계층은 프로세스끼리 공유되지 않지만 그룹 방송을 쓰지 않으므로 이 범위에서는 문제가 없다. 프로세스를 늘리려면 채널 계층 교체가 먼저다.
+
+| 상황 | 처리 |
+|---|---|
+| 비로그인 | 연결 수락 직후 닫힘 코드 4401 |
+| 연결 중 로그아웃·세션 만료 | `ad.impression`을 처리하기 전에 세션이 아직 있는지 확인하고, 없으면 닫힘 코드 4401 |
+| `PALDO_PUBLIC_ORIGIN`과 스킴·호스트·포트 중 하나라도 다른 출처, `Origin` 없음 | 핸드셰이크 거부 |
+| 메시지 4,096바이트 초과 | 닫힘 코드 1009 |
+| 형식 위반, 알 수 없는 `type`, 연결당 초당 5개 초과(`hello`는 세지 않음) | `error` 응답, 연결 유지 |
+
+- **메시지**(JSON 텍스트 프레임):
+
+| 방향 | 형식 | 뜻 |
+|---|---|---|
+| 브라우저 → 게임 웹 | `{"type": "hello", "dropped": 0}` | 연결·재연결 직후 1회. `dropped`는 직전에 보내지 못하고 버린 비콘 수(0 이상 정수) |
+| 브라우저 → 게임 웹 | `{"type": "ad.impression", "msg_id": "<UUID>", "token": "<serve 토큰>", "visible_ratio": 0.0~1.0, "visible_ms": 정수, "occurred_at_ms": 정수}` | 노출 비콘(면적 50% 이상 1초 이상, serve마다 1회). `msg_id` 외의 필드는 ads.md 3절 비콘 본문과 같다 |
+| 게임 웹 → 브라우저 | `{"type": "ack", "msg_id": "<UUID>", "relayed": true}` | 받음. `relayed`는 광고 서버 중계 성공 여부. 실패해도 다시 보내지 않는다(비콘 손실, ads.md 8절) |
+| 게임 웹 → 브라우저 | `{"type": "error", "msg_id": "<UUID 또는 null>", "code": "bad_message"}` | 거부. `code`는 `bad_message`·`unknown_type`·`rate_limited` 중 하나. 연결은 유지 |
+
+- **끊김 처리**: 브라우저가 자동으로 다시 연결한다(1·2·4·8·16·30초 간격, 이후 페이지가 열려 있는 동안 30초마다). 끊긴 동안의 비콘은 대기열(최대 20개, 넘으면 가장 오래된 것을 버림)에 두었다가 다시 연결되면 초당 4개 이하로 보낸다(연결당 상한 5개 아래). `ack`를 받기 전에 끊긴 비콘은 대기열 앞에 다시 넣어 다시 보낸다(광고 서버가 같은 serve의 두 번째 비콘을 `duplicate`로 판정하므로 중복 집계가 없다, ads.md 6절). `rate_limited`로 거부된 비콘은 다시 보내지 않고 버린 수에 넣는다. 닫힘 코드 4401이면 다시 연결하지 않는다(다음 페이지 이동 때 로그인 화면으로 간다). serve 토큰 만료(30분)는 광고 서버가 판정한다. 페이지 이동·닫기 때 남은 대기열은 버리고, 버린 수는 `sessionStorage`에 두었다가 다음 연결의 `hello.dropped`로 보낸다(지표 `paldo_ad_beacon_dropped_total{reason}`, reason은 `queue_full`·`page_exit`·`rate_limited`). 탭을 닫으면 `sessionStorage`도 사라져 보고하지 못하므로 이 지표는 손실의 **하한**이다. 실제 손실 판단은 광고 서버의 serve 대비 노출 비율로 한다.
+- **HTTP 중계 경로**(로그인 필수):
+
+| 메서드·경로 | 처리 |
+|---|---|
+| GET `/ads/slot/{slot}` | 기존(ports.md 5절). 응답 조각의 클릭 링크는 아래 `/ads/click`, 비콘은 웹소켓 |
+| GET `/ads/click?t=<serve 토큰>` | 광고 서버 클릭 엔드포인트를 부르고 302 `/ads/landing/<creative_id>`. 실패·시간 초과면 302 `/`. 어느 경우든 이동한다 |
+| GET `/ads/landing/<creative_id>` | 광고 서버 가상 랜딩 HTML을 그대로 전달. 실패면 대체 조각(돌아가기 링크) |

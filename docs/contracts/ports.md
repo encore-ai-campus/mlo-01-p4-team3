@@ -89,3 +89,15 @@
 - 가짜 `FakeAdProvider(latency_ms, fail, empty)`로 지연, 무응답, 실패를 주입해 시험한다(`tests/contract/test_ads.py::GamePathProtection`).
 - 허용치(기획서 14.7): 광고 장애 중 게임 API p95 증가가 50ms 이하이고, 게임 오류율이 늘지 않아야 한다.
 - 실제 `AdProvider` HTTP 구현은 `server/infra/ad_client.py`(B, B-08-03)다. 주소는 `PALDO_ADS_INTERNAL_URL`이고, 호출마다 `X-Request-ID`를 넘긴다(11/4 PM 결정 #6·#14).
+- **비콘·클릭·랜딩 중계**(11/4 PM 결정 #2 변경, B-07-05): 브라우저는 광고 서버에 직접 접속하지 않는다. 게임 웹이 같은 포트로 넘긴다. 메서드 이름과 인자는 아래가 기준이고, B-07-05가 `server/app/ads_port.py`와 `FakeAdProvider`에 추가한다.
+
+  | `AdProvider` 메서드 | 광고 서버 호출(ads.md 3절) | 실패 시 |
+  |---|---|---|
+  | `send_impression(serve_token, visible_ratio, visible_ms, occurred_at_ms, request_id, connect_timeout_ms, total_timeout_ms) -> bool` | POST `/ads/v1/impression` | `False`(비콘 손실로 처리, 재시도 없음) |
+  | `send_click(serve_token, request_id, connect_timeout_ms, total_timeout_ms) -> str \| None` | GET `/ads/v1/click?t=`. 리다이렉트를 따라가지 않고 `Location`(랜딩 경로)만 돌려준다 | `None` → 화면은 `/`로 이동 |
+  | `fetch_landing(creative_id, request_id, connect_timeout_ms, total_timeout_ms) -> str \| None` | GET `/ads/landing/<creative_id>`(HTML) | `None` → 대체 조각 |
+
+- `AdGateway.report_impression`·`click`·`landing`이 위 메서드를 감싼다. serve와 같은 시간 제한(연결 100ms, 전체 300ms), 재시도 없음, 예외를 올리지 않음. 회로 차단기는 serve와 함께 쓰고(같은 서버의 상태), 동시 호출 상한 8은 중계용으로 따로 둔다(비콘이 serve 자리를 빼앗지 않게). 중계는 게임 명령 처리 경로 밖이다(웹소켓 Consumer와 `/ads/click`·`/ads/landing` 요청). 결과는 `paldo_ad_relay_total{kind,result}`.
+- **비동기 경계**: 웹소켓 Consumer는 비동기(`AsyncJsonWebsocketConsumer`)이고 `AdGateway`는 동기다. Consumer는 이벤트 루프에서 `AdGateway`를 직접 부르지 않고 `asgiref.sync.sync_to_async(..., thread_sensitive=False)`로 스레드에서 실행한다(동기 호출이 Daphne 이벤트 루프를 막아 게임 HTTP 요청까지 멈추지 않게). 중계 동시 상한 8을 넘는 비콘은 기다리지 않고 `ack.relayed=false`로 끝낸다. `/ads/click`·`/ads/landing`은 동기 Django 뷰다.
+- **전달 헤더**: 중계 요청은 헤더를 새로 만든다. 보내는 것은 `X-Request-Id`와 필요한 `Content-Type`뿐이고, 참가자의 `Cookie`·`Authorization`·`X-Forwarded-For`·`User-Agent`·`Referer`는 복사하지 않는다(ads.md 9절, 테스트로 확인).
+- **회로 차단기가 열렸을 때**: 노출 비콘은 `ack.relayed=false`, 클릭은 302 `/`(게임 화면), 랜딩은 대체 조각이다. 광고 서버가 응답하지 못하는 동안 클릭 기록이 남지 않는 것은 비콘 손실과 같게 본다(ads.md 8절).
