@@ -14,6 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ZERO_SHA_RE = re.compile(r"^0+$")
+RECORD_SEP, FIELD_SEP = chr(0x1E), chr(0x1F)  # git log 형식의 %x1e·%x1f
 _HUNK_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
 
 
@@ -122,6 +123,17 @@ class GitRepo:
             ["git", "cat-file", "-t", f"{mb}:{directory}"], cwd=self.root, capture_output=True, text=True,
         )
         return proc.returncode == 0 and proc.stdout.strip() == "tree"
+
+    def commit_messages(self, base: str) -> list[tuple[str, str]]:
+        """`base..HEAD` 커밋의 [(짧은 SHA, 전체 메시지)]."""
+        out = self._git("log", "--format=%h%x1f%B%x1e", f"{base}..HEAD")
+        result = []
+        for rec in out.split(RECORD_SEP):
+            rec = rec.strip("\n")
+            if FIELD_SEP in rec:
+                sha, msg = rec.split(FIELD_SEP, 1)
+                result.append((sha.strip(), msg))
+        return result
 
     def head(self) -> str:
         """현재 HEAD 커밋 SHA(40자)."""

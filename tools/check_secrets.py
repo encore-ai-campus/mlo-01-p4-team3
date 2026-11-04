@@ -70,10 +70,11 @@ def is_secret_key(key: str) -> bool:
     return len(pieces) >= 2 and f"{pieces[-2]}_{pieces[-1]}" in SECRET_LAST_TWO
 
 
-def is_allowed_value(value: str, prefix: str = "") -> bool:
-    """빈 값, `${VAR}`, `<자리표시자>`, `{`가 든 템플릿 값, f-string은 허용."""
+def is_allowed_value(value: str) -> bool:
+    """빈 값, `${VAR}`, `<자리표시자>`, `{`가 든 템플릿 값·보간 f-string은 허용."""
     v = value.strip()
-    return (not v or "f" in prefix.lower() or "{" in v or bool(re.fullmatch(r"<[^<>]+>", v)))
+    # f-string은 `{`(보간)가 있을 때만 허용. 보간 없는 상수 f-string은 일반 문자열과 같이 검사한다(11/4 PM 결정)
+    return not v or "{" in v or bool(re.fullmatch(r"<[^<>]+>", v))
 
 
 def _ip_is_private(octets: tuple[int, ...]) -> bool:
@@ -94,8 +95,8 @@ def scan_text(path: str, text: str) -> list[Finding]:
             found.append(Finding(path, no, "개인 키 헤더"))
         keys_on_line: set[str] = set()
         for m in _QUOTED_RE.finditer(line):
-            key, prefix, value = m.group(2), m.group(3), m.group(5)
-            if is_secret_key(key) and not is_allowed_value(value, prefix):
+            key, value = m.group(2), m.group(5)
+            if is_secret_key(key) and not is_allowed_value(value):
                 keys_on_line.add(key)
                 found.append(Finding(path, no, f"비밀 키 {key}에 문자열 값", key))
         bm = None if code else _BARE_RE.match(line)

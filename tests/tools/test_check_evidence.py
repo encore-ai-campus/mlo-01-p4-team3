@@ -87,10 +87,14 @@ def result_json(task="E-05-01", key="api_p95", value=412.3, unit="ms", commit=SH
 
 
 class FakeRepo:
-    def __init__(self, files=None, commits=(SHA,), changes=None):
+    def __init__(self, files=None, commits=(SHA,), changes=None, messages=None):
         self.files = {"docs/tasks/README.md": README, "docs/troubles/E.md": TROUBLES, **(files or {})}
         self.commits = set(commits)
         self.changes = changes or []
+        self.messages = messages or [("abc1234", "feat: 작업\n")]
+
+    def commit_messages(self, base):
+        return self.messages
         self.root = Path(".")
 
     def read_text(self, path):
@@ -348,6 +352,17 @@ class PrBody(unittest.TestCase):
         self.assertTrue(ce.check_pr(BODY_OK, "base", repo, TASKS))  # --complete는 실패 문서를 막는다
         self.assertEqual(ce.check_pr(BODY_OK.replace("Closes", "Refs"), "base", repo, TASKS), [])  # --format은 통과
 
+    def test_commit_message_closing_keywords_fail(self):
+        for msg in ("fix: 버그\n\nFixes #5\n", "작업\n\nCloses #12\n", "resolves owner/repo#3",
+                    "closes https://github.com/o/r/issues/4"):
+            repo = ev_repo(doc())
+            repo.messages = [("aaa1111", "ok\n"), ("bbb2222", msg)]
+            errs = ce.check_pr(BODY_OK, "base", repo, TASKS)
+            self.assertTrue(any("커밋 bbb2222" in e for e in errs), (msg, errs))
+        repo = ev_repo(doc())
+        repo.messages = [("aaa1111", "Refs #12 관련 작업\n"), ("ccc3333", "issue #5 주석 정리\n")]
+        self.assertEqual(ce.check_pr(BODY_OK, "base", repo, TASKS), [])
+
     def test_changed_ids(self):
         changes = [("M", "docs/evidence/E-05-01.md"), ("D", "docs/evidence/E-06-01.md"),
                    ("A", "docs/evidence/perf/E-05-01/a.json"), ("A", "docs/evidence/E-05-05.md")]
@@ -397,6 +412,14 @@ class ViolationScenario(unittest.TestCase):
         code, out = self.run_main(BODY_OK)
         self.assertEqual(code, 1)
         self.assertIn("docs/evidence/E-05-01.md이 없음", out)
+
+    def test_closing_keyword_in_commit_message_fails(self):
+        (self.root / "tools" / "y.py").write_text('"""y."""\n', encoding="utf-8")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-q", "-m", "작업\n\nFixes #9")
+        code, out = self.run_main(BODY_OK.replace("Closes", "Refs"))
+        self.assertEqual(code, 1)
+        self.assertIn("메시지에 닫기 키워드 'Fixes #9'", out)
 
     def test_refs_without_changed_evidence_passes(self):
         self.assertEqual(self.run_main(BODY_OK.replace("Closes", "Refs"))[0], 0)

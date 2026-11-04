@@ -60,7 +60,7 @@ class Positives(unittest.TestCase):
 
     def test_key_value_in_code_quoted_only(self):
         keys = [f.key for f in self.scan("key_values.py")]
-        self.assertEqual(keys, ["DB_PASSWORD", "api_key", "signingKey"])
+        self.assertEqual(keys, ["DB_PASSWORD", "api_key", "signingKey", "session_token"])  # 마지막은 보간 없는 상수 f-string
 
     def test_key_value_in_yaml(self):
         keys = [f.key for f in self.scan("key_values.yml")]

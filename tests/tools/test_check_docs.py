@@ -49,6 +49,12 @@ SAMPLE_E = """# E
 - 문서화(+0h, 공통 ⑦): 산출물 자체가 문서다. 트러블
 - 완료 조건: 하나
 
+### E-10-05 발표 구간
+- 1h · 산출물: `docs/presentation/slides/E.md`
+- 문서화(+0h, 공통 ⑦): 산출물 자체가 문서다. 트러블
+- 필수 제목: `담당`, `구현`, `트러블`, `산출물·검증 수치`
+- 완료 조건: 하나
+
 ## 통합 태스크
 
 ### INT-07 통합 1 (11/7)
@@ -143,8 +149,12 @@ class Rule1Trouble(unittest.TestCase):
         repo = FakeRepo({"docs/troubles/E.md": troubles("E-05-01"), "docs/evidence/E-05-01.md": ev})
         self.assertEqual(cd.check_task("E-05-01", repo, TASKS), [])
 
-    def test_integration_task_has_no_trouble_entry(self):
+    def test_integration_task_is_excluded_from_rules_1_to_4(self):
         self.assertEqual(cd.check_task("INT-07", FakeRepo(), TASKS), [])
+        int_target = parse_task_file(SAMPLE_E.replace("대상: E-05-01, E-05-02, E-05-05", "대상: E-05-01, INT-07"),
+                                     "E", "docs/tasks/E_pm.md")
+        repo = FakeRepo({"docs/evidence/INT-07.md": evidence("INT-07")})
+        self.assertEqual(cd.check_all("11-11", repo, int_target), [])
 
     def test_unknown_id(self):
         self.assertIn("없는 ID", cd.check_task("E-99-01", FakeRepo(), TASKS)[0])
@@ -212,6 +222,16 @@ class Rule3DocOutput(unittest.TestCase):
         self.assertIn("docs/reports/user_test.md", cd.check_task("E-10-03", repo, TASKS)[0])
         repo.files["docs/reports/user_test.md"] = "# 리포트\n"
         self.assertEqual(cd.check_task("E-10-03", repo, TASKS), [])
+
+    def test_required_titles_line(self):
+        task = next(t for t in TASKS if t.task_id == "E-10-05")
+        self.assertEqual(cd.required_titles(task), ["담당", "구현", "트러블", "산출물·검증 수치"])
+        repo = FakeRepo(self.files("E-10-05"))
+        repo.files["docs/presentation/slides/E.md"] = "# E\n## 담당\n## 구현\n```\n## 트러블\n```\n본문에 산출물·검증 수치\n"
+        errs = cd.check_task("E-10-05", repo, TASKS)
+        self.assertEqual(sorted(e.split("`")[3] for e in errs), ["산출물·검증 수치", "트러블"])
+        repo.files["docs/presentation/slides/E.md"] = "# E\n## 담당\n### 구현\n## 트러블 ##\n## 산출물·검증 수치\n"
+        self.assertEqual(cd.check_task("E-10-05", repo, TASKS), [])
 
     def test_task_without_output_path_fails(self):
         self.assertIn("`산출물:` 경로가 없음", cd.check_task("E-10-04", FakeRepo(self.files("E-10-04")), TASKS)[0])

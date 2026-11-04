@@ -182,6 +182,30 @@ def output_paths(task: Task) -> list[str]:
     return paths
 
 
+def required_titles(task: Task) -> list[str]:
+    """태스크 본문 `- 필수 제목:` 줄의 백틱 제목 목록. 줄이 없으면 []."""
+    titles: list[str] = []
+    for line in task.body.splitlines():
+        m = re.match(r"^\s*-\s*필수 제목\s*:(.*)$", line)
+        if m:
+            titles += [t.strip() for t in _BACKTICK_RE.findall(m.group(1)) if t.strip()]
+    return titles
+
+
+def missing_titles(text: str, titles: list[str]) -> list[str]:
+    """마크다운 제목 줄(`#`~`######`, 코드 블록 밖) 중에 없는 필수 제목."""
+    heads: set[str] = set()
+    in_fence = False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        m = None if in_fence else re.match(r"^#{1,6}\s+(.*?)\s*#*\s*$", line)
+        if m:
+            heads.add(m.group(1).strip())
+    return [t for t in titles if t not in heads]
+
+
 # ---------------------------------------------------------------- 도메인: 규칙 5·6(변경분)
 def public_defs(tree: ast.Module) -> list[tuple[str, int, int, bool]]:
     """(이름, 시작 줄, 끝 줄, docstring 있음). 최상위 공개 함수·클래스와 공개 클래스의 공개 메서드."""
@@ -268,25 +292,32 @@ def check_task(task_id: str, repo, tasks: list[Task]) -> list[str]:
     task = _find(tasks, task_id)
     if task is None:
         return [f"{task_id}: 태스크 문서에 없는 ID"]
+    if task.kind == "integration":  # 통합(INT)에는 규칙 1~4를 적용하지 않는다(README 10절, 11/4 PM 결정)
+        return []
     errors: list[str] = []
     ev_text = repo.read_text(evidence_path(task_id))
-    # 규칙 1. 통합(INT)은 10절이 "문서 = 판정 결과(증빙)"로 정해 트러블 항목을 요구하지 않는다(문서 보완 대기).
-    if task.kind != "integration":
-        tpath = f"docs/troubles/{task.flow}.md"
-        ttext = repo.read_text(tpath)
-        errors += check_trouble_entry(trouble_entry(ttext, task_id) if ttext is not None else None, task_id, tpath)
-        errors += check_trouble_link(ev_text, task.flow, task_id)
+    # 규칙 1
+    tpath = f"docs/troubles/{task.flow}.md"
+    ttext = repo.read_text(tpath)
+    errors += check_trouble_entry(trouble_entry(ttext, task_id) if ttext is not None else None, task_id, tpath)
+    errors += check_trouble_link(ev_text, task.flow, task_id)
     # 규칙 2
     if task.batch_modules or task.batch_targets or task.batch_conditional:
         errors += _check_batch(task, repo, tasks)
-    # 규칙 3(산출물 파일 존재까지. 구간 제목은 태스크 문서에 읽을 형식이 없어 검사하지 않는다)
+    # 규칙 3: 산출물 파일 존재, `- 필수 제목:` 줄이 있으면 그 제목까지
     if is_doc_output_task(task):
         paths = output_paths(task)
+        titles = required_titles(task)
         if not paths:
             errors.append(f"{task_id}: 문서 산출 태스크인데 태스크 문서에 `산출물:` 경로가 없음(규칙 3)")
         for p in paths:
             if not repo.exists(p):
                 errors.append(f"{task_id}: 산출물 `{p}`이 없음(규칙 3)")
+                continue
+            if titles:
+                text = repo.read_text(p) or ""
+                errors += [f"{task_id}: 산출물 `{p}`에 필수 제목 `{t}`이 없음(규칙 3)"
+                           for t in missing_titles(text, titles)]
     return errors
 
 
@@ -350,7 +381,7 @@ def check_all(until: str, repo, tasks: list[Task]) -> list[str]:
     errors = []
     for tid in targets:
         t = by_id.get(tid)
-        if t is None or t.date is None or t.date > until:
+        if t is None or t.kind == "integration" or t.date is None or t.date > until:
             continue
         ev = repo.read_text(evidence_path(tid))
         if not is_completed(parse_evidence(ev) if ev is not None else None):

@@ -19,8 +19,8 @@ jobs:
   django:
     runs-on: ubuntu-latest
     services:
-      mongo: { image: "mongo:7", ports: ["27017:27017"] }
-      mysql: { image: "mysql:8.4", env: { MYSQL_ALLOW_EMPTY_PASSWORD: "yes" }, ports: ["3306:3306"] }
+      mongo: { image: "mongo:8.0.34", ports: ["27017:27017"] }
+      mysql: { image: "mysql:8.4.13", env: { MYSQL_ALLOW_EMPTY_PASSWORD: "yes" }, ports: ["3306:3306"] }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

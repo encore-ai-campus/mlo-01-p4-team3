@@ -315,6 +315,18 @@ def check_pr_body(body: str, task_ids: set[str], confirmed: set[str]) -> PrCheck
     return PrCheck([], task_id, mode)
 
 
+def check_commit_messages(messages: list[tuple[str, str]]) -> list[str]:
+    """README 11절 "커밋 메시지의 닫기 키워드 금지": PR 커밋 메시지에 닫기 키워드(`Closes` 포함)가 있으면 실패.
+
+    messages는 [(짧은 SHA, 메시지)]. 이슈는 PR 본문의 `Closes #` 한 줄로만 닫힌다.
+    """
+    errors = []
+    for sha, msg in messages:
+        for m in list(_CLOSING_RE.finditer(msg)) + list(_CLOSING_URL_RE.finditer(msg)):
+            errors.append(f"커밋 {sha} 메시지에 닫기 키워드 {m.group(0)!r}(커밋 메시지로는 이슈를 닫지 않는다, 11절)")
+    return errors
+
+
 def confirmed_decisions(readme_text: str) -> set[str]:
     """README 7절 "확정된 결정" 목록들에 나오는 P-xx."""
     sec = re.search(r"^## 7\..*?(?=^## )", readme_text, re.S | re.M)
@@ -400,8 +412,9 @@ def check_pr(body: str, base: str, repo, tasks: list[Task]) -> list[str]:
     """PR 본문 검사 후 Closes면 --complete, Refs면 --changed, P-xx면 결정 기록만."""
     readme = repo.read_text("docs/tasks/README.md") or ""
     pr = check_pr_body(body, {t.task_id for t in tasks}, confirmed_decisions(readme))
-    if pr.errors:
-        return pr.errors
+    commit_errors = check_commit_messages(repo.commit_messages(base))
+    if pr.errors or commit_errors:
+        return pr.errors + commit_errors
     if pr.mode == "complete":
         return complete(pr.task_id, repo, tasks)
     if pr.mode == "format":
