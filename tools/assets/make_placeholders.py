@@ -4,11 +4,11 @@
     python -m tools.assets.make_placeholders --check         # 쓰지 않고 대조만
     python -m tools.assets.make_placeholders --result        # 대조 수치를 docs/evidence/perf/E-05-05/placeholders.json에
 
-- 임시 파일은 단색 + 도형, 글자 없음. 같은 입력이면 같은 바이트.
+- 초상은 코드로 그린 도트 그림(`portrait_art.py`), 나머지는 단색 + 도형. 글자 없음. 같은 입력이면 같은 바이트.
 - manifest에서 `placeholder: false`(실제 파일)인 항목은 덮어쓰지 않는다.
 - 끝에 유형별 기대 수·manifest 항목 수·파일 수와 누락·남는 목록을 출력한다. 하나라도 어긋나면 종료 코드 1.
 
-계층: 이 파일은 응용(흐름 조립) + 표현(CLI). 규칙은 `spec.py`·`art.py`(도메인), 입출력은 `sources.py`·`png.py`(인프라).
+계층: 이 파일은 응용(흐름 조립) + 표현(CLI). 규칙은 `spec.py`·`art.py`·`portrait_art.py`(도메인), 입출력은 `sources.py`·`png.py`(인프라).
 """
 from __future__ import annotations
 

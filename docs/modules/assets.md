@@ -5,7 +5,7 @@
 게임 화면(B)과 광고 서버(D)가 쓰는 이미지 파일의 규격, 파일 목록(`manifest.json`), 임시 세트를 관리한다.
 - 입력: 규격표 `docs/assets/spec.md`, 콘텐츠 ID(`fixtures/content_min/bundle.json` 인물 + 무당 2종, 계약 `Place`, 규격표의 UI 아이콘 10개, `fixtures/ads/campaigns.json` 소재 × 지면 규격)
 - 출력: `content/images/<kind>/…` PNG와 `content/images/manifest.json`(kind, id, size(광고만), path, url, placeholder)
-- 계층(`tools/assets/`): 도메인 `spec.py`(규격표 해석, 기대 항목, 대조)·`art.py`(임시 그림), 인프라 `sources.py`(파일·로그·결과 JSON)·`png.py`(PNG 쓰기·머리 읽기), 응용+표현 `make_placeholders.py`(흐름 조립·CLI). 의존: `make_placeholders` → `spec`·`art`, `sources`·`png` → `spec`. 도메인은 인프라를 import하지 않는다.
+- 계층(`tools/assets/`): 도메인 `spec.py`(규격표 해석, 기대 항목, 대조)·`art.py`(임시 그림, 초상은 `portrait_art`에 맡김)·`portrait_art.py`(임시 초상: 128 격자 래스터화, 인물 데이터), 인프라 `sources.py`(파일·로그·결과 JSON)·`png.py`(PNG 쓰기·머리 읽기), 응용+표현 `make_placeholders.py`(흐름 조립·CLI). 의존: `make_placeholders` → `spec`·`art` → `portrait_art`, `sources`·`png` → `spec`. 도메인은 인프라를 import하지 않는다.
 - 그림 기준은 `docs/assets/style_guide.md`(사람이 판정).
 
 ## 왜
@@ -22,7 +22,7 @@ python -m tools.assets.make_placeholders            # 임시 세트 생성 + 유
 python -m tools.assets.make_placeholders --check    # 쓰지 않고 대조만(실제 파일로 교체한 뒤 확인용)
 python -m tools.assets.make_placeholders --force    # 표시 없는 다른 내용 파일도 임시 그림으로 덮어씀(주의)
 python -m tools.assets.make_placeholders --result   # 대조 수치를 docs/evidence/perf/E-05-05/placeholders.json에
-python -m unittest tests.assets.test_make_placeholders
+python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrait_art
 ```
 
 - 실제 파일로 바꿀 때: 같은 `path`에 PNG를 덮어쓰고 **바로** manifest의 그 항목 `placeholder`를 `false`로 바꾼 뒤 커밋한다. 그러면 다시 실행해도 그 파일은 덮어쓰지 않는다.
@@ -43,14 +43,15 @@ python -m unittest tests.assets.test_make_placeholders
 
 ## 한계
 
-- 임시 그림은 kind마다 같은 도형이다. id 해시로 보조색만 달라서, 화면에서 인물을 구분하는 용도로는 쓰지 못한다.
+- 임시 초상은 Claude가 코드로 그린 도트 그림이라 인물마다 머리·모자·옷이 달라 화면에서 구분된다. 다만 품질은 실제 에셋 수준이 아니다(얼굴 틀이 모두 같고, 표정·세부 묘사가 없다). 새 인물 ID는 코드의 인물 데이터(`CHARACTERS`)에 넣기 전까지 평범한 주민 모양(`DEFAULT_RESIDENT`)으로 나온다.
+- 장소·UI·지도·광고 임시 그림은 kind마다 같은 도형이다. id 해시로 보조색만 달라서, 화면에서 구분하는 용도로는 쓰지 못한다.
 - 형식(PNG 구조·CRC·데이터 길이)·크기·용량·누락·남는 파일·manifest path/url 불일치만 본다. 생성 기록(에셋2)과 정식 검사는 `check_assets.py`(E-08-07)가 맡는다.
 - 지도 장소 영역 좌표는 아직 없다(실제 지도 E-11-07에서 manifest에 추가).
 - 결과 JSON은 `tools/evidence_result.write_result`(E-05-02)가 없으면 같은 형식으로 직접 쓴다. E-05-02가 병합되면 그 함수를 쓴다.
-- 화풍은 도트(외곽선 있음, 초상 128 격자, 전 유형 ×4, 11/4 PM 결정)다. 임시 그림은 도트 격자를 따르지 않는다(실제 파일로 덮어쓰면 사라진다). 실제 에셋은 Claude가 코드로 그린 SVG를 후처리(`pixelize.py`, E-08-06)로 도트화한다. 외부 생성 도구는 쓰지 않는다(P-10).
+- 화풍은 도트(외곽선 있음, 초상 128 격자, 전 유형 ×4, 11/4 PM 결정)다. 임시 초상은 도트 격자·팔레트를 따르고, 나머지 임시 그림은 따르지 않는다(실제 파일로 덮어쓰면 사라진다). 실제 에셋 제작 방식(생성 도구, P-10)과 생성 결과 다듬기 스크립트는 E-08-06에서 정한다.
 
 ## 변경 이력
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
-| E-05-05 | 11/5 | 규격표(도트 격자 포함)·스타일 가이드(도트), 임시 세트 생성기(`make_placeholders`)와 37개 임시 세트·manifest |
+| E-05-05 | 11/5 | 규격표(도트 격자 포함)·스타일 가이드(도트), 임시 세트 생성기(`make_placeholders`)와 37개 임시 세트·manifest, 임시 초상 13장은 코드로 그린 도트 그림(`portrait_art`) |

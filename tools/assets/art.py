@@ -1,11 +1,14 @@
-"""임시 이미지 그리기(도메인). 단색 배경 + 도형, 글자 없음. 같은 (kind, id, 크기)면 같은 픽셀.
+"""임시 이미지 그리기(도메인). 초상은 코드로 그린 도트 그림(`portrait_art`), 나머지는 단색 배경 + 도형.
+글자 없음. 같은 (kind, id, 크기)면 같은 픽셀.
 
-색과 도형은 kind마다 고정이고, id에서 나온 해시로 보조색만 고른다. 해시는 게임 규칙과 무관하므로
+초상 외 색과 도형은 kind마다 고정이고, id에서 나온 해시로 보조색만 고른다. 해시는 게임 규칙과 무관하므로
 임시 이미지가 새 게임 정보(예: 씐 자 암시)를 주지 않는다.
 """
 from __future__ import annotations
 
 import hashlib
+
+from tools.assets import portrait_art
 
 RGB = tuple[int, int, int]
 
@@ -66,10 +69,8 @@ def render(kind: str, cid: str, width: int, height: int) -> Canvas:
     c = Canvas(width, height, BACKGROUND[kind])
     acc = accent_for(kind, cid)
     w, h = width, height
-    if kind == "portrait":                 # 흉상 실루엣: 머리 원 + 어깨 타원 + 보조색 띠
-        c.ellipse(w * 0.5, h * 0.95, w * 0.36, h * 0.30, FOREGROUND)
-        c.ellipse(w * 0.5, h * 0.42, w * 0.18, h * 0.20, FOREGROUND)
-        c.rect(0, int(h * 0.94), w, h, acc)
+    if kind == "portrait":                 # 128 격자 도트 인물(스타일 가이드 팔레트·격자)
+        c.rows = portrait_art.render(cid, w, h)
     elif kind == "place":                  # 둥근 판 + 보조색 사각
         c.ellipse(w / 2, h / 2, w * 0.42, h * 0.42, FOREGROUND)
         c.rect(int(w * 0.34), int(h * 0.34), int(w * 0.66), int(h * 0.66), acc)

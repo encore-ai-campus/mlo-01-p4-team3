@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import shutil
 import tempfile
 import unittest
@@ -44,6 +45,23 @@ class SpecTableTest(unittest.TestCase):
         self.assertEqual(spec.sizes, {"portrait": (512, 512), "place": (128, 128),
                                       "ui": (128, 128), "map": (1280, 720)})
         self.assertEqual(spec.ui_icon_ids, UI_IDS)
+
+    def test_dot_grid_table_condition_1(self):
+        """6절 도트 격자: 전 유형 ×4, 초상 128×128, 아이콘 32×32, 지도 320×180, 광고 182×22·75×62 + 위아래 1px."""
+        sec = SPEC_TEXT.split("## 6.", 1)[1]
+        pat = r"^\| ([a-z]+(?: \d+×\d+)?) \| (\d+)×(\d+) \| ×(\d+) \| (\d+)×(\d+) \|"
+        rows = {m[0]: tuple(int(v) for v in m[1:]) for m in re.findall(pat, sec, re.M)}
+        self.assertEqual(rows, {
+            "portrait": (128, 128, 4, 512, 512), "place": (32, 32, 4, 128, 128), "ui": (32, 32, 4, 128, 128),
+            "map": (320, 180, 4, 1280, 720), "ad 728×90": (182, 22, 4, 728, 90), "ad 300×250": (75, 62, 4, 300, 250)})
+        spec = parse_spec_md(SPEC_TEXT)
+        for kind, (gw, gh, k, fw, fh) in rows.items():
+            self.assertEqual(gw * k, fw, kind)
+            if kind.startswith("ad"):
+                self.assertEqual(fh - gh * k, 2, kind)      # 위아래 1px씩 배경색
+            else:
+                self.assertEqual(gh * k, fh, kind)
+                self.assertEqual(spec.sizes[kind], (fw, fh), kind)
 
     def test_missing_section_fails(self):
         with self.assertRaises(SpecError):
