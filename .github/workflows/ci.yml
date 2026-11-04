@@ -25,9 +25,20 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
+      # 외부 서비스가 필요한 테스트는 core에서 빼고 여기서 경로별로 돈다(11/4 PM 결정 #12).
+      # 폴더를 처음 만드는 태스크(C-06-01 tests/infra, D-05-03 tests/ads)가 그 폴더 __init__.py에
+      # load_tests를 두어 PALDO_SERVICE_TESTS가 없으면 빈 묶음을 돌려준다. 폴더가 없으면 건너뛰지 않고 통과한다.
+      - name: Mongo 테스트(tests/infra)
+        env: { PALDO_SERVICE_TESTS: "1" }
+        run: |
+          if [ -d tests/infra ]; then python -m unittest discover -s tests/infra -t .; else echo "tests/infra 없음(C-06-01 전)"; fi
+      - name: 광고 테스트(tests/ads)
+        env: { PALDO_SERVICE_TESTS: "1" }
+        run: |
+          if [ -d tests/ads ]; then python -m unittest discover -s tests/ads -t .; else echo "tests/ads 없음(D-05-03 전)"; fi
       # server/manage.py가 생기기 전의 빈 단계(E-05-02 조건 1). B-05-01 병합과 함께 아래 두 줄로 바꾼다.
       #   - run: pip install -r server/requirements.txt
-      #   - run: cd server && python manage.py test
+      #   - run: cd server && PALDO_SERVICE_TESTS=1 python manage.py test
       - name: Django 테스트(빈 단계, B-05-01 전)
         run: echo "server/manage.py 없음. B-05-01 병합 때 python manage.py test로 바꾼다."
 

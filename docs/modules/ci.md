@@ -67,6 +67,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 ## 한계
 
 - `django` 체크는 `server/manage.py`가 생기기 전까지 빈 단계다(조건 1). B-05-01 병합 때 `ci.yml`의 주석 두 줄로 바꾼다.
+- 외부 서비스 테스트(결정 #12): `django` 작업이 `tests/infra/`·`tests/ads/`를 `PALDO_SERVICE_TESTS=1`로 경로별 실행한다(폴더가 없으면 통과). `core`에서 두 폴더를 빼는 `load_tests`는 폴더를 처음 만드는 태스크(C-06-01, D-05-03)가 그 `__init__.py`에 둔다. 광고 테스트의 Django 설정(`ads/project`, 결정 #1)은 D-05-03이 이 단계에 붙인다.
 - `main` 보호 규칙의 필수 체크 등록과 "일부러 어긴 PR 3개"는 원격 저장소(P-11)가 생긴 뒤 한다. 그 전에는 같은 세 사례를 로컬 git 저장소 테스트로 재현해 둔다(`tests/tools/test_check_evidence.py` `ViolationScenario`, `tests/tools/test_check_docs.py` `ViolationScenarios`).
 - 문서 산출 태스크(규칙 3)는 산출물 파일 존재만 본다. "완료 조건에 적힌 구간 제목"은 태스크 문서에 기계가 읽을 형식이 정해져 있지 않아 검사하지 않는다. `산출물:` 줄이 없는 문서 산출 태스크(예: S-11-03, S-11-05)는 실패로 나온다.
 - 통합 태스크(INT)는 규칙 1(트러블 항목)을 보지 않는다. 10절이 INT의 문서를 판정 결과(증빙)로만 정했기 때문이다.
