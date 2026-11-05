@@ -1,6 +1,6 @@
 # B 웹·API 태스크
 
-- 담당자: (P-01) · 노트북: (P-01)
+- 담당자: 김영주 · 노트북: 4
 - 폴더: `server/`(Django 프로젝트, `server/api` 표현, `server/app` 응용), `web/`(템플릿·정적 파일). `server/app`은 Django를 import하지 않는다(`test_layers.py`).
 - 늘 볼 문서: `docs/contracts/api.md`, `ports.md` 2·4·5절, `privacy.md`, 기획서 4.5·6.1·8.4.
 - 테스트: Django 테스트는 `server/tests/`(CI에서 `python manage.py test`), 화면 정보 제한은 계약 테스트와 같은 금지 키 검사를 HTML에도 적용.

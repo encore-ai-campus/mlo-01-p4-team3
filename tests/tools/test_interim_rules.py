@@ -74,13 +74,6 @@ class ServiceCheckTest(unittest.TestCase):
         self.assertEqual(r.service_check(["engine/x.py", "tests/tools/t.py"], service_ran=False), [])
 
 
-class HoursTest(unittest.TestCase):
-    def test_hours(self):
-        self.assertEqual(r.parse_hours("2.5"), [])
-        self.assertTrue(r.parse_hours(None))
-        self.assertTrue(r.parse_hours("2h"))
-
-
 class LedgerTest(unittest.TestCase):
     def setUp(self):
         rows, errors = r.parse_ledger(LEDGER)

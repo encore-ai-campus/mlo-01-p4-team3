@@ -1,6 +1,6 @@
 # D ML·광고 태스크
 
-- 담당자: (P-01) · 노트북: (P-01)
+- 담당자: 이형인 · 노트북: 5
 - 폴더: `intent/`(의도 해석기), `ml/`(씐 자 확률 모델, 평가 관문, 밴딧), `engine/sim/`(봇 정책·시뮬레이터), `ads/`(광고 서버 전체: `ads/domain` 규칙, `ads/app` 흐름, `ads/infra` MySQL·Kafka, `ads/web` Django)
 - D가 맡는 에셋 태스크: [A_engine.md](A_engine.md)의 `[에셋]` 6개(A-07-04·A-08-04·A-09-05·A-10-05·A-10-06·A-11-04)와 A-11-01 안의 검수 탈락분 재생성(11/5 PM 결정으로 담당 변경, ID 유지). 기준은 [E_pm.md](E_pm.md) "에셋 작업 기준", 에셋 제출의 검토자(⑧)는 B. 시간은 흐름(ID) 기준이라 team_plan 전체 시간표의 A 행에 잡힌다.
 - 늘 볼 문서: `docs/contracts/intent.md`, `ml_lifecycle.md`, `events.md` 3·5절, `ads.md`, `ports.md` 3·5절, 기획서 9장·14장.
