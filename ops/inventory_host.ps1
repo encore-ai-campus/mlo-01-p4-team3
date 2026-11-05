@@ -1,6 +1,6 @@
 ﻿# 노트북 호스트에서 실행하는 VM 점검(C-05-01). VMware Workstation이 설치된 Windows 노트북용.
 # 사용: powershell -ExecutionPolicy Bypass -File ops\inventory_host.ps1 [-VmRoot "<VM 폴더>"]
-# 출력: VM마다 한 줄(논리 서버명, 기동, vCPU, RAM, 디스크 할당/호스트 점유, 스냅샷 수)과 호스트 디스크 여유, VM 디스크 합계.
+# 출력: VM마다 한 줄(논리 서버명, 기동, vCPU, RAM, 디스크 할당/호스트 점유, 스냅샷 수)과 디스크별(OS·데이터) 한 줄씩, 호스트 디스크 여유, VM 디스크 합계.
 # IP·계정은 출력하지 않는다. 결과는 ops/inventory_check.md 표에 옮긴다.
 param([string]$VmRoot = "$env:USERPROFILE\Documents\Virtual Machines")
 
@@ -20,21 +20,34 @@ $running = $null
 if (Test-Path $vmrun) { $out = & $vmrun list 2>$null; if ($LASTEXITCODE -eq 0) { $running = $out } }
 if ($null -eq $running) { "경고: vmrun 실행 목록을 얻지 못했다. 기동 칸은 '알 수 없음'이다(VMware 설치 위치 확인)." }
 
-function Get-AllocatedGB([string]$dir) {
-  # 디스크 설명 파일(작은 .vmdk)의 RW 섹터 수 합. 스냅샷 델타(-000001.vmdk)는 제외.
-  $sec = [int64]0
-  # 분할 디스크: 작은 설명 파일에 RW 줄. 단일 파일(monolithic) 디스크: 파일 앞부분에 설명이 들어 있다.
-  # 스냅샷 델타(-000001.vmdk)와 분할 조각(-s001.vmdk, -f001.vmdk)은 제외한다.
-  Get-ChildItem $dir -Filter *.vmdk | Where-Object { $_.Name -notmatch '-\d{6}\.vmdk$' -and $_.Name -notmatch '-[sf]\d{3}\.vmdk$' } | ForEach-Object {
-    $text = ''
-    if ($_.Length -lt 100KB) { $text = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue }
-    else {
-      $fs = [System.IO.File]::OpenRead($_.FullName)
-      try { $buf = New-Object byte[] 65536; $n = $fs.Read($buf, 0, $buf.Length); $text = [System.Text.Encoding]::ASCII.GetString($buf, 0, $n) } finally { $fs.Close() }
+function Read-VmdkText([string]$path) {
+  # 작은 설명 파일은 그대로, 단일 파일(monolithic) 디스크는 앞 64KB에 설명이 들어 있다.
+  if ((Get-Item $path).Length -lt 100KB) { return (Get-Content $path -Raw -ErrorAction SilentlyContinue) }
+  $fs = [System.IO.File]::OpenRead($path)
+  try { $buf = New-Object byte[] 65536; $n = $fs.Read($buf, 0, $buf.Length); return [System.Text.Encoding]::ASCII.GetString($buf, 0, $n) } finally { $fs.Close() }
+}
+
+function Get-VmDisks([string]$dir, [string[]]$vmxLines) {
+  # .vmx의 디스크 항목(scsi0:0, scsi0:1 …)마다 할당 크기와 호스트 점유를 구한다.
+  # 스냅샷이 있으면 .vmx는 델타(-000001.vmdk)를 가리키므로 parentFileNameHint를 따라가 기준 디스크의 RW 크기를 읽는다.
+  $out = @()
+  $vmxLines | Select-String '^((scsi|nvme|sata|ide)\d+:\d+)\.fileName\s*=\s*"([^"]+\.vmdk)"' | ForEach-Object {
+    $slot = $_.Matches.Groups[1].Value; $leaf = Split-Path $_.Matches.Groups[3].Value -Leaf
+    $f = Join-Path $dir $leaf; $sec = [int64]0; $guard = 0
+    while ($f -and (Test-Path $f) -and $guard -lt 10) {
+      $t = Read-VmdkText $f
+      $s = [int64]0; [regex]::Matches($t, '(?m)^RW (\d+)') | ForEach-Object { $s += [int64]$_.Groups[1].Value }
+      if ($s -gt 0) { $sec = $s }
+      $p = [regex]::Match($t, '(?m)^parentFileNameHint="([^"]+)"')
+      if ($p.Success) { $f = Join-Path $dir (Split-Path $p.Groups[1].Value -Leaf) } else { $f = $null }
+      $guard++
     }
-    [regex]::Matches($text, '(?m)^RW (\d+)') | ForEach-Object { $sec += [int64]$_.Groups[1].Value }
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($leaf) -replace '-\d{6}$', ''
+    $pat = '^' + [regex]::Escape($stem) + '(-\d{6})?(-[sf]\d{3})?\.vmdk$'
+    $used = (Get-ChildItem $dir -Filter *.vmdk | Where-Object { $_.Name -match $pat } | Measure-Object Length -Sum).Sum
+    $out += [pscustomobject]@{ Slot = $slot; AllocGB = [math]::Round($sec * 512 / 1GB, 0); UsedGB = [math]::Round($used / 1GB, 1) }
   }
-  [math]::Round($sec * 512 / 1GB, 0)
+  $out
 }
 
 $sumAlloc = 0; $sumUsed = 0
@@ -47,13 +60,16 @@ Get-ChildItem $VmRoot -Directory -ErrorAction SilentlyContinue | ForEach-Object 
   $mem = ($c | Select-String '^memsize\s*=\s*"(\d+)"').Matches.Groups | Select-Object -Last 1 -ExpandProperty Value
   if (-not $cpu) { $cpu = 1 }
   $used = [math]::Round(((Get-ChildItem $_.FullName -Recurse -Filter *.vmdk | Measure-Object Length -Sum).Sum / 1GB), 1)
-  $alloc = Get-AllocatedGB $_.FullName
+  $disks = @(Get-VmDisks $_.FullName $c)
+  $alloc = ($disks | Measure-Object AllocGB -Sum).Sum; if (-not $alloc) { $alloc = 0 }
+  $allocText = if ($disks.Count -gt 1) { "$alloc (" + (($disks | ForEach-Object { $_.AllocGB }) -join ' + ') + ")" } else { "$alloc" }
   $vmsd = Get-ChildItem $_.FullName -Filter *.vmsd | Select-Object -First 1
   $snap = 0; if ($vmsd) { $snap = (Get-Content $vmsd.FullName | Select-String '^snapshot\d+\.uid').Count }
   $on = if ($null -eq $running) { '알 수 없음' } elseif ($running -match [regex]::Escape($vmx.FullName)) { '켜짐' } else { '꺼짐' }
   $name = if ($Logical.ContainsKey($_.Name)) { $Logical[$_.Name] } else { "(프로젝트 밖) $($_.Name)" }
   if ($Logical.ContainsKey($_.Name)) { $sumAlloc += $alloc; $sumUsed += $used }
-  "{0} | {1} | {2} | {3} | {4} | {5} | {6} | {7}" -f $name, $on, $cpu, [math]::Round([int]$mem / 1024, 1), $alloc, $used, $snap, $_.Name
+  "{0} | {1} | {2} | {3} | {4} | {5} | {6} | {7}" -f $name, $on, $cpu, [math]::Round([int]$mem / 1024, 1), $allocText, $used, $snap, $_.Name
+  foreach ($d in $disks) { "    디스크 {0}: 할당 {1}GB, 호스트 점유 {2}GB" -f $d.Slot, $d.AllocGB, $d.UsedGB }
 }
 $drv = (Resolve-Path $VmRoot -ErrorAction SilentlyContinue).Drive
 if (-not $drv) { $drv = Get-PSDrive C }

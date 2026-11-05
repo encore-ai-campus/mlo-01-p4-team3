@@ -34,6 +34,26 @@ $(df -BG / 2>/dev/null | awk 'NR==2{gsub("G","",$2); gsub("G","",$3); gsub("G","
 EOF
 disk_total_gb="${disk_total_gb:-0}"; disk_used_gb="${disk_used_gb:-0}"; disk_avail_gb="${disk_avail_gb:-0}"
 
+# 디스크별(OS·데이터): 블록 디스크 크기와 마운트별 사용량. 데이터 디스크가 어디에 붙었는지 본다.
+disks_json=""
+if command -v lsblk >/dev/null 2>&1; then
+  while read -r dname dsize dtype; do
+    [ "$dtype" = "disk" ] || continue
+    disks_json+="{\"disk\":\"$(json_escape "$dname")\",\"size_gb\":\"$(json_escape "$dsize")\"},"
+  done <<EOF
+$(lsblk -d -n -o NAME,SIZE,TYPE --bytes 2>/dev/null | awk '{printf "%s %.1f %s\n", $1, $2/1073741824, $3}')
+EOF
+fi
+disks_json="[${disks_json%,}]"
+mounts_json=""
+while read -r src target size used; do
+  [ -z "${target:-}" ] && continue
+  mounts_json+="{\"source\":\"$(json_escape "$src")\",\"target\":\"$(json_escape "$target")\",\"size_gb\":\"$(json_escape "$size")\",\"used_gb\":\"$(json_escape "$used")\"},"
+done <<EOF
+$(df -BG --output=source,target,size,used -x tmpfs -x devtmpfs -x squashfs -x overlay -x efivarfs 2>/dev/null | awk 'NR>1{gsub("G","",$3); gsub("G","",$4); print $1, $2, $3, $4}')
+EOF
+mounts_json="[${mounts_json%,}]"
+
 # 서비스: systemd 유닛 이름 일부로 찾는다. 상태만(버전은 아래에서 가능한 것만).
 services_json=""
 if command -v systemctl >/dev/null 2>&1; then
@@ -75,7 +95,7 @@ num() { case "${1-}" in ''|*[!0-9]*) printf 0 ;; *) printf '%s' "$1" ;; esac; }
 vcpu=$(num "$vcpu"); mem_total_mb=$(num "$mem_total_mb"); mem_used_mb=$(num "$mem_used_mb")
 disk_total_gb=$(num "$disk_total_gb"); disk_used_gb=$(num "$disk_used_gb"); disk_avail_gb=$(num "$disk_avail_gb")
 
-printf '{"name":"%s","os":"%s","kernel":"%s","python":"%s","vcpu":%s,"mem_total_mb":%s,"mem_used_mb":%s,"disk_total_gb":%s,"disk_used_gb":%s,"disk_avail_gb":%s,"services":%s,"versions":%s}\n' \
+printf '{"name":"%s","os":"%s","kernel":"%s","python":"%s","vcpu":%s,"mem_total_mb":%s,"mem_used_mb":%s,"disk_total_gb":%s,"disk_used_gb":%s,"disk_avail_gb":%s,"disks":%s,"mounts":%s,"services":%s,"versions":%s}\n' \
   "$(json_escape "$NAME")" "$(json_escape "$os_name")" "$(json_escape "$kernel")" "$(json_escape "$python_ver")" \
   "$vcpu" "$mem_total_mb" "$mem_used_mb" "$disk_total_gb" "$disk_used_gb" "$disk_avail_gb" \
-  "$services_json" "$versions_json"
+  "$disks_json" "$mounts_json" "$services_json" "$versions_json"
