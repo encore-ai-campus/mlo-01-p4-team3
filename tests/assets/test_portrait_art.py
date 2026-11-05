@@ -1,147 +1,120 @@
-"""E-05-05 임시 그림 생성기(코드로 그린 실루엣·배치 확인용, 최종 화풍 아님): 기준 색·생성기 블록·결정성·주인공/주민 판정표 규칙."""
+"""E-05-05 임시 sprite·초상(회색 실루엣 + 기준선 + 이름표, 크기·배치 확인용): 결정성, 기준선, 이름표, 글자 비트맵."""
 from __future__ import annotations
 
-import re
 import unittest
 
-from tools.assets import art, png, portrait_art as pa, sources
+from tools.assets import art, background_art, build_glyphs, glyphs, png, portrait_art as pa, sources, vn
 
 ROOT = sources.ROOT
-GUIDE = ROOT / "docs" / "assets" / "style_guide.md"
-NPC_IDS = sources.load_npc_ids()
-ALL_IDS = ["mudang_f", "mudang_m", *NPC_IDS]
-HEROES = {"mudang_f", "mudang_m"}
+NAMES = sources.load_npc_labels()
+ALL_IDS = ["mudang_f", "mudang_m", *NAMES]
+W, H = vn.SPRITE_SIZE
 
 
-def _guide_palette() -> list[tuple[str, str]]:
-    """스타일 가이드 3절 표의 (이름, 코드) 목록."""
-    text = GUIDE.read_text(encoding="utf-8")
-    sec = text.split("## 3.", 1)[1].split("\n## ", 1)[0]
-    return re.findall(r"^\| ([^|]+?) \| `(#[0-9A-Fa-f]{6})` \|", sec, re.M)
+def _alpha(rows, x, y) -> int:
+    return rows[y][x * 4 + 3]
 
 
-def _white_components(g: pa.Grid, box: tuple[int, int, int, int]) -> int:
-    """눈 영역 안 하이라이트(백) 픽셀의 4연결 덩어리 수."""
-    x0, y0, x1, y1 = box
-    cells = {(x, y) for y in range(y0, y1) for x in range(x0, x1) if g.px[y][x] == pa.WHITE}
-    count = 0
-    while cells:
-        stack = [cells.pop()]
-        count += 1
-        while stack:
-            x, y = stack.pop()
-            for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-                if n in cells:
-                    cells.remove(n)
-                    stack.append(n)
-    return count
-
-
-class PortraitArtTest(unittest.TestCase):
+class SilhouetteTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.rows = {cid: pa.render(cid, 512, 512) for cid in ALL_IDS}
+        cls.sprites = {cid: pa.render_sprite(cid, W, H, NAMES.get(cid)) for cid in ALL_IDS}
 
-    def test_palette_matches_style_guide_table(self):
-        self.assertEqual(list(pa.PALETTE.items()), _guide_palette())
-        self.assertEqual(len(pa.PALETTE), 17)
-
-    def test_covers_all_portrait_ids(self):
+    def test_covers_all_ids_and_passes_vn_checks(self):
         self.assertEqual(len(ALL_IDS), 13)
-        self.assertEqual(set(pa.CHARACTERS), set(ALL_IDS))
+        self.assertLessEqual(set(pa.HEADGEAR), set(ALL_IDS))
+        for cid, rows in self.sprites.items():
+            self.assertEqual(vn.check_sprite(W, H, 4, rows), [], cid)
 
-    def test_only_palette_colors(self):
-        allowed = {bytes(c) for c in pa.C.values()}
-        for cid, rows in self.rows.items():
-            seen = {bytes(r[i:i + 3]) for r in rows for i in range(0, len(r), 3)}
+    def test_baselines(self):
+        """눈높이·허리선 점선이 실루엣 위에 있고, 발끝은 FOOT_Y."""
+        guide = bytes((*pa.GUIDE, 255))
+        for cid, rows in self.sprites.items():
+            for y in (vn.EYE_Y, vn.WAIST_Y):
+                self.assertIn(guide, bytes(rows[y]), (cid, y))
+            self.assertEqual(vn.visible_box(W, rows)[3], vn.FOOT_Y, cid)
+        self.assertEqual((pa.EYE_Y, pa.WAIST_Y, pa.FOOT_Y), (vn.EYE_Y, vn.WAIST_Y, vn.FOOT_Y))
+
+    def test_only_grey_body_and_label_colors(self):
+        allowed = {bytes((*c, 255)) for c in (pa.FILL, pa.EDGE, pa.GUIDE, pa.TEXT)} | {bytes(4)}
+        for cid, rows in self.sprites.items():
+            seen = {bytes(r[i:i + 4]) for r in rows for i in range(0, len(r), 4)}
             self.assertLessEqual(seen, allowed, cid)
 
-    def test_4x4_blocks_are_single_color(self):
-        for cid, rows in self.rows.items():
-            for gy in range(128):
-                block_rows = rows[gy * 4:gy * 4 + 4]
-                self.assertTrue(all(r == block_rows[0] for r in block_rows), (cid, gy))
-                r = block_rows[0]
-                for gx in range(128):
-                    cell = r[gx * 12:gx * 12 + 12]
-                    self.assertEqual(cell, cell[:3] * 4, (cid, gx, gy))
+    def test_label_inside_body_and_visible_in_normal_and_portrait(self):
+        text = bytes((*pa.TEXT, 255))
+        ys = [y for y, r in enumerate(self.sprites["hunjang"]) if text in bytes(r)]
+        self.assertTrue(ys)
+        self.assertLess(max(ys), min(vn.WAIST_Y, W))          # 평소 표시(0~640)와 초상 크롭(0~511) 안
 
-    def test_deterministic_and_distinct(self):
+    def test_name_changes_only_label(self):
+        a = pa.render_sprite("jumo", W, H, "주모")
+        b = pa.render_sprite("jumo", W, H, "과부")
+        diff = [y for y in range(H) if a[y] != b[y]]
+        self.assertTrue(diff)
+        lo, hi = pa.LABEL_Y + glyphs.HEIGHT, pa.LABEL_Y + 2 * glyphs.HEIGHT + 6
+        self.assertTrue(all(lo <= y < hi for y in diff))
+
+    def test_label_fallback_to_id(self):
+        self.assertEqual(pa.label_for("jumo", "주모"), "주모")
+        self.assertEqual(pa.label_for("mudang_f", None), "무당(여)")
+        self.assertEqual(pa.label_for("new_villager", "鬼"), "new_villager")   # 비트맵 없는 글자 → id
+        self.assertEqual(pa.label_for("new_villager", None), "new_villager")
+
+    def test_deterministic_and_distinct_headgear(self):
         for cid in ALL_IDS:
-            self.assertEqual(pa.render(cid, 512, 512), self.rows[cid], cid)
-        blobs = {b"".join(bytes(r) for r in rows) for rows in self.rows.values()}
-        self.assertEqual(len(blobs), 13)
+            self.assertEqual(pa.render_sprite(cid, W, H, NAMES.get(cid)), self.sprites[cid], cid)
+        masks = {tuple(pa.body_mask(cid)) for cid in ALL_IDS}
+        self.assertEqual(len(masks), len(set(pa.HEADGEAR.values())))
 
-    def test_highlight_rule_hero_2_residents_1(self):
-        """판정표: 주인공은 눈마다 하이라이트 2점, 주민은 전원 1점."""
-        for cid in ALL_IDS:
-            g = pa.draw(cid)
-            want = 2 if cid in HEROES else 1
-            for box in pa.EYE_BOXES:
-                self.assertEqual(_white_components(g, box), want, (cid, box))
+    def test_portrait_crop_and_wiring(self):
+        for cid in ("hunjang", "mudang_m"):
+            rows = pa.render(cid, 512, 512, NAMES.get(cid))
+            self.assertEqual(rows, pa.crop_portrait(512, self.sprites[cid]))
+            self.assertEqual(art.render("portrait", cid, 512, 512, NAMES.get(cid)).rows, rows)
+            self.assertEqual(art.render_rows("sprite", cid, W, H, NAMES.get(cid)), (4, self.sprites[cid]))
 
-    def test_hero_eyes_symmetric(self):
-        for cid in HEROES:
-            g = pa.draw(cid)
-            (lx0, y0, lx1, y1), _ = pa.EYE_BOXES
-            skin = {pa.SKIN, pa.SKIN_S}       # 얼굴 오른쪽 그림자(빛 왼쪽 위)는 이목구비가 아니므로 뺀다
-            for y in range(y0, y1):
-                for x in range(lx0, lx1):
-                    left, right = g.px[y][x], g.px[y][127 - x]
-                    if left in skin and right in skin:
-                        continue
-                    self.assertEqual(left, right, (cid, x, y))
-
-    def test_same_face_frame_for_everyone(self):
-        """머리 크기·눈높이가 같다: 홍채(머리 하이라이트색)·하이라이트 자리가 모든 초상에서 같다."""
-        def eyes(cid):
-            g = pa.draw(cid)
-            return {(x, y) for x0, y0, x1, y1 in pa.EYE_BOXES
-                    for y in range(y0, y1) for x in range(x0, x1) if g.px[y][x] in (pa.HAIR_HI, pa.WHITE)}
-        hero, resident = eyes("mudang_f"), eyes("hunjang")
-        self.assertTrue(resident)
-        for cid in ALL_IDS:
-            self.assertEqual(eyes(cid), hero if cid in HEROES else resident, cid)
-        self.assertLessEqual(len(hero ^ resident), 2 * len(pa.EYE_BOXES))   # 차이는 주인공 작은 하이라이트 점뿐
-
-    def test_png_under_limit_and_art_wired(self):
-        spec = sources.load_spec()
-        for cid, rows in self.rows.items():
-            data = png.encode_rgb(512, 512, rows)
-            self.assertLessEqual(len(data), spec.max_bytes, cid)
-            self.assertEqual(art.render("portrait", cid, 512, 512).rows, rows)
-
-    def test_unknown_id_and_bad_size(self):
-        self.assertEqual(pa.render("new_villager", 128, 128), pa.render("other_villager", 128, 128))
-        for w, h in ((500, 500), (512, 256), (0, 0)):
+    def test_bad_size(self):
+        for w, h in ((512, 640), (500, 1250), (0, 0)):
+            with self.assertRaises(ValueError):
+                pa.render_sprite("jumo", w, h)
+        for w, h in ((128, 128), (512, 256)):
             with self.assertRaises(ValueError):
                 pa.render("jumo", w, h)
 
-    def test_committed_portraits_match_generator(self):
-        """커밋된 임시 초상이 지금 생성기와 같은 바이트다(표시가 true인 것만)."""
-        spec = sources.load_spec()
-        for e in sources.load_manifest(ROOT, spec):
-            if e.kind != "portrait" or not e.placeholder:
-                continue
-            data = png.encode_rgb(e.width, e.height, pa.render(e.id, e.width, e.height))
-            self.assertEqual((ROOT / e.path).read_bytes(), data, e.path)
-
-    def test_committed_sprites_match_generator(self):
-        """커밋된 임시 sprite가 지금 생성기(RGBA, 바탕 투명)와 같은 바이트다(표시가 true인 것만)."""
+    def test_committed_files_match_generator(self):
+        """커밋된 임시 sprite·초상이 지금 생성기와 같은 바이트다(표시가 true인 것만)."""
         spec = sources.load_spec()
         seen = 0
         for e in sources.load_manifest(ROOT, spec):
-            if e.kind != "sprite" or not e.placeholder:
+            if e.kind not in ("sprite", "portrait") or not e.placeholder:
                 continue
-            data = png.encode_rgba(e.width, e.height, pa.render_sprite(e.id, e.width, e.height))
+            if e.kind == "sprite":
+                data = png.encode_rgba(e.width, e.height, pa.render_sprite(e.id, e.width, e.height, NAMES.get(e.id)))
+            else:
+                data = png.encode_rgb(e.width, e.height, pa.render(e.id, e.width, e.height, NAMES.get(e.id)))
             self.assertEqual((ROOT / e.path).read_bytes(), data, e.path)
             seen += 1
-        self.assertEqual(seen, 13)
+        self.assertEqual(seen, 26)
 
-    def test_sprite_bad_size(self):
-        for w, h in ((512, 512), (500, 625), (0, 0)):
-            with self.assertRaises(ValueError):
-                pa.render_sprite("jumo", w, h)
+
+class GlyphTest(unittest.TestCase):
+    def test_all_needed_chars_committed(self):
+        """콘텐츠 묶음의 이름·고정 문구 글자가 모두 비트맵에 있다(없으면 build_glyphs를 다시 돌린다)."""
+        missing = [ch for ch in build_glyphs.needed_chars() if ch not in glyphs.GLYPHS]
+        self.assertEqual(missing, [])
+
+    def test_draw_and_width(self):
+        rows = [bytearray(3 * 200) for _ in range(glyphs.HEIGHT * 2)]
+        glyphs.draw(rows, 3, 0, 0, "임시", (255, 0, 0), scale=2)
+        self.assertTrue(any(b"\xff\x00\x00" in bytes(r) for r in rows))
+        self.assertEqual(glyphs.width("임 시", 2), 2 * (glyphs.GLYPHS["임"][0] + glyphs.SPACE + glyphs.GLYPHS["시"][0]))
+        self.assertFalse(glyphs.fits("鬼"))
+        glyphs.draw(rows, 3, 190, -5, "鬼임", (0, 0, 255))       # 없는 글자·가장자리 넘김은 건너뛴다
+
+    def test_background_labels(self):
+        for cid in background_art.IDS:
+            self.assertTrue(glyphs.fits(background_art.LABELS[cid]), cid)
 
 
 if __name__ == "__main__":

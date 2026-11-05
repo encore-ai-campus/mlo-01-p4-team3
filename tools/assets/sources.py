@@ -28,6 +28,12 @@ def load_npc_ids(path: Path = BUNDLE_PATH) -> list[str]:
     return [c["npc_id"] for c in bundle["characters"]]
 
 
+def load_npc_labels(path: Path = BUNDLE_PATH) -> dict[str, str]:
+    """인물 ID → 공개 표시 이름(`name_ko`). 임시 에셋 이름표에만 쓴다."""
+    bundle = json.loads(path.read_text(encoding="utf-8"))
+    return {c["npc_id"]: c.get("name_ko") or c["npc_id"] for c in bundle["characters"]}
+
+
 def load_place_ids() -> list[str]:
     """계약 `Place` 값 5개."""
     from engine.domain.model import Place

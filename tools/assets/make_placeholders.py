@@ -5,14 +5,15 @@
     python -m tools.assets.make_placeholders --result        # 대조 수치를 docs/evidence/perf/E-05-05/placeholders.json에
     python -m tools.assets.make_placeholders --rederive-portraits   # 임시 초상을 sprite 파생으로 다시 쓴다(11/5 이전 1회)
 
-- sprite·초상은 코드로 그린 임시 인물(`portrait_art.py`), 장면 배경은 단순 장면(`background_art.py`, 둘 다 실루엣·배치 확인용),
-  나머지는 단색 + 도형. 글자 없음. 같은 입력이면 같은 바이트. sprite만 RGBA(바탕 투명).
+- sprite·초상은 회색 실루엣 + 기준선 + "임시"/표시 이름(`portrait_art.py`), 장면 배경은 그라데이션 + 이름표
+  (`background_art.py`). 모두 크기·기준선·배치 확인용이다. 나머지는 단색 + 도형(글자 없음). 이름은 콘텐츠 묶음의 공개
+  표시 이름(`name_ko`), 글자는 저장소의 비트맵(`glyph_data.py`)만 쓴다. 같은 입력이면 같은 바이트. sprite만 RGBA(바탕 투명).
 - 초상은 같은 id의 sprite 위 512×512 크롭을 먹남 위에 알파 합성한 것이다. sprite가 실제 파일(`placeholder: false`)이면 그 파일을
   잘라 초상을 만들고 초상도 `false`로 바꾼다. 쌍의 표시가 다르면 대조에서 `pair_mismatch`로 보고한다.
 - manifest에서 `placeholder: false`(실제 파일)인 항목은 덮어쓰지 않는다.
 - 끝에 유형별 기대 수·manifest 항목 수·파일 수와 누락·남는 목록을 출력한다. 하나라도 어긋나면 종료 코드 1.
 
-계층: 이 파일은 응용(흐름 조립) + 표현(CLI). 규칙은 `spec.py`·`art.py`·`portrait_art.py`·`background_art.py`·`vn.py`
+계층: 이 파일은 응용(흐름 조립) + 표현(CLI). 규칙은 `spec.py`·`art.py`·`portrait_art.py`·`background_art.py`·`glyphs.py`·`vn.py`
 (도메인), 입출력은 `sources.py`·`png.py`(인프라).
 """
 from __future__ import annotations
@@ -57,10 +58,10 @@ def _encode(channels: int, width: int, height: int, rows: list) -> bytes:
     return (png.encode_rgba if channels == 4 else png.encode_rgb)(width, height, rows)
 
 
-def _sprite_rows(repo: Path, entry: AssetEntry, real: bool) -> list:
+def _sprite_rows(repo: Path, entry: AssetEntry, real: bool, name: str | None = None) -> list:
     """초상을 자를 sprite RGBA 행. 실제 sprite면 디스크 파일을 읽고, 아니면 임시 그림을 그린다."""
     if not real:
-        return portrait_art.render_sprite(entry.id, entry.width, entry.height)
+        return portrait_art.render_sprite(entry.id, entry.width, entry.height, name)
     p = repo / entry.path
     if not p.is_file():
         raise SpecError(f"{entry.path}: 실제 sprite 파일이 없음(placeholder: false)")
@@ -84,6 +85,7 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
     """
     spec = sources.load_spec(spec_path)
     expected = build_expected(spec, bundle_path, campaigns_path)
+    names = sources.load_npc_labels(bundle_path)
     existing = {e.key: e for e in sources.load_manifest(repo, spec)}
     sprites = {e.id: e for e in expected if e.kind == "sprite"}
     real_sprites = {cid for cid, e in sprites.items()
@@ -106,7 +108,7 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
             final.append(old if old is not None else target)
             continue
         if e.kind == "portrait":
-            src_rows = _sprite_rows(repo, sprites[e.id], from_real)
+            src_rows = _sprite_rows(repo, sprites[e.id], from_real, names.get(e.id))
             if not from_real:
                 drawn[e.id] = src_rows      # 같은 실행의 sprite 항목이 다시 그리지 않게
             rows = portrait_art.crop_portrait(e.width, src_rows)
@@ -114,7 +116,7 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
         elif e.kind == "sprite" and e.id in drawn:
             data = png.encode_rgba(e.width, e.height, drawn[e.id])
         else:
-            channels, rows = art.render_rows(e.kind, e.id, e.width, e.height)
+            channels, rows = art.render_rows(e.kind, e.id, e.width, e.height, names.get(e.id))
             data = _encode(channels, e.width, e.height, rows)
         if len(data) > spec.max_bytes:
             raise SpecError(f"{e.path}: {len(data)}바이트 > 상한 {spec.max_bytes}")

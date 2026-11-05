@@ -17,7 +17,7 @@ from tools.assets import art, background_art, png, portrait_art as pa, preview_v
 from tools.assets.make_placeholders import format_report, run
 from tools.assets.spec import AssetEntry, pair_mismatches
 
-ALL_IDS = list(pa.CHARACTERS)
+ALL_IDS = list(pa.HEADGEAR)
 W, H = vn.SPRITE_SIZE
 
 
@@ -66,7 +66,8 @@ class SpriteCheckTest(unittest.TestCase):
     def test_composition_rules(self):
         self.assertTrue(any("가운데" in p for p in vn.check_sprite(W, H, 4, _shift(_sprite(), dx=24))))
         self.assertEqual(vn.check_sprite(W, H, 4, _shift(_sprite(), dx=12)), [])
-        self.assertTrue(any("머리 위" in p for p in vn.check_sprite(W, H, 4, _shift(_sprite("hunjang"), dy=-24))))
+        top = vn.visible_box(W, _sprite("hunjang"))[1]
+        self.assertTrue(any("머리 위" in p for p in vn.check_sprite(W, H, 4, _shift(_sprite("hunjang"), dy=-(top - 8)))))
         self.assertTrue(any("발끝" in p for p in vn.check_sprite(W, H, 4, _shift(_sprite(), dy=-40))))  # 떠 있음
         self.assertTrue(any("발끝" in p for p in vn.check_sprite(W, H, 4, _shift(_sprite(), dy=24))))   # 잘림
 
@@ -83,9 +84,8 @@ class SpriteCheckTest(unittest.TestCase):
         self.assertEqual(vn.check_sprite(W, H, 3, rgb), ["투명 채널 없음(RGBA로 저장)"])
 
     def test_baselines_of_placeholder_art(self):
-        """임시 그림은 spec 기준선으로 그린다: 눈 중심 y≈200, 발끝 y=1248."""
-        x0, y0, x1, y1 = pa.EYE_BOXES[0]
-        self.assertLessEqual(abs((y0 + y1) / 2 * 4 - vn.EYE_Y), 8)
+        """임시 그림은 spec 기준선으로 그린다: 머리 중심 = 눈높이 y=200, 발끝 y=1248."""
+        self.assertEqual(pa.EYE_Y, vn.EYE_Y)
         for cid in ALL_IDS:
             self.assertEqual(vn.visible_box(W, _sprite(cid))[3], vn.FOOT_Y, cid)
 
@@ -101,14 +101,15 @@ class BackgroundTest(unittest.TestCase):
         self.assertTrue(any("불투명" in p for p in vn.check_background(1280, 720, 4, rgba)))
         self.assertTrue(vn.check_background(1280, 700, 3, rows[:700]))
 
-    def test_bottom_quarter_and_center_are_simple(self):
-        """대사창이 덮는 아래 1/4은 한 색, 가운데 sprite 구간은 행마다 3색 이하(인물·글자·강조 없음)."""
+    def test_label_top_left_and_plain_elsewhere(self):
+        """이름표는 왼쪽 위에만 있고, 가운데(sprite 자리)와 아래 1/4(대사창)은 행마다 한 색(그라데이션)."""
         for cid in background_art.IDS:
-            px = background_art.draw(cid)
-            self.assertEqual(len({c for line in px[background_art.LOW_Y:] for c in line}), 1, cid)
-            x0, x1 = background_art.SPRITE_X
-            for y in range(background_art.LOW_Y):
-                self.assertLessEqual(len(set(px[y][x0:x1])), 3, (cid, y))
+            rows = background_art.render(cid, 1280, 720)
+            ink = bytes(background_art.COLORS[cid][2])
+            self.assertIn(ink, bytes(rows[background_art.LABEL_XY[1] + 40]))
+            for y in list(range(200, 720, 37)):
+                r = bytes(rows[y])
+                self.assertEqual(r, r[:3] * 1280, (cid, y))
 
     def test_unknown_id_and_bad_size(self):
         with self.assertRaises(ValueError):
@@ -152,9 +153,8 @@ class PublicIdOnlyTest(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.tmp, True)
 
-    def test_draw_takes_only_id(self):
-        self.assertEqual(list(inspect.signature(pa.draw).parameters), ["cid"])
-        self.assertEqual(list(inspect.signature(pa.character).parameters), ["cid"])
+    def test_shape_takes_only_id(self):
+        self.assertEqual(list(inspect.signature(pa.body_mask).parameters), ["cid"])
 
     def test_bundle_fields_other_than_id_do_not_change_images(self):
         a, b = self.tmp / "a", self.tmp / "b"
@@ -162,9 +162,8 @@ class PublicIdOnlyTest(unittest.TestCase):
         bundle = json.loads(sources.BUNDLE_PATH.read_text(encoding="utf-8"))
         temperaments = [c["temperament_id"] for c in bundle["characters"]]
         for c, t in zip(bundle["characters"], reversed(temperaments)):
-            c["temperament_id"] = t                 # 성격·일과·이름을 바꾸고 순서를 뒤집는다
+            c["temperament_id"] = t                 # 성격·일과를 바꾸고 순서를 뒤집는다(이름표는 공개 표시 이름이라 그대로)
             c["routine"] = {}
-            c["name_ko"] = "x"
         bundle["characters"].reverse()
         changed = self.tmp / "bundle.json"
         changed.write_text(json.dumps(bundle, ensure_ascii=False), encoding="utf-8")
