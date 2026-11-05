@@ -274,8 +274,8 @@
 
 | ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
 |---|---|---|---|---|---|---|---|
-| `FR-GOV-001` | planned | GitHub 저장소(P-11, 조직 생성·초대, 비공개), `dev`(통합)·`main`(배포) 병합 규칙(필수 체크 4개, 작성자 외 승인 1명. 무료 플랜 비공개 저장소라 보호 규칙을 설정할 수 없어 병합 전 사람이 확인하는 운영 규칙으로 대체, 병합은 PM), 담당 배정, 태스크 → 이슈 생성 | `BR-OBJ-009` | `AC-GOV-001` | E-05-01 | `STK-PM-001` | 11/5 |
-| `FR-GOV-002` | planned | CI 필수 체크 4개(`core`, `django`, `evidence`, `docs`)와 `check_evidence`·`check_docs`·`check_secrets` | `BR-OBJ-009` | `AC-GOV-001` | E-05-02 | `STK-PM-001` | 11/5 |
+| `FR-GOV-001` | planned | GitHub 저장소(P-11, 조직 생성·초대, 비공개), `dev`(통합)·`main`(배포) 병합 규칙(로컬 검사 `precheck` 통과 줄, 작성자 외 승인 1명. 무료 플랜 비공개 저장소라 보호 규칙을 설정할 수 없어 병합 전 사람이 확인하는 운영 규칙으로 대체, 병합은 PM), 담당 배정, 태스크 → 이슈 생성 | `BR-OBJ-009` | `AC-GOV-001` | E-05-01 | `STK-PM-001` | 11/5 |
+| `FR-GOV-002` | planned | 로컬 검사 `tools/precheck.py`(구조·비밀·단위 테스트·문서·증빙, push 때 `.githooks/pre-push`. 11/5 GitHub Actions CI 폐지)와 `check_evidence`·`check_docs`·`check_secrets` | `BR-OBJ-009` | `AC-GOV-001` | E-05-02 | `STK-PM-001` | 11/5 |
 | `FR-GOV-003` | planned | 모든 태스크의 증빙 문서(명령·출력·수치·로그), 흐름별 트러블·검증 기록(데모 자료 트랙 입력), 모듈 문서 일괄 갱신 | `BR-OBJ-009` | `AC-GOV-002` | 전 태스크(공통 완료 정의 ③⑦), A-10-03, B-10-04, C-11-04, D-11-03 | `STK-PM-001` | 11/12 |
 | `FR-GOV-004` | planned | 통합 1·2·3 판정(끝에서 끝까지 흐름 2개, 대조표, 릴리스 후보 SHA 재검사) | `BR-OBJ-009` | `AC-GOV-003` | INT-07, INT-09, INT-11, E-07-03, E-09-04, E-11-01, A-07-03, A-09-03, A-11-01, B-07-04, B-09-04, B-11-01, C-07-03, C-09-04, D-07-04, D-09-04, D-11-02 | `STK-PM-001` | 11/11 |
 | `FR-PRES-001` | planned | 사업 검토 데모 구성안과 시연 시나리오: 25분 타임라인, 핵심 장면 4개, 장면별 실패 시 대체 화면 | `BR-OBJ-009` | `AC-PRES-001` | S-10-01 | `STK-PRES-001` | 11/10 |
@@ -518,7 +518,7 @@
 | `AC-ASSET-002` | 임시 에셋으로 개발된 화면·광고 | 실제 에셋으로 같은 경로 덮어쓰기 | B·D 코드 이미지 경로 변경 0줄, 화면·광고 테스트 통과 | `evidence/E-11-10.md` | planned |
 | `AC-UT-001` | 테스트 준비 완료(P-12) | 사전·정식 사용자 테스트 | 목표 30명 × 평균 4판 대비 실제 참가자 수·판 수(미달이면 원인), 소요 시간 중앙값 10분 이하, 완주율, 설문 응답률, 원하는 행동 완료율 표 | `evidence/E-06-04.md`, `evidence/E-08-10.md`, `evidence/E-09-01.md`, INT-09 #10 | planned |
 | `AC-UT-002` | 사용자 테스트 데이터 | 수집 확인과 리포트 작성 | 판 수 = 설문 이벤트 수(건너뜀 포함), 설문 평균과 응답 수, 판 번호별 승률, 이탈 지점, 미달 시 원인 분석 | `evidence/D-09-02.md`, `evidence/B-07-02.md`, `docs/reports/user_test.md`, INT-09 #7 | planned |
-| `AC-GOV-001` | GitHub 저장소(P-11) | 규칙 위반 PR 3개 생성 | 필수 체크 4개가 각각 해당 위반에서 실패, 병합 방식 merge commit만 허용·운영 규칙 기록(P-11), 이슈 수가 `--dry-run`과 일치 | `evidence/E-05-01.md`, `evidence/E-05-02.md` | planned |
+| `AC-GOV-001` | GitHub 저장소(P-11) | 규칙 위반 사례 3개 | `precheck`의 해당 단계가 각각 위반에서 실패, 병합 방식 merge commit만 허용·운영 규칙 기록(P-11), 이슈 수가 `--dry-run`과 일치 | `evidence/E-05-01.md`, `evidence/E-05-02.md` | planned |
 | `AC-GOV-002` | 완료 처리할 태스크 | `python -m tools.check_evidence <ID> --complete` | 조건 번호마다 통과 행, 수치가 결과 JSON과 일치, 문서 검사 통과 | `docs/evidence/<ID>.md`, CI `evidence`·`docs` | planned |
 | `AC-GOV-003` | 통합일(11/7, 11/9, 11/11) | INT 항목 판정, 릴리스 후보 SHA 재검사 | INT 표 전 항목 통과, 끝에서 끝까지 흐름 2개와 시연 장면 4개 재실행 통과, `blocker` 미해결 0 | `evidence/INT-07.md`, `evidence/INT-09.md`, `evidence/INT-11.md` | planned |
 | `AC-PRES-001` | 각 흐름의 트러블·검증 기록(A-10-03, B-10-04, C-11-04, D-11-03) | 데모 자료·시연 시나리오 작성 | 25분 타임라인, 핵심 장면 4개와 대체 화면, 수치마다 증빙 링크, 시연 영상 백업 | `docs/presentation/`, `evidence/S-10-01.md` ~ `evidence/S-11-07.md` | planned |
