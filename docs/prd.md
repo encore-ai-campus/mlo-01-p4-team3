@@ -7,7 +7,7 @@
 - version: `v1`
 - document_state: `Draft`
 - brd_reference: `BRD-PALDO-001@v1`
-- scope_basis: `기획서 paldo_design_v1.md v1.1(2026-11-04 확정 결정과 1.1절 합격선), 계약 contracts/(contract-0.3, ads-0.3), 태스크 tasks/(커밋 e89d389 + E 11/6 일부 미룸·C-11-04 추가 반영분)`
+- scope_basis: `기획서 paldo_design_v1.md v1.1(2026-11-04 확정 결정과 1.1절 합격선), 계약 contracts/(contract-0.3, ads-0.3), 태스크 tasks/(커밋 c953d22 + E 11/6 일부 미룸·C-11-04 추가 반영분)`
 - owner_role: `STK-PM-001`
 - reviewer_roles: [`STK-ENGINE-001`, `STK-WEB-001`, `STK-INFRA-001`, `STK-MLAD-001`] (흐름별로 다른 흐름 1명이 검토, 11절)
 
@@ -598,7 +598,7 @@
 
 | 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 버전 | 변경 | 근거&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
-| 2026-11-04 | v1 | 최초 작성(1단계: 1·3·5·6·7절, 2단계: 2·4·8·9·10·11·12절). 태스크는 e89d389 + 11/5 PM 결정 반영분(E 11/6 일부 미룸, C-11-04 추가)으로 추적 | BRD-PALDO-001@v1 |
+| 2026-11-04 | v1 | 최초 작성(1단계: 1·3·5·6·7절, 2단계: 2·4·8·9·10·11·12절). 태스크는 c953d22 + 11/5 PM 결정 반영분(E 11/6 일부 미룸, C-11-04 추가)으로 추적 | BRD-PALDO-001@v1 |
 | 2026-11-04 | v1 | 사업 문서 표현으로 통일(사업 검토 데모, 최종 산출물 확정, 데모 자료 트랙, 조직 저장소). 요구사항·AC 내용은 그대로. `BR-OBJ-010`을 `FR-AD-006`·`FR-AD-009`에 연결, 재방문율은 출시 후 지표(BRD 3.1절)로 표기 | BRD-PALDO-001@v1(사업 문서 재작성) |
 | 2026-11-04 | v1 | 실제 에셋 담당 이전(E → B, 검수자 E: `FR-ASSET-001·002` 태스크·담당, 2.1절, 2.3절 검수), 웹소켓 광고 신호 중계(`FR-AD-001`, `AC-WEB-009`), 내부 사용자 테스트 HTTPS(`NFR-SEC-002`, `AC-SEC-002`), 12절 시간 초과 갱신 | PM 결정(11/4), BRD `BR-OQ-023` |
 | 2026-11-04 | v1 | 개인 계정 결정 반영: `FR-AUTH-001~004`·`AC-AUTH-001~004` 추가, `FR-PRIV-001`·`AC-PRIV-001`의 쿠키 가명 발급을 가입 시 계정 발급으로 변경, 7.5절·9.2절·10절·12절 갱신 | PM 결정(11/4), BRD `BR-OQ-022` |
