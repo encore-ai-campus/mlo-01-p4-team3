@@ -58,16 +58,18 @@
 | `ad.serve` | `AdServeEvent` | 경매 응답 시점. 노출이 아니다. 광고 없음도 기록한다 |
 | `ad.impression` | `AdImpressionEvent` | 비콘 도착 시점, 또는 클릭이 노출 증거가 된 시점(`implied_by_click`) |
 | `ad.click` | `AdClickEvent` | 클릭 리다이렉트를 지나는 시점 |
-| `ad.rejudge` | silver 재판정 무효 이벤트(원본 `source_event_id`, `charge_id`, `invalid_reason`, `judge_version`) | Spark silver 재판정이 확정 과금 건을 무효로 바꾼 시점(C-08-02). 소비자는 광고 서버 환입 소비자(D-06-02), 11/4 PM 결정 #11 |
+| `ad.rejudge` | `AdRejudgeEvent`(`event_id`, 원본 `source_event_id`, `charge_id`, `invalid_reason`, `judge_version`, `occurred_at_ms`, `source`, `contract_version`). 키 `charge_id`. 광고 서버 아웃박스가 아니라 Spark 재판정 작업이 직접 발행하고, `event_id`는 `rj:<charge_id>:<judge_version>`으로 결정적이라 다시 실행해도 같은 이벤트다 | Spark silver 재판정이 확정 과금 건을 무효로 바꾼 시점(C-08-02). 소비자는 광고 서버 환입 소비자(D-06-02), 11/4 PM 결정 #11 |
 
 - **공통 필드**:
   - 식별: `event_id`(MERGE 키), `request_id`, `serve_id`
   - 시각: `occurred_at_ms`(발생), `received_at_ms`(도착)
   - 대상: `slot`, `campaign_id`, `creative_id`, `session_pseudonym`
   - 출처: `source`(human, synthetic), `load_test`
-  - 버전: `policy_version`, `ctr_version`, `contract_version`
+  - 버전: `policy_version`, `ctr_version`, `bid_version`(자동 입찰 입찰가 버전, 없으면 빈 문자열), `contract_version`(`ads-0.4`부터). 노출·클릭 이벤트의 버전은 그때의 캐시 값이 아니라 serve 기록(`ServeRecord`)에 고정된 경매 시점 값을 복사한다
   - 경매 당시 값: `billing`, `price_mw`
 - **serve 이벤트**:
+  - 요청 맥락 `context`(`AdRequest.context` 복사: `preset_id`, `outcome`(win, lose, 없음), `returning`, `hour`). 노출·클릭 이벤트에는 싣지 않고, silver가 `serve_id`로 serve에 조인해 붙인다(11/5 PM 결정, `ads-0.4`). 맥락 조인은 분석·학습용이고 판정·과금을 바꾸지 않는다
+  - 맥락 값 검증: 광고 서버가 serve 시점에 `preset_id`는 프리셋 이름(`engine/domain/model.py` `PRESETS`), `outcome`은 열거값, `hour`는 0~23만 받고 그 밖은 비운다(자유 문자열로 식별 값이 들어오지 않게. 세션 가명 ID 말고 개인 식별 값은 넣지 않는다, privacy.md)
   - 후보 목록: 순위 CTR, 평균 CTR, eCPM, 탈락 사유
   - 경매 결과: `threshold_ecpm_mw`(T), `rank_ctr`, `capped`
   - 예약: `reserved_charge_id`, `reserved_mw`
@@ -77,4 +79,4 @@
   - 재판정·환입: `source_event_id`(원본 이벤트 ID)
   - 클릭에만: `suspect`
 - `source=synthetic` 이벤트는 합성 전용 캠페인(`syn:`)만 가리킨다. 실제 집계와 학습 평가 보고에서는 분리한다.
-- 광고 이벤트는 게임 `EventEnvelope`를 쓰지 않는다. 광고 서버가 MySQL 아웃박스로 발행한다.
+- 광고 이벤트는 게임 `EventEnvelope`를 쓰지 않는다. 광고 서버가 MySQL 아웃박스로 발행한다(`ad.rejudge`만 Spark 재판정 작업이 직접 발행).

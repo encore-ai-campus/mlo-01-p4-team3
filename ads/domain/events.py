@@ -1,4 +1,4 @@
-"""광고 이벤트 계약(Kafka 토픽 ad.serve, ad.impression, ad.click). 상세: docs/contracts/events.md 5절.
+"""광고 이벤트 계약(Kafka 토픽 ad.serve, ad.impression, ad.click, ad.rejudge). 상세: docs/contracts/events.md 5절.
 
 광고 서버는 원장 변경과 이벤트(아웃박스 행)를 같은 MySQL 트랜잭션에 쓰고, 발행기가 Kafka로 보낸다.
 """
@@ -7,11 +7,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from .model import AdSlot, BillingType, InvalidReason, JudgeStatus
+from .model import AdContext, AdSlot, BillingType, InvalidReason, JudgeStatus
 
 TOPIC_SERVE = "ad.serve"
 TOPIC_IMPRESSION = "ad.impression"
 TOPIC_CLICK = "ad.click"
+TOPIC_REJUDGE = "ad.rejudge"   # Spark silver 재판정(C-08-02) → 환입 소비자(D-06-02). 키 charge_id
 
 
 @dataclass
@@ -33,6 +34,7 @@ class AdEventBase:
     billing: Optional[BillingType] = None
     price_mw: int = 0
     load_test: bool = False
+    bid_version: str = ""           # 경매에 쓴 입찰가 버전(자동 입찰 갱신, D-10-02). 자동 입찰이 없으면 ""
 
 
 @dataclass
@@ -58,6 +60,8 @@ class AdServeEvent(AdEventBase):
     reserved_charge_id: Optional[str] = None
     reserved_mw: int = 0
     latency_ms: int = 0
+    # 요청 맥락(AdRequest.context 복사). 노출·클릭에는 싣지 않고 silver가 serve_id로 조인한다(시나리오 6·광고 CTR 학습)
+    context: Optional[AdContext] = None
 
 
 @dataclass
@@ -81,3 +85,21 @@ class AdImpressionEvent(AdJudgedEvent):
 class AdClickEvent(AdJudgedEvent):
     suspect: bool = False                   # 빠른 연속 클릭(무효 근거 아님)
     redirect_path: str = ""
+
+
+@dataclass
+class AdRejudgeEvent:
+    """silver 재판정이 확정 과금 건을 무효로 바꿨을 때(토픽 ad.rejudge, 키 charge_id).
+
+    광고 서버 아웃박스가 아니라 Spark 재판정 작업(C-08-02)이 발행한다. event_id는 `rj:<charge_id>:<judge_version>`.
+
+    소비자(환입 소비자)는 원래 원장 행을 두고 음수 환입 행(`<charge_id>:refund`)을 추가한다(ads.md 5절).
+    """
+    event_id: str                   # 전역 유일. 소비자 멱등 키
+    source_event_id: str            # 원래 확정한 노출·클릭 이벤트 ID
+    charge_id: str
+    invalid_reason: InvalidReason
+    judge_version: str
+    occurred_at_ms: int             # 재판정 시각
+    source: str                     # human | synthetic
+    contract_version: str

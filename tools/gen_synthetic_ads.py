@@ -88,7 +88,7 @@ class _Sim:
         slot = rng.choice(list(AdSlot))
         sess = f"syn_s{i // 40}_{rng.randrange(8)}"      # 세션은 시간이 지나며 새로 생긴다
         outcome = rng.choice([GameOutcome.WIN, GameOutcome.LOSE]) if slot in (AdSlot.RESULT_BANNER, AdSlot.REVIEW_SIDE) else None
-        ctx = AdContext(rng.choice(["base6", "duo9"]), outcome, rng.random() < 0.5, minute // 60)
+        ctx = AdContext(rng.choice(["base6", "large8"]), outcome, rng.random() < 0.5, minute // 60)
         pol = self.policies[slot]
         req_id = f"req_{self.seed}_{i:07d}"
         cands, bidders = [], []
@@ -131,7 +131,7 @@ class _Sim:
             filled=filled, candidates=cands, threshold_ecpm_mw=res.threshold_ecpm_mw, rank_ctr=rec.rank_ctr,
             capped=res.capped, reserved_charge_id=rules.charge_id(rec.serve_id, rec.billing) if filled else None,
             reserved_mw=rules.charge_amount_mw(rec.billing, rec.price_mw) if filled else 0,
-            latency_ms=rng.randrange(3, 30)))
+            latency_ms=rng.randrange(3, 30), context=ctx))
         if not filled:
             return
         self.st.serves[rec.serve_id] = rec

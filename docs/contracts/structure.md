@@ -56,6 +56,7 @@ paldo/
 │  ├─ app/                         serve.py, beacon.py, click.py [D-05-03]
 │  │                               expire_reservations.py, refund_consumer.py [D-06-02]
 │  │                               ctr_update.py, pacing_update.py [D-08-02]
+│  │                               bid_update.py [D-10-02]
 │  ├─ infra/                       mysql_ledger.py, outbox.py, schema.sql [D-06-02]
 │  ├─ web/                         Django 앱(내부 API, 비콘, 클릭, 가상 랜딩, admin) [D-05-03]
 │  └─ testing/fakes.py             FakeAdProvider (있음)
@@ -67,7 +68,8 @@ paldo/
 │  ├─ suspicion/                   features.py, train.py, evaluate.py [D-07-02]
 │  ├─ adapters/suspicion_model.py  SuspicionModel 구현 [D-08-01]
 │  ├─ adapters/run_model_games.py  모델 v0 판 실행 진입점 [D-08-01]
-│  └─ gate.py, bandit.py           [D-09-02]
+│  ├─ gate.py, bandit.py           [D-09-02]
+│  └─ ad_ctr.py                    광고 CTR LightGBM [D-10-02]
 ├─ llm/                            LLM · E
 │  ├─ bench/run_bench.py           [E-06-07]
 │  ├─ service/                     HTTP 서비스 [E-07-01]
@@ -115,7 +117,7 @@ paldo/
 │  └─ fixtures/secrets/            탐지 시험용 가짜 값(검사 제외 경로). 개별 예외는 tools/secrets_allowlist.txt [E-05-02]
 │
 ├─ docs/                           문서 (3절)
-└─ out/                            실행 산출물(커밋 제외): logs/, perf/, handoff/a06/, ad_scenarios/
+└─ out/                            실행 산출물(커밋 제외): logs/, perf/, handoff/a06/, ad_scenarios/, ad_truth/(합성 광고 정답, 평가 전용 [D-06-03])
 ```
 
 ## 2. 폴더별 계층·담당 요약

@@ -5,9 +5,9 @@ import time
 import unittest
 
 from ads.domain import rules
-from ads.domain.events import AdClickEvent, AdImpressionEvent, AdServeEvent
+from ads.domain.events import TOPIC_REJUDGE, AdClickEvent, AdImpressionEvent, AdRejudgeEvent, AdServeEvent
 from ads.domain.model import (
-    SLOT_SIZES, AdContext, AdRequest, AdSlot, Bidder, BillingType, Campaign, CampaignStatus, ChargeState, JudgeStatus,
+    SLOT_SIZES, AdContext, AdRequest, AdSlot, Bidder, BillingType, Campaign, CampaignStatus, ChargeState, InvalidReason, JudgeStatus,
     ServeClaims, ServeRecord, SlotPolicy, Targeting, slot_image_path, won,
 )
 from ads.testing.fakes import FakeAdProvider
@@ -261,12 +261,24 @@ class GamePathProtection(unittest.TestCase):
         self.assertEqual(gw.fetch(self.req(9))[1], "ok")
 
 
+class RejudgeEvent(unittest.TestCase):
+    def test_rejudge_event_contract(self):
+        e = AdRejudgeEvent("rj_1", "ad_syn_1_0000001", "sv_1:click", InvalidReason.DUPLICATE, rules.JUDGE_VERSION,
+                           1_000, "synthetic", "ads-0.4")
+        self.assertEqual(TOPIC_REJUDGE, "ad.rejudge")
+        strict(AdRejudgeEvent, serde.to_jsonable(e))
+
+
 class SyntheticAds(unittest.TestCase):
     def test_contract_and_isolation(self):
         from tools.gen_synthetic_ads import generate_ads
         serves, imps, clicks, truth, book = generate_ads(3000, 5)
         for e in serves[:50]:
             strict(AdServeEvent, serde.to_jsonable(e))
+        # serve에 요청 맥락이 남는다(시나리오 6: 판 결과별 CTR은 silver가 serve_id로 조인)
+        self.assertTrue(all(e.context is not None for e in serves))
+        self.assertTrue(any(e.context.outcome is not None for e in serves if e.filled))
+        self.assertEqual(serde.to_jsonable(serves[0])["bid_version"], "")
         for e in imps[:50]:
             strict(AdImpressionEvent, serde.to_jsonable(e))
         for e in clicks:

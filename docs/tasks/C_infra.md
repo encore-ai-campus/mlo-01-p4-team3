@@ -64,7 +64,7 @@
 - 2.5h · 산출물: `server/infra/outbox_publisher.py`, `pipeline/topics.yaml`, `pipeline/consumers/`
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-06-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`infra`](../modules/infra.md)는 그날 일괄 갱신(C-06-04)
 - 완료 조건:
-  1. 토픽 표(events.md 2절 + `ad.serve`/`ad.impression`/`ad.click`)마다 파티션 수, 키(`game_id`, 광고는 `serve_id`), 보존 기간, 복제 수를 `topics.yaml`에 정의하고 생성 스크립트로 적용.
+  1. 토픽 표(events.md 2절 + `ad.serve`/`ad.impression`/`ad.click`/`ad.rejudge`)마다 파티션 수, 키(`game_id`, 광고는 `serve_id`, `ad.rejudge`는 `charge_id`), 보존 기간, 복제 수를 `topics.yaml`에 정의하고 생성 스크립트로 적용.
   2. 발행기: 미발행 아웃박스를 순서대로 발행, 발행 확인(acks=all) 후 발행 표시, 실패 시 재시도. 같은 이벤트 재발행은 소비자가 `event_id`로 제거. 발행기는 Django와 별도 프로세스로 돈다(`python -m server.infra.outbox_publisher`, 11/4 PM 결정 #15).
   3. 발행 지연(커밋 → Kafka 기록) p95 지표 `paldo_outbox_publish_lag_seconds`, 미발행 건수 게이지.
   4. 발행·소비 시연 명령과 출력(토픽·파티션·오프셋)을 증빙에.
@@ -146,8 +146,8 @@
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-08-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`pipeline`](../modules/pipeline.md)는 그날 일괄 갱신(C-08-03)
 - 산출물: `pipeline/spark/ads_silver.py`, `ads_gold.py`, `ads_reconcile.py`, `pipeline/README.md` 광고 집계 정의
 - 완료 조건:
-  1. 집계 정의서: 귀속일(serve 시각 기준, ads.md 4절) 기준 시간대(Asia/Seoul), 관찰 종료 시각, CTR = 유효 클릭 ÷ 유효 노출, 노출 0건이면 CTR 비움, 유효·무효 분리, 실현 eCPM·CPC 정의(기획서 14.3).
-  2. gold: 캠페인 × 지면 × 시간대의 노출·클릭·CTR·비용·eCPM·소진율·무효율.
+  1. 집계 정의서(광고 수익 지표의 미결 정의는 P-25 결정값을 쓴다): 귀속일(serve 시각 기준, ads.md 4절) 기준 시간대(Asia/Seoul), 관찰 종료 시각, CTR = 유효 클릭 ÷ 유효 노출, 노출 0건이면 CTR 비움, 유효·무효 분리, 실현 eCPM·CPC 정의(기획서 14.3).
+  2. gold: 캠페인 × 지면 × 시간대의 노출·클릭·CTR·비용·eCPM·소진율·무효율. 그리고 광고 CTR 학습 행: 소재 × 지면 × 맥락(`outcome`, `preset_id`, 시간대)의 유효 노출·클릭. 맥락은 serve 이벤트의 `context`를 `serve_id`로 노출·클릭에 조인해 얻는다(events.md 5절, 11/5 PM 결정). serve 이벤트가 늦게 오면 확정 마감까지 실행마다 다시 조인하고(멱등 MERGE), 확정 마감 뒤에도 serve가 없는 노출·클릭은 학습 행에서 빼고 맥락 없음 건수로 따로 센다. 맥락 조인은 판정·과금을 바꾸지 않는다(판정은 광고 서버 온라인 판정과 silver 재판정 규칙 그대로). 시나리오 6과 D-10-02가 쓴다.
   3. 건별 대사: `charge_id`마다 원장만 있음 / Delta만 있음 / 중복 / 금액 불일치 4종 건수. D의 합성 트래픽 1회분에서 **불일치 0건**.
   4. 원본 이벤트 수 → bronze → silver → gold 합계 대조표.
   5. 잠정 마감(귀속일 다음 날, ads.md 7절)과 확정 마감(클릭 인정 기한과 판정 유예가 지난 뒤)을 따로 계산해 둘 다 저장. silver 재판정으로 무효가 된 과금 건은 무효 판정 이벤트를 `ad.rejudge` 토픽으로 내고(11/4 PM 결정 #11), D의 환입 소비자(D-06-02 7번)가 환입한 뒤 다시 대사해 불일치 0건(실제 Kafka·MySQL·Delta로 재현).
@@ -238,7 +238,7 @@
 - 문서화(+0.25h, 공통 ⑦): [트러블 C](../troubles/C.md)에 `### C-11-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`ops`](../modules/ops.md)는 그날 일괄 갱신(C-11-03)
 - 완료 조건: 아래 6가지를 VM 실제 스택에서 주입하고 각각 복구 시간, 유실·중복 건수, 게임 API 오류율을 표로. 유실·중복은 **0**. 복구 시간 기준은 P-13(미정이면 측정·보고).
   1. Kafka 브로커 1대 정지 2. Mongo Primary 정지(선출) 3. MySQL Primary 정지(수동 승격, 3차 런북) 4. 광고 서버 정지 5. LLM 서버 정지(폴백) 6. Spark 배치 중단 후 재실행(멱등)
-  - 게임 경로 보호(기획서 14.7): 광고 DB 지연(쿼리 지연 주입), 광고 이벤트 폭주(합성 트래픽 10배), 노트북 3 자원 압박(CPU 부하) 각각에서 게임 API p95 1초 이하·오류율 증가 0.
+  - 게임 경로 보호(기획서 14.7): 광고 DB 지연(쿼리 지연 주입), 광고 이벤트 폭주(합성 트래픽 10배), 노트북 3 자원 압박(CPU 부하) 각각에서 정상 대비 게임 API p95 증가 50ms 이하·오류율 증가 0(B-08-03과 같은 기준, 기획서 14.7, 11/5 PM 결정).
 - 근거: 기획서 12장 / 3차 감점 3
 
 ### C-11-02 AWS 전체 동작·속도 검증

@@ -10,7 +10,7 @@ import enum
 from dataclasses import dataclass, field
 from typing import Optional
 
-AD_CONTRACT_VERSION = "ads-0.3"
+AD_CONTRACT_VERSION = "ads-0.4"   # 0.4(11/5): serve 이벤트 context, 공통 bid_version, ad.rejudge 형식
 MW_PER_WON = 1000
 
 
@@ -220,6 +220,7 @@ class ServeRecord:
     served_at_ms: int
     attribution_day: str            # 비용 귀속일 = serve 시각 기준
     source: str = "human"
+    bid_version: str = ""           # 경매 시점의 입찰가 버전. 후속 노출·클릭 이벤트는 이 값을 복사한다(ads-0.4)
 
 
 @dataclass
