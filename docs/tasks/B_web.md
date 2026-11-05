@@ -1,6 +1,6 @@
 # B 웹·API 태스크
 
-- 담당자: (P-01) · 노트북: (P-01)
+- 담당자: 김영주 · 노트북: 4
 - 폴더: `server/`(Django 프로젝트, `server/api` 표현, `server/app` 응용), `web/`(템플릿·정적 파일). `server/app`은 Django를 import하지 않는다(`test_layers.py`).
 - 늘 볼 문서: `docs/contracts/api.md`, `ports.md` 2·4·5절, `privacy.md`, 기획서 4.5·6.1·8.4.
 - 테스트: Django 테스트는 `server/tests/`(CI에서 `python manage.py test`), 화면 정보 제한은 계약 테스트와 같은 금지 키 검사를 HTML에도 적용.
@@ -105,7 +105,7 @@
   4. `intent_attempt` 이벤트가 아웃박스에 들어가고 원문은 마스킹(privacy.md 2).
   5. 입력창 옆에 지원 예시·미지원 예시 표시(기획서 4.5).
   6. 해석 요청 지연 p95(`paldo_intent_parse_duration_seconds`) 노출.
-  7. 추궁 답변 표시(api.md 5절, PRD `FR-WEB-006`): 폴백 문장을 먼저 보여 주고 `GET /games/{id}/renders/{job_id}`를 1초 간격으로 htmx 폴링, `final`이면 폴링 중지하고 문장 교체, 단계가 넘어가면 미완료 작업의 폴링 중지. 11/7 오전에는 가짜 렌더러(`LineRenderer` 계약의 폴백)로 개발하고, E-07-01 인계 뒤 설정만 바꿔 같은 테스트가 통과. 테스트: 폴백 먼저 표시, `final` 후 추가 요청 0건, 단계 전환 후 추가 요청 0건. `render_job` 기록(11/4 PM 결정 #18): 응용이 `poll` 결과의 상태 변화와, 단계가 넘어가 미완료 작업을 `cancel`할 때의 최종 상태를 `append_events`로 남긴다(`dedup_key = render:<job_id>:<status>`, `RenderResult.quantization`·`fallback` 포함). 테스트: 폴링이 멈춘 작업도 단계 전환 때 최종 상태가 1건 기록됨.
+  7. 추궁 답변 표시(api.md 5절, PRD `FR-WEB-006`): 폴백 문장을 먼저 보여 주고 `GET /games/{id}/renders/{job_id}`를 1초 간격으로 htmx 폴링, `final`이면 폴링 중지하고 문장 교체, 단계가 넘어가면 미완료 작업의 폴링 중지. 이 태스크는 가짜 렌더러(`LineRenderer` 계약의 폴백)로 완료한다. 실제 서비스(E-08-09)는 11/8 인계라, 설정만 바꿔 같은 테스트가 통과하는지는 INT-09 #5에서 확인한다(11/5 PM 결정, MVP 일정). 테스트: 폴백 먼저 표시, `final` 후 추가 요청 0건, 단계 전환 후 추가 요청 0건. `render_job` 기록(11/4 PM 결정 #18): 응용이 `poll` 결과의 상태 변화와, 단계가 넘어가 미완료 작업을 `cancel`할 때의 최종 상태를 `append_events`로 남긴다(`dedup_key = render:<job_id>:<status>`, `RenderResult.quantization`·`fallback` 포함). 테스트: 폴링이 멈춘 작업도 단계 전환 때 최종 상태가 1건 기록됨.
 - 근거: 기획서 4.5, 9.1 실행 정책 / api.md 4·5, intent.md
 
 ### B-07-02 수첩·확신도·판 종료 설문

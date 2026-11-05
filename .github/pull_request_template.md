@@ -1,9 +1,7 @@
-<!-- docs/tasks/README.md 11절. 아래 Task 줄은 CI evidence 체크가 읽는다. 지우지 않는다. PR 하나 = 태스크 ID 하나(Task 줄 1개). HTML 주석 안의 글은 검사하지 않는다. -->
+<!-- docs/tasks/README.md 11절. 아래 Task 줄은 증빙 검사(python -m tools.precheck --pr-body <이 본문 파일>)가 읽는다. 지우지 않는다. PR 하나 = 태스크 ID 하나(Task 줄 1개). HTML 주석 안의 글은 검사하지 않는다. -->
 Task: A-05-01
-<!-- 필수. 이 PR의 태스크에 쓴 시간(문서화 포함, 공통 시간 제외). 숫자만. 증빙 문서의 같은 줄과 같은 값 -->
-실제 소요 시간(h): 
 
-<!-- 조건을 모두 만족했으면 Closes, 일부·실패 증빙이면 Refs. 둘 중 정확히 한 줄만. Fixes·Resolves 등 다른 닫기 키워드는 쓰면 실패한다. Closes면 CI가 check_evidence --complete를 돌린다. -->
+<!-- 조건을 모두 만족했으면 Closes, 일부·실패 증빙이면 Refs. 둘 중 정확히 한 줄만. Fixes·Resolves 등 다른 닫기 키워드는 쓰면 실패한다. Closes면 precheck가 check_evidence --complete까지 돌린다. -->
 Closes #
 
 ## 바뀐 점
@@ -23,6 +21,10 @@ Closes #
 - 라우팅: (새 폴더를 만들었으면) `paldo/README.md`
 
 ## 확인
+
+<!-- PR 본문을 파일로 저장해 python -m tools.precheck --pr-body <파일> 을 돌리고 마지막 줄을 그대로 붙인다. 에셋 관련 파일을 바꿨으면 --with-assets. -->
+precheck: 
+
 
 - [ ] 공통 완료 정의 ①~⑧(README 3절). ⑧ 작성자가 아닌 1명의 승인은 병합 전에 받는다
 - [ ] 계약 변경이면 `contract-change` 라벨과 영향받는 흐름 담당자 승인

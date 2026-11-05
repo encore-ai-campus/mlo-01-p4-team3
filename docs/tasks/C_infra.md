@@ -1,6 +1,6 @@
 # C 인프라/파이프라인 태스크
 
-- 담당자: (P-01) · 노트북: (P-01)
+- 담당자: 신성민 · 노트북: 1
 - 폴더: `server/infra/`(Mongo 저장소, 아웃박스 발행기, 어댑터), `pipeline/`(Kafka 소비자, Spark 작업), `ops/`(Compose, Ansible, k3s, Prometheus·Grafana, AWS, 런북)
 - 늘 볼 문서: `docs/contracts/ports.md` 1·2절, `events.md`, `ads.md` 5·7절, `ml_lifecycle.md` 5절, `tech_stack.md`, 기획서 6.2·6.3·14.4·14.7.
 - 접속 정보(IP·계정·비밀번호)는 저장소에 쓰지 않는다. 인벤토리는 저장소 밖 파일을 환경 변수로 가리킨다(`PALDO_INVENTORY`).
@@ -113,7 +113,7 @@
 - 근거: 기획서 6.1, 12장(로그 유실·중복)
 
 ### C-07-04 게임 웹 HTTPS 프록시 (내부 사용자 테스트)
-- 0.75h · 선행: B-07-05(같은 날 오전 병합, wss 확인용) · 인계: **사전 테스트(E-07-02) 전에 참가자 안내 문구 → E**
+- 0.75h · 선행: B-07-05(같은 날 오전 병합, wss 확인용) · 인계: **사전 테스트(E-08-10, 11/8) 전에 참가자 안내 문구 → E**
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 C](../troubles/C.md)에 `### C-07-04` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 공개 함수·클래스 docstring(CI `docs` 검사) · 모듈 문서 [`ops`](../modules/ops.md)는 그날 일괄 갱신(C-07-03)
 - 산출물: `ops/proxy/Caddyfile`, `ops/proxy/README.md`(기동·종료, 인증서 경고 안내)
 - 완료 조건:

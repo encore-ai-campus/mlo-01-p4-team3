@@ -17,7 +17,8 @@ paldo/
 ├─ .gitignore                      out/, .env, .venv/ 등 (있음)
 ├─ .github/                        저장소 운영 · E
 │  ├─ ISSUE_TEMPLATE/, labels.yml, pull_request_template.md (있음)
-│  └─ workflows/ci.yml             필수 체크 4개 [E-05-02]
+│  └─ (workflows/ 없음)            GitHub Actions CI는 11/5 폐지 [E-05-02]
+├─ .githooks/pre-push              push 전 로컬 검사(tools/precheck.py) [E-05-02]
 │
 ├─ engine/                         도메인 · A (표준 라이브러리만)
 │  ├─ ports.py                     엔진이 바깥에 기대는 포트 (있음)
@@ -41,7 +42,7 @@ paldo/
 │  ├─ infra/                       인프라(C 저장소·발행기·조회, E LLM 렌더러, B 광고 HTTP 클라이언트·모델 선택 적용)
 │  │  ├─ mongo_repo.py, content_store.py   [C-06-01]
 │  │  ├─ outbox_publisher.py       [C-06-02]
-│  │  ├─ llm_renderer.py           LineRenderer 구현 [E-07-01]
+│  │  ├─ llm_renderer.py           LineRenderer 구현 [E-08-09]
 │  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03]
 │  │  ├─ ad_client.py              AdProvider HTTP 구현(serve·비콘·클릭·랜딩 중계) [B-08-03] 결정 #2·#6
 │  │  └─ model_selector.py         ModelSelector 최소 구현 [D-08-04] → 카나리아·고정 [B-09-01], 레지스트리 [C-09-01] 결정 #5
@@ -72,8 +73,11 @@ paldo/
 │  └─ ad_ctr.py                    광고 CTR LightGBM [D-10-02]
 ├─ llm/                            LLM · E
 │  ├─ bench/run_bench.py           [E-06-07]
-│  ├─ service/                     HTTP 서비스 [E-07-01]
-│  └─ graph.py                     LangGraph 흐름 [E-07-01]
+│  ├─ prompt.py, validator.py, eval_set.py  추궁 프롬프트·검증기·평가 세트, 순수 함수(표준 라이브러리만) [E-07-07]
+│  ├─ mvp_metrics.py               MVP 지표(성공률·지연·일관성) [E-07-07]
+│  ├─ colab/paldo_llm_mvp.ipynb    MVP 코랩 노트북, 출력 셀 비움 [E-07-06]
+│  ├─ service/                     HTTP 서비스 [E-08-09]
+│  └─ graph.py                     LangGraph 흐름 [E-08-09]
 │
 ├─ pipeline/                       데이터 파이프라인 · C
 │  ├─ topics.yaml, consumers/      [C-06-02]
@@ -102,12 +106,13 @@ paldo/
 │
 ├─ tools/                          도구 · 공용
 │  ├─ build_fixtures.py, build_ads_fixtures.py, gen_synthetic.py, gen_synthetic_ads.py,
-│  │  tasks_md.py, tasks_to_issues.py, hours_report.py   (있음)
+│  │  tasks_md.py, tasks_to_issues.py   (있음)
 │  ├─ check_evidence.py, check_docs.py, check_secrets.py, secrets_allowlist.txt, evidence_result.py [E-05-02]
 │  ├─ run_engine_games.py, check_handoff_a06.py [A-06-03], optimize_decision.py [A-08-03]
 │  ├─ load_content.py [C-06-01] 결정 #8, replay_progress.py [C-09-04] 결정 #19
 │  ├─ reconcile_game_events.py [C-07-02], ml_gate.py [C-09-01], privacy_delete.py, privacy_retention.py [C-09-02]
 │  ├─ ad_traffic_sim.py [D-06-03], ad_scenarios.py [D-08-02], demo_retrain.sh [D-10-01]
+│  ├─ build_llm_bundle.py [E-07-06] LLM MVP 제출 묶음 zip(out/llm_mvp/, 커밋 제외)
 │  ├─ perf/                        engine_bench.py [A-05-01], vm_probe.sh [C-05-01], api_bench.py [B-06-02], ad_fault_test.py [B-08-03]
 │  └─ assets/                      make_placeholders.py [E-05-05], check_assets.py [E-08-07], cutout.py [A-08-04]
 │
@@ -193,10 +198,11 @@ VM 이름과 배치의 원본은 기획서 6.3이다. 실제 노트북 대응은
 - `**`를 준 곳: 하위 구조를 그 영역 도구나 프레임워크가 정하는 곳이다. 예를 들어 Django 앱의 `migrations/`, `templates/`, 문서·픽스처·테스트·콘텐츠 폴더, ops의 서비스별 설정이 그렇다. 나머지 코드 폴더는 1절에 적은 깊이까지만 허용한다.
 - 1절 트리와 이 목록이 어긋나면 이 목록이 검사 기준이다. 둘 다 같은 변경에서 고친다.
 - **폴더를 새로 만들려면** PM 승인을 받은 뒤 이 절과 1절 트리를 먼저 고친다([parallel_dev.md 4절](parallel_dev.md#4-규칙) 계약 변경 절차와 같다). 승인 없이 목록만 고쳐 검사를 통과시키지 않는다.
-- 로컬 CI(`interim submit`)는 `--diff <base>`로 새로 생긴 폴더만 본다. GitHub CI `core`는 `--all`로 전체를 본다.
+- 로컬 CI(`interim submit`)는 `--diff <base>`로 새로 생긴 폴더만 본다. 로컬 검사 `tools/precheck.py`(push 때 `.githooks/pre-push`)는 `--all`로 전체를 본다.
 
 ```
 .github/**
+.githooks/                 # pre-push 훅(E-05-02, 11/5 CI 폐지)
 engine/
 engine/domain/
 engine/domain/npc/
@@ -223,6 +229,7 @@ ml/suspicion/
 ml/adapters/
 llm/
 llm/bench/
+llm/colab/
 llm/service/**
 pipeline/
 pipeline/consumers/**

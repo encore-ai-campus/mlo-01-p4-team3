@@ -1,9 +1,9 @@
 """저장소 배정 전 임시 운영 도구(`docs/tasks/README.md` 10-1절). GitHub 없이 NAS 공유 폴더로 번들을 주고받는다.
 
-    python -m tools.interim ci --base <SHA> [--task <ID> --hours 2 [--complete]]   # 커밋된 HEAD로 로컬 CI
-    python -m tools.interim submit --task <ID> --base <공개 main SHA> --hours 2 [--complete] [--out DIR]
+    python -m tools.interim ci --base <SHA> [--task <ID> [--complete]]             # 커밋된 HEAD로 로컬 CI
+    python -m tools.interim submit --task <ID> --base <공개 main SHA> [--complete] [--out DIR]
     python -m tools.interim intake <번들 경로>                                      # PM: 검증 후 refs/inbox/<ID>/<NN>
-    python -m tools.interim merge --task <ID> --number <NN> [--complete --hours 2]  # PM: --no-ff 병합 + 재검사
+    python -m tools.interim merge --task <ID> --number <NN> [--complete]           # PM: --no-ff 병합 + 재검사
     python -m tools.interim publish --out DIR --until 11-05 [--inbox DIR]           # PM: 일 마감 전체 검사 + main 번들
     python -m tools.interim status --until 11-05 [--inbox DIR]                      # 진행표
     python -m tools.interim check-ledger                                            # 원장(⑧ 대체) 검사
@@ -101,7 +101,6 @@ class SubmitInfo:
 
     task_id: str | None = None
     complete: bool = False
-    hours: str | None = None
     kind: str = "task"
 
 
@@ -128,7 +127,6 @@ class CiResult:
             f"Python: {platform.python_version()}",
             f"태스크: {info.task_id or '-'}",
             f"완료 제출: {'예' if info.complete else '아니오'}",
-            f"실제 소요 시간(h): {info.hours or '-'}",
             f"종류: {info.kind}",
         ]
         for name, passed, detail in self.steps:
@@ -162,8 +160,6 @@ def run_ci(root: Path, base: str, info: SubmitInfo, runner=default_runner, envir
     ev_errors: list[str] = []
     if info.task_id is not None and info.task_id not in {t.task_id for t in tasks}:
         ev_errors.append(f"태스크 목록에 없는 ID: {info.task_id}")
-    if info.hours is not None or info.complete:
-        ev_errors += rules.parse_hours(info.hours)
     if info.complete:
         if info.task_id is None:
             ev_errors.append("완료 제출에는 --task가 필요하다")
@@ -417,7 +413,7 @@ def _normalize_date(value: str) -> str:
 
 def _info(args) -> SubmitInfo:
     return SubmitInfo(getattr(args, "task", None), getattr(args, "complete", False),
-                      getattr(args, "hours", None), getattr(args, "kind", "task"))
+                      getattr(args, "kind", "task"))
 
 
 def _print_ci(result: CiResult, info: SubmitInfo) -> None:
@@ -433,7 +429,6 @@ def main(argv: list[str] | None = None, repo: InterimGit | None = None, runner=d
     def info_args(p, task_required=False):
         p.add_argument("--task", required=task_required, help="태스크 ID")
         p.add_argument("--complete", action="store_true", help="완료 제출(check_evidence --complete)")
-        p.add_argument("--hours", help="실제 소요 시간(h), 숫자")
         p.add_argument("--kind", choices=rules.KINDS, default="task", help="fix = 수정 제출(fix PR 대신)")
 
     p = sub.add_parser("ci", help="커밋된 커밋(기본 HEAD)을 임시 작업 트리로 꺼내 로컬 CI")
@@ -445,7 +440,6 @@ def main(argv: list[str] | None = None, repo: InterimGit | None = None, runner=d
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
     p.add_argument("--seen", type=Path, help="공유 폴더의 자기 inbox(이미 올린 번호를 이어 쓴다)")
     info_args(p, task_required=True)
-    p.set_defaults(hours_required=True)
     p = sub.add_parser("intake", help="PM: 번들 검증 후 refs/inbox/<ID>/<NN>으로 가져오기")
     p.add_argument("bundle", type=Path)
     p = sub.add_parser("merge", help="PM: --no-ff 병합 후 재검사")
@@ -460,8 +454,6 @@ def main(argv: list[str] | None = None, repo: InterimGit | None = None, runner=d
     p.add_argument("--inbox", type=Path, help="제출 번들이 있는 폴더(하위 폴더 포함)")
     sub.add_parser("check-ledger", help="원장(⑧ 대체) 검사")
     args = ap.parse_args(argv)
-    if getattr(args, "hours_required", False) and args.hours is None:
-        ap.error("submit에는 --hours(실제 소요 시간 h)가 필요하다")
 
     repo = repo or InterimGit()
     started = time.monotonic()
