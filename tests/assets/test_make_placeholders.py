@@ -36,10 +36,18 @@ def _expected():
 
 
 class SpecTableTest(unittest.TestCase):
+    def test_bad_kind_limit_row_rejected(self):
+        bad = SPEC_TEXT.replace("| 용량 상한(바이트) sprite | 8388608 |", "| 용량 상한(바이트) sprit | 8388608 |")
+        with self.assertRaises(SpecError):
+            parse_spec_md(bad)
+
     def test_values_match_task_condition_1(self):
         spec = parse_spec_md(SPEC_TEXT)
         self.assertEqual(spec.image_format, "png")
         self.assertEqual(spec.max_bytes, 512000)
+        self.assertEqual(spec.kind_max_bytes, {"sprite": 8388608, "portrait": 3145728, "background": 10485760})
+        self.assertEqual(spec.max_bytes_for("sprite"), 8388608)
+        self.assertEqual(spec.max_bytes_for("ui"), 512000)        # kind별 행이 없으면 공통 상한
         self.assertEqual(spec.root, "content/images")
         self.assertEqual(spec.manifest_path, "content/images/manifest.json")
         self.assertEqual(spec.sizes, {"portrait": (512, 512), "sprite": (512, 1280), "background": (1280, 720),

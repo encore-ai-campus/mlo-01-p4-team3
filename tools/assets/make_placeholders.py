@@ -24,7 +24,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from tools.assets import art, png, portrait_art, sources, vn
-from tools.assets.spec import KINDS, AssetEntry, Reconciliation, SpecError, expected_entries, key_label, reconcile
+from tools.assets.spec import KINDS, AssetEntry, AssetSpec, Reconciliation, SpecError, expected_entries, key_label, reconcile
 
 TASK_ID = "E-05-05"
 RESULT_NAME = "placeholders"
@@ -118,8 +118,8 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
         else:
             channels, rows = art.render_rows(e.kind, e.id, e.width, e.height, names.get(e.id))
             data = _encode(channels, e.width, e.height, rows)
-        if len(data) > spec.max_bytes:
-            raise SpecError(f"{e.path}: {len(data)}바이트 > 상한 {spec.max_bytes}")
+        if len(data) > spec.max_bytes_for(e.kind):
+            raise SpecError(f"{e.path}: {len(data)}바이트 > 상한 {spec.max_bytes_for(e.kind)}")
         current = repo / e.path
         if current.is_file() and current.read_bytes() != data:
             # 임시 그림은 결정적이라, 내용이 다르면 표시(placeholder)를 안 바꾼 실제 파일일 수 있다
@@ -141,7 +141,7 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
         sources.write_manifest(repo, spec, final)
     manifest_now = sources.load_manifest(repo, spec)
     recon = reconcile(expected, manifest_now, sources.list_asset_files(repo, spec), spec.root)
-    max_bytes, bad = inspect_files(repo, final, spec.max_bytes)
+    max_bytes, bad = inspect_files(repo, final, spec)
     result = RunResult(final, written, kept, max_bytes, recon, bad, protected)
     if logger:
         logger.log("info", "placeholders_done" if write else "placeholders_checked",
@@ -156,7 +156,7 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
     return result
 
 
-def inspect_files(repo: Path, entries: list[AssetEntry], max_bytes: int) -> tuple[int, list[str]]:
+def inspect_files(repo: Path, entries: list[AssetEntry], spec: AssetSpec) -> tuple[int, list[str]]:
     """항목 파일마다 PNG 여부·픽셀 크기·용량을 본다. (가장 큰 파일 바이트, 위반 목록).
 
     sprite·장면 배경은 `vn` 규칙(크기·RGBA·가운데·여백·발끝, 배경 불투명)도 보고, 파생 초상은 원본 sprite 크롭과 같은지 본다.
@@ -176,8 +176,9 @@ def inspect_files(repo: Path, entries: list[AssetEntry], max_bytes: int) -> tupl
             continue
         if size != (e.width, e.height):
             bad.append(f"{e.path}: 크기 {size[0]}x{size[1]} ≠ {e.width}x{e.height}")
-        if len(data) > max_bytes:
-            bad.append(f"{e.path}: {len(data)}바이트 > {max_bytes}")
+        limit = spec.max_bytes_for(e.kind)
+        if len(data) > limit:
+            bad.append(f"{e.path}: {len(data)}바이트 > {limit}")
         if e.kind not in ("sprite", "background", "portrait"):
             continue
         try:

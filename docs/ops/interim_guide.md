@@ -124,7 +124,23 @@ PM이 검토를 맡기면, 남의 제출을 보고 판정을 남긴다. 자기 �
 
 진행표 상태: `제출됨`(NAS에 번들만 있음) → `병합됨`(PM이 main에 합침) → `완료`(증빙 완료 + 검토 통과). GitHub가 있어야 끝나는 조건(태스크 문서에 **(저장소 배정 후)** 표시)은 배정 전에는 판정하지 않는다. 그래서 그런 태스크는 `병합됨`으로 남아도 정상이다.
 
-## 7. 막힐 때
+## 7. 저장소가 배정되면 (전환)
+
+PM이 GitHub 저장소 주소를 알리면 그때부터 NAS 제출을 멈추고 원래 규칙(PR·Actions·승인, [태스크 README 3절](../tasks/README.md))으로 일한다. PM이 **같은 main을 그대로** 올리므로 지금 저장소를 지우거나 다시 받을 필요가 없다.
+
+```powershell
+git remote add origin <PM이 알려 준 저장소 주소>
+git fetch origin
+git switch main
+git merge --ff-only origin/main          # 실패하면 손대지 말고 PM에게
+git branch -u origin/main main
+git push -u origin task/A-05-01          # 진행 중이던 태스크 브랜치. 이어서 PR을 연다
+```
+
+- NAS에 이미 제출한 태스크는 다시 낼 필요 없다. PM이 진행표·원장으로 정리한다.
+- 이력을 바꾸는 명령(`rebase`로 공유된 커밋 고치기, `push --force`)은 쓰지 않는다.
+
+## 8. 막힐 때
 
 | 증상 | 대응 |
 |---|---|

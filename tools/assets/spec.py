@@ -35,6 +35,11 @@ class AssetSpec:
     manifest_path: str
     sizes: dict[str, tuple[int, int]]
     ui_icon_ids: tuple[str, ...]
+    kind_max_bytes: dict[str, int] = field(default_factory=dict)
+
+    def max_bytes_for(self, kind: str) -> int:
+        """kind별 용량 상한. 1절에 `용량 상한(바이트) <kind>` 행이 없으면 공통 상한."""
+        return self.kind_max_bytes.get(kind, self.max_bytes)
 
 
 @dataclass(frozen=True)
@@ -116,6 +121,14 @@ def parse_spec_md(text: str) -> AssetSpec:
     if not common["용량 상한(바이트)"].isdigit():
         raise SpecError(f"용량 상한이 정수가 아님: {common['용량 상한(바이트)']!r}")
 
+    kind_max: dict[str, int] = {}
+    for key, val in common.items():
+        if key.startswith("용량 상한(바이트) "):
+            k = _strip_code(key[len("용량 상한(바이트) "):])
+            if k not in KINDS or not val.isdigit():
+                raise SpecError(f"kind별 용량 상한 행 오류: {key!r} = {val!r}")
+            kind_max[k] = int(val)
+
     sizes: dict[str, tuple[int, int]] = {}
     kinds_seen: list[str] = []
     for row in _table_after(text, "유형별 규격"):
@@ -146,6 +159,7 @@ def parse_spec_md(text: str) -> AssetSpec:
         manifest_path=common["manifest"],
         sizes=sizes,
         ui_icon_ids=icons,
+        kind_max_bytes=kind_max,
     )
 
 
