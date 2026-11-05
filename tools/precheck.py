@@ -68,6 +68,22 @@ def summarize(results: list[StepResult], base_short: str | None, seconds: float)
 
 
 # ---------------------------------------------------------------- 인프라
+# git이 훅을 부를 때 넘기는 저장소 지정 변수(`git rev-parse --local-env-vars`). 남아 있으면 테스트가 임시
+# 저장소 대신 이 저장소에 `git init`·`commit`·`config`를 해 버린다(11/5 사고: 브랜치 이동, core.bare·user 설정 덮어씀).
+GIT_LOCAL_ENV_VARS = (
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_CONFIG", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT",
+    "GIT_OBJECT_DIRECTORY", "GIT_DIR", "GIT_WORK_TREE", "GIT_IMPLICIT_WORK_TREE", "GIT_GRAFT_FILE",
+    "GIT_INDEX_FILE", "GIT_NO_REPLACE_OBJECTS", "GIT_REPLACE_REF_BASE", "GIT_PREFIX", "GIT_SHALLOW_FILE",
+    "GIT_COMMON_DIR",
+)
+
+
+def clean_env(environ: dict[str, str]) -> dict[str, str]:
+    """저장소 지정 git 변수(`GIT_LOCAL_ENV_VARS`, `GIT_CONFIG_KEY_*`·`GIT_CONFIG_VALUE_*` 포함)를 뺀 사본."""
+    return {k: v for k, v in environ.items()
+            if k not in GIT_LOCAL_ENV_VARS and not k.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))}
+
+
 class SubprocessRunner:
     """하위 명령 실행과 git 조회. 테스트에서는 같은 메서드를 가진 가짜로 바꿔 끼운다."""
 
@@ -76,7 +92,7 @@ class SubprocessRunner:
 
     def run(self, args: list[str], env: dict[str, str] | None = None) -> tuple[int, str]:
         """명령을 저장소 루트에서 실행하고 (종료 코드, 표준 출력+오류)를 돌려준다."""
-        full_env = dict(os.environ, PYTHONIOENCODING="utf-8")
+        full_env = dict(clean_env(dict(os.environ)), PYTHONIOENCODING="utf-8")
         if env:
             full_env.update(env)
         proc = subprocess.run(args, cwd=self.root, env=full_env, capture_output=True,
