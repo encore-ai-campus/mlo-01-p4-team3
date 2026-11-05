@@ -266,7 +266,7 @@
 | ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
 |---|---|---|---|---|---|---|---|
 | `FR-UT-001` | planned | 테스트 준비: 일정·장소·인원(P-12), 진행 순서(동의 → 튜토리얼 → 4판 → 설문), 설문 문항 확정, 고정 시드 판 목록 | `BR-OBJ-002` | `AC-UT-001` | E-06-04, E-08-04, B-08-02 | `STK-PM-001` | 11/8 |
-| `FR-UT-002` | planned | 사전 테스트(11/7)와 정식 테스트 운영, 테스트 중 수정 | `BR-OBJ-002` | `AC-UT-001` | E-07-02, E-09-01, A-09-02, B-09-03 | `STK-PM-001` | 11/9 |
+| `FR-UT-002` | planned | 사전 테스트(11/8)와 정식 테스트 운영, 테스트 중 수정 | `BR-OBJ-002` | `AC-UT-001` | E-08-10, E-09-01, A-09-02, B-09-03 | `STK-PM-001` | 11/9 |
 | `FR-UT-003` | planned | 수집 확인과 리포트: 판 수 = 설문 이벤트 수(건너뜀 포함), 설문 평균·응답률, 판 번호별 승률, 판 길이·이탈 지점, 캐묻기·고백 유도율 | `BR-OBJ-002` | `AC-UT-002` | D-09-02, E-10-03, INT-09 | `STK-PM-001` | 11/10 |
 | `NFR-UT-001` | planned | 사람 판 소요 시간 중앙값 10분 이하 | `BR-OBJ-001` | `AC-UT-001` | E-09-01, INT-09 | `STK-PM-001` | 11/9 |
 
@@ -516,7 +516,7 @@
 | `AC-CONT-002` | 템플릿·변형 | `tools/check_templates.py`, 검수 | 반응 템플릿 `{fact}` 포함, 자리표시자 오탈자 0, 템플릿당 변형 2개 이상, 사전 생성 변형은 검수 통과분만(사전 생성은 여유 시, E-09-03) | `evidence/E-06-01.md`, `evidence/E-09-03.md`(여유 시) | planned |
 | `AC-ASSET-001` | 규격표·콘텐츠 ID 목록 | `check_assets.py`(임시 `--placeholder`, 실제 기본, 시연 세트 `--allow-placeholder place,ui,map,ad`) | 에셋 유형별 기대 키 집합(인물 ID, 장면 ID, `Place`, 아이콘 ID, `creative_id` × 지면 규격)마다 파일 정확히 1개, 실제 필수 유형(초상·sprite(표정 변형 포함)·배경·마스코트)의 임시 파일 0, 초상-sprite 쌍 불일치 0(초상은 sprite 파생), 표정 변형의 얼굴 밖 기본 sprite 일치(`edited_from`·`edited_from_sha256`), 표정 대상 8명(spec 9절)·표정 sprite 24장과 파생 초상 24장 전부 실제, sprite 기준선 자동 검사 위반 0, 누락 0·남는 파일 0, manifest 항목 = 기대 키 수, 규격·용량·생성 기록 위반 0(임시 에셋은 생성 기록 면제), 스타일 가이드 검수 기록(E-05-05), 모든 실제 파일(sprite와 파생 초상 포함, 원본·합성 화면)의 에셋1·5 일괄 검수 기록(E-11-10) | `evidence/E-05-05.md`, `evidence/E-08-07.md`, `evidence/E-11-10.md` | planned |
 | `AC-ASSET-002` | 임시 에셋으로 개발된 화면·광고 | 실제 에셋으로 같은 경로 덮어쓰기 | B·D 코드 이미지 경로 변경 0줄, 화면·광고 테스트 통과 | `evidence/E-11-10.md` | planned |
-| `AC-UT-001` | 테스트 준비 완료(P-12) | 사전·정식 사용자 테스트 | 목표 30명 × 평균 4판 대비 실제 참가자 수·판 수(미달이면 원인), 소요 시간 중앙값 10분 이하, 완주율, 설문 응답률, 원하는 행동 완료율 표 | `evidence/E-06-04.md`, `evidence/E-07-02.md`, `evidence/E-09-01.md`, INT-09 #10 | planned |
+| `AC-UT-001` | 테스트 준비 완료(P-12) | 사전·정식 사용자 테스트 | 목표 30명 × 평균 4판 대비 실제 참가자 수·판 수(미달이면 원인), 소요 시간 중앙값 10분 이하, 완주율, 설문 응답률, 원하는 행동 완료율 표 | `evidence/E-06-04.md`, `evidence/E-08-10.md`, `evidence/E-09-01.md`, INT-09 #10 | planned |
 | `AC-UT-002` | 사용자 테스트 데이터 | 수집 확인과 리포트 작성 | 판 수 = 설문 이벤트 수(건너뜀 포함), 설문 평균과 응답 수, 판 번호별 승률, 이탈 지점, 미달 시 원인 분석 | `evidence/D-09-02.md`, `evidence/B-07-02.md`, `docs/reports/user_test.md`, INT-09 #7 | planned |
 | `AC-GOV-001` | GitHub 저장소(P-11) | 규칙 위반 PR 3개 생성 | 필수 체크 4개가 각각 해당 위반에서 실패, `dev`·`main` 보호 동작, 이슈 수가 `--dry-run`과 일치 | `evidence/E-05-01.md`, `evidence/E-05-02.md` | planned |
 | `AC-GOV-002` | 완료 처리할 태스크 | `python -m tools.check_evidence <ID> --complete` | 조건 번호마다 통과 행, 수치가 결과 JSON과 일치, 실제 소요 시간 숫자, 문서 검사 통과 | `docs/evidence/<ID>.md`, CI `evidence`·`docs` | planned |
