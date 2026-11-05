@@ -58,13 +58,15 @@ TROUBLES = "# E\n\n### E-05-01 저장소\n- 없음\n\n### E-05-05 스타일\n- �
 SHA = "abc1234"
 
 
-def doc(task_id="E-05-01", rows=None, author="E", hours="1.5", failed=False, review=None, commit=SHA,
+def doc(task_id="E-05-01", rows=None, author="E", hours=None, failed=False, review=None, commit=SHA,
         drop_heading=None):
     rows = rows if rows is not None else ["| 1 | - | 통과 | 테스트 | - | 예 |", "| 2 | - | 통과 | 테스트 | - | 예 |"]
     parts = [f"# {task_id} 제목"]
     if failed:
         parts.append("상태: 실패 — 원인과 재시도 계획")
-    parts += [f"- 커밋: {commit}", f"- 작성자(흐름): {author}", "- 환경: 로컬", f"- 실제 소요 시간(h): {hours}"]
+    parts += [f"- 커밋: {commit}", f"- 작성자(흐름): {author}", "- 환경: 로컬"]
+    if hours is not None:  # 11/5 폐지된 줄. 기존 증빙에 남아 있어도 검사하지 않는다
+        parts.append(f"- 실제 소요 시간(h): {hours}")
     sections = {
         "명령": "```\npython -m x\n```",
         "출력": "```\n## 이건 코드 블록 안이라 제목이 아니다\n상태: 실패\n```",
@@ -140,10 +142,12 @@ class Format(unittest.TestCase):
         self.assertIn("작성자(흐름) 값", self.errors(doc(author="PM"))[0])
         self.assertIn("줄이 없음", self.errors(doc().replace("- 작성자(흐름): E\n", ""))[0])
 
-    def test_actual_hours_number(self):
-        self.assertIn("숫자 형식", self.errors(doc(hours="2시간"))[0])
-        self.assertIn("숫자 형식", self.errors(doc(hours=""))[0])
-        self.assertEqual(self.errors(doc(hours="3")), [])
+    def test_actual_hours_not_required(self):
+        # 11/5 PM 결정: 실제 소요 시간 기록 폐지. 줄이 없어도, 예전 줄이 어떤 값이어도 통과한다
+        self.assertNotIn("실제 소요 시간", doc())
+        self.assertEqual(self.errors(doc()), [])
+        for legacy in ("3", "2시간", ""):
+            self.assertEqual(self.errors(doc(hours=legacy)), [], legacy)
 
     def test_title_and_unknown_id(self):
         self.assertIn("첫 제목", self.errors(doc().replace("# E-05-01 제목", "# 다른 제목"))[0])
@@ -295,7 +299,7 @@ class Complete(unittest.TestCase):
         self.assertFalse(is_completed(None))
 
 
-BODY_OK = "Task: E-05-01\n실제 소요 시간(h): 2.5\n\nCloses #12\n\n## 바뀐 점\n- x\n"
+BODY_OK = "Task: E-05-01\n\nCloses #12\n\n## 바뀐 점\n- x\n"
 
 
 class PrBody(unittest.TestCase):
@@ -329,9 +333,13 @@ class PrBody(unittest.TestCase):
             errs = self.check(BODY_OK.replace("Closes #12", line)).errors
             self.assertTrue(any("둘 이상" in e for e in errs), line)
 
-    def test_actual_hours(self):
-        self.assertIn("줄이 없음", self.check(BODY_OK.replace("실제 소요 시간(h): 2.5\n", "")).errors[0])
-        self.assertIn("숫자 형식", self.check(BODY_OK.replace("2.5", "두 시간")).errors[0])
+    def test_actual_hours_not_required(self):
+        # 11/5 PM 결정: PR 본문의 실제 소요 시간 줄은 없어도 되고, 예전 줄이 남아 있어도 보지 않는다
+        self.assertNotIn("실제 소요 시간", BODY_OK)
+        self.assertEqual(self.check(BODY_OK).errors, [])
+        for legacy in ("2.5", "두 시간", ""):
+            body = BODY_OK.replace("Task: E-05-01\n", f"Task: E-05-01\n실제 소요 시간(h): {legacy}\n")
+            self.assertEqual(self.check(body).errors, [], legacy)
 
     def test_html_comments_are_ignored(self):
         body = "<!-- 예시 Task: A-05-01, Fixes #1 -->\n" + BODY_OK
@@ -369,8 +377,18 @@ class PrBody(unittest.TestCase):
         self.assertEqual(ce.changed_evidence_ids(changes), ["E-05-01", "E-05-05"])
 
     def test_changed_with_zero_sha_checks_all_evidence(self):
-        repo = ev_repo(doc(hours="x"))
+        repo = ev_repo(doc(author="PM"))
         self.assertTrue(ce.check_changed("0" * 40, repo, TASKS))
+
+    def test_ci_paths_pass_without_actual_hours(self):
+        """ci.yml evidence 잡의 세 경로(PR 본문 + 변경 증빙, 승격 PR 변경 증빙, push 변경 증빙)가 시간 줄 없이 통과."""
+        changes = [("M", "docs/evidence/E-05-01.md")]
+        for text in (doc(), doc(hours="모름")):
+            repo = ev_repo(text, changes=changes)
+            self.assertEqual(ce.check_pr(BODY_OK, "base", repo, TASKS), [])  # PR 본문(Closes → --complete)
+            self.assertEqual(ce.check_pr(BODY_OK.replace("Closes", "Refs"), "base", repo, TASKS), [])  # Refs → --changed
+            self.assertEqual(ce.check_changed("base", repo, TASKS), [])  # 승격 PR·push의 --changed
+            self.assertEqual(ce.check_changed("0" * 40, repo, TASKS), [])  # 새 브랜치 push(증빙 전부)
 
 
 # ---------------------------------------------------------------- 실제 git으로 E-05-02 조건 6의 위반 1 재현

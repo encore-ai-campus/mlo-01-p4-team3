@@ -108,15 +108,6 @@ def service_check(paths: list[str], service_ran: bool) -> list[str]:
     return []
 
 
-def parse_hours(value: str | None) -> list[str]:
-    """제출 정보의 실제 소요 시간(h): 숫자만(README 4절과 같은 형식)."""
-    if value is None:
-        return ["실제 소요 시간(h)이 없음(--hours)"]
-    if not re.fullmatch(r"\d+(?:\.\d+)?", value.strip()):
-        return [f"실제 소요 시간(h)이 숫자 형식이 아님: {value!r}"]
-    return []
-
-
 @dataclass(frozen=True)
 class LedgerRow:
     """원장 한 행(README 10-1절 ⑧ 대체 기록)."""

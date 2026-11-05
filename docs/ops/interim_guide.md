@@ -65,11 +65,10 @@ git commit -m "A-05-01: 무엇을 왜 바꿨는지"
    ```
 3. 제출 명령:
    ```powershell
-   python -m tools.interim submit --task A-05-01 --base <받은 main SHA12> --hours 2 --seen \\NAS\...\inbox\A
+   python -m tools.interim submit --task A-05-01 --base <받은 main SHA12> --seen \\NAS\...\inbox\A
    ```
    | 옵션 | 언제 |
    |---|---|
-   | `--hours` | 실제 걸린 시간(숫자만, 예: `2.5`) |
    | `--complete` | 이 제출로 태스크를 끝낼 때(증빙 완료 검사까지 한다) |
    | `--kind fix` | 버그·검수 탈락을 고치는 제출일 때 |
    | `--seen` | NAS의 **자기 흐름 inbox 폴더**. 이미 올린 번호 다음 번호를 쓰게 한다. 항상 붙인다 |
@@ -161,7 +160,7 @@ git switch -c task/A-05-01               # dev에서 딴다
 git push -u origin task/A-05-01
 ```
 
-- GitHub에서 **base `dev`** ← `task/A-05-01`로 PR을 연다. 본문은 PR 템플릿대로 쓴다(`Task:` 1줄, `실제 소요 시간(h):`, `Closes #` 또는 `Refs #` 중 하나). `Closes #<이슈 번호>`면 CI가 증빙 완료 검사까지 돌린다.
+- GitHub에서 **base `dev`** ← `task/A-05-01`로 PR을 연다. 본문은 PR 템플릿대로 쓴다(`Task:` 1줄, `Closes #` 또는 `Refs #` 중 하나). `Closes #<이슈 번호>`면 CI가 증빙 완료 검사까지 돌린다.
 - 이미 `main`에서 따 둔 작업 브랜치가 있으면 그대로 푸시해도 된다(지금 `main`과 `dev`가 같은 커밋에서 시작했다). PR의 base만 `dev`로 고른다.
 - 이력을 바꾸는 명령(공유된 커밋을 `rebase`로 고치기, `push --force`)은 쓰지 않는다.
 

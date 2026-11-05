@@ -49,7 +49,7 @@ python -m tools.check_docs --diff origin/dev                 # 규칙 5~6(커밋
 
 ```
 python -m tools.interim ci --base <SHA>                      # 커밋된 HEAD를 임시 worktree로 꺼내 core·docs·evidence·service
-python -m tools.interim submit --task <ID> --base <main SHA> --hours 2 [--complete] [--kind fix]
+python -m tools.interim submit --task <ID> --base <main SHA> [--complete] [--kind fix]
 python -m tools.interim intake <번들>                         # PM: 검증 후 refs/inbox/<ID>/<NN>
 python -m tools.interim merge --task <ID> --number <NN>       # PM: --no-ff 병합 + 병합 결과 재검사
 python -m tools.interim publish --out <main 폴더> --until 11-05 --inbox <inbox 폴더>   # PM: 일 마감 전체 검사 + main 번들·진행표
