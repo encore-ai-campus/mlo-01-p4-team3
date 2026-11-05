@@ -27,7 +27,7 @@ paldo/
 │  │  ├─ params.py                 밸런스 상수 [A-05-01]
 │  │  ├─ observation.py            관측 투영·스냅샷 [A-06-02]
 │  │  ├─ npc/                      beliefs.py, policy_villager.py, policy_possessed.py [A-07-01], vote.py [A-07-02]
-│  │  ├─ duo.py [A-08-01], summarize.py [A-08-02], progress.py [E-09-08], review.py [E-10-10]
+│  │  ├─ duo.py [A-08-01], summarize.py [E-08-08], progress.py [E-09-08], review.py [E-10-10]
 │  │  └─ decision_params.json      결정 층 파라미터 [A-08-03]
 │  ├─ testing/fakes.py             엔진 포트의 가짜(광고 가짜는 ads/testing/fakes.py) (있음)
 │  └─ sim/                         도메인 사용 · D: bots.py, runner.py, report.py [D-06-01]
