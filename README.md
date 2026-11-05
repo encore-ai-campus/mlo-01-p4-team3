@@ -45,6 +45,7 @@ server/infra (인프라) → engine (포트 구현)
 | `ads/testing/` | 테스트 지원 | D | `FakeAdProvider` |
 | `server/app/ads_port.py` | 응용(게임 쪽) | B | `AdProvider` 포트와 보호 래퍼 `AdGateway` |
 | `llm/` | 인프라 | E | LLM 서비스, LangGraph(예정) |
+| `llm/prompt.py`, `validator.py`, `eval_set.py`, `mvp_metrics.py` | 도메인(규칙) | E | 추궁 프롬프트·생성 설정 `GEN_SETTINGS`, 검증기(사유 4종)와 폴백, 평가 세트 생성, `run_eval`과 MVP 지표. 표준 라이브러리와 `llm`만 import(`test_layers.py`). 서비스(E-08-09)·MVP 노트북(E-07-06)이 그대로 부른다 |
 | `llm/bench/` | 인프라(측정) | E | LLM 벤치마크 `run_bench.py`(llama.cpp, 모델 인스턴스 1개 + FIFO 큐로 지연·토큰/초·메모리 측정). 결과 `docs/reports/llm_bench.md` |
 | `contracts/` | 데이터 계약 | 공용 | 학습 행, 의도 예시, 시나리오 스키마 |
 | `fixtures/` | 생성물 | 공용 | 계약 예시. `tools/build_fixtures.py`가 만든다 |
@@ -78,6 +79,7 @@ server/infra (인프라) → engine (포트 구현)
 | 개인정보 처리 | `docs/contracts/privacy.md` |
 | 서버와 버전 | `docs/contracts/tech_stack.md`, 기획서 6.3 |
 | LLM 모델·스레드·실행 방식 다시 재기 | 인프라 `llm/bench/run_bench.py`(`--help`), 결과·결정 `docs/reports/llm_bench.md` |
+| 추궁 답변 프롬프트·검증 규칙·지표 정의 바꾸기 | 도메인 `llm/prompt.py`·`llm/validator.py`·`llm/mvp_metrics.py`(테스트 `tests/llm/`). 평가 세트는 `python -m llm.eval_set --seed 1`로 다시 만들고, 측정은 `run_bench.py --eval` |
 | 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
 | 새 파일·폴더를 어디에 만들지 | `docs/contracts/structure.md`(1절 트리, 6절 허용 폴더 목록) |

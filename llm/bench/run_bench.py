@@ -3,9 +3,13 @@
 측정 구조(서비스 E-08-09와 같게): 모델 인스턴스 1개 + FIFO 큐 + 작업자 스레드 1개. 한 라운드에 요청 N개를
 동시에 큐에 넣고, 요청마다 큐 대기·프롬프트 처리·생성·검증을 나눠 잰다. 전체 지연 = 큐 대기 + 처리 + 검증.
 
-프롬프트와 검증은 **임시**다(`PROMPT_VERSION`). E-07-07(`llm/prompt.py`, `llm/validator.py`)이 실제 함수로 바꾼다.
+프롬프트와 검증은 E-07-07의 실제 함수(`llm/prompt.py`, `llm/validator.py`)를 부른다(E-06-07 때는 임시 `bench-tmp-1`).
 
     python -m llm.bench.run_bench --model <gguf> --label qwen3_4b --stage s1 --threads 6 --concurrency 1 --repeats 5
+    python -m llm.bench.run_bench --model <gguf> --label kanana2_3b --eval fixtures/llm/interrogation_eval.json
+
+`--eval`(E-07-07 완료 조건 3): 평가 세트를 `llm.mvp_metrics.run_eval`로 차례로 돌려(동시 1건) 성공률·사유 분포·
+지연을 결과 JSON(`docs/evidence/perf/E-07-07/`)으로 쓴다. 생성 설정 기본값은 `llm.prompt.GEN_SETTINGS`다.
 
 계층: 위쪽 순수 함수(백분위·검증·로그 해석·요약, 단독 테스트) / 아래쪽 인프라(llama.cpp 호출, 프로세스 메모리,
 결과 기록) / `main`(인자 파싱과 흐름 조립). `llama_cpp`·`jinja2`는 함수 안에서 늦게 import한다
@@ -17,7 +21,6 @@ import argparse
 import contextlib
 import io
 import json
-import math
 import os
 import platform
 import queue
@@ -29,47 +32,22 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from llm import mvp_metrics
+from llm.prompt import GEN_SETTINGS, PROMPT_VERSION, STOP, build_messages
+from llm.validator import Lexicon, lexicon_from_bundle, normalize_output, validate
+
 ROOT = Path(__file__).resolve().parents[2]
 TASK = "E-06-07"
+EVAL_TASK = "E-07-07"
 FIXTURE = ROOT / "fixtures" / "llm" / "interrogation_requests.json"
-PROMPT_VERSION = "bench-tmp-1"   # 임시 프롬프트·검증. E-07-07이 교체
-MAX_CHARS = 200                  # 임시 검증: 출력 길이 상한(글자)
-STOP = ["<|im_end|>", "<|endoftext|>", "<|eot_id|>", "<end_of_turn>"]
-REACTION_KO = {
-    "evade": "말을 돌리며 얼버무린다",
-    "confess": "망설이다 털어놓는다",
-    "counter": "되레 상대에게 따져 묻는다",
-}
+BUNDLE = ROOT / "fixtures" / "content_min" / "bundle.json"
 _BUFFER_RE = re.compile(r"(\S+)\s+(model|KV|RS|compute|output) buffer size\s*=\s*([0-9]+(?:\.[0-9]+)?) MiB")
 _THINK_RE = re.compile(r"<think>.*?</think>", re.S)
 
 
 # ---------------------------------------------------------------- 순수 함수
 
-def percentile(values: list[float], q: float) -> float:
-    """최근접 순위(nearest-rank) 백분위. q는 0~100. 표본이 없으면 ValueError."""
-    if not values:
-        raise ValueError("표본이 없음")
-    if not 0 <= q <= 100:
-        raise ValueError(f"q는 0~100: {q}")
-    ordered = sorted(values)
-    rank = max(1, math.ceil(q / 100 * len(ordered)))
-    return ordered[rank - 1]
-
-
-def build_messages(req: dict) -> list[dict]:
-    """추궁 요청 1건을 채팅 메시지로 만든다(임시 프롬프트)."""
-    names = ", ".join(req["allowed_names"])
-    system = (
-        f"너는 조선 시대 마을 사람이다. 인물: {req['persona']}.\n"
-        "규칙:\n"
-        "1. 아래 '사실 문장'을 한 글자도 바꾸지 말고 그대로 넣는다.\n"
-        f"2. 태도: {REACTION_KO.get(req['reaction'], req['reaction'])}.\n"
-        f"3. 사람 이름은 {names}만 쓴다. 새 인물·장소·시간을 지어내지 않는다.\n"
-        "4. 대사만 1~2문장으로 쓴다. 설명·따옴표·괄호를 붙이지 않는다."
-    )
-    user = f"사실 문장: {req['fact_sentence']}\n추궁에 대한 대사:"
-    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+percentile = mvp_metrics.percentile   # 최근접 순위(보간 없음). 정의는 llm/mvp_metrics.py
 
 
 def strip_think(text: str) -> str:
@@ -77,15 +55,10 @@ def strip_think(text: str) -> str:
     return _THINK_RE.sub("", text).strip()
 
 
-def validate_output(text: str, req: dict) -> tuple[bool, str]:
-    """임시 최소 검증: 비어 있지 않고, 사실 문장을 그대로 포함하고, MAX_CHARS 이하. (통과, 사유)."""
-    if not text:
-        return False, "empty"
-    if req["fact_sentence"] not in text:
-        return False, "fact_missing"
-    if len(text) > MAX_CHARS:
-        return False, "too_long"
-    return True, "ok"
+def validate_output(text: str, req: dict, lexicon: Lexicon) -> tuple[bool, str]:
+    """`llm.validator.validate`로 검증한다. (통과, 사유). 사유는 "ok" 또는 대표 사유 코드 4종 중 하나."""
+    result = validate(normalize_output(text), req, lexicon)
+    return result.ok, result.reason or "ok"
 
 
 def parse_buffer_sizes(log_text: str) -> dict[str, float]:
@@ -303,15 +276,19 @@ class BenchModel:
         return self._template.render(messages=messages, add_generation_prompt=True, enable_thinking=False,
                                      bos_token="", eos_token="")
 
-    def generate(self, prompt: str, max_tokens: int, temperature: float) -> tuple[str, float, float, int, int]:
-        """한 건 생성. (본문, 프롬프트 처리 ms, 생성 ms, 프롬프트 토큰, 생성 토큰). 앞 요청의 KV는 재사용하지 않는다."""
+    def generate(self, prompt: str, max_tokens: int, temperature: float, top_p: float = GEN_SETTINGS["top_p"],
+                 top_k: int = GEN_SETTINGS["top_k"], seed: int | None = None) -> tuple[str, float, float, int, int]:
+        """한 건 생성. (본문, 프롬프트 처리 ms, 생성 ms, 프롬프트 토큰, 생성 토큰). 앞 요청의 KV는 재사용하지 않는다.
+
+        seed를 주면 그 요청의 샘플링 시드로 쓴다(같은 시드·같은 프롬프트 = 같은 출력).
+        """
         lc = self._llama_cpp
         with self.lock:
             self.llm.reset()
             ctx = self.llm._ctx.ctx
             lc.llama_perf_context_reset(ctx)
             out = self.llm.create_completion(prompt, max_tokens=max_tokens, temperature=temperature,
-                                             top_p=0.8, top_k=20, stop=STOP)
+                                             top_p=top_p, top_k=top_k, stop=STOP, seed=seed)
             perf = lc.llama_perf_context(ctx)
         text = out["choices"][0]["text"]
         return text, perf.t_p_eval_ms, perf.t_eval_ms, int(perf.n_p_eval), int(perf.n_eval)
@@ -338,8 +315,14 @@ def _generation_extension():
 
 
 def run_rounds(model: BenchModel, fixtures: list[dict], concurrency: int, repeats: int,
-               max_tokens: int, temperature: float) -> list[RequestRecord]:
-    """FIFO 큐 + 작업자 1개. 라운드마다 요청 concurrency건을 동시에 넣고 모두 끝날 때까지 기다린다."""
+               max_tokens: int, temperature: float, lexicon: Lexicon | None = None,
+               top_p: float = GEN_SETTINGS["top_p"], top_k: int = GEN_SETTINGS["top_k"]) -> list[RequestRecord]:
+    """FIFO 큐 + 작업자 1개. 라운드마다 요청 concurrency건을 동시에 넣고 모두 끝날 때까지 기다린다.
+
+    검증 어휘 lexicon이 없으면 최소 콘텐츠 묶음(`BUNDLE`)에서 만든다.
+    """
+    if lexicon is None:
+        lexicon = lexicon_from_bundle(json.loads(BUNDLE.read_text(encoding="utf-8")))
     jobs: queue.Queue = queue.Queue()
     records: list[RequestRecord] = []
 
@@ -353,9 +336,9 @@ def run_rounds(model: BenchModel, fixtures: list[dict], concurrency: int, repeat
             start_s = time.perf_counter()
             try:
                 raw, p_ms, g_ms, p_tok, g_tok = model.generate(model.render(build_messages(req)), max_tokens,
-                                                               temperature)
+                                                               temperature, top_p, top_k)
                 v0 = time.perf_counter()
-                ok, reason = validate_output(strip_think(raw), req)
+                ok, reason = validate_output(raw, req, lexicon)
                 v_ms = (time.perf_counter() - v0) * 1000
             except Exception as exc:   # 실패도 기록하고 다음 요청으로 간다
                 log("bench", "error", "생성 실패", job_id=job_id, error_type=type(exc).__name__)
@@ -380,18 +363,19 @@ def run_rounds(model: BenchModel, fixtures: list[dict], concurrency: int, repeat
     return records
 
 
-def write_outputs(name: str, metrics: dict, source: str, out_json: str | None, extra: dict) -> Path:
+def write_outputs(name: str, metrics: dict, source: str, out_json: str | None, extra: dict,
+                  task: str = TASK) -> Path:
     """결과 기록. 기본은 `write_result`(증빙 결과 JSON), `--out`이면 그 경로에 원본 JSON(다른 기기용)."""
     if out_json:
         path = Path(out_json)
         path.parent.mkdir(parents=True, exist_ok=True)
-        data = {"task": TASK, "name": name, "commit": _head(), "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        data = {"task": task, "name": name, "commit": _head(), "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "source": source, "metrics": metrics, "env": extra}
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return path
     sys.path.insert(0, str(ROOT))
     from tools.evidence_result import write_result
-    return write_result(TASK, name, metrics, source)
+    return write_result(task, name, metrics, source)
 
 
 def _head() -> str:
@@ -425,12 +409,14 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--label", help="모델 짧은 이름(결과 이름에 씀), 예: qwen3_4b")
     p.add_argument("--stage", default="s1", help="측정 단계: s1|s2|s3|colab")
     p.add_argument("--mode", default="win", help="실행 방식: win(Windows 직접) | vm(llm-01)")
-    p.add_argument("--threads", type=int, default=6)
+    p.add_argument("--threads", type=int, help="스레드 수(기본: 벤치 6, --eval이면 GEN_SETTINGS)")
     p.add_argument("--concurrency", type=int, default=1, help="한 라운드에 동시에 넣는 요청 수")
     p.add_argument("--repeats", type=int, default=5, help="라운드 수(요청 수 = repeats × concurrency)")
-    p.add_argument("--max-tokens", type=int, default=128)
-    p.add_argument("--temperature", type=float, default=0.7)
-    p.add_argument("--n-ctx", type=int, default=1024)
+    p.add_argument("--max-tokens", type=int, default=GEN_SETTINGS["max_tokens"])
+    p.add_argument("--temperature", type=float, default=GEN_SETTINGS["temperature"])
+    p.add_argument("--top-p", type=float, default=GEN_SETTINGS["top_p"])
+    p.add_argument("--top-k", type=int, default=GEN_SETTINGS["top_k"])
+    p.add_argument("--n-ctx", type=int, default=GEN_SETTINGS["n_ctx"])
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--tag", default="", help="결과 이름 꼬리표, 예: devon")
     p.add_argument("--note", default="", help="측정 조건 메모(개발 도구 상태 등). 주소·계정 금지")
@@ -439,20 +425,126 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--import-json", help="받은 JSON을 증빙 결과로 기록")
     p.add_argument("--import-name", help="--import-json의 결과 이름(기본: JSON의 name)")
     p.add_argument("--origin", default="VM llm-01", help="--import-json 출처 표시")
+    p.add_argument("--eval", help="평가 세트 JSON(E-07-07). 주면 평가 모드: run_eval로 차례로 생성·검증·폴백")
+    p.add_argument("--eval-seed", type=int, default=0, help="평가 모드 생성 시드(요청마다 같은 시드)")
+    p.add_argument("--eval-n", type=int, help="평가 세트 앞 N건만(기본 전부)")
+    p.add_argument("--consistency-n", type=int, default=0, help="일관성: 앞 N건을 --consistency-seeds로 반복(0이면 안 함)")
+    p.add_argument("--consistency-seeds", default="1,2,3,4,5")
     a = p.parse_args(argv)
+    if a.threads is None:
+        a.threads = GEN_SETTINGS["n_threads"] if a.eval else 6
     if not a.import_json and not (a.model and a.label):
         p.error("--model과 --label이 필요(또는 --import-json)")
     return a
 
 
+def eval_name(label: str, mode: str, threads: int, seed: int, n: int, tag: str = "") -> str:
+    """평가 모드 결과 이름. 예: eval_kanana2_3b_win_t8_s0_n100."""
+    name = f"eval_{label}_{mode}_t{threads}_s{seed}_n{n}"
+    return f"{name}_{tag}" if tag else name
+
+
+def eval_record_log(rec: dict) -> dict:
+    """평가 요청 기록 → 로그 필드(생성문 원문은 넣지 않는다. 원문은 out/perf 기록 파일에만)."""
+    return {"job_id": rec["case_id"], "seed": rec["seed"], "status": rec["status"], "fallback": rec["fallback"],
+            "reason": rec["reasons"][0] if rec["reasons"] else None, "duration_ms": round(rec["total_ms"], 1),
+            "prompt_ms": round(rec["prompt_ms"], 1), "gen_ms": round(rec["gen_ms"], 1),
+            "gen_tokens": rec["gen_tokens"], "error_type": rec["error_type"], "prompt_version": PROMPT_VERSION}
+
+
+def _write_records(path: Path, records: list[dict]) -> None:
+    """요청 기록(생성문 포함)을 JSON Lines로 쓴다. 위치는 out/perf(커밋하지 않음)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
+
+
+def run_eval_mode(a: argparse.Namespace, env: dict) -> int:
+    """평가 모드(E-07-07 완료 조건 3): 모델 로드 → 예열 1건 → run_eval → 지표 → 결과 JSON·요청 기록."""
+    data = json.loads(Path(a.eval).read_text(encoding="utf-8"))
+    lexicon = Lexicon.from_json(data["lexicon"])
+    cases = data["cases"][: a.eval_n] if a.eval_n else data["cases"]
+    name = eval_name(a.label, a.mode, a.threads, a.eval_seed, len(cases), a.tag)
+    log("bench", "info", "평가 시작", run=name, threads=a.threads, n_cases=len(cases), seed=a.eval_seed,
+        max_tokens=a.max_tokens, model_version=Path(a.model).name, eval_version=data.get("eval_version"),
+        **{k: v for k, v in env.items() if k not in ("os", "model_file", "note")})
+    model = BenchModel(a.model, a.threads, a.n_ctx, a.seed)
+    log("bench", "info", "모델 로드", run=name, duration_ms=round(model.load_ms, 1))
+
+    def generate(messages: list[dict], *, seed: int) -> dict:
+        text, p_ms, g_ms, p_tok, g_tok = model.generate(model.render(messages), a.max_tokens, a.temperature,
+                                                        a.top_p, a.top_k, seed)
+        return {"text": text, "prompt_ms": p_ms, "gen_ms": g_ms, "prompt_tokens": p_tok, "gen_tokens": g_tok}
+
+    def on_rec(r: dict) -> None:
+        log("bench", "error" if r["status"] == "error" else "info", "평가 요청 완료", **eval_record_log(r))
+
+    generate(build_messages(cases[0]["request"]), seed=a.eval_seed)   # 예열 1건(집계 제외)
+    t0 = time.perf_counter()
+    records = mvp_metrics.run_eval(cases, generate, seed=a.eval_seed, lexicon=lexicon, on_record=on_rec)
+    wall_s = time.perf_counter() - t0
+    metrics = {**mvp_metrics.success_metrics(records), **mvp_metrics.latency_metrics(records),
+               "wall_s": {"value": round(wall_s, 1), "unit": "s"},
+               "threads": {"value": a.threads, "unit": ""}, "max_tokens": {"value": a.max_tokens, "unit": "tok"},
+               "n_ctx": {"value": a.n_ctx, "unit": "tok"}, "temperature": {"value": a.temperature, "unit": ""},
+               "top_p": {"value": a.top_p, "unit": ""}, "top_k": {"value": a.top_k, "unit": ""}}
+    rec_dir = ROOT / "out" / "perf" / EVAL_TASK
+    _write_records(rec_dir / f"{name}_records.jsonl", records)
+    path = write_outputs(name, metrics, _eval_source(a, a.eval_seed, len(cases), env), a.out, env, EVAL_TASK)
+    log("bench", "info", "평가 끝", run=name, path=str(path).replace("\\", "/"), records=f"{name}_records.jsonl",
+        total_p95_ms=metrics["total_p95_ms"]["value"], success_rate_pct=metrics["success_rate_pct"]["value"],
+        duration_ms=round(wall_s * 1000, 1))
+    if a.consistency_n:
+        seeds = [int(x) for x in a.consistency_seeds.split(",") if x.strip()]
+        sub = data["cases"][: a.consistency_n]
+        cname = f"consistency_{a.label}_{a.mode}_t{a.threads}_n{len(sub)}_k{len(seeds)}" + (f"_{a.tag}" if a.tag else "")
+        cm, runs = mvp_metrics.run_consistency(sub, generate, seeds=seeds, lexicon=lexicon)
+        _write_records(rec_dir / f"{cname}_records.jsonl", [r for rs in runs for r in rs])
+        csrc = _eval_source(a, None, len(sub), env) + f"; --consistency-n {len(sub)} --consistency-seeds {a.consistency_seeds}"
+        cout = consistency_out_path(a.out) if a.out else None   # 평가 결과 파일을 덮어쓰지 않는다
+        cpath = write_outputs(cname, cm, csrc, cout, env, EVAL_TASK)
+        log("bench", "info", "일관성 끝", run=cname, path=str(cpath).replace("\\", "/"),
+            verdict_agree_pct=cm["verdict_agree_pct"]["value"], facts_kept_pct=cm["facts_kept_pct"]["value"])
+    return 0
+
+
+def consistency_out_path(out: str) -> str:
+    """`--out` 경로 옆 일관성 결과 경로: a/b.json → a/b_consistency.json."""
+    path = Path(out)
+    return str(path.with_name(f"{path.stem}_consistency{path.suffix or '.json'}"))
+
+
+def _eval_source(a: argparse.Namespace, seed: int | None, n: int, env: dict) -> str:
+    """평가 결과 JSON의 source(다시 돌릴 명령 + 전원·버전 메모)."""
+    parts = ["--model", Path(a.model).name, "--label", a.label, "--mode", a.mode, "--eval", Path(a.eval).as_posix(),
+             "--threads", a.threads, "--max-tokens", a.max_tokens, "--temperature", a.temperature, "--top-p", a.top_p,
+             "--top-k", a.top_k, "--n-ctx", a.n_ctx]
+    if seed is not None:
+        parts += ["--eval-seed", seed]
+    if a.eval_n:
+        parts += ["--eval-n", a.eval_n]
+    if a.tag:
+        parts += ["--tag", a.tag]
+    power = ", ".join(f"{k}={env[k].split('(')[0]}" for k in ("ac_power", "battery_saver", "power_plan", "power_mode")
+                      if k in env)
+    notes = [x for x in (a.note, power and f"전원 {power}", f"llama_cpp {env['llama_cpp']}",
+                         f"prompt {PROMPT_VERSION}", f"n {n}") if x]
+    return "python -m llm.bench.run_bench " + " ".join(str(x) for x in parts) + "  # " + "; ".join(notes)
+
+
 def main(argv: list[str] | None = None) -> int:
-    """인자를 읽고 모델 로드 → 예열 1건 → 라운드 측정 → 요약 → 결과 기록 순으로 실행한다."""
+    """인자를 읽고 모델 로드 → 예열 1건 → 라운드 측정 → 요약 → 결과 기록 순으로 실행한다(`--eval`이면 평가 모드)."""
     a = parse_args(argv)
     if a.import_json:
         path = import_received(a.import_json, a.import_name, a.origin)
         log("bench", "info", "받은 결과 기록", path=str(path.relative_to(ROOT)).replace("\\", "/"))
         return 0
     import llama_cpp
+
+    if a.eval:
+        env = {"llama_cpp": llama_cpp.__version__, "python": platform.python_version(), "os": platform.platform(),
+               "cpu_count": os.cpu_count(), "model_file": Path(a.model).name, "note": a.note,
+               "prompt_version": PROMPT_VERSION, **power_status()}
+        return run_eval_mode(a, env)
 
     fixtures = json.loads(Path(a.fixture).read_text(encoding="utf-8"))
     name = result_name(a.stage, a.label, a.mode, a.threads, a.concurrency, a.tag)
@@ -468,8 +560,9 @@ def main(argv: list[str] | None = None) -> int:
     if not bufs["weights_total"]:   # 로드 로그를 못 잡았다(llama-cpp-python 로그 콜백 변경 등). 0을 결과로 남기지 않는다
         log("bench", "error", "버퍼 크기를 로드 로그에서 읽지 못함", run=name, error_type="BufferLogMissing")
         return 1
-    run_rounds(model, fixtures, 1, 1, a.max_tokens, a.temperature)   # 예열 1건(집계 제외)
-    records = run_rounds(model, fixtures, a.concurrency, a.repeats, a.max_tokens, a.temperature)
+    run_rounds(model, fixtures, 1, 1, a.max_tokens, a.temperature, top_p=a.top_p, top_k=a.top_k)   # 예열 1건(집계 제외)
+    records = run_rounds(model, fixtures, a.concurrency, a.repeats, a.max_tokens, a.temperature,
+                         top_p=a.top_p, top_k=a.top_k)
     mem = process_memory_mib()
     metrics = summarize(records)
     if metrics["error_count"]["value"]:   # 실패한 생성의 0에 가까운 지연을 결과로 남기지 않는다
