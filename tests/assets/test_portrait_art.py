@@ -99,7 +99,7 @@ class SilhouetteTest(unittest.TestCase):
                 data = png.encode_rgb(e.width, e.height, pa.render(*args))
             self.assertEqual((ROOT / e.path).read_bytes(), data, e.path)
             seen += 1
-        self.assertEqual(seen, 62)          # 인물 13 + 표정 변형 18, sprite·초상 각각
+        self.assertEqual(seen, 74)          # 인물 13 + 표정 변형 24, sprite·초상 각각
 
 
 class GlyphTest(unittest.TestCase):
