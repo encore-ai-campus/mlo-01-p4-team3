@@ -55,7 +55,7 @@ server/infra (인프라) → engine (포트 구현)
 | `.github/workflows/` | 저장소 운영(표현) | E | CI 필수 체크 4개 `core`·`django`·`evidence`·`docs`(`ci.yml`). 검사 규칙은 `tools/check_*.py`, 설명은 `docs/modules/ci.md` |
 | `docs/evidence/` | 문서(증빙) | 각 흐름 | 태스크 증빙 `<ID>.md`, 측정 결과 JSON `perf/<ID>/<이름>.json`(`tools/evidence_result.py`로만 쓴다) |
 | `tests/fixtures/secrets/` | 테스트 데이터 | E | `check_secrets` 탐지 테스트용 가짜 비밀값. 비밀정보 검사에서 이 폴더만 제외 |
-| `docs/ops/` | 문서(운영 기록) | E | 저장소 배정 전 임시 운영 원장 `interim_ledger.md`(⑧ 대체·병합 기록·결함 표, `tools/interim.py`가 검사) |
+| `docs/ops/` | 문서(운영 기록) | E | 팀원 안내서 `interim_guide.md`(받기·작업·제출·검토 절차), 저장소 배정 전 임시 운영 원장 `interim_ledger.md`(⑧ 대체·병합 기록·결함 표, `tools/interim.py`가 검사) |
 | `docs/modules/`, `docs/troubles/` | 문서 | 각 흐름 | 모듈 문서, 흐름별 트러블 기록(양식 `_template.md`) |
 
 "예정"인 폴더는 담당 흐름이 처음 코드를 넣을 때 만든다.
