@@ -170,7 +170,7 @@ VM 이름과 배치의 원본은 기획서 6.3이다. 실제 노트북 대응은
 
 번호는 [integration.md 7절](integration.md#7-114-pm-결정-영역-간-호출-19건) 표와 같다. 여기서는 위치에 관한 것만 요약한다.
 
-| #&nbsp;&nbsp;&nbsp; | ⁠목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠정&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| #&nbsp;&nbsp;&nbsp; | 항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 결정&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | 1 | 광고 서버 Django 프로젝트 위치 | `ads/project/`(settings·urls) + `ads/manage.py`. 게임 웹 프로젝트와 설정을 공유하지 않는다 |
 | 5 | `ModelSelector` 실제 구현 파일 | `server/infra/model_selector.py` |

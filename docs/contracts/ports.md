@@ -26,7 +26,7 @@
 
 ## 2. 명령 처리 책임 경계
 
-| ⁠계&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠칙&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 단계&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 규칙&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | ① 중복 명령 확인 | B(응용) | `find_command(game_id, command_id)`가 있으면 저장된 응답을 그대로 반환한다(`replayed=true`). 엔진은 호출하지 않는다 |
 | ② 버전 확인 | B(응용) | 저장된 `state_version` ≠ `expected_state_version`이면 엔진을 호출하지 않고 `state_version_conflict`와 현재 화면을 반환한다 |

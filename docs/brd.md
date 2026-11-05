@@ -25,7 +25,7 @@
 
 ### 1.1 사업 모델
 
-| ⁠목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠용 |
+| 항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 내용 |
 |---|---|
 | 가격 | 무료 플레이. 파일럿에는 결제 기능이 없다 |
 | 수익원 | 광고. CPC·CPM 캠페인을 eCPM 순으로 줄 세우는 2등 가격 경매로 노출을 판다 |
@@ -38,7 +38,7 @@
 
 시장 규모와 이용자 수는 조사 자료가 없어 수치를 쓰지 않는다. 아래 가정은 파일럿과 출시 뒤에 검증한다.
 
-| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠정&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠증 ⁠법 | ⁠증&nbsp;⁠점&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 가정&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 검증 방법 | 검증&nbsp;시점&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | `BR-ASM-007` | 짧은 한 판(10분 안팎)의 싱글플레이 사회적 추론 게임을 웹에서 즐길 이용자가 있다 | 파일럿: 완주율·재미 설문·판 수는 탐색 근거로만 쓴다(진행자가 지정한 반복 플레이는 자발적 수요로 보지 않는다). 출시 후: 재방문율(3.1절) | 파일럿(11/9, 탐색), 출시 후 |
 | `BR-ASM-008` | 한국 민속 분위기의 창작 설정이 기존 사회적 추론 게임과 구별되는 매력이 된다 | 파일럿에서는 직접 검증하지 않는다. 출시 후 이용자 조사, 유사 서비스 비교(부록 1) | 출시 후 |
@@ -52,7 +52,7 @@
 
 흐름 A~E의 실제 담당자는 결정 대기(P-01)다. 이 문서는 역할 ID로만 부른다.
 
-| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠⁠⁠자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠한 ⁠무 ⁠과&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이해관계자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 필요한 업무 결과&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | `STK-PLAYER-001` | 플레이어(파일럿 내부망 테스트 참가자, 출시 후 일반 이용자) | 규칙을 이해하고 10분 안팎에 한 판을 끝낸다. 자유 입력과 버튼으로 원하는 행동을 하고, 패배해도 납득할 근거를 확인한다. 개인정보를 내지 않고 참여하며 가명 ID로 삭제를 요청할 수 있다. |
 | `STK-PM-001` | PM(흐름 E: 콘텐츠·LLM·이미지 에셋 규격·검수·사용자 테스트·통합) | 범위를 줄이지 않고 11/12에 파일럿을 완료한다. 태스크 완료 여부만 감독해도 합격선이 충족되는지 판단할 수 있다. 사용자 테스트를 운영하고 결과를 보고한다. |
@@ -68,7 +68,7 @@
 
 합격선의 출처는 기획서 1.1절(2026-11-04 확정)이다. 성능 수치는 Prometheus 지표 또는 측정 스크립트 출력만 인정하고, 추정치는 인정하지 않는다. 확인하지 못한 항목은 PASS가 아니라 `not_verified`로 기록한다.
 
-| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠무&nbsp;⁠표&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠정 ⁠법(⁠⁠선)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠⁠⁠자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 업무&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 측정 방법(합격선)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이해관계자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | `BR-OBJ-001` | 한 판이 처음부터 끝까지 성립하고, 승패가 한쪽으로 쏠리지 않는다. | ① 6인·창귀 1 판, 피해 장소 공개 상태에서 대역 "논리 우선 봇" 승률 40~60%(1,000판 이상, 95% 구간 보고)<br>② 사람 판 소요 시간 중앙값 10분 이하<br>③ 웹에서 LLM 없이 한 판 완주. 6인 외 프리셋은 공개 기준(P-08)을 통과한 것만 연다 | `STK-PLAYER-001`, `STK-ENGINE-001` |
 | `BR-OBJ-002` | 파일럿 사용자 테스트(내부망)로 실제 플레이 데이터와 반응을 모은다. | 목표: 참가자 30명, 1인 평균 4판(약 120판, 가명 ID 기준). 필수 조건:<br>① 사전·정식 테스트를 실제로 운영하고 참가자 수·판 수·완주율을 집계한다. 목표 미달이면 실제 수와 원인을 보고한다<br>② 판 종료 설문 응답률을 집계해 보고한다(목표치는 `BR-OQ-002`)<br>③ 설문 평균 3.5(5점)는 목표값이며 조건은 구현·수집·리포트다. 미달이면 원인 분석을 남긴다 | `STK-PM-001`, `STK-PLAYER-001` |
@@ -149,7 +149,7 @@
 
 ## 7. 위험·대응·미결 질문
 
-| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠생&nbsp;⁠건&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠향&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠응 | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠태&nbsp; |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 발생&nbsp;조건&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 영향&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 대응 | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp; |
 |---|---|---|---|---|---|
 | `BR-RISK-001` | 6인 구성의 밸런스 쏠림, 피해 장소 공개로 마을이 유리해짐 | `BR-OBJ-001` 미달 | 목격 확률·동선 무작위성·비밀 수 조정. 그래도 안 되면 인원 구성 변경 | `STK-ENGINE-001` | open |
 | `BR-RISK-002` | 큰 판(9/2, 11/2)의 검증 부담과 긴 진행 | 프리셋 공개 지연, 판 시간 초과 | 검증된 프리셋만 공개. 반복 진술 접기·회의 축약. 그래도 안 되면 창귀 1명 프리셋만 유지 | `STK-ENGINE-001` | open |
@@ -171,7 +171,7 @@
 
 결정 대기 항목(P-xx)은 `tasks/README.md` 7절이 원본이다. 여기서는 업무 목표에 영향을 주는 것만 연결한다.
 
-| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠문&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠⁠는&nbsp;⁠표&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠본&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠한&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 질문&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 영향받는&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 원본&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 기한&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
 | `BR-OQ-001` | 담당자 실명과 흐름·노트북 배정 | 전체 | P-01 | 11/5 09:00 |
 | `BR-OQ-002` | 판 종료 설문 응답률의 목표치(없으면 집계·보고만) | `BR-OBJ-002` | 신규 | 11/6 12:00(제안) |
@@ -204,7 +204,7 @@
 - 확인되지 않은 항목은 PASS가 아니라 `not_verified`로 기록한다.
 - baseline 이후의 변경은 아래 표에 남긴다.
 
-| ⁠짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠전&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠경&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠거&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 버전&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 변경&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 근거&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 2026-11-04 | v1 | 최초 작성(문서 간 정합성 검토 반영) | 기획서 v1.1, 계약 문서, 결정 대기 목록 |
 | 2026-11-04 | v1 | 사업 문서로 다시 씀(baseline 전 수정): 신규 웹게임 사업 파일럿으로 배경 재작성, 사업 모델(1.1)·시장 가정(1.2, `BR-ASM-007~011`), 광고 수익 지표(`BR-OBJ-010`), 출시 후 지표(3.1, `BR-KPI-001~003`), 위험 `BR-RISK-013·014`, 미결 질문 `BR-OQ-019~021` 추가. `STK-PRES-001`은 데모 자료 트랙, `STK-EVAL-001`은 사업 의사결정자로 의미 변경(ID 유지) | PM 결정(11/4) |
@@ -220,7 +220,7 @@
 
 조사일 2026-11-04. 가격은 조사 시점 스토어 표시값이다.
 
-| ⁠⁠스&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠태&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠격&nbsp;⁠책&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠심 ⁠조 | ⁠처&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 서비스&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 형태&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 가격&nbsp;정책&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 핵심 구조 | 출처&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
 | GNOSIA (Petit Depotto, 발매 PLAYISM, PC 2022-01-23) | 싱글플레이 사회적 추론 | 유료 1회 구매(스팀 표시 ₩26,000) | 토론 → 투표로 1명을 콜드 슬립 → 시간 루프 반복. 역할과 능력치(설득·거짓말 등)가 대화 결과에 영향. 캐릭터 이벤트로 기록(Notes)을 모은다 | https://store.steampowered.com/app/1608290/GNOSIA/ |
 | Suck Up! (Proxima, PC 2025-10-01) | 싱글플레이 대화형 | 유료 1회 구매(스팀 표시 ₩18,500) | 음성·텍스트로 AI 이웃을 설득해 집에 들어간다. 스토어 페이지에 OpenAI ChatGPT로 콘텐츠를 생성한다고 표시. 외부 API 의존 | https://store.steampowered.com/app/2726370/Suck_Up/ |
