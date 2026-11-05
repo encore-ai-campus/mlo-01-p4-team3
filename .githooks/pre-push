@@ -17,10 +17,18 @@ check_sha() {
     return $?
   fi
   tmp=$(mktemp -d 2>/dev/null || echo "${TMPDIR:-/tmp}/precheck.$$")
-  git worktree add --quiet --detach "$tmp/wt" "$sha" || return 1
-  (cd "$tmp/wt" && PYTHONIOENCODING=utf-8 "$py" -m tools.precheck)
+  # 훅이 물려받은 GIT_DIR·GIT_INDEX_FILE 등을 지운 하위 셸에서 한다. 남아 있으면 worktree add가
+  # 원래 index에 쓰고, 하위 git 명령이 임시 worktree 대신 원래 저장소를 본다.
+  (
+    unset $(git rev-parse --local-env-vars)
+    cd "$root" || exit 1
+    git worktree add --quiet --detach "$tmp/wt" "$sha" || exit 1
+    (cd "$tmp/wt" && PYTHONIOENCODING=utf-8 "$py" -m tools.precheck)
+    rc=$?
+    git worktree remove --force "$tmp/wt" >/dev/null 2>&1
+    exit $rc
+  )
   rc=$?
-  git worktree remove --force "$tmp/wt" >/dev/null 2>&1
   rmdir "$tmp" 2>/dev/null
   return $rc
 }
