@@ -1,0 +1,120 @@
+{
+  "task": "E-06-07",
+  "commit": "929dec0ca175cc055691ed84987be2082028c053",
+  "generated_at": "2026-11-05T13:43:23Z",
+  "source": "python -m llm.bench.run_bench --model kanana-2-3b-instruct.Q4_K_M.gguf --label kanana2_3b --stage s3 --mode win --threads 8 --concurrency 4 --repeats 5 --max-tokens 128 --temperature 0.7 --n-ctx 1024 --seed 1 --tag devoff  # 개발 도구·VM 끔(사용자 확인). 남은 것: Claude Code 세션, Edge·ChatGPT 백그라운드 프로세스; 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36",
+  "metrics": {
+    "total_p50_ms": {
+      "value": 6667.08,
+      "unit": "ms"
+    },
+    "total_p95_ms": {
+      "value": 12419.1,
+      "unit": "ms"
+    },
+    "total_max_ms": {
+      "value": 13070.18,
+      "unit": "ms"
+    },
+    "queue_wait_p50_ms": {
+      "value": 3648.64,
+      "unit": "ms"
+    },
+    "queue_wait_p95_ms": {
+      "value": 9322.91,
+      "unit": "ms"
+    },
+    "prompt_p50_ms": {
+      "value": 2319.59,
+      "unit": "ms"
+    },
+    "gen_p50_ms": {
+      "value": 607.77,
+      "unit": "ms"
+    },
+    "validate_p95_ms": {
+      "value": 0.01,
+      "unit": "ms"
+    },
+    "prompt_tokens_mean": {
+      "value": 132.9,
+      "unit": "tok"
+    },
+    "gen_tokens_mean": {
+      "value": 10.1,
+      "unit": "tok"
+    },
+    "n_requests": {
+      "value": 20,
+      "unit": "건"
+    },
+    "validation_fail_count": {
+      "value": 11,
+      "unit": "건"
+    },
+    "error_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "gen_tps_p50": {
+      "value": 13.79,
+      "unit": "tok/s"
+    },
+    "gen_tps_min": {
+      "value": 13.16,
+      "unit": "tok/s"
+    },
+    "weights_mib": {
+      "value": 2045.22,
+      "unit": "MiB"
+    },
+    "weights_repack_mib": {
+      "value": 1327.5,
+      "unit": "MiB"
+    },
+    "weights_total_mib": {
+      "value": 3372.72,
+      "unit": "MiB"
+    },
+    "kv_mib": {
+      "value": 128.0,
+      "unit": "MiB"
+    },
+    "rs_mib": {
+      "value": 0.0,
+      "unit": "MiB"
+    },
+    "compute_mib": {
+      "value": 260.5,
+      "unit": "MiB"
+    },
+    "load_ms": {
+      "value": 1365.32,
+      "unit": "ms"
+    },
+    "threads": {
+      "value": 8,
+      "unit": ""
+    },
+    "concurrency": {
+      "value": 4,
+      "unit": ""
+    },
+    "repeats": {
+      "value": 5,
+      "unit": "회"
+    },
+    "max_tokens": {
+      "value": 128,
+      "unit": "tok"
+    },
+    "rss_mib": {
+      "value": 3492.82,
+      "unit": "MiB"
+    },
+    "rss_peak_mib": {
+      "value": 3492.89,
+      "unit": "MiB"
+    }
+  }
+}
