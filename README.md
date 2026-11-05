@@ -27,7 +27,7 @@ server/infra (인프라) → engine (포트 구현)
 
 | 폴더 | 계층 | 담당 | 역할 |
 |---|---|---|---|
-| `engine/domain/` | 도메인 | A | 규칙, 상태, 이벤트, 콘텐츠 타입, 배정 검증기(`model.py`, `content.py`, `events.py`, `serde.py`) |
+| `engine/domain/` | 도메인 | A | 규칙, 상태, 이벤트, 콘텐츠 타입, 배정 검증기(`model.py`, `content.py`, `events.py`, `serde.py`), 엔진 구현(`engine.py`), 밸런스 상수(`params.py`) |
 | `engine/ports.py` | 도메인 경계 | A(정의) | 엔진이 바깥에 기대는 인터페이스 |
 | `engine/testing/` | 테스트 지원 | 공용 | 모든 포트의 가짜 구현 |
 | `engine/sim/` | 도메인 사용 | D | 봇 정책, 시뮬레이터(예정). 결정 층 최적화는 A가 `engine/domain`에서 맡는다 |
@@ -48,6 +48,7 @@ server/infra (인프라) → engine (포트 구현)
 | `contracts/` | 데이터 계약 | 공용 | 학습 행, 의도 예시, 시나리오 스키마 |
 | `fixtures/` | 생성물 | 공용 | 계약 예시. `tools/build_fixtures.py`가 만든다 |
 | `tools/` | 도구 | 공용 | 픽스처 생성, 합성 데이터 생성, 태스크 문서 파서(`tasks_md.py`)·이슈 동기화(`tasks_to_issues.py`)·계획 대비 실제 시간 요약(`hours_report.py`), 저장소 배정 전 임시 운영(`interim.py` 표현·응용, `interim_rules.py` 도메인) |
+| `tools/perf/` | 도구(측정) | 각 흐름 | 측정 스크립트. 결과 JSON은 `tools/evidence_result.py`로 `docs/evidence/perf/<ID>/`에 쓴다(엔진 `engine_bench.py`) |
 | `tests/contract/` | 테스트 | 공용 | 계약 테스트(unittest) |
 | `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화·임시 운영 흐름은 임시 git 저장소와 임시 폴더로) |
 | `tests/assets/` | 테스트 | E | 에셋 도구 테스트(규격표 해석, 임시 세트 생성·대조) |
@@ -65,6 +66,7 @@ server/infra (인프라) → engine (포트 구현)
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 게임 규칙 변경 | 도메인 `engine/domain/model.py`, `docs/contracts/domain.md` |
+| 판 생성·진행 규칙 구현, 목격 확률 등 밸런스 상수 | 도메인 `engine/domain/engine.py`, `engine/domain/params.py` |
 | 엔진과 바깥의 인터페이스 변경 | `engine/ports.py`, `docs/contracts/ports.md` |
 | 화면이나 API 추가 | 표현 `server/api/`, 응용 `server/app/dto.py`, `docs/contracts/api.md` |
 | 저장소나 Kafka 교체 | 인프라 `server/infra/`, `docs/contracts/ports.md` 2절 |
