@@ -9,7 +9,7 @@
 | 서버 | 3차 VMware VM 20대(노트북 5대에 분산) | VM 사양 후보 2 vCPU / 4GB(재확인 전). 배치는 기획서 6.3 |
 | OS | Ubuntu Server 26.04 | 기록값, 11/5 실측 필요 |
 | 시스템 Python | 3.14.6 | 11/4 이 PC 실측(`python --version`). 다른 노트북은 C-05-03 점검표로 확인 |
-| ML·LLM Python | **3.14 단일**(11/5 PM 확정, 3.12 가상환경 분리 안 함) | 근거: C-05-03 조건 2 실측(11/4, 기준 PC, Windows 네이티브 3.14.6 venv와 Linux 컨테이너 `python:3.14`): torch 2.15.0+cpu, transformers 5.22.1, lightgbm 4.7.0, pyspark 4.1.3, llama-cpp-python 0.3.36 설치·import·기본 동작 성공(llama는 시스템 정보 호출까지, 모델 추론은 E-06-07), 실패 0건(`docs/evidence/C-05-03.md`). 한계: Ubuntu VM에서는 아직 확인하지 않았다(VM에서 같은 5개 import를 확인할 태스크는 미정, PM 결정 대기) |
+| ML·LLM Python | **3.14 단일**(11/5 PM 확정, 3.12 가상환경 분리 안 함) | 근거: C-05-03 조건 2 실측(11/4, 기준 PC, Windows 네이티브 3.14.6 venv와 Linux 컨테이너 `python:3.14`): torch 2.15.0+cpu, transformers 5.22.1, lightgbm 4.7.0, pyspark 4.1.3, llama-cpp-python 0.3.36 설치·import·기본 동작 성공(llama는 시스템 정보 호출까지, 모델 추론은 E-06-07), 실패 0건(`docs/evidence/C-05-03.md`). 한계: Ubuntu VM에서는 아직 확인하지 않았다(VM 확인은 11/5 PM 결정으로 완료 조건에 넣었다: 학습·시뮬레이션 VM의 torch·transformers·lightgbm·pyspark 4개는 D-07-02 6번, llm-01의 llama-cpp-python은 E-06-07 3번 ②) |
 | 엔진·계약 코드 | 표준 라이브러리만 사용, Python 3.12와 3.14 둘 다 지원 | `engine/`, `contracts/`, `tools/`는 외부 패키지를 import하지 않는다 |
 
 ## 2. 구성 요소

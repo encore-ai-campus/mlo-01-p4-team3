@@ -10,15 +10,8 @@
 
 ## 11/5(목)
 
-### A-05-00 자기 노트북 VM 4대 점검
-- 0.5h · 선행: E-05-01(노트북 배정)
-- 문서화(+0h, 공통 ⑦, 트러블만): [트러블 A](../troubles/A.md)에 `### A-05-00` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 코드를 바꿨다면 모듈 문서 [`engine`](../modules/engine.md) `변경 이력` 행은 그날 일괄 갱신(A-05-02)
-- 산출물: `docs/evidence/A-05-00.md`
-- 완료 조건: C-05-01의 점검표 양식으로 VM 4대 각각의 기동 여부, vCPU·RAM·디스크 사용량, 스냅샷 수를 기록. 논리 서버명만 쓰고 IP는 쓰지 않는다.
-- 근거: 기획서 6.3
-
 ### A-05-01 판 생성·배정·아침 진술
-- 3.5h · 선행: E-05-01
+- 4h(자기 노트북 VM 점검 0.5h 포함, 11/5 PM 결정) · 선행: E-05-01
 - 문서화(+0.25h, 공통 ⑦): [트러블 A](../troubles/A.md)에 `### A-05-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`engine`](../modules/engine.md)는 그날 일괄 갱신(A-05-02)
 - 입력: `engine/domain/model.py`, `content.py`(`validate_assignment`), `fixtures/content_min/bundle.json`, `fixtures/assignment/`
 - 산출물: `engine/domain/engine.py`(`GameEngine` 포트 구현의 `new_game`), `engine/domain/params.py`(목격 확률 등 밸런스 상수, `RULE_PARAMS_VERSION`), `tests/engine/test_setup.py`
@@ -29,12 +22,13 @@
   4. 아침 진술이 주장 스키마(기획서 5.1)를 따르고 `serde` 왕복이 손실 없음.
   5. 같은 시드 → 같은 판(결정적)을 테스트로 확인.
   6. 판 생성 1회 시간 p95를 `tools/perf/engine_bench.py --op new_game --n 1000`으로 측정해 증빙에 기록.
+  7. 자기 노트북 VM 4대 점검(11/5 PM 결정으로 별도 점검 태스크를 합침): C-05-01의 점검표 양식(`ops/inventory_check.md`)으로 VM 4대 각각의 기동 여부, vCPU·RAM·디스크 사용량, 스냅샷 수를 이 태스크 증빙(`docs/evidence/A-05-01.md`)의 `## 노트북 VM 점검` 절에 기록. 논리 서버명만 쓰고 IP는 쓰지 않는다(기획서 6.3). 노트북 배정(E-05-01) 뒤에 한다.
 - 근거: 기획서 4.1, 4.2, 4.6, 10장 배정 검증기 / domain.md 2, 10
 
 ### A-05-02 회의·캐묻기·투표·종료 판정
 - 3.5h · 선행: A-05-01
 - 문서화(+0.25h, 공통 ⑦): [트러블 A](../troubles/A.md)에 `### A-05-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`engine`](../modules/engine.md)는 그날 일괄 갱신(이 태스크의 일괄 갱신 줄)
-- 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: A-05-01, A-05-02 · 코드를 바꿨다면: A-05-00 · 모듈: [`engine`](../modules/engine.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/5 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
+- 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: A-05-01, A-05-02 · 코드를 바꿨다면: 없음 · 모듈: [`engine`](../modules/engine.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/5 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
 - 입력: `fixtures/scenarios/normal_game.json`, `runoff_tie_no_lock.json`, `mudang_locked.json`, `last_possessed_locked.json`
 - 산출물: `engine/domain/engine.py`(`apply`), `tests/engine/test_scenarios_engine.py`
 - 완료 조건:
