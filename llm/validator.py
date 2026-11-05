@@ -211,9 +211,9 @@ def missing_fact_words(text: str, fact_sentence: str, lexicon: Lexicon) -> list[
     """사실 문장의 어절(띄어쓰기 단위, 앞뒤 문장부호 제외) 중 생성문에 없는 것. 둘 다 `canonicalize`한 뒤 비교한다.
 
     장소·시간·인물 밖의 내용(행동·대상, 예: "팔았소"→"샀소")이 바뀌거나 빠진 것을 잡는다. 어미를 바꾼 것도 바꾼 것으로 본다
-    (프롬프트가 사실 문장을 그대로 넣으라고 요구한다).
+    (프롬프트가 사실 문장을 그대로 넣으라고 요구한다). 띄어쓰기만 다른 것("그날"↔"그 날")은 같은 것으로 본다.
     """
-    out = canonicalize(text, lexicon)
+    out = canonicalize(text, lexicon).replace(" ", "")
     words = [w.strip(_WORD_STRIP) for w in canonicalize(fact_sentence, lexicon).split()]
     return [w for w in words if w and w not in out]
 
