@@ -46,11 +46,16 @@ def make_setup(preset: Preset, content: ContentBundle, seed: int, game_id: str) 
     for attempt in range(params.ASSIGNMENT_MAX_ATTEMPTS):
         rng = random.Random(f"{seed}:{attempt}")
         a = _draw_assignment(rng, preset, content, game_id)
-        if a is None or validate_assignment(preset, content, a):
+        if a is None:
             continue
         sightings = _draw_sightings(rng, a)
-        lies = _lies_of(rng, a, content)
-        return Setup(a, attempt + 1, sightings, lies)
+        plan = a.night0_plan
+        alibi = executor_alibi(rng, a.night0_whereabouts[plan.executor][Slot.MIDNIGHT], sightings[plan.executor])
+        if preset.n_possessed == 2:                       # 2명 판은 실행자의 거짓 알리바이를 합의한다
+            plan.agreed_alibis = {plan.executor: alibi.value}
+        if validate_assignment(preset, content, a):
+            continue
+        return Setup(a, attempt + 1, sightings, _lies_of(a, content, alibi))
     raise AssignmentError(f"{preset.preset_id}: 시드 {seed}에서 {params.ASSIGNMENT_MAX_ATTEMPTS}회 안에 유효한 배정 없음")
 
 
@@ -90,8 +95,6 @@ def _draw_assignment(rng: random.Random, preset: Preset, content: ContentBundle,
                 where[r][Slot.MIDNIGHT] = _routine_place(rng, chars[r], Slot.MIDNIGHT, exclude=crime)
 
     plan = NightPlan(executor=executor, victim=victim)
-    if preset.n_possessed == 2:                           # 2명 판은 실행자의 거짓 알리바이를 합의한다
-        plan.agreed_alibis = {executor: _executor_alibi(rng, chars[executor], crime).value}
     return Assignment(game_id=game_id, preset_id=preset.preset_id, residents=residents,
                       night0_victim=victim, roles=roles, secrets=secrets,
                       night0_whereabouts=where, night0_plan=plan)
@@ -138,13 +141,14 @@ def _routine_place(rng: random.Random, ch: Character, slot: Slot, exclude: Optio
     return rng.choices(places, weights=weights)[0]
 
 
-def _executor_alibi(rng: random.Random, ch: Character, crime: Place) -> Place:
-    """실행자가 0일째 한밤에 있었다고 말할 장소(규칙 v0, params.EXECUTOR_ALIBI_PLACE)."""
-    if crime is not params.EXECUTOR_ALIBI_PLACE:
-        return params.EXECUTOR_ALIBI_PLACE
-    publics = [p for p in PUBLIC_PLACES if p is not crime]
-    prefs = [p for p in ch.routine.get(Slot.MIDNIGHT, {}) if p in publics]
-    return rng.choice(prefs or publics)
+def executor_alibi(rng: random.Random, crime: Place, own_sightings: list[Sighting]) -> Place:
+    """실행자가 한밤에 있었다고 말할 장소(기획서 5.2 씐 자 전략의 단순형, 정교화는 A-07-01).
+
+    자기가 아는 목격 기록으로 반박되지 않는 공공장소 중에서 시드로 고른다: 범행 장소와
+    자기가 한밤에 누군가를 본 장소(= 그 시각 실제로 있던 곳)는 뺀다.
+    """
+    known = {s.place for s in own_sightings if s.slot is Slot.MIDNIGHT} | {crime}
+    return rng.choice([p for p in PUBLIC_PLACES if p not in known])
 
 
 # ---------------------------------------------------------------- 목격과 거짓 행적
@@ -164,18 +168,14 @@ def _draw_sightings(rng: random.Random, a: Assignment) -> dict[str, list[Sightin
             for r in a.residents}
 
 
-def _lies_of(rng: random.Random, a: Assignment, content: ContentBundle) -> dict[str, dict[Slot, Place]]:
+def _lies_of(a: Assignment, content: ContentBundle, alibi: Place) -> dict[str, dict[Slot, Place]]:
     """거짓으로 진술할 행적. 비밀 보유자는 비밀 시간대, 실행자는 한밤(기획서 4.1·4.6)."""
     by_id = {s.secret_id: s for s in content.secrets}
-    chars = {c.npc_id: c for c in content.characters}
     lies: dict[str, dict[Slot, Place]] = {}
     for npc, sid in a.secrets.items():
         s = by_id[sid]
         lies[npc] = {s.slot: s.false_place}
-    ex = a.night0_plan.executor
-    agreed = a.night0_plan.agreed_alibis.get(ex)
-    crime = a.night0_whereabouts[ex][Slot.MIDNIGHT]
-    lies[ex] = {Slot.MIDNIGHT: Place(agreed) if agreed else _executor_alibi(rng, chars[ex], crime)}
+    lies[a.night0_plan.executor] = {Slot.MIDNIGHT: alibi}
     return lies
 
 
@@ -242,7 +242,7 @@ class PaldoEngine:
             if r in a.secrets:
                 s = secrets[a.secrets[r]]
                 pk.hidden_whereabouts = [{"night": str(NIGHT0), "slot": s.slot.value}]
-                pk.confession_threshold = s.confession_threshold
+                # 고백(confession_threshold 등)은 A-06-01·A-07-01 범위. 여기서는 비밀 사건과 그 시간대 거짓말만 만든다.
             pk.my_false_claims = [c.claim_id for c in claims
                                   if c.speaker == r and claim_truths[c.claim_id].deliberate_lie]
             npcs[r] = NpcState(npc_id=r, temperament_id=temperaments[r], private=pk)

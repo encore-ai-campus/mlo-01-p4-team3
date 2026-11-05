@@ -6,17 +6,10 @@
 """
 from __future__ import annotations
 
-from .model import Place
+RULE_PARAMS_VERSION = "rule-0.2"   # 0.2: 실행자 거짓 행적을 고정 장소(집)에서 반박되지 않는 공공장소 무작위 선택으로 바꿈
 
-RULE_PARAMS_VERSION = "rule-0.1"
-
-# 같은 시간대·같은 공공장소에 있던 두 사람이 서로를 목격할 확률(쌍마다 한 번 뽑고 서로 본다).
-# 초기 후보값이다. 조정 전까지 임시로 쓴다.
-WITNESS_PROB = 0.7
+# 같은 시간대·같은 공공장소에 있던 두 사람이 서로를 목격할 확률(쌍마다 한 번 뽑고 서로 본다, domain.md 5절 3).
+WITNESS_PROB = 0.7   # 초기값, A-08-03에서 조정
 
 # 배정 검증기 위반이 나오면 파생 시드로 다시 뽑는 최대 횟수(domain.md 10절). 넘으면 콘텐츠 부족으로 본다.
 ASSIGNMENT_MAX_ATTEMPTS = 200
-
-# 실행자의 0일째 한밤 거짓 행적(규칙 v0). 집은 공공장소가 아니라 목격으로 반박되지 않는다.
-# 피해 장소가 피해자의 집(HOME)이면 집이라고 말할 수 없으므로 자기 동선의 공공장소 중에서 고른다.
-EXECUTOR_ALIBI_PLACE = Place.HOME

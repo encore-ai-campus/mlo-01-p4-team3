@@ -134,6 +134,30 @@ class AllPresets(unittest.TestCase):
                 expect = {(n, Slot(sl)) for n, sl in expect} | {(tr.night_plans[0].executor, Slot.MIDNIGHT)}
                 self.assertEqual(liars, expect)
 
+    def test_executor_alibi_not_refutable_by_own_sightings(self):
+        """PM 결정(11/5): 실행자 거짓 행적은 범행 장소·자기 한밤 목격 장소가 아닌 공공장소."""
+        places = Counter()
+        for (p, s), r in self.games.items():
+            st, tr = r.state, r.truth
+            ex = tr.night_plans[0].executor
+            with self.subTest(preset=p, seed=s):
+                claim = next(c for c in st.public.claims if c.speaker == ex
+                             and c.claim_type is ClaimType.WHEREABOUTS and c.slot is Slot.MIDNIGHT)
+                own = {w.place for w in st.npcs[ex].private.witnessed if w.slot is Slot.MIDNIGHT}
+                self.assertIn(claim.place, PUBLIC_PLACES)
+                self.assertIsNot(claim.place, st.public.disappearances[0].place)
+                self.assertNotIn(claim.place, own)
+                if PRESETS[p].n_possessed == 2:
+                    self.assertEqual(tr.night_plans[0].agreed_alibis, {ex: claim.place.value})
+                places[claim.place] += 1
+        self.assertEqual(len(places), len(PUBLIC_PLACES))   # 시드로 고르므로 네 곳 모두 나온다
+
+    def test_no_confession_state_yet(self):
+        """PM 결정(11/5): 고백은 A-06-01·A-07-01 범위. 이 태스크는 고백 문턱값을 채우지 않는다."""
+        for r in self.games.values():
+            for npc in r.state.npcs.values():
+                self.assertIsNone(npc.private.confession_threshold)
+
     def test_serde_round_trip(self):
         """조건 4: 상태·진실·이벤트의 serde 왕복이 손실 없다."""
         for (p, s), r in self.games.items():
