@@ -8,7 +8,7 @@
 
 ## 1. 결정 사항
 
-| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 결정 | 이유&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 결정&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이유&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | 2026-11-04 | 주제: 팔도무록 세계관 + 싱글플레이 사회적 추론 | 동시 접속자 없이 한 판이 성립하고, 봇 시뮬레이션으로 초기 데이터를 만들 수 있으며, LLM의 쓰임(NPC 대화)이 분명하다 |
 | 2026-11-04 | v1 방향: 플레이어는 항상 무당(유일한 점술가), NPC끼리만 역할이 바뀐다 | 공개 역할 주장 구도에서 생기는 "사칭 = 확정 패배" 반례를 없애고, 원작 그노시아와 구조를 차별화한다 |
@@ -632,7 +632,7 @@ flowchart LR
 
 ## 11. 단계별 로드맵 (기간 미정, 순서만)
 
-| 단계&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 할 일 | 완료&nbsp;기준&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 단계&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 할 일&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 완료&nbsp;기준&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | 1. 제약 확정 | 팀·마감·필수 기술·실제 CPU/RAM·동시 접속 범위 확인 | 범위 축소 기준 합의 |
 | 2. 최소 계약 | 상태·주장·명령·이벤트 스키마, 의도 라벨과 행동 대응표, 행동별 필수 슬롯, 질문·주장 구분, 무당의 거짓 공개 범위, 다중 의도·미지원·문맥 누락 처리, 9.2 학습 목표, 실제 추궁 예시 몇 개 | 문서화된 계약 |
@@ -728,7 +728,7 @@ flowchart LR
 - Delta 계층: bronze(원본 serve·impression·click), silver(검증·유효 판정·조인), gold(캠페인 × 지면 × 시간대의 노출, 클릭, CTR, 비용, eCPM, 소진율, 무효율).
 
 ### 14.5 집계를 입찰에 반영하는 루프
-| 반영&nbsp;대상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 방식 | 주기&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 반영&nbsp;대상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 방식&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 주기&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | 예측 CTR | 소재 × 지면별 베타 분포. 사전분포는 지면 평균 CTR `μ`와 사전 강도 `κ`(예: 노출 200회분)로 `Beta(μκ, (1−μ)κ)`. 확정된 유효 노출 N, 클릭된 노출 C로 `Beta(μκ + C, (1−μ)κ + N − C)`. 갱신은 누적 집계를 다시 더하지 않고 확정분 전체로 다시 계산한다. 데이터가 쌓이면 LightGBM CTR 모델(지면, 소재, 판 결과, 판 수, 시간대)과 비교 | 베타: 집계 주기마다(예: 5분). LightGBM: 야간 |
 | 탐색 | CPC 캠페인은 순위 점수에 쓰는 CTR을 베타 분포에서 샘플링(톰슨 샘플링)한다. CPM 캠페인은 순위에 CTR이 없으므로, 낙찰된 캠페인 안에서 소재를 고를 때 톰슨 샘플링을 쓴다. 페이싱에 막힌 신규 소재가 학습 기회를 잃지 않도록 캠페인별 탐색 노출 하한(예: 하루 노출의 5%)을 페이싱과 별도로 둔다. LightGBM 도입 뒤에도 같은 탐색 규칙을 쓴다 | 경매마다 |

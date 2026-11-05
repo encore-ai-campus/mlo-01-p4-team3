@@ -8,7 +8,7 @@
   description: "B 웹·API"
 - name: "flow:C"
   color: "bf8700"
-  description: "C 인프라"
+  description: "C 인프라/파이프라인"
 - name: "flow:D"
   color: "1a7f37"
   description: "D ML·광고"

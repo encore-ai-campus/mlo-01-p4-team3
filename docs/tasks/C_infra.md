@@ -1,4 +1,4 @@
-# C 인프라 태스크
+# C 인프라/파이프라인 태스크
 
 - 담당자: (P-01) · 노트북: (P-01)
 - 폴더: `server/infra/`(Mongo 저장소, 아웃박스 발행기, 어댑터), `pipeline/`(Kafka 소비자, Spark 작업), `ops/`(Compose, Ansible, k3s, Prometheus·Grafana, AWS, 런북)

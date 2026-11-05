@@ -9,7 +9,7 @@
 - **일자별·담당자별 태스크와 완료 조건**: [`docs/tasks/`](docs/tasks/README.md) (공통 완료 정의, 증빙 양식, 로그·계측 규칙, 결정 대기, 통합 판정 표)
 - 태스크 증빙: `docs/evidence/<태스크ID>.md`, 발표 기록: `docs/presentation/`, 리포트: `docs/reports/`
 - 모듈 문서(무엇을·왜·사용법·설정값·한계): [`docs/modules/`](docs/modules/README.md), 트러블 기록: `docs/troubles/<흐름>.md`(발표 트랙은 `S.md`). 기준은 `docs/tasks/README.md` 10절
-- 진행 관리: GitHub Issues(태스크 마크다운에서 생성, `docs/tasks/README.md` 11절)
+- 진행 관리: GitHub Issues(태스크 마크다운에서 생성, `docs/tasks/README.md` 11절). 저장소 배정 전에는 NAS 번들 제출·PM 병합·원장(`docs/tasks/README.md` 10-1절)
 
 ## 계층과 의존 방향
 
@@ -25,7 +25,7 @@ server/infra (인프라) → engine (포트 구현)
 
 ## 폴더 안내
 
-| 폴더&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 계층&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 역할 |
+| 폴더&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 계층&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 역할&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | `engine/domain/` | 도메인 | A | 규칙, 상태, 이벤트, 콘텐츠 타입, 배정 검증기(`model.py`, `content.py`, `events.py`, `serde.py`) |
 | `engine/ports.py` | 도메인 경계 | A(정의) | 엔진이 바깥에 기대는 인터페이스 |
@@ -47,21 +47,22 @@ server/infra (인프라) → engine (포트 구현)
 | `llm/` | 인프라 | E | LLM 서비스, LangGraph(예정) |
 | `contracts/` | 데이터 계약 | 공용 | 학습 행, 의도 예시, 시나리오 스키마 |
 | `fixtures/` | 생성물 | 공용 | 계약 예시. `tools/build_fixtures.py`가 만든다 |
-| `tools/` | 도구 | 공용 | 픽스처 생성, 합성 데이터 생성, 태스크 문서 파서(`tasks_md.py`)·이슈 동기화(`tasks_to_issues.py`)·계획 대비 실제 시간 요약(`hours_report.py`) |
+| `tools/` | 도구 | 공용 | 픽스처 생성, 합성 데이터 생성, 태스크 문서 파서(`tasks_md.py`)·이슈 동기화(`tasks_to_issues.py`)·계획 대비 실제 시간 요약(`hours_report.py`), 저장소 배정 전 임시 운영(`interim.py` 표현·응용, `interim_rules.py` 도메인) |
 | `tests/contract/` | 테스트 | 공용 | 계약 테스트(unittest) |
-| `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화) |
+| `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화·임시 운영 흐름은 임시 git 저장소와 임시 폴더로) |
 | `tests/assets/` | 테스트 | E | 에셋 도구 테스트(규격표 해석, 임시 세트 생성·대조) |
 | `.github/` | 저장소 운영 | E | 이슈 양식(`ISSUE_TEMPLATE/`), 라벨 정의(`labels.yml`), PR 양식, CI 워크플로(E-05-02) |
 | `.github/workflows/` | 저장소 운영(표현) | E | CI 필수 체크 4개 `core`·`django`·`evidence`·`docs`(`ci.yml`). 검사 규칙은 `tools/check_*.py`, 설명은 `docs/modules/ci.md` |
 | `docs/evidence/` | 문서(증빙) | 각 흐름 | 태스크 증빙 `<ID>.md`, 측정 결과 JSON `perf/<ID>/<이름>.json`(`tools/evidence_result.py`로만 쓴다) |
 | `tests/fixtures/secrets/` | 테스트 데이터 | E | `check_secrets` 탐지 테스트용 가짜 비밀값. 비밀정보 검사에서 이 폴더만 제외 |
+| `docs/ops/` | 문서(운영 기록) | E | 저장소 배정 전 임시 운영 원장 `interim_ledger.md`(⑧ 대체·병합 기록·결함 표, `tools/interim.py`가 검사) |
 | `docs/modules/`, `docs/troubles/` | 문서 | 각 흐름 | 모듈 문서, 흐름별 트러블 기록(양식 `_template.md`) |
 
 "예정"인 폴더는 담당 흐름이 처음 코드를 넣을 때 만든다.
 
 ## 작업별 위치
 
-| 하려는&nbsp;일&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 볼 곳 |
+| 하려는&nbsp;일&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 볼 곳&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|
 | 게임 규칙 변경 | 도메인 `engine/domain/model.py`, `docs/contracts/domain.md` |
 | 엔진과 바깥의 인터페이스 변경 | `engine/ports.py`, `docs/contracts/ports.md` |
@@ -81,6 +82,7 @@ server/infra (인프라) → engine (포트 구현)
 | 태스크 문서화(트러블·docstring은 태스크마다, 모듈 문서는 흐름별 하루 1회 일괄 갱신) | `docs/tasks/README.md` 10절 → `docs/modules/`, `docs/troubles/` |
 | 이슈 만들기·동기화, 오늘 열린 태스크 보기 | `python -m tools.tasks_to_issues --dry-run`, `docs/tasks/README.md` 11절 |
 | CI 체크·증빙·문서화·비밀정보 검사 규칙 바꾸기 | 표현 `.github/workflows/ci.yml`, 규칙 `tools/check_evidence.py`·`check_docs.py`·`check_secrets.py`, 예외 `tools/secrets_allowlist.txt`, 설명 `docs/modules/ci.md` |
+| 저장소 배정 전 제출·병합(NAS 번들, 로컬 CI, 원장, 진행표) | 표현·응용 `tools/interim.py`, 규칙(도메인) `tools/interim_rules.py`, 기록 `docs/ops/interim_ledger.md`, 절차 `docs/tasks/README.md` 10-1절 |
 | 태스크 조건 바꾸기 | `docs/tasks/<흐름>.md`를 고치는 PR(이슈 본문은 직접 고치지 않음) |
 | 로그·지표 이름 정하기 | `docs/tasks/README.md` 5절 |
 | 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/B_web.md` `[에셋]`) |
@@ -99,6 +101,9 @@ python -m tools.gen_synthetic --games 50 --seed 7 --ads 20000 --out out/syntheti
 python -m tools.tasks_to_issues --dry-run                 # 태스크 → 이슈 계획(실제 생성은 --apply --repo)
 python -m tools.tasks_to_issues --hours                   # 흐름별 일별 시간(문서화·일괄 갱신 포함, 흐름별 한도, 발표 트랙은 별도 줄)
 python -m tools.hours_report --until 11-05                # 계획 대비 실제 소요 시간(증빙의 "실제 소요 시간(h)")
+python -m tools.interim submit --task <ID> --base <main SHA> --hours 2   # 저장소 배정 전 제출(README 10-1절)
 ```
+
+텍스트 파일은 UTF-8(BOM 없음), 줄바꿈 LF다(`.gitattributes`가 고정, Windows 스크립트 `.ps1`·`.bat`·`.cmd`만 CRLF).
 
 접속 정보(IP, 계정, 비밀번호)는 이 저장소에 넣지 않는다.

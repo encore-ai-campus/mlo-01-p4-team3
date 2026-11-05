@@ -8,7 +8,7 @@
 |---|---|---|
 | A 엔진 | `FixtureContentSource`, `FakeSuspicionModel`, `fixtures/scenarios`, `fixtures/assignment` | `GameEngine`(ports.md), domain.md 전체 |
 | B 웹·API | `ScriptedGameEngine`, `InMemoryGameRepository`, `FakeIntentParser`, `FakeLineRenderer`, `fixtures/api` | api.md, `server/app/dto.py`, `server/api/viewmodels.py` |
-| C 인프라 | `fixtures/events`, `tools/gen_synthetic.py`, `InMemoryGameRepository`(기준 동작) | ports.md 2절(원자 저장), events.md |
+| C 인프라/파이프라인 | `fixtures/events`, `tools/gen_synthetic.py`, `InMemoryGameRepository`(기준 동작) | ports.md 2절(원자 저장), events.md |
 | D ML | `fixtures/ml`, `fixtures/intent`, `tools/gen_synthetic.py`, `FakeSuspicionModel`(출력 형식) | ports.md 3절, intent.md, ml_lifecycle.md |
 | E 콘텐츠·LLM | `fixtures/content_min`, `fixtures/llm`, `FakeLineRenderer` | content.md, ports.md 4절, privacy.md |
 | D 광고(ads/ 전체) | `fixtures/ads`, `tools/gen_synthetic.py --ads`, `ads/domain`(기준 규칙) | ads.md, events.md 5절 |

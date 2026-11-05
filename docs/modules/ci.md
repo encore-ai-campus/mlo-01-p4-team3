@@ -42,6 +42,18 @@ python -m tools.check_docs --all --until 11-05               # 규칙 4
 python -m tools.check_docs --diff main                       # 규칙 5~6(커밋 전 변경·새 파일 포함)
 ```
 
+저장소 배정 전 임시 운영(README 10-1절, GitHub 없이 4체크를 로컬에서 대체):
+
+```
+python -m tools.interim ci --base <SHA>                      # 커밋된 HEAD를 임시 worktree로 꺼내 core·docs·evidence·service
+python -m tools.interim submit --task <ID> --base <main SHA> --hours 2 [--complete] [--kind fix]
+python -m tools.interim intake <번들>                         # PM: 검증 후 refs/inbox/<ID>/<NN>
+python -m tools.interim merge --task <ID> --number <NN>       # PM: --no-ff 병합 + 병합 결과 재검사
+python -m tools.interim publish --out <main 폴더> --until 11-05 --inbox <inbox 폴더>   # PM: 일 마감 전체 검사 + main 번들·진행표
+python -m tools.interim status --until 11-05 --inbox <폴더>   # 진행표(완료·병합됨·제출됨·실패·미착수)
+python -m tools.interim check-ledger                         # 원장(⑧ 대체) 검사
+```
+
 측정 스크립트에서 결과 JSON 쓰기:
 
 ```
@@ -68,6 +80,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 
 - `django` 체크는 `server/manage.py`가 생기기 전까지 빈 단계다(조건 1). B-05-01 병합 때 `ci.yml`의 주석 두 줄로 바꾼다.
 - 외부 서비스 테스트(결정 #12): `django` 작업이 `tests/infra/`·`tests/ads/`를 `PALDO_SERVICE_TESTS=1`로 경로별 실행한다(폴더가 없으면 통과). `core`에서 두 폴더를 빼는 `load_tests`는 폴더를 처음 만드는 태스크(C-06-01, D-05-03)가 그 `__init__.py`에 둔다. 광고 테스트의 Django 설정(`ads/project`, 결정 #1)은 D-05-03이 이 단계에 붙인다.
+- 임시 운영 로컬 CI(`tools/interim.py`)는 Actions와 같은 검사 함수를 부르지만 실행 환경은 각자 노트북이다(Python 3.14 버전은 `.ci.txt`에 기록). 서비스 테스트는 `PALDO_SERVICE_TESTS=1`과 Compose 기동이 있어야 돌고, 대상 영역을 바꿨는데 안 돌렸으면 실패로 본다. 원장 검사는 병합 SHA·부모·흐름만 보고 검토 내용 자체는 보지 않는다.
 - `main` 보호 규칙의 필수 체크 등록과 "일부러 어긴 PR 3개"는 원격 저장소(P-11)가 생긴 뒤 한다. 그 전에는 같은 세 사례를 로컬 git 저장소 테스트로 재현해 둔다(`tests/tools/test_check_evidence.py` `ViolationScenario`, `tests/tools/test_check_docs.py` `ViolationScenarios`).
 - 문서 산출 태스크(규칙 3)는 `산출물:` 줄의 파일 존재를 보고, 태스크에 `- 필수 제목:` 줄이 있을 때만 그 제목이 산출물의 마크다운 제목 줄(`#`~`######`, 코드 블록 밖, 글자 그대로 일치)에 있는지 본다. 본문 문장 속 단어는 제목으로 치지 않는다. `.pptx` 같은 비텍스트 산출물에는 필수 제목을 둘 수 없다.
 - 통합 태스크(INT)에는 `check_docs` 규칙 1~4를 적용하지 않는다(README 10절). `--task INT-xx`는 항상 통과하고, `--all`은 INT를 대상에서 뺀다.
@@ -81,3 +94,4 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | E-05-02 | 11/5 | 처음 작성: `ci.yml` 4체크(결정 #12 경로별 단계, 이미지 태그 tech_stack 기준), `check_evidence`(커밋 메시지 닫기 키워드 금지 포함)·`check_docs`(필수 제목 줄, INT 제외)·`check_secrets`·`evidence_result`, 예외 목록, 자체 테스트(사전 작업, 실제 작업일 11/4) |
+| E-05-02 | 11/5 | 저장소 배정 전 임시 운영 도구 `interim`(로컬 CI·번들 제출·PM 병합·원장·진행표, README 10-1절) 추가 |

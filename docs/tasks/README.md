@@ -8,11 +8,11 @@
 
 ## 1. 담당자
 
-| 흐름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당 범위 | 담당자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 노트북 |
+| 흐름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당 범위&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 노트북&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | A 엔진 | `engine/domain` 규칙·NPC·결정 층 최적화 | (결정 대기 P-01) | (P-01) |
 | B 웹·API | `server/`, `web/`, 광고 지면 연동·웹소켓 중계, 실제 이미지 에셋 제작(`content/images/` 실제 파일, `tools/assets/pixelize.py`, 11/4 PM 결정) | (P-01) | (P-01) |
-| C 인프라 | `server/infra`, `pipeline/`, `ops/`, 광고 인프라, AWS | (P-01) | (P-01) |
+| C 인프라/파이프라인 | `server/infra`, `pipeline/`, `ops/`, 광고 인프라, AWS | (P-01) | (P-01) |
 | D ML·광고 | `intent/`, `ml/`, `engine/sim`, `ads/` 전체 | (P-01) | (P-01) |
 | E PM | `content/`, `llm/`, 에셋 규격·임시 에셋·검사 도구(`docs/assets/`, `tools/assets/`), 실제 에셋 일괄 검수·교체 확정(E-11-10), AWS 화면 검증(E-11-09), 테스트 운영, 통합 주관 | PM | (P-01) |
 | S 발표 트랙 | `docs/presentation/` 발표 구성·자료·시연 영상·리허설·제출(각 흐름의 트러블·검증 기록을 입력으로 받기만 한다) | (결정 대기 P-24) | - |
@@ -42,16 +42,16 @@
 
 ## 3. 공통 완료 정의 (모든 태스크)
 
-| # | 조건 | 자동&nbsp;확인&nbsp;방법&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| #&nbsp; | 조건&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 자동&nbsp;확인&nbsp;방법&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
-| ① | PR이 `main`에 병합됨. PR 제목에 태스크 ID | GitHub PR 목록 |
-| ② | GitHub Actions 필수 체크 4개 통과: `core`(계약·엔진·ML·광고 도메인 unittest, 비밀정보 검사), `django`(`python manage.py test`, Mongo·MySQL 서비스 컨테이너), `evidence`(PR 본문의 태스크 ID로 증빙 검사, 11절), `docs`(문서화 검사, 10절). Kafka·Spark·Delta를 쓰는 검사는 CI가 아니라 통합(INT)에서 실제 스택으로 판정한다 | PR의 체크 표시(`.github/workflows/ci.yml`, E-05-02) |
+| ① | PR이 `main`에 병합됨. PR 제목에 태스크 ID<br>저장소 배정 전: 10-1절 임시 대체(원장 행 + 병합 SHA가 `main`에 포함) | GitHub PR 목록 |
+| ② | GitHub Actions 필수 체크 4개 통과: `core`(계약·엔진·ML·광고 도메인 unittest, 비밀정보 검사), `django`(`python manage.py test`, Mongo·MySQL 서비스 컨테이너), `evidence`(PR 본문의 태스크 ID로 증빙 검사, 11절), `docs`(문서화 검사, 10절). Kafka·Spark·Delta를 쓰는 검사는 CI가 아니라 통합(INT)에서 실제 스택으로 판정한다<br>저장소 배정 전: 10-1절 임시 대체(제출·병합 때 로컬 CI 통과) | PR의 체크 표시(`.github/workflows/ci.yml`, E-05-02) |
 | ③ | 증빙 문서 `paldo/docs/evidence/<태스크ID>.md` 커밋(양식 4절). 태스크 문서의 **완료 조건 번호마다 한 행**, 모든 행 "통과 = 예" | `python -m tools.check_evidence <태스크ID> --complete`가 통과(4절 검사 규칙) |
 | ④ | **성능 관련 수치는 전부 계측값**이다. Prometheus 지표 또는 측정 스크립트(`tools/perf/`) 출력으로만 쓴다. 추정치·손으로 잰 값은 인정하지 않는다. 측정 결과는 결과 JSON(4절 "결과 JSON 형식", `docs/evidence/perf/<ID>/<이름>.json`)으로 함께 커밋한다 | `check_evidence`가 수치 행의 측정값을 결과 JSON 값과 대조하고, 기준과 비교한 통과 여부를 다시 계산한다(4절 규칙 3) |
 | ⑤ | **동작하는 구성요소는 모두 구조화 로그를 남긴다**(5절 규칙). 새로 만든 서비스·배치·스크립트 포함 | 증빙에 로그 발췌 3줄 이상 + 로그 위치 |
 | ⑥ | 비밀정보(IP, 계정, 비밀번호, 키, 토큰) 미포함. 비밀이 아닌데 걸리는 값은 `tools/secrets_allowlist.txt`에 파일 경로·키 이름·사유를 적는다(규칙은 E-05-02 조건 5) | `python -m tools.check_secrets`(CI) |
 | ⑦ | **문서화**: 태스크의 "문서화" 줄에 적힌 문서를 10절 기준대로 남긴다(트러블 기록, docstring, 계약 문서, 라우팅 문서). 모듈 문서는 흐름별로 **그날 마지막 태스크**의 "모듈 문서 일괄 갱신" 줄에서 한 번에 갱신한다. "문서화(+Nh)"와 "일괄 갱신(+Nh)"이 그 시간이다 | `check_docs --task <ID>`(`--complete`에 포함)와 `check_docs --diff`(CI `docs` 체크) |
-| ⑧ | **PR 승인**: 작성자가 아닌 팀원 1명이 GitHub에서 승인(Approve)한다. 리뷰 시간은 공통 시간의 "PR 리뷰 0.5h"다. 승인 뒤 수정 커밋을 올려도 기존 승인은 유지된다(재승인 부담을 줄이려고 "새 푸시 시 승인 무효화"는 끈다) | `main` 보호 규칙(승인 1명 필수, 관리자도 우회 불가)이 승인 없는 병합을 막는다(E-05-01) |
+| ⑧ | **PR 승인**: 작성자가 아닌 팀원 1명이 GitHub에서 승인(Approve)한다. 리뷰 시간은 공통 시간의 "PR 리뷰 0.5h"다. 승인 뒤 수정 커밋을 올려도 기존 승인은 유지된다(재승인 부담을 줄이려고 "새 푸시 시 승인 무효화"는 끈다)<br>저장소 배정 전: 10-1절 임시 대체(다른 흐름의 검토 기록 + 원장) | `main` 보호 규칙(승인 1명 필수, 관리자도 우회 불가)이 승인 없는 병합을 막는다(E-05-01) |
 
 - 가짜 구현으로 통과한 것은 "착수 완료"다. 진짜로 교체해 계약 테스트를 다시 통과해야 완료로 센다(`docs/contracts/parallel_dev.md` 3절).
 - 조건을 만족하지 못하면 완료 처리하지 않는다. 대신 증빙 맨 위에 `상태: 실패`와 원인·재시도 계획을 남겨 병합할 수 있다(형식 검사 `--format`만 통과). 이 문서는 **완료 검사 `--complete`를 통과하지 못한다.** 스탠드업에서 PM이 재배치를 정한다.
@@ -61,7 +61,7 @@
 
 **가짜 → 진짜 교체표** (받는 쪽은 왼쪽으로 개발하고, 교체 때 코드를 고치지 않는다)
 
-| 가짜·임시&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 진짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 교체&nbsp;태스크&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 교체 확인 |
+| 가짜·임시&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 진짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 교체&nbsp;태스크&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 교체 확인&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | `ScriptedGameEngine` | A 엔진 | A-05-02 → B | B-05-02 테스트가 엔진만 바꿔 통과 |
 | `InMemoryGameRepository` | Mongo 저장소 | C-06-01 → B | 같은 시나리오 테스트 재사용 |
@@ -73,7 +73,7 @@
 | 로컬 `mlruns/` | MLflow | C-09-01 → D | 필수 태그 없으면 등록 실패 |
 | **임시 에셋**(실제 파일과 같은 경로·이름·규격, manifest `placeholder: true`) | 실제 에셋(B `[에셋]` 태스크, 11/4 PM 결정으로 E에서 이전) | B-09-05, B-10-05, B-10-06, B-11-03, B-11-04 → E-11-10(일괄 검수·교체 확정, 검수자 E. 탈락분 재생성은 B-11-01) → B·D | 같은 경로 덮어쓰기. B·D는 `manifest.json`·`image_path`로만 참조(B-05-03 4번, D-05-03 7번). E-11-10 5번이 B·D 코드의 이미지 경로 변경 0줄과 화면·광고 테스트 통과를 검사 |
 
-**PM의 감독 방법**: 각 태스크에 대해 (1) PR 병합 여부(보호 규칙 때문에 병합됐다면 승인 1명 ⑧도 만족) (2) CI 필수 체크 4개 녹색 여부 (3) `check_evidence <ID> --complete` 통과 여부만 본다. 셋 다 예면 완료다. `상태: 실패` 문서, 빠진 조건 번호, 결과 JSON과 다른 수치, 존재하지 않는 커밋 SHA, 빠진 문서는 (3)에서 걸린다. GitHub Issues를 쓰면 이 세 가지가 **이슈가 닫혔는지** 하나로 합쳐진다(11절: 이슈는 `--complete`를 통과한 PR의 병합으로만 닫힌다).
+**PM의 감독 방법**: 각 태스크에 대해 (1) PR 병합 여부(보호 규칙 때문에 병합됐다면 승인 1명 ⑧도 만족) (2) CI 필수 체크 4개 녹색 여부 (3) `check_evidence <ID> --complete` 통과 여부만 본다. 셋 다 예면 완료다. `상태: 실패` 문서, 빠진 조건 번호, 결과 JSON과 다른 수치, 존재하지 않는 커밋 SHA, 빠진 문서는 (3)에서 걸린다. GitHub Issues를 쓰면 이 세 가지가 **이슈가 닫혔는지** 하나로 합쳐진다(11절: 이슈는 `--complete`를 통과한 PR의 병합으로만 닫힌다). 저장소 배정 전에는 10-1절 진행표(`python -m tools.interim status`)의 `완료`로 본다.
 
 ## 4. 증빙 문서 양식 (`docs/evidence/<ID>.md`)
 
@@ -265,6 +265,12 @@
 - 로컬 기본 브랜치 이름 `master` → `main`(11/5 PM 결정, 원격 `main`과 일치). 증빙·트러블의 "master <SHA>" 표기는 당시 기록이라 그대로 둔다.
 - Python 3.14 단일(11/5 PM): CI `core`·`django` 등 모든 작업과 엔진·계약 코드도 3.14(3.12 겸용 폐지). VM은 OS 기본 Python 대신 3.14 컨테이너 이미지나 별도 설치본을 쓰고, Spark 실행기 Python 일치는 C-07-01 6번에서 확인.
 
+**확정된 결정 (11/5 PM, 저장소 배정 전 임시 운영)** 상세는 10-1절.
+- 저장소 배정 전에는 GitHub가 있어야만 끝나는 상황을 피한다. NAS 공유 폴더로 git 번들 파일을 주고받는다(NAS는 파일 공유만, git은 로컬에서만).
+- 흐름별로 따로 제출한다(`python -m tools.interim submit`, 로컬 CI 통과분만 번들 생성).
+- 병합과 통합 테스트는 PM만 한다(`intake`·`merge`·`publish`). ⑧은 다른 흐름의 검토 기록과 원장(`docs/ops/interim_ledger.md`)으로 대체한다.
+- 줄바꿈은 `.gitattributes`로 LF 고정(Windows 스크립트만 CRLF, 이미지·번들은 바이너리). 기존 파일 재정규화 대상 0건.
+
 ## 8. 기획서 → 태스크 추적표 (빠진 절 없음)
 
 | 기획서 절 | 태스크 |
@@ -381,6 +387,85 @@
 
 통합 태스크(INT-xx)에는 검사 규칙 1~4를 적용하지 않는다(11/4 PM 결정). INT-xx의 문서는 판정 결과(`docs/evidence/INT-xx.md`)이고, 미통과 항목의 원인은 담당 흐름의 트러블 기록에 남긴다. 시간은 주관 태스크(E-07-03, E-09-04, E-11-01)에 들어 있다.
 
+## 10-1. 저장소 배정 전 임시 운영 (11/5 PM 결정)
+
+**기간**: 시작 커밋 `<시작 SHA: 이 절을 병합한 뒤 PM이 기입>`부터 교육기관 저장소 배정(P-11) 후 아래 "전환" 6단계까지. 그 뒤로는 3절·11절 원래 규칙만 쓴다. GitHub가 있어야만 끝나는 조건은 태스크 문서에 **(저장소 배정 후)** 표시가 있고, 배정 전에는 판정하지 않는다(그 태스크는 진행표에서 `병합됨`으로 남는다).
+
+**원칙**: NAS는 파일 공유만 한다(NAS에서 git 작업 안 함). git은 각자 노트북에서만 쓴다. 흐름(A~E, S)마다 따로 제출하고, **병합·통합 테스트는 PM만** 한다. 주고받는 형식은 git 번들(`git bundle`) 파일이다. 도구는 `python -m tools.interim`(설명 [ci 모듈 문서](../modules/ci.md)).
+
+**1. 공유 폴더**(경로·계정은 PM이 따로 알려 준다. 저장소·문서에 적지 않는다)
+
+| 폴더 | 쓰는 사람 | 내용 |
+|---|---|---|
+| `inbox/<흐름>/` | 그 흐름만 | 제출 번들 `<ID>_<NN>_<HEAD SHA 12자>.bundle`과 같은 이름의 `.ci.txt` |
+| `main/` | PM만 | main 번들 `main_<MMDD>_<HHMM>_<SHA12>.bundle`, 진행표 `status_<MMDD>_<HHMM>.md` |
+| `review/<흐름>/` | 검토하는 흐름 | 검토 기록 `<ID>_<NN>.review.txt` |
+
+- 한 폴더에는 한 사람만 쓴다. NAS로 복사할 때는 `<이름>.part`로 복사를 끝낸 뒤 이름을 바꾼다(`.part`는 도구가 읽지 않는다).
+- 처음 받기: `git clone -b main <main 번들>`. 이후 새 main 번들이 올라오면 `git fetch <main 번들> main` 뒤 `git merge --ff-only FETCH_HEAD`(main에서). 번들 이름의 SHA12가 다음 제출의 base다.
+
+**2. 제출**(각 흐름)
+1. 받은 main에서 `task/<ID>` 브랜치를 만들어 작업하고 **전부 커밋**한다.
+2. `python -m tools.interim submit --task <ID> --base <받은 main SHA> --hours <실제 h> [--complete] [--kind fix]`
+   - 커밋하지 않은 변경·추적 안 된 파일이 있으면 거부한다.
+   - HEAD를 임시 `git worktree`로 꺼내 로컬 CI(아래 3)를 돌고 작업 트리를 지운다.
+   - 통과하면 `out/interim/`(또는 `--out`)에 base..`task/<ID>` 번들을 만들고 `git bundle verify`, 같은 이름의 `.ci.txt`(단계별 결과, 대상·base SHA, 시각, Python 버전, 번들 SHA-256)를 쓴다.
+3. 두 파일을 `inbox/<흐름>/`에 `.part`로 복사한 뒤 이름을 바꾼다.
+4. 다시 제출하면 번호(`NN`)가 하나 오른다(출력 폴더와 `--seen <공유 폴더의 자기 inbox>`의 최대 번호 + 1). 이전 번들은 지우지 않고, **가장 큰 번호만 유효**하다. 강제 푸시에 해당하는 일은 없다.
+- PR 본문 대신 제출 인자가 정보를 준다: 태스크 ID(`--task`), 완료 제출(`--complete`, PR의 `Closes`), 실제 소요 시간(`--hours`), 수정 제출(`--kind fix`, `fix` PR·라벨 대신).
+
+**3. 로컬 CI**(`python -m tools.interim ci --base <SHA>`, 커밋된 커밋만 검사. CI 4체크 대체, 3절 ②)
+
+| 단계&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 내용&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+|---|---|
+| core | `python -m unittest discover -s tests -t .`, `check_secrets` |
+| docs | `check_docs --diff <base>`(규칙 5·6) |
+| evidence | `--complete`면 `check_evidence <ID> --complete`, 아니면 바뀐 증빙 `--format`. base 이후 커밋 메시지의 닫기 키워드 금지(11절). `--hours` 숫자 형식 |
+| service | `PALDO_SERVICE_TESTS=1`이면 `tests/infra`·`tests/ads`·`server/manage.py test`. `server/`·`ads/`·`tests/infra/`·`tests/ads/`를 바꿨는데 서비스 테스트를 안 돌렸으면 **실패**(Compose를 띄우고 다시) |
+
+**4. PM 병합**(PM 노트북의 `main`)
+1. `python -m tools.interim intake <번들>`: 이름·`.ci.txt` 통과·SHA-256·`git bundle verify`·대상 SHA를 임시 참조에서 확인한 뒤에만 `refs/inbox/<ID>/<NN>`을 만든다(같은 번호를 다른 커밋으로 덮어쓰지 않는다).
+2. 선행·인계 순서대로 `python -m tools.interim merge --task <ID> --number <NN> [--complete --hours <h>]`: `--no-ff` 병합(메시지 `Task: <ID> (제출 <NN>)`, 닫기 키워드 없음. 받아 둔 더 큰 번호가 있으면 거부) 후 병합 결과를 base = 병합 전 SHA로 로컬 CI를 다시 돈다(충돌 해결분도 검사된다). 충돌이면 도구가 멈추고, 해결·커밋 뒤 `interim ci --base <병합 전 SHA>`로 검사한다.
+3. 재검사 실패면 PM만 `git reset --hard <병합 전 SHA>`로 되돌린다. **위험**: 이미 main 번들로 공개한 커밋을 되돌리면 팀원 저장소와 갈라진다. 그래서 공개 전(같은 날 마감 전)에만 쓰고, 공개 뒤에는 되돌림 커밋(`git revert -m 1`)을 쓴다.
+4. 일 마감: `python -m tools.interim publish --out <main 폴더> --until <오늘> --inbox <inbox 폴더>`가 unittest·`check_secrets`·`check_docs --all`·원장 검사를 통과해야 main 번들과 진행표를 쓴다(공유 폴더에 `.part`로 쓴 뒤 이름을 바꾼다).
+
+**5. ⑧(PR 승인) 대체**
+- 검토자는 **작성 흐름과 다른 흐름**이다. `반려`면 병합하지 않고 재제출을 받는다(원장의 병합 행은 판정 `통과`만). 받은 번들을 `git fetch <번들> task/<ID>`로 보고, `review/<검토 흐름>/<ID>_<NN>.review.txt`에 검토 흐름, 확인한 HEAD SHA(40자), 판정(`통과`/`반려`), 메모를 쓴다.
+- PM은 병합 뒤 [`docs/ops/interim_ledger.md`](../ops/interim_ledger.md) 원장에 한 행을 더한다(칸: 태스크, 작성 흐름, 제출 번호, 제출 HEAD SHA, 검토 흐름, 검토 SHA, 판정, 병합 SHA, 로컬 CI).
+- `python -m tools.interim check-ledger`: 검토 흐름 ≠ 증빙 `작성자(흐름)`, 검토 SHA = 제출 HEAD, 병합 SHA가 main에 포함되고 부모에 제출 HEAD가 있음, 로컬 CI `통과`. `[검수]` 태스크의 4절 규칙 5는 그대로 따로 적용한다.
+
+**6. 진행표**(`python -m tools.interim status --until <날짜> [--inbox <폴더>]`, PM 감독 방법 3절의 대체)
+
+| 상태 | 판정 |
+|---|---|
+| 완료 | `check_evidence --complete` 통과 + 원장 행 검사 통과(병합 SHA가 main에 있음, 검토 `통과`) |
+| 병합됨 | 원장의 병합 SHA가 main에 있으나 완료가 아님 |
+| 제출됨 | inbox에 번들만 있음 |
+| 실패 | 증빙에 `상태: 실패` |
+| 미착수 | 위 어디에도 없음 |
+
+**GitHub 기능의 임시 대체**
+
+| 원래(배정 후) | 배정 전 |
+|---|---|
+| PR 병합(①) | 원장 행 + 병합 SHA가 main에 포함 |
+| Actions 4체크(②) | 제출·병합 때 로컬 CI 통과(`.ci.txt`, 원장 로컬 CI 칸) |
+| PR 승인(⑧) | 다른 흐름의 검토 기록 + 원장(위 5) |
+| `fix` PR·라벨 | `--kind fix` 제출(병합 메시지 `, fix`) |
+| `bug` 이슈 | 원장 "결함" 절 표(ID, 영역, 내용, 상태, 보류 사유) |
+| 이슈 닫힘 | 진행표 `완료` |
+
+**원장 보존**: 원장은 저장소 안 문서라 배정 후에도 지우거나 고치지 않는다(행 추가만). 병합 SHA는 이력 재작성이 없으므로 원격에서도 그대로 유효하다.
+
+**전환**(배정 받은 날, PM)
+1. 제출을 멈춘다(공유 폴더에 공지).
+2. 전환 SHA를 정하고 그 SHA에서 전체 로컬 CI(`interim ci --base <시작 SHA>`), `check_docs --all --until <오늘>`, `check-ledger`를 통과시킨다.
+3. `main`을 원격에 푸시하고 곧바로 보호 규칙(3절 ⑧, E-05-01 1번)을 건다.
+4. `python -m tools.tasks_to_issues --apply --repo <OWNER/NAME>`(E-05-01 4번).
+5. 진행표 `완료` 태스크의 이슈는 원장 행과 병합 SHA를 코멘트로 남기고 닫는다. **11절 "이슈를 손으로 닫지 않는다"의 명시적 예외**이고, INT-11 #11 대조에서는 원장 행이 있는 이슈를 손으로 닫힌 이슈로 세지 않는다.
+6. 이후는 원래 규칙(PR·Actions·승인). 진행 중이던 `task/<ID>` 브랜치는 원격에 푸시해 PR로 낸다.
+7. 이력은 재작성하지 않는다(원장의 병합 SHA가 원격에서도 그대로 유효해야 한다).
+
 ## 11. GitHub Issues로 관리하기
 
 **원본 원칙**: 태스크 정의(할 일, 완료 조건, 시간, 선행)의 원본은 **이 저장소의 마크다운**이다. 조건을 바꾸려면 마크다운을 고치는 PR을 낸다(계약 변경과 같은 승인 규칙). GitHub Issues는 **진행 관리**(담당자, 상태, 토론, 막힌 것)에 쓴다. 이슈 본문은 `tools/tasks_to_issues.py`가 마크다운에서 만들므로 이슈 본문을 직접 고치지 않는다(다음 동기화 때 덮어쓴다). 토론과 진행 메모는 이슈 **댓글**에 쓴다.
@@ -425,7 +510,7 @@ python -m tools.hours_report --until 11-05                     # 계획 대비 �
 - PR 본문은 워크플로에서 환경 변수(`PR_BODY`)로 넘기고 셸 명령에 직접 넣지 않는다. 변경 파일 비교 기준은 PR의 base 커밋(`github.event.pull_request.base.sha`)이다.
 - **push 이벤트**(병합 뒤 `main`에 올라온 커밋)에는 PR 본문이 없으므로 테스트 체크(`core`, `django`)와 "그 push에서 바뀐 증빙"의 `--format`만 돌린다(비교 기준은 `github.event.before`). `evidence`의 PR 본문 검사와 `docs --diff`는 `pull_request`에서만 돌린다.
 - 병합에는 작성자가 아닌 1명의 승인이 필요하다(3절 ⑧).
-- 이슈를 손으로 닫지 않는다. `check_evidence`는 GitHub를 조회하지 않으므로, 손으로 닫힌 태스크 이슈는 INT-11 #11에서 닫힌 태스크 이슈 목록(`gh issue list --state closed --label type:task`)과 `check_evidence --all --until` 통과 목록을 대조해 찾는다.
+- 이슈를 손으로 닫지 않는다(예외: 저장소 배정 시 10-1절 전환 5단계). `check_evidence`는 GitHub를 조회하지 않으므로, 손으로 닫힌 태스크 이슈는 INT-11 #11에서 닫힌 태스크 이슈 목록(`gh issue list --state closed --label type:task`)과 `check_evidence --all --until` 통과 목록을 대조해 찾는다.
 - **태스크 ID를 바꾸거나 태스크를 다른 파일로 옮기면**(예: 11/5 발표 트랙 분리, E 에셋 재배치) 동기화는 새 ID 이슈를 만들고 옛 이슈는 건드리지 않는다. `--apply`가 "원본에 없는 열린 이슈" 목록을 출력하므로, PM이 옛 이슈에 새 이슈 링크를 댓글로 남기고 닫는다(이 경우만 손으로 닫는다. 옛 ID는 태스크 문서에 없으므로 `check_evidence --all` 대상이 아니다). 이슈를 처음 만든 뒤에는 ID를 바꾸지 않는 것이 원칙이다.
 
 **PM 감독 방법**(매일)

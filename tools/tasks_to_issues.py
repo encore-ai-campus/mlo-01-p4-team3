@@ -39,7 +39,7 @@ MILESTONES = [
     ("통합 3 (11/11)", "11-11"),
     ("발표 (11/12)", "11-12"),
 ]
-FLOW_NAMES = {"A": "A 엔진", "B": "B 웹·API", "C": "C 인프라", "D": "D ML·광고", "E": "E PM", "S": "발표 트랙",
+FLOW_NAMES = {"A": "A 엔진", "B": "B 웹·API", "C": "C 인프라/파이프라인", "D": "D ML·광고", "E": "E PM", "S": "발표 트랙",
               "INT": "통합"}
 # 흐름 → 라벨. 발표 트랙(S)은 담당이 P-24로 정해질 때까지 흐름 라벨 대신 트랙 라벨을 쓴다.
 FLOW_LABELS = {"A": "flow:A", "B": "flow:B", "C": "flow:C", "D": "flow:D", "E": "flow:E", "S": "flow:presentation"}

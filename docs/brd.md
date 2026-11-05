@@ -52,13 +52,13 @@
 
 흐름 A~E의 실제 담당자는 결정 대기(P-01)다. 이 문서는 역할 ID로만 부른다.
 
-| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이해관계자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 필요한 업무 결과 |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이해관계자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 필요한 업무 결과&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | `STK-PLAYER-001` | 플레이어(파일럿 내부망 테스트 참가자, 출시 후 일반 이용자) | 규칙을 이해하고 10분 안팎에 한 판을 끝낸다. 자유 입력과 버튼으로 원하는 행동을 하고, 패배해도 납득할 근거를 확인한다. 개인정보를 내지 않고 참여하며 가명 ID로 삭제를 요청할 수 있다. |
 | `STK-PM-001` | PM(흐름 E: 콘텐츠·LLM·이미지 에셋 규격·검수·사용자 테스트·통합) | 범위를 줄이지 않고 11/12에 파일럿을 완료한다. 태스크 완료 여부만 감독해도 합격선이 충족되는지 판단할 수 있다. 사용자 테스트를 운영하고 결과를 보고한다. |
 | `STK-ENGINE-001` | 엔진 담당(흐름 A) | 외부 의존 없는 도메인 엔진(규칙·승패·NPC 결정)을 만들고, 고정 시드로 같은 판을 재현한다. 시뮬레이션으로 밸런스를 맞춘다. |
 | `STK-WEB-001` | 웹·API 담당(흐름 B, 실제 이미지 에셋 제작 포함) | 엔진·저장소·의도 해석·LLM·광고를 한 요청 흐름으로 묶고, 화면에는 플레이어에게 허용된 정보만 보낸다. 게임 API 지연 합격선을 지킨다. 실제 이미지 에셋을 규격·스타일 가이드대로 만든다(11/4 PM 결정). |
-| `STK-INFRA-001` | 인프라·데이터 담당(흐름 C) | VM·AWS 배포, 저장소·이벤트·배치 파이프라인, 관측과 장애 복구, 개인정보 삭제 처리를 맡는다. 로그·지표로 상태를 확인할 수 있게 한다. |
+| `STK-INFRA-001` | 인프라/파이프라인 담당(흐름 C) | VM·AWS 배포, 저장소·이벤트·배치 파이프라인, 관측과 장애 복구, 개인정보 삭제 처리를 맡는다. 로그·지표로 상태를 확인할 수 있게 한다. |
 | `STK-MLAD-001` | ML·광고 담당(흐름 D) | 의도 해석기, 씐 자 확률 모델, 재학습 관문, 밴딧, 광고 서버(경매·예산·판정·대사)를 만들고 기준선 대비 수치로 효과를 보인다. |
 | `STK-ADV-001` | 광고주(파일럿에서는 시범 운영 소재와 합성 캠페인으로 대리. 실제 광고주 없음) | 예산 안에서만 과금되고, 무효 노출·클릭에는 과금되지 않으며, 청구 내역이 원장과 건별로 맞는다. 성과(노출·클릭·eCPM·소진율)를 확인할 수 있다. |
 | `STK-PRES-001` | 데모 자료 트랙(담당 결정 대기 P-24) | 각 흐름의 검증 기록을 입력으로 받아 25분 사업 검토 데모(시연 포함)를 구성한다. |
@@ -68,7 +68,7 @@
 
 합격선의 출처는 기획서 1.1절(2026-11-04 확정)이다. 성능 수치는 Prometheus 지표 또는 측정 스크립트 출력만 인정하고, 추정치는 인정하지 않는다. 확인하지 못한 항목은 PASS가 아니라 `not_verified`로 기록한다.
 
-| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 업무&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 측정 방법(합격선) | 이해관계자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 업무&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 측정 방법(합격선)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이해관계자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | `BR-OBJ-001` | 한 판이 처음부터 끝까지 성립하고, 승패가 한쪽으로 쏠리지 않는다. | ① 6인·창귀 1 판, 피해 장소 공개 상태에서 대역 "논리 우선 봇" 승률 40~60%(1,000판 이상, 95% 구간 보고)<br>② 사람 판 소요 시간 중앙값 10분 이하<br>③ 웹에서 LLM 없이 한 판 완주. 6인 외 프리셋은 공개 기준(P-08)을 통과한 것만 연다 | `STK-PLAYER-001`, `STK-ENGINE-001` |
 | `BR-OBJ-002` | 파일럿 사용자 테스트(내부망)로 실제 플레이 데이터와 반응을 모은다. | 목표: 참가자 30명, 1인 평균 4판(약 120판, 가명 ID 기준). 필수 조건:<br>① 사전·정식 테스트를 실제로 운영하고 참가자 수·판 수·완주율을 집계한다. 목표 미달이면 실제 수와 원인을 보고한다<br>② 판 종료 설문 응답률을 집계해 보고한다(목표치는 `BR-OQ-002`)<br>③ 설문 평균 3.5(5점)는 목표값이며 조건은 구현·수집·리포트다. 미달이면 원인 분석을 남긴다 | `STK-PM-001`, `STK-PLAYER-001` |
@@ -170,7 +170,7 @@
 
 결정 대기 항목(P-xx)은 `tasks/README.md` 7절이 원본이다. 여기서는 업무 목표에 영향을 주는 것만 연결한다.
 
-| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 질문 | 영향받는&nbsp;목표&nbsp; | 원본&nbsp;&nbsp;&nbsp;&nbsp; | 기한&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 질문&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 영향받는&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 원본&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 기한&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
 | `BR-OQ-001` | 담당자 실명과 흐름·노트북 배정 | 전체 | P-01 | 11/5 09:00 |
 | `BR-OQ-002` | 판 종료 설문 응답률의 목표치(없으면 집계·보고만) | `BR-OBJ-002` | 신규 | 11/6 12:00(제안) |
@@ -203,7 +203,7 @@
 - 확인되지 않은 항목은 PASS가 아니라 `not_verified`로 기록한다.
 - baseline 이후의 변경은 아래 표에 남긴다.
 
-| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 버전 | 변경 | 근거&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 버전&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 변경&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 근거&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 2026-11-04 | v1 | 최초 작성(문서 간 정합성 검토 반영) | 기획서 v1.1, 계약 문서, 결정 대기 목록 |
 | 2026-11-04 | v1 | 사업 문서로 다시 씀(baseline 전 수정): 신규 웹게임 사업 파일럿으로 배경 재작성, 사업 모델(1.1)·시장 가정(1.2, `BR-ASM-007~011`), 광고 수익 지표(`BR-OBJ-010`), 출시 후 지표(3.1, `BR-KPI-001~003`), 위험 `BR-RISK-013·014`, 미결 질문 `BR-OQ-019~021` 추가. `STK-PRES-001`은 데모 자료 트랙, `STK-EVAL-001`은 사업 의사결정자로 의미 변경(ID 유지) | PM 결정(11/4) |

@@ -91,7 +91,7 @@
 
 - **메시지**(JSON 텍스트 프레임):
 
-| 방향&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 형식 | 뜻&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 방향&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 형식&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 뜻&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | 브라우저 → 게임 웹 | `{"type": "hello", "dropped": 0}` | 연결·재연결 직후 1회. `dropped`는 직전에 보내지 못하고 버린 비콘 수(0 이상 정수) |
 | 브라우저 → 게임 웹 | `{"type": "ad.impression", "msg_id": "<UUID>", "token": "<serve 토큰>", "visible_ratio": 0.0~1.0, "visible_ms": 정수, "occurred_at_ms": 정수}` | 노출 비콘(면적 50% 이상 1초 이상, serve마다 1회). `msg_id` 외의 필드는 ads.md 3절 비콘 본문과 같다 |

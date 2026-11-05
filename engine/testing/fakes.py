@@ -3,7 +3,7 @@
 용도: 각 흐름이 다른 흐름의 완성을 기다리지 않고 개발·테스트한다(docs/contracts/parallel_dev.md).
 - A(엔진): FakeSuspicionModel, FixtureContentSource
 - B(웹·API): ScriptedGameEngine, InMemoryGameRepository, FakeIntentParser, FakeLineRenderer
-- C(인프라): ListEventSink, InMemoryGameRepository를 기준 동작으로 비교
+- C(인프라/파이프라인): ListEventSink, InMemoryGameRepository를 기준 동작으로 비교
 - D·E: 계약 테스트의 기대 동작 기준
 """
 from __future__ import annotations

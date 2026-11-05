@@ -16,7 +16,7 @@ body:
     id: flow
     attributes:
       label: 흐름
-      options: ["A 엔진", "B 웹·API", "C 인프라", "D ML·광고", "E PM", "통합"]
+      options: ["A 엔진", "B 웹·API", "C 인프라/파이프라인", "D ML·광고", "E PM", "통합"]
     validations: { required: true }
   - type: input
     id: date
