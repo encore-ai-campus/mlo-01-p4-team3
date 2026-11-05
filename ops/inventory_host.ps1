@@ -6,7 +6,7 @@ param([string]$VmRoot = "$env:USERPROFILE\Documents\Virtual Machines")
 
 # 3차 VM 폴더 이름 → 4차 논리 서버명(기획서 6.3)
 $Logical = @{
-  'pj3-bastion' = 'bastion-01'; 'pj3-webapp' = 'app-01'; 'pj3-ad-server' = 'ad-01'; 'pj3-monitor' = 'metrics-01'
+  'bastion' = 'bastion-01'; 'pj3-bastion' = 'bastion-01'; 'pj3-webapp' = 'app-01'; 'pj3-ad-server' = 'ad-01'; 'pj3-monitor' = 'metrics-01'
   'pj3-spark-master' = 'spark-master-01'; 'pj3-spark-worker01' = 'spark-worker-01'; 'pj3-spark-worker02' = 'spark-worker-02'
   'pj3-spark-worker03' = 'spark-worker-03'; 'pj3-nifi' = 'nifi-01'; 'pj3-kafka01' = 'kafka-01'; 'pj3-kafka02' = 'kafka-02'
   'pj3-kafka03' = 'kafka-03'; 'pj3-mysql01' = 'mysql-01'; 'pj3-mysql02' = 'mysql-02'; 'pj3-mysql03' = 'mysql-03'
@@ -16,7 +16,9 @@ $Logical = @{
 
 $vmrun = "C:\Program Files\VMware\VMware Workstation\vmrun.exe"
 if (-not (Test-Path $vmrun)) { $vmrun = "C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe" }
-$running = @(); if (Test-Path $vmrun) { $running = & $vmrun list }
+$running = $null
+if (Test-Path $vmrun) { $out = & $vmrun list 2>$null; if ($LASTEXITCODE -eq 0) { $running = $out } }
+if ($null -eq $running) { "경고: vmrun 실행 목록을 얻지 못했다. 기동 칸은 '알 수 없음'이다(VMware 설치 위치 확인)." }
 
 function Get-AllocatedGB([string]$dir) {
   # 디스크 설명 파일(작은 .vmdk)의 RW 섹터 수 합. 스냅샷 델타(-000001.vmdk)는 제외.
@@ -40,13 +42,14 @@ Get-ChildItem $VmRoot -Directory -ErrorAction SilentlyContinue | ForEach-Object 
   $alloc = Get-AllocatedGB $_.FullName
   $vmsd = Get-ChildItem $_.FullName -Filter *.vmsd | Select-Object -First 1
   $snap = 0; if ($vmsd) { $snap = (Get-Content $vmsd.FullName | Select-String '^snapshot\d+\.uid').Count }
-  $on = if ($running -match [regex]::Escape($vmx.FullName)) { '켜짐' } else { '꺼짐' }
+  $on = if ($null -eq $running) { '알 수 없음' } elseif ($running -match [regex]::Escape($vmx.FullName)) { '켜짐' } else { '꺼짐' }
   $name = if ($Logical.ContainsKey($_.Name)) { $Logical[$_.Name] } else { "(프로젝트 밖) $($_.Name)" }
   if ($Logical.ContainsKey($_.Name)) { $sumAlloc += $alloc; $sumUsed += $used }
   "{0} | {1} | {2} | {3} | {4} | {5} | {6} | {7}" -f $name, $on, $cpu, [math]::Round([int]$mem / 1024, 1), $alloc, $used, $snap, $_.Name
 }
-$d = Get-PSDrive C
-"호스트 C: 여유 {0}GB / 전체 {1}GB" -f [math]::Round($d.Free / 1GB, 1), [math]::Round(($d.Used + $d.Free) / 1GB, 1)
+$drv = (Resolve-Path $VmRoot -ErrorAction SilentlyContinue).Drive
+if (-not $drv) { $drv = Get-PSDrive C }
+"호스트 {0}: 드라이브(VM 폴더 위치) 여유 {1}GB / 전체 {2}GB" -f $drv.Name, [math]::Round($drv.Free / 1GB, 1), [math]::Round(($drv.Used + $drv.Free) / 1GB, 1)
 "프로젝트 VM 디스크 합계: 할당 {0}GB, 호스트 점유 {1}GB" -f $sumAlloc, [math]::Round($sumUsed, 1)
 $os = Get-CimInstance Win32_OperatingSystem
 "호스트 RAM: 전체 {0}GB, 여유 {1}GB" -f [math]::Round($os.TotalVisibleMemorySize / 1MB, 1), [math]::Round($os.FreePhysicalMemory / 1MB, 1)

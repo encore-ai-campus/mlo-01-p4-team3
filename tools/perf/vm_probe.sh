@@ -38,11 +38,13 @@ disk_total_gb="${disk_total_gb:-0}"; disk_used_gb="${disk_used_gb:-0}"; disk_ava
 services_json=""
 if command -v systemctl >/dev/null 2>&1; then
   for key in kafka mysql mongod spark nifi garage prometheus grafana docker; do
-    units="$(systemctl list-units --type=service --all --no-legend --plain 2>/dev/null | awk '{print $1}' | grep -i "$key" | head -n3 | tr '\n' ' ')"
+    # 불러온 유닛(list-units)과 설치된 유닛 파일(list-unit-files)을 모두 본다. 부팅 뒤 한 번도 안 띄운 서비스도 나오게.
+    units="$( { systemctl list-units --type=service --all --no-legend --plain 2>/dev/null | awk '{print $1}'; systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}'; } | grep -i "$key" | grep -v '@\.service$' | sort -u | head -n3 | tr '\n' ' ')"
     [ -z "$units" ] && continue
     for u in $units; do
       st="$(systemctl is-active "$u" 2>/dev/null || true)"
-      services_json+="{\"unit\":\"$(json_escape "$u")\",\"active\":\"$(json_escape "$st")\"},"
+      en="$(systemctl is-enabled "$u" 2>/dev/null || true)"
+      services_json+="{\"unit\":\"$(json_escape "$u")\",\"active\":\"$(json_escape "$st")\",\"enabled\":\"$(json_escape "$en")\"},"
     done
   done
 fi
