@@ -18,7 +18,7 @@
 
 ### 에셋 범위
 
-| 묶음&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 수량&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 콘텐츠&nbsp;ID&nbsp;대응&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 쓰는&nbsp;곳&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 묶음 | 수량 | 콘텐츠 ID 대응 | 쓰는 곳 |
 |---|---|---|---|
 | 인물 초상 | 무당 2(여 `mudang_f`·남 `mudang_m`, 플레이어가 새 게임 화면에서 고름, 11/4 PM 결정) + 주민 풀 11명 이상(E-08-02와 같은 수) | 인물 ID 1:1(무당은 변형 ID 2개) | B 회의·진술표·복기 화면(B-10-02), 회의·밤 VN 연출(B-10-07) |
 | 표정 변형 | 첫 플레이 8명(무당 2 + 첫 플레이 인물 6) × 3종(기쁨·당황·슬픔) = 24(11/5 PM 결정 P-20). 평상시는 기본 sprite, 확장 주민 풀은 기본 1장만. 기본 sprite를 편집 입력으로 얼굴만 바꿔 만든다 | 인물 ID × 표정 ID(`docs/assets/spec.md` 8·9절) | 회의·밤 VN 연출(B-10-07), 공개 사건에만 반응(spec 7절 표정 매핑) |
@@ -49,7 +49,7 @@
 - **개별 에셋 태스크**(A-09-05, A-10-05, A-10-06, A-11-04, S-11-01)는 **에셋2~4**(자동 검사)로 완료하고, 증빙 "수치" 표에 에셋2~4 행을 남긴다. 에셋1·5는 판정하지 않는다.
 - **에셋1·5**는 11/11 **E-11-10**에서 검수자 E가 모든 실제 파일을 한 번에 판정한다(11/4 PM 결정, README 3절 "에셋 검수는 한 번에 한다"). 실제 에셋 작성자가 A이므로 검수자는 E다.
 
-| #&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 조건&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 자동&nbsp;확인&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| # | 조건 | 자동 확인 |
 |---|---|---|
 | 에셋1 | 스타일 가이드(`docs/assets/style_guide.md`, 1장)를 따른다: 화풍(반실사 일러스트), 빛·선, 기준 색(코드값), 인물 구도·기준선, 배경 처리, 금지 요소, 같은 화풍 유지 기록. 판정은 가이드 8절 체크리스트 | **E-11-10 일괄 검수** 기록(검수자 E) |
 | 에셋2 | 생성 기록: 파일마다 도구, 모델·버전, 프롬프트 전문, 부정 프롬프트, 시드, 생성일을 `SOURCES.md` 표에(라이선스 확인은 하지 않는다. 머리말에 도구 이름과 "비상업 교육 프로젝트용 생성물" 한 줄, 11/5 PM 결정). **임시 에셋(manifest `placeholder: true`)은 면제**하고 생성 스크립트·명령만 E-05-05 증빙에 남긴다 | `tools/assets/check_assets.py`가 manifest의 모든 실제 파일(`placeholder: false`)에 기록 행이 있는지 검사 |
@@ -403,7 +403,7 @@ jobs:
 모든 통합은 **실제 스택**(VM의 Mongo·Kafka·Spark·Delta·MySQL·MLflow)에서 판정한다. 가짜 구현으로 통과한 항목은 인정하지 않는다. 항목마다 담당 흐름을 붙였고, 결과는 `docs/evidence/INT-xx.md` 표(항목, 담당, 기준, 측정값, 통과)로 남긴다.
 
 ### INT-07 통합 1 (11/7)
-| #&nbsp; | 항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 기준&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| # | 항목 | 담당 | 기준 |
 |---|---|---|---|
 | 1 | 버튼만으로 6인·창귀 1 판 완주(실제 엔진·웹·Mongo) | A·B·C | 3판 완주, 오류 0 |
 | 2 | 반례: 결선 재동점 무감금, 무당 감금, 점괘·고백 전환, 마지막 씐 자 감금 | A | 시나리오 테스트 + 웹으로 1회씩 재현 |
@@ -416,7 +416,7 @@ jobs:
 | 9 | 모든 구성요소 구조화 로그·`/metrics` 존재, 각 서비스 프로세스의 Python이 3.14(기동 로그나 `python -c "import sys; print(sys.version)"`를 그 프로세스 환경에서 실행, tech_stack.md 11/5 결정) | 전원 | 구성요소 목록 대비 누락 0, 3.14 아닌 프로세스 0 |
 
 ### INT-09 통합 2 (11/9)
-| #&nbsp; | 항목 | 담당&nbsp; | 기준&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| # | 항목 | 담당 | 기준 |
 |---|---|---|---|
 | 1 | **끝에서 끝까지 흐름 1**: 플레이(자유 입력 포함) → 아웃박스 → Kafka → Spark → Delta → 학습 행 → (D) 학습 실행 기록 | 전원 | 한 판의 `game_id`로 각 단계 데이터·로그를 찾아 표로 연결 |
 | 2 | **끝에서 끝까지 흐름 2**: 광고 요청 → serve → 노출 비콘 → 클릭 → 원장 → Kafka → silver·gold → CTR·페이싱 갱신 → 다음 serve에 새 버전 | B·D·C | 한 `serve_id`·`charge_id`로 단계별 기록 연결, 버전 변화 확인 |
@@ -430,7 +430,7 @@ jobs:
 | 10 | 사람 판 소요 시간 중앙값 10분 이하 | E | E-09-01 |
 
 ### INT-11 통합 3 (11/11)
-| #&nbsp;&nbsp;&nbsp; | 항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 기준&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| # | 항목 | 담당 | 기준 |
 |---|---|---|---|
 | 1 | 프리셋별 리포트(시드·판 수·정책·콘텐츠 버전), 6인 판 승률 40~60% | A·D | A-10-01·D-10-03 재생성 |
 | 2 | 확장 콘텐츠·결말·큰 판 화면 | A·B·E | 11인 판 1판 완주, 한풀이 결말 1회 |

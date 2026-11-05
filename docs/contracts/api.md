@@ -31,7 +31,7 @@
 - `/games/{id}/…`는 그 판을 시작한 가명 ID의 계정만 쓸 수 있다. 다른 계정의 판이나 그 판에 속하지 않은 `attempt_id`·`job_id`는 404다. 이 검사는 3절의 멱등 재요청 응답과 409 판정보다 먼저 한다.
 - 계정 엔드포인트는 Django 인증 폼이며 응용 계층 DTO를 쓰지 않는다. Django 세션 인증, CSRF 검사 유지. 규칙은 [privacy.md](privacy.md) 5절.
 
-| 메서드·경로&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 입력 | 결과&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 메서드·경로 | 입력 | 결과 |
 |---|---|---|
 | GET·POST `/accounts/signup` | 로그인 ID, 비밀번호, 비밀번호 확인, 동의(privacy.md 3절), 초대 코드(`PALDO_SIGNUP_INVITE_CODE`가 있을 때만, 파일럿은 설정 안 함) | 계정 생성, 가명 ID 발급, 로그인 상태로 이동. 가입 속도 제한 초과는 429(privacy.md 5절) |
 | GET·POST `/accounts/login` | 로그인 ID, 비밀번호 | 세션 시작. 실패·잠금 규칙은 privacy.md 5절 |
@@ -91,7 +91,7 @@
 
 - **메시지**(JSON 텍스트 프레임):
 
-| 방향&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 형식&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 뜻&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 방향 | 형식 | 뜻 |
 |---|---|---|
 | 브라우저 → 게임 웹 | `{"type": "hello", "dropped": 0}` | 연결·재연결 직후 1회. `dropped`는 직전에 보내지 못하고 버린 비콘 수(0 이상 정수) |
 | 브라우저 → 게임 웹 | `{"type": "ad.impression", "msg_id": "<UUID>", "token": "<serve 토큰>", "visible_ratio": 0.0~1.0, "visible_ms": 정수, "occurred_at_ms": 정수}` | 노출 비콘(면적 50% 이상 1초 이상, serve마다 1회). `msg_id` 외의 필드는 ads.md 3절 비콘 본문과 같다 |

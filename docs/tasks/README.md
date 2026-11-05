@@ -8,7 +8,7 @@
 
 ## 1. 담당자
 
-| 흐름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당 범위&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 노트북&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 흐름 | 담당 범위 | 담당자 | 노트북 |
 |---|---|---|---|
 | A 엔진 | `engine/domain` 규칙·NPC·결정 층 최적화, 실제 이미지 에셋 제작(`content/images/` 실제 파일, `tools/assets/cutout.py`, 11/5 PM 결정) | (결정 대기 P-01) | (P-01) |
 | B 웹·API | `server/`, `web/`, 광고 지면 연동·웹소켓 중계 | (P-01) | (P-01) |
@@ -42,7 +42,7 @@
 
 ## 3. 공통 완료 정의 (모든 태스크)
 
-| #&nbsp; | 조건&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 자동&nbsp;확인&nbsp;방법&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| # | 조건 | 자동 확인 방법 |
 |---|---|---|
 | ① | PR이 통합 브랜치 `dev`에 병합됨. PR 제목에 태스크 ID<br>저장소 배정 전(11/5 전환으로 끝남): 10-1절 임시 대체(원장 행 + 병합 SHA가 당시 `main`에 포함) | GitHub PR 목록 |
 | ② | GitHub Actions 필수 체크 4개 통과: `core`(계약·엔진·ML·광고 도메인 unittest, 비밀정보 검사, 디렉터리 트리 검사 `check_structure --all`), `django`(`python manage.py test`, Mongo·MySQL 서비스 컨테이너), `evidence`(PR 본문의 태스크 ID로 증빙 검사, 11절), `docs`(문서화 검사, 10절). Kafka·Spark·Delta를 쓰는 검사는 CI가 아니라 통합(INT)에서 실제 스택으로 판정한다<br>저장소 배정 전: 10-1절 임시 대체(제출·병합 때 로컬 CI 통과) | PR의 체크 표시(`.github/workflows/ci.yml`, E-05-02) |
@@ -66,7 +66,7 @@
 
 **가짜 → 진짜 교체표** (받는 쪽은 왼쪽으로 개발하고, 교체 때 코드를 고치지 않는다)
 
-| 가짜·임시&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 진짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 교체&nbsp;태스크&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 교체 확인&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 가짜·임시 | 진짜 | 교체 태스크 | 교체 확인 |
 |---|---|---|---|
 | `ScriptedGameEngine` | A 엔진 | A-05-02 → B | B-05-02 테스트가 엔진만 바꿔 통과 |
 | `InMemoryGameRepository` | Mongo 저장소 | C-06-01 → B | 같은 시나리오 테스트 재사용 |
@@ -159,7 +159,7 @@
 
 ## 6. 합격선 (11/4 PM 확정)
 
-| 항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 합격선 | 확인&nbsp;태스크 |
+| 항목 | 합격선 | 확인 태스크 |
 |---|---|---|
 | 밸런스 | 대역 "논리 우선 봇"의 6인·창귀 1 판 승률 40~60% (1,000판 이상, 95% 구간 보고). **피해 장소 공개 상태에서** 목격 확률·동선 무작위성으로 맞춘다 | A-08-03, A-10-01 |
 | 한 판 소요 시간 | 사람 판 중앙값 10분 이하 | INT-09, E-09-01 |
@@ -473,7 +473,7 @@
 
 **3. 로컬 CI**(`python -m tools.interim ci --base <SHA>`, 커밋된 커밋만 검사. CI 4체크 대체, 3절 ②)
 
-| 단계&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 내용&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 단계 | 내용 |
 |---|---|
 | core | `python -m unittest discover -s tests -t .`, `check_secrets`, `check_structure --diff <base>`(새 폴더가 `docs/contracts/structure.md` 6절 허용 목록 안) |
 | docs | `check_docs --diff <base>`(규칙 5·6) |

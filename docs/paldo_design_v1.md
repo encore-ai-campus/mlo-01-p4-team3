@@ -8,7 +8,7 @@
 
 ## 1. 결정 사항
 
-| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 결정&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이유&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 날짜 | 결정 | 이유 |
 |---|---|---|
 | 2026-11-04 | 주제: 팔도무록 세계관 + 싱글플레이 사회적 추론 | 동시 접속자 없이 한 판이 성립하고, 봇 시뮬레이션으로 초기 데이터를 만들 수 있으며, LLM의 쓰임(NPC 대화)이 분명하다 |
 | 2026-11-04 | v1 방향: 플레이어는 항상 무당(유일한 점술가), NPC끼리만 역할이 바뀐다 | 공개 역할 주장 구도에서 생기는 "사칭 = 확정 패배" 반례를 없애고, 원작 그노시아와 구조를 차별화한다 |
@@ -365,7 +365,7 @@ flowchart LR
 
 3차 프로젝트의 서비스·데이터는 4차 작업을 시작할 때 지운다. 4차에 필요 없는 역할(광고 서버, NiFi, MySQL 3대, 이미지 저장소)의 VM 6대를 새 역할로 돌린다. IP·계정은 이 문서와 저장소에 쓰지 않는다(저장소 밖 비공개 문서에서 관리).
 
-| 논리&nbsp;서버&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 3차&nbsp;역할&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 4차 역할 | 담당&nbsp;흐름 |
+| 논리 서버 | 3차 역할 | 4차 역할 | 담당 흐름 |
 |---|---|---|---|
 | bastion-01 | Bastion·Ansible | 그대로(배포 자동화) | C |
 | metrics-01 | Prometheus·Grafana | 그대로 + 게임·LLM·모델 지표 | C |
@@ -507,7 +507,7 @@ flowchart LR
 자유 문장을 실행 가능한 엔진 명령으로 바꾼다. 성공 기준은 의도 하나를 맞히는 것이 아니라 **명령 전체(행동, 수신자, 대상, 근거, 필수 슬롯)가 맞고 합법인 것**이다.
 
 **해석 단계**
-| 단계&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 하는&nbsp;일&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 방식 |
+| 단계 | 하는 일 | 방식 |
 |---|---|---|
 | ① 의도 분류 | 문장 → 의도 후보(복수 가능) + 발화 형태 | BERT 계열 한국어 인코더 미세조정(후보: KoELECTRA, KLUE-RoBERTa 등. 라이선스 확인). 기준선 TF-IDF + 로지스틱 회귀. 발화 형태(질문 / 주장 / 인용 / 요청)는 별도 출력 |
 | ② 인물 인식 | 문장 속 인물 → NPC ID, 그리고 역할 구분 | 별칭 사전 + 조사 처리 + 최장 일치. 인물마다 **수신자 / 행동 대상 / 언급 인물** 역할을 정한다("훈장님, 머슴을 왜 의심하세요?" → 수신자 훈장, 언급 인물 머슴) |
@@ -595,7 +595,7 @@ flowchart LR
 ### 9.4 사용자 데이터 기반 자동 학습 루프 (방향 합의)
 사람 데이터가 적으므로 게임 전략 모델은 사람 데이터로 직접 학습하지 않는다. 예외는 의도 해석기로, 사람 문장과 확인 결과가 곧 정답 라벨이므로 직접 재학습한다. 다음 네 갈래로 자동 반영한다.
 
-| 갈래&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 사람&nbsp;데이터에서&nbsp;배우는&nbsp;것&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 방식 |
+| 갈래 | 사람 데이터에서 배우는 것 | 방식 |
 |---|---|---|
 | ⓪ 의도 해석기 재학습 | 실제 플레이어의 말투와 질문 방식 | 라벨 출처 규칙(9.1)에 따른 신뢰 수준 높은 라벨로 재학습. 사람 주석 평가 세트에서 명령 전체 일치율이 기존보다 나을 때만 교체 |
 
@@ -635,7 +635,7 @@ flowchart LR
 
 ## 11. 단계별 로드맵 (기간 미정, 순서만)
 
-| 단계&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 할 일&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 완료&nbsp;기준&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 단계 | 할 일 | 완료 기준 |
 |---|---|---|
 | 1. 제약 확정 | 팀·마감·필수 기술·실제 CPU/RAM·동시 접속 범위 확인 | 범위 축소 기준 합의 |
 | 2. 최소 계약 | 상태·주장·명령·이벤트 스키마, 의도 라벨과 행동 대응표, 행동별 필수 슬롯, 질문·주장 구분, 무당의 거짓 공개 범위, 다중 의도·미지원·문맥 누락 처리, 9.2 학습 목표, 실제 추궁 예시 몇 개 | 문서화된 계약 |
@@ -651,7 +651,7 @@ flowchart LR
 
 ## 12. 리스크와 축소안
 
-| 리스크&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 확인&nbsp;시점 | 축소안 |
+| 리스크 | 확인 시점 | 축소안 |
 |---|---|---|
 | 6인 구성의 밸런스 쏠림 | 3단계 | 인원, 비밀 수, 목격 확률 조정. 그래도 안 되면 인원 구성 변경 |
 | 프리셋별 밸런스 검증 부담, 창귀 2명 판의 긴 진행 | 3·6단계 | 검증된 프리셋만 공개. 큰 판은 반복 진술 접기·변경점만 표시·회의 축약을 규칙으로 정의하고 읽기 시간을 측정. 그래도 안 되면 창귀 1명 프리셋만 유지 |
@@ -714,7 +714,7 @@ flowchart LR
 - 광고 DB(MySQL): 캠페인·소재·예산 원장(예약·확정·해제). 원장 기록과 이벤트 발행은 게임 쪽과 같은 **아웃박스 방식**으로, 원장 변경과 아웃박스 행을 같은 MySQL 트랜잭션에 저장한다. 캠페인 관리 화면은 Django admin을 쓴다.
 
 ### 14.4 노출과 클릭의 분리 집계
-| 이벤트&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 언제&nbsp;기록&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 비고 |
+| 이벤트 | 언제 기록 | 비고 |
 |---|---|---|
 | `ad.serve` | 경매가 끝나고 광고를 응답했을 때 | 요청 ID, 후보와 점수, 낙찰가, 정책 버전. **노출이 아니다** |
 | `ad.impression` | 광고 면적의 50% 이상이 1초 이상 보였을 때 브라우저가 게임 웹 웹소켓으로 비콘을 보내고 게임 웹이 광고 서버로 넘김(11/4 결정) | `serve` 없는 노출, 중복 노출은 무효 |
@@ -731,7 +731,7 @@ flowchart LR
 - Delta 계층: bronze(원본 serve·impression·click), silver(검증·유효 판정·조인), gold(캠페인 × 지면 × 시간대의 노출, 클릭, CTR, 비용, eCPM, 소진율, 무효율).
 
 ### 14.5 집계를 입찰에 반영하는 루프
-| 반영&nbsp;대상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 방식&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 주기&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 반영 대상 | 방식 | 주기 |
 |---|---|---|
 | 예측 CTR | 소재 × 지면별 베타 분포. 사전분포는 지면 평균 CTR `μ`와 사전 강도 `κ`(예: 노출 200회분)로 `Beta(μκ, (1−μ)κ)`. 확정된 유효 노출 N, 클릭된 노출 C로 `Beta(μκ + C, (1−μ)κ + N − C)`. 갱신은 누적 집계를 다시 더하지 않고 확정분 전체로 다시 계산한다. 데이터가 쌓이면 LightGBM CTR 모델(지면, 소재, 판 결과, 판 수, 시간대)과 비교 | 베타: 집계 주기마다(예: 5분). LightGBM: 야간 |
 | 탐색 | CPC 캠페인은 순위 점수에 쓰는 CTR을 베타 분포에서 샘플링(톰슨 샘플링)한다. CPM 캠페인은 순위에 CTR이 없으므로, 낙찰된 캠페인 안에서 소재를 고를 때 톰슨 샘플링을 쓴다. 페이싱에 막힌 신규 소재가 학습 기회를 잃지 않도록 캠페인별 탐색 노출 하한(예: 하루 노출의 5%)을 페이싱과 별도로 둔다. LightGBM 도입 뒤에도 같은 탐색 규칙을 쓴다 | 경매마다 |

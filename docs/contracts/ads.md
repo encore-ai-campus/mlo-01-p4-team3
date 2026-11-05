@@ -41,7 +41,7 @@
 
 ## 3. API
 
-| 호출&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 경로&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 입력 → 출력&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 호출 | 경로 | 입력 → 출력 |
 |---|---|---|
 | 게임 서버 → 광고 서버(내부 HTTP) | POST `/ads/v1/serve` | `AdRequest` → `AdResponse`(JSON) |
 | 게임 서버 → 광고 서버(내부 HTTP, 비콘 중계) | POST `/ads/v1/impression` | `{token, visible_ratio, visible_ms, occurred_at_ms}` → 204 |
@@ -97,7 +97,7 @@
 
 ## 6. 유효 판정 (pending → valid / invalid)
 
-| 이벤트&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 무효&nbsp;사유(우선순위&nbsp;순)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 비고&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 이벤트 | 무효 사유(우선순위 순) | 비고 |
 |---|---|---|
 | 노출 | `bad_signature` → `expired` → `load_test` → `no_serve` → `duplicate` → `not_viewable` | serve 기록이 안 보이면 **서버 최초 수신 시각**부터 유예 2분 동안 `pending`, 지나면 `no_serve`. 클라이언트가 보낸 발생 시각은 기록만 하고 판정에는 쓰지 않는다. 만료도 최초 수신 시각으로 검사한다(재판정해도 결과 불변) |
 | 클릭 | `bad_signature` → `expired` → `load_test` → `no_serve` → `duplicate`(토큰 재사용) | **클릭은 노출 증거다.** 비콘보다 먼저 도착한 클릭은 노출도 인정한다(`implied_by_click`). 그 뒤에 온 비콘은 `duplicate`. 같은 세션의 1초 내 연속 클릭은 `suspect` 표시만 하고 무효 근거로 쓰지 않는다 |

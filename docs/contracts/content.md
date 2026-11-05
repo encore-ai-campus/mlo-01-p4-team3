@@ -5,7 +5,7 @@
 
 ## 1. 구성 요소
 
-| 항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 필수 필드&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 규칙&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| 항목 | 필수 필드 | 규칙 |
 |---|---|---|
 | 장소 `PlaceDef` | place, name_ko, public | 5곳 고정. 집만 public=false |
 | 성향 `Temperament` | group_weights(근거 묶음별 가중치), aggression, stubbornness, conformity, confession_ease | 값은 0~1, 가중치 기본은 1.0 |
