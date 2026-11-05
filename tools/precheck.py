@@ -25,6 +25,7 @@ import re
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -117,41 +118,46 @@ class SubprocessRunner:
 
 # ---------------------------------------------------------------- 응용
 def run_precheck(runner, base: str | None, with_assets: bool = False,
-                 pr_body: str | None = None) -> list[StepResult]:
-    """구조 → 비밀 → 단위 테스트 → 문서 → 증빙 순서로 돌린다. 앞 단계가 실패해도 끝까지 돈다."""
+                 pr_body: str | None = None, workers: int | None = None) -> list[StepResult]:
+    """구조·비밀·단위 테스트(폴더별)·문서·증빙을 동시에 돌리고 결과는 이 순서로 모은다.
+
+    서로 독립인 하위 명령이라 병렬로 돌린다(11/5: 순서대로 돌리면 약 90초). 앞 단계가 실패해도 끝까지 돈다.
+    """
     py = sys.executable
-    results: list[StepResult] = []
+    jobs: dict[str, tuple[list[str], dict[str, str] | None]] = {
+        "구조": ([py, "-m", "tools.check_structure", "--all"], None),
+        "비밀": ([py, "-m", "tools.check_secrets"], None),
+    }
+    test_dirs = [d for d in runner.test_dirs() if with_assets or d != ASSETS_DIR]
+    for d in test_dirs:
+        jobs[f"tests/{d}"] = ([py, "-m", "unittest", "discover", "-s", f"tests/{d}", "-t", "."], None)
+    if base is not None:
+        jobs["문서"] = ([py, "-m", "tools.check_docs", "--diff", base], None)
+        if pr_body is not None:
+            jobs["증빙"] = ([py, "-m", "tools.check_evidence", "--pr-body-env", PR_BODY_ENV, "--changed", base],
+                          {PR_BODY_ENV: pr_body})
+        else:
+            jobs["증빙"] = ([py, "-m", "tools.check_evidence", "--changed", base], None)
 
-    rc, out = runner.run([py, "-m", "tools.check_structure", "--all"])
-    results.append(StepResult("구조", rc == 0, out))
-    rc, out = runner.run([py, "-m", "tools.check_secrets"])
-    results.append(StepResult("비밀", rc == 0, out))
+    with ThreadPoolExecutor(max_workers=workers or min(8, len(jobs))) as pool:
+        futures = {k: pool.submit(runner.run, args, env) for k, (args, env) in jobs.items()}
+        done = {k: f.result() for k, f in futures.items()}
 
+    results = [StepResult(k, done[k][0] == 0, done[k][1]) for k in ("구조", "비밀")]
     outputs, ok, n = [], True, 0
-    for d in runner.test_dirs():
-        if d == ASSETS_DIR and not with_assets:
-            continue
-        rc, out = runner.run([py, "-m", "unittest", "discover", "-s", f"tests/{d}", "-t", "."])
+    for d in test_dirs:
+        rc, out = done[f"tests/{d}"]
         n += count_tests(out)
         if not test_rc_ok(rc):
             ok = False
             outputs.append(f"[tests/{d}] rc={rc}\n{out}")
     results.append(StepResult("테스트", ok, "\n".join(outputs), tests=n))
-
     if base is None:
-        msg = f"비교 기준을 못 구함(`git fetch origin` 뒤 다시 돌리거나 --base 지정)"
+        msg = "비교 기준을 못 구함(`git fetch origin` 뒤 다시 돌리거나 --base 지정)"
         results.append(StepResult("문서", False, msg))
         results.append(StepResult("증빙", False, msg))
         return results
-
-    rc, out = runner.run([py, "-m", "tools.check_docs", "--diff", base])
-    results.append(StepResult("문서", rc == 0, out))
-    if pr_body is not None:
-        rc, out = runner.run([py, "-m", "tools.check_evidence", "--pr-body-env", PR_BODY_ENV, "--changed", base],
-                             env={PR_BODY_ENV: pr_body})
-    else:
-        rc, out = runner.run([py, "-m", "tools.check_evidence", "--changed", base])
-    results.append(StepResult("증빙", rc == 0, out))
+    results += [StepResult(k, done[k][0] == 0, done[k][1]) for k in ("문서", "증빙")]
     return results
 
 
