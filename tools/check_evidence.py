@@ -1,6 +1,6 @@
 """증빙 검사(`docs/tasks/README.md` 4절 검사 규칙, 11절 PR 본문 문법, E-05-02 조건 2·3).
 
-    python -m tools.check_evidence E-05-02 --format      # 양식 제목·작성자(흐름)·실제 소요 시간(h)
+    python -m tools.check_evidence E-05-02 --format      # 양식 제목·작성자(흐름)
     python -m tools.check_evidence E-05-02 --complete    # 4절 검사 규칙 1~6(규칙 6 = check_docs --task)
     python -m tools.check_evidence --all --until 11-05   # 예정일이 그날까지인 태스크 전부 --complete
     python -m tools.check_evidence --changed <base>      # base 이후 바뀐 증빙에 --format(push 이벤트)
@@ -22,7 +22,7 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from tools import check_docs
 from tools.evidence_md import (
-    BASE_HEADINGS, EVIDENCE_PATH_RE, FLOWS, NUMBER_RE, NUMERIC_COLUMNS, REVIEW_HEADING, Evidence,
+    BASE_HEADINGS, EVIDENCE_PATH_RE, FLOWS, NUMERIC_COLUMNS, REVIEW_HEADING, Evidence,
     evidence_path, numeric_rows, parse_evidence, parse_table, strip_code,
 )
 from tools.gitrepo import ZERO_SHA_RE, GitError, GitRepo
@@ -39,7 +39,7 @@ SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 
 # ---------------------------------------------------------------- 도메인: --format
 def check_format(task_id: str, ev: Evidence, task: Task | None) -> list[str]:
-    """`--format`: 양식 제목, `작성자(흐름)` 값, `실제 소요 시간(h)` 숫자 형식. `상태: 실패`도 통과할 수 있다."""
+    """`--format`: 양식 제목, `작성자(흐름)` 값. `상태: 실패`도 통과할 수 있다. `실제 소요 시간(h)` 줄은 11/5 폐지로 보지 않는다."""
     p = evidence_path(task_id)
     if task is None:
         return [f"{p}: 태스크 문서에 없는 ID {task_id}"]
@@ -55,11 +55,6 @@ def check_format(task_id: str, ev: Evidence, task: Task | None) -> list[str]:
         errors.append(f"{p}: `- 작성자(흐름):` 줄이 없음")
     elif author not in FLOWS:
         errors.append(f"{p}: 작성자(흐름) 값은 {'·'.join(FLOWS)} 중 하나: {author!r}")
-    hours = ev.field_value("실제 소요 시간(h)")
-    if hours is None:
-        errors.append(f"{p}: `- 실제 소요 시간(h):` 줄이 없음")
-    elif not NUMBER_RE.match(hours):
-        errors.append(f"{p}: 실제 소요 시간(h)이 숫자 형식이 아님: {hours!r}")
     return errors
 
 
@@ -256,7 +251,6 @@ _REFS_RE = re.compile(r"(?i)\brefs\s*:?\s*(?:[\w.-]+/[\w.-]+)?#\d+")
 # URL 형태 닫기(`Fixes https://github.com/o/r/issues/2`)도 GitHub가 이슈를 닫으므로 허용하지 않는다
 _CLOSING_URL_RE = re.compile(r"(?i)\b(close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b\s*:?\s*https?://\S+/(?:issues|pull)/\d+")
 _ISSUE_REF_RE = re.compile(r"#\d+|/(?:issues|pull)/\d+")
-_PR_HOURS_RE = re.compile(r"^\s*(?:-\s*)?실제 소요 시간\(h\)\s*:[ \t]*(.*?)[ \t]*$", re.M)
 
 
 @dataclass
@@ -269,7 +263,7 @@ class PrCheck:
 
 
 def check_pr_body(body: str, task_ids: set[str], confirmed: set[str]) -> PrCheck:
-    """README 11절: `Task:` 줄 1개·ID 1개, `Closes #`/`Refs #` 중 정확히 하나, 실제 소요 시간(h)."""
+    """README 11절: `Task:` 줄 1개·ID 1개, `Closes #`/`Refs #` 중 정확히 하나. 실제 소요 시간(h) 줄은 11/5 폐지로 보지 않는다."""
     text = _COMMENT_RE.sub("", body or "")
     errors: list[str] = []
     lines = _TASK_LINE_RE.findall(text)
@@ -303,12 +297,6 @@ def check_pr_body(body: str, task_ids: set[str], confirmed: set[str]) -> PrCheck
             errors.append(f"이슈 연결 줄에 이슈 번호가 둘 이상: {line.strip()!r}(번호 하나만)")
     if others == 0 and closes + refs != 1:
         errors.append(f"이슈 연결 줄은 `Closes #<번호>` 또는 `Refs #<번호>` 중 정확히 하나(Closes {closes}, Refs {refs})")
-    if not is_decision:
-        hm = _PR_HOURS_RE.findall(text)
-        if not hm:
-            errors.append("PR 본문에 `실제 소요 시간(h):` 줄이 없음")
-        elif not NUMBER_RE.match(hm[0]):
-            errors.append(f"PR 본문의 실제 소요 시간(h)이 숫자 형식이 아님: {hm[0]!r}")
     if errors:
         return PrCheck(errors, task_id, None)
     mode = "decision" if is_decision else ("complete" if closes == 1 else "format")
