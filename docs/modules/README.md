@@ -22,6 +22,6 @@
 | `llm.md` | `llm/` | E |
 | `assets.md` | `content/images/`, `docs/assets/`, `tools/assets/` | E |
 | `user_test.md` | 사용자 테스트 운영 절차 | E |
-| `ci.md` | `.github/`, `tools/check_*.py` | E |
+| `ci.md` | `.github/`, `.githooks/`, `tools/precheck.py`, `tools/check_*.py` | E |
 | `perf.md` | `tools/perf/` | 공용 |
 | `project.md` | 저장소 운영(브랜치, 라벨, 이슈 동기화 `tools/tasks_to_issues.py`) | E |
