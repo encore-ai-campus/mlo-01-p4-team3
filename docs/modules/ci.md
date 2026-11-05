@@ -39,7 +39,7 @@ python -m tools.check_evidence --changed <base>              # base 이후 바�
 PR_BODY="$(cat body.md)" python -m tools.check_evidence --pr-body-env PR_BODY --changed <base>   # evidence 체크(PR)
 python -m tools.check_docs --task E-05-02                    # 규칙 1~3
 python -m tools.check_docs --all --until 11-05               # 규칙 4
-python -m tools.check_docs --diff master                     # 규칙 5~6(커밋 전 변경·새 파일 포함)
+python -m tools.check_docs --diff main                       # 규칙 5~6(커밋 전 변경·새 파일 포함)
 ```
 
 측정 스크립트에서 결과 JSON 쓰기:

@@ -384,7 +384,7 @@ class ViolationScenario(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        git(self.root, "init", "-q", "-b", "master")
+        git(self.root, "init", "-q", "-b", "main")
         git(self.root, "config", "user.email", "t@example.invalid")
         git(self.root, "config", "user.name", "t")
         (self.root / "docs" / "tasks").mkdir(parents=True)
@@ -404,7 +404,7 @@ class ViolationScenario(unittest.TestCase):
     def run_main(self, body):
         out = io.StringIO()
         with redirect_stdout(out):
-            code = ce.main(["--pr-body-env", "PR_BODY", "--changed", "master"], repo=GitRepo(self.root),
+            code = ce.main(["--pr-body-env", "PR_BODY", "--changed", "main"], repo=GitRepo(self.root),
                            environ={"PR_BODY": body})
         return code, out.getvalue()
 

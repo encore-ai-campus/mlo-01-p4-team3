@@ -329,7 +329,7 @@ class ViolationScenarios(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        git(self.root, "init", "-q", "-b", "master")
+        git(self.root, "init", "-q", "-b", "main")
         git(self.root, "config", "user.email", "t@example.invalid")
         git(self.root, "config", "user.name", "t")
         self.write("README.md", "# r\n")
@@ -351,7 +351,7 @@ class ViolationScenarios(unittest.TestCase):
     def run_diff(self):
         out = io.StringIO()
         with redirect_stdout(out):
-            code = cd.main(["--diff", "master"], repo=GitRepo(self.root))
+            code = cd.main(["--diff", "main"], repo=GitRepo(self.root))
         return code, out.getvalue()
 
     def test_clean_pr_passes(self):
