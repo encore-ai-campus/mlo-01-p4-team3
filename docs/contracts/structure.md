@@ -106,7 +106,7 @@ paldo/
 │  ├─ reconcile_game_events.py [C-07-02], ml_gate.py [C-09-01], privacy_delete.py, privacy_retention.py [C-09-02]
 │  ├─ ad_traffic_sim.py [D-06-03], ad_scenarios.py [D-08-02], demo_retrain.sh [D-10-01]
 │  ├─ perf/                        engine_bench.py [A-05-01], vm_probe.sh [C-05-01], api_bench.py [B-06-02], ad_fault_test.py [B-08-03]
-│  └─ assets/                      make_placeholders.py [E-05-05], check_assets.py [E-08-07], pixelize.py [A-08-04]
+│  └─ assets/                      make_placeholders.py [E-05-05], check_assets.py [E-08-07], cutout.py [A-08-04]
 │
 ├─ tests/                          unittest 루트(`python -m unittest discover -s tests -t .`)
 │  ├─ contract/, tools/            (있음)
@@ -131,7 +131,7 @@ paldo/
 | `pipeline/` | 인프라(배치) | C | spark-master-01, spark-worker-01 |
 | `ops/` | 배포·관측 설정 | C | 각 VM |
 | `content/` | 데이터 | E | `tools/load_content.py`로 Mongo에 적재해 사용(결정 #8) |
-| `content/images/` 실제 파일, `tools/assets/pixelize.py` | 데이터(에셋) | A(실제 에셋 제작, 11/5 B에서 이전). 규격·임시·검사는 E | 정적 파일 |
+| `content/images/` 실제 파일, `tools/assets/cutout.py` | 데이터(에셋) | A(실제 에셋 제작, 11/5 B에서 이전). 규격·임시·검사는 E | 정적 파일 |
 | `contracts/`, `fixtures/` | 계약·생성물 | 공용 | - |
 | `tools/` | 도구 | 공용 | 개발 PC, Bastion |
 

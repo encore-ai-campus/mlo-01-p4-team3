@@ -1,4 +1,4 @@
-"""E-05-05 임시 에셋: 규격표 해석, 기대 항목(37), 생성·대조, 실제 파일 보존."""
+"""E-05-05 임시 에셋: 규격표 해석, 기대 항목(52, VN sprite·배경 포함), 생성·대조, 실제 파일 보존."""
 from __future__ import annotations
 
 import contextlib
@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 
 from ads.domain.model import SLOT_SIZES, AdSlot, slot_image_path
-from tools.assets import art, png, sources
+from tools.assets import art, png, portrait_art, sources, vn
 from tools.assets.make_placeholders import format_report, main, result_metrics, run
 from tools.assets.spec import (AssetEntry, SpecError, ad_entries, expected_entries, parse_spec_md,
                                reconcile)
@@ -42,26 +42,34 @@ class SpecTableTest(unittest.TestCase):
         self.assertEqual(spec.max_bytes, 512000)
         self.assertEqual(spec.root, "content/images")
         self.assertEqual(spec.manifest_path, "content/images/manifest.json")
-        self.assertEqual(spec.sizes, {"portrait": (512, 512), "place": (128, 128),
-                                      "ui": (128, 128), "map": (1280, 720)})
+        self.assertEqual(spec.sizes, {"portrait": (512, 512), "sprite": (512, 1280), "background": (1280, 720),
+                                      "place": (128, 128), "ui": (128, 128), "map": (1280, 720)})
         self.assertEqual(spec.ui_icon_ids, UI_IDS)
 
-    def test_dot_grid_table_condition_1(self):
-        """6절 도트 격자: 전 유형 ×4, 초상 128×128, 아이콘 32×32, 지도 320×180, 광고 182×22·75×62 + 위아래 1px."""
-        sec = SPEC_TEXT.split("## 6.", 1)[1]
-        pat = r"^\| ([a-z]+(?: \d+×\d+)?) \| (\d+)×(\d+) \| ×(\d+) \| (\d+)×(\d+) \|"
-        rows = {m[0]: tuple(int(v) for v in m[1:]) for m in re.findall(pat, sec, re.M)}
-        self.assertEqual(rows, {
-            "portrait": (128, 128, 4, 512, 512), "place": (32, 32, 4, 128, 128), "ui": (32, 32, 4, 128, 128),
-            "map": (320, 180, 4, 1280, 720), "ad 728×90": (182, 22, 4, 728, 90), "ad 300×250": (75, 62, 4, 300, 250)})
-        spec = parse_spec_md(SPEC_TEXT)
-        for kind, (gw, gh, k, fw, fh) in rows.items():
-            self.assertEqual(gw * k, fw, kind)
-            if kind.startswith("ad"):
-                self.assertEqual(fh - gh * k, 2, kind)      # 위아래 1px씩 배경색
-            else:
-                self.assertEqual(gh * k, fh, kind)
-                self.assertEqual(spec.sizes[kind], (fw, fh), kind)
+    def test_baseline_table_matches_vn(self):
+        """6절 기준선 표의 px 값이 검사 코드(vn.py)와 같다."""
+        sec = SPEC_TEXT.split("## 6.", 1)[1].split("\n## ", 1)[0]
+        rows = dict(re.findall(r"^\| ([^|]+?) \| ([^|]+?) \| (?:자동|사람 검수) \|$", sec, re.M))
+        self.assertIn(f"{vn.SPRITE_SIZE[0]}×{vn.SPRITE_SIZE[1]} RGBA", rows["sprite"])
+        self.assertIn(f"알파 {vn.VISIBLE_ALPHA} 이상", rows["가로 가운데"])
+        self.assertIn(f"{vn.SPRITE_SIZE[0] // 2}±{vn.CENTER_TOLERANCE}", rows["가로 가운데"])
+        self.assertIn(f"{vn.TOP_MARGIN_MIN} 이상", rows["머리 위 여백"])
+        self.assertIn(f"y≈{vn.EYE_Y}", rows["눈높이"])
+        self.assertIn(f"y={vn.WAIST_Y}", rows["허리선"])
+        self.assertIn(f"y={vn.FOOT_Y}, 아래 여백 {vn.BOTTOM_MARGIN[0]}~{vn.BOTTOM_MARGIN[1]}", rows["발끝"])
+        self.assertEqual(vn.SPRITE_SIZE[1] - vn.FOOT_Y, vn.BOTTOM_MARGIN[0] * 2)
+        self.assertIn(f"{vn.BACKGROUND_SIZE[0]}×{vn.BACKGROUND_SIZE[1]}", rows["장면 배경"])
+
+    def test_layout_table_matches_vn(self):
+        """7절 배치 표의 평소·전신 컷 수치가 vn.py 모드와 같다."""
+        sec = SPEC_TEXT.split("## 7.", 1)[1]
+        x0, y0, x1, y1 = vn.place(vn.NORMAL)
+        self.assertIn(f"0~{vn.NORMAL.rows[1]}행(머리~허리)을 부드럽게 0.8배 축소해 {x1 - x0}×{y1 - y0}, "
+                      f"가로 가운데(x {x0}~{x1}), 위 y {y0}, 아랫변 y {y1}", sec)
+        self.assertEqual(y1, vn.dialogue_box()[1])
+        x0, y0, x1, y1 = vn.place(vn.FULL)
+        self.assertIn(f"0.5배 축소해 {x1 - x0}×{y1 - y0}, 가로 가운데(x {x0}~{x1}), 위 y {y0}", sec)
+        self.assertIn(f"무대 아래 {vn.DIALOGUE_HEIGHT}px", sec)
 
     def test_missing_section_fails(self):
         with self.assertRaises(SpecError):
@@ -77,19 +85,30 @@ class SpecTableTest(unittest.TestCase):
 
 
 class ExpectedEntriesTest(unittest.TestCase):
-    def test_counts_by_kind_total_37(self):
+    def test_counts_by_kind_total_52(self):
         _, entries = _expected()
         by_kind: dict[str, int] = {}
         for e in entries:
             by_kind[e.kind] = by_kind.get(e.kind, 0) + 1
-        self.assertEqual(by_kind, {"portrait": 13, "place": 5, "ui": 10, "map": 1, "ad": 8})
-        self.assertEqual(len(entries), 37)
+        self.assertEqual(by_kind, {"portrait": 13, "sprite": 13, "background": 2,
+                                   "place": 5, "ui": 10, "map": 1, "ad": 8})
+        self.assertEqual(len(entries), 52)
+
+    def test_portrait_derived_from_same_id_sprite(self):
+        _, entries = _expected()
+        portraits = {e.id: e for e in entries if e.kind == "portrait"}
+        sprites = {e.id for e in entries if e.kind == "sprite"}
+        self.assertEqual(set(portraits), sprites)
+        for cid, e in portraits.items():
+            self.assertEqual(e.derived_from, f"sprite:{cid}")
+        self.assertEqual({e.id for e in entries if e.kind == "background"}, {"meeting", "night"})
 
     def test_mudang_variants_not_player_id(self):
         _, entries = _expected()
-        ids = {e.id for e in entries if e.kind == "portrait"}
-        self.assertTrue({"mudang_f", "mudang_m"} <= ids)
-        self.assertNotIn("mudang", ids)
+        for kind in ("portrait", "sprite"):
+            ids = {e.id for e in entries if e.kind == kind}
+            self.assertTrue({"mudang_f", "mudang_m"} <= ids)
+            self.assertNotIn("mudang", ids)
 
     def test_ad_keys_use_campaign_slot_sizes_only_and_contract_path(self):
         _, entries = _expected()
@@ -155,16 +174,16 @@ class GenerateTest(unittest.TestCase):
     def test_generate_counts_sizes_and_limit(self):
         r = run(self.tmp)
         self.assertTrue(r.ok, format_report(r))
-        self.assertEqual(r.written, 37)
-        self.assertEqual(sum(r.recon.files.values()), 37)
-        self.assertEqual(sum(r.recon.manifest.values()), 37)
+        self.assertEqual(r.written, 52)
+        self.assertEqual(sum(r.recon.files.values()), 52)
+        self.assertEqual(sum(r.recon.manifest.values()), 52)
         for e in r.entries:
             data = (self.tmp / e.path).read_bytes()
             self.assertEqual(png.read_size(data), (e.width, e.height), e.path)
             self.assertLessEqual(len(data), 512000)
         m = result_metrics(r)
         self.assertEqual((m["expected_total"]["value"], m["manifest_total"]["value"],
-                          m["files_total"]["value"]), (37, 37, 37))
+                          m["files_total"]["value"]), (52, 52, 52))
         self.assertEqual((m["missing_count"]["value"], m["extra_count"]["value"]), (0, 0))
 
     def test_manifest_format_condition_2(self):
@@ -172,7 +191,8 @@ class GenerateTest(unittest.TestCase):
         items = json.loads((self.tmp / "content/images/manifest.json").read_text(encoding="utf-8"))
         keys = set()
         for d in items:
-            want = {"kind", "id", "path", "url", "placeholder"} | ({"size"} if d["kind"] == "ad" else set())
+            want = ({"kind", "id", "path", "url", "placeholder"} | ({"size"} if d["kind"] == "ad" else set())
+                    | ({"derived_from"} if d["kind"] == "portrait" else set()))
             self.assertEqual(set(d), want)
             self.assertIs(d["placeholder"], True)
             keys.add((d["kind"], d["id"], tuple(d.get("size") or ())))
@@ -189,17 +209,17 @@ class GenerateTest(unittest.TestCase):
         run(self.tmp)
         mpath = self.tmp / "content/images/manifest.json"
         items = json.loads(mpath.read_text(encoding="utf-8"))
-        target = next(d for d in items if d["id"] == "hunjang")
+        target = next(d for d in items if d["kind"] == "map")
         target["placeholder"] = False
         mpath.write_text(json.dumps(items), encoding="utf-8")
-        real = png.encode_rgb(512, 512, art.render("map", "other", 512, 512).rows)
+        real = png.encode_rgb(1280, 720, art.render("map", "other", 1280, 720).rows)
         (self.tmp / target["path"]).write_bytes(real)
         r = run(self.tmp)
         self.assertTrue(r.ok, format_report(r))
-        self.assertEqual((r.written, r.kept_real), (36, 1))
+        self.assertEqual((r.written, r.kept_real), (51, 1))
         self.assertEqual((self.tmp / target["path"]).read_bytes(), real)
         after = json.loads(mpath.read_text(encoding="utf-8"))
-        self.assertIs(next(d for d in after if d["id"] == "hunjang")["placeholder"], False)
+        self.assertIs(next(d for d in after if d["kind"] == "map")["placeholder"], False)
 
     def test_missing_extra_and_wrong_size_detected(self):
         run(self.tmp)
@@ -226,7 +246,7 @@ class GenerateTest(unittest.TestCase):
         self.assertEqual(_quiet_main(["--repo", str(self.tmp), "--result"]), 0)
         body = json.loads((self.tmp / "docs/evidence/perf/E-05-05/placeholders.json").read_text(encoding="utf-8"))
         self.assertEqual(body["task"], "E-05-05")
-        self.assertEqual(body["metrics"]["expected_total"], {"value": 37, "unit": "개"})
+        self.assertEqual(body["metrics"]["expected_total"], {"value": 52, "unit": "개"})
 
 
 class CodexFindingsTest(unittest.TestCase):
@@ -240,11 +260,12 @@ class CodexFindingsTest(unittest.TestCase):
         run(self.tmp)
         mpath = self.tmp / "content/images/manifest.json"
         items = json.loads(mpath.read_text(encoding="utf-8"))
-        target = next(d for d in items if d["id"] == "boy")
+        target = next(d for d in items if d["kind"] == "sprite" and d["id"] == "boy")
         target["placeholder"] = False
         mpath.write_text(json.dumps(items), encoding="utf-8")
-        real = png.encode_rgb(512, 512, art.render("map", "real", 512, 512).rows)
+        real = png.encode_rgba(512, 1280, portrait_art.render_sprite("jumo", 512, 1280))
         (self.tmp / target["path"]).write_bytes(real)
+        self.assertTrue(run(self.tmp).ok)                  # 초상이 실제 sprite에서 파생되어 쌍이 모두 실제
 
         bundle = json.loads(sources.BUNDLE_PATH.read_text(encoding="utf-8"))
         bundle["characters"] = [c for c in bundle["characters"] if c["npc_id"] != "boy"]
@@ -252,11 +273,11 @@ class CodexFindingsTest(unittest.TestCase):
         removed.write_text(json.dumps(bundle, ensure_ascii=False), encoding="utf-8")
         r = run(self.tmp, bundle_path=removed)            # ID 제거: 실제 항목은 남고 extra로 보고
         self.assertFalse(r.ok)
-        self.assertEqual(r.recon.extra_in_manifest, ["portrait:boy"])
+        self.assertEqual(r.recon.extra_in_manifest, ["portrait:boy", "sprite:boy"])
 
         r = run(self.tmp)                                  # ID 복원: 실제 파일을 덮어쓰지 않는다
         self.assertTrue(r.ok, format_report(r))
-        self.assertEqual(r.kept_real, 1)
+        self.assertEqual(r.kept_real, 1)                   # sprite. 초상은 그 sprite에서 다시 파생(같은 바이트)
         self.assertEqual((self.tmp / target["path"]).read_bytes(), real)
 
     def test_unmarked_real_file_not_overwritten_without_force(self):

@@ -61,7 +61,8 @@ def load_manifest(repo: Path, spec: AssetSpec) -> list[AssetEntry]:
         size = tuple(d["size"]) if d.get("size") is not None else None
         w, h = size if size else spec.sizes.get(d["kind"], (0, 0))
         out.append(AssetEntry(kind=d["kind"], id=d["id"], path=d["path"], url=d["url"],
-                              width=w, height=h, size=size, placeholder=bool(d["placeholder"])))
+                              width=w, height=h, size=size, placeholder=bool(d["placeholder"]),
+                              derived_from=d.get("derived_from")))
     return out
 
 

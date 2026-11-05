@@ -2,17 +2,20 @@
 
 - `parse_spec_md`: `docs/assets/spec.md` 본문 → `AssetSpec`
 - `expected_entries`: 규격 + 콘텐츠 ID 목록 → manifest 기대 항목
-- `reconcile`: 기대 항목 ↔ manifest ↔ 디스크 파일 대조(유형별 수, 누락, 남는 것)
+- `reconcile`: 기대 항목 ↔ manifest ↔ 디스크 파일 대조(유형별 수, 누락, 남는 것, 초상-sprite 쌍 상태)
+
+초상(portrait)은 같은 id의 sprite 위 128행을 잘라 만든다(`derived_from: "sprite:<id>"`, 11/5 크로스체크 17).
 """
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Callable, Iterable, Optional
 
-KINDS: tuple[str, ...] = ("portrait", "place", "ui", "map", "ad")
+KINDS: tuple[str, ...] = ("portrait", "sprite", "background", "place", "ui", "map", "ad")
 MUDANG_VARIANT_IDS: tuple[str, ...] = ("mudang_f", "mudang_m")  # 주인공 여·남(11/4 PM 결정, B-08-02 mudang_variant)
 MAP_IDS: tuple[str, ...] = ("village",)
+BACKGROUND_IDS: tuple[str, ...] = ("meeting", "night")  # 회의 장소 고정 1장, 밤 마을 공통 1장(spec.md 7절)
 AD_URL_PREFIX = "/static/ads/"
 SYNTHETIC_CAMPAIGN_PREFIX = "syn:"
 ID_RE = re.compile(r"^[a-z0-9_]+$")
@@ -36,7 +39,7 @@ class AssetSpec:
 
 @dataclass(frozen=True)
 class AssetEntry:
-    """manifest 항목 1개. 키는 (kind, id, size). size는 광고만 있다."""
+    """manifest 항목 1개. 키는 (kind, id, size). size는 광고만, derived_from은 파생 초상만 있다."""
     kind: str
     id: str
     path: str
@@ -45,6 +48,7 @@ class AssetEntry:
     height: int
     size: Optional[tuple[int, int]] = None
     placeholder: bool = True
+    derived_from: Optional[str] = None
 
     @property
     def key(self) -> tuple[str, str, Optional[tuple[int, int]]]:
@@ -57,7 +61,14 @@ class AssetEntry:
         if self.size is not None:
             d["size"] = [self.size[0], self.size[1]]
         d.update({"path": self.path, "url": self.url, "placeholder": self.placeholder})
+        if self.derived_from is not None:
+            d["derived_from"] = self.derived_from
         return d
+
+
+def derived_source(kind: str, cid: str) -> Optional[str]:
+    """파생 항목의 원본 키 문자열. 초상은 같은 id의 sprite(`sprite:<id>`), 그 밖은 None."""
+    return f"sprite:{cid}" if kind == "portrait" else None
 
 
 def sort_key(entry: AssetEntry):
@@ -181,8 +192,12 @@ def expected_entries(spec: AssetSpec, npc_ids: Iterable[str], place_ids: Iterabl
                      slot_image_path: Callable[[str, str], str]) -> list[AssetEntry]:
     """규격 + 콘텐츠 ID 목록 → 정렬된 기대 항목. 키·경로·url 충돌이 있으면 SpecError."""
     entries: list[AssetEntry] = []
-    for cid in list(npc_ids) + list(MUDANG_VARIANT_IDS):
-        entries.append(_simple_entry(spec, "portrait", cid))
+    people = list(npc_ids) + list(MUDANG_VARIANT_IDS)
+    for cid in people:
+        e = _simple_entry(spec, "portrait", cid)
+        entries.append(replace(e, derived_from=derived_source("portrait", cid)))
+    entries += [_simple_entry(spec, "sprite", cid) for cid in people]
+    entries += [_simple_entry(spec, "background", b) for b in BACKGROUND_IDS]
     entries += [_simple_entry(spec, "place", p) for p in place_ids]
     entries += [_simple_entry(spec, "ui", i) for i in spec.ui_icon_ids]
     entries += [_simple_entry(spec, "map", m) for m in MAP_IDS]
@@ -209,13 +224,14 @@ class Reconciliation:
     manifest_mismatch: list[str] = field(default_factory=list)
     missing_files: list[str] = field(default_factory=list)
     extra_files: list[str] = field(default_factory=list)
+    pair_mismatch: list[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
         """유형별 세 수가 같고 누락·남는 것이 0건이면 True."""
         same = all(self.expected.get(k, 0) == self.manifest.get(k, 0) == self.files.get(k, 0) for k in KINDS)
         return same and not (self.missing_in_manifest or self.extra_in_manifest or self.manifest_mismatch
-                             or self.missing_files or self.extra_files)
+                             or self.missing_files or self.extra_files or self.pair_mismatch)
 
 
 def key_label(key) -> str:
@@ -252,8 +268,32 @@ def reconcile(expected: list[AssetEntry], manifest: list[AssetEntry],
         f"{key_label(k)}: path/url {man_keys[k].path} {man_keys[k].url}"
         for k in exp_keys.keys() & man_keys.keys()
         if (man_keys[k].path, man_keys[k].url) != (exp_keys[k].path, exp_keys[k].url))
+    r.manifest_mismatch += sorted(
+        f"{key_label(k)}: derived_from {man_keys[k].derived_from!r} ≠ {exp_keys[k].derived_from!r}"
+        for k in exp_keys.keys() & man_keys.keys()
+        if man_keys[k].derived_from != exp_keys[k].derived_from)
+    r.pair_mismatch = pair_mismatches(manifest)
     exp_paths = {e.path for e in expected}
     file_set = set(files)
     r.missing_files = sorted(exp_paths - file_set)
     r.extra_files = sorted(f for f in file_set - exp_paths if kind_of_path(f, root) is not None)
     return r
+
+
+def pair_mismatches(manifest: list[AssetEntry]) -> list[str]:
+    """파생 항목과 원본의 `placeholder`가 다르거나 원본이 없으면 목록에 넣는다.
+
+    초상은 sprite에서 잘라 만들므로 한 쌍은 함께 임시이거나 함께 실제다(크로스체크 17 지적 6).
+    """
+    by_label = {key_label(e.key): e for e in manifest}
+    out = []
+    for e in manifest:
+        if e.derived_from is None:
+            continue
+        src = by_label.get(e.derived_from)
+        if src is None:
+            out.append(f"{key_label(e.key)}: 원본 {e.derived_from} 없음")
+        elif src.placeholder != e.placeholder:
+            out.append(f"{key_label(e.key)}: placeholder {str(e.placeholder).lower()} ≠ "
+                       f"{e.derived_from} {str(src.placeholder).lower()}")
+    return sorted(out)

@@ -1,5 +1,5 @@
-"""임시 이미지 그리기(도메인). 초상은 코드로 그린 도트 그림(`portrait_art`), 나머지는 단색 배경 + 도형.
-글자 없음. 같은 (kind, id, 크기)면 같은 픽셀.
+"""임시 이미지 그리기(도메인). 초상·sprite는 코드로 그린 임시 인물(`portrait_art`), 장면 배경은 단순 장면
+(`background_art`). 모두 실루엣·배치 확인용이며 최종 화풍이 아니다, 나머지는 단색 배경 + 도형. 글자 없음. 같은 (kind, id, 크기)면 같은 픽셀.
 
 초상 외 색과 도형은 kind마다 고정이고, id에서 나온 해시로 보조색만 고른다. 해시는 게임 규칙과 무관하므로
 임시 이미지가 새 게임 정보(예: 씐 자 암시)를 주지 않는다.
@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import hashlib
 
-from tools.assets import portrait_art
+from tools.assets import background_art, portrait_art
 
 RGB = tuple[int, int, int]
 
 BACKGROUND: dict[str, RGB] = {
     "portrait": (0x2E, 0x34, 0x4A),
+    "background": (0x2E, 0x34, 0x4A),
     "place": (0x3B, 0x4A, 0x3F),
     "ui": (0x4A, 0x3B, 0x3B),
     "map": (0x5A, 0x55, 0x45),
@@ -62,15 +63,24 @@ def accent_for(kind: str, cid: str) -> RGB:
     return ACCENTS[digest[0] % len(ACCENTS)]
 
 
+def render_rows(kind: str, cid: str, width: int, height: int) -> tuple[int, list[bytearray]]:
+    """임시 이미지 1장 → (채널 수, 행 목록). sprite만 RGBA(4, 바탕 투명), 나머지는 RGB(3)."""
+    if kind == "sprite":
+        return 4, portrait_art.render_sprite(cid, width, height)
+    return 3, render(kind, cid, width, height).rows
+
+
 def render(kind: str, cid: str, width: int, height: int) -> Canvas:
-    """임시 이미지 1장을 그린다."""
+    """불투명(RGB) 임시 이미지 1장을 그린다. sprite는 `render_rows`로."""
     if kind not in BACKGROUND:
         raise ValueError(f"알 수 없는 kind: {kind!r}")
     c = Canvas(width, height, BACKGROUND[kind])
     acc = accent_for(kind, cid)
     w, h = width, height
-    if kind == "portrait":                 # 128 격자 도트 인물(스타일 가이드 팔레트·격자)
+    if kind == "portrait":                 # sprite 위 512×512 크롭 + 먹남 알파 합성
         c.rows = portrait_art.render(cid, w, h)
+    elif kind == "background":             # 단순 장면(인물·글자 없음)
+        c.rows = background_art.render(cid, w, h)
     elif kind == "place":                  # 둥근 판 + 보조색 사각
         c.ellipse(w / 2, h / 2, w * 0.42, h * 0.42, FOREGROUND)
         c.rect(int(w * 0.34), int(h * 0.34), int(w * 0.66), int(h * 0.66), acc)

@@ -39,7 +39,7 @@ server/infra (인프라) → engine (포트 구현)
 | `requirements/` | 의존성 | 공용 | 영역별 Python 패키지(`web`·`ml`·`llm`·`pipeline`, Python 3.14) |
 | `intent/`, `ml/` | 인프라(모델) | D | 의도 해석기, 씐 자 확률 모델(예정) |
 | `content/` | 데이터 | E | 인물, 비밀, 단서, 템플릿(예정) |
-| `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E(규격·스타일 가이드·임시 파일·검사), B(실제 파일·생성 기록·`pixelize.py`, 11/4 결정) | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
+| `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E(규격·스타일 가이드·임시 파일·검사), A(실제 파일·생성 기록·`cutout.py`, 11/5 결정) | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
 | `ads/domain/` | 광고 도메인 | D | 경매, 2등 가격, 예산 예약·확정·해제, 페이싱, CTR, 유효 판정, 대사, 지면 규격(`SLOT_SIZES`)(표준 라이브러리만) |
 | `ads/app/`, `ads/infra/`, `ads/web/` | 광고 응용, 인프라, 표현 | D | 요청·비콘·클릭 흐름, MySQL 원장·아웃박스·Kafka, Django 뷰·admin(예정) |
 | `ads/testing/` | 테스트 지원 | D | `FakeAdProvider` |

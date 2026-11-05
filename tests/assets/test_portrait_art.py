@@ -1,4 +1,4 @@
-"""E-05-05 임시 초상(코드로 그린 도트 그림): 팔레트·격자·결정성·주인공/주민 판정표 규칙."""
+"""E-05-05 임시 그림 생성기(코드로 그린 실루엣·배치 확인용, 최종 화풍 아님): 기준 색·생성기 블록·결정성·주인공/주민 판정표 규칙."""
 from __future__ import annotations
 
 import re
@@ -98,10 +98,11 @@ class PortraitArtTest(unittest.TestCase):
             g = pa.draw(cid)
             return {(x, y) for x0, y0, x1, y1 in pa.EYE_BOXES
                     for y in range(y0, y1) for x in range(x0, x1) if g.px[y][x] in (pa.HAIR_HI, pa.WHITE)}
-        base = eyes("mudang_f")
-        self.assertTrue(base)
+        hero, resident = eyes("mudang_f"), eyes("hunjang")
+        self.assertTrue(resident)
         for cid in ALL_IDS:
-            self.assertEqual(eyes(cid), base, cid)
+            self.assertEqual(eyes(cid), hero if cid in HEROES else resident, cid)
+        self.assertLessEqual(len(hero ^ resident), 2 * len(pa.EYE_BOXES))   # 차이는 주인공 작은 하이라이트 점뿐
 
     def test_png_under_limit_and_art_wired(self):
         spec = sources.load_spec()
@@ -124,6 +125,23 @@ class PortraitArtTest(unittest.TestCase):
                 continue
             data = png.encode_rgb(e.width, e.height, pa.render(e.id, e.width, e.height))
             self.assertEqual((ROOT / e.path).read_bytes(), data, e.path)
+
+    def test_committed_sprites_match_generator(self):
+        """커밋된 임시 sprite가 지금 생성기(RGBA, 바탕 투명)와 같은 바이트다(표시가 true인 것만)."""
+        spec = sources.load_spec()
+        seen = 0
+        for e in sources.load_manifest(ROOT, spec):
+            if e.kind != "sprite" or not e.placeholder:
+                continue
+            data = png.encode_rgba(e.width, e.height, pa.render_sprite(e.id, e.width, e.height))
+            self.assertEqual((ROOT / e.path).read_bytes(), data, e.path)
+            seen += 1
+        self.assertEqual(seen, 13)
+
+    def test_sprite_bad_size(self):
+        for w, h in ((512, 512), (500, 625), (0, 0)):
+            with self.assertRaises(ValueError):
+                pa.render_sprite("jumo", w, h)
 
 
 if __name__ == "__main__":

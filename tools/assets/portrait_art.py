@@ -1,11 +1,14 @@
-"""임시 초상 그리기(도메인). Claude가 코드로 그린 도트 그림: 128×128 격자에 직접 래스터화 → ×4 최근접 확대.
+"""임시 sprite·초상 그리기(도메인). 실루엣·배치 확인용 코드 그림이며 최종 화풍(반실사 일러스트)이 아니다.
 
-- 색은 스타일 가이드 3절 17색(`PALETTE`)만 쓴다. 안티에일리어싱이 없어 확대 후 4×4 블록이 모두 단색이다.
-- 좌표는 512 기준으로 적고 격자(÷4)로 바꿔 칠한다. 픽셀 중심이 도형 안이면 칠한다(스캔라인, 짝홀 규칙).
-- 외곽선: 도형마다 경계 픽셀(4이웃 중 도형 밖이 있는 픽셀)을 먹색 1픽셀로 칠한다. 캔버스 가장자리는 경계로 치지 않는다.
-- 그리는 순서는 뒤 → 앞(뒷머리 → 옷 → 목·귀 → 얼굴 → 눈코입 → 앞머리·옆머리 → 모자). 머리카락이 눈썹·눈을 덮는다.
-- 인물은 `CHARACTERS` 데이터(머리 모양·모자·옷·소품)로 정한다. 얼굴 틀(머리 크기·눈높이·눈 모양)은 모두 같다.
-  주인공(무당 2종)만 눈 하이라이트 2점, 주민은 전원 1점(스타일 가이드 4절 판정표). 해시나 게임 규칙으로 모양을 고르지 않는다.
+- sprite: 사람마다 전신 1장, 512×1280 RGBA(바탕 투명). 128×320 격자에 그려 ×4 최근접 확대한다(임시 그림의 그리기
+  방식일 뿐 규격이 아니다). 기준선: 눈높이 y=200(`EYE_Y`), 허리선 y=640(`WAIST_Y`), 발끝 y=1248(`FOOT_Y`).
+- 머리·얼굴·모자는 기존 흉상 그림(512 좌표)을 0.8배·위로 옮겨 그리고(`HEAD_SCALE`, `HEAD_DY`), 몸통·하의·신발은
+  최종 픽셀 좌표로 그린다.
+- 초상: sprite 위 512×512를 잘라 먹남 위에 알파 합성한다(`crop_portrait`, 실제 sprite에도 같은 함수를 쓴다).
+- 색은 스타일 가이드의 기준 색(`PALETTE`, 임시 그림만 이 색으로 제한), 1px 먹 외곽선. 그리는 순서는 뒤 → 앞(뒷머리 → 하의 → 저고리·팔 → 목·깃 → 귀 → 얼굴
+  → 앞머리 → 모자).
+- 인물은 `CHARACTERS` 데이터(머리 모양·모자·옷·하의·소품)로 정한다. 얼굴 틀(머리 크기·눈높이·눈 모양)은 모두 같다.
+  주인공(무당 2종)만 눈 하이라이트 2점, 주민은 전원 1점(스타일 가이드 판정표). 해시나 게임 규칙으로 모양을 고르지 않는다.
 - 모르는 id는 `DEFAULT_RESIDENT`(평범한 주민)로 그린다. 같은 입력이면 같은 픽셀이다.
 """
 from __future__ import annotations
@@ -14,9 +17,15 @@ import math
 import re
 
 RGB = tuple[int, int, int]
-GRID = 128
-SRC = 512                      # 도형 좌표의 기준 크기
-UNIT = SRC / GRID              # 512 좌표 → 격자 1칸
+GRID = 128                     # 가로 격자(512px ÷ 4)
+SPRITE_ROWS = 320              # sprite 세로 격자(1280px ÷ 4)
+SRC = 512                      # 도형 좌표의 기준 크기(가로 px)
+UNIT = SRC / GRID              # px → 격자 1칸
+EYE_Y = 200                    # 눈높이(눈동자 중심 y, px). spec.md 2절 기준선과 같다
+WAIST_Y = 640                  # 허리선 y(px). 평소 표시는 0~640행을 쓴다
+FOOT_Y = 1248                  # 발끝 y(px). 아래 여백 32px
+HEAD_SCALE = 0.8               # 흉상 그림(512 좌표) → sprite 머리 배율
+HEAD_DY = -4.0                 # 흉상 눈 중심 y 255 × 0.8 − 4 ≈ 200
 
 # 스타일 가이드 3절 표와 같은 순서·값(tests가 대조한다)
 PALETTE: dict[str, str] = {
@@ -38,17 +47,38 @@ RED, RED_S, BLUE, BLUE_S = C["적"], C["적 그림자"], C["청"], C["청 그림
 GOLD, GOLD_S, GREEN = C["황"], C["황 그림자"], C["녹"]
 SKIN, SKIN_S, LIP = C["피부"], C["피부 그림자"], C["입술"]
 
-# 눈 영역(격자 좌표, [x0, x1) × [y0, y1)). 테스트가 하이라이트 수를 센다. 눈썹(y≈54)은 들어가지 않는다.
-EYE_BOXES: tuple[tuple[int, int, int, int], ...] = ((44, 58, 62, 70), (66, 58, 84, 70))
+
+
+def _head_grid(gx: float, gy: float) -> tuple[float, float]:
+    """흉상 격자 좌표 → sprite 격자 좌표(머리 변환)."""
+    return GRID / 2 + (gx - GRID / 2) * HEAD_SCALE, gy * HEAD_SCALE + HEAD_DY / UNIT
+
+
+def _head_box(x0: float, y0: float, x1: float, y1: float) -> tuple[int, int, int, int]:
+    (a, b), (c, d) = _head_grid(x0, y0), _head_grid(x1, y1)
+    return math.floor(a), math.floor(b), max(math.ceil(c), math.floor(a) + 1), max(math.ceil(d), math.floor(b) + 1)
+
+
+# 눈 영역(sprite 격자 좌표, [x0, x1) × [y0, y1)). 흉상 기준 (44, 58, 62, 70)·(66, 58, 84, 70)을 머리 변환한 값.
+# 테스트가 하이라이트 수를 센다.
+EYE_BOXES: tuple[tuple[int, int, int, int], ...] = (_head_box(44, 58, 62, 70), _head_box(66, 58, 84, 70))
 
 
 # ---------------------------------------------------------------- 래스터화
 
 class Grid:
-    """128×128 색 격자."""
+    """가로 128 색 격자. 세로는 `rows`(초상 128, sprite 160), 빈 칸은 `bg`(None = 투명)."""
 
-    def __init__(self) -> None:
-        self.px: list[list[RGB]] = [[BG] * GRID for _ in range(GRID)]
+    def __init__(self, rows: int = GRID, bg: RGB | None = BG) -> None:
+        self.w, self.h = GRID, rows
+        self.px: list[list[RGB | None]] = [[bg] * GRID for _ in range(rows)]
+        self.head = False                  # True면 좌표를 머리 변환(0.8배, 위로)해서 칠한다
+
+    def _g(self, x: float, y: float) -> tuple[float, float]:
+        """512 좌표(px) → 격자 좌표. 머리 모드면 머리 변환을 거친다."""
+        if self.head:
+            x, y = SRC / 2 + (x - SRC / 2) * HEAD_SCALE, y * HEAD_SCALE + HEAD_DY
+        return x / UNIT, y / UNIT
 
     def _paint(self, mask: set[tuple[int, int]], color: RGB, outline: bool) -> None:
         for x, y in mask:
@@ -58,17 +88,30 @@ class Grid:
         for x, y in mask:
             for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                 nx, ny = x + dx, y + dy
-                if 0 <= nx < GRID and 0 <= ny < GRID and (nx, ny) not in mask:
+                if 0 <= nx < self.w and 0 <= ny < self.h and (nx, ny) not in mask:
                     self.px[y][x] = INK
                     break
 
     def fill(self, pts: list[tuple[float, float]], color: RGB, outline: bool = True) -> None:
         """다각형(512 좌표)을 칠한다. 픽셀 중심 기준, 짝홀 규칙."""
-        g = [(x / UNIT, y / UNIT) for x, y in pts]
+        self._paint(self._mask(pts), color, outline)
+
+    def edge(self, pts: list[tuple[float, float]]) -> None:
+        """다각형(512 좌표)의 경계 칸만 먹으로 다시 칠한다(그림자 면이 덮은 바깥 윤곽 복구)."""
+        mask = self._mask(pts)
+        for x, y in mask:
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.w and 0 <= ny < self.h and (nx, ny) not in mask:
+                    self.px[y][x] = INK
+                    break
+
+    def _mask(self, pts: list[tuple[float, float]]) -> set[tuple[int, int]]:
+        g = [self._g(x, y) for x, y in pts]
         ys = [p[1] for p in g]
         mask: set[tuple[int, int]] = set()
         n = len(g)
-        for y in range(max(0, int(min(ys))), min(GRID, int(max(ys)) + 1)):
+        for y in range(max(0, int(min(ys))), min(self.h, int(max(ys)) + 1)):
             yc = y + 0.5
             xs = []
             for i in range(n):
@@ -77,30 +120,35 @@ class Grid:
                     xs.append(x0 + (yc - y0) * (x1 - x0) / (y1 - y0))
             xs.sort()
             for a, b in zip(xs[0::2], xs[1::2]):
-                for x in range(max(0, math.ceil(a - 0.5)), min(GRID, math.ceil(b - 0.5))):
+                for x in range(max(0, math.ceil(a - 0.5)), min(self.w, math.ceil(b - 0.5))):
                     mask.add((x, y))
-        self._paint(mask, color, outline)
+        return mask
 
     def line(self, pts: list[tuple[float, float]], width: float, color: RGB) -> None:
         """굵은 선(512 좌표, 굵기도 512 기준). 선을 따라 원을 찍는다."""
-        r = max(width / UNIT / 2, 0.5)
+        r = max(width * (HEAD_SCALE if self.head else 1) / UNIT / 2, 0.5)
         mask: set[tuple[int, int]] = set()
-        g = [(x / UNIT, y / UNIT) for x, y in pts]
+        g = [self._g(x, y) for x, y in pts]
         for (x0, y0), (x1, y1) in zip(g, g[1:] or g):
             steps = max(1, int(math.hypot(x1 - x0, y1 - y0) * 4))
             for i in range(steps + 1):
                 cx, cy = x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps
                 for y in range(int(cy - r) - 1, int(cy + r) + 2):
                     for x in range(int(cx - r) - 1, int(cx + r) + 2):
-                        if 0 <= x < GRID and 0 <= y < GRID and (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= r * r:
+                        if 0 <= x < self.w and 0 <= y < self.h and (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= r * r:
                             mask.add((x, y))
         self._paint(mask, color, False)
 
     def block(self, x0: float, y0: float, x1: float, y1: float, color: RGB) -> None:
-        """격자 좌표 사각형 [x0, x1) × [y0, y1)을 칠한다(하이라이트 점처럼 픽셀을 정확히 놓을 때)."""
+        """격자 좌표 사각형 [x0, x1) × [y0, y1)을 칠한다(하이라이트 점처럼 픽셀을 정확히 놓을 때).
+
+        머리 모드면 흉상 격자 좌표로 보고 머리 변환한다(최소 1칸).
+        """
+        if self.head:
+            x0, y0, x1, y1 = _head_box(x0, y0, x1, y1)
         for y in range(int(y0), int(y1)):
             for x in range(int(x0), int(x1)):
-                if 0 <= x < GRID and 0 <= y < GRID:
+                if 0 <= x < self.w and 0 <= y < self.h:
                     self.px[y][x] = color
 
 
@@ -157,37 +205,38 @@ def both(g: Grid, d: str, color: RGB, outline: bool = True) -> None:
 
 # ---------------------------------------------------------------- 인물 데이터
 
-# hair: 머리 모양, hat: 모자, cloth: 저고리(기본색, 그림자색, 깃), outer: 겉옷, extra: 소품
+# hair: 머리 모양, hat: 모자, cloth: 저고리(기본색, 그림자색, 깃), outer: 겉옷, lower: 하의(종류, 색, 그림자색), extra: 소품
 CHARACTERS: dict[str, dict] = {
     "mudang_f": {"hero": True, "sex": "f", "hair": "bangs_long", "hat": None,
-                 "cloth": (WHITE, WHITE_S, HANJI), "outer": ("vest", RED, RED_S), "extra": ["binyeo"]},
+                 "cloth": (WHITE, WHITE_S, HANJI), "outer": ("vest", RED, RED_S), "lower": ("chima", BLUE, BLUE_S), "extra": ["binyeo"]},
     "mudang_m": {"hero": True, "sex": "m", "hair": "bangs_short", "hat": None,
-                 "cloth": (WHITE, WHITE_S, HANJI), "outer": ("vest", RED, RED_S), "extra": []},
+                 "cloth": (WHITE, WHITE_S, HANJI), "outer": ("vest", RED, RED_S), "lower": ("baji", WHITE, WHITE_S), "extra": []},
     "hunjang": {"sex": "m", "hair": "pulled", "hat": "gat",
-                "cloth": (WHITE, WHITE_S, HANJI), "outer": None, "extra": ["beard"]},
+                "cloth": (WHITE, WHITE_S, HANJI), "outer": None, "lower": ("baji", WHITE, WHITE_S), "extra": ["beard"]},
     "jumo": {"sex": "f", "hair": "part_bun", "hat": None,
-             "cloth": (BLUE, BLUE_S, HANJI), "outer": None, "extra": ["binyeo", "goreum_red", "apron"]},
+             "cloth": (BLUE, BLUE_S, HANJI), "outer": None, "lower": ("chima", GREEN, GREEN), "extra": ["binyeo", "goreum_red", "apron"]},
     "blacksmith": {"sex": "m", "hair": "pulled", "hat": "dugeon",
-                   "cloth": (HANJI, WHITE_S, WHITE_S), "outer": ("apron", NIGHT, NIGHT), "extra": []},
+                   "cloth": (HANJI, WHITE_S, WHITE_S), "outer": ("apron", NIGHT, NIGHT), "lower": ("baji", HANJI, WHITE_S), "extra": []},
     "meosum": {"sex": "m", "hair": "pulled", "hat": "headband",
-               "cloth": (HANJI, WHITE_S, WHITE_S), "outer": None, "extra": []},
+               "cloth": (HANJI, WHITE_S, WHITE_S), "outer": None, "lower": ("baji", HANJI, WHITE_S), "extra": []},
     "yakcho": {"sex": "m", "hair": "pulled", "hat": "towel",
-               "cloth": (HANJI, WHITE_S, WHITE_S), "outer": ("vest", GREEN, GREEN), "extra": []},
+               "cloth": (HANJI, WHITE_S, WHITE_S), "outer": ("vest", GREEN, GREEN), "lower": ("baji", HANJI, WHITE_S), "extra": []},
     "gwabu": {"sex": "f", "hair": "part_bun", "hat": None,
-              "cloth": (WHITE, WHITE_S, WHITE_S), "outer": None, "extra": ["binyeo_wood"]},
+              "cloth": (WHITE, WHITE_S, WHITE_S), "outer": None, "lower": ("chima", WHITE, WHITE_S), "extra": ["binyeo_wood"]},
     "ferryman": {"sex": "m", "hair": "pulled", "hat": "paeraengi",
-                 "cloth": (HANJI, WHITE_S, WHITE_S), "outer": ("vest", BLUE, BLUE_S), "extra": []},
+                 "cloth": (HANJI, WHITE_S, WHITE_S), "outer": ("vest", BLUE, BLUE_S), "lower": ("baji", WHITE_S, WHITE_S), "extra": []},
     "gisaeng": {"sex": "f", "hair": "gache", "hat": None,
-                "cloth": (GOLD, GOLD_S, HANJI), "outer": None, "extra": ["goreum_red"]},
+                "cloth": (GOLD, GOLD_S, HANJI), "outer": None, "lower": ("chima", RED, RED_S), "extra": ["goreum_red"]},
     "hunter": {"sex": "m", "hair": "pulled", "hat": "fur",
-               "cloth": (HANJI, WHITE_S, WHITE_S), "outer": ("vest", GOLD_S, GOLD_S), "extra": []},
+               "cloth": (HANJI, WHITE_S, WHITE_S), "outer": ("vest", GOLD_S, GOLD_S), "lower": ("baji", HANJI, WHITE_S), "extra": []},
     "monk": {"sex": "m", "hair": "bald", "hat": None,
-             "cloth": (NIGHT, NIGHT, HANJI), "outer": None, "extra": ["kasa"]},
+             "cloth": (NIGHT, NIGHT, HANJI), "outer": None, "lower": ("robe", NIGHT, NIGHT), "extra": ["kasa"]},
     "boy": {"sex": "m", "hair": "braid", "hat": None,
-            "cloth": (HANJI, WHITE_S, WHITE_S), "outer": None, "extra": []},
+            "cloth": (HANJI, WHITE_S, WHITE_S), "outer": None, "lower": ("baji", HANJI, WHITE_S), "extra": []},
 }
 DEFAULT_RESIDENT: dict = {"sex": "m", "hair": "pulled", "hat": None,
-                          "cloth": (HANJI, WHITE_S, WHITE_S), "outer": None, "extra": []}
+                          "cloth": (HANJI, WHITE_S, WHITE_S), "outer": None,
+                          "lower": ("baji", HANJI, WHITE_S), "extra": []}
 
 
 def character(cid: str) -> dict:
@@ -216,27 +265,66 @@ def _back_hair(g: Grid, ch: dict) -> None:
         g.block(29, 76, 100, 77, sh)
 
 
-def _clothes(g: Grid, ch: dict) -> None:
-    base, shade, collar = ch["cloth"]
-    g.fill(path("M84 512 C92 438 160 404 256 400 C352 404 420 438 428 512 Z"), base)
-    g.fill(path("M300 404 C370 412 418 444 428 512 L360 512 C356 460 334 424 300 412 Z"), shade, False)
+def _lower(g: Grid, ch: dict) -> None:
+    """하의·신발(최종 px 좌표). 허리선 600~640에서 시작해 발끝 FOOT_Y까지."""
+    kind, base, shade = ch["lower"]
+    if kind == "chima":
+        g.fill(path("M150 600 L362 600 C380 760 400 1000 412 1232 L100 1232 C112 1000 132 760 150 600 Z"), base)
+        g.fill(path("M300 600 L362 600 C380 760 400 1000 412 1232 L336 1232 C330 1000 318 760 300 600 Z"),
+               shade, False)
+        g.edge(path("M150 600 L362 600 C380 760 400 1000 412 1232 L100 1232 C112 1000 132 760 150 600 Z"))
+        for cx in (214, 298):
+            g.fill(ellipse(cx, FOOT_Y - 12, 24, 12), WHITE)          # 버선코
+    elif kind == "robe":
+        g.fill(path("M136 600 L376 600 L394 1228 L118 1228 Z"), base)
+        for cx in (210, 302):
+            g.fill(ellipse(cx, FOOT_Y - 12, 30, 12), GOLD_S)
+    else:                                                            # 바지
+        legs = path("M146 600 L366 600 L378 900 L364 1192 L270 1192 L262 836 L250 836 L242 1192 L148 1192 "
+                    "L134 900 Z")
+        g.fill(legs, base)
+        g.fill(path("M300 600 L366 600 L378 900 L364 1192 L330 1192 L338 900 Z"), shade, False)
+        g.edge(legs)
+        g.fill(path("M150 1168 L242 1168 L242 1192 L148 1192 Z"), shade)   # 대님
+        g.fill(path("M270 1168 L362 1168 L364 1192 L270 1192 Z"), shade)
+        for cx in (196, 316):
+            g.fill(ellipse(cx, FOOT_Y - 20, 48, 20), GOLD_S)          # 짚신
+
+
+def _torso(g: Grid, ch: dict) -> None:
+    """저고리·팔·겉옷(최종 px 좌표). 어깨선 y≈316, 허리선 WAIST_Y."""
+    base, shade, _ = ch["cloth"]
+    body = path("M118 406 C124 346 179 319 256 316 C333 319 387 346 393 406 L400 652 L112 652 Z")
+    g.fill(body, base)
+    g.fill(path("M300 320 C360 330 390 360 393 406 L400 652 L352 652 L352 420 C340 370 320 340 300 330 Z"),
+           shade, False)
+    g.edge(body)                                                    # 그림자가 덮은 오른쪽 윤곽
+    g.line(path("M164 420 L160 652"), 4, shade)                     # 팔과 몸통 사이 주름
+    g.line(path("M348 420 L352 652"), 4, shade)
     outer = ch["outer"]
     if outer and outer[0] == "vest":
-        g.fill(path("M118 474 C130 444 168 424 202 418 L238 512 L110 512 Z"), outer[1])
-        g.fill(path("M394 474 C382 444 344 424 310 418 L274 512 L402 512 Z"), outer[2])
+        g.fill(path("M146 380 C160 350 190 334 222 330 L242 410 L236 640 L166 640 L166 420 Z"), outer[1])
+        g.fill(path("M366 380 C352 350 322 334 290 330 L270 410 L276 640 L346 640 L346 420 Z"), outer[2])
     if outer and outer[0] == "apron":
-        g.fill(path("M190 440 L322 440 L330 512 L182 512 Z"), outer[1])
-        g.line(path("M196 444 L170 410"), 10, outer[1])
-        g.line(path("M316 444 L342 410"), 10, outer[1])
+        g.fill(path("M200 352 L312 352 L320 420 L332 780 L180 780 L192 420 Z"), outer[1])
+        g.line(path("M206 356 L186 326"), 8, outer[1])
+        g.line(path("M306 356 L326 326"), 8, outer[1])
     if "apron" in ch["extra"]:
-        g.fill(path("M196 470 L316 470 L322 512 L190 512 Z"), WHITE)
+        g.fill(path("M204 400 L308 400 L318 640 L324 900 L188 900 L194 640 Z"), WHITE)
     if "kasa" in ch["extra"]:
-        g.fill(path("M150 430 L200 414 L330 512 L262 512 Z"), RED_S)
+        g.fill(path("M150 360 L190 340 L396 560 L396 640 L320 640 Z"), RED_S)
+    for cx in (136, 376):                                            # 손(소매 끝)
+        g.fill(ellipse(cx, 676, 20, 26), SKIN)
+
+
+def _neck_collar(g: Grid, ch: dict) -> None:
+    """목·깃·고름(흉상 512 좌표, 머리 변환으로 그린다)."""
+    collar = ch["cloth"][2]
     g.fill(path("M234 330 L234 412 L278 412 L278 330 Z"), SKIN_S)
     g.fill(path("M206 404 L256 474 L306 404 L290 400 L256 450 L222 400 Z"), collar)
     if "goreum_red" in ch["extra"]:
         g.fill(path("M262 462 L300 470 L292 500 L266 478 Z"), RED)
-        g.fill(path("M260 466 L276 512 L258 512 L252 470 Z"), RED)
+        g.fill(path("M260 466 L282 548 L264 548 L252 470 Z"), RED)
 
 
 def _ears(g: Grid, ch: dict) -> None:
@@ -355,28 +443,69 @@ def _hat(g: Grid, ch: dict) -> None:
 
 
 def draw(cid: str) -> Grid:
-    """인물 하나를 128 격자에 그린다."""
+    """인물 하나를 sprite 격자(128×320, 바탕 투명)에 전신으로 그린다. 외형은 공개 id(`character`)로만 정한다."""
     ch = character(cid)
-    g = Grid()
+    g = Grid(SPRITE_ROWS, None)
+    g.head = True
     _back_hair(g, ch)
-    _clothes(g, ch)
+    g.head = False
+    _lower(g, ch)
+    _torso(g, ch)
+    g.head = True
+    _neck_collar(g, ch)
     _ears(g, ch)
     _face(g, ch)
     _front_hair(g, ch)
     _hat(g, ch)
+    g.head = False
     return g
 
 
-def render(cid: str, width: int, height: int) -> list[bytearray]:
-    """512×512(격자 128 × 정수 배율) RGB 행 목록. 크기가 격자의 정수배가 아니면 ValueError."""
-    if width != height or width % GRID or width <= 0:
-        raise ValueError(f"초상 크기는 {GRID}의 정수배 정사각형이어야 함: {width}x{height}")
-    k = width // GRID
-    g = draw(cid)
+def _scale_rows(px: list[list[RGB | None]], k: int) -> list[bytearray]:
+    """격자 → RGBA 행(×k 최근접). 투명 칸은 (0, 0, 0, 0), 나머지는 알파 255."""
     rows: list[bytearray] = []
-    for line in g.px:
+    for line in px:
         row = bytearray()
         for c in line:
-            row += bytes(c) * k
+            row += (bytes((0, 0, 0, 0)) if c is None else bytes((*c, 255))) * k
         rows.extend(bytearray(row) for _ in range(k))
     return rows
+
+
+def render_sprite(cid: str, width: int, height: int) -> list[bytearray]:
+    """512×1280(격자 128×320 × 정수 배율) RGBA 행 목록. 비율·배율이 맞지 않으면 ValueError."""
+    if width <= 0 or width % GRID or height * GRID != width * SPRITE_ROWS:
+        raise ValueError(f"sprite 크기는 {GRID}×{SPRITE_ROWS}의 정수배여야 함: {width}x{height}")
+    return _scale_rows(draw(cid).px, width // GRID)
+
+
+def crop_portrait(width: int, rows: list[bytes]) -> list[bytearray]:
+    """sprite RGBA 행(가로 `width`) → 위 `width`행을 자른 정사각 RGB 초상. 먹남 위에 알파 합성한다.
+
+    반투명(8비트 알파)도 받는다: 색 = round((c·a + 먹남·(255 − a)) / 255). 생성 도구가 만든 실제 sprite에도 쓴다.
+    """
+    if len(rows) < width or any(len(r) != width * 4 for r in rows[:width]):
+        raise ValueError("sprite 행이 초상 크기보다 작거나 RGBA가 아님")
+    bg = bytes(BG)
+    out: list[bytearray] = []
+    for r in rows[:width]:
+        r = bytes(r)
+        alpha = r[3::4]
+        line = bytearray(width * 3)
+        line[0::3], line[1::3], line[2::3] = r[0::4], r[1::4], r[2::4]
+        for x, a in enumerate(alpha):
+            if a == 255:
+                continue
+            if a == 0:
+                line[x * 3:x * 3 + 3] = bg
+            else:
+                line[x * 3:x * 3 + 3] = bytes((r[x * 4 + c] * a + bg[c] * (255 - a) + 127) // 255 for c in range(3))
+        out.append(line)
+    return out
+
+
+def render(cid: str, width: int, height: int) -> list[bytearray]:
+    """512×512 RGB 초상 = sprite 위 512×512 크롭 + 먹남 알파 합성. 크기가 128의 정수배 정사각형이 아니면 ValueError."""
+    if width != height or width % GRID or width <= 0:
+        raise ValueError(f"초상 크기는 {GRID}의 정수배 정사각형이어야 함: {width}x{height}")
+    return crop_portrait(width, render_sprite(cid, width, width * SPRITE_ROWS // GRID))

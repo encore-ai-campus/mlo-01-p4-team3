@@ -15,7 +15,7 @@
 | 저장 루트 | content/images |
 | manifest | content/images/manifest.json |
 
-- 용량 상한은 모든 파일에 적용한다(500KB = 512,000바이트, P-15). 넘으면 크기는 그대로 두고 색 수를 줄이거나 다시 압축한다.
+- 용량 상한은 모든 파일에 적용한다(500KB = 512,000바이트, P-15). 넘으면 크기·형식은 그대로 두고 6절의 허용 방법(무손실 재압축)으로 줄인다.
 - 이미지 안에 글자(한글·한자·영문·숫자), 실존 인물, 상표·로고를 넣지 않는다. 글자가 필요하면 화면(HTML)이 쓴다.
 
 ## 2. 유형별 규격
@@ -23,12 +23,17 @@
 | kind | 묶음 | 크기(px) | ID 출처 | 파일 경로 | url |
 |---|---|---|---|---|---|
 | portrait | 인물 초상 | 512×512 | `fixtures/content_min/bundle.json`의 `characters[].npc_id` + 무당 `mudang_f`·`mudang_m` | `content/images/portrait/<id>.png` | `/static/assets/portrait/<id>.png` |
+| sprite | 인물 전신 그림 | 512×1280 | portrait와 같은 인물 13종 | `content/images/sprite/<id>.png` | `/static/assets/sprite/<id>.png` |
+| background | 장면 배경 | 1280×720 | `meeting`·`night` 2장 | `content/images/background/<id>.png` | `/static/assets/background/<id>.png` |
 | place | 장소 아이콘 | 128×128 | `engine.domain.model.Place` 값 5개 | `content/images/place/<id>.png` | `/static/assets/place/<id>.png` |
 | ui | UI 아이콘 | 128×128 | 아래 3절 목록 10개 | `content/images/ui/<id>.png` | `/static/assets/ui/<id>.png` |
 | map | 마을 지도 | 1280×720 | `village` 1장 | `content/images/map/<id>.png` | `/static/assets/map/<id>.png` |
 | ad | 광고 소재 | SLOT_SIZES | `fixtures/ads/campaigns.json`의 모든 소재(캠페인 상태 무관) × 그 캠페인 지면의 규격 | `content/images/ad/<slot_image_path의 파일명>` | `slot_image_path(image_path, slot)` |
 
 - **무당**: 주인공 초상은 여 `mudang_f`, 남 `mudang_m` 2종이다(11/4 PM 결정). 화면은 판 메타 `mudang_variant`(`f`|`m`)로 고른다(B-08-02). 엔진의 참가자 ID `mudang`(PLAYER_ID)에는 파일을 두지 않는다.
+- **sprite**(11/5 크로스체크 17·18): 회의 화면(B-10-07)에 세우는 인물 전신 그림이다(사람마다 1장). 바탕은 투명(RGBA, 8비트 반투명 허용)이고 눈높이·허리선·발끝 기준선은 6절이다. 인물 ID는 portrait와 같다.
+- **초상은 sprite에서 파생**한다: sprite 위 512×512를 잘라 먹남(`#2E344A`) 위에 알파 합성한다(6절). 한 인물은 sprite 1장만 만들고, 초상은 `make_placeholders`가 만든다. manifest의 초상 항목에 `"derived_from": "sprite:<id>"`가 붙고, 쌍의 `placeholder`는 같아야 한다(4절).
+- **장면 배경**: 회의 `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), 밤 `night`(밤 마을 공통 1장). 장소별 배경은 만들지 않는다(7절).
 - **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `llm_wait`·`review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
 - **지도**: ID는 `village`다. 11/5 PM 결정으로 지도는 **시연까지 임시 에셋**이다. 장소 5곳의 영역 좌표는 E-08-07이 임시 지도용 안내 고정값(정보가 없는 균등 배치)으로 manifest에 넣는다(B-10-02 아이콘 배치용). 현재 임시 지도에는 좌표가 없다.
 - **정적 파일 연결**(B-05-03 5번): `/static/assets/<kind>/…` → `content/images/<kind>/…`, `/static/ads/…` → `content/images/ad/…`.
@@ -50,12 +55,14 @@
 
 ## 4. manifest.json 형식
 
-항목 배열이다. 키 (`kind`, `id`, `size`)는 유일하다. 항목은 kind 순서(portrait, place, ui, map, ad) 다음 id, size 순서로 정렬한다.
+항목 배열이다. 키 (`kind`, `id`, `size`)는 유일하다. 항목은 kind 순서(portrait, sprite, background, place, ui, map, ad) 다음 id, size 순서로 정렬한다.
 
 ```json
 [
   {"kind": "portrait", "id": "hunjang", "path": "content/images/portrait/hunjang.png",
-   "url": "/static/assets/portrait/hunjang.png", "placeholder": true},
+   "url": "/static/assets/portrait/hunjang.png", "placeholder": true, "derived_from": "sprite:hunjang"},
+  {"kind": "sprite", "id": "hunjang", "path": "content/images/sprite/hunjang.png",
+   "url": "/static/assets/sprite/hunjang.png", "placeholder": true},
   {"kind": "ad", "id": "cr_gat", "size": [300, 250], "path": "content/images/ad/gat__300x250.png",
    "url": "/static/ads/gat__300x250.png", "placeholder": true}
 ]
@@ -63,62 +70,72 @@
 
 | 필드 | 뜻 |
 |---|---|
-| `kind` | `portrait`·`place`·`ui`·`map`·`ad` |
+| `kind` | `portrait`·`sprite`·`background`·`place`·`ui`·`map`·`ad` |
 | `id` | 콘텐츠 ID. 광고는 `creative_id` |
 | `size` | 광고만. `[가로, 세로]` |
 | `path` | 저장소 기준 파일 경로 |
 | `url` | 웹 주소 |
 | `placeholder` | 임시 파일이면 `true`. 실제 파일로 덮어쓰면 `false` |
+| `derived_from` | 초상만. 원본 sprite 키(`sprite:<id>`). 쌍의 `placeholder`가 다르면 대조가 `pair_mismatch`로 실패한다 |
 
 - B는 `asset_url(content_id)`처럼 manifest를 조회해서만 이미지를 넣는다(B-05-03 4번). D는 캠페인의 `image_path`와 `slot_image_path`로만 소재를 가리킨다(D-05-03 7번). 경로 문자열을 코드에 쓰지 않는다.
 
 ## 5. 임시 세트
 
-- `python -m tools.assets.make_placeholders`가 1~3절과 ID 출처로 모든 항목을 만든다. 초상은 Claude가 코드로 그린 도트 그림(`tools/assets/portrait_art.py`: 스타일 가이드 격자 128×128·팔레트 17색·외곽선, ×4 확대)이고, 나머지는 단색 배경 + 도형이다. 모두 글자가 없고, 같은 입력이면 같은 바이트가 나온다. 인물 모양은 코드의 인물 데이터로 정하고 규칙·해시로 고르지 않는다(주민은 전원 같은 처리).
+- `python -m tools.assets.make_placeholders`가 1~3절과 ID 출처로 모든 항목을 만든다. sprite는 Claude가 코드로 그린 임시 전신 인물(`tools/assets/portrait_art.py`, 6절 기준선에 맞춤, 바탕 투명)이고, 초상은 그 sprite의 위 512×512 합성 크롭이다. 장면 배경은 코드로 그린 단순 장면(`tools/assets/background_art.py`), 나머지는 단색 배경 + 도형. 모두 글자가 없고, 같은 입력이면 같은 바이트가 나온다. 인물 모양은 공개 인물 ID의 코드 데이터로만 정하고 역할·규칙·해시로 고르지 않는다(주민은 전원 같은 처리).
+- **임시 그림은 실루엣·배치 확인용이다.** 코드로 그린 그림이라 최종 화풍(반실사 일러스트, [`style_guide.md`](style_guide.md))과 다르다. 크기·기준선·투명 바탕·배치만 실제 그림과 같고, 색·선·채색은 기준이 아니다.
 - 이미 실제 파일(manifest `placeholder: false`)이 있는 항목은 덮어쓰지 않는다. 표시가 `true`여도 파일 내용이 임시 그림과 다르면 덮어쓰지 않고 보고한다(`--force`로만 덮어씀).
-- **실제 파일을 넣으면 바로 그 항목을 `"placeholder": false`로 바꾸고 커밋한다.**
-- 현재 픽스처 기준 기대 수: portrait 13(주민 11 + 무당 2), place 5, ui 10, map 1, ad 8 = **37**.
+- **실제 파일을 넣으면 바로 그 항목을 `"placeholder": false`로 바꾸고 커밋한다.** 실제 sprite를 넣고 표시를 바꾼 뒤 `make_placeholders`를 실행하면 초상이 그 sprite에서 다시 잘리고 초상 표시도 `false`가 된다. 초상 파일을 따로 그려 넣지 않는다.
+- 이전 절차(11/5, 1회): 흉상 생성기로 만든 임시 초상은 새 파생 결과와 바이트가 달라 보호에 걸린다. `python -m tools.assets.make_placeholders --rederive-portraits`는 `placeholder: true`인 초상만 덮어쓴다(실제 파일·다른 유형은 보호 그대로).
+- 현재 픽스처 기준 기대 수: portrait 13(주민 11 + 무당 2), sprite 13, background 2, place 5, ui 10, map 1, ad 8 = **52**.
 - 임시 파일은 에셋2(생성 기록, `SOURCES.md`)를 면제한다.
 
-## 6. 도트 격자
+## 6. sprite 기준선과 파일 형식 (11/5 PM 결정, 크로스체크 18)
 
-화풍은 도트(픽셀 아트)다([`style_guide.md`](style_guide.md)). 원본 격자를 정수 배율로 최근접 확대(안티에일리어싱 없음)해 2절의 파일 크기에 맞춘다. 파일 크기는 바꾸지 않는다.
+화풍은 애니풍에 가까운 반실사 일러스트다([`style_guide.md`](style_guide.md)). 파일 크기는 2절 그대로다. 색 수·반투명·선은 검사하지 않고 스타일 가이드 체크리스트로 사람이 본다.
 
-| kind | 원본 격자 | 배율 | 파일 크기 | 남는 가장자리 |
-|---|---|---|---|---|
-| portrait | 128×128 | ×4 | 512×512 | 없음 |
-| place | 32×32 | ×4 | 128×128 | 없음 |
-| ui | 32×32 | ×4 | 128×128 | 없음 |
-| map | 320×180 | ×4 | 1280×720 | 없음 |
-| ad 728×90 | 182×22 | ×4 | 728×90 | 그림 728×88, 위아래 1px씩 배경색 |
-| ad 300×250 | 75×62 | ×4 | 300×250 | 그림 300×248, 위아래 1px씩 배경색 |
+| 기준 | 값(px) | 검사 |
+|---|---|---|
+| sprite | 512×1280 RGBA, 8비트 알파(반투명 허용) | 자동 |
+| 가로 가운데 | 보이는 픽셀(알파 16 이상) 경계 상자의 가운데 256±16 | 자동 |
+| 머리 위 여백 | 16 이상 | 자동 |
+| 눈높이 | y≈200, 모든 인물이 같은 값 | 사람 검수 |
+| 허리선 | y=640(평소 표시의 아랫변) | 사람 검수 |
+| 발끝 | y=1248, 아래 여백 16~48 | 자동 |
+| 장면 배경 | 1280×720, 완전 불투명(RGB, 또는 알파가 모두 255인 RGBA) | 자동 |
 
-- 모든 유형을 ×4로 통일한다. 초상은 128×128 격자다(11/4 PM이 샘플을 보고 64에서 변경).
-- 남는 가장자리는 그 그림의 배경색으로 채운다.
-- 생성형 AI 출력은 격자에 정확히 맞지 않으므로 원본 격자로 줄이고, 제한 팔레트로 양자화한 뒤 정수 배율로 확대한다(style_guide.md 7절). 원본 격자 파일(확대 전)의 보관 위치는 생성 도구 태스크(E-08-06)에서 정한다.
+- 자동 검사는 `tools/assets/vn.py`이고 `make_placeholders`가 실행한다. 알파 16 미만은 배경 제거 뒤 남은 옅은 점으로 보고 경계 상자에 넣지 않는다.
+- **PNG 형식**: 8비트 RGB(색 형식 2)·RGBA(색 형식 6), 인터레이스 없음만 쓴다. 팔레트 PNG·16비트·흑백은 쓰지 않는다(실제 sprite를 크롭하는 읽기 도구가 읽지 못해 실패로 보고한다).
+- **용량을 줄이는 방법**: 크기·형식은 그대로 두고 무손실 재압축(행별 필터 선택, zlib 최고 단계)만 한다. 색을 줄이는 양자화·손실 압축은 반투명 가장자리를 깨므로 쓰지 않는다. 그래도 500KB를 넘으면 A-08-04 측정 결과로 PM이 정한다.
+- **초상 파생**: sprite 위 512×512를 잘라 먹남(`#2E344A`) 위에 알파 합성한다. 색 = round((c·a + 먹남·(255 − a)) / 255). 파생 초상은 무손실 필터 선택으로 저장하고, 검사는 크롭 결과와 픽셀이 같은지 본다.
+- **가장자리 색 번짐**: 반투명 가장자리 픽셀의 RGB는 인물 색이어야 한다(바탕색이 섞이지 않은 straight alpha). 밝은 바탕·어두운 바탕·회의 배경 위와 축소 표시에서 사람이 본다(스타일 가이드 체크리스트).
 
-## 7. 장면 배경과 유형별 실제/임시 정책 (11/5 PM 결정, E-08-07에서 코드 반영)
+## 7. 비주얼 노벨 화면 배치와 유형별 실제/임시 정책 (11/5 PM 결정, 크로스체크 16·17)
 
-회의·밤 화면의 비주얼 노벨 연출(B-10-07)에 쓰는 장면 배경을 새 유형으로 둔다. **이 절은 아직 스크립트가 읽지 않는다.** E-08-07(11/8)이 아래 값을 2절 유형 표·4절 kind 목록·6절 격자 표로 옮기고 `spec.py`·`art.py`·`make_placeholders`를 함께 고친다. 그 전에 2절 표에 행을 더하면 임시 세트 생성이 실패한다.
+회의·밤 화면의 비주얼 노벨 연출(B-10-07)에 쓰는 sprite·장면 배경의 배치 기준이다. 규격은 2·6절, 그림 기준은 [`style_guide.md`](style_guide.md)다. 수치는 `tools/assets/vn.py`와 같다.
 
 | 항목 | 값 |
 |---|---|
-| kind | `background` |
-| ID | `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), `night`(밤 마을 공통 1장) |
-| 크기 | 1280×720(원본 격자 320×180, ×4, 남는 가장자리 없음) |
-| 파일 경로 | `content/images/background/<id>.png` |
-| url | `/static/assets/background/<id>.png` |
-| 그림 | 인물 없음, 글자 없음, 특정 장소·인물을 강조하지 않음(스타일 가이드 5·6절) |
-| 임시 그림 | 단색 바탕 + 도형(E-08-07, 인물 없음) |
+| 무대 | 1280×720(장면 배경 크기, 좁은 화면·200% 확대에서는 비율 유지 축소) |
+| 평소 sprite | 회의만, 말하는 사람 1명. sprite 0~640행(머리~허리)을 부드럽게 0.8배 축소해 410×512, 가로 가운데(x 435~845), 위 y 28, 아랫변 y 540(대사창 윗변) |
+| 전신 컷 | sprite 전체를 0.5배 축소해 256×640, 가로 가운데(x 512~768), 위 y 40. 컷 동안 대사창을 숨기고, 클릭하면 대사창이 돌아온다 |
+| 전신 컷 조건 | 첫 등장(자기소개), 추방·처형 결과, 엔딩, 밤 습격 결과(아침 회의에서 피해자를 발표할 때) |
+| 대사창 | 무대 아래 180px(1/4)를 덮는다. 표시 방식만이며 글자는 화면(HTML)이 쓴다 |
+| 선택지 | 무대 밖 아래 패널(무대와 겹치지 않음) |
+| 밤 | sprite 0명(밤 실행자 노출 금지). 무당 독백은 대사창만 |
+| 엔딩 | 평소와 같은 그림. 정체는 글로만 밝힌다 |
+| 투명 sprite 실패 시 | 불투명 흉상(초상)을 액자처럼 무대 가운데에 둔다(A-08-04 시험 결과로 결정) |
 
-- 기대 항목 수는 E-08-07이 코드 기준으로 다시 세어 5절에 적는다(현재 37 → 배경 2를 더해 39 예상).
+- 검수용 합성: `python -m tools.assets.preview_vn --bg meeting --id hunjang [--mode normal|full] --out <파일>`(저장소 밖 또는 `out/` 아래만). 배경 + sprite + 대사창 사각형을 겹친 1280×720 PNG를 쓴다. `--bg night`에 `--id`를 주면 오류다.
 - 장소별 배경은 만들지 않는다. 숨은 행적·실제 장소에 따라 배경을 고르면 거짓 진술을 화면이 판정해 주기 때문이다.
+- 외형(sprite·초상·크기·폴백)은 공개 인물 ID로만 정한다. 같은 인물은 역할이 바뀌어도, 엔딩에서도 같은 그림이다(`tests/assets/test_vn.py`).
 
 **유형별 실제/임시 정책**
 
 | kind | 시연 때 | 검사 |
 |---|---|---|
-| portrait | 실제 필수 | 기본 모드(에셋2~4) |
+| portrait | 실제 필수(sprite에서 파생) | 기본 모드(에셋2~4) |
+| sprite | 실제 필수 | 기본 모드(에셋2~4) |
 | background | 실제 필수 | 기본 모드(에셋2~4) |
 | place, ui, map, ad | 임시 허용(`placeholder: true`) | `check_assets.py --allow-placeholder place,ui,map,ad`(E-08-07 7번). 실제 필수 유형의 검사는 생략하지 않는다 |
 

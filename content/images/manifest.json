@@ -4,90 +4,208 @@
     "id": "blacksmith",
     "path": "content/images/portrait/blacksmith.png",
     "url": "/static/assets/portrait/blacksmith.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:blacksmith"
   },
   {
     "kind": "portrait",
     "id": "boy",
     "path": "content/images/portrait/boy.png",
     "url": "/static/assets/portrait/boy.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:boy"
   },
   {
     "kind": "portrait",
     "id": "ferryman",
     "path": "content/images/portrait/ferryman.png",
     "url": "/static/assets/portrait/ferryman.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:ferryman"
   },
   {
     "kind": "portrait",
     "id": "gisaeng",
     "path": "content/images/portrait/gisaeng.png",
     "url": "/static/assets/portrait/gisaeng.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:gisaeng"
   },
   {
     "kind": "portrait",
     "id": "gwabu",
     "path": "content/images/portrait/gwabu.png",
     "url": "/static/assets/portrait/gwabu.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:gwabu"
   },
   {
     "kind": "portrait",
     "id": "hunjang",
     "path": "content/images/portrait/hunjang.png",
     "url": "/static/assets/portrait/hunjang.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:hunjang"
   },
   {
     "kind": "portrait",
     "id": "hunter",
     "path": "content/images/portrait/hunter.png",
     "url": "/static/assets/portrait/hunter.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:hunter"
   },
   {
     "kind": "portrait",
     "id": "jumo",
     "path": "content/images/portrait/jumo.png",
     "url": "/static/assets/portrait/jumo.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:jumo"
   },
   {
     "kind": "portrait",
     "id": "meosum",
     "path": "content/images/portrait/meosum.png",
     "url": "/static/assets/portrait/meosum.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:meosum"
   },
   {
     "kind": "portrait",
     "id": "monk",
     "path": "content/images/portrait/monk.png",
     "url": "/static/assets/portrait/monk.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:monk"
   },
   {
     "kind": "portrait",
     "id": "mudang_f",
     "path": "content/images/portrait/mudang_f.png",
     "url": "/static/assets/portrait/mudang_f.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:mudang_f"
   },
   {
     "kind": "portrait",
     "id": "mudang_m",
     "path": "content/images/portrait/mudang_m.png",
     "url": "/static/assets/portrait/mudang_m.png",
-    "placeholder": true
+    "placeholder": true,
+    "derived_from": "sprite:mudang_m"
   },
   {
     "kind": "portrait",
     "id": "yakcho",
     "path": "content/images/portrait/yakcho.png",
     "url": "/static/assets/portrait/yakcho.png",
+    "placeholder": true,
+    "derived_from": "sprite:yakcho"
+  },
+  {
+    "kind": "sprite",
+    "id": "blacksmith",
+    "path": "content/images/sprite/blacksmith.png",
+    "url": "/static/assets/sprite/blacksmith.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "boy",
+    "path": "content/images/sprite/boy.png",
+    "url": "/static/assets/sprite/boy.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "ferryman",
+    "path": "content/images/sprite/ferryman.png",
+    "url": "/static/assets/sprite/ferryman.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "gisaeng",
+    "path": "content/images/sprite/gisaeng.png",
+    "url": "/static/assets/sprite/gisaeng.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "gwabu",
+    "path": "content/images/sprite/gwabu.png",
+    "url": "/static/assets/sprite/gwabu.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "hunjang",
+    "path": "content/images/sprite/hunjang.png",
+    "url": "/static/assets/sprite/hunjang.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "hunter",
+    "path": "content/images/sprite/hunter.png",
+    "url": "/static/assets/sprite/hunter.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "jumo",
+    "path": "content/images/sprite/jumo.png",
+    "url": "/static/assets/sprite/jumo.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "meosum",
+    "path": "content/images/sprite/meosum.png",
+    "url": "/static/assets/sprite/meosum.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "monk",
+    "path": "content/images/sprite/monk.png",
+    "url": "/static/assets/sprite/monk.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "mudang_f",
+    "path": "content/images/sprite/mudang_f.png",
+    "url": "/static/assets/sprite/mudang_f.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "mudang_m",
+    "path": "content/images/sprite/mudang_m.png",
+    "url": "/static/assets/sprite/mudang_m.png",
+    "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "yakcho",
+    "path": "content/images/sprite/yakcho.png",
+    "url": "/static/assets/sprite/yakcho.png",
+    "placeholder": true
+  },
+  {
+    "kind": "background",
+    "id": "meeting",
+    "path": "content/images/background/meeting.png",
+    "url": "/static/assets/background/meeting.png",
+    "placeholder": true
+  },
+  {
+    "kind": "background",
+    "id": "night",
+    "path": "content/images/background/night.png",
+    "url": "/static/assets/background/night.png",
     "placeholder": true
   },
   {
