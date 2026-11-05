@@ -6,6 +6,9 @@
 # 실패하면 푸시를 멈춘다. 태그 푸시와 브랜치 삭제 푸시는 검사하지 않는다.
 zero=0000000000000000000000000000000000000000
 root=$(git rev-parse --show-toplevel) || exit 1
+# 훅이 물려받은 GIT_DIR·GIT_INDEX_FILE 등은 처음에 모두 지운다. 남아 있으면 precheck의 테스트가 임시 저장소 대신
+# 이 저장소에 git init·commit·config를 한다(11/5 사고). 지운 뒤에도 worktree 안에서는 .git 파일로 저장소를 찾는다.
+unset $(git rev-parse --local-env-vars)
 cd "$root" || exit 1
 if command -v python >/dev/null 2>&1; then py=python; else py=python3; fi
 
