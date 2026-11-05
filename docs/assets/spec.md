@@ -104,7 +104,7 @@
 | 항목 | 값 |
 |---|---|
 | kind | `background` |
-| ID | `meeting`(회의 장소 고정 1장, 장소는 E-09-07이 정함), `night`(밤 마을 공통 1장) |
+| ID | `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), `night`(밤 마을 공통 1장) |
 | 크기 | 1280×720(원본 격자 320×180, ×4, 남는 가장자리 없음) |
 | 파일 경로 | `content/images/background/<id>.png` |
 | url | `/static/assets/background/<id>.png` |

@@ -196,7 +196,7 @@
 - 근거: 확정 결정(AWS 계정별 6만 원)
 
 ### C-09-04 통합 2 참여
-- 2h(진척 재처리 도구 0.5h 포함, 11/4 PM 결정 #19) · 조건: [INT-09](E_pm.md#int-09-통합-2-119) 중 C 항목 전부. 그리고 진척 재처리 도구 `tools/replay_progress.py`: 판 문서 아웃박스의 진척 관련 이벤트를 다시 읽어 A의 `engine/domain/progress.py` 반영 함수로 `ProgressRepository`에 멱등 반영(`source_event_id` 기준, 두 번 돌려도 결과 같음 테스트). A-09-01 4번 시험이 이 도구로 실행된다
+- 2h(진척 재처리 도구 0.5h 포함, 11/4 PM 결정 #19) · 조건: [INT-09](E_pm.md#int-09-통합-2-119) 중 C 항목 전부. 그리고 진척 재처리 도구 `tools/replay_progress.py`: 판 문서 아웃박스의 진척 관련 이벤트를 다시 읽어 A의 `engine/domain/progress.py` 반영 함수로 `ProgressRepository`에 멱등 반영(`source_event_id` 기준, 두 번 돌려도 결과 같음 테스트). E-09-08 4번 시험이 이 도구로 실행된다
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 C](../troubles/C.md)에 `### C-09-04` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 코드를 바꿨다면 모듈 문서 [`ops`](../modules/ops.md) `변경 이력` 행은 그날 일괄 갱신(이 태스크의 일괄 갱신 줄)
 - 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: C-09-01, C-09-02, C-09-03 · 코드를 바꿨다면: C-09-04 · 모듈: [`ml_ops`](../modules/ml_ops.md), [`privacy`](../modules/privacy.md), [`aws`](../modules/aws.md), [`ops`](../modules/ops.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/9 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
 

@@ -25,7 +25,7 @@ paldo/
 │  │  ├─ params.py                 밸런스 상수 [A-05-01]
 │  │  ├─ observation.py            관측 투영·스냅샷 [A-06-02]
 │  │  ├─ npc/                      beliefs.py, policy_villager.py, policy_possessed.py [A-07-01], vote.py [A-07-02]
-│  │  ├─ duo.py [A-08-01], summarize.py [A-08-02], progress.py [A-09-01], review.py [A-10-02]
+│  │  ├─ duo.py [A-08-01], summarize.py [A-08-02], progress.py [E-09-08], review.py [E-10-10]
 │  │  └─ decision_params.json      결정 층 파라미터 [A-08-03]
 │  ├─ testing/fakes.py             엔진 포트의 가짜(광고 가짜는 ads/testing/fakes.py) (있음)
 │  └─ sim/                         도메인 사용 · D: bots.py, runner.py, report.py [D-06-01]
@@ -93,7 +93,7 @@ paldo/
 │  ├─ intent/examples_v1.jsonl     [E-06-02]
 │  └─ images/                      <kind>/<id>.png(임시 [E-05-05]·실제 [A-09-05 …] 같은 경로), manifest.json [E-05-05], SOURCES.md(생성 기록) [A-08-04]
 ├─ contracts/datasets.py           데이터셋 계약 (있음)
-├─ fixtures/                       생성물(`tools/build_fixtures.py`) (있음) + review/review_trace_sample.json [A-10-02]
+├─ fixtures/                       생성물(`tools/build_fixtures.py`) (있음) + review/review_trace_sample.json [E-10-10]
 │
 ├─ tools/                          도구 · 공용
 │  ├─ build_fixtures.py, build_ads_fixtures.py, gen_synthetic.py, gen_synthetic_ads.py,
