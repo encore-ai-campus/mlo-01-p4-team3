@@ -25,13 +25,14 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from tools.tasks_md import TASK_LIMITS, UNASSIGNED_FLOWS, Decision, Task, hours_table, load_all
+from tools.tasks_md import (EXTENSION_ROW, EXTENSION_TAG, SEPARATE_ROWS, TASK_LIMITS, UNASSIGNED_FLOWS, Decision,
+                            Task, hours_table, load_all)
 
 ROOT = Path(__file__).resolve().parents[1]
 YEAR = 2026
 MARKER_RE = re.compile(r"<!--\s*(?:task|decision)-id:\s*([A-Z]+-\d{2}(?:-\d{2})?)\s*-->")
 MANAGED_PREFIXES = ("flow:", "day:", "type:")
-MANAGED_EXACT = ("review-required", "asset")
+MANAGED_EXACT = ("review-required", "asset", "scope:extension")
 MILESTONES = [
     # (제목, 마감일 MM-DD, 이 날짜까지의 태스크가 들어감)
     ("통합 1 (11/7)", "11-07"),
@@ -134,6 +135,8 @@ def desired_issues(tasks: list[Task], decisions: list[Decision], repo: str | Non
             labels.append("review-required")
         if "에셋" in t.tags:
             labels.append("asset")
+        if EXTENSION_TAG in t.tags:
+            labels.append("scope:extension")
         refs = " · ".join(_ref(d) for d in t.deps) or "없음"
         decs = " · ".join(_ref(p) for p in t.decisions) or "없음"
         date_txt = f"{int(t.date[:2])}/{int(t.date[3:])}" if t.date else "-"
@@ -418,9 +421,13 @@ def print_hours(tasks: list[Task], out=sys.stdout) -> None:
     table = hours_table(tasks)
     days = sorted({d for f in table.values() for d in f})
     out.write("흐름 | " + " | ".join(d[3:] for d in days) + " | 합계\n")
-    for flow in sorted(table, key=lambda f: (f in UNASSIGNED_FLOWS, f)):
+    for flow in sorted(table, key=lambda f: (f in SEPARATE_ROWS, f)):
         row = table[flow]
         cells = " | ".join(f"{row.get(d, 0.0):g}" for d in days)
+        if flow == EXTENSION_ROW:
+            # 확장 태스크(여유 되면): 흐름별 한도에 넣지 않고 별도 줄로만 보인다.
+            out.write(f"{flow}(여유 되면) | {cells} | {sum(row.values()):g}\n")
+            continue
         if flow in UNASSIGNED_FLOWS:
             # 담당 미정(P-24): 어느 흐름의 한도에도 넣지 않고 별도 줄로만 보인다.
             out.write(f"{flow}(발표 트랙, 담당 미정) | {cells} | {sum(row.values()):g}\n")

@@ -34,6 +34,11 @@ FLOW_FILES = {"A": "A_engine.md", "B": "B_web.md", "C": "C_infra.md", "D": "D_ml
 TASK_LIMITS = {"A": 7.5, "B": 7.5, "C": 7.5, "D": 7.5, "E": 9.0}
 # 담당이 정해지지 않은 트랙: 흐름별 한도 계산에서 빼고 시간표에 별도 줄로만 보인다(발표 트랙, P-24).
 UNASSIGNED_FLOWS = {"S"}
+# 확장 태스크(제목 `[확장]`, 11/5 PM 결정으로 범위 축소: 여유 되면 한다). 시간은 원래 흐름이 아니라 이 줄에 모아
+# 흐름별 한도 계산에서 빼고, 일괄 갱신 대상·통합 판정에도 넣지 않는다.
+EXTENSION_TAG = "확장"
+EXTENSION_ROW = "확장"
+SEPARATE_ROWS = UNASSIGNED_FLOWS | {EXTENSION_ROW}
 
 
 @dataclass
@@ -171,10 +176,10 @@ def _build_task(tid: str, title: str, flow: str, date: str | None, body: str, so
     dep_text = _first_segment_after("선행:", first)
     deps = [d for d in TASK_ID_RE.findall(dep_text) if d != tid]
     decisions = sorted(set(DECISION_ID_RE.findall(first)))
-    tags = [t for t in ("에셋", "검수") if f"[{t}]" in title]
+    tags = [t for t in ("에셋", "검수", EXTENSION_TAG) if f"[{t}]" in title]
     same = _SAME_AS_RE.search(body)
     same_as = TASK_ID_RE.findall(same.group(1)) if same else []
-    clean_title = re.sub(r"\s*\[(에셋|검수)\]", "", title).strip()
+    clean_title = re.sub(r"\s*\[(에셋|검수|확장)\]", "", title).strip()
     task_flow = "INT" if tid.startswith("INT-") else flow
     own = _OWNER_RE.search(first)
     owner = own.group(1) if own else ("E" if task_flow == "INT" else task_flow)
@@ -254,12 +259,26 @@ def load_all(tasks_dir: Path) -> tuple[list[Task], list[Decision]]:
     return tasks, decisions
 
 
+def is_extension(task: Task) -> bool:
+    """확장 태스크(`[확장]`, 여유 되면 한다)인지."""
+    return EXTENSION_TAG in task.tags
+
+
+def hours_row(task: Task) -> str:
+    """시간표에서 이 태스크가 들어가는 줄. 확장 태스크는 흐름과 관계없이 `확장` 줄이다."""
+    return EXTENSION_ROW if is_extension(task) else task.flow
+
+
 def hours_table(tasks: list[Task]) -> dict[str, dict[str, float]]:
-    """흐름 → 날짜 → (태스크 시간 + 문서화 시간 + 일괄 갱신 시간). 통합(INT)은 주관 태스크 시간에 들어 있어 뺀다."""
+    """흐름 → 날짜 → (태스크 시간 + 문서화 시간 + 일괄 갱신 시간). 통합(INT)은 주관 태스크 시간에 들어 있어 뺀다.
+
+    확장 태스크는 원래 흐름이 아니라 `확장` 줄에 모은다(흐름별 한도에서 빠진다).
+    """
     table: dict[str, dict[str, float]] = {}
     for t in tasks:
         if t.kind != "task" or t.date is None:
             continue
-        table.setdefault(t.flow, {}).setdefault(t.date, 0.0)
-        table[t.flow][t.date] += t.hours + t.doc_hours + t.batch_hours
+        row = hours_row(t)
+        table.setdefault(row, {}).setdefault(t.date, 0.0)
+        table[row][t.date] += t.hours + t.doc_hours + t.batch_hours
     return table

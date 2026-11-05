@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 
 from tools.tasks_md import (
-    FLOW_FILES, TASK_LIMITS, UNASSIGNED_FLOWS, hours_table, load_all, parse_decisions, parse_task_file,
+    EXTENSION_ROW, FLOW_FILES, TASK_LIMITS, UNASSIGNED_FLOWS, hours_table, is_extension, load_all, parse_decisions,
+    parse_task_file,
 )
 from tools.tasks_to_issues import (
     MILESTONES, ExistingIssue, apply_plan, desired_issues, milestone_for, parse_assign,
@@ -338,8 +339,14 @@ class RealTaskDocs(unittest.TestCase):
         """P-22(가): 흐름별 하루 한 번, 그날 마지막 태스크에 일괄 갱신 줄. 대상은 그날의 문서 산출 외 태스크 전부."""
         days: dict[tuple[str, str], list] = {}
         for t in self.tasks:
-            if t.kind == "task" and t.date:
+            if t.kind == "task" and t.date and not is_extension(t):  # 확장 태스크는 일괄 갱신 대상이 아니다(2절)
                 days.setdefault((t.flow, t.date), []).append(t)
+        for t in self.tasks:
+            if is_extension(t):
+                with self.subTest(extension=t.task_id):
+                    self.assertFalse(t.batch_hours, "확장 태스크에는 일괄 갱신 줄을 두지 않는다")
+                    listed = {x for o in self.tasks for x in o.batch_targets + o.batch_conditional}
+                    self.assertNotIn(t.task_id, listed, "확장 태스크는 일괄 갱신 대상에 넣지 않는다")
         for (flow, date), ts in days.items():
             if flow in UNASSIGNED_FLOWS:
                 self.assertFalse([t.task_id for t in ts if t.batch_hours], "발표 트랙은 모듈 문서가 없다")
@@ -356,6 +363,24 @@ class RealTaskDocs(unittest.TestCase):
                     self.assertTrue((ROOT / "docs" / "modules").exists())
                     self.assertRegex(m, r"^[a-z_]+$")
                 self.assertEqual(last.batch_hours, 0.5 if last.batch_targets else 0.25)
+
+    def test_required_tasks_do_not_depend_on_extensions(self):
+        """11/5 범위 축소: 필수 태스크는 `[확장]` 태스크를 선행으로 갖지 않는다."""
+        ext = {t.task_id for t in self.tasks if is_extension(t)}
+        self.assertTrue(ext)
+        bad = [(t.task_id, d) for t in self.tasks if not is_extension(t) for d in t.deps if d in ext]
+        self.assertEqual(bad, [])
+
+    def test_extension_hours_in_separate_row(self):
+        table = hours_table(self.tasks)
+        self.assertIn(EXTENSION_ROW, table)
+        ext_total = sum(t.hours + t.doc_hours + t.batch_hours for t in self.tasks
+                        if is_extension(t) and t.kind == "task" and t.date)
+        self.assertAlmostEqual(sum(table[EXTENSION_ROW].values()), ext_total)
+        labels = {d.key: d.labels for d in desired_issues(self.tasks, self.decisions)}
+        for t in self.tasks:
+            if is_extension(t) and t.task_id in labels:
+                self.assertIn("scope:extension", labels[t.task_id])
 
     def test_light_tasks_write_only_troubles(self):
         """P-22(가): 2h 미만·가벼운 태스크는 +0h(트러블만), 태스크별 문서화 줄에 모듈 문서 갱신 의무가 없다."""

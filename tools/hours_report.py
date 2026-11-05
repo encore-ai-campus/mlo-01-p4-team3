@@ -16,7 +16,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from tools.tasks_md import UNASSIGNED_FLOWS, Task, load_all
+from tools.tasks_md import EXTENSION_ROW, SEPARATE_ROWS, UNASSIGNED_FLOWS, Task, hours_row, load_all
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTUAL_LINE_RE = re.compile(r"^-\s*실제 소요 시간\(h\):[ \t]*(.*?)[ \t]*$", re.M)
@@ -73,7 +73,8 @@ def summarize(tasks: list[Task], actuals: dict[str, float | None], until: str | 
     for t in tasks:
         if t.kind != "task" or t.date is None or (until and t.date > until):
             continue
-        row = rows.setdefault((t.flow, t.date), Row(t.flow, t.date))
+        key = hours_row(t)  # 확장 태스크는 `확장` 줄
+        row = rows.setdefault((key, t.date), Row(key, t.date))
         plan = planned_hours(t)
         row.planned += plan
         actual = actuals.get(t.task_id)
@@ -82,7 +83,7 @@ def summarize(tasks: list[Task], actuals: dict[str, float | None], until: str | 
         else:
             row.planned_reported += plan
             row.actual += actual
-    return sorted(rows.values(), key=lambda r: (r.flow in UNASSIGNED_FLOWS, r.flow, r.date))
+    return sorted(rows.values(), key=lambda r: (r.flow in SEPARATE_ROWS, r.flow, r.date))
 
 
 def load_actuals(evidence_dir: Path, task_ids: list[str]) -> tuple[dict[str, float | None], dict[str, str]]:
@@ -109,7 +110,8 @@ def render(rows: list[Row]) -> str:
     lines = ["| 흐름 | 날짜 | 계획(전체) | 계획(기록한 태스크) | 실제 | 실제/계획 | 기록 없음 |", "|---|---|---|---|---|---|---|"]
     for r in rows:
         ratio = "-" if r.ratio is None else f"{r.ratio:.2f}"
-        name = f"{r.flow}(발표 트랙)" if r.flow in UNASSIGNED_FLOWS else r.flow
+        name = (f"{r.flow}(발표 트랙)" if r.flow in UNASSIGNED_FLOWS
+                else f"{r.flow}(여유 되면)" if r.flow == EXTENSION_ROW else r.flow)
         lines.append(f"| {name} | {r.date[:2].lstrip('0')}/{r.date[3:].lstrip('0')} | {f(r.planned)} | "
                      f"{f(r.planned_reported)} | {f(r.actual)} | {ratio} | {', '.join(r.missing) or '-'} |")
     return "\n".join(lines) + "\n"
