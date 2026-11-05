@@ -4,7 +4,7 @@
 
 ## 1. 실행 환경
 
-| 구분 | 값 | 비고 |
+| 구분&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 값&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 비고 |
 |---|---|---|
 | 서버 | 3차 VMware VM 20대(노트북 5대에 분산) | VM 사양 후보 2 vCPU / 4GB(재확인 전). 배치는 기획서 6.3 |
 | OS | Ubuntu Server 26.04 | 기록값, 11/5 실측 필요 |
@@ -14,7 +14,7 @@
 
 ## 2. 구성 요소
 
-| 역할 | 기술 | 버전(기록값, 11/5 실측 필요) | 담당 |
+| 역할&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 기술&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 버전(기록값, 11/5 실측 필요) | 담당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 웹·API | Django + Django 템플릿 + htmx + Alpine.js | Django 6.1.2(app 서버에 설치 기록) | B |
 | 웹소켓(광고 신호, 11/4 PM 결정) | Django Channels + Daphne(ASGI 서버), 채널 계층 `InMemoryChannelLayer`, 게임 웹 프로세스 1개 | **잠정 범위** `channels>=4.3.2,<5`, `daphne>=4.2.3,<5`(하한은 로컬에서 설치를 확인한 버전. 이전 Daphne의 보안 수정이 빠지지 않게 하한을 올림). Python 3.14·Django 6.1 조합은 미확인이고 설치 성공만으로 호환을 확정하지 않는다. B-07-05에서 대상 VM에 설치해 기동·로그인·웹소켓·기존 HTTP 테스트를 통과시킨 뒤 정확한 버전을 고정·기록 | B |

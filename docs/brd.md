@@ -25,7 +25,7 @@
 
 ### 1.1 사업 모델
 
-| 항목 | 내용 |
+| 항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 내용 |
 |---|---|
 | 가격 | 무료 플레이. 파일럿에는 결제 기능이 없다 |
 | 수익원 | 광고. CPC·CPM 캠페인을 eCPM 순으로 줄 세우는 2등 가격 경매로 노출을 판다 |
@@ -38,7 +38,7 @@
 
 시장 규모와 이용자 수는 조사 자료가 없어 수치를 쓰지 않는다. 아래 가정은 파일럿과 출시 뒤에 검증한다.
 
-| ID | 가정 | 검증 방법 | 검증 시점 |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 가정&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 검증 방법 | 검증&nbsp;시점&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | `BR-ASM-007` | 짧은 한 판(10분 안팎)의 싱글플레이 사회적 추론 게임을 웹에서 즐길 이용자가 있다 | 파일럿: 완주율·재미 설문·판 수는 탐색 근거로만 쓴다(진행자가 지정한 반복 플레이는 자발적 수요로 보지 않는다). 출시 후: 재방문율(3.1절) | 파일럿(11/9, 탐색), 출시 후 |
 | `BR-ASM-008` | 한국 민속 분위기의 창작 설정이 기존 사회적 추론 게임과 구별되는 매력이 된다 | 파일럿에서는 직접 검증하지 않는다. 출시 후 이용자 조사, 유사 서비스 비교(부록 1) | 출시 후 |
@@ -52,7 +52,7 @@
 
 흐름 A~E의 실제 담당자는 결정 대기(P-01)다. 이 문서는 역할 ID로만 부른다.
 
-| ID | 이해관계자 | 필요한 업무 결과 |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이해관계자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 필요한 업무 결과 |
 |---|---|---|
 | `STK-PLAYER-001` | 플레이어(파일럿 내부망 테스트 참가자, 출시 후 일반 이용자) | 규칙을 이해하고 10분 안팎에 한 판을 끝낸다. 자유 입력과 버튼으로 원하는 행동을 하고, 패배해도 납득할 근거를 확인한다. 개인정보를 내지 않고 참여하며 가명 ID로 삭제를 요청할 수 있다. |
 | `STK-PM-001` | PM(흐름 E: 콘텐츠·LLM·이미지 에셋 규격·검수·사용자 테스트·통합) | 범위를 줄이지 않고 11/12에 파일럿을 완료한다. 태스크 완료 여부만 감독해도 합격선이 충족되는지 판단할 수 있다. 사용자 테스트를 운영하고 결과를 보고한다. |
@@ -68,18 +68,18 @@
 
 합격선의 출처는 기획서 1.1절(2026-11-04 확정)이다. 성능 수치는 Prometheus 지표 또는 측정 스크립트 출력만 인정하고, 추정치는 인정하지 않는다. 확인하지 못한 항목은 PASS가 아니라 `not_verified`로 기록한다.
 
-| ID | 업무 목표 | 측정 방법(합격선) | 이해관계자 |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 업무&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 측정 방법(합격선) | 이해관계자&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
-| `BR-OBJ-001` | 한 판이 처음부터 끝까지 성립하고, 승패가 한쪽으로 쏠리지 않는다. | ① 6인·창귀 1 판, 피해 장소 공개 상태에서 대역 "논리 우선 봇" 승률 40~60%(1,000판 이상, 95% 구간 보고) ② 사람 판 소요 시간 중앙값 10분 이하 ③ 웹에서 LLM 없이 한 판 완주. 6인 외 프리셋은 공개 기준(P-08)을 통과한 것만 연다 | `STK-PLAYER-001`, `STK-ENGINE-001` |
-| `BR-OBJ-002` | 파일럿 사용자 테스트(내부망)로 실제 플레이 데이터와 반응을 모은다. | 목표: 참가자 30명, 1인 평균 4판(약 120판, 가명 ID 기준). 필수 조건: ① 사전·정식 테스트를 실제로 운영하고 참가자 수·판 수·완주율을 집계한다. 목표 미달이면 실제 수와 원인을 보고한다 ② 판 종료 설문 응답률을 집계해 보고한다(목표치는 `BR-OQ-002`) ③ 설문 평균 3.5(5점)는 목표값이며 조건은 구현·수집·리포트다. 미달이면 원인 분석을 남긴다 | `STK-PM-001`, `STK-PLAYER-001` |
+| `BR-OBJ-001` | 한 판이 처음부터 끝까지 성립하고, 승패가 한쪽으로 쏠리지 않는다. | ① 6인·창귀 1 판, 피해 장소 공개 상태에서 대역 "논리 우선 봇" 승률 40~60%(1,000판 이상, 95% 구간 보고)<br>② 사람 판 소요 시간 중앙값 10분 이하<br>③ 웹에서 LLM 없이 한 판 완주. 6인 외 프리셋은 공개 기준(P-08)을 통과한 것만 연다 | `STK-PLAYER-001`, `STK-ENGINE-001` |
+| `BR-OBJ-002` | 파일럿 사용자 테스트(내부망)로 실제 플레이 데이터와 반응을 모은다. | 목표: 참가자 30명, 1인 평균 4판(약 120판, 가명 ID 기준). 필수 조건:<br>① 사전·정식 테스트를 실제로 운영하고 참가자 수·판 수·완주율을 집계한다. 목표 미달이면 실제 수와 원인을 보고한다<br>② 판 종료 설문 응답률을 집계해 보고한다(목표치는 `BR-OQ-002`)<br>③ 설문 평균 3.5(5점)는 목표값이며 조건은 구현·수집·리포트다. 미달이면 원인 분석을 남긴다 | `STK-PM-001`, `STK-PLAYER-001` |
 | `BR-OBJ-003` | 플레이어가 자유 문장으로 말해도 원하는 행동으로 바뀐다. | 사람 주석 평가 세트(`test_human`)에서 명령 전체 일치율 80% 이상이면서 규칙 기준선보다 높다 | `STK-PLAYER-001`, `STK-MLAD-001` |
-| `BR-OBJ-004` | 로컬 LLM이 사실을 더하지 않고 NPC 답변의 말투를 살린다. | ① 추궁 전체 응답(큐 대기 + 처리 + 생성 + 검증) p95 15초 이하 ② 실패·시간 초과 시 같은 정보량의 템플릿으로 대체하고 폴백률을 보고한다 ③ 말투 사람 평가는 방법·합격선 결정 후 적용(P-09) | `STK-PLAYER-001`, `STK-PM-001` |
-| `BR-OBJ-005` | 플레이 데이터가 모델에 다시 반영되는 학습 루프를 보인다. | ① 씐 자 확률 모델: 로그 손실이 규칙 v0보다 낮고 ECE 0.05 이하 ② 재학습 모델은 비열등일 때만 승격하고, 거부도 사유를 레지스트리에 남기면 성공으로 본다 ③ 승격·거부 기록에 데이터 버전, 특징 버전, 코드 커밋이 있다 | `STK-MLAD-001`, `STK-INFRA-001` |
-| `BR-OBJ-006` | 광고 입찰·과금 루프가 설계대로 돌고 회계가 맞는다. | 합성 트래픽 검증에서 ① 예측 CTR 상대오차 20% 이내 ② 일 예산 소진 오차 10% 이내 ③ 무효 과금 0건 ④ 건별 대사 불일치 0건. 추가로 광고 장애 중 게임 API p95 증가 50ms 이하, 게임 오류율 증가 없음 | `STK-ADV-001`, `STK-MLAD-001` |
-| `BR-OBJ-007` | 운영 상태를 수치와 로그로 확인하고, 장애에서 복구할 수 있다. | ① 게임 API(LLM 제외) p95 1초 이하(필수), 300ms(목표, 실측 보고) ② 동작하는 구성요소마다 구조화 로그와 `/metrics`(또는 결과 JSON)가 있고 누락 0 ③ 장애 복구 시간을 측정해 보고한다(목표치는 P-13) ④ 판 상태와 이벤트 적재가 맞는다: 판마다 `next_seq`(마지막 `seq` + 1, 판에 기록된 이벤트 수) = 중복 제거 후 고유 발행 건수 = bronze 행 수, 유실 0·중복 0(Kafka·발행기·소비자·Spark 중지 후 재개 포함) | `STK-INFRA-001`, `STK-WEB-001` |
-| `BR-OBJ-008` | 개인정보를 최소로 다루고, 비밀정보가 저장소에 들어가지 않는다. | ① 게임 데이터에 실명·연락처·계정 ID 0건(가명 UUID만) ② 원문 입력은 마스킹 후 저장 ③ 파일럿 종료(11/12) 전: 시험 데이터로 가명 ID 삭제 요청과 보존 기한 삭제 작업을 실행해 저장 위치 전체 0건을 확인하고, 12/12 실행 예약을 런북에 남긴다(Kafka는 P-18 결정 시점 기준) ④ 파일럿 종료 후 운영 의무: 2026-12-12에 실제 사용자 테스트 데이터를 삭제하고 실행 기록을 남긴다(파일럿 종료 시점에는 검증 대상이 아니다) ⑤ 저장소 비밀정보 검사 0건 | `STK-PLAYER-001`, `STK-INFRA-001` |
-| `BR-OBJ-009` | 사업 검토 데모와 저장소만으로 결과를 검증하고 인수인계할 수 있다. | ① PRD의 모든 Must 요구사항이 AC·태스크 ID·증빙에 연결되고 고아 요구사항 0건 ② 증빙 문서의 수치가 측정 결과 파일과 일치 ③ 25분 사업 검토 데모에 핵심 장면 시연과 LLM 활용·학습 결과를 포함 | `STK-EVAL-001`, `STK-PRES-001` |
-| `BR-OBJ-010` | 광고 수익 지표를 측정하고 보고할 수 있다. | 파일럿에서는 합성 트래픽(정답 CTR을 숨긴 "숨은 정답 주사위")으로 측정해 보고한다: ① 채움률: 광고 서버가 응답한 serve 중 `filled=true` 비율(`paldo_ad_serve_total{filled}`). 웹 쪽 timeout·error·busy·circuit_open은 광고 조회 결과(`paldo_ad_fetch_total{result}`)로 따로 보고 ② 실현 eCPM: 비용 ÷ 유효 노출 × 1,000(순위용 eCPM과 구분, 금액 단위 표시) ③ 광고주 예산 소진율 ④ 무효 노출률·무효 클릭률, 그리고 무효 과금 0건(`BR-OBJ-006` ③). ②~④는 캠페인 × 지면 × 시간대 gold 집계와 광고 대시보드에서 본다. 채움률은 광고 서버 전체 기준으로 보고한다. 소진율의 예약 포함 여부, 무효율 분모, 채움률의 지면·시간대 분해, 잠정·확정 구분은 `BR-OQ-021`에서 정한다. 분모가 0이면 비운다. 목표치는 두지 않는다(합성 트래픽은 실제 성과를 증명하지 않는다, `BR-ASM-005`). 실제 목표치는 출시 후 기준선 측정 뒤 정한다(3.1절) | `STK-ADV-001`, `STK-MLAD-001`, `STK-EVAL-001` |
+| `BR-OBJ-004` | 로컬 LLM이 사실을 더하지 않고 NPC 답변의 말투를 살린다. | ① 추궁 전체 응답(큐 대기 + 처리 + 생성 + 검증) p95 15초 이하<br>② 실패·시간 초과 시 같은 정보량의 템플릿으로 대체하고 폴백률을 보고한다<br>③ 말투 사람 평가는 방법·합격선 결정 후 적용(P-09) | `STK-PLAYER-001`, `STK-PM-001` |
+| `BR-OBJ-005` | 플레이 데이터가 모델에 다시 반영되는 학습 루프를 보인다. | ① 씐 자 확률 모델: 로그 손실이 규칙 v0보다 낮고 ECE 0.05 이하<br>② 재학습 모델은 비열등일 때만 승격하고, 거부도 사유를 레지스트리에 남기면 성공으로 본다<br>③ 승격·거부 기록에 데이터 버전, 특징 버전, 코드 커밋이 있다 | `STK-MLAD-001`, `STK-INFRA-001` |
+| `BR-OBJ-006` | 광고 입찰·과금 루프가 설계대로 돌고 회계가 맞는다. | 합성 트래픽 검증에서<br>① 예측 CTR 상대오차 20% 이내<br>② 일 예산 소진 오차 10% 이내<br>③ 무효 과금 0건<br>④ 건별 대사 불일치 0건. 추가로 광고 장애 중 게임 API p95 증가 50ms 이하, 게임 오류율 증가 없음 | `STK-ADV-001`, `STK-MLAD-001` |
+| `BR-OBJ-007` | 운영 상태를 수치와 로그로 확인하고, 장애에서 복구할 수 있다. | ① 게임 API(LLM 제외) p95 1초 이하(필수), 300ms(목표, 실측 보고)<br>② 동작하는 구성요소마다 구조화 로그와 `/metrics`(또는 결과 JSON)가 있고 누락 0<br>③ 장애 복구 시간을 측정해 보고한다(목표치는 P-13)<br>④ 판 상태와 이벤트 적재가 맞는다: 판마다 `next_seq`(마지막 `seq` + 1, 판에 기록된 이벤트 수) = 중복 제거 후 고유 발행 건수 = bronze 행 수, 유실 0·중복 0(Kafka·발행기·소비자·Spark 중지 후 재개 포함) | `STK-INFRA-001`, `STK-WEB-001` |
+| `BR-OBJ-008` | 개인정보를 최소로 다루고, 비밀정보가 저장소에 들어가지 않는다. | ① 게임 데이터에 실명·연락처·계정 ID 0건(가명 UUID만)<br>② 원문 입력은 마스킹 후 저장<br>③ 파일럿 종료(11/12) 전: 시험 데이터로 가명 ID 삭제 요청과 보존 기한 삭제 작업을 실행해 저장 위치 전체 0건을 확인하고, 12/12 실행 예약을 런북에 남긴다(Kafka는 P-18 결정 시점 기준)<br>④ 파일럿 종료 후 운영 의무: 2026-12-12에 실제 사용자 테스트 데이터를 삭제하고 실행 기록을 남긴다(파일럿 종료 시점에는 검증 대상이 아니다)<br>⑤ 저장소 비밀정보 검사 0건 | `STK-PLAYER-001`, `STK-INFRA-001` |
+| `BR-OBJ-009` | 사업 검토 데모와 저장소만으로 결과를 검증하고 인수인계할 수 있다. | ① PRD의 모든 Must 요구사항이 AC·태스크 ID·증빙에 연결되고 고아 요구사항 0건<br>② 증빙 문서의 수치가 측정 결과 파일과 일치<br>③ 25분 사업 검토 데모에 핵심 장면 시연과 LLM 활용·학습 결과를 포함 | `STK-EVAL-001`, `STK-PRES-001` |
+| `BR-OBJ-010` | 광고 수익 지표를 측정하고 보고할 수 있다. | 파일럿에서는 합성 트래픽(정답 CTR을 숨긴 "숨은 정답 주사위")으로 측정해 보고한다:<br>① 채움률: 광고 서버가 응답한 serve 중 `filled=true` 비율(`paldo_ad_serve_total{filled}`). 웹 쪽 timeout·error·busy·circuit_open은 광고 조회 결과(`paldo_ad_fetch_total{result}`)로 따로 보고<br>② 실현 eCPM: 비용 ÷ 유효 노출 × 1,000(순위용 eCPM과 구분, 금액 단위 표시)<br>③ 광고주 예산 소진율<br>④ 무효 노출률·무효 클릭률, 그리고 무효 과금 0건(`BR-OBJ-006`<br>③).<br>②~④는 캠페인 × 지면 × 시간대 gold 집계와 광고 대시보드에서 본다. 채움률은 광고 서버 전체 기준으로 보고한다. 소진율의 예약 포함 여부, 무효율 분모, 채움률의 지면·시간대 분해, 잠정·확정 구분은 `BR-OQ-021`에서 정한다. 분모가 0이면 비운다. 목표치는 두지 않는다(합성 트래픽은 실제 성과를 증명하지 않는다, `BR-ASM-005`). 실제 목표치는 출시 후 기준선 측정 뒤 정한다(3.1절) | `STK-ADV-001`, `STK-MLAD-001`, `STK-EVAL-001` |
 
 ### 3.1 출시 후 지표 (파일럿에서는 측정하지 않음)
 
@@ -148,7 +148,7 @@
 
 ## 7. 위험·대응·미결 질문
 
-| ID | 발생 조건 | 영향 | 대응 | owner | 상태 |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 발생&nbsp;조건&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 영향&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 대응 | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp; |
 |---|---|---|---|---|---|
 | `BR-RISK-001` | 6인 구성의 밸런스 쏠림, 피해 장소 공개로 마을이 유리해짐 | `BR-OBJ-001` 미달 | 목격 확률·동선 무작위성·비밀 수 조정. 그래도 안 되면 인원 구성 변경 | `STK-ENGINE-001` | open |
 | `BR-RISK-002` | 큰 판(9/2, 11/2)의 검증 부담과 긴 진행 | 프리셋 공개 지연, 판 시간 초과 | 검증된 프리셋만 공개. 반복 진술 접기·회의 축약. 그래도 안 되면 창귀 1명 프리셋만 유지 | `STK-ENGINE-001` | open |
@@ -170,7 +170,7 @@
 
 결정 대기 항목(P-xx)은 `tasks/README.md` 7절이 원본이다. 여기서는 업무 목표에 영향을 주는 것만 연결한다.
 
-| ID | 질문 | 영향받는 목표 | 원본 | 기한 |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 질문 | 영향받는&nbsp;목표&nbsp; | 원본&nbsp;&nbsp;&nbsp;&nbsp; | 기한&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
 | `BR-OQ-001` | 담당자 실명과 흐름·노트북 배정 | 전체 | P-01 | 11/5 09:00 |
 | `BR-OQ-002` | 판 종료 설문 응답률의 목표치(없으면 집계·보고만) | `BR-OBJ-002` | 신규 | 11/6 12:00(제안) |
@@ -203,7 +203,7 @@
 - 확인되지 않은 항목은 PASS가 아니라 `not_verified`로 기록한다.
 - baseline 이후의 변경은 아래 표에 남긴다.
 
-| 날짜 | 버전 | 변경 | 근거 |
+| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 버전 | 변경 | 근거&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 2026-11-04 | v1 | 최초 작성(문서 간 정합성 검토 반영) | 기획서 v1.1, 계약 문서, 결정 대기 목록 |
 | 2026-11-04 | v1 | 사업 문서로 다시 씀(baseline 전 수정): 신규 웹게임 사업 파일럿으로 배경 재작성, 사업 모델(1.1)·시장 가정(1.2, `BR-ASM-007~011`), 광고 수익 지표(`BR-OBJ-010`), 출시 후 지표(3.1, `BR-KPI-001~003`), 위험 `BR-RISK-013·014`, 미결 질문 `BR-OQ-019~021` 추가. `STK-PRES-001`은 데모 자료 트랙, `STK-EVAL-001`은 사업 의사결정자로 의미 변경(ID 유지) | PM 결정(11/4) |
@@ -216,7 +216,7 @@
 
 조사일 2026-11-04. 가격은 조사 시점 스토어 표시값이다.
 
-| 서비스 | 형태 | 가격 정책 | 핵심 구조 | 출처 |
+| 서비스&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 형태&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 가격&nbsp;정책&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 핵심 구조 | 출처&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
 | GNOSIA (Petit Depotto, 발매 PLAYISM, PC 2022-01-23) | 싱글플레이 사회적 추론 | 유료 1회 구매(스팀 표시 ₩26,000) | 토론 → 투표로 1명을 콜드 슬립 → 시간 루프 반복. 역할과 능력치(설득·거짓말 등)가 대화 결과에 영향. 캐릭터 이벤트로 기록(Notes)을 모은다 | https://store.steampowered.com/app/1608290/GNOSIA/ |
 | Suck Up! (Proxima, PC 2025-10-01) | 싱글플레이 대화형 | 유료 1회 구매(스팀 표시 ₩18,500) | 음성·텍스트로 AI 이웃을 설득해 집에 들어간다. 스토어 페이지에 OpenAI ChatGPT로 콘텐츠를 생성한다고 표시. 외부 API 의존 | https://store.steampowered.com/app/2726370/Suck_Up/ |

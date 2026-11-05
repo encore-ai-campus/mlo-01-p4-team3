@@ -53,7 +53,7 @@
 
 ## 5. 광고 이벤트 (`ads/domain/events.py`, 상세 ads.md)
 
-| 토픽 | 이벤트 | 기록 시점 |
+| 토픽&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이벤트&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 기록 시점 |
 |---|---|---|
 | `ad.serve` | `AdServeEvent` | 경매 응답 시점. 노출이 아니다. 광고 없음도 기록한다 |
 | `ad.impression` | `AdImpressionEvent` | 비콘 도착 시점, 또는 클릭이 노출 증거가 된 시점(`implied_by_click`) |

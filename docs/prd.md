@@ -64,7 +64,7 @@
 
 ### 2.2 서비스 흐름
 
-| 구분 | 흐름 |
+| 구분&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 흐름 |
 |---|---|
 | 게임 요청 | 브라우저 → Django 응용 계층(명령 검증: `command_id`, `expected_state_version`) → 도메인 엔진 → MongoDB 판 문서(상태 + 진실 + 아웃박스 + 명령 기록 단일 쓰기) → 허용 정보만 화면으로 |
 | 자유 입력 | 문장 → 의도 해석기(소비 없음, `intent_attempt` 기록) → 발언 카드 0~N장 → 확인·수정·재입력·취소 → 확인한 카드만 명령으로 실행 |
@@ -128,7 +128,7 @@
 
 ### 4.1 게임 엔진 (A)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-ENG-001` | planned | 프리셋 6종으로 판을 만들고 역할·비밀·동선을 배정한다. 배정 검증기 위반 0, 같은 시드는 같은 판 | `BR-OBJ-001` | `AC-ENG-001` | A-05-01, E-05-03 | `STK-ENGINE-001` | 11/5 |
 | `FR-ENG-002` | planned | 아침에 실종자와 피해 장소·시간대를 공개하고(0일째 포함) 주장 스키마에 맞는 행적 진술을 낸다 | `BR-OBJ-001` | `AC-ENG-001` | A-05-01, A-06-02 | `STK-ENGINE-001` | 11/6 |
@@ -146,7 +146,7 @@
 
 ### 4.2 웹·API (B)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-WEB-001` | planned | `contracts/api.md` 2절의 엔드포인트 10개. 입력 JSON 엄격 검증(알 수 없는 필드 400) | `BR-OBJ-001` | `AC-WEB-001` | B-05-02 | `STK-WEB-001` | 11/5 |
 | `FR-WEB-002` | planned | 명령 멱등성과 버전 충돌: 같은 `command_id`는 replay, 오래된 버전 409, 엔진 거부 422, 동시 명령 중 1건만 수락 | `BR-OBJ-007` | `AC-WEB-002` | B-05-02, B-06-02, C-06-01 | `STK-WEB-001` | 11/6 |
@@ -172,7 +172,7 @@
 
 ### 4.4 ML·학습 루프 (D·C)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-ML-001` | planned | 봇 정책 4종(무작위, 논리 우선, 반복 의심형, 거짓말 공략형)과 플레이어 대역 봇, 시뮬레이션 리포트 | `BR-OBJ-001` | `AC-ML-001` | D-06-01 | `STK-MLAD-001` | 11/6 |
 | `FR-ML-002` | planned | k3s Job 대량 시뮬레이션(6인 3,000판 이상, 다른 프리셋 각 300판 이상)이 Kafka → bronze까지 적재 | `BR-OBJ-005` | `AC-ML-001` | C-08-03, D-08-01 | `STK-INFRA-001` | 11/8 |
@@ -181,13 +181,13 @@
 | `FR-ML-004` | planned | MLflow 추적·레지스트리(아티팩트는 Garage). 데이터 버전·특징 버전·코드 커밋 태그가 없으면 등록 실패 | `BR-OBJ-005` | `AC-ML-003` | C-09-01 | `STK-INFRA-001` | 11/9 |
 | `FR-ML-005` | planned | 평가 관문(`contracts/ml_lifecycle.md` 2절)을 코드로. 실패하면 등록하지 않고 거부 사유를 남긴다 | `BR-OBJ-005` | `AC-ML-003` | D-09-02, C-09-01 | `STK-MLAD-001` | 11/9 |
 | `FR-ML-006` | planned | 밴딧(톰슨 샘플링)으로 씐 자 전략 비율을 판 종료마다 갱신. 보상식·1인 가중치 상한·최소 판 수는 P-16 | `BR-OBJ-005` | `AC-ML-004` | D-09-02 | `STK-MLAD-001` | 11/9 |
-| `FR-ML-007` | planned | 재학습 루프 실증: ⓪ 의도 해석기 재학습 ① 대역 봇 보정 ② 시뮬레이션 재생성·씐 자 모델 재학습 → 관문 → 승격 또는 거부, 삭제 요청 데이터 0건, 시연용 단일 명령 | `BR-OBJ-005` | `AC-ML-005` | D-10-01, D-11-01 | `STK-MLAD-001` | 11/11 |
+| `FR-ML-007` | planned | 재학습 루프 실증:<br>⓪ 의도 해석기 재학습<br>① 대역 봇 보정<br>② 시뮬레이션 재생성·씐 자 모델 재학습 → 관문 → 승격 또는 거부, 삭제 요청 데이터 0건, 시연용 단일 명령 | `BR-OBJ-005` | `AC-ML-005` | D-10-01, D-11-01 | `STK-MLAD-001` | 11/11 |
 | `FR-ML-008` | planned | 재학습 CronJob(초기 수동 트리거), 카나리아 20%(관찰 기간·최소 판 수·중단 기준 P-17), 경보 → 롤백 → 다음 판부터 이전 버전 | `BR-OBJ-005` | `AC-ML-005` | C-10-01, B-09-01 | `STK-INFRA-001` | 11/10 |
 | `FR-ML-009` | planned | (확장) 판 중 마을 승리 확률 예측, 자기 대전 강화학습 정책 비교, 프리셋 리포트 | `BR-OBJ-005` | `AC-ML-006` | D-10-03 | `STK-MLAD-001` | 11/10 |
 
 ### 4.5 LLM (E)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-LLM-001` | planned | LLM 벤치마크로 모델·실행 방식·스레드·배정 RAM 결정(후보별 라이선스 기록), 최종 자원 확정 | `BR-OBJ-004` | `AC-LLM-001` | E-06-07, C-06-04 | `STK-PM-001` | 11/6 |
 | `FR-LLM-002` | planned | LLM 서버와 LangGraph: `LineRenderer` 수명주기 6상태, 시간 초과 시 실제 생성 취소, 큐 우선순위, `render_job` 이벤트 | `BR-OBJ-004` | `AC-LLM-002` | E-07-01 | `STK-PM-001` | 11/7 |
@@ -199,7 +199,7 @@
 
 ### 4.6 광고 (D·B·C)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-AD-001` | planned | 지면 4곳만(회의·투표·밤 제외), 규격 `SLOT_SIZES`, 광고 칸 지연 로드, 게임 명령 경로의 광고 호출 0, 노출 비콘(50% 이상 1초)·서명 클릭 링크. 비콘은 게임 웹 웹소켓, 클릭·랜딩은 게임 웹 중계(브라우저는 게임 웹 출처에만 접속, 11/4 PM 결정) | `BR-OBJ-006` | `AC-AD-001`, `AC-WEB-009` | B-07-05, B-07-03 | `STK-WEB-001` | 11/7 |
 | `FR-AD-002` | planned | 광고 서버 API 3종(serve·비콘·클릭), eCPM 2등 가격 경매, 가상 랜딩, admin 캠페인 관리, 이미지는 `image_path`로만 | `BR-OBJ-006` | `AC-AD-002` | D-05-03 | `STK-MLAD-001` | 11/5 |
@@ -214,7 +214,7 @@
 
 ### 4.7 데이터 파이프라인 (C)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-DATA-001` | planned | Mongo 저장소: CAS commit, 상태·진실·아웃박스·명령 기록 단일 문서 쓰기(`w=majority`), 진척·콘텐츠 버전 저장 | `BR-OBJ-007` | `AC-DATA-001` | C-06-01 | `STK-INFRA-001` | 11/6 |
 | `FR-DATA-002` | planned | 아웃박스 발행기와 토픽 정의(파티션·키·보존·복제), acks=all 후 발행 표시, 소비자 `event_id` 중복 제거 | `BR-OBJ-007` | `AC-DATA-002` | C-06-02 | `STK-INFRA-001` | 11/6 |
@@ -223,7 +223,7 @@
 
 ### 4.8 운영·성능 (C·B)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-OPS-001` | planned | VM 20대 실측·점검표, 파일럿 역할 재배정, LLM 잠정 자원, 실행 시간표·디스크 예산, 개발 Compose와 Python 환경(ML·LLM 포함 3.14 단일, 11/5 확정, C-05-03) | `BR-OBJ-007` | `AC-OPS-001` | A-05-01, B-05-01, C-05-01, D-05-01, E-05-01(각 노트북 VM 점검 조건), C-05-02, C-05-03 | `STK-INFRA-001` | 11/5 |
 | `FR-OPS-002` | planned | 모든 서비스·배치·스크립트의 구조화 로그(JSON 한 줄, 필수 필드)와 `/metrics` 또는 결과 JSON. 웹은 `request_id`·`X-Request-ID`·`/healthz`·`/readyz` | `BR-OBJ-007` | `AC-OPS-002` | B-05-01, D-05-03, E-07-01, INT-07 | `STK-INFRA-001` | 11/7 |
@@ -237,7 +237,7 @@
 
 ### 4.9 개인정보·보안 (B·C·E)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-PRIV-001` | planned | 가명 UUID는 가입 때 계정에 발급(쿠키 발급 없음), 실명·연락처 입력란 없음, 동의 기록 없는 계정은 판 시작 불가, 테스트 세션·고정 시드 판, 운영자 화면 인증 | `BR-OBJ-008` | `AC-PRIV-001` | B-06-03, E-06-04 | `STK-WEB-001` | 11/6 |
 | `FR-PRIV-002` | planned | 자유 입력·설문 원문 마스킹(규칙 버전 기록), 로그에는 원문 미기록 | `BR-OBJ-008` | `AC-PRIV-002` | B-07-01, C-09-02 | `STK-WEB-001` | 11/9 |
@@ -251,7 +251,7 @@
 
 ### 4.10 콘텐츠·에셋 (E, 실제 에셋 제작은 B)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-CONT-001` | planned | 첫 플레이 버전 인물 6·비밀 6과 확장 주민 풀·비밀·단서. 콘텐츠 묶음 엄격 검증, 설화 원전 인용 0 | `BR-OBJ-001` | `AC-CONT-001` | E-05-03, E-08-02 | `STK-PM-001` | 11/8 |
 | `FR-CONT-002` | planned | 템플릿 대사(행동 유형 × 성향 4종, 반응 템플릿에 `{fact}`, 템플릿당 변형 2개 이상) | `BR-OBJ-004` | `AC-CONT-002` | E-06-01 | `STK-PM-001` | 11/6 |
@@ -261,7 +261,7 @@
 
 ### 4.11 사용자 테스트 (E)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp;&nbsp;&nbsp; | 요구사항 | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크&nbsp;&nbsp;&nbsp; | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|
 | `FR-UT-001` | planned | 테스트 준비: 일정·장소·인원(P-12), 진행 순서(동의 → 튜토리얼 → 4판 → 설문), 설문 문항 확정, 고정 시드 판 목록 | `BR-OBJ-002` | `AC-UT-001` | E-06-04, E-08-04, B-08-02 | `STK-PM-001` | 11/8 |
 | `FR-UT-002` | planned | 사전 테스트(11/7)와 정식 테스트 운영, 테스트 중 수정 | `BR-OBJ-002` | `AC-UT-001` | E-07-02, E-09-01, A-09-02, B-09-03 | `STK-PM-001` | 11/9 |
@@ -270,7 +270,7 @@
 
 ### 4.12 저장소·통합·사업 검토 데모 (E·S)
 
-| ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
+| ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태&nbsp; | 요구사항&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | BRD&nbsp;목표&nbsp;&nbsp;&nbsp;&nbsp; | AC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 태스크 | owner&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | due |
 |---|---|---|---|---|---|---|---|
 | `FR-GOV-001` | planned | GitHub 저장소(P-11, 조직 생성·초대, 공개), `main` 보호(필수 체크 4개, 작성자 외 승인 1명, 관리자 우회 불가), 담당 배정, 태스크 → 이슈 생성 | `BR-OBJ-009` | `AC-GOV-001` | E-05-01 | `STK-PM-001` | 11/5 |
 | `FR-GOV-002` | planned | CI 필수 체크 4개(`core`, `django`, `evidence`, `docs`)와 `check_evidence`·`check_docs`·`check_secrets` | `BR-OBJ-009` | `AC-GOV-001` | E-05-02 | `STK-PM-001` | 11/5 |
@@ -286,7 +286,7 @@
 
 상세 규격은 계약 문서가 원본이다. 이 절은 무엇이 어디에 있는지만 적는다. 계약을 바꾸면 계약 버전을 올리고(`contract-x.y`, `ads-x.y`) 계약 테스트(`tests/contract/`)를 같이 고친다.
 
-| 계약 | 위치 | 핵심 내용 | 소유 |
+| 계약&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 위치&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 핵심 내용 | 소유&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 도메인 | `contracts/domain.md` | 참가자·ID, 프리셋, 단계별 합법 명령(`PHASE_RULES`), 횟수(`LIMITS`), 투표·밤 처리 순서, 창귀 2명 규칙, 고백·기색, 정보 공개 범위, 11인 판 축약, 판 밖 진척, 배정 검증기 | A |
 | 포트 | `contracts/ports.md` | 엔진 ↔ 바깥 인터페이스와 가짜 구현, 이벤트 처리 통일 규칙, 명령 처리 책임, 의심 모델 출력, LLM 비동기 작업, 광고 포트 보호값 | A·전원 |
@@ -313,7 +313,7 @@
 
 ### 5.2 데이터 종류 구분
 
-| 종류 | `source` | 용도 | 쓰지 않는 곳 |
+| 종류&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | `source`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 용도 | 쓰지&nbsp;않는&nbsp;곳&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 사람 플레이 | `human` | 평가, 상대 모델 보정, 의도 해석기 학습 | 사용자 단위 분할 밖의 섞임 |
 | 봇 시뮬레이션 | `bot` | 밸런스, 씐 자 모델 학습 | 사람 행동의 증거 |
@@ -443,7 +443,7 @@
 - 상태는 모두 `planned`로 시작한다. 확인하지 못한 항목은 `not_verified`로 둔다.
 - Evidence의 `evidence/<ID>.md`는 `docs/evidence/<태스크ID>.md`이고, 수치는 `docs/evidence/perf/<ID>/<이름>.json`(`tasks/README.md` 4절 "결과 JSON 형식")과 대조된다.
 
-| AC ID | Given | When | Then | Evidence | 상태 |
+| AC&nbsp;ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Given&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | When&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Then | Evidence&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 상태 |
 |---|---|---|---|---|---|
 | `AC-ENG-001` | 프리셋 6종 × 시드 200개 | 판 생성과 0일째·1일째 아침 처리 | 배정 검증기 위반 0, 역할 수가 프리셋 표와 일치, 같은 시드 같은 판, 피해 장소·시간대가 공개 기록에 있음 | `evidence/A-05-01.md`, `evidence/A-06-02.md` | planned |
 | `AC-ENG-002` | 계약 시나리오(결선 재동점, 무당 감금, 마지막 씐 자 감금 등) | 실제 엔진으로 재생, 위반 명령 주입 | 모든 checks 통과, 거부 시 `state_version` 불변, 종료 사유가 판정 순서대로 기록 | `evidence/A-05-02.md`, INT-07 #2 | planned |
@@ -564,7 +564,7 @@
 
 상세 일정은 `tasks/`가 기준이다. 아래는 요구사항이 어느 날 확인되는지만 보인다.
 
-| 날짜 | 주요 작업 | 확인되는 요구사항 | 완료 evidence |
+| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 주요 작업 | 확인되는&nbsp;요구사항&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 완료&nbsp;evidence&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 11/5(목) | VM 실측·재배정, 저장소·CI, 엔진 판 생성·회의·투표, API·회의 화면(가짜 엔진), 의도 기준선, 광고 서버 골격, 인물·비밀, 임시 에셋 | `FR-OPS-001`, `FR-GOV-001·002`, `FR-ENG-001·003`, `FR-WEB-001`, `FR-AD-002` | `evidence/C-05-01.md`, `evidence/E-05-02.md`, `evidence/A-05-02.md` |
 | 11/6(금) | 밤·점괘·관측 경계, Mongo 저장소·아웃박스·광고 DB, 멱등성·가명 ID, 봇 정책, 광고 원장·합성 트래픽, LLM 벤치, 템플릿·의도 예시, 사용자 테스트 준비 | `FR-ENG-004·005`, `FR-DATA-001·002`, `FR-WEB-002`, `FR-PRIV-001`, `FR-AUTH-001~003`, `FR-ML-001`, `FR-AD-003~005`, `FR-LLM-001` | `evidence/A-06-03.md`, `evidence/C-06-02.md`, `evidence/E-06-07.md` |
@@ -596,7 +596,7 @@
 
 **변경 기록**
 
-| 날짜 | 버전 | 변경 | 근거 |
+| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 버전 | 변경 | 근거&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 2026-11-04 | v1 | 최초 작성(1단계: 1·3·5·6·7절, 2단계: 2·4·8·9·10·11·12절). 태스크는 e89d389 + 11/5 PM 결정 반영분(E 11/6 일부 미룸, C-11-04 추가)으로 추적 | BRD-PALDO-001@v1 |
 | 2026-11-04 | v1 | 사업 문서 표현으로 통일(사업 검토 데모, 최종 산출물 확정, 데모 자료 트랙, 조직 저장소). 요구사항·AC 내용은 그대로. `BR-OBJ-010`을 `FR-AD-006`·`FR-AD-009`에 연결, 재방문율은 출시 후 지표(BRD 3.1절)로 표기 | BRD-PALDO-001@v1(사업 문서 재작성) |
@@ -609,7 +609,7 @@
 
 2026-11-04 작성 시점에 PRD와 태스크·계약을 대조한 결과다. 처리 담당이 정해지면 상태를 바꾼다.
 
-| 구분 | 검토 항목 | 확인 내용 | 결과 |
+| 구분&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 검토&nbsp;항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 확인 내용 | 결과&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 추적 | 요구사항 ↔ 태스크 | 94개 요구사항 모두 태스크 ID가 있고, 태스크 문서의 모든 태스크 ID가 4절 태스크 칸에 나온다(검사 스크립트로 대조: 없는 ID 0, 빠진 태스크 0). AC는 정의 74개 = 참조 74개(11/4 `AC-AD-009`, `AC-AUTH-001~004`, `AC-WEB-009`, `AC-SEC-002` 추가). `FR-WEB-006`은 11/4 B-07-01 조건 7로 구현 태스크를 정했다 | 94개 연결 |
 | 추적 | BRD 목표 → 요구사항 | `BR-OBJ-001`~`010` 모두 요구사항이 1개 이상 있다(`BR-OBJ-010` 광고 수익 지표는 `FR-AD-006`·`FR-AD-009`: 계측 D-05-03, 집계 C-08-02, 대시보드 C-08-01, 보고 D-10-02·D-11-01). 출시 후 지표 `BR-KPI-001~003`은 파일럿 합격선이 아니라 요구사항을 두지 않는다 | ID 연결 확인. `BR-OBJ-010` 집계 정의는 미결(BRD `BR-OQ-021`) |
