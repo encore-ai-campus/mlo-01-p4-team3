@@ -45,6 +45,7 @@ server/infra (인프라) → engine (포트 구현)
 | `ads/testing/` | 테스트 지원 | D | `FakeAdProvider` |
 | `server/app/ads_port.py` | 응용(게임 쪽) | B | `AdProvider` 포트와 보호 래퍼 `AdGateway` |
 | `llm/` | 인프라 | E | LLM 서비스, LangGraph(예정) |
+| `llm/bench/` | 인프라(측정) | E | LLM 벤치마크 `run_bench.py`(llama.cpp, 모델 인스턴스 1개 + FIFO 큐로 지연·토큰/초·메모리 측정). 결과 `docs/reports/llm_bench.md` |
 | `contracts/` | 데이터 계약 | 공용 | 학습 행, 의도 예시, 시나리오 스키마 |
 | `fixtures/` | 생성물 | 공용 | 계약 예시. `tools/build_fixtures.py`가 만든다 |
 | `tools/` | 도구 | 공용 | 픽스처 생성, 합성 데이터 생성, 태스크 문서 파서(`tasks_md.py`)·이슈 동기화(`tasks_to_issues.py`), 저장소 배정 전 임시 운영(`interim.py` 표현·응용, `interim_rules.py` 도메인) |
@@ -52,6 +53,7 @@ server/infra (인프라) → engine (포트 구현)
 | `tests/contract/` | 테스트 | 공용 | 계약 테스트(unittest) |
 | `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화·임시 운영 흐름은 임시 git 저장소와 임시 폴더로) |
 | `tests/assets/` | 테스트 | E | 에셋 도구 테스트(규격표 해석, 임시 세트 생성·대조) |
+| `tests/llm/` | 테스트 | E | LLM 순수 함수 테스트(llama_cpp 없이 돈다) |
 | `.github/` | 저장소 운영 | E | 이슈 양식(`ISSUE_TEMPLATE/`), 라벨 정의(`labels.yml`), PR 양식. GitHub Actions CI는 11/5 폐지(로컬 `precheck`로 대체) |
 | `.githooks/` | 저장소 운영(표현) | E | `pre-push`: `git push` 때 `python -m tools.precheck`를 돌려 실패하면 푸시를 멈춘다(설치 `git config core.hooksPath .githooks`). 검사 조립은 `tools/precheck.py`(응용), 규칙은 `tools/check_*.py`, 설명은 `docs/modules/ci.md` |
 | `docs/evidence/` | 문서(증빙) | 각 흐름 | 태스크 증빙 `<ID>.md`, 측정 결과 JSON `perf/<ID>/<이름>.json`(`tools/evidence_result.py`로만 쓴다) |
@@ -75,6 +77,7 @@ server/infra (인프라) → engine (포트 구현)
 | 콘텐츠 추가 | `docs/contracts/content.md` |
 | 개인정보 처리 | `docs/contracts/privacy.md` |
 | 서버와 버전 | `docs/contracts/tech_stack.md`, 기획서 6.3 |
+| LLM 모델·스레드·실행 방식 다시 재기 | 인프라 `llm/bench/run_bench.py`(`--help`), 결과·결정 `docs/reports/llm_bench.md` |
 | 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
 | 새 파일·폴더를 어디에 만들지 | `docs/contracts/structure.md`(1절 트리, 6절 허용 폴더 목록) |
