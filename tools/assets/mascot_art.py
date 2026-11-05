@@ -7,6 +7,8 @@
 """
 from __future__ import annotations
 
+from functools import lru_cache
+
 from tools.assets import glyphs
 
 RGB = tuple[int, int, int]
@@ -56,8 +58,14 @@ def render(cid: str, width: int, height: int) -> list[bytearray]:
         raise ValueError(f"알 수 없는 마스코트: {cid!r} (허용 {tuple(SHAPES)})")
     if (width, height) != (SIZE, SIZE):
         raise ValueError(f"마스코트 크기는 {SIZE}x{SIZE}여야 함: {width}x{height}")
+    return [bytearray(r) for r in _rows(cid, OFFSET[cid])]   # 같은 입력이면 같은 픽셀: 기억한 결과의 복사본
+
+
+@lru_cache(maxsize=None)
+def _rows(cid: str, offset: tuple[int, int]) -> tuple[bytes, ...]:
+    """`render`의 실제 그리기. `offset`(`OFFSET[cid]`)을 기억 키에 넣어 위치를 바꾸면 다시 그린다."""
     px = bytes((*FILL, 255))
-    dx, dy = OFFSET[cid]
+    dx, dy = offset
     rows = []
     for y in range(SIZE):
         line = bytearray(SIZE * 4)
@@ -67,4 +75,4 @@ def render(cid: str, width: int, height: int) -> list[bytearray]:
         rows.append(line)
     for i, text in enumerate((PREFIX, LABELS[cid])):
         glyphs.draw(rows, 4, 240 + dx - glyphs.width(text) // 2, 250 + dy + i * (glyphs.HEIGHT + 6), text, TEXT)
-    return rows
+    return tuple(bytes(r) for r in rows)

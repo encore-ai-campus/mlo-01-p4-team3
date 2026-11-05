@@ -22,9 +22,10 @@ import argparse
 import hashlib
 import sys
 from dataclasses import dataclass, field, replace
+from functools import lru_cache
 from pathlib import Path
 
-from tools.assets import art, png, portrait_art, sources, vn
+from tools.assets import art, mascot_art, png, portrait_art, sources, vn
 from tools.assets.spec import (KINDS, AssetEntry, AssetSpec, Reconciliation, SpecError, expected_entries, key_label,
                                reconcile, split_variant)
 
@@ -60,11 +61,33 @@ def _encode(channels: int, width: int, height: int, rows: list) -> bytes:
     return (png.encode_rgba if channels == 4 else png.encode_rgb)(width, height, rows)
 
 
-def _sprite_rows(repo: Path, entry: AssetEntry, real: bool, name: str | None = None,
-                 expression: str | None = None) -> list:
-    """초상을 자를 sprite RGBA 행. 실제 sprite면 디스크 파일을 읽고, 아니면 임시 그림을 그린다."""
-    if not real:
-        return portrait_art.render_sprite(split_variant(entry.id)[0], entry.width, entry.height, name, expression)
+def _art_key(kind: str, cid: str) -> tuple | None:
+    """임시 그림이 id 말고도 기대는 표 값(키 등급·머리 장식·마스코트 위치). PNG 기억의 키에 넣어 표가 바뀌면 다시 그린다."""
+    if kind in ("sprite", "portrait"):
+        return vn.grade_for(cid), portrait_art.HEADGEAR.get(cid), vn.portrait_top(cid)
+    if kind == "mascot":
+        return mascot_art.OFFSET.get(cid)
+    return None
+
+
+def _placeholder_png(kind: str, cid: str, width: int, height: int, name: str | None,
+                     expression: str | None) -> bytes:
+    """임시 그림 1장의 PNG 바이트. 초상은 같은 id 임시 sprite의 `vn.portrait_top`부터 자른 크롭이다(`portrait_art.render`).
+
+    같은 입력이면 같은 바이트(결정적)라 한 프로세스 안에서 기억해 두고 다시 그리거나 압축하지 않는다(반복 실행·테스트 시간).
+    """
+    return _placeholder_png_cached(kind, cid, width, height, name, expression, _art_key(kind, cid))
+
+
+@lru_cache(maxsize=512)
+def _placeholder_png_cached(kind: str, cid: str, width: int, height: int, name: str | None,
+                            expression: str | None, art_key: tuple | None) -> bytes:
+    channels, rows = art.render_rows(kind, cid, width, height, name, expression)
+    return _encode(channels, width, height, rows)
+
+
+def _real_sprite_rows(repo: Path, entry: AssetEntry) -> list:
+    """실제 sprite(`placeholder: false`) 파일을 읽어 초상을 자를 RGBA 행을 돌려준다."""
     p = repo / entry.path
     if not p.is_file():
         raise SpecError(f"{entry.path}: 실제 sprite 파일이 없음(placeholder: false)")
@@ -115,7 +138,6 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
     final: list[AssetEntry] = []
     written = kept = 0
     protected: list[str] = []
-    drawn: dict[str, list] = {}
     for e in expected:
         old = existing.get(e.key)
         if old is not None and not old.placeholder and (old.path != e.path or old.url != e.url):
@@ -133,19 +155,13 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
         if not write:
             final.append(old if old is not None else target)
             continue
-        if e.kind == "portrait":
-            _, name, expr = label_args(e.kind, e.id)
-            src_rows = _sprite_rows(repo, sprites[e.id], from_real, name, expr)
-            if not from_real:
-                drawn[e.id] = src_rows      # 같은 실행의 sprite 항목이 다시 그리지 않게
-            rows = portrait_art.crop_portrait(e.width, src_rows, vn.portrait_top(split_variant(e.id)[0]))
-            data = png.encode_rgb(e.width, e.height, rows, optimize=from_real)   # 실제 그림은 필터 선택으로 용량 줄임
-        elif e.kind == "sprite" and e.id in drawn:
-            data = png.encode_rgba(e.width, e.height, drawn[e.id])
+        if from_real:                       # 실제 sprite 위 크롭. 필터 선택으로 용량 줄임
+            rows = portrait_art.crop_portrait(e.width, _real_sprite_rows(repo, sprites[e.id]),
+                                              vn.portrait_top(split_variant(e.id)[0]))
+            data = png.encode_rgb(e.width, e.height, rows, optimize=True)
         else:
             base, name, expr = label_args(e.kind, e.id)
-            channels, rows = art.render_rows(e.kind, base, e.width, e.height, name, expr)
-            data = _encode(channels, e.width, e.height, rows)
+            data = _placeholder_png(e.kind, base, e.width, e.height, name, expr)
         if len(data) > spec.max_bytes_for(e.kind):
             raise SpecError(f"{e.path}: {len(data)}바이트 > 상한 {spec.max_bytes_for(e.kind)}")
         current = repo / e.path
