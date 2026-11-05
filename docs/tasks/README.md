@@ -57,7 +57,7 @@
 
 - **브랜치 모델**(11/5 PM 결정, 저장소 배정 때):
   - `dev`는 통합 브랜치이고 GitHub 기본 브랜치다. 태스크 브랜치 `task/<ID>`는 `dev`에서 따고, 모든 태스크 PR은 `dev`를 대상으로 연다. ①②⑧과 11절 규칙은 `dev` 대상 PR 기준이다. 이슈를 닫는 `Closes #`도 기본 브랜치인 `dev`에 병합될 때 동작한다.
-  - `main`은 배포 브랜치다. 안정 시점에만 PM이 `dev` → `main` 승격 PR을 연다: **사용자 테스트 전**(11/9 시작 전)과 **시연 전**(11/12). 승격 전 `dev`에서 전체 테스트·`check_docs --all --until <오늘>`이 통과해야 하고, 승격 PR도 `precheck` 통과 줄과 작성자가 아닌 1명의 승인을 받는다. 승격 PR은 태스크 PR이 아니어서 `Task:` 줄이 없고, `--pr-body` 없이 돌린 `precheck`로 바뀐 증빙의 형식만 본다(11절).
+  - `main`은 배포 브랜치다. 안정 시점에만 PM이 `dev` → `main` 승격 PR을 연다: **사용자 테스트 전**(11/9 시작 전)과 **시연 전**(11/12). 승격 전 `dev`에서 전체 테스트·`check_docs --all --until <오늘>`이 통과해야 하고, 승격 PR도 `precheck` 통과 줄과 작성자가 아닌 1명의 승인을 받는다. 승격 PR은 태스크 PR이 아니어서 `Task:` 줄이 없고, `dev`에서 `python -m tools.precheck --base origin/main`(비교 기준을 `main`으로)으로 바뀐 증빙의 형식만 본다(11절).
   - 병합 규칙은 `dev`·`main` 둘 다 같다: PR 필수, PR 본문의 `precheck: 통과` 줄(②), 작성자 외 승인 1명, 직접 푸시·강제 푸시 금지. 저장소가 비공개·무료 플랜이라 GitHub 보호 규칙으로 강제할 수 없으므로(P-11, 11/5) **병합 버튼은 PM만 누르고, 누르기 전에 승인 1명과 `precheck` 통과 줄을 PR 화면에서 확인한다**. 팀원은 `dev`·`main`에 직접 푸시하지 않는다. `main`에는 `dev`에서 온 승격 PR만 병합한다(급한 수정도 `dev`를 거친다).
   - 시연·사용자 테스트 환경은 `main`의 커밋으로 띄운다. 그 밖의 통합(INT)·일일 확인은 `dev` 기준이다.
 - 가짜 구현으로 통과한 것은 "착수 완료"다. 진짜로 교체해 계약 테스트를 다시 통과해야 완료로 센다(`docs/contracts/parallel_dev.md` 3절).
@@ -582,9 +582,9 @@ python -m tools.tasks_to_issues --apply --repo OWNER/NAME --assign A=login1,B=lo
 - **커밋 메시지의 닫기 키워드 금지**(11/4 PM 결정): GitHub는 기본 브랜치에 들어온 커밋 메시지의 닫기 키워드로도 이슈를 닫는다. 그래서 증빙 검사(`precheck --pr-body`)는 PR base 이후 커밋 메시지(`git log <base>..HEAD`)에 닫기 키워드(`Closes` 포함)가 하나라도 있으면 실패한다. 이슈는 PR 본문의 `Closes #` 한 줄로만 닫힌다. 병합은 merge commit만 허용한다(squash·rebase 병합은 증빙의 커밋 SHA를 dev 이력에서 없앤다, 11/5 PM 결정).
 - 일부만 했거나 `상태: 실패` 증빙을 병합하는 PR은 `Refs #<번호>`를 쓰고 이슈에 `evidence-fail` 라벨을 붙인다. `Refs` PR은 바뀐 증빙에 `--format`만 돌린다.
 - `precheck`는 PR 본문을 환경 변수로 `check_evidence --pr-body-env`에 넘기고 셸 명령에 직접 넣지 않는다. 변경 파일 비교 기준은 `origin/dev`와 HEAD의 merge-base다(`--base`로 바꿀 수 있다. 못 구하면 문서·증빙 검사를 실패로 본다).
-- **push**: `git push` 때 `.githooks/pre-push`가 PR 본문 없이 `precheck`를 돌린다(바뀐 증빙은 `--format`만). 병합 뒤 `dev`·`main`에서는 자동 검사가 없다. PM이 매일 `dev`에서 `python -m tools.precheck`를 한 번 돌린다.
+- **push**: `git push` 때 `.githooks/pre-push`가 PR 본문 없이 `precheck`를 돌린다(바뀐 증빙은 `--format`만). 푸시하는 커밋이 지금 HEAD가 아니거나 커밋하지 않은 변경이 있으면 임시 worktree에 그 커밋을 꺼내 검사한다. 병합 뒤 `dev`·`main`에서는 자동 검사가 없다. PM이 매일 `dev`에서 `python -m tools.precheck`를 한 번 돌린다.
 - 병합에는 작성자가 아닌 1명의 승인이 필요하다(3절 ⑧).
-- **승격 PR**(`dev` → `main`, 3절 브랜치 모델): `Task:`·`Closes`/`Refs` 줄을 쓰지 않는다. 제목은 `승격: <날짜> <사유>`(예: `승격: 11/8 사용자 테스트 전`). `precheck`는 `--pr-body` 없이 돌려 바뀐 증빙의 `--format`만 본다.
+- **승격 PR**(`dev` → `main`, 3절 브랜치 모델): `Task:`·`Closes`/`Refs` 줄을 쓰지 않는다. 제목은 `승격: <날짜> <사유>`(예: `승격: 11/8 사용자 테스트 전`). `dev`를 체크아웃하고 `python -m tools.precheck --base origin/main`으로 돌려 `main` 이후 바뀐 증빙의 `--format`만 본다(기본 기준 `origin/dev`로 돌리면 바뀐 것이 없어 아무것도 검사하지 않는다).
 - 이슈를 손으로 닫지 않는다(예외: 저장소 배정 시 10-1절 전환 5단계). `check_evidence`는 GitHub를 조회하지 않으므로, 손으로 닫힌 태스크 이슈는 INT-11 #11에서 닫힌 태스크 이슈 목록(`gh issue list --state closed --label type:task`)과 `check_evidence --all --until` 통과 목록을 대조해 찾는다.
 - **태스크 ID를 바꾸거나 태스크를 다른 파일로 옮기면**(예: 11/5 발표 트랙 분리, E 에셋 재배치) 동기화는 새 ID 이슈를 만들고 옛 이슈는 건드리지 않는다. `--apply`가 "원본에 없는 열린 이슈" 목록을 출력하므로, PM이 옛 이슈에 새 이슈 링크를 댓글로 남기고 닫는다(이 경우만 손으로 닫는다. 옛 ID는 태스크 문서에 없으므로 `check_evidence --all` 대상이 아니다). 이슈를 처음 만든 뒤에는 ID를 바꾸지 않는 것이 원칙이다.
 

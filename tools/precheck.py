@@ -4,6 +4,7 @@
     python -m tools.precheck --with-assets        # tests/assets도 포함(에셋 관련 파일을 바꿨을 때)
     python -m tools.precheck --pr-body pr.md      # PR 본문 파일까지 검사(Task·Closes/Refs 문법, Closes면 --complete)
     python -m tools.precheck --base <커밋>         # 비교 기준 직접 지정(기본: origin/dev와 HEAD의 merge-base)
+    python -m tools.precheck --base origin/main   # 승격 PR(dev → main): dev에서 main 이후 바뀐 증빙 검사
 
 `git push` 때 `.githooks/pre-push`가 이 명령을 부른다(설치: `git config core.hooksPath .githooks`).
 하나라도 실패하면 종료 코드 1이고, 마지막 줄에 한 줄 요약(`precheck: 통과 …` 또는 `precheck: 실패 …`)을 낸다.

@@ -8,7 +8,7 @@
 
 | 파일 | 계층 | 하는 일 |
 |---|---|---|
-| `.githooks/pre-push` | 표현(진입점) | `git push` 때 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외) |
+| `.githooks/pre-push` | 표현(진입점) | `git push` 때 푸시하는 커밋마다 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 그 커밋이 HEAD가 아니거나 작업 트리에 변경이 있으면 임시 worktree에서 검사 |
 | `tools/precheck.py` | 도메인(`summarize` 등) + 인프라(`SubprocessRunner`) + 응용(`run_precheck`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다 |
 | `tools/check_evidence.py` | 도메인 규칙 + 응용 + 표현(`main`) | 증빙 형식(`--format`), 완료 검사(`--complete`, 4절 규칙 1~6), PR 본문 문법(11절) |
 | `tools/check_docs.py` | 도메인 규칙 + 응용 + 표현(`main`) | 문서화 검사(10절 규칙 1~6) |
@@ -95,7 +95,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 - `tests/assets`(단일 테스트가 10초를 넘는다)는 기본에서 빠진다. 에셋 관련 파일(`tools/assets/`, `tests/assets/`, `docs/assets/`, `content/images/`)을 바꾼 사람만 `--with-assets`로 돌린다.
 - Django(`server/manage.py test`)와 외부 서비스 테스트(결정 #12, `tests/infra/`·`tests/ads/`, `PALDO_SERVICE_TESTS=1`)는 `precheck`에 넣지 않았다. 두 폴더를 기본 discover에서 빼는 `load_tests`는 폴더를 처음 만드는 태스크(C-06-01, D-05-03)가 그 `__init__.py`에 두고, 실제 실행은 각자 Compose와 통합(INT)에서 한다.
 - 임시 운영 로컬 CI(`tools/interim.py`)는 Actions와 같은 검사 함수를 부르지만 실행 환경은 각자 노트북이다(Python 3.14 버전은 `.ci.txt`에 기록). 서비스 테스트는 `PALDO_SERVICE_TESTS=1`과 Compose 기동이 있어야 돌고, 대상 영역을 바꿨는데 안 돌렸으면 실패로 본다. 원장 검사는 병합 SHA·부모·흐름만 보고 검토 내용 자체는 보지 않는다.
-- 브랜치 모델(11/5 PM 결정, tasks README 3절): 통합 `dev`(기본 브랜치, 태스크 PR 대상), 배포 `main`(승격 PR만). 승격 PR(`dev` → `main`)은 Task 줄이 없으므로 `--pr-body` 없이 `precheck`를 돌려 바뀐 증빙의 `--format`만 본다. 이슈 본문의 원본 링크는 `dev`를 가리킨다(`tools/tasks_to_issues.py` `INTEGRATION_BRANCH`).
+- 브랜치 모델(11/5 PM 결정, tasks README 3절): 통합 `dev`(기본 브랜치, 태스크 PR 대상), 배포 `main`(승격 PR만). 승격 PR(`dev` → `main`)은 Task 줄이 없으므로 `dev`에서 `precheck --base origin/main`을 돌려 `main` 이후 바뀐 증빙의 `--format`만 본다(기본 기준 `origin/dev`면 바뀐 것이 없다). 이슈 본문의 원본 링크는 `dev`를 가리킨다(`tools/tasks_to_issues.py` `INTEGRATION_BRANCH`).
 - 보호 규칙은 비공개·무료 플랜이라 걸 수 없다(P-11). "일부러 어긴 사례 3개"는 로컬 git 저장소 테스트로 재현해 둔다(`tests/tools/test_check_evidence.py` `ViolationScenario`, `tests/tools/test_check_docs.py` `ViolationScenarios`).
 - 문서 산출 태스크(규칙 3)는 `산출물:` 줄의 파일 존재를 보고, 태스크에 `- 필수 제목:` 줄이 있을 때만 그 제목이 산출물의 마크다운 제목 줄(`#`~`######`, 코드 블록 밖, 글자 그대로 일치)에 있는지 본다. 본문 문장 속 단어는 제목으로 치지 않는다. `.pptx` 같은 비텍스트 산출물에는 필수 제목을 둘 수 없다.
 - 통합 태스크(INT)에는 `check_docs` 규칙 1~4를 적용하지 않는다(README 10절). `--task INT-xx`는 항상 통과하고, `--all`은 INT를 대상에서 뺀다.
