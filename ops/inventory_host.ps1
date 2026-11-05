@@ -23,8 +23,16 @@ if ($null -eq $running) { "경고: vmrun 실행 목록을 얻지 못했다. 기�
 function Get-AllocatedGB([string]$dir) {
   # 디스크 설명 파일(작은 .vmdk)의 RW 섹터 수 합. 스냅샷 델타(-000001.vmdk)는 제외.
   $sec = [int64]0
-  Get-ChildItem $dir -Filter *.vmdk | Where-Object { $_.Length -lt 100KB -and $_.Name -notmatch '-\d{6}\.vmdk$' } | ForEach-Object {
-    Get-Content $_.FullName -ErrorAction SilentlyContinue | Select-String '^RW (\d+)' | ForEach-Object { $sec += [int64]$_.Matches.Groups[1].Value }
+  # 분할 디스크: 작은 설명 파일에 RW 줄. 단일 파일(monolithic) 디스크: 파일 앞부분에 설명이 들어 있다.
+  # 스냅샷 델타(-000001.vmdk)와 분할 조각(-s001.vmdk, -f001.vmdk)은 제외한다.
+  Get-ChildItem $dir -Filter *.vmdk | Where-Object { $_.Name -notmatch '-\d{6}\.vmdk$' -and $_.Name -notmatch '-[sf]\d{3}\.vmdk$' } | ForEach-Object {
+    $text = ''
+    if ($_.Length -lt 100KB) { $text = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue }
+    else {
+      $fs = [System.IO.File]::OpenRead($_.FullName)
+      try { $buf = New-Object byte[] 65536; $n = $fs.Read($buf, 0, $buf.Length); $text = [System.Text.Encoding]::ASCII.GetString($buf, 0, $n) } finally { $fs.Close() }
+    }
+    [regex]::Matches($text, '(?m)^RW (\d+)') | ForEach-Object { $sec += [int64]$_.Groups[1].Value }
   }
   [math]::Round($sec * 512 / 1GB, 0)
 }
