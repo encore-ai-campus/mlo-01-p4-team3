@@ -28,6 +28,25 @@
 | 5 | D | mysql-02 | 광고 DB Replica | C | 사용 |
 | 5 | D | mongo-02 | Mongo 레플리카 셋 2 | C | 사용 |
 
+## 3차 VM 이름과 4차 논리 서버명
+
+VMware 폴더와 3차 접속 별칭은 3차 이름(`pj3-…`)을 그대로 쓴다. 4차 문서·증빙에는 논리 서버명만 쓴다. 출처: 3차 VM 설치 패키지(공유 드라이브)와 3차 인계 자료.
+
+| 3차 이름 | 4차 논리 서버명 | 3차 이름 | 4차 논리 서버명 |
+|---|---|---|---|
+| bastion | bastion-01 | pj3-mysql01 | mysql-01 |
+| pj3-webapp | app-01 | pj3-mysql02 | mysql-02 |
+| pj3-ad-server | ad-01 | pj3-mysql03 | mysql-03 |
+| pj3-monitor | metrics-01 | pj3-mongo01 | mongo-01 |
+| pj3-spark-master | spark-master-01 | pj3-mongo02 | mongo-02 |
+| pj3-spark-worker01 | spark-worker-01 | pj3-mongo03 | mongo-03 |
+| pj3-spark-worker02 | spark-worker-02 | pj3-object01 | media-storage-01 |
+| pj3-spark-worker03 | spark-worker-03 | pj3-object02 | lake-storage-01 |
+| pj3-nifi | nifi-01 | pj3-kafka01 | kafka-01 |
+| pj3-kafka02 | kafka-02 | pj3-kafka03 | kafka-03 |
+
+- 설치 기준(같은 출처): 모든 VM 2 vCPU(1소켓 × 2코어), RAM 4096MB, 40GB 확장형 디스크, Ubuntu 26.04.1 live server(자동 설치). bastion과 pj3-webapp은 설치 패키지에 없다(webapp은 나중에 추가). VMware 폴더 이름은 노트북마다 다를 수 있어 `ops/inventory_host.ps1`의 대응표에 없으면 직접 고쳐 적는다.
+
 - "노트북 관리"는 VM 켜기·끄기·설정 변경을 하는 사람이다(`docs/tasks/README.md` 1절). "4차 담당 흐름"은 그 VM의 서비스를 맡는 흐름이다.
 - 끄기 대상(mysql-03, media-storage-01)과 llm-01 생성은 C-05-02 조건 2다. **11/5 밤 기준 아직 하지 않았다**(PM 결정 대기, C 확인 필요).
 
