@@ -1,6 +1,6 @@
 # C 인프라/파이프라인 태스크
 
-- 담당자: (P-01) · 노트북: (P-01)
+- 담당자: 신성민 · 노트북: 1
 - 폴더: `server/infra/`(Mongo 저장소, 아웃박스 발행기, 어댑터), `pipeline/`(Kafka 소비자, Spark 작업), `ops/`(Compose, Ansible, k3s, Prometheus·Grafana, AWS, 런북)
 - 늘 볼 문서: `docs/contracts/ports.md` 1·2절, `events.md`, `ads.md` 5·7절, `ml_lifecycle.md` 5절, `tech_stack.md`, 기획서 6.2·6.3·14.4·14.7.
 - 접속 정보(IP·계정·비밀번호)는 저장소에 쓰지 않는다. 인벤토리는 저장소 밖 파일을 환경 변수로 가리킨다(`PALDO_INVENTORY`).

@@ -1,0 +1,120 @@
+{
+  "task": "E-06-07",
+  "commit": "929dec0ca175cc055691ed84987be2082028c053",
+  "generated_at": "2026-11-05T11:43:07Z",
+  "source": "python -m llm.bench.run_bench --model Qwen3.5-4B-Q4_K_M.gguf --label qwen35_4b --stage s1 --mode win --threads 6 --concurrency 1 --repeats 9 --max-tokens 128 --temperature 0.7 --n-ctx 1024 --seed 1  # Claude Code 세션 켬, 다른 측정 없음; 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36",
+  "metrics": {
+    "total_p50_ms": {
+      "value": 8348.68,
+      "unit": "ms"
+    },
+    "total_p95_ms": {
+      "value": 10694.14,
+      "unit": "ms"
+    },
+    "total_max_ms": {
+      "value": 10694.14,
+      "unit": "ms"
+    },
+    "queue_wait_p50_ms": {
+      "value": 0.07,
+      "unit": "ms"
+    },
+    "queue_wait_p95_ms": {
+      "value": 0.09,
+      "unit": "ms"
+    },
+    "prompt_p50_ms": {
+      "value": 5666.37,
+      "unit": "ms"
+    },
+    "gen_p50_ms": {
+      "value": 2861.96,
+      "unit": "ms"
+    },
+    "validate_p95_ms": {
+      "value": 0.02,
+      "unit": "ms"
+    },
+    "prompt_tokens_mean": {
+      "value": 166.33,
+      "unit": "tok"
+    },
+    "gen_tokens_mean": {
+      "value": 21.78,
+      "unit": "tok"
+    },
+    "n_requests": {
+      "value": 9,
+      "unit": "건"
+    },
+    "validation_fail_count": {
+      "value": 4,
+      "unit": "건"
+    },
+    "error_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "gen_tps_p50": {
+      "value": 7.31,
+      "unit": "tok/s"
+    },
+    "gen_tps_min": {
+      "value": 6.18,
+      "unit": "tok/s"
+    },
+    "weights_mib": {
+      "value": 2603.5,
+      "unit": "MiB"
+    },
+    "weights_repack_mib": {
+      "value": 1297.97,
+      "unit": "MiB"
+    },
+    "weights_total_mib": {
+      "value": 3901.47,
+      "unit": "MiB"
+    },
+    "kv_mib": {
+      "value": 32.0,
+      "unit": "MiB"
+    },
+    "rs_mib": {
+      "value": 50.25,
+      "unit": "MiB"
+    },
+    "compute_mib": {
+      "value": 501.02,
+      "unit": "MiB"
+    },
+    "load_ms": {
+      "value": 3636.91,
+      "unit": "ms"
+    },
+    "threads": {
+      "value": 6,
+      "unit": ""
+    },
+    "concurrency": {
+      "value": 1,
+      "unit": ""
+    },
+    "repeats": {
+      "value": 9,
+      "unit": "회"
+    },
+    "max_tokens": {
+      "value": 128,
+      "unit": "tok"
+    },
+    "rss_mib": {
+      "value": 3763.16,
+      "unit": "MiB"
+    },
+    "rss_peak_mib": {
+      "value": 3763.16,
+      "unit": "MiB"
+    }
+  }
+}

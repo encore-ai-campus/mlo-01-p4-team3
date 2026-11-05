@@ -1,0 +1,24 @@
+{
+  "task": "A-05-01",
+  "commit": "b5b38d38a17eef87920477c2204ce2cda099e66f",
+  "generated_at": "2026-11-05T10:58:54Z",
+  "source": "python -m tools.perf.engine_bench --op new_game --n 1000",
+  "metrics": {
+    "new_game_p50": {
+      "value": 0.138,
+      "unit": "ms"
+    },
+    "new_game_p95": {
+      "value": 0.222,
+      "unit": "ms"
+    },
+    "new_game_max": {
+      "value": 0.415,
+      "unit": "ms"
+    },
+    "games": {
+      "value": 1000,
+      "unit": "판"
+    }
+  }
+}

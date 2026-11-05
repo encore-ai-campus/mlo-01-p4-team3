@@ -1,0 +1,28 @@
+{
+  "task": "A-05-02",
+  "commit": "d2febc039a7a0d7f680e2b77a6113f8d309317f6",
+  "generated_at": "2026-11-05T12:03:56Z",
+  "source": "python -m tools.perf.engine_bench --op apply --n 1000",
+  "metrics": {
+    "apply_p50": {
+      "value": 0.651,
+      "unit": "ms"
+    },
+    "apply_p95": {
+      "value": 0.975,
+      "unit": "ms"
+    },
+    "apply_max": {
+      "value": 6.321,
+      "unit": "ms"
+    },
+    "calls": {
+      "value": 1000,
+      "unit": "회"
+    },
+    "games": {
+      "value": 78,
+      "unit": "판"
+    }
+  }
+}
