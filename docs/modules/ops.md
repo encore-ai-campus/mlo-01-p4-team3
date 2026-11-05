@@ -57,7 +57,7 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 ## 한계
 
 - 이 결과는 **기준 PC 한 대(11/4)**의 것이다. 다른 노트북은 `ops/compose/README.md` 5절 점검표로 각자 확인해야 한다.
-- 이미지 `mongo:8.0.34`·`mysql:8.4.13`은 11/4 PM 결정(CI 서비스 컨테이너와 같은 태그)이다. `apache/kafka:4.3.2`는 VM 실측(C-05-01) 전의 잠정값이다.
+- 이미지 `mongo:8.0.34`·`mysql:8.4.11`은 11/4 PM 결정(MySQL은 11/5 VM 설치 버전에 맞춰 8.4.13 → 8.4.11)(CI 서비스 컨테이너와 같은 태그)이다. `apache/kafka:4.3.2`는 VM 실측(C-05-01) 전의 잠정값이다.
 - Spark 4.1.3에는 Delta 기본 jar(`delta-spark_2.13:4.4.1`, Spark 4.2.0용)가 맞지 않는다. Spark 4.1용 jar(`delta-spark_4.1_2.13:4.4.1`)로만 확인했다(Spark 공식 컨테이너, Java 17, 로컬 저장). 11/5 PM 승인으로 계약(`tech_stack.md`)에 반영됐다. OpenJDK 21·Garage 조합은 아직 확인하지 않았다.
 - Python은 3.14를 먼저 실측했다(C-05-03 조건 2, 11/4 PM 결정). 필수 5개가 모두 성공해 3.12 재시도는 하지 않았다. 11/5 PM이 ML·LLM Python을 3.14 단일로 확정해 `tech_stack.md`에 반영했다. 같은 날 CI를 포함한 프로젝트 전체를 3.14 단일로 정했다.
 - Python 3.14 필수 5개는 Windows 네이티브와 Linux 컨테이너(`python:3.14`, Debian 13, glibc 2.41)에서 확인했다. Ubuntu VM(nifi-01, llm-01) 자체에서는 확인하지 않았다(manylinux 휠이라 glibc 2.28 이상이면 같을 것으로 보지만 실측 전이다). VM 확인은 D-07-02 6번(학습 VM)과 E-06-07 3번 ②(llm-01)의 완료 조건이다(11/5 PM 결정).

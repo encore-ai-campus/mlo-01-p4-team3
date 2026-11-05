@@ -25,7 +25,7 @@
 | 학습 데이터 | Delta Lake on Garage(S3 호환) | Delta Spark 4.4.1, Maven 좌표 **`io.delta:delta-spark_4.1_2.13:4.4.1`**(11/5 PM 확정). 근거: C-05-03 조건 3 실측(Spark 4.1.3 공식 컨테이너, Java 17, Python 3.10, 로컬 파일 저장)에서 이 좌표로 쓰기·추가·읽기·버전 0 읽기 성공, 기본 좌표 `io.delta:delta-spark_2.13:4.4.1`은 NoSuchMethodError(Spark 4.2 빌드)로 실패. OpenJDK 21·Garage(S3) 저장 조합은 실제 스택에 처음 쓰는 C-07-01(Spark → Delta)에서 처음 드러난다 | C |
 | 모델 관리 | MLflow 추적·레지스트리(아티팩트는 Garage) | 미설치, 11/9까지 설치 | C·D |
 | 관측 | Prometheus, Grafana, node_exporter(전 VM) | 3.15.0 / 13.2.4 / 1.12.1 | C |
-| 광고 서버·DB | Django 별도 서비스(ad-01), MySQL Primary + Replica(mysql-01·02). 이미지 `mysql:8.4.13`(개발 Compose·CI 서비스 컨테이너도 같은 태그, 11/4 PM 결정) | 기록값, 11/5 실측 필요 | D(서버), C(DB·배포) |
+| 광고 서버·DB | Django 별도 서비스(ad-01), MySQL Primary + Replica(mysql-01·02). 이미지 `mysql:8.4.11`(개발 Compose·CI 서비스 컨테이너도 같은 태그, 11/4 PM 결정. 11/5 VM 설치 버전에 맞춰 8.4.13 → 8.4.11) | 기록값, 11/5 실측 필요 | D(서버), C(DB·배포) |
 | 배포 자동화 | Ansible(Bastion) | - | C |
 | 배치 실행 | k3s 2노드(CronJob, Job) | 미설치 | C |
 | 의도 해석 | BERT 계열(한국어) + 규칙 매칭 | 11/5 모델 후보 확정 | D |

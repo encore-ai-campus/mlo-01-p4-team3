@@ -10,7 +10,7 @@
 |---|---|---|---|---|
 | mongo | `mongo:8.0.34` | `localhost:27117` | 640MB | 판 문서·아웃박스·콘텐츠. 레플리카셋 `rs0` 1노드(인증 + 키 파일) |
 | kafka | `apache/kafka:4.3.2` | `localhost:9092` | 1GB | 이벤트. KRaft 1노드, 보존 24시간 |
-| mysql | `mysql:8.4.13` | `localhost:3316`(`.env`의 `PALDO_ADS_DB_PORT`) | 512MB | 광고 DB `paldo_ads`, 계정 저장소 `paldo_auth`(스키마·DB 계정을 나눠 서로 접근 거부) |
+| mysql | `mysql:8.4.11` | `localhost:3316`(`.env`의 `PALDO_ADS_DB_PORT`) | 512MB | 광고 DB `paldo_ads`, 계정 저장소 `paldo_auth`(스키마·DB 계정을 나눠 서로 접근 거부) |
 | garage | `dxflrs/garage:v2.5.0` | S3 `localhost:3900`, 관리 `localhost:3903` | 256MB | Delta·MLflow 버킷(`paldo-lake`, `paldo-mlflow`) |
 | prometheus | `prom/prometheus:v3.15.0` | `localhost:9090` | 256MB | 지표 수집(지금은 자기 자신·Grafana·Garage) |
 | grafana | `grafana/grafana:13.2.4` | `localhost:3000` | 384MB | 대시보드. 데이터 소스 Prometheus 자동 등록 |

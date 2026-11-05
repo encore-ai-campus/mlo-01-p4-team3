@@ -159,7 +159,7 @@ class Checks(unittest.TestCase):
             "ERROR 1044 (42000): Access denied for user 'paldo_dev'@'%' to database 'paldo_auth'"))
         self.assertFalse(devenv.mysql_access_denied(
             "ERROR 1045 (28000): Access denied for user 'paldo_dev'@'localhost' (using password: YES)"))   # 비밀번호 오류는 거부 확인이 아니다
-        self.assertFalse(devenv.mysql_access_denied("8.4.13\tpaldo_auth"))
+        self.assertFalse(devenv.mysql_access_denied("8.4.11\tpaldo_auth"))
 
     def test_prometheus_down_jobs(self):
         def res(*pairs):

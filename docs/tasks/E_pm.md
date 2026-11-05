@@ -112,8 +112,8 @@ jobs:
   django:
     runs-on: ubuntu-latest
     services:
-      mongo: { image: "mongo:7", ports: ["27017:27017"] }
-      mysql: { image: "mysql:8.4", env: { MYSQL_ALLOW_EMPTY_PASSWORD: "yes" }, ports: ["3306:3306"] }
+      mongo: { image: "mongo:8.0.34", ports: ["27017:27017"] }
+      mysql: { image: "mysql:8.4.11", env: { MYSQL_ALLOW_EMPTY_PASSWORD: "yes" }, ports: ["3306:3306"] }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -231,7 +231,7 @@ jobs:
 - 근거: 기획서 7.2, 7.3
 
 ### E-07-02 사전 테스트 운영
-- 2h · 선행: INT-07 이전 버전(버튼·템플릿·기준선 해석기)
+- 2h · 선행: INT-07 이전 버전(버튼·템플릿·기준선 해석기), C-07-04(참가자 안내 문구)
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 E](../troubles/E.md)에 `### E-07-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 코드를 바꿨다면 모듈 문서 [`user_test`](../modules/user_test.md) `변경 이력` 행은 그날 일괄 갱신(E-07-05)
 - 완료 조건: 참가자 수·판 수·완주율, 원하는 행동 완료율, 추가 선택 횟수, 취소·버튼 전환 비율, 수집된 입력 문장 수(검수 후 개발 세트 편입 수)를 표로. 발견 이슈를 라벨 붙여 등록.
 - 근거: 기획서 11장 4단계, 8.4
@@ -428,6 +428,7 @@ jobs:
 | 8 | 게임 API p95 1초 이하(목표 300ms) — P-07 부하에서 | B·C | `api_bench.py` + Grafana |
 | 9 | 광고 서버 장애 중 게임 p95 증가 50ms 이하, 오류율 증가 0 | B·D | B-08-03 재실행 |
 | 10 | 사람 판 소요 시간 중앙값 10분 이하 | E | E-09-01 |
+| 11 | 결과·진척 화면(B-08-01)이 실제 진척 로직(E-09-08)으로 동작: 고백으로 얻은 단서가 진척 화면에 표시, 해금 전 한풀이 비활성 | B·E | 화면 테스트를 실제 진척 저장소로 재실행 |
 
 ### INT-11 통합 3 (11/11)
 | # | 항목 | 담당 | 기준 |
