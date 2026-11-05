@@ -19,7 +19,7 @@
 
 ---
 
-## 2. 역할 분담 (재분배안)
+## 2. 역할 분담
 
 | 흐름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 계층·폴더&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 책임&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
@@ -36,7 +36,7 @@
 - 광고 시스템(기획서 14장)은 경매·CTR·페이싱·밴딧 같은 알고리즘이 중심이라 D가 핵심을 맡는다. 대신 D의 결정 층 최적화를 A로 옮겨 부담을 맞춘다(A는 투표 3층 규칙을 이미 갖고 있어 결정 층과 가깝다).
 - 광고 서버 코드도 계층을 나눈다: 도메인 `ads/domain`(경매·페이싱·CTR 추정·유효 판정, 표준 라이브러리만), 응용 `ads/app`(광고 요청·노출·클릭 처리 흐름), 인프라 `ads/infra`(MySQL 원장, Kafka 발행), 표현 `ads/web`(Django 뷰·admin). 게임 서버는 `AdProvider` 포트로만 광고 서버를 부른다.
 - **담당 확정(11/4 PM 결정): 1안.** 결정 층 최적화는 A, 광고 서버 전체(도메인·응용·인프라·표현)는 D가 맡는다. A의 지연이 전체를 막을 수 있으므로, PM은 A의 결정 층 진척을 11/7부터 매일 확인하고, 밀리면 B가 시뮬레이션 실행·파라미터 탐색 스크립트를 돕는다.
-- PM은 작업이 가장 많은 A와 D의 진척을 매일 먼저 확인한다. 모든 흐름의 태스크가 하루 7.5h로 차 있으므로 "여유 인력"은 없다. 막히면 11/11 수정 시간 또는 PM 재배치(tasks README 2절 시간 초과 규칙)로 대응한다.
+- PM은 다른 흐름이 기다리는 인계(A-06-03 실제 엔진 판 11/6, E-10-10 복기용 이유 조회 11/10 10:00 등)와 실제 에셋 진척을 매일 먼저 확인한다. 모든 흐름의 태스크가 하루 7.5h로 차 있으므로 "여유 인력"은 없다. 막히면 11/11 수정 시간 또는 PM 재배치(tasks README 2절 시간 초과 규칙)로 대응한다.
 
 ---
 
