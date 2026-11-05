@@ -66,6 +66,7 @@ paldo/
 ├─ ml/                             모델 · D
 │  ├─ suspicion/                   features.py, train.py, evaluate.py [D-07-02]
 │  ├─ adapters/suspicion_model.py  SuspicionModel 구현 [D-08-01]
+│  ├─ adapters/run_model_games.py  모델 v0 판 실행 진입점 [D-08-01]
 │  └─ gate.py, bandit.py           [D-09-02]
 ├─ llm/                            LLM · E
 │  ├─ bench/run_bench.py           [E-06-07]

@@ -6,7 +6,7 @@
 
 | 모듈 문서 | 코드 위치 | 주 담당 |
 |---|---|---|
-| `engine.md` | `engine/domain/`, `tools/run_engine_games.py` | A |
+| `engine.md` | `engine/domain/`, `tools/run_engine_games.py`, `tools/check_handoff_a06.py`, `tools/optimize_decision.py` | A |
 | `sim.md` | `engine/sim/` | D |
 | `web.md` | `server/api/`, `server/app/`, `web/` | B |
 | `infra.md` | `server/infra/` | C |

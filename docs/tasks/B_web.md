@@ -177,6 +177,7 @@
   2. 사용자 테스트 세션에서는 카나리아 꺼짐(테스트).
   3. 게임 안 "업데이트 내역" 화면(세계관 문구: "창귀가 무당들의 수법을 기억했다") — 레지스트리 승격 기록을 읽어 표시.
   4. `ParseResult.versions["model"]`과 판 메타 불일치 시 경보 로그(`level=warning`).
+  5. 엔진이 돌려준 의심 모델 폴백 횟수(A-07-02 4번)를 `/metrics`의 `paldo_engine_suspicion_fallback_total`(카운터)로 노출하고 테스트(11/5 PM 결정).
 - 근거: 기획서 9.4 안전장치 / ml_lifecycle.md 4
 
 ### B-09-02 BERT 해석기 연결

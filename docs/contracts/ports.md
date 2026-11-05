@@ -51,6 +51,7 @@
   - q_max는 A의 규칙 상수이며(초기 0.5), 시뮬레이션으로 조정한다.
 - **실패 처리**:
   - `ModelUnavailable`, `FeatureVersionMismatch`, 시간 초과(엔진 측 100ms)가 나면 그 결정만 규칙 v0 의심도(`beliefs.suspicion`)로 대신한다.
+  - 시간 초과 책임: 엔진은 호출 경과 시간으로 판정하고 100ms를 넘은 결과를 버린다. 응답하지 않는 호출의 중단은 어댑터(D-08-01)가 자기 시간 제한으로 막는다(11/5 PM 결정).
   - 이때 decision 이벤트의 `policy_version`에 `-fallback`을 붙인다. 판은 계속 진행한다.
 - **버전 호환**:
   - 모델 산출물은 자기 `feature_version`을 선언한다. `ModelSelector`는 엔진의 특징 버전과 다른 모델을 고르지 않는다.
