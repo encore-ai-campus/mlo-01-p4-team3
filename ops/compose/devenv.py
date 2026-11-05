@@ -1,7 +1,7 @@
 """로컬 개발 환경(ops/compose/dev.yml)의 규칙 부분: .env 생성 규칙, 점검 판정, S3 서명, 로그 레코드.
 
 외부 호출(docker, HTTP, 파일)은 하지 않는다. 그 부분은 `ops/compose/run.py`가 맡는다.
-표준 라이브러리만 쓴다(Python 3.12·3.14 모두).
+표준 라이브러리만 쓴다(Python 3.14).
 """
 from __future__ import annotations
 

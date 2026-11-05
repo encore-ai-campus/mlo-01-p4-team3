@@ -73,7 +73,7 @@
 - 2.5h · 산출물: `.github/workflows/ci.yml`, `tools/check_evidence.py`, `tools/check_docs.py`, `tools/check_secrets.py`, `tools/secrets_allowlist.txt`, `tools/evidence_result.py`
 - 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-05-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ci`](../modules/ci.md)는 그날 일괄 갱신(E-05-05)
 - 완료 조건:
-  1. PR마다 필수 체크 4개(README 3절 ②): `core`(Python 3.12. 엔진·계약·도구 코드는 3.12·3.14 겸용이라 잠정값이다. ML·LLM 런타임은 11/5 3.14 단일로 확정했지만 CI `core` 버전은 그 결정에 묶지 않고 PM이 따로 정한다, `python -m unittest discover -s tests -t .`, `python -m tools.check_secrets`), `django`(Mongo·MySQL 서비스 컨테이너 + `python manage.py test`; `server/manage.py`가 생기기 전에는 "건너뜀" 대신 실패하지 않는 빈 단계로 두고, B-05-01 병합과 함께 실제 실행으로 바꿈), `evidence`(아래 3번), `docs`(아래 4번). 네 체크를 `main` 보호 규칙의 필수 체크로 등록. 테스트 경로(11/4 PM 결정 #12): `core`는 외부 서비스가 필요한 `tests/infra/`·`tests/ads/`를 discover에서 뺀다(예: 그 폴더의 `__init__.py`에 `load_tests`를 두어 `PALDO_SERVICE_TESTS` 환경 변수가 없으면 빈 묶음 반환). `django` 작업이 서비스 컨테이너와 그 변수를 주고 `tests/infra/`, `tests/ads/`, `server/tests/`를 경로별로 따로 실행한다. 광고 테스트는 `ads/project` 설정(결정 #1)으로 돈다.
+  1. PR마다 필수 체크 4개(README 3절 ②): `core`(Python 3.14, 프로젝트 전체 3.14 단일(11/5 PM 결정), `python -m unittest discover -s tests -t .`, `python -m tools.check_secrets`), `django`(Mongo·MySQL 서비스 컨테이너 + `python manage.py test`; `server/manage.py`가 생기기 전에는 "건너뜀" 대신 실패하지 않는 빈 단계로 두고, B-05-01 병합과 함께 실제 실행으로 바꿈), `evidence`(아래 3번), `docs`(아래 4번). 네 체크를 `main` 보호 규칙의 필수 체크로 등록. 테스트 경로(11/4 PM 결정 #12): `core`는 외부 서비스가 필요한 `tests/infra/`·`tests/ads/`를 discover에서 뺀다(예: 그 폴더의 `__init__.py`에 `load_tests`를 두어 `PALDO_SERVICE_TESTS` 환경 변수가 없으면 빈 묶음 반환). `django` 작업이 서비스 컨테이너와 그 변수를 주고 `tests/infra/`, `tests/ads/`, `server/tests/`를 경로별로 따로 실행한다. 광고 테스트는 `ads/project` 설정(결정 #1)으로 돈다.
   2. `check_evidence`: `--format`은 README 4절 양식 제목이 모두 있고(`## 검수`는 `[검수]` 태스크만), `- 작성자(흐름):` 값이 A~E·S 중 하나이며, `- 실제 소요 시간(h):` 값이 숫자 형식인지만 본다(`상태: 실패` 문서도 통과). `--complete <ID>`는 README 4절 "검사 규칙" 1~6을 모두 검사한다(조건 번호 누락, 통과 아님, `상태: 실패`, 결과 JSON과 다른 측정값·단위, 해석할 수 없는 기준 칸, 없는 커밋 SHA, 검수 기록 누락·검수자 흐름 = 작성자 흐름, **문서화 검사(`check_docs --task <ID>`) 실패**면 실패). 결과 JSON·기준 문법·반올림 대조는 README 4절 "결과 JSON 형식"·"수치 표 작성 규칙"을 그대로 따른다. `--all --until <날짜>`는 예정일이 그 날짜까지인 태스크 전부를 `--complete`로 검사(GitHub 조회 없음). `tools/evidence_result.py`의 `write_result(task, name, metrics, source)`는 4절 형식의 결과 JSON을 쓰고 `commit`·`generated_at`을 채운다. 규칙마다 실패 사례 자체 테스트 포함.
   3. `evidence` 체크(PR 본문 연결, README 11절 "PR과 이슈 잇기"): `--pr-body-env PR_BODY`로 환경 변수에서 본문을 읽는다. `Task:` 줄이 정확히 1개, ID가 1개이고 태스크 문서에 있어야 한다(없거나 여러 개면 실패). 연결 줄은 `Closes #` 또는 `Refs #` 중 정확히 하나(둘 다·둘 다 없음·다른 닫기 키워드 `Fixes`/`Resolves` 등이면 실패). `Closes #`면 그 ID로 `check_evidence --complete`, `Refs #`면 `--changed <base>`로 PR base 커밋 이후 바뀐 증빙에 `--format`만 돌린다. push 이벤트에서는 PR 본문 검사를 하지 않고 `--changed <github.event.before>`로 바뀐 증빙의 `--format`만 돌린다. 본문의 `실제 소요 시간(h):` 줄이 없거나 숫자 형식이 아니면 실패(`Task: P-xx`는 제외). PR base 이후 커밋 메시지에 닫기 키워드(`Closes` 포함)가 하나라도 있으면 실패(README 11절, 11/4 PM 결정. 체크아웃은 `fetch-depth: 0`). `Task: P-xx`(결정 대기)는 README 7절 "확정된 결정"에 그 ID가 기록됐는지만 본다. 이 체크가 실패하면 병합이 막히므로, 이슈는 `--complete`를 통과한 PR의 병합으로만 닫힌다.
   4. `check_docs`(README 10절 검사 규칙 1~6, 태스크 정보는 `tools/tasks_md.py`로 읽는다): `--task <ID>`는 트러블 항목(규칙 1), 그 태스크에 "모듈 문서 일괄 갱신" 줄이 있으면 줄에 적힌 모듈 문서의 필수 절과 대상 태스크마다 그날 날짜(태스크 예정일, README 10절)의 `변경 이력` 행(규칙 2, "코드를 바꿨다면" 태스크는 그 증빙 커밋이 모듈 코드를 바꿨을 때만), 문서 산출 태스크의 제목 규칙(규칙 3)을 검사. `--all --until <날짜>`는 "완료된 태스크"(README 10절 정의: 증빙 있음, `상태: 실패` 없음, 통과 칸 전부 "예". `check_evidence`를 부르지 않고 GitHub도 조회하지 않음)인 구현 태스크마다 `변경 이력` 행이 있는지(규칙 4). `--diff <base>`는 PR 변경분에 대해 공개 함수·클래스 docstring, 계약 파일 ↔ 계약 문서 동시 변경, 새 폴더 ↔ `paldo/README.md` 동시 변경을 검사. 규칙마다 실패 사례 자체 테스트 포함.
@@ -98,13 +98,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+        with: { python-version: "3.14" }
   core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+        with: { python-version: "3.14" }
       - run: python -m unittest discover -s tests -t .
       - run: python -m tools.check_secrets
   django:
@@ -115,7 +115,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+        with: { python-version: "3.14" }
       - run: pip install -r server/requirements.txt
       - run: cd server && python manage.py test
       - run: python -m unittest discover -s tests/infra -t .
@@ -128,7 +128,7 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+        with: { python-version: "3.14" }
       - name: PR 본문의 태스크 ID로 증빙 검사
         env: { PR_BODY: "${{ github.event.pull_request.body }}" }
         if: github.event_name == 'pull_request'
@@ -142,7 +142,7 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+        with: { python-version: "3.14" }
       - run: python -m tools.check_docs --diff ${{ github.event.pull_request.base.sha }}
         if: github.event_name == 'pull_request'
 ```
@@ -368,7 +368,7 @@ jobs:
 | 6 | 브라우저 응답에 비공개 정보 0 | B | 판 3개 전체 HTML·JSON 금지 키 검사 |
 | 7 | 실제 엔진 로그 → Delta → 씐 자 모델 첫 학습 결과 | C·D | D-07-02 수치 존재 |
 | 8 | 광고 서버 단독: 경매·2등 가격·과금 원장, `ad.*`가 Kafka 도달 | D·C | 테스트 + 토픽 오프셋 증가 |
-| 9 | 모든 구성요소 구조화 로그·`/metrics` 존재 | 전원 | 구성요소 목록 대비 누락 0 |
+| 9 | 모든 구성요소 구조화 로그·`/metrics` 존재, 각 서비스 프로세스의 Python이 3.14(기동 로그나 `python -c "import sys; print(sys.version)"`를 그 프로세스 환경에서 실행, tech_stack.md 11/5 결정) | 전원 | 구성요소 목록 대비 누락 0, 3.14 아닌 프로세스 0 |
 
 ### INT-09 통합 2 (11/9)
 | # | 항목 | 담당 | 기준 |

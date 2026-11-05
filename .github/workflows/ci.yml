@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }   # 잠정값. ML·LLM 런타임(3.14 단일, 11/5 확정)과 별도로 PM이 정한다
+        with: { python-version: "3.14" }   # 프로젝트 전체 Python 3.14 단일(11/5 PM 결정, tech_stack.md)
       - run: python -m unittest discover -s tests -t .
       - run: python -m tools.check_secrets
 
@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+        with: { python-version: "3.14" }
       # 외부 서비스가 필요한 테스트는 core에서 빼고 여기서 경로별로 돈다(11/4 PM 결정 #12).
       # 폴더를 처음 만드는 태스크(C-06-01 tests/infra, D-05-03 tests/ads)가 그 폴더 __init__.py에
       # load_tests를 두어 PALDO_SERVICE_TESTS가 없으면 빈 묶음을 돌려준다. 폴더가 없으면 건너뛰지 않고 통과한다.
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+        with: { python-version: "3.14" }
       - name: PR 본문의 태스크 ID로 증빙 검사
         if: github.event_name == 'pull_request'
         env:
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+        with: { python-version: "3.14" }
       - name: 문서화 검사(PR 변경분)
         if: github.event_name == 'pull_request'
         env:

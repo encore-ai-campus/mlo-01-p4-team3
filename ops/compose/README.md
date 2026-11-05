@@ -90,7 +90,7 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down        # 내리기(데�
 
 ## 4. Spark + Delta 확인 (C 담당, 선택)
 
-Spark 4.1.3 컨테이너에서 Delta 테이블에 쓰고 다시 읽는다. **Delta jar는 Spark 4.1용 `io.delta:delta-spark_4.1_2.13:4.4.1`을 쓴다.** 기본 jar `delta-spark_2.13:4.4.1`은 Spark 4.2.0용으로 빌드돼 Spark 4.1.3에서 쓰기 때 `NoSuchMethodError`가 난다(증빙 C-05-03). 이 조합은 11/5 PM 승인으로 `tech_stack.md`에 반영됐다.
+Spark 4.1.3 컨테이너에서 Delta 테이블에 쓰고 다시 읽는다. **Delta jar는 Spark 4.1용 `io.delta:delta-spark_4.1_2.13:4.4.1`을 쓴다.** 기본 jar `delta-spark_2.13:4.4.1`은 Spark 4.2.0용으로 빌드돼 Spark 4.1.3에서 쓰기 때 `NoSuchMethodError`가 난다(증빙 C-05-03). 이 조합은 11/5 PM 승인으로 `tech_stack.md`에 반영됐다. 아래 명령은 **jar 좌표 재현용**이다. 공식 이미지의 Python이 3.10이라 프로젝트 Python(3.14)과 다르며, 실제 파이프라인의 드라이버·실행기 Python 3.14 일치는 C-07-01 6번에서 맞추고 확인한다.
 
 ```powershell
 docker run --rm --memory 1g -v "${PWD}/ops/compose/spark:/work:ro" apache/spark:4.1.3-scala2.13-java17-python3-ubuntu `
