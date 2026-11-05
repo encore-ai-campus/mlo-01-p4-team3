@@ -194,7 +194,7 @@ class DesiredIssues(unittest.TestCase):
         self.assertEqual(d.labels, ["day:11-05", "flow:A", "review-required", "type:task"])
         self.assertEqual(d.milestone, MILESTONES[0][0])
         self.assertEqual(self.desired["A-11-01"].milestone, MILESTONES[2][0])
-        self.assertEqual(self.desired["P-22"].milestone, MILESTONES[1][0])
+        self.assertFalse([k for k in self.desired if k.startswith(("P-", "S-"))])   # 결정·발표 트랙은 이슈로 안 만듦(11/5)
         self.assertIn("type:integration", self.desired["INT-07"].labels)
 
     def test_milestone_boundaries(self):
@@ -234,8 +234,12 @@ class ApplyPlan(unittest.TestCase):
         gh = FakeGh()
         apply_plan(gh, self.desired, self.labels, {}, log=lambda *_: None)
         by_key = {re.search(r"id: (\S+) ", i.body).group(1): i for i in gh.issues.values()}
-        p19 = by_key["P-19"].number
-        self.assertIn(f"#{p19} P-19", by_key["A-05-01"].body)
+        self.assertNotIn("P-19", by_key)                    # 결정 대기는 이슈가 없고
+        self.assertIn("P-19", by_key["A-05-01"].body)       # 본문에는 ID 글자로만 남는다
+        self.assertNotRegex(by_key["A-05-01"].body, r"#\d+ P-19")
+        dep = next(d for d in self.desired if any(not x.startswith(("P-", "S-")) for x in d.deps))
+        k = next(x for x in dep.deps if not x.startswith(("P-", "S-")))
+        self.assertIn(f"#{by_key[k].number} {k}", by_key[dep.key].body)
 
     def test_manual_labels_kept_and_stale_managed_labels_removed(self):
         gh = FakeGh()
@@ -347,8 +351,7 @@ class RealTaskDocs(unittest.TestCase):
         for t in self.tasks:
             if t.flow in "ABCDE" and t.kind == "task":
                 self.assertNotRegex(t.title, r"발표 자료|발표 구간|구성안|시연 영상|리허설·(시연|발표)", t.task_id)
-        labels = {l for d in desired_issues(self.tasks, self.decisions) if d.key.startswith("S-") for l in d.labels}
-        self.assertIn("flow:presentation", labels)
+        self.assertFalse([d for d in desired_issues(self.tasks, self.decisions) if d.key.startswith("S-")])  # 별도 관리(11/5)
         self.assertIn("P-24", {d.decision_id for d in self.decisions})
 
     def test_presentation_hours_outside_flow_limits(self):

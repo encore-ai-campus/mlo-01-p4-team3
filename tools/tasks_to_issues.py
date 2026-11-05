@@ -109,10 +109,20 @@ def _source_link(source: str, repo: str | None) -> str:
     return f"`{source}`"
 
 
+NO_ISSUE_PREFIXES = ("P-", "S-")   # 결정 대기(P)와 발표 트랙(S)은 이슈로 만들지 않는다(11/5 PM 결정). 원본 표·문서만 본다
+
+
+def _ref(key: str) -> str:
+    """선행 표기. 이슈가 있는 ID는 번호 링크 자리표시, 이슈가 없는 P·S는 ID 글자만."""
+    return key if key.startswith(NO_ISSUE_PREFIXES) else f"{{{{ref:{key}}}}}"
+
+
 def desired_issues(tasks: list[Task], decisions: list[Decision], repo: str | None = None) -> list[DesiredIssue]:
-    """태스크·결정 대기 목록을 이슈 목록으로 바꾼다."""
+    """태스크 목록을 이슈 목록으로 바꾼다. 발표 트랙(S) 태스크와 결정 대기(P)는 만들지 않는다(`decisions`는 받기만 한다)."""
     out: list[DesiredIssue] = []
     for t in tasks:
+        if t.task_id.startswith(NO_ISSUE_PREFIXES):
+            continue
         labels = [f"type:{t.kind}"]
         if t.flow in FLOW_LABELS:
             labels.append(FLOW_LABELS[t.flow])
@@ -122,8 +132,8 @@ def desired_issues(tasks: list[Task], decisions: list[Decision], repo: str | Non
             labels.append("review-required")
         if "에셋" in t.tags:
             labels.append("asset")
-        refs = " · ".join(f"{{{{ref:{d}}}}}" for d in t.deps) or "없음"
-        decs = " · ".join(f"{{{{ref:{p}}}}}" for p in t.decisions) or "없음"
+        refs = " · ".join(_ref(d) for d in t.deps) or "없음"
+        decs = " · ".join(_ref(p) for p in t.decisions) or "없음"
         date_txt = f"{int(t.date[:2])}/{int(t.date[3:])}" if t.date else "-"
         hours_txt = (f"{t.hours:g}h + 문서화 {t.doc_hours + t.batch_hours:g}h" if t.kind == "task"
                      else "주관 태스크 시간에 포함")
@@ -148,21 +158,8 @@ def desired_issues(tasks: list[Task], decisions: list[Decision], repo: str | Non
         tag_txt = "".join(f" [{x}]" for x in t.tags)
         out.append(DesiredIssue(
             key=t.task_id, title=f"[{t.task_id}] {t.title}{tag_txt}", labels=sorted(labels),
-            milestone=milestone_for(t.date), flow=t.flow, deps=list(t.deps) + list(t.decisions), body_template=body,
-        ))
-    for d in decisions:
-        body = "\n".join([
-            f"<!-- decision-id: {d.decision_id} -->",
-            f"**기한** {d.deadline} · **막히는 태스크** {d.blocks}",
-            f"**원본** {_source_link('docs/tasks/README.md', repo)} 7절",
-            "",
-            d.what,
-            "",
-            f"결정이 나면 README 7절 \"확정된 결정\"에 기록하는 PR을 내고, PR 본문에 `Task: {d.decision_id}`와 `Closes #이 이슈`를 쓴다.",
-        ])
-        out.append(DesiredIssue(
-            key=d.decision_id, title=f"[{d.decision_id}] {_short(d.what)}", labels=["type:decision"],
-            milestone=milestone_for(_deadline_key(d.deadline)), flow="E", body_template=body,
+            milestone=milestone_for(t.date), flow=t.flow, deps=[k for k in list(t.deps) + list(t.decisions) if not k.startswith(NO_ISSUE_PREFIXES)],
+            body_template=body,
         ))
     return out
 

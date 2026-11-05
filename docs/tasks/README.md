@@ -533,12 +533,13 @@
 
 **이슈 종류와 라벨**(정의: [`.github/labels.yml`](../../.github/labels.yml))
 
+결정 대기(P-xx)와 발표 트랙(S-xx)은 이슈로 만들지 않는다(11/5 PM 결정). 결정 대기의 원본은 7절 결정 표, 발표 트랙은 [`P_presentation.md`](P_presentation.md)이고 PM이 별도로 관리한다. 11/5 처음 이슈를 만들 때 생긴 P·S 이슈는 "not planned"로 닫았다(조직 설정상 삭제 불가).
+
 | 라벨 | 뜻 |
 |---|---|
 | `flow:A` ~ `flow:E` | 흐름 |
-| `flow:presentation` | 발표 트랙(S-xx). 담당은 P-24 |
 | `day:11-05` ~ `day:11-12` | 태스크 날짜 |
-| `type:task`, `type:integration`, `type:decision` | 태스크, 통합(INT), 결정 대기(P-xx) |
+| `type:task`, `type:integration` | 태스크, 통합(INT) |
 | `blocker` | 시연·통합을 막는 결함(3절). 보류로 닫을 수 없다 |
 | `evidence-fail` | `상태: 실패` 증빙을 병합한 태스크(완료 아님) |
 | `status:blocked` | 선행 태스크나 결정 대기 때문에 착수 못 함 |
@@ -577,5 +578,5 @@ python -m tools.hours_report --until 11-05                     # 계획 대비 �
 1. 마일스톤 화면: 다음 통합 마일스톤의 진행률. 오늘 날짜 라벨(`day:11-0X`)로 걸러 **오늘 닫혀야 할 이슈 중 열린 것**을 본다.
 2. `blocker` 라벨 열린 이슈: 0건이어야 한다. 있으면 스탠드업 첫 안건.
 3. `evidence-fail`, `status:blocked` 라벨: 재배치 대상.
-4. `type:decision` 열린 이슈 중 기한이 오늘인 것: PM이 결정하고 결과를 README 7절에 반영하는 PR을 낸 뒤 그 PR로 닫는다.
+4. 7절 결정 표에서 기한이 오늘인 결정 대기(P-xx): PM이 결정하고 결과를 7절 "확정된 결정"에 반영하는 PR을 낸다(PR 본문 `Task: P-xx`, 닫을 이슈 없음).
 5. 오후 5시 병합 뒤 `python -m tools.check_evidence --all --until <오늘>`(E-05-02) 결과가 녹색인지.
