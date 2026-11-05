@@ -7,7 +7,7 @@
 
 ## 1. 원칙
 
-| 원칙&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 내용&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 근거&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠칙&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠용&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠거&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | 호출 방식 분류(이 문서의 표기) | ① 같은 프로세스 안의 호출(포트·함수)<br>② HTTP(브라우저·내부 서비스·Prometheus 수집)<br>③ Kafka 토픽<br>④ 저장소 접근(Mongo·MySQL 연결, Delta 테이블, MLflow 레지스트리, 파일). 포트 호출 뒤에 저장소 접근이 있으면 "①→④"로 함께 적는다 | - |
 | 포트 뒤에 숨긴다 | 게임 쪽 코드는 바깥을 `engine/ports.py`와 `server/app/ads_port.py`의 포트로만 부른다. HTTP·DB 세부는 인프라 구현 안에 있다 | [ports.md](ports.md) |
@@ -20,7 +20,7 @@
 
 통합 환경(VM)의 배치 원본은 기획서 6.3이다. 개발 환경은 각자 PC의 Docker Compose(`paldo-dev`, C-05-03)이고, AWS 범위는 결정 대기(P-05)다.
 
-| 실행&nbsp;단위&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 코드&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | VM(기획서&nbsp;6.3)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠행&nbsp;⁠위&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠드&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | VM(⁠⁠서&nbsp;6.3)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | 게임 웹(Django) | `server/`, `web/`, 같은 프로세스 안에 `engine/`. `intent/`, `ml/adapters/`도 같은 프로세스에서 import해 먼저 시험한다(결정 #4. 환경 실패나 p95 초과면 분리) | app-01 | B |
 | 게임 아웃박스 발행기 | `server/infra/outbox_publisher.py` | app-01 | C |
@@ -43,7 +43,7 @@
 
 ### 3.1 게임 요청 경로
 
-| #&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 부르는 쪽 → 받는 쪽&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 방식&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 이름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 계약&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 시간 제한·실패&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 주소 변수&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 그동안 쓰는 가짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 진짜로 붙는 태스크 → INT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| #&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠는 쪽 → ⁠는 쪽&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠식&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠약&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠간 ⁠한·⁠패&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠소 ⁠수&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠안 ⁠는 ⁠짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠로 ⁠는 ⁠⁠크 → INT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|---|---|
 | G1 | 브라우저 → 게임 웹(B) | ② | api.md 2절 엔드포인트(htmx 조각 또는 JSON) | [api.md 1~4절](api.md) | 409 버전 충돌, 422 거부, 같은 `command_id` 재요청은 저장된 응답. 비로그인 401·로그인 화면 이동(api.md 2-1절) | - | 녹화 판 `fixtures/api/` | B-05-02 → INT-07 #1 |
 | G1a | 게임 웹 계정(B) → 계정 MySQL | ④ DB 연결(Django 인증) | 가입·로그인·잠금·세션 | [privacy.md 5절](privacy.md), [api.md 2-1절](api.md) | DB 장애 시 로그인 불가(게임 화면 진입 불가), 오류 로그·지표 | `PALDO_AUTH_DB_HOST`, `PALDO_AUTH_DB_PORT`, `PALDO_AUTH_DB_NAME`, `PALDO_AUTH_DB_USER`, `PALDO_AUTH_DB_PASSWORD` | 로컬 Compose MySQL의 같은 스키마 이름 | C-06-03 4번 → B-06-04 → INT-07 |
@@ -63,7 +63,7 @@
 
 ### 3.2 이벤트·데이터·학습 경로
 
-| # | 부르는&nbsp;쪽&nbsp;→&nbsp;받는&nbsp;쪽 | 방식 | 이름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 계약&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 시간&nbsp;제한·실패 | 주소&nbsp;변수&nbsp;&nbsp;&nbsp; | 그동안&nbsp;쓰는&nbsp;가짜 | 진짜로&nbsp;붙는&nbsp;태스크&nbsp;→&nbsp;INT |
+| # | ⁠⁠는&nbsp;쪽&nbsp;→&nbsp;⁠는&nbsp;쪽 | ⁠식 | ⁠름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠약&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠간&nbsp;⁠한·⁠패 | ⁠소&nbsp;⁠수&nbsp;&nbsp;&nbsp; | ⁠⁠안&nbsp;⁠는&nbsp;⁠짜 | ⁠⁠로&nbsp;⁠는&nbsp;⁠⁠크&nbsp;→&nbsp;INT |
 |---|---|---|---|---|---|---|---|---|
 | D1 | 게임 웹 응용 → 아웃박스(상태를 바꾸지 않는 이벤트) | ① `append_events` | `intent_attempt`, 카드 반응, `notebook_updated`, `survey_submitted`, `render_job` | [ports.md 1절](ports.md), [events.md 2절](events.md) | `dedup_key`로 중복 무시, 상태 버전 안 올림 | `PALDO_MONGO_URI` | `InMemoryGameRepository` | C-06-01 → INT-09 #7 |
 | D2 | 게임 아웃박스 발행기(C) → Kafka | ③ | `paldo.game`, `paldo.observations`, `paldo.intent`, `paldo.llm`, `paldo.player`, `paldo.truth`(판 종료 후만) | [events.md 1·2절](events.md) | acks=all 후 발행 표시, 실패 시 재시도, 소비자는 `event_id`로 중복 제거 | `PALDO_KAFKA_BOOTSTRAP` | `fixtures/events/`, `tools/gen_synthetic.py` | C-06-02 → INT-07 #5 |
@@ -95,7 +95,7 @@
 - 코드와 문서에는 IP·계정·비밀번호를 쓰지 않는다. 실제 값은 Git이 추적하지 않는 `.env`에 두고, `.env.example`에는 이름과 자리표시자만 둔다(C-05-03).
 - 같은 이름을 개발(Compose)·VM·AWS에서 쓰고 값만 바꾼다.
 
-| 변수&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 쓰는&nbsp;곳&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 뜻&nbsp; |
+| ⁠수&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠는&nbsp;곳&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 뜻&nbsp; |
 |---|---|---|
 | `PALDO_MONGO_URI` | 게임 웹, 발행기, 삭제 도구 | Mongo 레플리카셋 연결 문자열 |
 | `PALDO_KAFKA_BOOTSTRAP` | 발행기, 광고 발행, Spark, 소비자 | Kafka 부트스트랩 서버 목록 |
@@ -133,7 +133,7 @@
 
 ## 5. 환경별 차이
 
-| 환경&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 구성&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 다른&nbsp;점&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠경&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠성&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠른&nbsp;점&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | 개발(각자 PC) | Compose `paldo-dev`: Mongo 1노드 레플리카셋, Kafka 1노드, MySQL 1노드, S3 호환 저장소, Prometheus, Grafana(C-05-03) + 로컬 Django(11/7 B-07-05부터 Daphne ASGI, HTTP) | 상대 흐름은 가짜. LLM은 `FakeLineRenderer` 또는 작은 모델(기획서 6.3 개발 시간대) |
 | 통합·사용자 테스트(VM) | 2절 표 + app-01 게임 웹 앞 Caddy HTTPS 프록시(C-07-04, 자체 서명, wss 통과) | 실제 구현으로 교체. 사용자 테스트 중에는 llm-01·ad-01·app-01에 학습 작업을 올리지 않는다(기획서 6.3). 참가자는 첫 접속 때 인증서 경고를 한 번 넘긴다(C-07-04 안내) |
@@ -141,7 +141,7 @@
 
 ## 6. 통합 시점 요약
 
-| 날짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 처음 진짜로 붙는 호출&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 판정&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠음 ⁠⁠로 ⁠는 ⁠출&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠정&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | 11/5 | 임시 에셋 manifest(G12) | E-05-05 → B·D |
 | 11/6 | 광고 MySQL(A1), 광고 이벤트 Kafka(A2), 게임 이벤트 Kafka(D2), 실제 엔진 소량 판(D7) | INT-07 사전 |
@@ -155,7 +155,7 @@
 
 계약·태스크에 없던 것을 PM이 11/4에 아래 "결정과 이유" 열대로 모두 승인했다. 각 결정은 "반영 위치" 열의 계약·태스크 문서에 반영했고, 시간이 는 태스크는 C-06-01(+0.25h), C-08-03(+0.25h), C-09-04(+0.5h), D-08-04(+0.5h)다.
 
-| #&nbsp;&nbsp;&nbsp; | 항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 선택지&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 결정과 이유&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 반영&nbsp;위치&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| #&nbsp;&nbsp;&nbsp; | ⁠목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠지&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠과 ⁠유&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠영&nbsp;⁠치&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
 | 1 | 광고 서버 Django 프로젝트 위치 | (a) `ads/project/`(settings·urls) + `ads/manage.py`로 독립 (b) `server/paldo_web`에 `ads.web` 앱을 넣고 설정 모듈만 분리 | **(a)**. 계약이 "Django 별도 서비스(ad-01)"이고 DB·비밀 키가 다르다. B와 D가 같은 settings 파일을 동시에 고치지 않는다 | D-05-03, C-10-02 |
 | 2 | 브라우저 → 광고 서버(비콘·클릭)의 출처 처리 | (a) 광고 서버에 직접. 클릭은 링크 이동이라 출처 문제가 없다. 비콘은 `navigator.sendBeacon`으로 `text/plain` 본문(JSON 문자열)을 보내 사전 요청을 피한다 (b) 리버스 프록시로 같은 출처 (c) 게임 웹이 비콘을 받아 넘김 | **11/4 같은 날 (a) → (c)로 변경(웹소켓)**: 내부 사용자 테스트를 HTTPS로 하기로 해(BRD `BR-OQ-023`) 게임만 HTTPS면 HTTP 광고 서버로 가는 비콘이 혼합 콘텐츠로 막히고, 클릭은 HTTPS 화면에서 HTTP 주소로 빠져나간다. 그래서 브라우저는 게임 웹 출처에만 접속하고, 노출 비콘은 Django Channels·Daphne 웹소켓 `/ws/game/`, 클릭·랜딩은 게임 웹 HTTP 경로로 받아 게임 웹이 광고 서버에 내부 HTTP로 넘긴다(api.md 7절, ports.md 5절). 서버 간 API 형식은 그대로(`ads-0.3`). `PALDO_ADS_PUBLIC_URL` 폐지, `PALDO_PUBLIC_ORIGIN` 추가. 광고 장애 시험 범위가 중계까지 넓어진다(B-08-03 2번). 반영: B-07-05(신설), B-07-03, B-08-03, D-05-03, C-07-04(신설), C-10-02. 아래는 처음 (a)를 고른 이유와 그때의 조건이며 **폐기된 이력**이다(지금 유효한 조건은 api.md 7절·ports.md 5절·ads.md 3절). **(a)**. 새 구성요소가 없고 광고 트래픽이 게임 웹 부하에 섞이지 않는다. 조건: 광고 서버가 `text/plain` 본문을 직접 파싱하고, 비콘·클릭 엔드포인트는 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다. `PALDO_ADS_PUBLIC_URL`(AWS는 HTTPS 공개 주소)이 필요하다. 서로 다른 출처에서 실제 동작을 확인한다(B-08-03). (c)도 게임 명령 경로 밖이면 기획서 14.7 위반은 아니지만 광고 장애 시험 범위가 넓어진다 | B-07-05, B-07-03, D-05-03, B-08-03, C-07-04, C-10-02 |

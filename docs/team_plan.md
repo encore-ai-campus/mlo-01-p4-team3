@@ -21,7 +21,7 @@
 
 ## 2. 역할 분담
 
-| 흐름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 담당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 계층·폴더&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 책임&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠당&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠층·⁠더&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠임&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | **A. 게임 엔진** | 팀원 1 | 도메인 `engine/domain` | 상태 전이, 규칙, 관측 투영, 종료 판정, NPC 상태와 규칙 v0(의심 갱신, 투표 3층, 씐 자 전략), 행적·목격 생성, **배정 검증기**, 창귀 2명 규칙, 행동 이유 코드(원한 단서 해금과 복기용 이유 조회 코드는 11/5 결정으로 E가 작성, 검토자 A), **결정 층 최적화(D에서 이관)**, 실제 이미지 에셋 제작(생성 도구·투명 바탕 처리, 반실사 전신 sprite(초상은 파생)·장면 배경, 첫 플레이 8명 표정 변형(기본 sprite를 편집 입력으로 얼굴만 변경)·마스코트 2종(11/5 P-20·P-21 결정), 검수 탈락분 재생성. 11/5 결정으로 B에서 이전) |
 | **B. 웹·API** | 팀원 2 | 표현 `web/`, `server/api`, 응용 `server/app` | 판 진행 유스케이스(버전 검사·중복 명령 판정), 전체 화면(회의, 진술표, 투표, 밤, 자유 입력·발언 카드, 수첩·확신도·설문, 프리셋 선택, 원한 단서·결말 선택, 복기, 11인 판 화면, 업데이트 내역 표시), 모델 버전 적용, 사용자 모집·세션 기록 도구, **광고 지면 4곳 연동(AdProvider 포트 호출·타임아웃 폴백, 가시 노출 비콘, 클릭 리다이렉트 링크)**, **웹소켓 연결과 광고 신호 중계**(11/4 결정), 회의·밤 화면 비주얼 노벨 연출(장면 배경·초상·대화창)과 VN 연출 규칙 문서, 사용자 테스트 리허설 지원·버그 분류·재현(11/5 결정) |
@@ -42,7 +42,7 @@
 
 ## 3. 일정 (요약. 상세는 `paldo/docs/tasks/`)
 
-| 날짜 | A&nbsp;엔진&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | B&nbsp;웹·API&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | C&nbsp;인프라/파이프라인&nbsp;&nbsp;&nbsp; | D&nbsp;ML&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | E 콘텐츠·LLM(PM) | 통합·검증&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠짜 | A&nbsp;⁠진&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | B&nbsp;웹·API&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | C&nbsp;⁠⁠라/⁠⁠⁠⁠인&nbsp;&nbsp;&nbsp; | D&nbsp;ML&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | E ⁠⁠츠·LLM(PM) | ⁠합·⁠증&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|---|---|
 | **11/4(수)** | 계약 리뷰 | 계약 리뷰 | 계약 리뷰 | 라벨표 리뷰, 광고 계약 리뷰 | 계약 확정, 추적표, 참가자 섭외 시작 | 계약 동결(밤) |
 | **11/5(목)** | 판 생성·배정·아침 진술, 회의·투표·종료 판정 (A-05-01~02) | Django 골격·로그·계측, API(가짜 엔진), 회의 화면 (B-05-01~03) | VM 20대 실측·점검표, 역할 재배정·LLM 잠정 자원·실행 시간표·디스크 예산, 개발용 Compose·Python 3.14 필수 패키지 확인 (C-05-01~03) | 의도 기준선·매칭 v0, BERT 후보 확인, 광고 서버 골격 (D-05-01~03) | 저장소·CI·증빙 검사, 인물 6·비밀 6, 스타일 가이드·임시 에셋 (E-05-01~03·05) | 각자 노트북 VM 4대 점검(각 흐름 11/5 첫 태스크의 완료 조건) |
@@ -74,7 +74,7 @@
 
 ## 4. 가짜 구현과 교체 시점
 
-| 흐름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 필요한&nbsp;입력&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 그동안&nbsp;쓰는&nbsp;가짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 진짜로 교체&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠한&nbsp;⁠력&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠안&nbsp;⁠는&nbsp;⁠짜&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠로 ⁠체&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | A | 콘텐츠 | `fixtures/content_min` | 11/6 E의 초안, 11/8 확장분 |
 | A | 의심 모델, LLM, 저장소 | `engine/testing/fakes.py` | 11/8 모델 v0, 11/7 LLM(E-07-01 인계 → B-07-01 7번, 11/4 PM 결정) |
@@ -157,7 +157,7 @@
 
 ## 7. 통합 완료 기준
 
-| 통합&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 완료 기준&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠합&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠료 ⁠준&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|
 | **1 (11/7)** | 버튼만으로 6인·창귀 1 판 완주. 반례 통과: 결선 재동점 무감금, 무당 감금, 점괘·고백 전환. 중복 명령과 오래된 버전 거부. 저장 후 재개. Kafka를 멈췄다 재개해도 유실·중복 없음(상태 수와 이벤트 수 대조). 브라우저 응답에 비공개 정보 없음. 실제 엔진 로그로 씐 자 모델 첫 학습 결과. 광고 서버 단독: 경매·2등 가격·과금 원장 단위 테스트, `ad.*` 이벤트가 Kafka에 도달 |
 | **2 (11/9)** | 자유 입력: 카드 수정, 다중 의도 선택, 문맥 누락, 미지원 입력, 행동 미소비 확인. 명령 전체 일치율과 전체 지연 측정. LLM 실패·취소·늦은 응답 처리 확인. 모델 NPC가 관측 경계와 합법 행동을 지킴. 입력부터 설문까지 로그 대조. 광고: 지면 4곳 노출·클릭이 따로 집계되고 무효(중복·노출 없는 클릭)가 과금에서 빠짐, 원장과 Delta 대사 일치, 광고 서버를 꺼도 게임 진행 정상 |
@@ -172,9 +172,9 @@
 ## 8. 운영 규칙
 
 - 매일 오전 스탠드업 15분(PM): 어제 한 일, 오늘 할 일, 막힌 것, 오늘 넘길 산출물.
-- 매일 오후 5시 통합 시간: `main`에 병합, 계약 테스트와 전체 테스트 실행.
+- 매일 오후 5시 통합 시간: 통합 브랜치 `dev`에 병합, 계약 테스트와 전체 테스트 실행.
 - 입력 검수(11/7부터, E 진행, D가 라벨 규칙 확인)는 E-07-02·E-09-02·D-09-02 태스크 시간 안에서 한다(공통 시간에 더하지 않음). 평가용 사람 주석은 학습에서 제외한다.
-- 브랜치: `main` + 흐름별 기능 브랜치(`a/…`, `b/…`). PR 리뷰는 다른 흐름 1명이 반나절 안에 한다.
+- 브랜치: 통합 `dev`(기본 브랜치, 모든 PR 대상) + 배포 `main`(사용자 테스트 전·시연 전에만 `dev`에서 승격) + 태스크 브랜치 `task/<ID>`(`dev`에서 딴다). 규칙은 tasks README 3절 "브랜치 모델". PR 리뷰는 다른 흐름 1명이 반나절 안에 한다.
 - 계약 변경: PR에 "계약 변경"을 표시하고, 영향받는 흐름 담당자가 승인해야 병합한다. 예제 묶음과 계약 테스트를 함께 고친다.
 - 머신 사용: 사용자 테스트 시간대에는 학습·대량 시뮬레이션을 돌리지 않는다(5절 실행 시간표).
 - 문서화: 모든 태스크가 트러블 기록과 docstring(해당 시 계약·라우팅 문서)을 남기고, 모듈 문서는 흐름별로 그날 마지막 태스크에서 한 번에 갱신한다(11/5 P-22 결정). 기준은 `paldo/docs/tasks/README.md` 10절, CI `docs` 체크와 `check_evidence --complete`가 검사한다.
@@ -184,7 +184,7 @@
 
 ## 9. 리스크
 
-| 리스크&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 대응&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠⁠크&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠응&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|
 | 8일 안에 전체 범위를 끝내기는 매우 빠듯함 | 계약 선확정, 인수 시점 앞당김, 11/11은 검증 전용. 매일 스탠드업에서 지연 흐름에 인력 재배치 |
 | A 지연이 전체를 막음 | A는 11/6까지 하루 흐름을 끝까지 연결하고 지능은 그 뒤에 올린다. PM이 매일 A를 먼저 확인 |

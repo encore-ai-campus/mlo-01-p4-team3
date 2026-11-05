@@ -1,5 +1,7 @@
 # 팀원 안내서: 저장소 배정 전 작업·제출 방법
 
+> **저장소가 11/5에 배정되었다(`https://github.com/encore-ai-campus/mlo-01-p4-team3`). 이제는 7절만 본다.** 1~6절(NAS 번들 제출)은 기록으로만 남기고 쓰지 않는다. 8절 표에서 번들·NAS 관련 줄도 해당 없다.
+
 교육기관 GitHub 저장소를 받기 전까지 쓰는 방법이다. 규칙 원문은 [태스크 README 10-1절](../tasks/README.md)이다. 이 문서는 그중 팀원이 할 일만 순서대로 적었다.
 
 - 코드는 **각자 노트북의 git**에서만 다룬다. NAS는 파일을 놓아두는 곳일 뿐이고, NAS 안에서 git 명령을 쓰지 않는다.
@@ -124,21 +126,44 @@ PM이 검토를 맡기면, 남의 제출을 보고 판정을 남긴다. 자기 �
 
 진행표 상태: `제출됨`(NAS에 번들만 있음) → `병합됨`(PM이 main에 합침) → `완료`(증빙 완료 + 검토 통과). GitHub가 있어야 끝나는 조건(태스크 문서에 **(저장소 배정 후)** 표시)은 배정 전에는 판정하지 않는다. 그래서 그런 태스크는 `병합됨`으로 남아도 정상이다.
 
-## 7. 저장소가 배정되면 (전환)
+## 7. 저장소가 배정되면 (지금 쓰는 절차)
 
-PM이 GitHub 저장소 주소를 알리면 그때부터 NAS 제출을 멈추고 원래 규칙(PR·Actions·승인, [태스크 README 3절](../tasks/README.md))으로 일한다. PM이 **같은 main을 그대로** 올리므로 지금 저장소를 지우거나 다시 받을 필요가 없다.
+저장소: `https://github.com/encore-ai-campus/mlo-01-p4-team3`(비공개, 초대 수락 필요). 규칙 원문은 [태스크 README 3절](../tasks/README.md) "브랜치 모델"과 11절이다.
+
+- **`dev`**: 통합 브랜치이자 기본 브랜치. 모든 태스크 PR은 `dev`로 연다.
+- **`main`**: 배포 브랜치. 사용자 테스트 전·시연 전에 PM이 `dev`에서 승격한다. 팀원은 `main`에 PR을 열지 않는다.
+- `dev`·`main` 모두 직접 푸시가 막혀 있다. 필수 체크 4개와 작성자가 아닌 1명의 승인이 있어야 병합된다.
+
+**처음 받는 경우**(NAS zip·번들을 받지 않았거나 새로 시작할 때):
 
 ```powershell
-git remote add origin <PM이 알려 준 저장소 주소>
-git fetch origin
-git switch main
-git merge --ff-only origin/main          # 실패하면 손대지 말고 PM에게
-git branch -u origin/main main
-git push -u origin task/A-05-01          # 진행 중이던 태스크 브랜치. 이어서 PR을 연다
+git clone -b dev https://github.com/encore-ai-campus/mlo-01-p4-team3.git paldo
+cd paldo
+git config user.name "자기 이름"
+git config user.email "자기 이메일"
 ```
 
-- NAS에 이미 제출한 태스크는 다시 낼 필요 없다. PM이 진행표·원장으로 정리한다.
-- 이력을 바꾸는 명령(`rebase`로 공유된 커밋 고치기, `push --force`)은 쓰지 않는다.
+**NAS에서 받은 저장소(zip·번들)로 이미 시작한 경우**: 같은 커밋이 올라가 있으니 지우지 않고 원격만 붙인다.
+
+```powershell
+git remote add origin https://github.com/encore-ai-campus/mlo-01-p4-team3.git   # 이미 origin이 있으면 git remote set-url origin <주소>
+git fetch origin
+git switch -c dev --track origin/dev     # 이미 dev가 있으면: git switch dev; git merge --ff-only origin/dev
+```
+
+**태스크 하나 작업하고 PR 내기**:
+
+```powershell
+git switch dev
+git pull --ff-only                       # 최신 dev
+git switch -c task/A-05-01               # dev에서 딴다
+# ... 작업, git add <파일들>, git commit -m "A-05-01: 무엇을 왜" ...
+git push -u origin task/A-05-01
+```
+
+- GitHub에서 **base `dev`** ← `task/A-05-01`로 PR을 연다. 본문은 PR 템플릿대로 쓴다(`Task:` 1줄, `실제 소요 시간(h):`, `Closes #` 또는 `Refs #` 중 하나). `Closes #<이슈 번호>`면 CI가 증빙 완료 검사까지 돌린다.
+- 이미 `main`에서 따 둔 작업 브랜치가 있으면 그대로 푸시해도 된다(지금 `main`과 `dev`가 같은 커밋에서 시작했다). PR의 base만 `dev`로 고른다.
+- 이력을 바꾸는 명령(공유된 커밋을 `rebase`로 고치기, `push --force`)은 쓰지 않는다.
 
 ## 8. 막힐 때
 
@@ -148,7 +173,8 @@ git push -u origin task/A-05-01          # 진행 중이던 태스크 브랜치.
 | `service` 단계 실패: 서비스 테스트를 안 돌림 | Compose를 띄우고 `$env:PALDO_SERVICE_TESTS = "1"` 뒤 다시 제출 |
 | `core: check_structure` 실패 | 허용 목록에 없는 새 폴더를 만들었다. 출력의 "가장 가까운 허용 패턴"을 보고 `docs/contracts/structure.md` 1절 트리의 위치로 옮긴다. 새 폴더가 꼭 필요하면 PM에게 묻는다(승인 뒤 6절 목록부터 고친다) |
 | `docs` 단계 실패 | 출력에 나온 문서 규칙(태스크 README 10절)대로 모듈 문서·트러블을 고친다 |
+| PR이 `main`을 대상으로 열림 | PR 화면에서 base를 `dev`로 바꾼다. `main`은 PM의 승격 PR만 받는다 |
 | `evidence` 단계 실패 | `--complete`면 증빙 완료 조건을 확인한다. 커밋 메시지에 닫기 키워드가 있으면 새 커밋으로 덮을 수 없으니 PM에게 알린다 |
-| `git merge --ff-only` 실패 | main에 직접 커밋한 것이 있다. 손대지 말고 PM에게 알린다 |
+| `git merge --ff-only`·`git pull --ff-only` 실패 | 로컬 `dev`(또는 `main`)에 직접 커밋한 것이 있다. 손대지 말고 PM에게 알린다 |
 | 콘솔 한글이 깨짐 | `PYTHONUTF8=1` 설정(1절) 뒤 새 창을 연다 |
-| `git clone` 뒤 브랜치가 이상함 | `-b main`을 빠뜨렸다. 폴더를 지우고 1절 4번을 다시 한다 |
+| `git clone` 뒤 브랜치가 이상함 | `-b dev`를 빠뜨렸다. `git switch dev`로 옮기거나 폴더를 지우고 7절 "처음 받는 경우"를 다시 한다 |

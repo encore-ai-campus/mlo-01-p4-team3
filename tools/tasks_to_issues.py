@@ -100,9 +100,12 @@ def _deadline_key(deadline: str) -> str | None:
     return f"{int(m.group(1)):02d}-{int(m.group(2)):02d}" if m else None
 
 
+INTEGRATION_BRANCH = "dev"   # 통합 브랜치(11/5 PM 결정: dev 통합, main 배포). 이슈의 원본 링크가 가리키는 곳
+
+
 def _source_link(source: str, repo: str | None) -> str:
     if repo:
-        return f"[{source}](https://github.com/{repo}/blob/main/{source})"
+        return f"[{source}](https://github.com/{repo}/blob/{INTEGRATION_BRANCH}/{source})"
     return f"`{source}`"
 
 

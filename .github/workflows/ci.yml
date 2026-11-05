@@ -50,12 +50,19 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: actions/setup-python@v5
         with: { python-version: "3.14" }
+      # 승격 PR(dev → main, README 3절 브랜치 모델)은 태스크 하나의 PR이 아니라 Task 줄이 없다.
+      # 각 태스크 PR이 dev에서 이미 검사를 통과했으므로, 승격 PR은 바뀐 증빙 형식만 본다.
       - name: PR 본문의 태스크 ID로 증빙 검사
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && !(github.base_ref == 'main' && github.head_ref == 'dev' && github.event.pull_request.head.repo.full_name == github.repository)
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: python -m tools.check_evidence --pr-body-env PR_BODY --changed "$BASE_SHA"
+      - name: 승격 PR(dev → main)에서 바뀐 증빙 형식 검사
+        if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.head_ref == 'dev' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python -m tools.check_evidence --changed "$BASE_SHA"
       - name: push에서 바뀐 증빙 형식 검사
         if: github.event_name == 'push'
         env:

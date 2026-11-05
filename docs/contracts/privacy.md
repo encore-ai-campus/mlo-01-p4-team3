@@ -20,7 +20,7 @@
 
 ## 4. 학습 사용 범위
 
-| 데이터&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 학습 사용&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 제외&nbsp;조건&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠⁠터&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠습 ⁠용&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠외&nbsp;⁠건&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | 행동 로그(명령, 투표, 수첩) | 씐 자 모델 평가, 대역 봇 보정 | 동의하지 않은 세션, `load_test`, 중단된 판(라벨 없음) |
 | 자유 입력 문장 | 의도 해석기 학습·평가 | 마스킹 후에도 개인정보가 남은 문장(검수 때 제외), `auto_executed` 단독 라벨 |
@@ -31,7 +31,7 @@
 
 ## 5. 계정 규칙 (11/4 PM 결정, B-06-04)
 
-| 항목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 규칙&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠목&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠칙&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|
 | 가입 | 로그인 ID, 비밀번호, 비밀번호 확인, 3절 동의만 받는다. 이름·연락처·이메일 입력란 없음. 가입 때 가명 ID 발급 |
 | 가입 방식 | **공개 가입**(11/4 PM 결정, BRD `BR-OQ-022` 닫힘). 환경 변수 `PALDO_SIGNUP_INVITE_CODE`가 있으면 가입 때 그 초대 코드를 요구하는 기능은 남기되 파일럿에서는 설정하지 않는다. 코드 값은 로그에 남기지 않는다 |

@@ -37,7 +37,7 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 
 ## 설정값
 
-| 이름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 기본값 | 뜻&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 바꿀&nbsp;때&nbsp;영향&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| ⁠름&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠⁠값 | 뜻&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ⁠꿀&nbsp;때&nbsp;⁠향&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|
 | `.env`의 `PALDO_*`(integration.md 4.1) | `make-env`가 로컬 값으로 채움(주소·포트는 고정값, 비밀은 무작위, MLflow·LLM·광고 서버 주소와 가입 초대 코드는 비움, 게임 웹 출처 `http://localhost:8000`) | 앱이 읽는 주소·비밀. 양식은 `.env.example`(자리표시자만) | 같은 이름을 VM·AWS에서 값만 바꿔 쓴다 |
 | `.env`의 `MONGO_INITDB_ROOT_*`, `MYSQL_*`, `GARAGE_RPC_SECRET`, `GARAGE_ADMIN_TOKEN`, `GF_SECURITY_ADMIN_*` | `make-env`가 무작위로 채움(MySQL 계정은 `PALDO_ADS_DB_USER`·`_PASSWORD`와 같은 값) | 컨테이너 초기화용(이미지가 정한 이름) | 첫 기동 뒤 바꾸면 기존 볼륨 계정과 어긋난다. 볼륨을 지우고 다시 띄워야 한다 |
