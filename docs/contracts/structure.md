@@ -105,7 +105,7 @@ paldo/
 │
 ├─ tools/                          도구 · 공용
 │  ├─ build_fixtures.py, build_ads_fixtures.py, gen_synthetic.py, gen_synthetic_ads.py,
-│  │  tasks_md.py, tasks_to_issues.py, hours_report.py   (있음)
+│  │  tasks_md.py, tasks_to_issues.py   (있음)
 │  ├─ check_evidence.py, check_docs.py, check_secrets.py, secrets_allowlist.txt, evidence_result.py [E-05-02]
 │  ├─ run_engine_games.py, check_handoff_a06.py [A-06-03], optimize_decision.py [A-08-03]
 │  ├─ load_content.py [C-06-01] 결정 #8, replay_progress.py [C-09-04] 결정 #19

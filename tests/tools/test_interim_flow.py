@@ -128,7 +128,7 @@ class InterimFlowTest(unittest.TestCase):
         mate = self._teammate(main_bundle)
         self._commit(mate, "tests/test_more.py", "import unittest\n\nclass M(unittest.TestCase):\n"
                                                  "    def test_m(self):\n        self.assertEqual(1, 1)\n")
-        info = SubmitInfo("E-05-01", False, "1.5")
+        info = SubmitInfo("E-05-01", False)
         out = self.tmp / "mate_out"
 
         # 커밋 안 된 변경이 있으면 거부
@@ -195,7 +195,7 @@ class InterimFlowTest(unittest.TestCase):
         base = self.pm.head()
         mate = self._teammate(main_bundle)
         self._commit(mate, "tests/test_more.py", "")
-        _, bundle = interim.submit(mate, SubmitInfo("E-05-01", False, "1"), base, self.tmp / "o", environ=self.env)
+        _, bundle = interim.submit(mate, SubmitInfo("E-05-01", False), base, self.tmp / "o", environ=self.env)
         nas_bundle = self._copy_to_nas(bundle)
         with open(nas_bundle, "ab") as f:
             f.write(b"x")
@@ -208,7 +208,7 @@ class InterimFlowTest(unittest.TestCase):
         base = self.pm.head()
         mate = self._teammate(main_bundle)
         self._commit(mate, "tests/test_more.py", "")
-        _, bundle = interim.submit(mate, SubmitInfo("E-05-01", False, "1"), base, self.tmp / "o", environ=self.env)
+        _, bundle = interim.submit(mate, SubmitInfo("E-05-01", False), base, self.tmp / "o", environ=self.env)
         nas_bundle = self._copy_to_nas(bundle)
         ref, sha = interim.intake(self.pm, nas_bundle)
         # 같은 이름으로 다른 커밋 번들을 만들어 .ci.txt까지 맞춰도 대상 SHA 불일치로 거부되고 참조는 그대로
@@ -231,7 +231,7 @@ class InterimFlowTest(unittest.TestCase):
         mate = self._teammate(main_bundle)
         self._commit(mate, "README.md", "# t\n\n| server/ | 서버 |\n")
         self._commit(mate, "server/app.py", '"""서버."""\n')
-        result, bundle = interim.submit(mate, SubmitInfo("E-05-01", False, "1"), base, self.tmp / "o",
+        result, bundle = interim.submit(mate, SubmitInfo("E-05-01", False), base, self.tmp / "o",
                                         environ=self.env)
         self.assertIsNone(bundle)
         failed = [name for name, ok, _ in result.steps if not ok]
@@ -244,7 +244,7 @@ class InterimFlowTest(unittest.TestCase):
         mate = self._teammate(main_bundle)
         self._commit(mate, "README.md", "# t\n\n| misc/ | 메모 |\n")  # 규칙 6(라우팅 문서)은 지킨다
         self._commit(mate, "misc/note.txt", "x\n")
-        result, bundle = interim.submit(mate, SubmitInfo("E-05-01", False, "1"), base, self.tmp / "o",
+        result, bundle = interim.submit(mate, SubmitInfo("E-05-01", False), base, self.tmp / "o",
                                         environ=self.env)
         self.assertIsNone(bundle)
         steps = {n: (ok, d) for n, ok, d in result.steps}
@@ -260,15 +260,17 @@ class InterimFlowTest(unittest.TestCase):
         write(mate.root, "tests/test_more.py", "")
         git(mate.root, "add", "-A")
         git(mate.root, "commit", "-q", "-m", "feat: x\n\nCloses #3")
-        result, bundle = interim.submit(mate, SubmitInfo("E-05-01", False, "1"), base, self.tmp / "o",
+        result, bundle = interim.submit(mate, SubmitInfo("E-05-01", False), base, self.tmp / "o",
                                         environ=self.env)
         self.assertIsNone(bundle)
         self.assertFalse(dict((n, ok) for n, ok, _ in result.steps)[
             "evidence: --format(바뀐 증빙) + 커밋 메시지"])
 
-    def test_cli_submit_requires_hours(self):
-        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
-            interim.main(["submit", "--task", "E-05-01", "--base", "HEAD"], repo=self.pm)
+    def test_cli_has_no_hours_option(self):
+        # 11/5 PM 결정: 실제 소요 시간 기록 폐지. --hours는 더 이상 받지 않는다
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as cm:
+            interim.main(["submit", "--task", "E-05-01", "--base", "HEAD", "--hours", "2"], repo=self.pm)
+        self.assertEqual(cm.exception.code, 2)
 
 
 if __name__ == "__main__":
