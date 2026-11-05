@@ -6,6 +6,8 @@
 - 이름표: 몸통(허리 위, 평소 표시 범위 0~640행 안)에 2줄 "임시" / 표시 이름. 이름은 호출 쪽이 공개 표시 이름(`name_ko`,
   무당은 `HERO_LABELS`)으로 넘긴다. 비트맵에 없는 글자가 있으면 이름 대신 id를 쓴다(`glyphs.fits`).
   역할·진영 같은 게임 정보는 쓰지 않는다.
+- 표정 변형(`expression` 이름을 주면): 기본과 같은 그림에 얼굴 영역(`vn.FACE_BOX`) 안에만 표정 이름을 찍는다. 얼굴 밖 픽셀은
+  기본 sprite와 같다(표정 변형 검사 `vn.check_expression`과 같은 규칙).
 - 초상: sprite 위 512×512를 잘라 먹남 위에 알파 합성한다(`crop_portrait`, 실제 sprite에도 같은 함수를 쓴다).
 - 같은 (id, 이름, 크기)면 같은 픽셀이다.
 """
@@ -29,6 +31,8 @@ EDGE_PX = 3
 LABEL_PREFIX = "임시"
 HERO_LABELS = {"mudang_f": "무당(여)", "mudang_m": "무당(남)"}
 LABEL_Y = 380                  # 이름표 첫 줄 위(px). 두 줄 모두 초상 크롭(0~511)과 평소 표시(0~639) 안
+EXPR_Y = 222                   # 표정 이름 위(px). 얼굴 영역 vn.FACE_BOX(y 104~311) 안
+EXPR_TEXT: RGB = (0x30, 0x30, 0x30)
 
 # 머리 장식: 공개 id → 종류. 실루엣 구분용 단순 도형일 뿐 역할과 무관하다.
 HEADGEAR: dict[str, str] = {
@@ -116,8 +120,9 @@ def label_for(cid: str, name: str | None) -> str:
     return text if glyphs.fits(text) else cid
 
 
-def render_sprite(cid: str, width: int, height: int, name: str | None = None) -> list[bytearray]:
-    """512×1280 RGBA 행 목록. 크기가 다르면 ValueError."""
+def render_sprite(cid: str, width: int, height: int, name: str | None = None,
+                  expression: str | None = None) -> list[bytearray]:
+    """512×1280 RGBA 행 목록. `cid`는 인물 id(표정 접미사 없음), `expression`은 표정 이름(기본이면 None). 크기가 다르면 ValueError."""
     if (width, height) != (W, H):
         raise ValueError(f"sprite 크기는 {W}x{H}여야 함: {width}x{height}")
     m = body_mask(cid)
@@ -143,6 +148,10 @@ def render_sprite(cid: str, width: int, height: int, name: str | None = None) ->
     for i, text in enumerate((LABEL_PREFIX, second)):
         x = CX - glyphs.width(text) // 2
         glyphs.draw(rows, 4, x, LABEL_Y + i * (glyphs.HEIGHT + 6), text, TEXT)
+    if expression:
+        if not glyphs.fits(expression):
+            raise ValueError(f"표정 이름 글자 비트맵 없음: {expression!r} (build_glyphs 다시 실행)")
+        glyphs.draw(rows, 4, CX - glyphs.width(expression) // 2, EXPR_Y, expression, EXPR_TEXT)
     return rows
 
 
@@ -171,8 +180,9 @@ def crop_portrait(width: int, rows: list[bytes]) -> list[bytearray]:
     return out
 
 
-def render(cid: str, width: int, height: int, name: str | None = None) -> list[bytearray]:
+def render(cid: str, width: int, height: int, name: str | None = None,
+           expression: str | None = None) -> list[bytearray]:
     """512×512 RGB 초상 = sprite 위 512×512 크롭 + 먹남 알파 합성. 크기가 512 정사각형이 아니면 ValueError."""
     if (width, height) != (W, W):
         raise ValueError(f"초상 크기는 {W}x{W}여야 함: {width}x{height}")
-    return crop_portrait(width, render_sprite(cid, W, H, name))
+    return crop_portrait(width, render_sprite(cid, W, H, name, expression))

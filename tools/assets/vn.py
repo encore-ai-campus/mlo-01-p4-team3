@@ -5,11 +5,17 @@
 - sprite(사람마다 전신 1장): 512×1280 RGBA, 8비트 알파. 보이는 픽셀(알파 ≥ 16, 잔여 노이즈 무시)의 경계 상자 가로 가운데가 256±16px,
   머리 위 여백 16px 이상, 발끝 아래 여백 16~48px(발끝 기준선 y=1248). 눈높이 y=200·허리선 y=640은 기준선이며
   그림에서 자동으로 찾을 수 없어 사람 검수 항목이다(spec.md 2절).
+- 표정 변형(11/5 PM 결정, 크로스체크 19): 기본 sprite에서 얼굴 영역(`FACE_BOX`)만 바꾼다. 편집 결과의 얼굴 영역만 기본에
+  붙여 넣으므로 얼굴 밖 픽셀은 기본과 정확히 같아야 한다(완전 투명 픽셀은 RGB를 보지 않는다). 얼굴 영역이 기본과 완전히
+  같으면(표정 변화 없음) 위반이다. 기본 sprite가 바뀐 것은 manifest `edited_from_sha256`으로 잡는다(make_placeholders).
+- 마스코트: 512×512 RGBA, 보이는 픽셀이 있고 네 모서리와 전체의 `MASCOT_CLEAR_MIN` 이상이 투명(바탕 투명).
 - 장면 배경: 1280×720, 완전 불투명(알파가 있으면 모두 255).
 - 배치(B-10-07 기준, 무대 1280×720, 대사창 아래 180px):
   - 평소(`normal`): sprite 0~640행(머리~허리)을 부드럽게 0.8배 → 410×512, 가운데, 위 y=28·아랫변 y=540(대사창 윗변).
   - 전신 컷(`full`): sprite 전체를 0.5배 → 256×640, 가운데, 위 y=40. 컷 동안 대사창을 숨긴다.
   - 밤 화면에는 sprite가 없다. 밤 습격 결과 전신 컷은 아침 회의 화면에서 보인다.
+  - 마스코트(`MASCOT`): 0.5배 → 256×256, 무대 왼쪽(x 64), 위 y 260, 아랫변 y 516(대사창 위). 까치는 아침 희생자 발표,
+    족제비는 안내(튜토리얼·도움말)에만 나온다.
 
 검사 함수는 문제 목록(문자열)을 돌려준다. 빈 목록이면 통과.
 """
@@ -30,6 +36,11 @@ BOTTOM_MARGIN = (16, 48)                   # 발끝 아래 여백(px). 기준선
 STAGE = (1280, 720)                        # 무대(배경) 크기
 DIALOGUE_HEIGHT = 180                      # 대사창 높이(무대 아래 1/4을 덮음)
 NIGHT_SPRITES = 0                          # 밤 장면 sprite 수(밤 실행자 노출 금지)
+
+FACE_BOX = (160, 104, 352, 312)            # 표정 변형에서 바꿔도 되는 얼굴 영역 (x0, y0, x1, y1), 끝 미포함
+MASCOT_SIZE = (512, 512)
+MASCOT_CLEAR_MIN = 0.2                     # 마스코트 전체에서 투명(알파 < 16) 픽셀 비율 하한
+MASCOT = (64, 260, (256, 256))             # 무대 안 (x0, y0, 축소 크기)
 
 
 @dataclass(frozen=True)
@@ -89,6 +100,57 @@ def check_sprite(width: int, height: int, channels: int, rows: Sequence[bytes]) 
     if not BOTTOM_MARGIN[0] <= bottom <= BOTTOM_MARGIN[1]:
         problems.append(f"발끝 아래 여백 {bottom}px ≠ {BOTTOM_MARGIN[0]}~{BOTTOM_MARGIN[1]}px(발끝 기준선 y={FOOT_Y})")
     return problems
+
+
+def _same_px(a: bytes, b: bytes, i: int) -> bool:
+    """RGBA 픽셀 i(바이트 위치)가 같은가. 둘 다 완전 투명이면 RGB와 무관하게 같다."""
+    if a[i + 3] == 0 and b[i + 3] == 0:
+        return True
+    return a[i:i + 4] == b[i:i + 4]
+
+
+def check_expression(base: Sequence[bytes], variant: Sequence[bytes], width: int = SPRITE_SIZE[0]) -> list[str]:
+    """표정 변형 sprite가 기본 sprite와 얼굴 영역 밖에서 정확히 같고, 얼굴 영역은 달라졌는지 본다(둘 다 RGBA)."""
+    if len(base) != len(variant) or any(len(a) != len(b) for a, b in zip(base, variant)):
+        return ["기본 sprite와 크기·채널이 다름"]
+    fx0, fy0, fx1, fy1 = FACE_BOX
+    outside = inside = 0
+    for y, (a, b) in enumerate(zip(base, variant)):
+        a, b = bytes(a), bytes(b)
+        if a == b:
+            continue
+        in_rows = fy0 <= y < fy1
+        for x in range(width):
+            if _same_px(a, b, x * 4):
+                continue
+            if in_rows and fx0 <= x < fx1:
+                inside += 1
+            else:
+                outside += 1
+    problems = []
+    if outside:
+        problems.append(f"얼굴 영역 밖 {outside}픽셀이 기본 sprite와 다름. 편집한 얼굴(x {fx0}~{fx1 - 1}, "
+                        f"y {fy0}~{fy1 - 1})만 기본 sprite에 붙여 넣는다")
+    if not inside:
+        problems.append("얼굴 영역이 기본 sprite와 같음(표정 변화 없음)")
+    return problems
+
+
+def check_mascot(width: int, height: int, channels: int, rows: Sequence[bytes]) -> list[str]:
+    """마스코트 한 장의 규칙 위반 목록(크기·RGBA·보이는 픽셀·모서리 투명)."""
+    if (width, height) != MASCOT_SIZE:
+        return [f"크기 {width}x{height} ≠ {MASCOT_SIZE[0]}x{MASCOT_SIZE[1]}"]
+    if channels != 4:
+        return ["투명 채널 없음(RGBA로 저장)"]
+    if visible_box(width, rows) is None:
+        return ["보이는 픽셀 없음"]
+    corners = [rows[y][x * 4 + 3] for y in (0, height - 1) for x in (0, width - 1)]
+    if any(a >= VISIBLE_ALPHA for a in corners):
+        return ["모서리가 투명하지 않음(바탕 투명)"]
+    clear = sum(bytes(r[3::4]).translate(_VISIBLE).count(0) for r in rows)
+    if clear < MASCOT_CLEAR_MIN * width * height:
+        return [f"투명 픽셀 {clear / (width * height):.0%} < {MASCOT_CLEAR_MIN:.0%}(바탕 투명)"]
+    return []
 
 
 def check_background(width: int, height: int, channels: int, rows: Sequence[bytes]) -> list[str]:
@@ -168,9 +230,22 @@ DIALOGUE_FILL = bytes((0x1F, 0x24, 0x33))  # 깊은 밤(검수용 사각형, 실
 DIALOGUE_EDGE = bytes((0xE8, 0xDF, 0xC8))  # 한지 테두리
 
 
+def _blend(out: list[bytearray], small: Sequence[bytes], x0: int, y0: int, w: int) -> None:
+    for y, src in enumerate(small):
+        dst = out[y0 + y]
+        for x in range(w):
+            a = src[x * 4 + 3]
+            if a == 0:
+                continue
+            tx = (x0 + x) * 3
+            dst[tx:tx + 3] = bytes((src[x * 4 + c] * a + dst[tx + c] * (255 - a) + 127) // 255 for c in range(3))
+
+
 def compose(background: Sequence[bytes], bg_channels: int, sprite: Optional[Sequence[bytes]] = None,
-            mode: Mode = NORMAL, sprite_width: int = SPRITE_SIZE[0]) -> list[bytearray]:
-    """검수용 합성(RGB 행): 무대 배경 + sprite(모드대로 잘라 축소·배치, 알파 합성) + 대사창 사각형(모드가 보일 때)."""
+            mode: Mode = NORMAL, sprite_width: int = SPRITE_SIZE[0],
+            mascot: Optional[Sequence[bytes]] = None) -> list[bytearray]:
+    """검수용 합성(RGB 행): 무대 배경 + sprite(모드대로 잘라 축소·배치, 알파 합성) + 마스코트(왼쪽 자리) +
+    대사창 사각형(모드가 보일 때)."""
     if bg_channels == 4:
         out = [bytearray(b"".join(bytes(r[i:i + 3]) for i in range(0, len(r), 4))) for r in background]
     else:
@@ -179,15 +254,10 @@ def compose(background: Sequence[bytes], bg_channels: int, sprite: Optional[Sequ
         y_from, y_to = mode.rows
         small = resize_rgba(sprite[y_from:y_to], sprite_width, mode.size)
         x0, y0, _, _ = place(mode)
-        for y, src in enumerate(small):
-            dst = out[y0 + y]
-            for x in range(mode.size[0]):
-                a = src[x * 4 + 3]
-                if a == 0:
-                    continue
-                tx = (x0 + x) * 3
-                dst[tx:tx + 3] = bytes((src[x * 4 + c] * a + dst[tx + c] * (255 - a) + 127) // 255
-                                       for c in range(3))
+        _blend(out, small, x0, y0, mode.size[0])
+    if mascot is not None:
+        mx, my, msize = MASCOT
+        _blend(out, resize_rgba(mascot, MASCOT_SIZE[0], msize), mx, my, msize[0])
     if mode.dialogue or sprite is None:
         x0, y0, x1, y1 = dialogue_box()
         for y in range(y0, y1):

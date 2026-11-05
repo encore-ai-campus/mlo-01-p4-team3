@@ -19,12 +19,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import sys
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from tools.assets import art, png, portrait_art, sources, vn
-from tools.assets.spec import KINDS, AssetEntry, AssetSpec, Reconciliation, SpecError, expected_entries, key_label, reconcile
+from tools.assets.spec import (KINDS, AssetEntry, AssetSpec, Reconciliation, SpecError, expected_entries, key_label,
+                               reconcile, split_variant)
 
 TASK_ID = "E-05-05"
 RESULT_NAME = "placeholders"
@@ -58,10 +60,11 @@ def _encode(channels: int, width: int, height: int, rows: list) -> bytes:
     return (png.encode_rgba if channels == 4 else png.encode_rgb)(width, height, rows)
 
 
-def _sprite_rows(repo: Path, entry: AssetEntry, real: bool, name: str | None = None) -> list:
+def _sprite_rows(repo: Path, entry: AssetEntry, real: bool, name: str | None = None,
+                 expression: str | None = None) -> list:
     """초상을 자를 sprite RGBA 행. 실제 sprite면 디스크 파일을 읽고, 아니면 임시 그림을 그린다."""
     if not real:
-        return portrait_art.render_sprite(entry.id, entry.width, entry.height, name)
+        return portrait_art.render_sprite(split_variant(entry.id)[0], entry.width, entry.height, name, expression)
     p = repo / entry.path
     if not p.is_file():
         raise SpecError(f"{entry.path}: 실제 sprite 파일이 없음(placeholder: false)")
@@ -69,6 +72,17 @@ def _sprite_rows(repo: Path, entry: AssetEntry, real: bool, name: str | None = N
     if (w, h) != (entry.width, entry.height) or ch != 4:
         raise SpecError(f"{entry.path}: 실제 sprite가 {w}x{h} 채널 {ch} (규격 {entry.width}x{entry.height} RGBA)")
     return rows
+
+
+def _base_sha(repo: Path, base: AssetEntry | None, existing: dict) -> str | None:
+    """실제 표정 sprite를 처음 실제로 표시했을 때의 기본 sprite 파일 SHA-256. 기본이 실제 파일이 아니면 None."""
+    if base is None:
+        return None
+    old = existing.get(base.key)
+    p = repo / base.path
+    if old is None or old.placeholder or not p.is_file():
+        return None
+    return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
 def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sources.BUNDLE_PATH,
@@ -86,6 +100,14 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
     spec = sources.load_spec(spec_path)
     expected = build_expected(spec, bundle_path, campaigns_path)
     names = sources.load_npc_labels(bundle_path)
+    expr_labels = dict(spec.expressions)
+
+    def label_args(kind: str, cid: str) -> tuple[str, str | None, str | None]:
+        if kind not in ("sprite", "portrait"):
+            return cid, names.get(cid), None   # 표정 변형은 인물 유형만. 다른 유형 ID의 "__"는 그대로 둔다
+        base, expr = split_variant(cid)
+        return base, names.get(base), (expr_labels[expr] if expr else None)
+
     existing = {e.key: e for e in sources.load_manifest(repo, spec)}
     sprites = {e.id: e for e in expected if e.kind == "sprite"}
     real_sprites = {cid for cid, e in sprites.items()
@@ -100,7 +122,11 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
             raise SpecError(f"{key_label(e.key)}: 실제 파일 항목의 path/url이 규격과 다름 ({old.path}, {old.url})")
         from_real = e.kind == "portrait" and e.id in real_sprites
         if old is not None and not old.placeholder and not from_real:
-            final.append(replace(old, derived_from=e.derived_from))
+            sha = old.edited_from_sha256
+            if e.edited_from and sha is None:
+                sha = _base_sha(repo, sprites.get(e.edited_from.partition(":")[2]), existing)
+            final.append(replace(old, derived_from=e.derived_from, edited_from=e.edited_from,
+                                 edited_from_sha256=sha if e.edited_from else None))
             kept += 1
             continue
         target = replace(e, placeholder=not from_real)
@@ -108,7 +134,8 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
             final.append(old if old is not None else target)
             continue
         if e.kind == "portrait":
-            src_rows = _sprite_rows(repo, sprites[e.id], from_real, names.get(e.id))
+            _, name, expr = label_args(e.kind, e.id)
+            src_rows = _sprite_rows(repo, sprites[e.id], from_real, name, expr)
             if not from_real:
                 drawn[e.id] = src_rows      # 같은 실행의 sprite 항목이 다시 그리지 않게
             rows = portrait_art.crop_portrait(e.width, src_rows)
@@ -116,7 +143,8 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
         elif e.kind == "sprite" and e.id in drawn:
             data = png.encode_rgba(e.width, e.height, drawn[e.id])
         else:
-            channels, rows = art.render_rows(e.kind, e.id, e.width, e.height, names.get(e.id))
+            base, name, expr = label_args(e.kind, e.id)
+            channels, rows = art.render_rows(e.kind, base, e.width, e.height, name, expr)
             data = _encode(channels, e.width, e.height, rows)
         if len(data) > spec.max_bytes_for(e.kind):
             raise SpecError(f"{e.path}: {len(data)}바이트 > 상한 {spec.max_bytes_for(e.kind)}")
@@ -163,12 +191,14 @@ def inspect_files(repo: Path, entries: list[AssetEntry], spec: AssetSpec) -> tup
     """
     biggest, bad = 0, []
     decoded: dict[str, tuple[int, int, int, list[bytes]]] = {}
+    shas: dict[str, str] = {}
     for e in entries:
         p = repo / e.path
         if not p.is_file():
             continue                        # 누락은 reconcile이 잡는다
         data = p.read_bytes()
         biggest = max(biggest, len(data))
+        shas[e.path] = hashlib.sha256(data).hexdigest()
         try:
             size = png.read_size(data)
         except ValueError:
@@ -179,7 +209,7 @@ def inspect_files(repo: Path, entries: list[AssetEntry], spec: AssetSpec) -> tup
         limit = spec.max_bytes_for(e.kind)
         if len(data) > limit:
             bad.append(f"{e.path}: {len(data)}바이트 > {limit}")
-        if e.kind not in ("sprite", "background", "portrait"):
+        if e.kind not in ("sprite", "background", "portrait", "mascot"):
             continue
         try:
             decoded[e.path] = png.decode(data)
@@ -190,7 +220,22 @@ def inspect_files(repo: Path, entries: list[AssetEntry], spec: AssetSpec) -> tup
             bad += [f"{e.path}: {msg}" for msg in vn.check_sprite(*decoded[e.path])]
         elif e.kind == "background":
             bad += [f"{e.path}: {msg}" for msg in vn.check_background(*decoded[e.path])]
+        elif e.kind == "mascot":
+            bad += [f"{e.path}: {msg}" for msg in vn.check_mascot(*decoded[e.path])]
     by_label = {key_label(e.key): e for e in entries}
+    for e in entries:                       # 표정 변형 = 기본 sprite에서 얼굴만 편집
+        base = by_label.get(e.edited_from or "")
+        if e.kind != "sprite" or base is None or e.path not in decoded or base.path not in decoded:
+            continue
+        if e.placeholder and not base.placeholder:
+            continue                        # 실제 기본 + 임시 표정(표정 작업 전)은 정상인 중간 상태
+        if not e.placeholder and e.edited_from_sha256 and shas.get(base.path) != e.edited_from_sha256:
+            bad.append(f"{e.path}: 기본 sprite {base.path}가 표정을 만든 뒤 바뀜. 새 기본을 편집 입력으로 표정을 다시 만들고"
+                       f" manifest의 edited_from_sha256을 지운다")
+            continue
+        if any(decoded[x][:3] != (vn.SPRITE_SIZE[0], vn.SPRITE_SIZE[1], 4) for x in (e.path, base.path)):
+            continue                        # 크기·형식 문제는 sprite 검사가 보고한다
+        bad += [f"{e.path}: {msg}" for msg in vn.check_expression(decoded[base.path][3], decoded[e.path][3])]
     for e in entries:                       # 파생 초상 = 원본 sprite 위 크롭 + 먹남
         src = by_label.get(e.derived_from or "")
         if e.kind != "portrait" or src is None or e.path not in decoded or src.path not in decoded:

@@ -5,7 +5,7 @@
 - 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md)
 - 팀 일정과 역할: [`docs/team_plan.md`](docs/team_plan.md)
 - BRD(업무 요구): [`docs/brd.md`](docs/brd.md) · PRD(제품 요구·합격 기준, 요구사항 기준 문서): [`docs/prd.md`](docs/prd.md)
-- 계약 문서: [`docs/contracts/`](docs/contracts/) · 디렉터리 트리(새 파일 위치): [`structure.md`](docs/contracts/structure.md) · 영역 간 호출 지도: [`integration.md`](docs/contracts/integration.md)
+- 계약 문서: [`docs/contracts/`](docs/contracts/)(색인·DB 스키마 위치: [`README.md`](docs/contracts/README.md)) · 디렉터리 트리(새 파일 위치): [`structure.md`](docs/contracts/structure.md) · 영역 간 호출 지도: [`integration.md`](docs/contracts/integration.md)
 - **일자별·담당자별 태스크와 완료 조건**: [`docs/tasks/`](docs/tasks/README.md) (공통 완료 정의, 증빙 양식, 로그·계측 규칙, 결정 대기, 통합 판정 표)
 - 태스크 증빙: `docs/evidence/<태스크ID>.md`, 발표 기록: `docs/presentation/`, 리포트: `docs/reports/`
 - 모듈 문서(무엇을·왜·사용법·설정값·한계): [`docs/modules/`](docs/modules/README.md), 트러블 기록: `docs/troubles/<흐름>.md`(발표 트랙은 `S.md`). 기준은 `docs/tasks/README.md` 10절

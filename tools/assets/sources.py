@@ -68,7 +68,8 @@ def load_manifest(repo: Path, spec: AssetSpec) -> list[AssetEntry]:
         w, h = size if size else spec.sizes.get(d["kind"], (0, 0))
         out.append(AssetEntry(kind=d["kind"], id=d["id"], path=d["path"], url=d["url"],
                               width=w, height=h, size=size, placeholder=bool(d["placeholder"]),
-                              derived_from=d.get("derived_from")))
+                              derived_from=d.get("derived_from"), edited_from=d.get("edited_from"),
+                              edited_from_sha256=d.get("edited_from_sha256")))
     return out
 
 

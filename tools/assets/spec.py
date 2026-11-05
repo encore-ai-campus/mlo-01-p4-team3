@@ -4,7 +4,9 @@
 - `expected_entries`: 규격 + 콘텐츠 ID 목록 → manifest 기대 항목
 - `reconcile`: 기대 항목 ↔ manifest ↔ 디스크 파일 대조(유형별 수, 누락, 남는 것, 초상-sprite 쌍 상태)
 
-초상(portrait)은 같은 id의 sprite 위 128행을 잘라 만든다(`derived_from: "sprite:<id>"`, 11/5 크로스체크 17).
+초상(portrait)은 같은 id의 sprite 위 512×512를 잘라 만든다(`derived_from: "sprite:<id>"`, 11/5 크로스체크 17).
+표정 변형(11/5 PM 결정, 크로스체크 19)은 id 접미사 `<인물 id>__<표정 id>`인 sprite·초상 항목이다. 평상시는 접미사 없는
+기본 항목 그대로다. 표정 목록과 대상 인물은 규격표 8절에서 읽는다.
 """
 from __future__ import annotations
 
@@ -12,10 +14,12 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Callable, Iterable, Optional
 
-KINDS: tuple[str, ...] = ("portrait", "sprite", "background", "place", "ui", "map", "ad")
+KINDS: tuple[str, ...] = ("portrait", "sprite", "background", "mascot", "place", "ui", "map", "ad")
 MUDANG_VARIANT_IDS: tuple[str, ...] = ("mudang_f", "mudang_m")  # 주인공 여·남(11/4 PM 결정, B-08-02 mudang_variant)
 MAP_IDS: tuple[str, ...] = ("village",)
 BACKGROUND_IDS: tuple[str, ...] = ("meeting", "night")  # 회의 장소 고정 1장, 밤 마을 공통 1장(spec.md 7절)
+MASCOT_IDS: tuple[str, ...] = ("jokjebi", "kkachi")     # 족제비(무당의 짝, 안내)·까치(아침 소식), 11/5 PM 결정 P-21
+VARIANT_SEP = "__"                                      # 표정 변형 id = <인물 id>__<표정 id>
 AD_URL_PREFIX = "/static/ads/"
 SYNTHETIC_CAMPAIGN_PREFIX = "syn:"
 ID_RE = re.compile(r"^[a-z0-9_]+$")
@@ -36,6 +40,8 @@ class AssetSpec:
     sizes: dict[str, tuple[int, int]]
     ui_icon_ids: tuple[str, ...]
     kind_max_bytes: dict[str, int] = field(default_factory=dict)
+    expressions: tuple[tuple[str, str], ...] = ()      # 8절 (표정 id, 이름). 평상시(기본)는 넣지 않는다
+    expression_targets: tuple[str, ...] = ()           # 8절 표정 변형을 만드는 인물 id
 
     def max_bytes_for(self, kind: str) -> int:
         """kind별 용량 상한. 1절에 `용량 상한(바이트) <kind>` 행이 없으면 공통 상한."""
@@ -54,6 +60,8 @@ class AssetEntry:
     size: Optional[tuple[int, int]] = None
     placeholder: bool = True
     derived_from: Optional[str] = None
+    edited_from: Optional[str] = None      # 표정 변형 sprite의 기본 sprite(`sprite:<인물 id>`). 얼굴만 편집해 만든다
+    edited_from_sha256: Optional[str] = None  # 실제 표정 sprite를 만들 때 쓴 기본 sprite 파일의 SHA-256(기본 교체 감지)
 
     @property
     def key(self) -> tuple[str, str, Optional[tuple[int, int]]]:
@@ -68,6 +76,10 @@ class AssetEntry:
         d.update({"path": self.path, "url": self.url, "placeholder": self.placeholder})
         if self.derived_from is not None:
             d["derived_from"] = self.derived_from
+        if self.edited_from is not None:
+            d["edited_from"] = self.edited_from
+        if self.edited_from_sha256 is not None:
+            d["edited_from_sha256"] = self.edited_from_sha256
         return d
 
 
@@ -152,6 +164,21 @@ def parse_spec_md(text: str) -> AssetSpec:
     if len(set(icons)) != len(icons):
         raise SpecError(f"아이콘 ID 중복: {icons}")
 
+    expressions: list[tuple[str, str]] = []
+    targets: list[str] = []
+    if "## 8." in text:
+        for r in _table_after(text, "표정 목록"):
+            eid, label = _strip_code(r[0]), _strip_code(r[1])
+            if not ID_RE.match(eid) or VARIANT_SEP in eid:
+                raise SpecError(f"표정 ID 형식 오류: {eid!r}")
+            expressions.append((eid, label))
+        targets = [_strip_code(r[0]) for r in _table_after(text, "표정 대상")]
+        if len({e for e, _ in expressions}) != len(expressions) or len(set(targets)) != len(targets):
+            raise SpecError(f"표정 ID·대상 중복: {expressions} / {targets}")
+        bad_t = [t for t in targets if not ID_RE.match(t) or VARIANT_SEP in t]
+        if bad_t:
+            raise SpecError(f"표정 대상 ID 형식 오류: {bad_t}")
+
     return AssetSpec(
         image_format=common["형식"].lower(),
         max_bytes=int(common["용량 상한(바이트)"]),
@@ -160,7 +187,20 @@ def parse_spec_md(text: str) -> AssetSpec:
         sizes=sizes,
         ui_icon_ids=icons,
         kind_max_bytes=kind_max,
+        expressions=tuple(expressions),
+        expression_targets=tuple(targets),
     )
+
+
+def split_variant(cid: str) -> tuple[str, Optional[str]]:
+    """`hunjang__joy` → ("hunjang", "joy"), `hunjang` → ("hunjang", None)."""
+    base, sep, expr = cid.partition(VARIANT_SEP)
+    return (base, expr) if sep else (cid, None)
+
+
+def variant_id(cid: str, expr: str) -> str:
+    """인물 id + 표정 id → 표정 변형 id."""
+    return f"{cid}{VARIANT_SEP}{expr}"
 
 
 # ---------------------------------------------------------------- 기대 항목
@@ -207,11 +247,19 @@ def expected_entries(spec: AssetSpec, npc_ids: Iterable[str], place_ids: Iterabl
     """규격 + 콘텐츠 ID 목록 → 정렬된 기대 항목. 키·경로·url 충돌이 있으면 SpecError."""
     entries: list[AssetEntry] = []
     people = list(npc_ids) + list(MUDANG_VARIANT_IDS)
+    unknown = [t for t in spec.expression_targets if t not in people]
+    if unknown:
+        raise SpecError(f"표정 대상이 인물 목록에 없음: {unknown}")
+    people += [variant_id(t, ex) for t in spec.expression_targets for ex, _ in spec.expressions]
     for cid in people:
         e = _simple_entry(spec, "portrait", cid)
         entries.append(replace(e, derived_from=derived_source("portrait", cid)))
-    entries += [_simple_entry(spec, "sprite", cid) for cid in people]
+    for cid in people:
+        base, expr = split_variant(cid)
+        e = _simple_entry(spec, "sprite", cid)
+        entries.append(replace(e, edited_from=f"sprite:{base}") if expr else e)
     entries += [_simple_entry(spec, "background", b) for b in BACKGROUND_IDS]
+    entries += [_simple_entry(spec, "mascot", m) for m in MASCOT_IDS]
     entries += [_simple_entry(spec, "place", p) for p in place_ids]
     entries += [_simple_entry(spec, "ui", i) for i in spec.ui_icon_ids]
     entries += [_simple_entry(spec, "map", m) for m in MAP_IDS]
@@ -286,6 +334,10 @@ def reconcile(expected: list[AssetEntry], manifest: list[AssetEntry],
         f"{key_label(k)}: derived_from {man_keys[k].derived_from!r} ≠ {exp_keys[k].derived_from!r}"
         for k in exp_keys.keys() & man_keys.keys()
         if man_keys[k].derived_from != exp_keys[k].derived_from)
+    r.manifest_mismatch += sorted(
+        f"{key_label(k)}: edited_from {man_keys[k].edited_from!r} ≠ {exp_keys[k].edited_from!r}"
+        for k in exp_keys.keys() & man_keys.keys()
+        if man_keys[k].edited_from != exp_keys[k].edited_from)
     r.pair_mismatch = pair_mismatches(manifest)
     exp_paths = {e.path for e in expected}
     file_set = set(files)

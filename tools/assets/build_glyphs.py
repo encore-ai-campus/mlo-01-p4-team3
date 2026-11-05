@@ -3,7 +3,8 @@
     python -m tools.assets.build_glyphs                       # 기본 글꼴(맑은 고딕)로 glyph_data.py를 다시 쓴다
     python -m tools.assets.build_glyphs --font "<Windows 글꼴 이름>"
 
-- 필요한 글자: 고정 문구(`portrait_art.LABEL_PREFIX`, `portrait_art.HERO_LABELS`, `background_art.LABELS`) + 콘텐츠 묶음 인물 이름
+- 필요한 글자: 고정 문구(`portrait_art.LABEL_PREFIX`, `portrait_art.HERO_LABELS`, `background_art.LABELS`, `mascot_art.LABELS`)
+  + 규격표 8절 표정 이름 + 콘텐츠 묶음 인물 이름
   (`name_ko`) + 영문 소문자·숫자·`_-()`(이름 글자가 없을 때 ID로 대신 쓴다).
 - 결과 `tools/assets/glyph_data.py`는 저장소에 커밋한다. 생성기(`make_placeholders`)는 그 데이터만 쓰므로 팀원 노트북의 글꼴과
   상관없이 같은 바이트가 나온다. 이 스크립트는 Windows GDI(ctypes, 표준 라이브러리)로 글자를 그리므로 Windows에서만 돈다.
@@ -19,7 +20,7 @@ import string
 import sys
 from pathlib import Path
 
-from tools.assets import background_art, portrait_art, sources
+from tools.assets import background_art, mascot_art, portrait_art, sources
 
 DEFAULT_FONT = "Malgun Gothic"
 SIZE = 32
@@ -30,6 +31,7 @@ ASCII = string.ascii_lowercase + string.digits + "_-()"
 def needed_chars(bundle_path: Path = sources.BUNDLE_PATH) -> str:
     """비트맵으로 만들 글자(정렬, 공백 제외)."""
     texts = [portrait_art.LABEL_PREFIX, *portrait_art.HERO_LABELS.values(), *background_art.LABELS.values(),
+             *mascot_art.LABELS.values(), *(label for _, label in sources.load_spec().expressions),
              *sources.load_npc_labels(bundle_path).values(), ASCII]
     return "".join(sorted({ch for t in texts for ch in t if not ch.isspace()}))
 

@@ -9,6 +9,30 @@
   },
   {
     "kind": "portrait",
+    "id": "blacksmith__flustered",
+    "path": "content/images/portrait/blacksmith__flustered.png",
+    "url": "/static/assets/portrait/blacksmith__flustered.png",
+    "placeholder": true,
+    "derived_from": "sprite:blacksmith__flustered"
+  },
+  {
+    "kind": "portrait",
+    "id": "blacksmith__joy",
+    "path": "content/images/portrait/blacksmith__joy.png",
+    "url": "/static/assets/portrait/blacksmith__joy.png",
+    "placeholder": true,
+    "derived_from": "sprite:blacksmith__joy"
+  },
+  {
+    "kind": "portrait",
+    "id": "blacksmith__sad",
+    "path": "content/images/portrait/blacksmith__sad.png",
+    "url": "/static/assets/portrait/blacksmith__sad.png",
+    "placeholder": true,
+    "derived_from": "sprite:blacksmith__sad"
+  },
+  {
+    "kind": "portrait",
     "id": "boy",
     "path": "content/images/portrait/boy.png",
     "url": "/static/assets/portrait/boy.png",
@@ -49,6 +73,30 @@
   },
   {
     "kind": "portrait",
+    "id": "hunjang__flustered",
+    "path": "content/images/portrait/hunjang__flustered.png",
+    "url": "/static/assets/portrait/hunjang__flustered.png",
+    "placeholder": true,
+    "derived_from": "sprite:hunjang__flustered"
+  },
+  {
+    "kind": "portrait",
+    "id": "hunjang__joy",
+    "path": "content/images/portrait/hunjang__joy.png",
+    "url": "/static/assets/portrait/hunjang__joy.png",
+    "placeholder": true,
+    "derived_from": "sprite:hunjang__joy"
+  },
+  {
+    "kind": "portrait",
+    "id": "hunjang__sad",
+    "path": "content/images/portrait/hunjang__sad.png",
+    "url": "/static/assets/portrait/hunjang__sad.png",
+    "placeholder": true,
+    "derived_from": "sprite:hunjang__sad"
+  },
+  {
+    "kind": "portrait",
     "id": "hunter",
     "path": "content/images/portrait/hunter.png",
     "url": "/static/assets/portrait/hunter.png",
@@ -65,11 +113,59 @@
   },
   {
     "kind": "portrait",
+    "id": "jumo__flustered",
+    "path": "content/images/portrait/jumo__flustered.png",
+    "url": "/static/assets/portrait/jumo__flustered.png",
+    "placeholder": true,
+    "derived_from": "sprite:jumo__flustered"
+  },
+  {
+    "kind": "portrait",
+    "id": "jumo__joy",
+    "path": "content/images/portrait/jumo__joy.png",
+    "url": "/static/assets/portrait/jumo__joy.png",
+    "placeholder": true,
+    "derived_from": "sprite:jumo__joy"
+  },
+  {
+    "kind": "portrait",
+    "id": "jumo__sad",
+    "path": "content/images/portrait/jumo__sad.png",
+    "url": "/static/assets/portrait/jumo__sad.png",
+    "placeholder": true,
+    "derived_from": "sprite:jumo__sad"
+  },
+  {
+    "kind": "portrait",
     "id": "meosum",
     "path": "content/images/portrait/meosum.png",
     "url": "/static/assets/portrait/meosum.png",
     "placeholder": true,
     "derived_from": "sprite:meosum"
+  },
+  {
+    "kind": "portrait",
+    "id": "meosum__flustered",
+    "path": "content/images/portrait/meosum__flustered.png",
+    "url": "/static/assets/portrait/meosum__flustered.png",
+    "placeholder": true,
+    "derived_from": "sprite:meosum__flustered"
+  },
+  {
+    "kind": "portrait",
+    "id": "meosum__joy",
+    "path": "content/images/portrait/meosum__joy.png",
+    "url": "/static/assets/portrait/meosum__joy.png",
+    "placeholder": true,
+    "derived_from": "sprite:meosum__joy"
+  },
+  {
+    "kind": "portrait",
+    "id": "meosum__sad",
+    "path": "content/images/portrait/meosum__sad.png",
+    "url": "/static/assets/portrait/meosum__sad.png",
+    "placeholder": true,
+    "derived_from": "sprite:meosum__sad"
   },
   {
     "kind": "portrait",
@@ -89,11 +185,59 @@
   },
   {
     "kind": "portrait",
+    "id": "mudang_f__flustered",
+    "path": "content/images/portrait/mudang_f__flustered.png",
+    "url": "/static/assets/portrait/mudang_f__flustered.png",
+    "placeholder": true,
+    "derived_from": "sprite:mudang_f__flustered"
+  },
+  {
+    "kind": "portrait",
+    "id": "mudang_f__joy",
+    "path": "content/images/portrait/mudang_f__joy.png",
+    "url": "/static/assets/portrait/mudang_f__joy.png",
+    "placeholder": true,
+    "derived_from": "sprite:mudang_f__joy"
+  },
+  {
+    "kind": "portrait",
+    "id": "mudang_f__sad",
+    "path": "content/images/portrait/mudang_f__sad.png",
+    "url": "/static/assets/portrait/mudang_f__sad.png",
+    "placeholder": true,
+    "derived_from": "sprite:mudang_f__sad"
+  },
+  {
+    "kind": "portrait",
     "id": "mudang_m",
     "path": "content/images/portrait/mudang_m.png",
     "url": "/static/assets/portrait/mudang_m.png",
     "placeholder": true,
     "derived_from": "sprite:mudang_m"
+  },
+  {
+    "kind": "portrait",
+    "id": "mudang_m__flustered",
+    "path": "content/images/portrait/mudang_m__flustered.png",
+    "url": "/static/assets/portrait/mudang_m__flustered.png",
+    "placeholder": true,
+    "derived_from": "sprite:mudang_m__flustered"
+  },
+  {
+    "kind": "portrait",
+    "id": "mudang_m__joy",
+    "path": "content/images/portrait/mudang_m__joy.png",
+    "url": "/static/assets/portrait/mudang_m__joy.png",
+    "placeholder": true,
+    "derived_from": "sprite:mudang_m__joy"
+  },
+  {
+    "kind": "portrait",
+    "id": "mudang_m__sad",
+    "path": "content/images/portrait/mudang_m__sad.png",
+    "url": "/static/assets/portrait/mudang_m__sad.png",
+    "placeholder": true,
+    "derived_from": "sprite:mudang_m__sad"
   },
   {
     "kind": "portrait",
@@ -109,6 +253,30 @@
     "path": "content/images/sprite/blacksmith.png",
     "url": "/static/assets/sprite/blacksmith.png",
     "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "blacksmith__flustered",
+    "path": "content/images/sprite/blacksmith__flustered.png",
+    "url": "/static/assets/sprite/blacksmith__flustered.png",
+    "placeholder": true,
+    "edited_from": "sprite:blacksmith"
+  },
+  {
+    "kind": "sprite",
+    "id": "blacksmith__joy",
+    "path": "content/images/sprite/blacksmith__joy.png",
+    "url": "/static/assets/sprite/blacksmith__joy.png",
+    "placeholder": true,
+    "edited_from": "sprite:blacksmith"
+  },
+  {
+    "kind": "sprite",
+    "id": "blacksmith__sad",
+    "path": "content/images/sprite/blacksmith__sad.png",
+    "url": "/static/assets/sprite/blacksmith__sad.png",
+    "placeholder": true,
+    "edited_from": "sprite:blacksmith"
   },
   {
     "kind": "sprite",
@@ -147,6 +315,30 @@
   },
   {
     "kind": "sprite",
+    "id": "hunjang__flustered",
+    "path": "content/images/sprite/hunjang__flustered.png",
+    "url": "/static/assets/sprite/hunjang__flustered.png",
+    "placeholder": true,
+    "edited_from": "sprite:hunjang"
+  },
+  {
+    "kind": "sprite",
+    "id": "hunjang__joy",
+    "path": "content/images/sprite/hunjang__joy.png",
+    "url": "/static/assets/sprite/hunjang__joy.png",
+    "placeholder": true,
+    "edited_from": "sprite:hunjang"
+  },
+  {
+    "kind": "sprite",
+    "id": "hunjang__sad",
+    "path": "content/images/sprite/hunjang__sad.png",
+    "url": "/static/assets/sprite/hunjang__sad.png",
+    "placeholder": true,
+    "edited_from": "sprite:hunjang"
+  },
+  {
+    "kind": "sprite",
     "id": "hunter",
     "path": "content/images/sprite/hunter.png",
     "url": "/static/assets/sprite/hunter.png",
@@ -161,10 +353,58 @@
   },
   {
     "kind": "sprite",
+    "id": "jumo__flustered",
+    "path": "content/images/sprite/jumo__flustered.png",
+    "url": "/static/assets/sprite/jumo__flustered.png",
+    "placeholder": true,
+    "edited_from": "sprite:jumo"
+  },
+  {
+    "kind": "sprite",
+    "id": "jumo__joy",
+    "path": "content/images/sprite/jumo__joy.png",
+    "url": "/static/assets/sprite/jumo__joy.png",
+    "placeholder": true,
+    "edited_from": "sprite:jumo"
+  },
+  {
+    "kind": "sprite",
+    "id": "jumo__sad",
+    "path": "content/images/sprite/jumo__sad.png",
+    "url": "/static/assets/sprite/jumo__sad.png",
+    "placeholder": true,
+    "edited_from": "sprite:jumo"
+  },
+  {
+    "kind": "sprite",
     "id": "meosum",
     "path": "content/images/sprite/meosum.png",
     "url": "/static/assets/sprite/meosum.png",
     "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "meosum__flustered",
+    "path": "content/images/sprite/meosum__flustered.png",
+    "url": "/static/assets/sprite/meosum__flustered.png",
+    "placeholder": true,
+    "edited_from": "sprite:meosum"
+  },
+  {
+    "kind": "sprite",
+    "id": "meosum__joy",
+    "path": "content/images/sprite/meosum__joy.png",
+    "url": "/static/assets/sprite/meosum__joy.png",
+    "placeholder": true,
+    "edited_from": "sprite:meosum"
+  },
+  {
+    "kind": "sprite",
+    "id": "meosum__sad",
+    "path": "content/images/sprite/meosum__sad.png",
+    "url": "/static/assets/sprite/meosum__sad.png",
+    "placeholder": true,
+    "edited_from": "sprite:meosum"
   },
   {
     "kind": "sprite",
@@ -182,10 +422,58 @@
   },
   {
     "kind": "sprite",
+    "id": "mudang_f__flustered",
+    "path": "content/images/sprite/mudang_f__flustered.png",
+    "url": "/static/assets/sprite/mudang_f__flustered.png",
+    "placeholder": true,
+    "edited_from": "sprite:mudang_f"
+  },
+  {
+    "kind": "sprite",
+    "id": "mudang_f__joy",
+    "path": "content/images/sprite/mudang_f__joy.png",
+    "url": "/static/assets/sprite/mudang_f__joy.png",
+    "placeholder": true,
+    "edited_from": "sprite:mudang_f"
+  },
+  {
+    "kind": "sprite",
+    "id": "mudang_f__sad",
+    "path": "content/images/sprite/mudang_f__sad.png",
+    "url": "/static/assets/sprite/mudang_f__sad.png",
+    "placeholder": true,
+    "edited_from": "sprite:mudang_f"
+  },
+  {
+    "kind": "sprite",
     "id": "mudang_m",
     "path": "content/images/sprite/mudang_m.png",
     "url": "/static/assets/sprite/mudang_m.png",
     "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "mudang_m__flustered",
+    "path": "content/images/sprite/mudang_m__flustered.png",
+    "url": "/static/assets/sprite/mudang_m__flustered.png",
+    "placeholder": true,
+    "edited_from": "sprite:mudang_m"
+  },
+  {
+    "kind": "sprite",
+    "id": "mudang_m__joy",
+    "path": "content/images/sprite/mudang_m__joy.png",
+    "url": "/static/assets/sprite/mudang_m__joy.png",
+    "placeholder": true,
+    "edited_from": "sprite:mudang_m"
+  },
+  {
+    "kind": "sprite",
+    "id": "mudang_m__sad",
+    "path": "content/images/sprite/mudang_m__sad.png",
+    "url": "/static/assets/sprite/mudang_m__sad.png",
+    "placeholder": true,
+    "edited_from": "sprite:mudang_m"
   },
   {
     "kind": "sprite",
@@ -206,6 +494,20 @@
     "id": "night",
     "path": "content/images/background/night.png",
     "url": "/static/assets/background/night.png",
+    "placeholder": true
+  },
+  {
+    "kind": "mascot",
+    "id": "jokjebi",
+    "path": "content/images/mascot/jokjebi.png",
+    "url": "/static/assets/mascot/jokjebi.png",
+    "placeholder": true
+  },
+  {
+    "kind": "mascot",
+    "id": "kkachi",
+    "path": "content/images/mascot/kkachi.png",
+    "url": "/static/assets/mascot/kkachi.png",
     "placeholder": true
   },
   {

@@ -4,6 +4,7 @@ from __future__ import annotations
 import unittest
 
 from tools.assets import art, background_art, build_glyphs, glyphs, png, portrait_art as pa, sources, vn
+from tools.assets.spec import split_variant
 
 ROOT = sources.ROOT
 NAMES = sources.load_npc_labels()
@@ -86,16 +87,19 @@ class SilhouetteTest(unittest.TestCase):
         """커밋된 임시 sprite·초상이 지금 생성기와 같은 바이트다(표시가 true인 것만)."""
         spec = sources.load_spec()
         seen = 0
+        labels = dict(spec.expressions)
         for e in sources.load_manifest(ROOT, spec):
             if e.kind not in ("sprite", "portrait") or not e.placeholder:
                 continue
+            base, expr = split_variant(e.id)
+            args = (base, e.width, e.height, NAMES.get(base), labels[expr] if expr else None)
             if e.kind == "sprite":
-                data = png.encode_rgba(e.width, e.height, pa.render_sprite(e.id, e.width, e.height, NAMES.get(e.id)))
+                data = png.encode_rgba(e.width, e.height, pa.render_sprite(*args))
             else:
-                data = png.encode_rgb(e.width, e.height, pa.render(e.id, e.width, e.height, NAMES.get(e.id)))
+                data = png.encode_rgb(e.width, e.height, pa.render(*args))
             self.assertEqual((ROOT / e.path).read_bytes(), data, e.path)
             seen += 1
-        self.assertEqual(seen, 26)
+        self.assertEqual(seen, 62)          # 인물 13 + 표정 변형 18, sprite·초상 각각
 
 
 class GlyphTest(unittest.TestCase):

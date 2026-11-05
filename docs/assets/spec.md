@@ -15,10 +15,11 @@
 | 용량 상한(바이트) sprite | 8388608 |
 | 용량 상한(바이트) portrait | 3145728 |
 | 용량 상한(바이트) background | 10485760 |
+| 용량 상한(바이트) mascot | 3145728 |
 | 저장 루트 | content/images |
 | manifest | content/images/manifest.json |
 
-- 용량 상한은 kind별 행이 있으면 그 값, 없으면 공통 값(500KB = 512,000바이트, P-15)이다. 반실사 실제 그림을 위해 sprite 8MB, 초상 3MB, 장면 배경 10MB로 크게 잡았다(11/5 PM 결정, 저장소·번들이 조금 무거워지는 것은 감수). 임시 유지 유형(장소·UI 아이콘, 지도, 광고)은 공통 값이다. 넘으면 크기·형식은 그대로 두고 6절의 허용 방법(무손실 재압축)으로 줄인다.
+- 용량 상한은 kind별 행이 있으면 그 값, 없으면 공통 값(500KB = 512,000바이트, P-15)이다. 반실사 실제 그림을 위해 sprite 8MB, 초상 3MB, 장면 배경 10MB, 마스코트 3MB로 크게 잡았다(11/5 PM 결정, 저장소·번들이 조금 무거워지는 것은 감수). 임시 유지 유형(장소·UI 아이콘, 지도, 광고)은 공통 값이다. 넘으면 크기·형식은 그대로 두고 6절의 허용 방법(무손실 재압축)으로 줄인다.
 - 이미지 안에 글자(한글·한자·영문·숫자), 실존 인물, 상표·로고를 넣지 않는다. 글자가 필요하면 화면(HTML)이 쓴다. 예외: 임시 sprite·초상·장면 배경의 "임시" 이름표(5절).
 
 ## 2. 유형별 규격
@@ -28,6 +29,7 @@
 | portrait | 인물 초상 | 512×512 | `fixtures/content_min/bundle.json`의 `characters[].npc_id` + 무당 `mudang_f`·`mudang_m` | `content/images/portrait/<id>.png` | `/static/assets/portrait/<id>.png` |
 | sprite | 인물 전신 그림 | 512×1280 | portrait와 같은 인물 13종 | `content/images/sprite/<id>.png` | `/static/assets/sprite/<id>.png` |
 | background | 장면 배경 | 1280×720 | `meeting`·`night` 2장 | `content/images/background/<id>.png` | `/static/assets/background/<id>.png` |
+| mascot | 마스코트 | 512×512 | `kkachi`(까치)·`jokjebi`(족제비) 2장 | `content/images/mascot/<id>.png` | `/static/assets/mascot/<id>.png` |
 | place | 장소 아이콘 | 128×128 | `engine.domain.model.Place` 값 5개 | `content/images/place/<id>.png` | `/static/assets/place/<id>.png` |
 | ui | UI 아이콘 | 128×128 | 아래 3절 목록 10개 | `content/images/ui/<id>.png` | `/static/assets/ui/<id>.png` |
 | map | 마을 지도 | 1280×720 | `village` 1장 | `content/images/map/<id>.png` | `/static/assets/map/<id>.png` |
@@ -35,6 +37,8 @@
 
 - **무당**: 주인공 초상은 여 `mudang_f`, 남 `mudang_m` 2종이다(11/4 PM 결정). 화면은 판 메타 `mudang_variant`(`f`|`m`)로 고른다(B-08-02). 엔진의 참가자 ID `mudang`(PLAYER_ID)에는 파일을 두지 않는다.
 - **sprite**(11/5 크로스체크 17·18): 회의 화면(B-10-07)에 세우는 인물 전신 그림이다(사람마다 1장). 바탕은 투명(RGBA, 8비트 반투명 허용)이고 눈높이·허리선·발끝 기준선은 6절이다. 인물 ID는 portrait와 같다.
+- **표정 변형**(11/5 PM 결정 P-20, 크로스체크 19): 8·9절의 대상 인물은 기본(평상시) sprite `sprite/<id>.png` 외에 표정마다 `sprite/<id>__<표정 id>.png`를 두고, 초상도 표정마다 `portrait/<id>__<표정 id>.png`로 파생한다. 표정 sprite는 **기본 sprite를 확정한 뒤 그 파일을 편집 도구의 입력으로 넣어 얼굴 영역만 바꿔** 만든다. 처음부터 새로 생성하지 않는다. manifest 표정 sprite 항목에 `"edited_from": "sprite:<id>"`가 붙고, 검사는 얼굴 영역(6절) 밖이 기본과 같은지 본다. 기본 sprite를 다시 만들면 그 인물의 표정 sprite도 새 기본에서 다시 만든다.
+- **마스코트**(11/5 PM 결정 P-21): 까치 `kkachi`(아침 희생자 발표 장면)와 족제비 `jokjebi`(무당의 짝, 안내·도움말)다. 512×512 RGBA 바탕 투명, 표정 없음. 연출·안내만 하고 새 게임 정보를 주지 않는다(스타일 가이드 6절).
 - **초상은 sprite에서 파생**한다: sprite 위 512×512를 잘라 먹남(`#2E344A`) 위에 알파 합성한다(6절). 한 인물은 sprite 1장만 만들고, 초상은 `make_placeholders`가 만든다. manifest의 초상 항목에 `"derived_from": "sprite:<id>"`가 붙고, 쌍의 `placeholder`는 같아야 한다(4절).
 - **장면 배경**: 회의 `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), 밤 `night`(밤 마을 공통 1장). 장소별 배경은 만들지 않는다(7절).
 - **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `llm_wait`·`review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
@@ -58,7 +62,7 @@
 
 ## 4. manifest.json 형식
 
-항목 배열이다. 키 (`kind`, `id`, `size`)는 유일하다. 항목은 kind 순서(portrait, sprite, background, place, ui, map, ad) 다음 id, size 순서로 정렬한다.
+항목 배열이다. 키 (`kind`, `id`, `size`)는 유일하다. 항목은 kind 순서(portrait, sprite, background, mascot, place, ui, map, ad) 다음 id, size 순서로 정렬한다.
 
 ```json
 [
@@ -66,6 +70,8 @@
    "url": "/static/assets/portrait/hunjang.png", "placeholder": true, "derived_from": "sprite:hunjang"},
   {"kind": "sprite", "id": "hunjang", "path": "content/images/sprite/hunjang.png",
    "url": "/static/assets/sprite/hunjang.png", "placeholder": true},
+  {"kind": "sprite", "id": "hunjang__joy", "path": "content/images/sprite/hunjang__joy.png",
+   "url": "/static/assets/sprite/hunjang__joy.png", "placeholder": true, "edited_from": "sprite:hunjang"},
   {"kind": "ad", "id": "cr_gat", "size": [300, 250], "path": "content/images/ad/gat__300x250.png",
    "url": "/static/ads/gat__300x250.png", "placeholder": true}
 ]
@@ -73,13 +79,14 @@
 
 | 필드 | 뜻 |
 |---|---|
-| `kind` | `portrait`·`sprite`·`background`·`place`·`ui`·`map`·`ad` |
-| `id` | 콘텐츠 ID. 광고는 `creative_id` |
+| `kind` | `portrait`·`sprite`·`background`·`mascot`·`place`·`ui`·`map`·`ad` |
+| `id` | 콘텐츠 ID. 광고는 `creative_id`. 표정 변형은 `<인물 id>__<표정 id>`(8절) |
 | `size` | 광고만. `[가로, 세로]` |
 | `path` | 저장소 기준 파일 경로 |
 | `url` | 웹 주소 |
 | `placeholder` | 임시 파일이면 `true`. 실제 파일로 덮어쓰면 `false` |
 | `derived_from` | 초상만. 원본 sprite 키(`sprite:<id>`). 쌍의 `placeholder`가 다르면 대조가 `pair_mismatch`로 실패한다 |
+| `edited_from` | 표정 변형 sprite만. 편집 입력으로 쓴 기본 sprite 키(`sprite:<인물 id>`). 둘 다 실제면(또는 표정만 실제면) 얼굴 영역 밖이 같아야 한다(6절). 기본이 실제이고 표정이 임시인 것은 표정 작업 전 정상 상태다 |
 
 - B는 `asset_url(content_id)`처럼 manifest를 조회해서만 이미지를 넣는다(B-05-03 4번). D는 캠페인의 `image_path`와 `slot_image_path`로만 소재를 가리킨다(D-05-03 7번). 경로 문자열을 코드에 쓰지 않는다.
 
@@ -89,13 +96,15 @@
 - **임시 에셋은 회색 실루엣과 이름 표기다. 크기·기준선·배치 확인용이며 최종 그림이 아니다**(11/5 PM 결정).
   - sprite(`tools/assets/portrait_art.py`): 회색 사람 실루엣(바탕 투명), 눈높이 y=200·허리선 y=640 점선, 발끝 y=1248(6절), 몸통에 "임시"와 표시 이름 2줄. 머리 장식(갓·쪽머리 등)만 공개 인물 ID로 다르고 나머지 실루엣은 모두 같다. 역할·규칙·해시로 모양을 고르지 않는다.
   - 초상: 그 sprite의 위 512×512 합성 크롭(이름표가 보인다).
+  - 표정 변형: 기본과 같은 실루엣에 얼굴 영역 안에만 표정 이름(기쁨·당황·슬픔)을 찍는다(얼굴 밖은 기본과 같은 바이트).
+  - 마스코트(`tools/assets/mascot_art.py`): 단순한 회색 새·족제비 실루엣(바탕 투명)과 "임시"/이름.
   - 장면 배경(`tools/assets/background_art.py`): 2색 그라데이션 + 왼쪽 위 "회의 배경(임시)"·"밤 배경(임시)".
   - 나머지(장소·UI 아이콘, 지도, 광고)는 단색 배경 + 도형, 글자 없음.
   - 이름은 콘텐츠 묶음의 공개 표시 이름(`name_ko`, 무당은 "무당(여)"·"무당(남)")이다. 글자는 저장소에 커밋한 비트맵(`tools/assets/glyph_data.py`)만 써서 노트북 글꼴과 무관하게 같은 바이트가 나온다. 비트맵에 없는 글자가 있는 이름은 인물 ID로 찍힌다. 인물을 추가하면 `python -m tools.assets.build_glyphs`(Windows, 관리자만)로 비트맵을 다시 만든다.
 - 이미 실제 파일(manifest `placeholder: false`)이 있는 항목은 덮어쓰지 않는다. 표시가 `true`여도 파일 내용이 임시 그림과 다르면 덮어쓰지 않고 보고한다(`--force`로만 덮어씀).
 - **실제 파일을 넣으면 바로 그 항목을 `"placeholder": false`로 바꾸고 커밋한다.** 실제 sprite를 넣고 표시를 바꾼 뒤 `make_placeholders`를 실행하면 초상이 그 sprite에서 다시 잘리고 초상 표시도 `false`가 된다. 초상 파일을 따로 그려 넣지 않는다.
 - 이전 절차(11/5, 1회): 흉상 생성기로 만든 임시 초상은 새 파생 결과와 바이트가 달라 보호에 걸린다. `python -m tools.assets.make_placeholders --rederive-portraits`는 `placeholder: true`인 초상만 덮어쓴다(실제 파일·다른 유형은 보호 그대로).
-- 현재 픽스처 기준 기대 수: portrait 13(주민 11 + 무당 2), sprite 13, background 2, place 5, ui 10, map 1, ad 8 = **52**.
+- 현재 픽스처 기준 기대 수: portrait 31(주민 11 + 무당 2 + 표정 변형 18), sprite 31, background 2, mascot 2, place 5, ui 10, map 1, ad 8 = **90**. 표정 변형 18은 9절 대상 6명 × 표정 3개다. E-05-03이 첫 플레이 인물 2명을 확정해 9절에 넣으면 24(합계 102)가 된다.
 - 임시 파일은 에셋2(생성 기록, `SOURCES.md`)를 면제한다.
 
 ## 6. sprite 기준선과 파일 형식 (11/5 PM 결정, 크로스체크 18)
@@ -111,6 +120,8 @@
 | 허리선 | y=640(평소 표시의 아랫변) | 사람 검수 |
 | 발끝 | y=1248, 아래 여백 16~48 | 자동 |
 | 장면 배경 | 1280×720, 완전 불투명(RGB, 또는 알파가 모두 255인 RGBA) | 자동 |
+| 표정 변형 | 얼굴 영역 x 160~351, y 104~311 밖이 기본 sprite와 정확히 같음(완전 투명 픽셀의 RGB는 무시), 얼굴 영역은 기본과 달라야 함(표정 변화 없음 금지). 기본이 표정을 만든 뒤 바뀌면(`edited_from_sha256` 불일치) 위반 | 자동 |
+| 마스코트 | 512×512 RGBA, 네 모서리 투명 | 자동 |
 
 - 자동 검사는 `tools/assets/vn.py`이고 `make_placeholders`가 실행한다. 알파 16 미만은 배경 제거 뒤 남은 옅은 점으로 보고 경계 상자에 넣지 않는다.
 - **PNG 형식**: 8비트 RGB(색 형식 2)·RGBA(색 형식 6), 인터레이스 없음만 쓴다. 팔레트 PNG·16비트·흑백은 쓰지 않는다(실제 sprite를 크롭하는 읽기 도구가 읽지 못해 실패로 보고한다).
@@ -133,8 +144,24 @@
 | 밤 | sprite 0명(밤 실행자 노출 금지). 무당 독백은 대사창만 |
 | 엔딩 | 평소와 같은 그림. 정체는 글로만 밝힌다 |
 | 투명 sprite 실패 시 | 불투명 흉상(초상)을 액자처럼 무대 가운데에 둔다(A-08-04 시험 결과로 결정) |
+| 표정 | 평소·전신 컷 모두 말하는 인물의 표정 sprite로 바꿔 끼운다. 표정이 없는 인물(확장 주민 풀)은 기본 그림 |
+| 마스코트 | 0.5배 256×256, 무대 왼쪽 x 64, 위 y 260(아랫변 516, 대사창 위). 까치는 **매일 아침 발표 때마다**(희생자가 없는 아침 포함, 이미 표시된 발표 문장과 함께), 족제비는 안내(튜토리얼·도움말)에만. 밤 화면에는 없다 |
 
-- 검수용 합성: `python -m tools.assets.preview_vn --bg meeting --id hunjang [--mode normal|full] --out <파일>`(저장소 밖 또는 `out/` 아래만). 배경 + sprite + 대사창 사각형을 겹친 1280×720 PNG를 쓴다. `--bg night`에 `--id`를 주면 오류다.
+**표정 매핑(정보 누설 금지, 크로스체크 19)**: 표정은 **지금 화면에 표시 중인 공개 사건**에만 반응한다.
+- 역할(씐 자 여부), 거짓 진술 여부, 숨은 행적·의심도 같은 비공개 상태로 표정을 고르지 않는다. 같은 사건이면 누구든 같은 표정이다.
+- 표정은 인물의 최신 서버 상태가 아니라 **표시 중인 대사·사건(사건 ID)**에 묶는다. 아직 읽지 않은 뒤 사건(고백·투표 결과 등)의 표정을 앞 대사에서 미리 보이지 않는다. 넘김·건너뛰기·새로고침·재접속에서도 같은 사건이면 같은 표정이다.
+- 기색은 "판정을 했다"가 아니라 **"기색이 나타났다"고 화면에 표시된 결과**에만 반응한다(판정 여부 자체를 표정으로 드러내지 않는다).
+- 표정은 그 사건의 대사 1개 동안만 유지하고 다음 대사에서 평상시로 돌아온다. 한 대사에 여러 사건이 겹치면 우선순위 슬픔 > 당황 > 기쁨 > 평상시.
+- 화면에는 한 번에 1명(화자 또는 전신 컷 대상)만 서므로, 반응 인물이 지금 선 사람일 때만 표정을 바꾼다.
+
+| 표정 | id | 공개 사건 | 반응 인물 |
+|---|---|---|---|
+| 평상시 | (기본) | 그 밖의 모든 대사 | — |
+| 기쁨 | `joy` | 감싸기 발언 / 투표 결과 발표 직후(표를 받았지만 추방되지 않음) | 감싸기 발언의 화자 / 표를 받고 남은 인물의 그 직후 첫 대사 |
+| 당황 | `flustered` | 의심하기 발언의 대상이 됨 / 자기 주장에 "기색이 나타났다"가 표시됨 | 의심 대상의 바로 다음 자기 대사 / 그 주장 화자의 기색 표시 대사 |
+| 슬픔 | `sad` | 희생자 발표(아침) / 고백 / 추방 결과 | 발표 직후 각 인물의 그날 첫 대사 / 고백하는 화자 / 추방 결과 전신 컷의 당사자 |
+
+- 검수용 합성: `python -m tools.assets.preview_vn --bg meeting --id hunjang [--expr joy] [--mode normal|full] [--mascot kkachi] --out <파일>`(저장소 밖 또는 `out/` 아래만). 배경 + sprite + 마스코트 + 대사창 사각형을 겹친 1280×720 PNG를 쓴다. `--bg night`에 `--id`나 `--mascot`을 주면 오류다.
 - 장소별 배경은 만들지 않는다. 숨은 행적·실제 장소에 따라 배경을 고르면 거짓 진술을 화면이 판정해 주기 때문이다.
 - 외형(sprite·초상·크기·폴백)은 공개 인물 ID로만 정한다. 같은 인물은 역할이 바뀌어도, 엔딩에서도 같은 그림이다(`tests/assets/test_vn.py`).
 
@@ -143,9 +170,33 @@
 | kind | 시연 때 | 검사 |
 |---|---|---|
 | portrait | 실제 필수(sprite에서 파생) | 기본 모드(에셋2~4) |
-| sprite | 실제 필수 | 기본 모드(에셋2~4) |
+| sprite | 실제 필수(표정 변형 포함) | 기본 모드(에셋2~4) |
 | background | 실제 필수 | 기본 모드(에셋2~4) |
+| mascot | 실제 필수 | 기본 모드(에셋2~4) |
 | place, ui, map, ad | 임시 허용(`placeholder: true`) | `check_assets.py --allow-placeholder place,ui,map,ad`(E-08-07 7번). 실제 필수 유형의 검사는 생략하지 않는다 |
 
 - 임시 아이콘은 도형뿐이므로 화면이 기능·장소 이름 텍스트를 함께 쓴다(B-10-02).
 - 광고 소재가 임시라 사람 클릭률은 소재 효과로 해석하지 않는다. 합성 CTR 검증(D)은 그림과 무관하다.
+
+## 8. 표정 목록
+
+표정 변형 파일의 표정 id와 이름(11/5 PM 결정 P-20). 평상시는 기본 sprite라 이 표에 넣지 않는다. 쓰는 때는 7절 표정 매핑이다. `make_placeholders`가 이 표를 읽는다.
+
+| 표정 id | 이름 |
+|---|---|
+| joy | 기쁨 |
+| flustered | 당황 |
+| sad | 슬픔 |
+
+## 9. 표정 대상
+
+표정 변형을 만드는 인물이다. 첫 플레이 8명(무당 2종 + 첫 플레이 인물 6명)이고, 확장 주민 풀은 기본 1장만 둔다(11/5 PM 결정). 첫 플레이 인물 중 아직 정하지 않은 2명은 E-05-03이 `content/bundle_v1.json`을 확정할 때 이 표에 넣는다.
+
+| 인물 id |
+|---|
+| mudang_f |
+| mudang_m |
+| hunjang |
+| jumo |
+| blacksmith |
+| meosum |

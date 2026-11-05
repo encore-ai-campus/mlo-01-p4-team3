@@ -4,14 +4,14 @@
 
 게임 화면(B)과 광고 서버(D)가 쓰는 이미지 파일의 규격, 파일 목록(`manifest.json`), 임시 세트를 관리한다.
 - 입력: 규격표 `docs/assets/spec.md`, 콘텐츠 ID(`fixtures/content_min/bundle.json` 인물 + 무당 2종, 계약 `Place`, 규격표의 UI 아이콘 10개, `fixtures/ads/campaigns.json` 소재 × 지면 규격)
-- 출력: `content/images/<kind>/…` PNG와 `content/images/manifest.json`(kind, id, size(광고만), path, url, placeholder, derived_from(초상만))
-- 유형 7개: portrait·sprite·background·place·ui·map·ad. 비주얼 노벨 회의 화면용 sprite(전신 512×1280, 바탕 투명)를 원본으로 두고, 초상은 sprite 위 512×512를 먹남 위에 알파 합성해 만든다(크로스체크 17·18).
+- 출력: `content/images/<kind>/…` PNG와 `content/images/manifest.json`(kind, id, size(광고만), path, url, placeholder, derived_from(초상만), edited_from·edited_from_sha256(표정 변형 sprite만))
+- 유형 8개: portrait·sprite·background·mascot·place·ui·map·ad. 비주얼 노벨 회의 화면용 sprite(전신 512×1280, 바탕 투명)를 원본으로 두고, 초상은 sprite 위 512×512를 먹남 위에 알파 합성해 만든다(크로스체크 17·18). 표정 변형은 `<인물 id>__<표정 id>` sprite·초상이고 기본 sprite에서 얼굴만 편집한다(크로스체크 19). 마스코트는 까치·족제비 512×512 RGBA다.
 - 계층(`tools/assets/`)
-  - 도메인: `spec.py`(규격표 해석, 기대 항목, 대조, 초상-sprite 쌍 검사)·`art.py`(유형별 임시 그림 배분)·`portrait_art.py`(임시 sprite: 회색 실루엣·기준선·이름표, 초상 합성 크롭)·`background_art.py`(임시 장면 배경: 그라데이션·이름표)·`glyphs.py`(이름표 글자 찍기, 비트맵 `glyph_data.py`)·`vn.py`(sprite 기준선·배경 검사, 평소/전신 컷 배치 수치, 부드러운 축소, 검수용 합성)
+  - 도메인: `spec.py`(규격표 해석, 기대 항목, 대조, 초상-sprite 쌍 검사)·`art.py`(유형별 임시 그림 배분)·`portrait_art.py`(임시 sprite: 회색 실루엣·기준선·이름표, 초상 합성 크롭)·`background_art.py`(임시 장면 배경: 그라데이션·이름표)·`mascot_art.py`(임시 마스코트: 동물 실루엣·이름표)·`glyphs.py`(이름표 글자 찍기, 비트맵 `glyph_data.py`)·`vn.py`(sprite 기준선·배경·표정 얼굴 영역·마스코트 검사, 평소/전신 컷·마스코트 배치 수치, 부드러운 축소, 검수용 합성)
   - 인프라: `sources.py`(파일·로그·결과 JSON, 인물 표시 이름)·`png.py`(PNG RGB/RGBA 쓰기·읽기)·`build_glyphs.py`(Windows 글꼴 → `glyph_data.py`, GDI·ctypes, 개발 도구 CLI)
   - 응용+표현: `make_placeholders.py`(생성·대조 흐름, CLI)·`preview_vn.py`(검수용 합성 PNG CLI)
-  - 의존: `make_placeholders`·`preview_vn` → `spec`·`art`·`vn` → `portrait_art`·`background_art` → `glyphs`, `sources`·`png` → `spec`. 도메인은 인프라를 import하지 않는다.
-- 고칠 곳: 규격·기대 수 → `docs/assets/spec.md` + `spec.py`, 임시 실루엣 → `portrait_art.py`, 임시 배경 → `background_art.py`, 이름표 글자 추가 → `python -m tools.assets.build_glyphs`, sprite·배경 검사 기준·화면 배치 수치 → `vn.py`, PNG 형식 → `png.py`.
+  - 의존: `make_placeholders`·`preview_vn` → `spec`·`art`·`vn` → `portrait_art`·`background_art`·`mascot_art` → `glyphs`, `sources`·`png` → `spec`. 도메인은 인프라를 import하지 않는다.
+- 고칠 곳: 규격·기대 수 → `docs/assets/spec.md` + `spec.py`, 임시 실루엣 → `portrait_art.py`, 임시 배경 → `background_art.py`, 임시 마스코트 → `mascot_art.py`, 표정 목록·대상 → `spec.md` 8·9절, 이름표 글자 추가 → `python -m tools.assets.build_glyphs`, sprite·배경 검사 기준·화면 배치 수치 → `vn.py`, PNG 형식 → `png.py`.
 - 그림 기준은 `docs/assets/style_guide.md`(반실사 일러스트, 사람이 체크리스트로 판정). 임시 에셋은 회색 실루엣과 이름 표기, 크기·기준선·배치 확인용이며 최종 그림이 아니다.
 
 ## 왜
@@ -34,10 +34,12 @@ python -m tools.assets.make_placeholders --result   # 대조 수치를 docs/evid
 python -m tools.assets.make_placeholders --rederive-portraits   # 임시 초상만 sprite 파생으로 다시 씀(흉상 생성기에서 1회 이전)
 python -m tools.assets.preview_vn --bg meeting --id hunjang --out out/preview_vn/meeting_hunjang.png
 python -m tools.assets.preview_vn --bg meeting --id hunjang --mode full --out out/preview_vn/full_hunjang.png
-python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrait_art tests.assets.test_vn
+python -m tools.assets.preview_vn --bg meeting --id jumo --expr sad --mascot kkachi --out out/preview_vn/morning.png
+python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrait_art tests.assets.test_vn tests.assets.test_expression_mascot
 ```
 
 - 실제 sprite를 넣을 때: `content/images/sprite/<id>.png`(512×1280 8비트 RGBA, 반투명 허용, 팔레트 PNG 안 됨)를 덮어쓰고 sprite 항목 `placeholder`를 `false`로 바꾼 뒤 `make_placeholders`를 실행한다. 초상이 그 sprite에서 다시 합성·크롭되고(무손실 필터 선택으로 저장) 초상 표시도 `false`가 된다. 초상 파일은 따로 넣지 않는다.
+- 실제 표정 sprite를 넣을 때: 기본 sprite를 편집 입력으로 얼굴 영역만 바꾼 결과를 기본에 붙여 넣어 `sprite/<id>__<표정 id>.png`에 덮어쓰고 `placeholder: false`로 바꾼 뒤 `make_placeholders`를 실행한다. 처음 실제로 표시될 때 기본 sprite 파일의 SHA-256이 `edited_from_sha256`에 기록되고, 이후 기본이 바뀌면 위반으로 보고한다. 표정을 새 기본에서 다시 만들었으면 그 항목의 `edited_from_sha256`을 지우고 다시 실행한다.
 - 검수용 합성(`preview_vn`)은 저장소의 파일을 그대로 겹친다. 출력은 저장소 밖이나 `out/` 아래만 허용하고, `--bg night`에 `--id`를 주면 오류다.
 
 - 실제 파일로 바꿀 때: 같은 `path`에 PNG를 덮어쓰고 **바로** manifest의 그 항목 `placeholder`를 `false`로 바꾼 뒤 커밋한다. 그러면 다시 실행해도 그 파일은 덮어쓰지 않는다.
@@ -50,11 +52,13 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
 | `spec.md` 1절 `용량 상한(바이트)` | 512000 | 파일 용량 공통 상한(P-15 잠정) | 넘는 임시 파일이 생기면 생성 실패 |
-| `spec.md` 1절 `용량 상한(바이트) <kind>` | sprite 8388608, portrait 3145728, background 10485760 | kind별 상한(11/5 PM 결정, 반실사 실제 그림용) | 행이 없는 kind는 공통 상한 |
+| `spec.md` 1절 `용량 상한(바이트) <kind>` | sprite 8388608, portrait 3145728, background 10485760, mascot 3145728 | kind별 상한(11/5 PM 결정, 반실사 실제 그림용) | 행이 없는 kind는 공통 상한 |
 | `spec.md` 2절 크기 | portrait 512×512, sprite 512×1280, background·map 1280×720, place·ui 128×128 | 유형별 픽셀 크기 | 바꾸면 B 화면 레이아웃과 실제 에셋 전부 영향. 바꾸지 않는다 |
 | `vn.py` sprite 기준선 | 가운데 256±16px(알파 16 이상), 머리 위 여백 ≥ 16px, 발끝 y=1248(아래 여백 16~48px), 눈높이 y≈200·허리선 y=640(사람 검수) | sprite 검사 기준(`spec.md` 6절과 같은 값, 테스트가 대조) | 실제 sprite 생성(A-09-05) 결과를 보고 PM이 조정 |
-| `vn.py` 배치 | 무대 1280×720, 평소 0~640행 0.8배 410×512 위 28, 전신 컷 0.5배 256×640 위 40(대사창 숨김), 대사창 180px, 밤 sprite 0 | 검수용 합성과 B-10-07의 기준 수치(`spec.md` 7절) | B 화면 배치와 함께 바꾼다 |
+| `vn.py` 표정·마스코트 | 얼굴 영역 x 160~351·y 104~311(밖은 기본과 정확히 같음, 완전 투명 RGB 무시, 얼굴은 달라야 함), 마스코트 512×512 RGBA·모서리 투명·투명 20% 이상 | 표정 변형·마스코트 검사(`spec.md` 6절) | 실제 편집 시험(A-10-06) 결과로 PM이 조정 |
+| `vn.py` 배치 | 무대 1280×720, 평소 0~640행 0.8배 410×512 위 28, 전신 컷 0.5배 256×640 위 40(대사창 숨김), 마스코트 0.5배 256×256 x 64·y 260, 대사창 180px, 밤 sprite 0 | 검수용 합성과 B-10-07의 기준 수치(`spec.md` 7절) | B 화면 배치와 함께 바꾼다 |
 | `spec.md` 3절 | 아이콘 10개 | UI 아이콘 ID 목록 | 추가하면 기대 수가 늘어남 |
+| `spec.md` 8·9절 | 표정 3개(joy·flustered·sad), 대상 6명(+E-05-03이 2명 추가) | 표정 변형 목록과 대상 | 대상 1명마다 sprite·초상 3장씩 늘어남. 새 표정 이름은 `build_glyphs` 다시 실행 |
 | 광고 크기 | 계약 `SLOT_SIZES` | 728×90, 300×250(P-19 잠정) | 계약 변경 → 픽스처 재생성 → 다시 실행 |
 | `--repo` | 이 저장소 | 출력 루트 | 테스트에서 임시 폴더로 바꿔 쓴다 |
 | 로그 | `out/logs/assets.jsonl` + 표준 출력 | 구조화 로그(README 5절) | — |
@@ -79,3 +83,4 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 |---|---|---|
 | E-05-05 | 11/5 | 규격표(도트 격자 포함)·스타일 가이드(도트), 임시 세트 생성기(`make_placeholders`)와 37개 임시 세트·manifest, 임시 초상 13장은 코드로 그린 도트 그림(`portrait_art`) |
 | E-08-07 | 11/8 | (11/5 사전 작업) 유형 sprite·background 추가(기대 52), 초상을 sprite 크롭으로 파생(`derived_from`, 쌍 상태 검사), RGBA PNG 쓰기·읽기, sprite·배경 검사(`vn.py`), 검수용 합성(`preview_vn`), 임시 sprite 13장·배경 2장. 같은 날 화풍을 반실사로 바꿔(크로스체크 18) sprite를 전신 512×1280으로, 검사를 px 기준선으로 바꾸고 도트 격자·팔레트·블록·알파 이진 검사를 뺐다. 초상은 알파 합성 크롭, 배치는 평소/전신 컷 두 모드. 이어서 임시 sprite·초상·배경을 회색 실루엣 + 이름표로 바꾸고(`glyphs`·`glyph_data`·`build_glyphs`) 코드 인물 그림·마을 그림을 지웠다 |
+| E-08-07 | 11/8 | (11/5 사전 작업, 크로스체크 19) 표정 변형(`<id>__<표정 id>`, 규격표 8·9절, `edited_from`·`edited_from_sha256`, 얼굴 영역 밖 동일·얼굴 변화 검사)과 마스코트 유형(`mascot`, 까치·족제비, `mascot_art`) 추가, 기대 90. `preview_vn --expr --mascot` |
