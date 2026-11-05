@@ -57,6 +57,7 @@ class DesiredIssue:
     milestone: str | None
     flow: str | None
     deps: list[str] = field(default_factory=list)
+    owner: str | None = None  # 담당 흐름 글자(담당 변경이 있으면 흐름과 다르다). None이면 흐름 기준
     body_template: str = ""  # `{{ref:ID}}` 자리표시자를 이슈 번호로 바꿔 본문을 만든다
 
 
@@ -83,6 +84,7 @@ class Action:
     milestone: str | None = None
     clear_milestone: bool = False  # 원하는 마일스톤이 없는데 기존 이슈에 남아 있으면 제거
     assignee: str | None = None
+    remove_assignees: list[str] = field(default_factory=list)  # 담당 덮어쓰기에서 뺄 기존 담당자
 
 
 def milestone_for(date_key: str | None) -> str | None:
@@ -159,7 +161,7 @@ def desired_issues(tasks: list[Task], decisions: list[Decision], repo: str | Non
         out.append(DesiredIssue(
             key=t.task_id, title=f"[{t.task_id}] {t.title}{tag_txt}", labels=sorted(labels),
             milestone=milestone_for(t.date), flow=t.flow, deps=[k for k in list(t.deps) + list(t.decisions) if not k.startswith(NO_ISSUE_PREFIXES)],
-            body_template=body,
+            body_template=body, owner=t.owner or None,
         ))
     return out
 
@@ -246,10 +248,17 @@ def plan_updates(desired: list[DesiredIssue], existing: list[ExistingIssue],
                 clear_milestone=changed_ms and not d.milestone,
             ))
         if assign:
-            flow = "E" if d.flow == "INT" else d.flow
-            login = assign.get(flow or "")
-            if login and login not in cur.assignees:
-                actions.append(Action(kind="assign", key=d.key, number=cur.number, assignee=login))
+            # 담당은 태스크 문서가 원본이다. 원하는 담당자 한 명으로 덮어쓴다(담당 변경 시 기존 담당자 제거).
+            owner = d.owner or ("E" if d.flow == "INT" else d.flow)
+            login = assign.get(owner or "")
+            # GitHub 로그인은 대소문자를 구분하지 않으므로 비교도 소문자로 한다.
+            if login and [a.lower() for a in cur.assignees] != [login.lower()]:
+                has = any(a.lower() == login.lower() for a in cur.assignees)
+                actions.append(Action(
+                    kind="assign", key=d.key, number=cur.number,
+                    assignee=None if has else login,
+                    remove_assignees=sorted(a for a in cur.assignees if a.lower() != login.lower()),
+                ))
     return actions
 
 
@@ -341,7 +350,7 @@ class GhClient:
 
     def edit_issue(self, number: int, title: str | None, body: str | None, add: list[str],
                    remove: list[str], milestone: str | None, assignee: str | None = None,
-                   clear_milestone: bool = False) -> None:
+                   clear_milestone: bool = False, remove_assignees: list[str] | None = None) -> None:
         args = ["issue", "edit", str(number), "--repo", self.repo]
         path = None
         if title:
@@ -361,6 +370,8 @@ class GhClient:
             args += ["--remove-milestone"]
         if assignee:
             args += ["--add-assignee", assignee]
+        for a in remove_assignees or []:
+            args += ["--remove-assignee", a]
         try:
             self._run(args)
         finally:
@@ -393,7 +404,8 @@ def apply_plan(gh, desired: list[DesiredIssue], labels: list[dict[str, str]],
                           clear_milestone=a.clear_milestone)
             n_upd += 1
         elif a.kind == "assign":
-            gh.edit_issue(a.number, None, None, [], [], None, assignee=a.assignee)
+            gh.edit_issue(a.number, None, None, [], [], None, assignee=a.assignee,
+                          remove_assignees=a.remove_assignees)
             n_asg += 1
     orphans = plan_orphans(desired, gh.list_issues())
     for num, key in orphans:
@@ -424,7 +436,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--apply", action="store_true", help="실제로 GitHub에 쓴다")
     p.add_argument("--dry-run", action="store_true", help="출력만 한다(기본)")
     p.add_argument("--repo", help="OWNER/NAME (--apply에 필수)")
-    p.add_argument("--assign", help="흐름별 담당자 GitHub 로그인. 예: A=login1,B=login2")
+    p.add_argument("--assign", help="흐름별 담당자 GitHub 로그인(담당 흐름 기준 덮어쓰기). 예: A=login1,B=login2")
     p.add_argument("--hours", action="store_true", help="흐름별 일별 시간표를 출력")
     p.add_argument("--tasks-dir", default=str(ROOT / "docs" / "tasks"))
     args = p.parse_args(argv)

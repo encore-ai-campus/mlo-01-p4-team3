@@ -31,7 +31,7 @@ SAMPLE_A = """# A 엔진 태스크
 ```
 
 ### A-05-02 같은 조건
-- 1h · 조건은 A-05-01과 같음
+- 1h · 담당 D(담당 변경, ID 유지) · 조건은 A-05-01과 같음
 - 문서화(+0h, 공통 ⑦, 트러블만): 트러블
 - 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: A-05-01 · 코드를 바꿨다면: A-05-02 · 모듈: [`engine`](../modules/engine.md), [`sim`](../modules/sim.md) · 할 일: 행
 
@@ -109,7 +109,8 @@ class FakeGh:
         self.calls.append("create")
         return n
 
-    def edit_issue(self, number, title, body, add, remove, milestone, assignee=None, clear_milestone=False):
+    def edit_issue(self, number, title, body, add, remove, milestone, assignee=None, clear_milestone=False,
+                   remove_assignees=None):
         iss = self.issues[number]
         if title:
             iss.title = title
@@ -122,6 +123,7 @@ class FakeGh:
             iss.milestone = None
         if assignee:
             iss.assignees.append(assignee)
+        iss.assignees = [a for a in iss.assignees if a not in (remove_assignees or [])]
         self.calls.append("edit")
 
 
@@ -285,6 +287,32 @@ class ApplyPlan(unittest.TestCase):
         self.assertEqual(integ.assignees, ["pm"])
         result = apply_plan(gh, self.desired, self.labels, {"A": "alice", "E": "pm"}, log=lambda *_: None)
         self.assertEqual(result["assigned"], 0)
+
+    def test_owner_line_overrides_flow_and_overwrites_assignees(self):
+        tasks = parse_task_file(SAMPLE_A, "A", "docs/tasks/A_engine.md")
+        self.assertEqual({t.task_id: t.owner for t in tasks},
+                         {"A-05-01": "A", "A-05-02": "D", "A-11-01": "A"})
+        gh = FakeGh()
+        assign = {"A": "alice", "D": "dave", "E": "pm"}
+        apply_plan(gh, self.desired, self.labels, assign, log=lambda *_: None)
+        a1 = next(i for i in gh.issues.values() if "A-05-01" in i.title)
+        a2 = next(i for i in gh.issues.values() if "A-05-02" in i.title)
+        self.assertEqual(a2.assignees, ["dave"])
+        # 담당 변경: 문서의 담당자 한 명으로 덮어쓰고 이전 담당자를 뺀다
+        a1.assignees = ["bob", "alice"]
+        a2.assignees = ["alice"]
+        result = apply_plan(gh, self.desired, self.labels, assign, log=lambda *_: None)
+        self.assertEqual(a1.assignees, ["alice"])
+        self.assertEqual(a2.assignees, ["dave"])
+        self.assertEqual(result["assigned"], 2)
+        # 로그인 대소문자만 다르면 같은 계정이라 바꾸지 않는다
+        a1.assignees = ["Alice"]
+        result = apply_plan(gh, self.desired, self.labels, assign, log=lambda *_: None)
+        self.assertEqual(a1.assignees, ["Alice"])
+        self.assertEqual(result["assigned"], 0)
+        # 지정할 로그인이 없는 담당은 건드리지 않는다
+        apply_plan(gh, self.desired, self.labels, {"A": "alice"}, log=lambda *_: None)
+        self.assertEqual(a2.assignees, ["dave"])
 
     def test_parse_assign(self):
         self.assertEqual(parse_assign("a=x, B=y,bad"), {"A": "x", "B": "y"})

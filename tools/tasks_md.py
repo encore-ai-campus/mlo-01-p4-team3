@@ -57,6 +57,7 @@ class Task:
     batch_targets: list[str] = field(default_factory=list)  # 일괄 갱신에서 변경 이력 행이 반드시 있어야 하는 태스크
     batch_conditional: list[str] = field(default_factory=list)  # 코드를 바꿨을 때만 행이 필요한 태스크
     batch_modules: list[str] = field(default_factory=list)  # 일괄 갱신 대상 모듈 문서
+    owner: str = ""  # 담당 흐름 글자. 첫 줄 "담당 X(...)"가 있으면 X(담당 변경, ID 유지), 없으면 흐름(INT는 E)
 
     @property
     def kind(self) -> str:
@@ -142,6 +143,10 @@ def parse_task_file(text: str, flow: str, source: str) -> list[Task]:
     return tasks
 
 
+# 태스크 첫 줄의 담당 변경 표기. 예: "· 담당 D(11/5 PM 결정으로 담당 변경, ID 유지)"
+_OWNER_RE = re.compile(r"담당 ([A-E])(?=[(\s·]|$)")
+
+
 def _build_task(tid: str, title: str, flow: str, date: str | None, body: str, source: str) -> Task:
     lines = body.splitlines()
     hours = 0.0
@@ -170,12 +175,15 @@ def _build_task(tid: str, title: str, flow: str, date: str | None, body: str, so
     same = _SAME_AS_RE.search(body)
     same_as = TASK_ID_RE.findall(same.group(1)) if same else []
     clean_title = re.sub(r"\s*\[(에셋|검수)\]", "", title).strip()
+    task_flow = "INT" if tid.startswith("INT-") else flow
+    own = _OWNER_RE.search(first)
+    owner = own.group(1) if own else ("E" if task_flow == "INT" else task_flow)
     return Task(
-        task_id=tid, title=clean_title, flow="INT" if tid.startswith("INT-") else flow, date=date,
+        task_id=tid, title=clean_title, flow=task_flow, date=date,
         hours=hours, doc_hours=doc_hours, body=body, source=source,
         deps=list(dict.fromkeys(deps)), decisions=decisions, conditions=_condition_numbers(lines),
         tags=tags, same_as=same_as, batch_hours=batch["hours"], batch_targets=batch["targets"],
-        batch_conditional=batch["conditional"], batch_modules=batch["modules"],
+        batch_conditional=batch["conditional"], batch_modules=batch["modules"], owner=owner,
     )
 
 
