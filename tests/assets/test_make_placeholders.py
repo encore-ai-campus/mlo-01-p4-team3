@@ -1,4 +1,4 @@
-"""E-05-05 임시 에셋: 규격표 해석, 기대 항목(90, VN sprite·배경·표정 변형·마스코트 포함), 생성·대조, 실제 파일 보존."""
+"""E-05-05 임시 에셋: 규격표 해석, 기대 항목(102, VN sprite·배경·표정 변형·마스코트 포함), 생성·대조, 실제 파일 보존."""
 from __future__ import annotations
 
 import contextlib
@@ -94,15 +94,15 @@ class SpecTableTest(unittest.TestCase):
 
 
 class ExpectedEntriesTest(unittest.TestCase):
-    def test_counts_by_kind_total_90(self):
+    def test_counts_by_kind_total_102(self):
         _, entries = _expected()
         by_kind: dict[str, int] = {}
         for e in entries:
             by_kind[e.kind] = by_kind.get(e.kind, 0) + 1
-        # 인물 13 + 표정 변형 18(9절 대상 6명 × 8절 표정 3)
-        self.assertEqual(by_kind, {"portrait": 31, "sprite": 31, "background": 2, "mascot": 2,
+        # 인물 13 + 표정 변형 24(9절 대상 8명 × 8절 표정 3)
+        self.assertEqual(by_kind, {"portrait": 37, "sprite": 37, "background": 2, "mascot": 2,
                                    "place": 5, "ui": 10, "map": 1, "ad": 8})
-        self.assertEqual(len(entries), 90)
+        self.assertEqual(len(entries), 102)
 
     def test_portrait_derived_from_same_id_sprite(self):
         _, entries = _expected()
@@ -184,16 +184,16 @@ class GenerateTest(unittest.TestCase):
     def test_generate_counts_sizes_and_limit(self):
         r = run(self.tmp)
         self.assertTrue(r.ok, format_report(r))
-        self.assertEqual(r.written, 90)
-        self.assertEqual(sum(r.recon.files.values()), 90)
-        self.assertEqual(sum(r.recon.manifest.values()), 90)
+        self.assertEqual(r.written, 102)
+        self.assertEqual(sum(r.recon.files.values()), 102)
+        self.assertEqual(sum(r.recon.manifest.values()), 102)
         for e in r.entries:
             data = (self.tmp / e.path).read_bytes()
             self.assertEqual(png.read_size(data), (e.width, e.height), e.path)
             self.assertLessEqual(len(data), 512000)
         m = result_metrics(r)
         self.assertEqual((m["expected_total"]["value"], m["manifest_total"]["value"],
-                          m["files_total"]["value"]), (90, 90, 90))
+                          m["files_total"]["value"]), (102, 102, 102))
         self.assertEqual((m["missing_count"]["value"], m["extra_count"]["value"]), (0, 0))
 
     def test_manifest_format_condition_2(self):
@@ -227,7 +227,7 @@ class GenerateTest(unittest.TestCase):
         (self.tmp / target["path"]).write_bytes(real)
         r = run(self.tmp)
         self.assertTrue(r.ok, format_report(r))
-        self.assertEqual((r.written, r.kept_real), (89, 1))
+        self.assertEqual((r.written, r.kept_real), (101, 1))
         self.assertEqual((self.tmp / target["path"]).read_bytes(), real)
         after = json.loads(mpath.read_text(encoding="utf-8"))
         self.assertIs(next(d for d in after if d["kind"] == "map")["placeholder"], False)
@@ -257,7 +257,7 @@ class GenerateTest(unittest.TestCase):
         self.assertEqual(_quiet_main(["--repo", str(self.tmp), "--result"]), 0)
         body = json.loads((self.tmp / "docs/evidence/perf/E-05-05/placeholders.json").read_text(encoding="utf-8"))
         self.assertEqual(body["task"], "E-05-05")
-        self.assertEqual(body["metrics"]["expected_total"], {"value": 90, "unit": "개"})
+        self.assertEqual(body["metrics"]["expected_total"], {"value": 102, "unit": "개"})
 
 
 class CodexFindingsTest(unittest.TestCase):

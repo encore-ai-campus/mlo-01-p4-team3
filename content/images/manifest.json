@@ -65,6 +65,30 @@
   },
   {
     "kind": "portrait",
+    "id": "gwabu__flustered",
+    "path": "content/images/portrait/gwabu__flustered.png",
+    "url": "/static/assets/portrait/gwabu__flustered.png",
+    "placeholder": true,
+    "derived_from": "sprite:gwabu__flustered"
+  },
+  {
+    "kind": "portrait",
+    "id": "gwabu__joy",
+    "path": "content/images/portrait/gwabu__joy.png",
+    "url": "/static/assets/portrait/gwabu__joy.png",
+    "placeholder": true,
+    "derived_from": "sprite:gwabu__joy"
+  },
+  {
+    "kind": "portrait",
+    "id": "gwabu__sad",
+    "path": "content/images/portrait/gwabu__sad.png",
+    "url": "/static/assets/portrait/gwabu__sad.png",
+    "placeholder": true,
+    "derived_from": "sprite:gwabu__sad"
+  },
+  {
+    "kind": "portrait",
     "id": "hunjang",
     "path": "content/images/portrait/hunjang.png",
     "url": "/static/assets/portrait/hunjang.png",
@@ -248,6 +272,30 @@
     "derived_from": "sprite:yakcho"
   },
   {
+    "kind": "portrait",
+    "id": "yakcho__flustered",
+    "path": "content/images/portrait/yakcho__flustered.png",
+    "url": "/static/assets/portrait/yakcho__flustered.png",
+    "placeholder": true,
+    "derived_from": "sprite:yakcho__flustered"
+  },
+  {
+    "kind": "portrait",
+    "id": "yakcho__joy",
+    "path": "content/images/portrait/yakcho__joy.png",
+    "url": "/static/assets/portrait/yakcho__joy.png",
+    "placeholder": true,
+    "derived_from": "sprite:yakcho__joy"
+  },
+  {
+    "kind": "portrait",
+    "id": "yakcho__sad",
+    "path": "content/images/portrait/yakcho__sad.png",
+    "url": "/static/assets/portrait/yakcho__sad.png",
+    "placeholder": true,
+    "derived_from": "sprite:yakcho__sad"
+  },
+  {
     "kind": "sprite",
     "id": "blacksmith",
     "path": "content/images/sprite/blacksmith.png",
@@ -305,6 +353,30 @@
     "path": "content/images/sprite/gwabu.png",
     "url": "/static/assets/sprite/gwabu.png",
     "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "gwabu__flustered",
+    "path": "content/images/sprite/gwabu__flustered.png",
+    "url": "/static/assets/sprite/gwabu__flustered.png",
+    "placeholder": true,
+    "edited_from": "sprite:gwabu"
+  },
+  {
+    "kind": "sprite",
+    "id": "gwabu__joy",
+    "path": "content/images/sprite/gwabu__joy.png",
+    "url": "/static/assets/sprite/gwabu__joy.png",
+    "placeholder": true,
+    "edited_from": "sprite:gwabu"
+  },
+  {
+    "kind": "sprite",
+    "id": "gwabu__sad",
+    "path": "content/images/sprite/gwabu__sad.png",
+    "url": "/static/assets/sprite/gwabu__sad.png",
+    "placeholder": true,
+    "edited_from": "sprite:gwabu"
   },
   {
     "kind": "sprite",
@@ -481,6 +553,30 @@
     "path": "content/images/sprite/yakcho.png",
     "url": "/static/assets/sprite/yakcho.png",
     "placeholder": true
+  },
+  {
+    "kind": "sprite",
+    "id": "yakcho__flustered",
+    "path": "content/images/sprite/yakcho__flustered.png",
+    "url": "/static/assets/sprite/yakcho__flustered.png",
+    "placeholder": true,
+    "edited_from": "sprite:yakcho"
+  },
+  {
+    "kind": "sprite",
+    "id": "yakcho__joy",
+    "path": "content/images/sprite/yakcho__joy.png",
+    "url": "/static/assets/sprite/yakcho__joy.png",
+    "placeholder": true,
+    "edited_from": "sprite:yakcho"
+  },
+  {
+    "kind": "sprite",
+    "id": "yakcho__sad",
+    "path": "content/images/sprite/yakcho__sad.png",
+    "url": "/static/assets/sprite/yakcho__sad.png",
+    "placeholder": true,
+    "edited_from": "sprite:yakcho"
   },
   {
     "kind": "background",

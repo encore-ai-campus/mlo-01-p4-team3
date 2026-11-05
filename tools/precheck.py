@@ -25,6 +25,7 @@ import re
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -68,6 +69,22 @@ def summarize(results: list[StepResult], base_short: str | None, seconds: float)
 
 
 # ---------------------------------------------------------------- 인프라
+# git이 훅을 부를 때 넘기는 저장소 지정 변수(`git rev-parse --local-env-vars`). 남아 있으면 테스트가 임시
+# 저장소 대신 이 저장소에 `git init`·`commit`·`config`를 해 버린다(11/5 사고: 브랜치 이동, core.bare·user 설정 덮어씀).
+GIT_LOCAL_ENV_VARS = (
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_CONFIG", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT",
+    "GIT_OBJECT_DIRECTORY", "GIT_DIR", "GIT_WORK_TREE", "GIT_IMPLICIT_WORK_TREE", "GIT_GRAFT_FILE",
+    "GIT_INDEX_FILE", "GIT_NO_REPLACE_OBJECTS", "GIT_REPLACE_REF_BASE", "GIT_PREFIX", "GIT_SHALLOW_FILE",
+    "GIT_COMMON_DIR",
+)
+
+
+def clean_env(environ: dict[str, str]) -> dict[str, str]:
+    """저장소 지정 git 변수(`GIT_LOCAL_ENV_VARS`, `GIT_CONFIG_KEY_*`·`GIT_CONFIG_VALUE_*` 포함)를 뺀 사본."""
+    return {k: v for k, v in environ.items()
+            if k not in GIT_LOCAL_ENV_VARS and not k.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))}
+
+
 class SubprocessRunner:
     """하위 명령 실행과 git 조회. 테스트에서는 같은 메서드를 가진 가짜로 바꿔 끼운다."""
 
@@ -76,7 +93,7 @@ class SubprocessRunner:
 
     def run(self, args: list[str], env: dict[str, str] | None = None) -> tuple[int, str]:
         """명령을 저장소 루트에서 실행하고 (종료 코드, 표준 출력+오류)를 돌려준다."""
-        full_env = dict(os.environ, PYTHONIOENCODING="utf-8")
+        full_env = dict(clean_env(dict(os.environ)), PYTHONIOENCODING="utf-8")
         if env:
             full_env.update(env)
         proc = subprocess.run(args, cwd=self.root, env=full_env, capture_output=True,
@@ -101,41 +118,46 @@ class SubprocessRunner:
 
 # ---------------------------------------------------------------- 응용
 def run_precheck(runner, base: str | None, with_assets: bool = False,
-                 pr_body: str | None = None) -> list[StepResult]:
-    """구조 → 비밀 → 단위 테스트 → 문서 → 증빙 순서로 돌린다. 앞 단계가 실패해도 끝까지 돈다."""
+                 pr_body: str | None = None, workers: int | None = None) -> list[StepResult]:
+    """구조·비밀·단위 테스트(폴더별)·문서·증빙을 동시에 돌리고 결과는 이 순서로 모은다.
+
+    서로 독립인 하위 명령이라 병렬로 돌린다(11/5: 순서대로 돌리면 약 90초). 앞 단계가 실패해도 끝까지 돈다.
+    """
     py = sys.executable
-    results: list[StepResult] = []
+    jobs: dict[str, tuple[list[str], dict[str, str] | None]] = {
+        "구조": ([py, "-m", "tools.check_structure", "--all"], None),
+        "비밀": ([py, "-m", "tools.check_secrets"], None),
+    }
+    test_dirs = [d for d in runner.test_dirs() if with_assets or d != ASSETS_DIR]
+    for d in test_dirs:
+        jobs[f"tests/{d}"] = ([py, "-m", "unittest", "discover", "-s", f"tests/{d}", "-t", "."], None)
+    if base is not None:
+        jobs["문서"] = ([py, "-m", "tools.check_docs", "--diff", base], None)
+        if pr_body is not None:
+            jobs["증빙"] = ([py, "-m", "tools.check_evidence", "--pr-body-env", PR_BODY_ENV, "--changed", base],
+                          {PR_BODY_ENV: pr_body})
+        else:
+            jobs["증빙"] = ([py, "-m", "tools.check_evidence", "--changed", base], None)
 
-    rc, out = runner.run([py, "-m", "tools.check_structure", "--all"])
-    results.append(StepResult("구조", rc == 0, out))
-    rc, out = runner.run([py, "-m", "tools.check_secrets"])
-    results.append(StepResult("비밀", rc == 0, out))
+    with ThreadPoolExecutor(max_workers=workers or min(8, len(jobs))) as pool:
+        futures = {k: pool.submit(runner.run, args, env) for k, (args, env) in jobs.items()}
+        done = {k: f.result() for k, f in futures.items()}
 
+    results = [StepResult(k, done[k][0] == 0, done[k][1]) for k in ("구조", "비밀")]
     outputs, ok, n = [], True, 0
-    for d in runner.test_dirs():
-        if d == ASSETS_DIR and not with_assets:
-            continue
-        rc, out = runner.run([py, "-m", "unittest", "discover", "-s", f"tests/{d}", "-t", "."])
+    for d in test_dirs:
+        rc, out = done[f"tests/{d}"]
         n += count_tests(out)
         if not test_rc_ok(rc):
             ok = False
             outputs.append(f"[tests/{d}] rc={rc}\n{out}")
     results.append(StepResult("테스트", ok, "\n".join(outputs), tests=n))
-
     if base is None:
-        msg = f"비교 기준을 못 구함(`git fetch origin` 뒤 다시 돌리거나 --base 지정)"
+        msg = "비교 기준을 못 구함(`git fetch origin` 뒤 다시 돌리거나 --base 지정)"
         results.append(StepResult("문서", False, msg))
         results.append(StepResult("증빙", False, msg))
         return results
-
-    rc, out = runner.run([py, "-m", "tools.check_docs", "--diff", base])
-    results.append(StepResult("문서", rc == 0, out))
-    if pr_body is not None:
-        rc, out = runner.run([py, "-m", "tools.check_evidence", "--pr-body-env", PR_BODY_ENV, "--changed", base],
-                             env={PR_BODY_ENV: pr_body})
-    else:
-        rc, out = runner.run([py, "-m", "tools.check_evidence", "--changed", base])
-    results.append(StepResult("증빙", rc == 0, out))
+    results += [StepResult(k, done[k][0] == 0, done[k][1]) for k in ("문서", "증빙")]
     return results
 
 

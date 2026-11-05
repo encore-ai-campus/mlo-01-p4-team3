@@ -1,0 +1,455 @@
+{
+  "content_version": "content-1.0",
+  "places": [
+    {
+      "place": "well",
+      "name_ko": "우물가",
+      "public": true
+    },
+    {
+      "place": "shrine",
+      "name_ko": "서낭당",
+      "public": true
+    },
+    {
+      "place": "tavern",
+      "name_ko": "주막",
+      "public": true
+    },
+    {
+      "place": "gate",
+      "name_ko": "마을 어귀",
+      "public": true
+    },
+    {
+      "place": "home",
+      "name_ko": "집",
+      "public": false
+    }
+  ],
+  "temperaments": [
+    {
+      "temperament_id": "scholar",
+      "name_ko": "신중형",
+      "group_weights": {
+        "contradiction": 1.3,
+        "divination": 0.3,
+        "statement": 1.2
+      },
+      "aggression": 0.3,
+      "stubbornness": 0.8,
+      "conformity": 0.3,
+      "confession_ease": 0.3
+    },
+    {
+      "temperament_id": "keen",
+      "name_ko": "눈치형",
+      "group_weights": {
+        "witness": 1.4,
+        "social": 0.7
+      },
+      "aggression": 0.4,
+      "stubbornness": 0.4,
+      "conformity": 0.4,
+      "confession_ease": 0.5
+    },
+    {
+      "temperament_id": "hothead",
+      "name_ko": "다혈질",
+      "group_weights": {
+        "social": 1.3,
+        "tell": 1.3,
+        "contradiction": 0.7
+      },
+      "aggression": 0.8,
+      "stubbornness": 0.3,
+      "conformity": 0.8,
+      "confession_ease": 0.4
+    },
+    {
+      "temperament_id": "timid",
+      "name_ko": "겁쟁이",
+      "group_weights": {
+        "divination": 1.5,
+        "contradiction": 0.6
+      },
+      "aggression": 0.2,
+      "stubbornness": 0.5,
+      "conformity": 0.7,
+      "confession_ease": 0.8
+    }
+  ],
+  "characters": [
+    {
+      "npc_id": "hunjang",
+      "name_ko": "훈장",
+      "aliases": [
+        "훈장",
+        "훈장님",
+        "훈장 어른",
+        "김 훈장",
+        "서당 어른"
+      ],
+      "temperament_id": "scholar",
+      "routine": {
+        "evening": {
+          "home": 0.5,
+          "tavern": 0.3,
+          "shrine": 0.2
+        },
+        "midnight": {
+          "home": 0.9,
+          "shrine": 0.1
+        }
+      },
+      "speech_style": "점잖은 하오체. 옛글 문자를 섞고, 남을 '자네'라 부르며 말끝을 길게 끈다."
+    },
+    {
+      "npc_id": "jumo",
+      "name_ko": "주모",
+      "aliases": [
+        "주모",
+        "주막댁",
+        "주모 아지매",
+        "국밥집 아지매"
+      ],
+      "temperament_id": "keen",
+      "routine": {
+        "evening": {
+          "tavern": 0.9,
+          "well": 0.1
+        },
+        "midnight": {
+          "tavern": 0.5,
+          "home": 0.4,
+          "well": 0.1
+        }
+      },
+      "speech_style": "시원시원한 하게체에 반말이 섞인다. 손님 다루듯 눙치며 남의 사정을 훤히 꿴다."
+    },
+    {
+      "npc_id": "blacksmith",
+      "name_ko": "대장장이",
+      "aliases": [
+        "대장장이",
+        "대장간 최씨",
+        "최씨",
+        "최 서방"
+      ],
+      "temperament_id": "hothead",
+      "routine": {
+        "evening": {
+          "tavern": 0.5,
+          "home": 0.3,
+          "gate": 0.2
+        },
+        "midnight": {
+          "home": 0.8,
+          "well": 0.2
+        }
+      },
+      "speech_style": "거칠고 짧게 끊어 말한다. 화가 나면 목소리부터 커지고 말보다 손이 먼저 나간다."
+    },
+    {
+      "npc_id": "meosum",
+      "name_ko": "머슴",
+      "aliases": [
+        "머슴",
+        "돌쇠",
+        "머슴 돌쇠"
+      ],
+      "temperament_id": "timid",
+      "routine": {
+        "evening": {
+          "well": 0.4,
+          "tavern": 0.3,
+          "home": 0.3
+        },
+        "midnight": {
+          "home": 0.9,
+          "well": 0.1
+        }
+      },
+      "speech_style": "말을 더듬는 존댓말(~습니다요). 겁이 많아 묻지 않은 것까지 먼저 해명한다."
+    },
+    {
+      "npc_id": "yakcho",
+      "name_ko": "약초꾼",
+      "aliases": [
+        "약초꾼",
+        "약초꾼 영감",
+        "박 영감"
+      ],
+      "temperament_id": "keen",
+      "routine": {
+        "evening": {
+          "gate": 0.5,
+          "home": 0.4,
+          "shrine": 0.1
+        },
+        "midnight": {
+          "home": 0.8,
+          "tavern": 0.2
+        }
+      },
+      "speech_style": "느릿한 노인 말투. 산과 풀 이야기로 에둘러 말하고, 본 것은 날짜까지 또렷이 기억한다."
+    },
+    {
+      "npc_id": "gwabu",
+      "name_ko": "과부",
+      "aliases": [
+        "과부",
+        "윗마을 과부",
+        "이씨 부인",
+        "이씨 댁"
+      ],
+      "temperament_id": "scholar",
+      "routine": {
+        "evening": {
+          "well": 0.5,
+          "home": 0.3,
+          "shrine": 0.2
+        },
+        "midnight": {
+          "home": 0.8,
+          "well": 0.2
+        }
+      },
+      "speech_style": "조용하고 단정한 말투. 말수가 적고, 틀린 말에는 낮은 목소리로 하나하나 짚는다."
+    }
+  ],
+  "secrets": [
+    {
+      "secret_id": "gambling",
+      "title_ko": "몰래 노름",
+      "eligible_npcs": [
+        "blacksmith",
+        "meosum",
+        "yakcho"
+      ],
+      "slot": "midnight",
+      "actual_place": "tavern",
+      "false_place": "home",
+      "confession_line": "…그 밤엔 주막 뒷방 투전판에 앉아 있었소. 식구들 귀에만은 들어가지 않게 해 주시오.",
+      "confession_threshold": 60.0,
+      "conflicts_with": [],
+      "grudge_clue_id": "clue_debt"
+    },
+    {
+      "secret_id": "tryst",
+      "title_ko": "몰래 만남",
+      "eligible_npcs": [
+        "jumo",
+        "blacksmith",
+        "gwabu"
+      ],
+      "slot": "midnight",
+      "actual_place": "shrine",
+      "false_place": "well",
+      "confession_line": "서낭당 뒤에서… 사람을 만났소. 그 사람이 누군지만은 묻지 마시오.",
+      "confession_threshold": 70.0,
+      "conflicts_with": [],
+      "grudge_clue_id": null
+    },
+    {
+      "secret_id": "grain",
+      "title_ko": "곡식 빼돌리기",
+      "eligible_npcs": [
+        "jumo",
+        "meosum",
+        "gwabu"
+      ],
+      "slot": "evening",
+      "actual_place": "gate",
+      "false_place": "tavern",
+      "confession_line": "빚을 갚으려고 곳간 곡식을 몇 말 덜어 마을 어귀로 날랐소. 그날 곳간 옆 짚더미에서 낡은 이름패 하나를 봤소.",
+      "confession_threshold": 50.0,
+      "conflicts_with": [
+        "taboo_herb"
+      ],
+      "grudge_clue_id": "clue_famine"
+    },
+    {
+      "secret_id": "taboo_herb",
+      "title_ko": "금기 약초",
+      "eligible_npcs": [
+        "meosum",
+        "yakcho",
+        "gwabu"
+      ],
+      "slot": "evening",
+      "actual_place": "gate",
+      "false_place": "shrine",
+      "confession_line": "산신께서 금하신 골짜기에 들어가 약초를 캤소. 식구 약값이 급해서 그랬소. 거기서 이름 없는 돌무덤을 봤소.",
+      "confession_threshold": 55.0,
+      "conflicts_with": [
+        "grain"
+      ],
+      "grudge_clue_id": "clue_valley"
+    },
+    {
+      "secret_id": "letter",
+      "title_ko": "숨긴 편지",
+      "eligible_npcs": [
+        "hunjang",
+        "jumo",
+        "gwabu"
+      ],
+      "slot": "evening",
+      "actual_place": "well",
+      "false_place": "home",
+      "confession_line": "관아에 올릴 편지를 우물가에서 인편에 몰래 맡겼소. 무슨 글인지는 아직 말할 수 없소.",
+      "confession_threshold": 65.0,
+      "conflicts_with": [],
+      "grudge_clue_id": null
+    },
+    {
+      "secret_id": "drinking",
+      "title_ko": "제사 전날 술",
+      "eligible_npcs": [
+        "hunjang",
+        "blacksmith",
+        "yakcho"
+      ],
+      "slot": "evening",
+      "actual_place": "tavern",
+      "false_place": "home",
+      "confession_line": "제사 전날인데 주막에서 술을 마셨소. 그 자리에서 십 년 전 그 밤 일을 두고 수군대는 소리를 들었소.",
+      "confession_threshold": 40.0,
+      "conflicts_with": [],
+      "grudge_clue_id": "clue_tiger"
+    }
+  ],
+  "grudge_clues": [
+    {
+      "clue_id": "clue_famine",
+      "text_ko": "창귀는 생전에 흉년 든 해 마을 곳간을 지키던 떠돌이 일꾼이었다.",
+      "unlock": "secret:grain 고백",
+      "part": "identity",
+      "hypothesis_id": "h1"
+    },
+    {
+      "clue_id": "clue_valley",
+      "text_ko": "금한 골짜기 깊은 곳에 아무도 돌보지 않는 이름 없는 돌무덤이 있다.",
+      "unlock": "secret:taboo_herb 고백",
+      "part": "identity",
+      "hypothesis_id": "h1"
+    },
+    {
+      "clue_id": "clue_debt",
+      "text_ko": "그 일꾼은 노름빚 독촉에 쫓겨 밤 산길로 나섰다가 돌아오지 못했다.",
+      "unlock": "secret:gambling 고백",
+      "part": "death",
+      "hypothesis_id": "h1"
+    },
+    {
+      "clue_id": "clue_tiger",
+      "text_ko": "그 밤 마을 어귀 사립문은 누군가의 지시로 일찍 걸려, 산에서 쫓겨 온 일꾼을 들이지 않았다.",
+      "unlock": "secret:drinking 고백",
+      "part": "target",
+      "hypothesis_id": "h1"
+    }
+  ],
+  "templates": [
+    {
+      "template_id": "t_suspect",
+      "kind": "suspect",
+      "temperament_id": null,
+      "reaction": null,
+      "variants": [
+        "{target}이(가) 수상하오.",
+        "{target}, 자네 말이 영 미덥지 않네."
+      ]
+    },
+    {
+      "template_id": "t_defend",
+      "kind": "defend",
+      "temperament_id": null,
+      "reaction": null,
+      "variants": [
+        "{target}은(는) 그럴 사람이 아니오."
+      ]
+    },
+    {
+      "template_id": "t_contra",
+      "kind": "point_contradiction",
+      "temperament_id": null,
+      "reaction": null,
+      "variants": [
+        "두 사람 말이 서로 맞지 않소."
+      ]
+    },
+    {
+      "template_id": "t_explain",
+      "kind": "explain",
+      "temperament_id": null,
+      "reaction": null,
+      "variants": [
+        "나는 귀신과 상관없소."
+      ]
+    },
+    {
+      "template_id": "t_silence",
+      "kind": "silence",
+      "temperament_id": null,
+      "reaction": null,
+      "variants": [
+        "……"
+      ]
+    },
+    {
+      "template_id": "t_reveal",
+      "kind": "reveal_divination",
+      "temperament_id": null,
+      "reaction": null,
+      "variants": [
+        "간밤 {target}의 점괘는 {result}였소."
+      ]
+    },
+    {
+      "template_id": "t_whereabouts",
+      "kind": "explain",
+      "temperament_id": null,
+      "reaction": null,
+      "variants": [
+        "{night}일째 밤 {slot}엔 {place}에 있었소."
+      ]
+    },
+    {
+      "template_id": "t_ans_explain",
+      "kind": "interrogate",
+      "temperament_id": null,
+      "reaction": "explain",
+      "variants": [
+        "{fact}"
+      ]
+    },
+    {
+      "template_id": "t_ans_evade",
+      "kind": "interrogate",
+      "temperament_id": null,
+      "reaction": "evade",
+      "variants": [
+        "{fact} …더 묻지 마시오."
+      ]
+    },
+    {
+      "template_id": "t_ans_counter",
+      "kind": "interrogate",
+      "temperament_id": "hothead",
+      "reaction": "counter",
+      "variants": [
+        "{fact} 그러는 무당 양반은 어디 있었소?"
+      ]
+    },
+    {
+      "template_id": "t_ans_confess",
+      "kind": "interrogate",
+      "temperament_id": null,
+      "reaction": "confess",
+      "variants": [
+        "{fact}"
+      ]
+    }
+  ]
+}
