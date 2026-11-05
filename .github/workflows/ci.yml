@@ -15,6 +15,7 @@ jobs:
         with: { python-version: "3.14" }   # 프로젝트 전체 Python 3.14 단일(11/5 PM 결정, tech_stack.md)
       - run: python -m unittest discover -s tests -t .
       - run: python -m tools.check_secrets
+      - run: python -m tools.check_structure --all   # 디렉터리 트리(docs/contracts/structure.md 6절)
 
   django:
     runs-on: ubuntu-latest

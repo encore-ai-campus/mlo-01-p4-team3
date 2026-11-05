@@ -45,7 +45,7 @@
 | #&nbsp; | 조건&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 자동&nbsp;확인&nbsp;방법&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|
 | ① | PR이 `main`에 병합됨. PR 제목에 태스크 ID<br>저장소 배정 전: 10-1절 임시 대체(원장 행 + 병합 SHA가 `main`에 포함) | GitHub PR 목록 |
-| ② | GitHub Actions 필수 체크 4개 통과: `core`(계약·엔진·ML·광고 도메인 unittest, 비밀정보 검사), `django`(`python manage.py test`, Mongo·MySQL 서비스 컨테이너), `evidence`(PR 본문의 태스크 ID로 증빙 검사, 11절), `docs`(문서화 검사, 10절). Kafka·Spark·Delta를 쓰는 검사는 CI가 아니라 통합(INT)에서 실제 스택으로 판정한다<br>저장소 배정 전: 10-1절 임시 대체(제출·병합 때 로컬 CI 통과) | PR의 체크 표시(`.github/workflows/ci.yml`, E-05-02) |
+| ② | GitHub Actions 필수 체크 4개 통과: `core`(계약·엔진·ML·광고 도메인 unittest, 비밀정보 검사, 디렉터리 트리 검사 `check_structure --all`), `django`(`python manage.py test`, Mongo·MySQL 서비스 컨테이너), `evidence`(PR 본문의 태스크 ID로 증빙 검사, 11절), `docs`(문서화 검사, 10절). Kafka·Spark·Delta를 쓰는 검사는 CI가 아니라 통합(INT)에서 실제 스택으로 판정한다<br>저장소 배정 전: 10-1절 임시 대체(제출·병합 때 로컬 CI 통과) | PR의 체크 표시(`.github/workflows/ci.yml`, E-05-02) |
 | ③ | 증빙 문서 `paldo/docs/evidence/<태스크ID>.md` 커밋(양식 4절). 태스크 문서의 **완료 조건 번호마다 한 행**, 모든 행 "통과 = 예" | `python -m tools.check_evidence <태스크ID> --complete`가 통과(4절 검사 규칙) |
 | ④ | **성능 관련 수치는 전부 계측값**이다. Prometheus 지표 또는 측정 스크립트(`tools/perf/`) 출력으로만 쓴다. 추정치·손으로 잰 값은 인정하지 않는다. 측정 결과는 결과 JSON(4절 "결과 JSON 형식", `docs/evidence/perf/<ID>/<이름>.json`)으로 함께 커밋한다 | `check_evidence`가 수치 행의 측정값을 결과 JSON 값과 대조하고, 기준과 비교한 통과 여부를 다시 계산한다(4절 규칙 3) |
 | ⑤ | **동작하는 구성요소는 모두 구조화 로그를 남긴다**(5절 규칙). 새로 만든 서비스·배치·스크립트 포함 | 증빙에 로그 발췌 3줄 이상 + 로그 위치 |
@@ -291,6 +291,11 @@
 - A → E 이관(같은 결정, A가 에셋을 받아 11/9·11/11이 과부하): 프리셋 반례 테스트 A-09-04 → E-10-09(1h, 날짜 11/9 → 11/10. 테스트 코드만 쓰는 일이고 프리셋 구성은 E 콘텐츠, 11/9 사용자 테스트는 6인 판이라 하루 늦어도 됨. 코드가 `tests/engine/`이라 검토자 A), 최종 파라미터 재실행 A-11-02 → E-11-11(1.5h, 11/11. 값이 어긋나면 원인 분석은 A에 요청, 검토자 A). 일괄 갱신 줄: A 11/9 대상에서 A-09-04, A 11/11 "코드를 바꿨다면"에서 A-11-02를 뺐고, E 11/10(E-10-03)에 E-10-09·모듈 engine, E 11/11(E-11-09)에 E-11-11·모듈 engine을 더했다.
 - 하루 시간(공통 1.5h 제외, 일별 표는 [team_plan.md](../team_plan.md) "전체 시간표"): A 11/8 8.5h → 10.5h, 11/9 8.25h → 10h, 11/11 5.75h → 9.75h. B 11/8 10h → 8h, 11/9 10.5h → 7.75h, 11/11 8.75h → 3.25h. E 11/10 8h → 9h, 11/11 7.25h → 8.75h. 이슈 수는 그대로(ID만 바뀜).
 
+**확정된 결정 (11/5 PM 결정, 트리 계약 검사)**
+- 팀원에게 작업 공간을 통째로 주기 전에 디렉터리 트리를 확정한다. 허용 폴더 목록은 `docs/contracts/structure.md` 6절이고, `tools/check_structure.py`가 검사한다(GitHub CI `core`는 `--all`, 로컬 CI `core`는 `--diff <base>`). 새 필수 체크는 만들지 않는다.
+- 새 폴더는 PM 승인 뒤 6절과 1절 트리를 먼저 고친다(`parallel_dev.md` 4절 계약 변경 절차).
+- 아직 없는 코드 폴더 중 일반 패키지는 `__init__.py`(docstring만)로 미리 만들었다(structure.md 1절 머리). Django 앱과 `tests/ads/`·`tests/infra/`는 담당 태스크가 만든다(startapp, 서비스 테스트 `load_tests`).
+
 **확정된 결정 (11/5 PM 결정, A 에셋 주담당 재배치)** 바로 위 결정(실제 에셋 B → A)을 이어 받는다.
 - 이유: 에셋이 가장 큰 위험이다. A가 에셋이 몰린 날(11/9)과 그다음 날(11/10)에 여유를 갖게 한다. E에는 E의 콘텐츠·복기 해설과 직접 이어진 엔진 일을, B에는 에셋 이관으로 여유가 생긴 날의 일을 준다.
 - A → E: 원한 단서 해금·결말·선택형 도전 A-09-01 → E-09-08(3h, 11/9. 단서·결말 내용을 E-07-05가 씀), 복기용 이유 조회 A-10-02 → E-10-10(3h, 11/10. 10:00 인계는 그대로, 받는 E-10-01과 같은 담당). 코드는 `engine/`이므로 두 태스크의 ⑧ 대체 검토자는 A.
@@ -447,7 +452,7 @@
 
 | 단계&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 내용&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|
-| core | `python -m unittest discover -s tests -t .`, `check_secrets` |
+| core | `python -m unittest discover -s tests -t .`, `check_secrets`, `check_structure --diff <base>`(새 폴더가 `docs/contracts/structure.md` 6절 허용 목록 안) |
 | docs | `check_docs --diff <base>`(규칙 5·6) |
 | evidence | `--complete`면 `check_evidence <ID> --complete`, 아니면 바뀐 증빙 `--format`. base 이후 커밋 메시지의 닫기 키워드 금지(11절). `--hours` 숫자 형식 |
 | service | `PALDO_SERVICE_TESTS=1`이면 `tests/infra`·`tests/ads`·`server/manage.py test`. `server/`·`ads/`·`tests/infra/`·`tests/ads/`를 바꿨는데 서비스 테스트를 안 돌렸으면 **실패**(Compose를 띄우고 다시) |

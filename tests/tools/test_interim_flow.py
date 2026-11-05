@@ -28,6 +28,16 @@ LEDGER_HEAD = """# 임시 운영 원장
 | 태스크 | 작성 흐름 | 제출 번호 | 제출 HEAD SHA | 검토 흐름 | 검토 SHA | 판정 | 병합 SHA | 로컬 CI |
 |---|---|---|---|---|---|---|---|---|
 """
+STRUCTURE = """# 구조
+
+## 6. 허용 폴더(검사 기준)
+
+```
+docs/**
+server/
+tests/**
+```
+"""
 
 
 def _force_remove(func, path, _exc):
@@ -71,6 +81,7 @@ class InterimFlowTest(unittest.TestCase):
                                       "    def test_ok(self):\n        self.assertTrue(True)\n")
         write(pm, "docs/tasks/E_pm.md", TASKS_E)
         write(pm, "docs/ops/interim_ledger.md", LEDGER_HEAD)
+        write(pm, "docs/contracts/structure.md", STRUCTURE)
         git(pm, "add", "-A")
         git(pm, "commit", "-q", "-m", "init")
         self.pm = InterimGit(pm)
@@ -226,6 +237,21 @@ class InterimFlowTest(unittest.TestCase):
         failed = [name for name, ok, _ in result.steps if not ok]
         self.assertEqual(len(failed), 1)
         self.assertTrue(failed[0].startswith("service"))
+
+    def test_folder_outside_structure_contract_fails(self):
+        main_bundle = self._publish()
+        base = self.pm.head()
+        mate = self._teammate(main_bundle)
+        self._commit(mate, "README.md", "# t\n\n| misc/ | 메모 |\n")  # 규칙 6(라우팅 문서)은 지킨다
+        self._commit(mate, "misc/note.txt", "x\n")
+        result, bundle = interim.submit(mate, SubmitInfo("E-05-01", False, "1"), base, self.tmp / "o",
+                                        environ=self.env)
+        self.assertIsNone(bundle)
+        steps = {n: (ok, d) for n, ok, d in result.steps}
+        ok, detail = steps[f"core: check_structure --diff {base[:12]}"]
+        self.assertFalse(ok)
+        self.assertIn("misc/", detail)
+        self.assertEqual([n for n, (ok, _) in steps.items() if not ok], [f"core: check_structure --diff {base[:12]}"])
 
     def test_closing_keyword_in_commit_fails(self):
         main_bundle = self._publish()

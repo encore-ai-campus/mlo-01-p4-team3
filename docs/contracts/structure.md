@@ -8,6 +8,8 @@
 
 ## 1. 전체 트리
 
+- 패키지만 미리 생성(11/5): `engine/sim/`, `engine/domain/npc/`, `intent/`, `ml/`(`suspicion/`, `adapters/`), `llm/`(`service/`), `pipeline/`(`sinks/`), `server/infra/`, `ads/app/`, `ads/infra/`, `tests/engine/`·`tests/sim/`·`tests/intent/`. 안은 `__init__.py`뿐이고, 파일은 표의 태스크가 만든다. 폴더를 다시 만들지 않는다. Django 앱(`server/paldo_web/`, `server/accounts/`, `ads/project/`, `ads/web/`)과 `tests/ads/`·`tests/infra/`는 담당 태스크가 만든다(startapp, 서비스 테스트 `load_tests`).
+
 ```
 paldo/
 ├─ README.md                       라우팅 문서(폴더 안내, 작업별 위치) (있음)
@@ -178,3 +180,68 @@ VM 이름과 배치의 원본은 기획서 6.3이다. 실제 노트북 대응은
 | 10 | 시뮬레이터 Kafka `EventSink` | `pipeline/sinks/kafka_sink.py` |
 | 19 | 진척 재처리 도구 | `tools/replay_progress.py`(C-09-04) |
 | 12 | 외부 서비스가 필요한 테스트 실행 | `core`에서 제외하고 서비스 CI에서 경로별로 명시 실행(integration.md 7절 #12) |
+
+## 6. 허용 폴더(검사 기준)
+
+`python -m tools.check_structure`가 아래 펜스 블록을 읽어 git이 추적하는 파일의 폴더를 검사한다([ci.md](../modules/ci.md)). 1절 트리를 폴더 단위로 옮긴 것이다(11/5 PM 결정).
+
+- 패턴은 한 줄에 하나다. `dir/` = 그 폴더 자체만 허용하고 하위 폴더는 따로 적어야 한다. `dir/**` = 그 폴더와 아래 전부를 허용한다. `#` 뒤는 설명이다.
+- 루트에는 파일만 둔다(README.md, .env.example, .gitignore, .gitattributes). 루트 폴더는 아래 목록에 있는 것만 허용한다.
+- `**`를 준 곳: 하위 구조를 그 영역 도구나 프레임워크가 정하는 곳이다. 예를 들어 Django 앱의 `migrations/`, `templates/`, 문서·픽스처·테스트·콘텐츠 폴더, ops의 서비스별 설정이 그렇다. 나머지 코드 폴더는 1절에 적은 깊이까지만 허용한다.
+- 1절 트리와 이 목록이 어긋나면 이 목록이 검사 기준이다. 둘 다 같은 변경에서 고친다.
+- **폴더를 새로 만들려면** PM 승인을 받은 뒤 이 절과 1절 트리를 먼저 고친다([parallel_dev.md 4절](parallel_dev.md#4-규칙) 계약 변경 절차와 같다). 승인 없이 목록만 고쳐 검사를 통과시키지 않는다.
+- 로컬 CI(`interim submit`)는 `--diff <base>`로 새로 생긴 폴더만 본다. GitHub CI `core`는 `--all`로 전체를 본다.
+
+```
+.github/**
+engine/
+engine/domain/
+engine/domain/npc/
+engine/testing/
+engine/sim/
+server/
+server/paldo_web/**        # Django 프로젝트 설정
+server/accounts/**         # Django 앱(migrations 등)
+server/api/
+server/app/
+server/infra/
+server/tests/**
+web/**                     # templates/, static/js/
+ads/
+ads/project/**             # 광고 서버 Django 설정
+ads/domain/
+ads/app/
+ads/infra/
+ads/web/**                 # 광고 서버 Django 앱
+ads/testing/
+intent/
+ml/
+ml/suspicion/
+ml/adapters/
+llm/
+llm/bench/
+llm/service/**
+pipeline/
+pipeline/consumers/**
+pipeline/sinks/
+pipeline/spark/
+ops/
+ops/compose/**
+ops/mysql/**
+ops/proxy/**
+ops/prometheus/**
+ops/grafana/**
+ops/k3s/**
+ops/mlflow/**
+ops/aws/**
+ops/runbook/**
+content/**
+contracts/
+fixtures/**
+tools/
+tools/perf/
+tools/assets/
+tests/**
+docs/**
+requirements/
+```

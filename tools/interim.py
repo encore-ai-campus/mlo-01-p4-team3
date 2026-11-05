@@ -30,7 +30,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from tools import check_docs, check_evidence, check_secrets
+from tools import check_docs, check_evidence, check_secrets, check_structure
 from tools import interim_rules as rules
 from tools.evidence_md import evidence_path, parse_evidence
 from tools.gitrepo import GitError, GitRepo
@@ -154,6 +154,10 @@ def run_ci(root: Path, base: str, info: SubmitInfo, runner=default_runner, envir
     # 정적 검사(docs·evidence·secrets)를 먼저 한다: 테스트 실행이 남기는 파일이 변경분으로 잡히지 않게
     remaining, allow_errors, scanned = check_secrets.run(repo)
     docs_errors = check_docs.check_diff(base, repo)
+    try:
+        structure_errors = check_structure.check_diff(base, repo)
+    except check_structure.PatternError as exc:
+        structure_errors = [f"{check_structure.CONTRACT} 허용 패턴을 읽지 못함: {exc}"]
     tasks, _ = load_all(root / "docs" / "tasks")
     ev_errors: list[str] = []
     if info.task_id is not None and info.task_id not in {t.task_id for t in tasks}:
@@ -173,6 +177,7 @@ def run_ci(root: Path, base: str, info: SubmitInfo, runner=default_runner, envir
     rc, tail = runner([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "."], root, environ)
     _step(result, "core: unittest", [] if rc == 0 else [f"종료 코드 {rc}", tail], tail)
     _step(result, "core: check_secrets", [str(f) for f in remaining] + allow_errors, f"파일 {scanned}개")
+    _step(result, f"core: check_structure --diff {base[:12]}", structure_errors, "새 폴더 없음 또는 모두 허용(structure.md 6절)")
     # docs
     _step(result, f"docs: check_docs --diff {base[:12]}", docs_errors)
     # evidence

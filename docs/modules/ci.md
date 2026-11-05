@@ -12,6 +12,7 @@ PR마다 필수 체크 4개(`core`, `django`, `evidence`, `docs`)를 돌려, 태
 | `tools/check_evidence.py` | 도메인 규칙 + 응용 + 표현(`main`) | 증빙 형식(`--format`), 완료 검사(`--complete`, 4절 규칙 1~6), PR 본문 문법(11절) |
 | `tools/check_docs.py` | 도메인 규칙 + 응용 + 표현(`main`) | 문서화 검사(10절 규칙 1~6) |
 | `tools/check_secrets.py` | 도메인 규칙 + 응용 + 표현(`main`) | 비밀정보 검사(E-05-02 조건 5), 예외 `tools/secrets_allowlist.txt` |
+| `tools/check_structure.py` | 도메인 규칙 + 응용 + 표현(`main`) | 디렉터리 트리 검사(`docs/contracts/structure.md` 6절 허용 폴더). `--all`은 `core` 체크, `--diff`는 로컬 CI `core` |
 | `tools/evidence_md.py` | 도메인 | 증빙 마크다운 파서, "완료된 태스크" 판정(두 검사기가 함께 씀) |
 | `tools/evidence_result.py` | 도메인(`build_result`) + 인프라(`write_result`) | 측정 결과 JSON(4절 형식) 쓰기 |
 | `tools/gitrepo.py` | 인프라 | 파일·git 읽기(`GitRepo`). 규칙 함수는 이것을 직접 부르지 않고 인자로 받는다 |
@@ -32,6 +33,8 @@ PR마다 필수 체크 4개(`core`, `django`, `evidence`, `docs`)를 돌려, 태
 ```
 python -m unittest discover -s tests -t .                    # core 체크(검사 도구 자체 테스트 포함)
 python -m tools.check_secrets                                # core 체크
+python -m tools.check_structure --all                        # core 체크: 추적 파일의 모든 폴더가 structure.md 6절 안
+python -m tools.check_structure --diff <base>                # base 이후 새로 생긴 폴더만(로컬 CI core)
 python -m tools.check_evidence E-05-02 --format              # 양식만(상태: 실패 문서도 통과)
 python -m tools.check_evidence E-05-02 --complete            # 4절 검사 규칙 1~6
 python -m tools.check_evidence --all --until 11-05           # 예정일 11/5까지 태스크 전부 --complete
@@ -73,6 +76,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | `PR_BODY` | - | `evidence` 체크가 읽는 PR 본문 환경 변수 | 이름을 바꾸면 `--pr-body-env` 인자도 같이 바꾼다 |
 | `PALDO_LOG_DIR` | `out/logs` | 구조화 로그 파일 폴더(`ci.jsonl`) | 로그만 옮겨진다. 검사 결과와 무관 |
 | `tools/secrets_allowlist.txt` | 4항목 | 한 줄에 경로·키 이름·사유(`\|`로 구분). 그 파일의 그 키만 허용 | 항목 추가는 PR 승인(⑧)으로 통제. 걸리지 않는 항목은 죽은 예외로 실패 |
+| 허용 폴더 목록 | `docs/contracts/structure.md` 6절 펜스 블록 | `dir/` = 그 폴더만, `dir/**` = 아래 전부. 루트 파일은 늘 허용 | 폴더 추가는 PM 승인 후 이 목록과 1절 트리를 같이 고친다 |
 | `tests/fixtures/secrets/` | - | 탐지 테스트용 가짜 값. 비밀정보 검사에서 이 폴더만 제외 | 다른 폴더에 가짜 값을 두면 검사가 실패한다 |
 | base 커밋 | PR: `pull_request.base.sha`, push: `event.before` | 변경분 비교 기준(공통 조상 기준) | push의 `before`가 0으로만 된 SHA(새 브랜치)면 증빙 전부를 `--format` 검사 |
 
@@ -87,6 +91,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 - `Task: P-xx`는 README 7절 "확정된 결정" 목록에 그 ID가 **나오는지**만 본다. 그 줄이 실제로 확정 내용인지는 보지 않는다.
 - docstring 규칙(5)은 바뀐 줄과 겹치는 공개 정의만 본다. 클래스 안 메서드 본문만 바뀌어도 클래스 자체의 docstring을 요구한다.
 - 비밀 키 규칙은 따옴표 값과 줄 전체 `KEY=값`/`KEY: 값`만 본다. `.py` 파일의 따옴표 없는 값은 변수·호출·타입 표기로 보고 검사하지 않는다. f-string은 `{`(보간)가 있을 때만 허용하고, 보간 없는 상수 f-string은 일반 문자열처럼 검사한다. 사설 IP는 점 네 개 IPv4만 보고, IPv6·호스트 이름·공인 IP는 보지 않는다.
+- `check_structure`는 git이 보는 파일의 폴더만 본다. 빈 폴더와 `.gitignore`로 빠진 경로(`out/` 등)는 검사하지 않는다. `--all`은 추적 파일만, `--diff`는 커밋 전·추적 안 된 새 파일도 본다. 폴더 이름만 보고 파일이 1절 트리의 어느 줄에 맞는지는 보지 않는다.
 - 손으로 닫힌 이슈는 이 도구가 찾지 않는다(GitHub를 조회하지 않는다). INT-11 #11에서 `gh issue list`와 `--all` 결과를 대조한다(11절).
 
 ## 변경 이력
@@ -95,3 +100,4 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 |---|---|---|
 | E-05-02 | 11/5 | 처음 작성: `ci.yml` 4체크(결정 #12 경로별 단계, 이미지 태그 tech_stack 기준), `check_evidence`(커밋 메시지 닫기 키워드 금지 포함)·`check_docs`(필수 제목 줄, INT 제외)·`check_secrets`·`evidence_result`, 예외 목록, 자체 테스트(사전 작업, 실제 작업일 11/4) |
 | E-05-02 | 11/5 | 저장소 배정 전 임시 운영 도구 `interim`(로컬 CI·번들 제출·PM 병합·원장·진행표, README 10-1절) 추가 |
+| E-05-02 | 11/5 | 디렉터리 트리 검사 `check_structure` 추가(`core`에 `--all`, 로컬 CI `core`에 `--diff`), 11/5 PM 결정 |
