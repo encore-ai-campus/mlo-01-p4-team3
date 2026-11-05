@@ -1,18 +1,19 @@
-# ci — CI 필수 체크와 증빙·문서화·비밀정보 검사
+# ci — 로컬 검사(precheck)와 증빙·문서화·비밀정보 검사
 
 <!-- 양식: docs/tasks/README.md 10절. 아래 6개 제목을 이 순서 그대로 둔다(check_docs 검사). -->
 
 ## 무엇을
 
-PR마다 필수 체크 4개(`core`, `django`, `evidence`, `docs`)를 돌려, 태스크 완료 여부를 사람이 결과물을 열지 않고 판정하게 한다(README 3절 ②③⑥⑦).
+로컬 검사 한 명령 `python -m tools.precheck`로 구조·비밀정보·단위 테스트·문서화·증빙을 돌려, 태스크 완료 여부를 사람이 결과물을 열지 않고 판정하게 한다(README 3절 ②③⑥⑦). GitHub Actions CI는 11/5 폐지했다(조직 공용 Actions 분량을 쓰지 않는다). `git push` 때 `.githooks/pre-push`가 같은 검사를 돌리고, PR 본문에는 마지막 줄(`precheck: 통과 …`)을 붙인다.
 
 | 파일 | 계층 | 하는 일 |
 |---|---|---|
-| `.github/workflows/ci.yml` | 표현(진입점) | 이벤트별로 아래 도구를 부른다. PR 본문은 환경 변수 `PR_BODY`로만 넘긴다 |
+| `.githooks/pre-push` | 표현(진입점) | `git push` 때 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외) |
+| `tools/precheck.py` | 도메인(`summarize` 등) + 인프라(`SubprocessRunner`) + 응용(`run_precheck`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다 |
 | `tools/check_evidence.py` | 도메인 규칙 + 응용 + 표현(`main`) | 증빙 형식(`--format`), 완료 검사(`--complete`, 4절 규칙 1~6), PR 본문 문법(11절) |
 | `tools/check_docs.py` | 도메인 규칙 + 응용 + 표현(`main`) | 문서화 검사(10절 규칙 1~6) |
 | `tools/check_secrets.py` | 도메인 규칙 + 응용 + 표현(`main`) | 비밀정보 검사(E-05-02 조건 5), 예외 `tools/secrets_allowlist.txt` |
-| `tools/check_structure.py` | 도메인 규칙 + 응용 + 표현(`main`) | 디렉터리 트리 검사(`docs/contracts/structure.md` 6절 허용 폴더). `--all`은 `core` 체크, `--diff`는 로컬 CI `core` |
+| `tools/check_structure.py` | 도메인 규칙 + 응용 + 표현(`main`) | 디렉터리 트리 검사(`docs/contracts/structure.md` 6절 허용 폴더). `--all`은 `precheck`, `--diff`는 임시 운영 로컬 CI |
 | `tools/evidence_md.py` | 도메인 | 증빙 마크다운 파서, "완료된 태스크" 판정(두 검사기가 함께 씀) |
 | `tools/evidence_result.py` | 도메인(`build_result`) + 인프라(`write_result`) | 측정 결과 JSON(4절 형식) 쓰기 |
 | `tools/gitrepo.py` | 인프라 | 파일·git 읽기(`GitRepo`). 규칙 함수는 이것을 직접 부르지 않고 인자로 받는다 |
@@ -26,26 +27,33 @@ PR마다 필수 체크 4개(`core`, `django`, `evidence`, `docs`)를 돌려, 태
 - 수치 행을 결과 JSON과 대조하고 판정을 다시 계산하는 이유: ④ "성능 수치는 계측값만"을 손으로 고친 숫자로 우회하지 못하게 하려고. 반올림은 측정값 칸의 소수 자릿수에 맞춰 사사오입하고, 판정은 반올림하지 않은 값으로 한다(4절).
 - `Closes`/`Refs` 외의 닫기 키워드, URL 형태 닫기, 한 줄에 번호 여러 개, **PR 커밋 메시지의 닫기 키워드(`Closes` 포함)**를 막는 이유: GitHub가 이 경로로도 이슈를 닫아 `--complete`를 거치지 않고 이슈가 닫히기 때문(11절 "커밋 메시지의 닫기 키워드 금지"). 이슈는 PR 본문의 `Closes #` 한 줄로만 닫힌다.
 - 비밀 키 규칙을 "마지막 조각 일치"로 한 이유: 게임 용어 `secret_id`·`secrets`와 `TOKEN_TTL_MS`를 오탐하지 않기 위해(11/4 PM 결정, 조건 5).
-- 표준 라이브러리만 쓴다(`docs/contracts/tech_stack.md`: 도구 코드는 외부 패키지 없음). CI에 설치 단계가 없다.
+- 표준 라이브러리만 쓴다(`docs/contracts/tech_stack.md`: 도구 코드는 외부 패키지 없음). 설치 단계가 없다.
+- CI를 없앤 이유(11/5 PM 결정): 조직 저장소 68개가 무료 플랜 Actions 분량(월 2,000분)을 함께 쓰는데, 잡마다 1분 단위로 올려 세서 PR 하나에 약 30분이 들었다(11/5 하루 약 15회·140분). 검사 자체는 수십 초라 각자 노트북에서 돌려도 부담이 없다.
+- 비교 기준을 못 구하면 문서·증빙 단계를 실패로 보는 이유: 건너뛰면 검사 없이 `precheck: 통과` 줄이 나와 PR 본문의 결과 줄을 믿을 수 없게 된다.
 
 ## 사용법
 
 ```
-python -m unittest discover -s tests -t .                    # core 체크(검사 도구 자체 테스트 포함)
-python -m tools.check_secrets                                # core 체크
-python -m tools.check_structure --all                        # core 체크: 추적 파일의 모든 폴더가 structure.md 6절 안
+git config core.hooksPath .githooks                          # 처음 한 번: push 때 precheck 자동 실행
+python -m tools.precheck                                     # 구조·비밀·테스트(tests/assets 제외)·문서(--diff)·증빙(--changed)
+python -m tools.precheck --pr-body pr.md                     # PR 본문까지(Closes면 --complete). 마지막 줄을 PR 본문에
+python -m tools.precheck --with-assets                       # 에셋 관련 파일을 바꿨을 때 tests/assets 포함
+python -m tools.precheck --base <커밋>                        # 비교 기준 직접 지정(기본 origin/dev와의 merge-base)
+python -m unittest discover -s tests -t .                    # 단위 테스트 전체(검사 도구 자체 테스트 포함)
+python -m tools.check_secrets                                # 비밀정보
+python -m tools.check_structure --all                        # 추적 파일의 모든 폴더가 structure.md 6절 안
 python -m tools.check_structure --diff <base>                # base 이후 새로 생긴 폴더만(로컬 CI core)
 python -m tools.check_evidence E-05-02 --format              # 양식만(상태: 실패 문서도 통과)
 python -m tools.check_evidence E-05-02 --complete            # 4절 검사 규칙 1~6
 python -m tools.check_evidence --all --until 11-05           # 예정일 11/5까지 태스크 전부 --complete
 python -m tools.check_evidence --changed <base>              # base 이후 바뀐 증빙에 --format(push)
-PR_BODY="$(cat body.md)" python -m tools.check_evidence --pr-body-env PR_BODY --changed <base>   # evidence 체크(PR)
+PR_BODY="$(cat body.md)" python -m tools.check_evidence --pr-body-env PR_BODY --changed <base>   # PR 본문 검사(precheck --pr-body가 부름)
 python -m tools.check_docs --task E-05-02                    # 규칙 1~3
 python -m tools.check_docs --all --until 11-05               # 규칙 4
 python -m tools.check_docs --diff origin/dev                 # 규칙 5~6(커밋 전 변경·새 파일 포함). 기준은 통합 브랜치 dev
 ```
 
-저장소 배정 전 임시 운영(README 10-1절, GitHub 없이 4체크를 로컬에서 대체). **11/5 저장소 배정으로 끝났고 기록으로만 남긴다.** `interim`은 로컬 `main`을 통합 브랜치로 가정한 임시 운영 전용 도구라 `dev`로 바꾸지 않았다:
+저장소 배정 전 임시 운영(README 10-1절, GitHub 없이 검사를 로컬에서 대체). **11/5 저장소 배정으로 끝났고 기록으로만 남긴다.** `interim`은 로컬 `main`을 통합 브랜치로 가정한 임시 운영 전용 도구라 `dev`로 바꾸지 않았다:
 
 ```
 python -m tools.interim ci --base <SHA>                      # 커밋된 HEAD를 임시 worktree로 꺼내 core·docs·evidence·service
@@ -71,22 +79,24 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
-| CI Python | `3.14` | `ci.yml`의 `setup-python` | 프로젝트 전체 Python 3.14 단일(11/5 PM 결정, `tech_stack.md`) |
-| 서비스 이미지 | `mongo:8.0.34`, `mysql:8.4.11` | `django` 체크의 서비스 컨테이너 | `tech_stack.md`의 태그(개발 Compose와 같음). 바꿀 때는 tech_stack.md와 함께 |
-| `PR_BODY` | - | `evidence` 체크가 읽는 PR 본문 환경 변수 | 이름을 바꾸면 `--pr-body-env` 인자도 같이 바꾼다 |
+| Python | `3.14` | 각자 노트북의 Python(`precheck`는 자기를 실행한 인터프리터로 하위 검사를 돈다) | 프로젝트 전체 Python 3.14 단일(11/5 PM 결정, `tech_stack.md`) |
+| `PRECHECK_PR_BODY` | - | `precheck --pr-body`가 `check_evidence --pr-body-env`에 넘기는 환경 변수 | 이름을 바꾸면 `tools/precheck.py`의 `PR_BODY_ENV`도 같이 |
+| `core.hooksPath` | `.githooks` | git 훅 폴더(각 clone에서 한 번 설정) | 설정하지 않으면 push 때 자동 검사가 돌지 않는다 |
 | `PALDO_LOG_DIR` | `out/logs` | 구조화 로그 파일 폴더(`ci.jsonl`) | 로그만 옮겨진다. 검사 결과와 무관 |
-| `tools/secrets_allowlist.txt` | 4항목 | 한 줄에 경로·키 이름·사유(`\|`로 구분). 그 파일의 그 키만 허용 | 항목 추가는 PR 승인(⑧)으로 통제. 걸리지 않는 항목은 죽은 예외로 실패 |
+| `tools/secrets_allowlist.txt` | 3항목(11/5 `ci.yml` 삭제로 1항목 제거) | 한 줄에 경로·키 이름·사유(`\|`로 구분). 그 파일의 그 키만 허용 | 항목 추가는 PR 승인(⑧)으로 통제. 걸리지 않는 항목은 죽은 예외로 실패 |
 | 허용 폴더 목록 | `docs/contracts/structure.md` 6절 펜스 블록 | `dir/` = 그 폴더만, `dir/**` = 아래 전부. 루트 파일은 늘 허용 | 폴더 추가는 PM 승인 후 이 목록과 1절 트리를 같이 고친다 |
 | `tests/fixtures/secrets/` | - | 탐지 테스트용 가짜 값. 비밀정보 검사에서 이 폴더만 제외 | 다른 폴더에 가짜 값을 두면 검사가 실패한다 |
-| base 커밋 | PR: `pull_request.base.sha`, push: `event.before` | 변경분 비교 기준(공통 조상 기준) | push의 `before`가 0으로만 된 SHA(새 브랜치)면 증빙 전부를 `--format` 검사 |
+| base 커밋 | `origin/dev`와 HEAD의 merge-base(`--base`로 지정) | 변경분 비교 기준 | 못 구하면 문서·증빙 단계 실패. `git fetch origin` 뒤 다시 |
 
 ## 한계
 
-- `django` 체크는 `server/manage.py`가 생기기 전까지 빈 단계다(조건 1). B-05-01 병합 때 `ci.yml`의 주석 두 줄로 바꾼다.
-- 외부 서비스 테스트(결정 #12): `django` 작업이 `tests/infra/`·`tests/ads/`를 `PALDO_SERVICE_TESTS=1`로 경로별 실행한다(폴더가 없으면 통과). `core`에서 두 폴더를 빼는 `load_tests`는 폴더를 처음 만드는 태스크(C-06-01, D-05-03)가 그 `__init__.py`에 둔다. 광고 테스트의 Django 설정(`ads/project`, 결정 #1)은 D-05-03이 이 단계에 붙인다.
+- 자동으로 막는 장치가 없다. 훅은 `core.hooksPath`를 설정한 clone에서만 돌고 `git push --no-verify`로 건너뛸 수 있으며, PR 본문의 결과 줄은 손으로 쓸 수 있다. 실수로 빼먹는 것만 막는다. PM은 `Closes` PR을 병합하기 전에 PR 브랜치에서 `precheck --pr-body`를 다시 돌린다(README 11절).
+- 병합 뒤 `dev`에서 자동 검사가 돌지 않는다. 두 PR이 각각 통과해도 합친 결과가 깨질 수 있어, PM이 매일 `dev`에서 `precheck`를 한 번 돌린다.
+- `tests/assets`(단일 테스트가 10초를 넘는다)는 기본에서 빠진다. 에셋 관련 파일(`tools/assets/`, `tests/assets/`, `docs/assets/`, `content/images/`)을 바꾼 사람만 `--with-assets`로 돌린다.
+- Django(`server/manage.py test`)와 외부 서비스 테스트(결정 #12, `tests/infra/`·`tests/ads/`, `PALDO_SERVICE_TESTS=1`)는 `precheck`에 넣지 않았다. 두 폴더를 기본 discover에서 빼는 `load_tests`는 폴더를 처음 만드는 태스크(C-06-01, D-05-03)가 그 `__init__.py`에 두고, 실제 실행은 각자 Compose와 통합(INT)에서 한다.
 - 임시 운영 로컬 CI(`tools/interim.py`)는 Actions와 같은 검사 함수를 부르지만 실행 환경은 각자 노트북이다(Python 3.14 버전은 `.ci.txt`에 기록). 서비스 테스트는 `PALDO_SERVICE_TESTS=1`과 Compose 기동이 있어야 돌고, 대상 영역을 바꿨는데 안 돌렸으면 실패로 본다. 원장 검사는 병합 SHA·부모·흐름만 보고 검토 내용 자체는 보지 않는다.
-- 브랜치 모델(11/5 PM 결정, tasks README 3절): 통합 `dev`(기본 브랜치, 태스크 PR 대상), 배포 `main`(승격 PR만). 워크플로 트리거는 `[pull_request, push]`라 두 브랜치 모두에서 돈다. 승격 PR(`dev` → `main`)에서는 `evidence`가 PR 본문 검사를 건너뛰고 바뀐 증빙의 `--format`만 본다(Task 줄이 없는 PR. 같은 저장소의 `dev`에서 온 PR만 해당하고, 포크의 `dev`는 일반 PR로 검사). 이슈 본문의 원본 링크는 `dev`를 가리킨다(`tools/tasks_to_issues.py` `INTEGRATION_BRANCH`).
-- `dev`·`main` 보호 규칙의 필수 체크 등록과 "일부러 어긴 PR 3개"는 원격 저장소(P-11)가 생긴 뒤 한다. 그 전에는 같은 세 사례를 로컬 git 저장소 테스트로 재현해 둔다(`tests/tools/test_check_evidence.py` `ViolationScenario`, `tests/tools/test_check_docs.py` `ViolationScenarios`).
+- 브랜치 모델(11/5 PM 결정, tasks README 3절): 통합 `dev`(기본 브랜치, 태스크 PR 대상), 배포 `main`(승격 PR만). 승격 PR(`dev` → `main`)은 Task 줄이 없으므로 `--pr-body` 없이 `precheck`를 돌려 바뀐 증빙의 `--format`만 본다. 이슈 본문의 원본 링크는 `dev`를 가리킨다(`tools/tasks_to_issues.py` `INTEGRATION_BRANCH`).
+- 보호 규칙은 비공개·무료 플랜이라 걸 수 없다(P-11). "일부러 어긴 사례 3개"는 로컬 git 저장소 테스트로 재현해 둔다(`tests/tools/test_check_evidence.py` `ViolationScenario`, `tests/tools/test_check_docs.py` `ViolationScenarios`).
 - 문서 산출 태스크(규칙 3)는 `산출물:` 줄의 파일 존재를 보고, 태스크에 `- 필수 제목:` 줄이 있을 때만 그 제목이 산출물의 마크다운 제목 줄(`#`~`######`, 코드 블록 밖, 글자 그대로 일치)에 있는지 본다. 본문 문장 속 단어는 제목으로 치지 않는다. `.pptx` 같은 비텍스트 산출물에는 필수 제목을 둘 수 없다.
 - 통합 태스크(INT)에는 `check_docs` 규칙 1~4를 적용하지 않는다(README 10절). `--task INT-xx`는 항상 통과하고, `--all`은 INT를 대상에서 뺀다.
 - `Task: P-xx`는 README 7절 "확정된 결정" 목록에 그 ID가 **나오는지**만 본다. 그 줄이 실제로 확정 내용인지는 보지 않는다.
@@ -103,3 +113,4 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | E-05-02 | 11/5 | 저장소 배정 전 임시 운영 도구 `interim`(로컬 CI·번들 제출·PM 병합·원장·진행표, README 10-1절) 추가 |
 | E-05-02 | 11/5 | 디렉터리 트리 검사 `check_structure` 추가(`core`에 `--all`, 로컬 CI `core`에 `--diff`), 11/5 PM 결정 |
 | E-05-01 | 11/5 | 저장소 배정에 맞춘 브랜치 모델(통합 `dev`·배포 `main`): 승격 PR의 `evidence` 형식 검사 분기, 이슈 원본 링크 `dev` |
+| E-05-02 | 11/5 | GitHub Actions CI(`ci.yml`) 폐지, 로컬 검사 `tools/precheck.py`와 `.githooks/pre-push`로 대체(조직 공용 Actions 분량, 11/5 PM 결정). 실제 소요 시간 검사 폐지 |

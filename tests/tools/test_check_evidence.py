@@ -381,7 +381,7 @@ class PrBody(unittest.TestCase):
         self.assertTrue(ce.check_changed("0" * 40, repo, TASKS))
 
     def test_ci_paths_pass_without_actual_hours(self):
-        """ci.yml evidence 잡의 세 경로(PR 본문 + 변경 증빙, 승격 PR 변경 증빙, push 변경 증빙)가 시간 줄 없이 통과."""
+        """증빙 검사의 세 경로(PR 본문 + 변경 증빙, 승격 PR 변경 증빙, push 변경 증빙)가 시간 줄 없이 통과."""
         changes = [("M", "docs/evidence/E-05-01.md")]
         for text in (doc(), doc(hours="모름")):
             repo = ev_repo(text, changes=changes)
