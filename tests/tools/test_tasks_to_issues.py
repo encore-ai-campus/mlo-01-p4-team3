@@ -423,7 +423,7 @@ class RealTaskDocs(unittest.TestCase):
         by_id = {t.task_id: t for t in self.tasks}
         bench = by_id["E-06-07"]
         self.assertEqual(bench.date, "11-06")
-        self.assertIn("E-06-07", by_id["E-07-01"].deps)
+        self.assertIn("E-06-07", by_id["E-08-09"].deps)
         self.assertIn("E-06-07", by_id["C-06-04"].deps)
         self.assertEqual(by_id["C-06-04"].date, "11-06")
         self.assertNotIn("E-05-04", by_id)

@@ -219,15 +219,29 @@ jobs:
 
 ## 11/7(토)
 
-### E-07-01 LLM 서버와 LangGraph 골격
-- 3h · 선행: E-06-07
-- 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-07-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`llm`](../modules/llm.md)는 그날 일괄 갱신(E-07-05)
-- 산출물: `llm/service/`(HTTP 서비스), `llm/graph.py`(LangGraph: 요청 → 프롬프트 → 생성 → 검증 → 폴백), `server/infra/llm_renderer.py`(`LineRenderer` 구현, C와 협의)
+### E-07-07 추궁 표현: 프롬프트·검증기·평가 세트
+- 3h(11/5 PM 결정으로 E-08-01에서 이전, MVP 일정. LLM 서버·LangGraph는 하루 뒤 E-08-09) · 선행: E-06-07(모델·실행 설정), P-09(4번 말투 평가만) · 사용처: E-07-06(MVP 제출), E-08-09(서비스가 같은 함수를 부른다)
+- 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-07-07` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`llm`](../modules/llm.md)는 그날 일괄 갱신(E-07-05)
+- 산출물: `llm/prompt.py`(추궁 프롬프트 생성), `llm/validator.py`(검증기와 폴백 문장), `llm/eval_set.py`(평가 세트 생성), `fixtures/llm/interrogation_eval.json`(평가 세트 100건), `llm/mvp_metrics.py`(지표 계산: 성공률·사유 분포·지연 p50/p95·일관성), `tests/llm/test_validator.py`, `tests/llm/test_mvp_metrics.py`. `llm/prompt.py`·`llm/validator.py`·`llm/eval_set.py`·`llm/mvp_metrics.py`는 서버·LangGraph·llama.cpp 없이 쓰는 순수 함수이고 표준 라이브러리만 쓴다(`tests/contract/test_layers.py`에 검사 추가). 11/8 서비스(E-08-09)와 MVP 노트북(E-07-06)이 같은 함수를 부른다.
 - 완료 조건:
-  1. `LineRenderer` 계약(ports.md 4절) 준수: 수명주기 6상태, `deadline_ms` 초과 시 실제 생성 취소(llama.cpp 요청 중단 확인 로그), 판 단계가 넘어가면 취소, 늦은 결과 `discarded`. 전송(11/4 PM 결정 #3·#14): `server/infra/llm_renderer.py`가 `POST /v1/renders`(`RenderRequest` JSON → 202), `GET /v1/renders/{job_id}`(`RenderResult` JSON), `POST /v1/renders/{job_id}/cancel`(→ 204)로 서비스를 부른다. 서비스에 작업이 없으면(재시작 등, 404) `failed`로 본다. `X-Request-ID`를 넘기고 서비스 로그에 같은 값을 남긴다.
-  2. 큐 우선순위(캐묻기 0 > 복기 1 > 운영 분석 2).
-  3. 지표: `paldo_llm_queue_wait_seconds`, `paldo_llm_render_duration_seconds{stage}`, `paldo_llm_render_total{status}`(done/timeout/failed/cancelled/discarded).
-  4. `render_job` 이벤트(`paldo.llm`)에 모델·양자화·프롬프트 버전, 대기·생성 시간, 실패 사유, 폴백 여부. 양자화 버전과 폴백 여부는 `RenderResult.quantization`·`fallback`(계약 contract-0.3)으로 응용에 넘기고, 이벤트 기록은 응용이 한다(B-07-01 7번, 11/4 PM 결정 #18).
+  1. 검증기: 형식·길이, 허용되지 않은 인물·장소·역할어, 부정·단정 표현 추가 여부, `fact_sentence` 장소·시간·인물 보존. 위반 예시 20개 이상 단위 테스트 전부 거부. 위반 사유는 코드 4종(`format_length`, `forbidden_entity`, `added_assertion`, `fact_changed`)으로 돌려준다.
+  2. 평가 세트: 콘텐츠 묶음(인물·비밀·주장)에서 추궁 요청 100건을 `python -m llm.eval_set --seed 1`로 자동 생성. 같은 명령이면 같은 파일(테스트). 요청마다 `fact_sentence`와 허용 인물·장소 목록을 담는다. 기존 `fixtures/llm/interrogation_requests.json`(3건)은 계약 예시로 둔다.
+  3. 추궁 예시 100건 측정(E-06-07 선정 모델·실행 설정, 로컬): 전체 응답 **p95 15초 이하**, 폴백률, 검증 실패 사유 분포. 폴백 문장 = `fact_sentence` 포함(정보량 동일) 100%. 측정은 `llm/mvp_metrics.py`로 하고, MVP 노트북(E-07-06)도 같은 함수를 불러 숫자 정의를 맞춘다.
+  4. 말투 사람 평가는 P-09 방법·합격선대로 실시하고 결과 표. P-09 미정이면 평가 결과만 기록하고 완료 판정은 보류. MVP 제출(E-07-06)은 1~3번만 선행으로 보므로 이 항목이 미완이어도 막지 않는다.
+- 근거: 기획서 7.2, 7.3
+
+### E-07-06 LLM MVP 제출 (코랩 노트북)
+- 1.5h(11/5 PM 결정 신설: 11/7 23:59 강사 제출 MVP. 채팅(추궁 답변) LLM만 구동해 성공률·지연 시간·일관성을 본다) · 선행: E-07-07(1~3번: 검증기·평가 세트·지표 함수. 4번 말투 평가는 제외), E-06-07 · 인계: **11/7 23:59까지 제출 → 강사** · 노트북·묶음 스크립트 작성은 에이전트가 하고 PM이 검수한다
+- 문서화(+0h, 공통 ⑦, 트러블만): [트러블 E](../troubles/E.md)에 `### E-07-06` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 공개 함수·클래스 docstring(CI `docs` 검사) · 새 폴더 `llm/colab/`이 생기므로 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 코드를 바꿨다면 모듈 문서 [`llm`](../modules/llm.md) `변경 이력` 행은 그날 일괄 갱신(E-07-05)
+- 산출물: `tools/build_llm_bundle.py`(제출 묶음 zip 생성), `llm/colab/paldo_llm_mvp.ipynb`(코랩 노트북, 지표는 E-07-07의 `llm/mvp_metrics.py`를 부른다), `tests/tools/test_build_llm_bundle.py`
+- 완료 조건:
+  1. 묶음: `python -m tools.build_llm_bundle --out out/llm_mvp/`가 zip 1개를 만든다. 안에는 `llm/prompt.py`, `llm/validator.py`, `llm/mvp_metrics.py`, 평가 세트(`interrogation_eval.json`), 실행 함수(노트북이 부르는 `run_eval`)만 넣는다. 저장소는 비공개라 강사는 이 zip만 받는다. 같은 커밋이면 같은 zip(파일 목록·내용 고정, 테스트). zip에 비밀값·접속 주소가 없음(`check_secrets` 규칙으로 zip 안 파일 검사).
+  2. 노트북 단계: ① 맨 위 입력 칸(모델 파일 ID, zip 파일 ID. 저장소에는 빈 값) ② llama-cpp-python 설치(미리 빌드된 CPU 휠, GPU 런타임이면 GPU 휠과 `n_gpu_layers`) ③ 구글 드라이브에서 모델 GGUF와 zip 받기 ④ 예시 3건 추론 ⑤ 지표 표(아래 3~5번) ⑥ 강사가 직접 질문을 넣는 칸(인물·사실 문장·질문 입력 → 답변, 검증 결과, 지연 시간). 생성 설정(온도·top_p·최대 토큰·컨텍스트 길이·스레드 수)은 E-07-07 측정과 같게 고정하고 첫 칸에 표시한다. 커밋하는 노트북은 출력 셀을 비운다.
+  3. 성공률: 평가 세트 100건을 시드 0으로 1회씩 생성. 성공 = 검증기 통과이고 폴백 없이 나온 답. 성공률(%)과 위반 사유 4종(`format_length`, `forbidden_entity`, `added_assertion`, `fact_changed`)별 건수·비율, 생성 오류·시간 초과 건수를 표로.
+  4. 지연 시간: 요청마다 프롬프트 처리·생성·검증 시간과 합계를 재서 p50·p95, 생성 토큰/초 평균을 표로. 실행 환경(CPU 모델명·코어 수, GPU 이름 또는 없음, 스레드 수, `n_gpu_layers`, llama-cpp-python 버전)을 함께 출력한다. 코랩 사양이 달라 15초 기준(NFR-LLM-001)은 참고로만 표시한다.
+  5. 일관성: 평가 세트 앞 20건을 시드 1~5로 5회씩 생성(k=5, 생성 설정은 2번과 같음). 요청별로 ① 판정 일치(5회의 검증 통과·실패 판정이 모두 같음) ② 사실 요소 일치(5회 모두 `fact_sentence`의 장소·시간·인물을 보존) ③ 문자 유사도(5회 답변 10쌍의 `difflib.SequenceMatcher` 비율 평균)를 구하고, 20건에 대한 ①·② 비율(%)과 ③ 평균을 표로.
+  6. 코랩 새 런타임(무료 CPU)에서 노트북을 처음부터 끝까지 1회 실행. 전체 실행 시간 목표 40분 이하이고, 넘으면 일관성 건수·k를 노트북 입력 칸에서 줄일 수 있다(줄이면 표에 표시). 실행 시간과 결과 표를 증빙에 적는다.
+  7. 제출: 모델 GGUF와 zip을 구글 드라이브에 올려 "링크가 있는 누구나" 보기로 공유한다. 실제 링크·파일 ID는 저장소 밖(`4th_private`)에만 두고, 증빙에는 제출 시각, 공유 범위, 모델 파일 이름·sha256, zip sha256만 적는다.
 - 근거: 기획서 7.2, 7.3
 
 ### E-07-02 사전 테스트 운영
@@ -243,18 +257,20 @@ jobs:
 ### E-07-05 원한 단서와 결말 초안
 - 1.5h · 완료 조건: 원한 단서 4개(가설 1개의 신원·죽음·대상 3조각 + 1), 해금 조건, 퇴마·한풀이 결말 문안 2개. `GrudgeClue` 스키마 통과, `clue_id` 고정.
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 E](../troubles/E.md)에 `### E-07-05` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 공개 함수·클래스 docstring(CI `docs` 검사) · 모듈 문서 [`content`](../modules/content.md)는 그날 일괄 갱신(이 태스크의 일괄 갱신 줄)
-- 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: E-07-01, E-07-05 · 코드를 바꿨다면: E-07-02, E-07-03 · 모듈: [`llm`](../modules/llm.md), [`user_test`](../modules/user_test.md), [`content`](../modules/content.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/7 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
+- 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: E-07-07, E-07-05 · 코드를 바꿨다면: E-07-02, E-07-03, E-07-06 · 모듈: [`llm`](../modules/llm.md), [`user_test`](../modules/user_test.md), [`content`](../modules/content.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/7 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
 - 근거: 기획서 4.7, 10장
 
 ## 11/8(일)
 
-### E-08-01 추궁 표현 완성 (프롬프트·검증기·폴백)
-- 3h · 선행: E-07-01, P-09
-- 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-08-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`llm`](../modules/llm.md)는 그날 일괄 갱신(E-08-04)
+### E-08-09 LLM 서버와 LangGraph 골격
+- 3h(11/5 PM 결정으로 E-07-01에서 이전, MVP 일정. 프롬프트·검증기는 하루 앞 E-07-07) · 선행: E-06-07, E-07-07(프롬프트·검증기)
+- 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-08-09` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`llm`](../modules/llm.md)는 그날 일괄 갱신(E-08-04)
+- 산출물: `llm/service/`(HTTP 서비스), `llm/graph.py`(LangGraph: 요청 → 프롬프트 → 생성 → 검증 → 폴백. 프롬프트·검증·폴백 단계는 E-07-07의 `llm/prompt.py`·`llm/validator.py`를 그대로 부른다), `server/infra/llm_renderer.py`(`LineRenderer` 구현, C와 협의)
 - 완료 조건:
-  1. 검증기: 형식·길이, 허용되지 않은 인물·장소·역할어, 부정·단정 표현 추가 여부, `fact_sentence` 장소·시간·인물 보존. 위반 예시 20개 이상 단위 테스트 전부 거부.
-  2. 추궁 예시 100건 측정: 전체 응답 **p95 15초 이하**, 폴백률, 검증 실패 사유 분포. 폴백 문장 = `fact_sentence` 포함(정보량 동일) 100%.
-  3. 말투 사람 평가는 P-09 방법·합격선대로 실시하고 결과 표. P-09 미정이면 평가 결과만 기록하고 완료 판정은 보류.
+  1. `LineRenderer` 계약(ports.md 4절) 준수: 수명주기 6상태, `deadline_ms` 초과 시 실제 생성 취소(llama.cpp 요청 중단 확인 로그), 판 단계가 넘어가면 취소, 늦은 결과 `discarded`. 전송(11/4 PM 결정 #3·#14): `server/infra/llm_renderer.py`가 `POST /v1/renders`(`RenderRequest` JSON → 202), `GET /v1/renders/{job_id}`(`RenderResult` JSON), `POST /v1/renders/{job_id}/cancel`(→ 204)로 서비스를 부른다. 서비스에 작업이 없으면(재시작 등, 404) `failed`로 본다. `X-Request-ID`를 넘기고 서비스 로그에 같은 값을 남긴다.
+  2. 큐 우선순위(캐묻기 0 > 복기 1 > 운영 분석 2).
+  3. 지표: `paldo_llm_queue_wait_seconds`, `paldo_llm_render_duration_seconds{stage}`, `paldo_llm_render_total{status}`(done/timeout/failed/cancelled/discarded).
+  4. `render_job` 이벤트(`paldo.llm`)에 모델·양자화·프롬프트 버전, 대기·생성 시간, 실패 사유, 폴백 여부. 양자화 버전과 폴백 여부는 `RenderResult.quantization`·`fallback`(계약 contract-0.3)으로 응용에 넘기고, 이벤트 기록은 응용이 한다(B-07-01 7번, 11/4 PM 결정 #18).
 - 근거: 기획서 7.2, 7.3
 
 ### E-08-02 추가 콘텐츠 (주민 2명, 7·8인 판)
@@ -284,7 +300,7 @@ jobs:
 ### E-08-04 사용자 테스트 후보 버전 리허설
 - 0.5h(리허설 지원 1h는 11/5 PM 결정: A 에셋 주담당 재배치로 B-08-02에 되돌림) · 완료 조건: 후보 커밋에 태그 `v-usertest-1`을 만들고(이 태스크의 산출물, 11/5 PM 결정으로 명시) 그 태그에서 6인 판 1판 완주(자유 입력·LLM 추궁·설문 포함), 발견 이슈 등록. 화면·API 이슈는 재현 절차(판 시드, 단계, 입력, 기대·실제 화면)를 붙여 B에 넘기고 B 수정 뒤 다시 확인(B-08-02).
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 E](../troubles/E.md)에 `### E-08-04` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 코드를 바꿨다면 모듈 문서 [`content`](../modules/content.md) `변경 이력` 행은 그날 일괄 갱신(이 태스크의 일괄 갱신 줄)
-- 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: E-08-01, E-08-02, E-08-07 · 코드를 바꿨다면: E-08-04 · 모듈: [`llm`](../modules/llm.md), [`content`](../modules/content.md), [`assets`](../modules/assets.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/8 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
+- 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: E-08-09, E-08-02, E-08-07 · 코드를 바꿨다면: E-08-04 · 모듈: [`llm`](../modules/llm.md), [`content`](../modules/content.md), [`assets`](../modules/assets.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/8 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
 
 ## 11/9(월)
 
