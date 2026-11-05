@@ -405,17 +405,15 @@ def apply_plan(gh, desired: list[DesiredIssue], labels: list[dict[str, str]],
 def print_hours(tasks: list[Task], out=sys.stdout) -> None:
     table = hours_table(tasks)
     days = sorted({d for f in table.values() for d in f})
-    out.write("흐름 | " + " | ".join(d[3:] for d in days) + " | 한도 | 초과 합계\n")
+    out.write("흐름 | " + " | ".join(d[3:] for d in days) + " | 합계\n")
     for flow in sorted(table, key=lambda f: (f in UNASSIGNED_FLOWS, f)):
         row = table[flow]
         cells = " | ".join(f"{row.get(d, 0.0):g}" for d in days)
         if flow in UNASSIGNED_FLOWS:
             # 담당 미정(P-24): 어느 흐름의 한도에도 넣지 않고 별도 줄로만 보인다.
-            out.write(f"{flow}(발표 트랙, 담당 미정) | {cells} | - | -\n")
+            out.write(f"{flow}(발표 트랙, 담당 미정) | {cells} | {sum(row.values()):g}\n")
             continue
-        limit = TASK_LIMITS.get(flow, 7.5)
-        over = sum(max(0.0, row.get(d, 0.0) - limit) for d in days)
-        out.write(f"{flow} | {cells} | {limit:g} | {over:g}\n")
+        out.write(f"{flow} | {cells} | {sum(row.values()):g}\n")
 
 
 def main(argv: list[str] | None = None) -> int:

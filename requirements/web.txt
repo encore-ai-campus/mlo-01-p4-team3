@@ -1,4 +1,4 @@
-# 웹·API(B), 저장소·발행기(C), 광고 서버(D). Python 3.14(app·ad VM의 시스템 Python과 같다)
+# 웹·API(B), 저장소·발행기(C), 광고 서버(D). Python 3.14(VM에서는 OS 기본 Python을 쓰지 않고 python:3.14 계열 컨테이너나 별도 설치한 3.14로 실행, tech_stack.md 1절)
 # 설치: py -3.14 -m venv .venv  →  .venv\Scripts\python -m pip install -r requirements/web.txt
 # C-05-03(11/4 사전 작업): 아래는 Windows 3.14용 휠 존재만 확인했다(pip --dry-run). import 실측은 하지 않았다
 Django==6.1.2              # tech_stack.md 2절 기록값(app 서버)
@@ -6,3 +6,8 @@ pymongo==4.19.0
 PyMySQL==1.2.3             # 순수 파이썬. mysqlclient 2.3.0도 3.14 휠이 있다(선택은 D)
 confluent-kafka==2.16.1    # Kafka 클라이언트 후보(확정은 C-06-02)
 prometheus-client==0.26.0
+# 11/5 측정(PM 세션): channels·daphne는 Windows 3.14에서 Django 6.1.2와 함께 의존성까지 바이너리 휠로만 해석됨
+#   (py -3.14 -m pip install --dry-run --ignore-installed --only-binary=:all: Django==6.1.2 channels==4.3.2 daphne==4.2.3,
+#    Twisted 26.10.0·autobahn 26.11.1·cryptography 50.0.2 포함). import 실측은 하지 않았다
+channels==4.3.2            # Django Channels(웹소켓, 11/4 PM 결정). tech_stack.md 웹소켓 행의 잠정 범위 하한. 확정은 B-07-05
+daphne==4.2.3              # ASGI 서버(같은 결정, 잠정 범위 하한, 확정은 B-07-05). twisted[tls]·autobahn을 함께 설치

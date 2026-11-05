@@ -356,8 +356,12 @@ class RealTaskDocs(unittest.TestCase):
         from tools.tasks_to_issues import print_hours
         buf = io.StringIO()
         print_hours(self.tasks, buf)
-        s_row = next(l for l in buf.getvalue().splitlines() if l.startswith("S("))
-        self.assertTrue(s_row.endswith("| - | -"))
+        out = buf.getvalue()
+        s_row = next(l for l in out.splitlines() if l.startswith("S("))
+        self.assertIn("담당 미정", s_row)
+        # 공개 출력에는 한도·초과 열을 두지 않는다(11/5 PM 결정).
+        self.assertNotIn("초과", out)
+        self.assertNotIn("한도", out)
 
     def test_llm_bench_before_llm_server(self):
         by_id = {t.task_id: t for t in self.tasks}
