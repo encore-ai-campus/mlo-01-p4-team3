@@ -3,15 +3,21 @@
 화풍은 반실사 일러스트(11/5 PM 결정)라 색 수·반투명은 검사하지 않는다(사람 검수, 스타일 가이드 체크리스트).
 
 - sprite(사람마다 전신 1장): 512×1280 RGBA, 8비트 알파. 보이는 픽셀(알파 ≥ 16, 잔여 노이즈 무시)의 경계 상자 가로 가운데가 256±16px,
-  머리 위 여백 16px 이상, 발끝 아래 여백 16~48px(발끝 기준선 y=1248). 눈높이 y=200·허리선 y=640은 기준선이며
-  그림에서 자동으로 찾을 수 없어 사람 검수 항목이다(spec.md 2절).
-- 표정 변형(11/5 PM 결정, 크로스체크 19): 기본 sprite에서 얼굴 영역(`FACE_BOX`)만 바꾼다. 편집 결과의 얼굴 영역만 기본에
+  머리 위 여백 16px 이상, 발끝 아래 여백 16~48px(발끝 기준선 y=1248).
+- 키 등급(11/6 PM 결정): 모든 인물을 같은 축척으로 그리고 키는 인물마다 다르다. 인물 id → 등급(`CHARACTER_GRADE`),
+  등급 → 머리 꼭대기 y·등신(`HEIGHT_GRADES`). 머리 높이 h = (1248 − 꼭대기) / 등신, 눈 y = 꼭대기 + h/2.
+  머리 꼭대기 위치는 그림에서 자동으로 찾을 수 없어 사람 검수 항목이다(spec.md 6절). 등급은 역할과 무관한 고정 표다.
+- 표정 변형(11/5 PM 결정, 크로스체크 19): 기본 sprite에서 얼굴 영역(`face_box(인물 id)`, 등급에서 계산)만 바꾼다. 편집 결과의 얼굴 영역만 기본에
   붙여 넣으므로 얼굴 밖 픽셀은 기본과 정확히 같아야 한다(완전 투명 픽셀은 RGB를 보지 않는다). 얼굴 영역이 기본과 완전히
   같으면(표정 변화 없음) 위반이다. 기본 sprite가 바뀐 것은 manifest `edited_from_sha256`으로 잡는다(make_placeholders).
 - 마스코트: 512×512 RGBA, 보이는 픽셀이 있고 네 모서리와 전체의 `MASCOT_CLEAR_MIN` 이상이 투명(바탕 투명).
+  sprite와 같은 판정으로 보이는 픽셀 경계 상자의 가로 가운데 256±16px, 아래 여백 16~48px(발끝 기준선 y=480,
+  11/6 PM 결정: 화면에서 대사창 위에 떠 보이지 않게).
 - 장면 배경: 1280×720, 완전 불투명(알파가 있으면 모두 255).
+- 초상 크롭 위 y(`portrait_top`): 눈이 초상 안 등급별 y(`HeightGrade.portrait_eye`)에 오도록
+  clamp(round(눈 y − portrait_eye), 0, 1280 − 512).
 - 배치(B-10-07 기준, 무대 1280×720, 대사창 아래 180px):
-  - 평소(`normal`): sprite 0~640행(머리~허리)을 부드럽게 0.8배 → 410×512, 가운데, 위 y=28·아랫변 y=540(대사창 윗변).
+  - 평소(`normal`): sprite 0~640행(인물과 무관한 고정 범위. 키가 작은 인물은 낮게 선다)을 부드럽게 0.8배 → 410×512, 가운데, 위 y=28·아랫변 y=540(대사창 윗변).
   - 전신 컷(`full`): sprite 전체를 0.5배 → 256×640, 가운데, 위 y=40. 컷 동안 대사창을 숨긴다.
   - 밤 화면에는 sprite가 없다. 밤 습격 결과 전신 컷은 아침 회의 화면에서 보인다.
   - 마스코트(`MASCOT`): 0.5배 → 256×256, 무대 왼쪽(x 64), 위 y 260, 아랫변 y 516(대사창 위). 까치는 아침 희생자 발표,
@@ -21,13 +27,13 @@
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
 SPRITE_SIZE = (512, 1280)
 BACKGROUND_SIZE = (1280, 720)
-EYE_Y = 200                                # 눈높이 기준선(px, 사람 검수)
-WAIST_Y = 640                              # 허리선(px). 평소 표시는 0~640행
+NORMAL_ROWS = 640                          # 평소 표시에 쓰는 sprite 행 수(0~639, 모든 인물 같음)
 FOOT_Y = 1248                              # 발끝 기준선(px)
 CENTER_TOLERANCE = 16                      # 경계 상자 가운데 허용 오차(px)
 TOP_MARGIN_MIN = 16                        # 머리 위 최소 여백(px)
@@ -37,7 +43,7 @@ STAGE = (1280, 720)                        # 무대(배경) 크기
 DIALOGUE_HEIGHT = 180                      # 대사창 높이(무대 아래 1/4을 덮음)
 NIGHT_SPRITES = 0                          # 밤 장면 sprite 수(밤 실행자 노출 금지)
 
-FACE_BOX = (160, 104, 352, 312)            # 표정 변형에서 바꿔도 되는 얼굴 영역 (x0, y0, x1, y1), 끝 미포함
+PORTRAIT_SIZE = 512                        # 초상 한 변(px)
 MASCOT_SIZE = (512, 512)
 MASCOT_CLEAR_MIN = 0.2                     # 마스코트 전체에서 투명(알파 < 16) 픽셀 비율 하한
 MASCOT = (64, 260, (256, 256))             # 무대 안 (x0, y0, 축소 크기)
@@ -53,9 +59,72 @@ class Mode:
     dialogue: bool
 
 
-NORMAL = Mode("normal", (0, WAIST_Y), (410, 512), 28, True)       # 아랫변 28 + 512 = 540 = 대사창 윗변
+NORMAL = Mode("normal", (0, NORMAL_ROWS), (410, 512), 28, True)       # 아랫변 28 + 512 = 540 = 대사창 윗변
 FULL = Mode("full", (0, SPRITE_SIZE[1]), (256, 640), 40, False)   # 전신 컷(첫 등장·추방/처형 결과·엔딩·밤 습격 결과)
 MODES = {m.name: m for m in (NORMAL, FULL)}
+
+@dataclass(frozen=True)
+class HeightGrade:
+    """키 등급: 머리 꼭대기 y(px), 등신, 초상 안 눈 위치 y(px). 발끝은 모두 FOOT_Y."""
+    name: str
+    top: int
+    heads: float
+    portrait_eye: int
+
+    @property
+    def head(self) -> float:
+        """머리 높이(px)."""
+        return (FOOT_Y - self.top) / self.heads
+
+    @property
+    def eye_y(self) -> float:
+        """눈 y(px) = 머리 꼭대기 + 머리 높이 / 2."""
+        return self.top + self.head / 2
+
+
+HEIGHT_GRADES = {g.name: g for g in (
+    HeightGrade("tall", 24, 7.2, 200),     # 큰 키
+    HeightGrade("male", 94, 7.0, 200),     # 남성 보통
+    HeightGrade("female", 185, 6.8, 200),  # 여성 보통
+    HeightGrade("child", 339, 6.0, 230),   # 아이(초상에서 여성보다 살짝 아래)
+)}
+# 공개 인물 id → 키 등급(11/6 PM 결정). 역할·성격과 무관하다. 새 인물은 여기에 등급을 넣어야 그릴 수 있다.
+CHARACTER_GRADE = {
+    "boy": "child",
+    "jumo": "female", "gwabu": "female", "gisaeng": "female", "mudang_f": "female",
+    "hunjang": "male", "meosum": "male", "yakcho": "male", "ferryman": "male", "monk": "male", "mudang_m": "male",
+    "blacksmith": "tall", "hunter": "tall",
+}
+
+
+def _round(v: float) -> int:
+    """0.5는 올리는 정수 반올림(파이썬 round의 짝수 반올림을 쓰지 않는다)."""
+    return math.floor(v + 0.5)
+
+
+def grade_for(cid: str) -> HeightGrade:
+    """인물 id(표정 접미사 없음)의 키 등급. 표에 없으면 ValueError."""
+    try:
+        return HEIGHT_GRADES[CHARACTER_GRADE[cid]]
+    except KeyError:
+        raise ValueError(f"키 등급이 없는 인물 id: {cid!r} (vn.CHARACTER_GRADE에 추가)") from None
+
+
+def face_box(cid: str) -> tuple[int, int, int, int]:
+    """표정 변형에서 바꿔도 되는 얼굴 영역 (x0, y0, x1, y1), 끝 미포함.
+    x 256 ± 0.6h, y (눈 − 0.6h) ~ (눈 + 0.69h), 정수 반올림(h = 머리 높이)."""
+    g = grade_for(cid)
+    cx = SPRITE_SIZE[0] / 2
+    return (_round(cx - 0.6 * g.head), _round(g.eye_y - 0.6 * g.head),
+            _round(cx + 0.6 * g.head), _round(g.eye_y + 0.69 * g.head))
+
+
+def portrait_top(cid: str) -> int:
+    """초상 크롭(512×512)의 sprite 안 위 y. 눈이 초상 안 등급별 y(`portrait_eye`)에 오게 하고 sprite 밖으로 나가지 않게 자른다."""
+    g = grade_for(cid)
+    top = _round(g.eye_y - g.portrait_eye)
+    return min(SPRITE_SIZE[1] - PORTRAIT_SIZE, max(0, top))
+
 
 VISIBLE_ALPHA = 16                         # 경계 상자에 넣는 알파 하한(배경 제거 뒤 남은 옅은 점 무시)
 _VISIBLE = bytes(0 if v < VISIBLE_ALPHA else 1 for v in range(256))
@@ -89,17 +158,29 @@ def check_sprite(width: int, height: int, channels: int, rows: Sequence[bytes]) 
     box = visible_box(width, rows)
     if box is None:
         return ["보이는 픽셀 없음"]
-    problems: list[str] = []
-    x0, y0, x1, y1 = box
-    center = (x0 + x1) / 2
-    if abs(center - width / 2) > CENTER_TOLERANCE:
-        problems.append(f"가로 가운데 {center:g}px ≠ {width // 2}±{CENTER_TOLERANCE}px")
+    y0 = box[1]
+    problems = _center_problem(box, width)
     if y0 < TOP_MARGIN_MIN:
         problems.append(f"머리 위 여백 {y0}px < {TOP_MARGIN_MIN}px(머리가 잘릴 수 있음)")
-    bottom = height - y1
+    return problems + _foot_problem(box, height)
+
+
+def _center_problem(box: tuple[int, int, int, int], width: int) -> list[str]:
+    """보이는 픽셀 경계 상자의 가로 가운데가 width/2 ± CENTER_TOLERANCE 밖이면 위반 1건. sprite·마스코트 공통."""
+    center = (box[0] + box[2]) / 2
+    if abs(center - width / 2) > CENTER_TOLERANCE:
+        return [f"가로 가운데 {center:g}px ≠ {width // 2}±{CENTER_TOLERANCE}px"]
+    return []
+
+
+def _foot_problem(box: tuple[int, int, int, int], height: int) -> list[str]:
+    """아래 여백(가장 아래 보이는 픽셀 아래 투명 행 수)이 BOTTOM_MARGIN 밖이면 위반 1건. sprite·마스코트 공통.
+    발끝 기준선은 그 범위의 가운데(sprite y=1248, 마스코트 y=480)."""
+    bottom = height - box[3]
     if not BOTTOM_MARGIN[0] <= bottom <= BOTTOM_MARGIN[1]:
-        problems.append(f"발끝 아래 여백 {bottom}px ≠ {BOTTOM_MARGIN[0]}~{BOTTOM_MARGIN[1]}px(발끝 기준선 y={FOOT_Y})")
-    return problems
+        foot = height - sum(BOTTOM_MARGIN) // 2
+        return [f"발끝 아래 여백 {bottom}px ≠ {BOTTOM_MARGIN[0]}~{BOTTOM_MARGIN[1]}px(발끝 기준선 y={foot})"]
+    return []
 
 
 def _same_px(a: bytes, b: bytes, i: int) -> bool:
@@ -109,11 +190,13 @@ def _same_px(a: bytes, b: bytes, i: int) -> bool:
     return a[i:i + 4] == b[i:i + 4]
 
 
-def check_expression(base: Sequence[bytes], variant: Sequence[bytes], width: int = SPRITE_SIZE[0]) -> list[str]:
-    """표정 변형 sprite가 기본 sprite와 얼굴 영역 밖에서 정확히 같고, 얼굴 영역은 달라졌는지 본다(둘 다 RGBA)."""
+def check_expression(base: Sequence[bytes], variant: Sequence[bytes], box: tuple[int, int, int, int],
+                     width: int = SPRITE_SIZE[0]) -> list[str]:
+    """표정 변형 sprite가 기본 sprite와 얼굴 영역 `box`(그 인물의 `face_box`) 밖에서 정확히 같고,
+    얼굴 영역은 달라졌는지 본다(둘 다 RGBA)."""
     if len(base) != len(variant) or any(len(a) != len(b) for a, b in zip(base, variant)):
         return ["기본 sprite와 크기·채널이 다름"]
-    fx0, fy0, fx1, fy1 = FACE_BOX
+    fx0, fy0, fx1, fy1 = box
     outside = inside = 0
     for y, (a, b) in enumerate(zip(base, variant)):
         a, b = bytes(a), bytes(b)
@@ -137,20 +220,22 @@ def check_expression(base: Sequence[bytes], variant: Sequence[bytes], width: int
 
 
 def check_mascot(width: int, height: int, channels: int, rows: Sequence[bytes]) -> list[str]:
-    """마스코트 한 장의 규칙 위반 목록(크기·RGBA·보이는 픽셀·모서리 투명)."""
+    """마스코트 한 장의 규칙 위반 목록(크기·RGBA·보이는 픽셀·모서리 투명·가로 가운데·아래 여백)."""
     if (width, height) != MASCOT_SIZE:
         return [f"크기 {width}x{height} ≠ {MASCOT_SIZE[0]}x{MASCOT_SIZE[1]}"]
     if channels != 4:
         return ["투명 채널 없음(RGBA로 저장)"]
-    if visible_box(width, rows) is None:
+    box = visible_box(width, rows)
+    if box is None:
         return ["보이는 픽셀 없음"]
+    placement = _center_problem(box, width) + _foot_problem(box, height)
     corners = [rows[y][x * 4 + 3] for y in (0, height - 1) for x in (0, width - 1)]
     if any(a >= VISIBLE_ALPHA for a in corners):
         return ["모서리가 투명하지 않음(바탕 투명)"]
     clear = sum(bytes(r[3::4]).translate(_VISIBLE).count(0) for r in rows)
     if clear < MASCOT_CLEAR_MIN * width * height:
         return [f"투명 픽셀 {clear / (width * height):.0%} < {MASCOT_CLEAR_MIN:.0%}(바탕 투명)"]
-    return []
+    return placement
 
 
 def check_background(width: int, height: int, channels: int, rows: Sequence[bytes]) -> list[str]:

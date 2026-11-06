@@ -2,6 +2,7 @@
 
 - `kkachi`(까치, 아침 소식): 둥근 몸·머리·부리·긴 꼬리. `jokjebi`(족제비, 무당의 짝·안내): 긴 몸·머리·귀·꼬리.
 - 512×512 RGBA, 바탕 투명. 이름표 2줄은 몸 위 가운데. 연출·안내용이라 게임 정보를 담지 않는다.
+- 도형은 비율 그대로 `OFFSET`만큼 옮겨 가로 가운데·아래 여백 16~48px(`vn.check_mascot`)에 맞춘다.
 - 같은 id면 같은 픽셀.
 """
 from __future__ import annotations
@@ -34,6 +35,10 @@ SHAPES: dict[str, tuple[Shape, ...]] = {
 }
 
 
+# 도형 평행 이동(dx, dy): 보이는 경계 상자 가운데 ≈ 256, 아래 여백 ≈ 32px(발끝 y=480).
+OFFSET: dict[str, tuple[int, int]] = {"kkachi": (6, 50), "jokjebi": (15, 80)}
+
+
 def _inside(shape: Shape, x: float, y: float) -> bool:
     if shape[0] == "e":
         _, cx, cy, rx, ry = shape
@@ -52,13 +57,14 @@ def render(cid: str, width: int, height: int) -> list[bytearray]:
     if (width, height) != (SIZE, SIZE):
         raise ValueError(f"마스코트 크기는 {SIZE}x{SIZE}여야 함: {width}x{height}")
     px = bytes((*FILL, 255))
+    dx, dy = OFFSET[cid]
     rows = []
     for y in range(SIZE):
         line = bytearray(SIZE * 4)
         for x in range(SIZE):
-            if any(_inside(s, x + 0.5, y + 0.5) for s in SHAPES[cid]):
+            if any(_inside(s, x + 0.5 - dx, y + 0.5 - dy) for s in SHAPES[cid]):
                 line[x * 4:x * 4 + 4] = px
         rows.append(line)
     for i, text in enumerate((PREFIX, LABELS[cid])):
-        glyphs.draw(rows, 4, 240 - glyphs.width(text) // 2, 250 + i * (glyphs.HEIGHT + 6), text, TEXT)
+        glyphs.draw(rows, 4, 240 + dx - glyphs.width(text) // 2, 250 + dy + i * (glyphs.HEIGHT + 6), text, TEXT)
     return rows

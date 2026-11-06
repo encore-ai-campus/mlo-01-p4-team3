@@ -84,7 +84,7 @@ def render(kind: str, cid: str, width: int, height: int, name: str | None = None
     c = Canvas(width, height, BACKGROUND[kind])
     acc = accent_for(kind, cid)
     w, h = width, height
-    if kind == "portrait":                 # sprite 위 512×512 크롭 + 먹남 알파 합성
+    if kind == "portrait":                 # sprite의 인물별 512×512 크롭(vn.portrait_top) + 먹남 알파 합성
         c.rows = portrait_art.render(cid, w, h, name, expression)
     elif kind == "background":             # 그라데이션 + 이름표
         c.rows = background_art.render(cid, w, h)
