@@ -84,7 +84,7 @@ SECRETS = [
     Secret("grain", "곡식 빼돌리기", ["meosum", "boy", "ferryman"], Slot.EVENING, G, T,
            "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…", 50.0, [], "clue_famine"),
     Secret("taboo_herb", "금기 약초", ["yakcho", "hunter", "monk"], Slot.EVENING, G, S,
-           "산신께 금한 골짜기에서 약초를 캤소.", 55.0, [], "clue_valley"),
+           "산신이 금한 골짜기에서 약초를 캤소.", 55.0, [], "clue_valley"),
     Secret("letter", "숨긴 편지", ["hunjang", "monk"], Slot.EVENING, W, H,
            "우물가에서 관아로 보내는 편지를 몰래 전했소.", 65.0, ["tryst"], None),
     Secret("drinking", "금주 어김", ["hunter", "blacksmith", "hunjang"], Slot.EVENING, T, H,

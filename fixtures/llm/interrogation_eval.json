@@ -2511,8 +2511,8 @@
           "탁발승"
         ],
         "deadline_ms": 15000,
-        "fact_sentence": "산신께 금한 골짜기에서 약초를 캤소.",
-        "fallback_text": "산신께 금한 골짜기에서 약초를 캤소.",
+        "fact_sentence": "산신이 금한 골짜기에서 약초를 캤소.",
+        "fallback_text": "산신이 금한 골짜기에서 약초를 캤소.",
         "game_id": "g_eval_s1",
         "job_id": "ev_090",
         "npc_id": "hunter",
@@ -2595,8 +2595,8 @@
           "탁발승"
         ],
         "deadline_ms": 15000,
-        "fact_sentence": "산신께 금한 골짜기에서 약초를 캤소.",
-        "fallback_text": "산신께 금한 골짜기에서 약초를 캤소.",
+        "fact_sentence": "산신이 금한 골짜기에서 약초를 캤소.",
+        "fallback_text": "산신이 금한 골짜기에서 약초를 캤소.",
         "game_id": "g_eval_s1",
         "job_id": "ev_093",
         "npc_id": "monk",

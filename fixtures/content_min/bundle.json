@@ -368,7 +368,7 @@
       "slot": "evening",
       "actual_place": "gate",
       "false_place": "shrine",
-      "confession_line": "산신께 금한 골짜기에서 약초를 캤소.",
+      "confession_line": "산신이 금한 골짜기에서 약초를 캤소.",
       "confession_threshold": 55.0,
       "conflicts_with": [],
       "grudge_clue_id": "clue_valley"
