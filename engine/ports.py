@@ -109,6 +109,8 @@ class RenderStatus(str, enum.Enum):
 
 @dataclass
 class RenderRequest:
+    """엔진이 LLM 렌더러에 넘기는 대사 요청(사실 문장·폴백은 엔진이 완성, ports.md 4절)."""
+
     job_id: str
     game_id: str
     state_version: int           # 요청을 만든 전이 후의 버전
@@ -116,7 +118,7 @@ class RenderRequest:
     npc_id: str
     persona: str
     reaction: ReactionIntent
-    fact_sentence: str           # 엔진이 완성. LLM은 수정·추가 금지
+    fact_sentence: str           # 엔진이 완성. LLM은 사실 요소 수정·추가 금지, 끝 어미만 말투 허용(ports.md 4절)
     allowed_names: list[str]
     fallback_text: str           # 템플릿 표현. 생성 결과와 같은 정보량
     priority: int = 0            # 0 = 캐묻기(최우선), 1 = 복기, 2 = 운영 분석
