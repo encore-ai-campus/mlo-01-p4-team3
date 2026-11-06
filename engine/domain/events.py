@@ -37,6 +37,7 @@ class EventType(str, enum.Enum):
 # 토픽 라우팅(events.md 표와 동일)
 TOPIC_OF: dict[EventType, str] = {
     EventType.OBSERVATION: "paldo.observations",
+    EventType.DECISION: "paldo.observations",       # 관측과 같은 snapshot_id로 묶는다. 씐 자 결정이 판 도중 paldo.game에 실리지 않게(11/6 PM 결정)
     EventType.INTENT_ATTEMPT: "paldo.intent",
     EventType.RENDER_JOB: "paldo.llm",
     EventType.NOTEBOOK_UPDATED: "paldo.player",
