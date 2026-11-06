@@ -10,6 +10,9 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from server.api.consent import player_context
+from server.app.usecases import StartUnavailable
+from server.paldo_web.composition import GameServiceUnavailable, get_game_service, get_session_service
 from .lockout import login_user
 from .models import AccountProfile
 from .validators import normalize_login_id
@@ -19,9 +22,16 @@ CONSENT_TEXT = "플레이 기록(선택, 입력한 문장, 수첩 값, 설문)�
 
 @require_GET
 def home(request):
-    """가입·로그인 후 공개 화면에는 자기 가명만 표시한다."""
-    profile = getattr(request.user, "paldo_profile", None)
-    response = render(request, "accounts/home.html", {"player_id": profile.player_pseudonym if profile else None})
+    """계정의 가명 ID와 동의한 참가자의 다음 고정 판을 표시한다."""
+    player = player_context(request.user)
+    context = {"player_id": player[0] if player else None, "assignments": None}
+    if player and player[1]:
+        try:
+            service = get_session_service()
+            context["assignments"] = service.assigned(player[0], get_game_service().repository.load)
+        except (StartUnavailable, GameServiceUnavailable):
+            context["assignments_unavailable"] = True
+    response = render(request, "accounts/home.html", context)
     response["Cache-Control"] = "private, no-store"
     return response
 
