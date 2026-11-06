@@ -1,0 +1,64 @@
+{
+  "task": "A-07-04",
+  "commit": "06137566350aa625b0306fef39ecea4952e418b4",
+  "generated_at": "2026-11-06T05:22:20Z",
+  "source": "python -B out/assets/A-07-04/inspect-trial.py (tool timing from timing.json; PNG decode, exact face comparison, uniform-fit checks)",
+  "metrics": {
+    "repeat_duration_ms": {
+      "value": 30914,
+      "unit": "ms"
+    },
+    "face_edit_duration_ms": {
+      "value": 35898,
+      "unit": "ms"
+    },
+    "repeat_success_count": {
+      "value": 1,
+      "unit": "회"
+    },
+    "prompt_identical": {
+      "value": 1,
+      "unit": ""
+    },
+    "reference_match_count": {
+      "value": 2,
+      "unit": "개"
+    },
+    "raw_pixels_identical": {
+      "value": 0,
+      "unit": ""
+    },
+    "first_width": {
+      "value": 1122,
+      "unit": "px"
+    },
+    "first_height": {
+      "value": 1402,
+      "unit": "px"
+    },
+    "repeat_width": {
+      "value": 793,
+      "unit": "px"
+    },
+    "repeat_height": {
+      "value": 1983,
+      "unit": "px"
+    },
+    "face_inside_changed": {
+      "value": 11397,
+      "unit": "px"
+    },
+    "face_outside_changed": {
+      "value": 0,
+      "unit": "px"
+    },
+    "face_expression_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "fit_errors": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

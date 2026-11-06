@@ -8,6 +8,7 @@
 | `SuspicionModel` | D | `FakeSuspicionModel` | A 엔진(NPC 추정 층) |
 | `IntentParser` | D | `FakeIntentParser` | B 응용 |
 | `LineRenderer` | E(LLM), C(배포) | `FakeLineRenderer` | B 응용 |
+| `IntentAssistant`(확장 E-08-12, `intent.md` 5절) | E(LLM), C(배포) | E-08-12가 함께 만든다 | D 해석기 래퍼(`intent/assisted.py`) |
 | `GameRepository` | C(Mongo) | `InMemoryGameRepository`(기준 동작) | B 응용 |
 | `ProgressRepository` | C | `InMemoryProgressRepository` | B 응용 |
 | `ContentSource` | C(저장), E(내용) | `FixtureContentSource` | A·B |

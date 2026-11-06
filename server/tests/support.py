@@ -1,9 +1,13 @@
 """웹 테스트에서만 사용하는 포트 조립과 승인된 시드 배정 대역."""
+from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import uuid4
 
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.middleware.csrf import get_token
+from django.test import RequestFactory
 from django.utils import timezone
 
 from engine.domain.model import DataSource, GameMeta, PRESETS
@@ -16,17 +20,31 @@ from engine.testing.fakes import FakeIntentParser, FakeLineRenderer
 from .interaction_store import MemoryInteractionStore
 
 
-def install_test_profiles(test):
-    """Django 세션의 실제 사용자에 시험 전용 프로필 관계를 연결한다."""
+@contextmanager
+def temporary_test_profiles():
+    """시험이 끝날 때까지 Django 사용자에 시험용 가명과 동의 시각을 연결한다."""
     profiles = {}
-    test.enterContext(patch.object(User, "paldo_profile", property(lambda user: profiles.get(user.pk)), create=True))
 
     def register(user):
         profile = SimpleNamespace(player_pseudonym=uuid4(), consented_at=timezone.now())
         profiles[user.pk] = profile
         return profile
 
-    return register
+    with patch.object(User, "paldo_profile", property(lambda user: profiles.get(user.pk)), create=True):
+        yield register
+
+
+def install_test_profiles(test):
+    """Django 세션의 실제 사용자에 시험 전용 프로필 관계를 연결한다."""
+    return test.enterContext(temporary_test_profiles())
+
+
+def issue_test_csrf(client):
+    """계정이나 화면 URL 없이 Django CSRF 쿠키와 제출 토큰을 준비한다."""
+    request = RequestFactory().get("/")
+    token = get_token(request)
+    client.cookies[settings.CSRF_COOKIE_NAME] = request.META["CSRF_COOKIE"]
+    return token
 
 
 def make_service(repository=None, progress=None):
