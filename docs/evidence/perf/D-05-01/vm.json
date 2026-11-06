@@ -1,0 +1,112 @@
+{
+  "task": "D-05-01",
+  "commit": "672fff137cbdc0e3ef431a79f2f39a456dddd6b6",
+  "generated_at": "2026-11-05T15:10:55Z",
+  "source": "python -m tools.perf.intent_vm_check",
+  "metrics": {
+    "vm_checked": {
+      "value": 4,
+      "unit": "대"
+    },
+    "vm_running": {
+      "value": 4,
+      "unit": "대"
+    },
+    "kafka_03_running": {
+      "value": 1,
+      "unit": ""
+    },
+    "kafka_03_vcpu": {
+      "value": 2,
+      "unit": ""
+    },
+    "kafka_03_ram_mib": {
+      "value": 4096,
+      "unit": ""
+    },
+    "kafka_03_largest_disk_capacity_bytes": {
+      "value": 42949672960,
+      "unit": ""
+    },
+    "kafka_03_host_vmdk_file_bytes": {
+      "value": 14005241631,
+      "unit": ""
+    },
+    "kafka_03_snapshots": {
+      "value": 1,
+      "unit": ""
+    },
+    "spark_worker_02_running": {
+      "value": 1,
+      "unit": ""
+    },
+    "spark_worker_02_vcpu": {
+      "value": 2,
+      "unit": ""
+    },
+    "spark_worker_02_ram_mib": {
+      "value": 4096,
+      "unit": ""
+    },
+    "spark_worker_02_largest_disk_capacity_bytes": {
+      "value": 42949672960,
+      "unit": ""
+    },
+    "spark_worker_02_host_vmdk_file_bytes": {
+      "value": 41894086592,
+      "unit": ""
+    },
+    "spark_worker_02_snapshots": {
+      "value": 1,
+      "unit": ""
+    },
+    "mysql_02_running": {
+      "value": 1,
+      "unit": ""
+    },
+    "mysql_02_vcpu": {
+      "value": 2,
+      "unit": ""
+    },
+    "mysql_02_ram_mib": {
+      "value": 4096,
+      "unit": ""
+    },
+    "mysql_02_largest_disk_capacity_bytes": {
+      "value": 53687091200,
+      "unit": ""
+    },
+    "mysql_02_host_vmdk_file_bytes": {
+      "value": 41428978389,
+      "unit": ""
+    },
+    "mysql_02_snapshots": {
+      "value": 1,
+      "unit": ""
+    },
+    "mongo_02_running": {
+      "value": 1,
+      "unit": ""
+    },
+    "mongo_02_vcpu": {
+      "value": 2,
+      "unit": ""
+    },
+    "mongo_02_ram_mib": {
+      "value": 4096,
+      "unit": ""
+    },
+    "mongo_02_largest_disk_capacity_bytes": {
+      "value": 53687091200,
+      "unit": ""
+    },
+    "mongo_02_host_vmdk_file_bytes": {
+      "value": 32690408208,
+      "unit": ""
+    },
+    "mongo_02_snapshots": {
+      "value": 1,
+      "unit": ""
+    }
+  }
+}
