@@ -12,6 +12,7 @@
 |---|---|---|---|
 | `engine/domain/` | 도메인 | A | 규칙, 상태, 이벤트, 콘텐츠 타입, 배정 검증기(`model.py`, `content.py`, `events.py`, `serde.py`), 엔진 구현(`engine.py`), 밸런스 상수(`params.py`) |
 | `engine/ports.py` | 도메인 경계 | A(정의) | 엔진이 바깥에 기대는 인터페이스 |
+| `tools/run_engine_games.py`, `tools/check_handoff_a06.py` | 표현·응용 | A | 실제 엔진 판 실행 → 이벤트 jsonl(`EventSink` 파일 구현), D·C 인수 조건 검사 |
 
 ## 작업별 위치
 
@@ -19,5 +20,6 @@
 |---|---|
 | 게임 규칙 변경 | 도메인 `engine/domain/model.py`, `docs/contracts/domain.md` |
 | 판 생성·진행 규칙 구현, 목격 확률 등 밸런스 상수 | 도메인 `engine/domain/engine.py`, `engine/domain/params.py` |
+| D·C용 엔진 판 이벤트 생성·검사, NPC 정책 선택지 추가 | 표현·응용 `tools/run_engine_games.py`(`POLICIES`), 검사 `tools/check_handoff_a06.py`, 정책 규칙은 도메인 `engine/domain/` |
 | 엔진과 바깥의 인터페이스 변경 | `engine/ports.py`, `docs/contracts/ports.md` |
 | 아침 실종 발표·피해 장소 공개, 알리바이 명제 | `engine/domain/model.py`(`DisappearanceRecord`, `alibi_propositions`), `docs/contracts/domain.md` 6절 |
