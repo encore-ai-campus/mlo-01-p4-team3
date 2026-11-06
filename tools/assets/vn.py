@@ -83,7 +83,7 @@ class HeightGrade:
 
 
 HEIGHT_GRADES = {g.name: g for g in (
-    HeightGrade("tall", 24, 7.2, 200),     # 큰 키
+    HeightGrade("tall", 40, 7.2, 200),     # 큰 키
     HeightGrade("male", 94, 7.0, 200),     # 남성 보통
     HeightGrade("female", 185, 6.8, 200),  # 여성 보통
     HeightGrade("child", 339, 6.0, 230),   # 아이(초상에서 여성보다 살짝 아래)

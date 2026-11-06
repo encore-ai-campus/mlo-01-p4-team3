@@ -96,7 +96,7 @@ class HeightGradeTest(unittest.TestCase):
 
     def test_grade_values(self):
         got = {g.name: (g.top, g.heads, g.portrait_eye) for g in vn.HEIGHT_GRADES.values()}
-        self.assertEqual(got, {"tall": (24, 7.2, 200), "male": (94, 7.0, 200), "female": (185, 6.8, 200),
+        self.assertEqual(got, {"tall": (40, 7.2, 200), "male": (94, 7.0, 200), "female": (185, 6.8, 200),
                                "child": (339, 6.0, 230)})
         g = vn.HEIGHT_GRADES["male"]
         self.assertAlmostEqual(g.head, (1248 - 94) / 7)
@@ -111,7 +111,7 @@ class HeightGradeTest(unittest.TestCase):
             vn.face_box("hunjang__joy")                 # 표정 접미사는 호출 쪽이 뗀다
 
     def test_face_box_and_portrait_top(self):
-        want = {"hunter": ((154, 7, 358, 226), 0), "hunjang": ((157, 78, 355, 290), 0),
+        want = {"hunter": ((155, 23, 357, 240), 0), "hunjang": ((157, 78, 355, 290), 0),
                 "jumo": ((162, 169, 350, 371), 63), "boy": ((165, 324, 347, 519), 185)}
         for cid, (box, top) in want.items():
             self.assertEqual((vn.face_box(cid), vn.portrait_top(cid)), (box, top), cid)
