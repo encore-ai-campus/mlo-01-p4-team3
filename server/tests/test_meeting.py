@@ -11,9 +11,10 @@ from django.middleware.csrf import get_token
 from django.test import Client, RequestFactory, TestCase
 
 from engine.domain.engine import PaldoEngine
-from engine.domain.model import PLAYER_ID, Phase
+from engine.domain.model import PLAYER_ID, CommandKind, DivinationResult, NightPlan, Phase
 from server.paldo_web.composition import configure_game_service
-from tests.engine.test_scenarios_engine import ScriptedPolicy, drive_to, game_base6
+from tests.engine.test_night import NightPolicy, to_night_yakcho
+from tests.engine.test_scenarios_engine import DAY1_LOCK_YAKCHO, ScriptedPolicy, drive_to, game_base6, step
 from .support import install_test_profiles, make_service
 
 
@@ -141,8 +142,13 @@ class Meeting(TestCase):
                     if index == 0:
                         self.assertContains(response, "진술표")
                         self.assertContains(response, "훈장·주모을(를) 봤다")
+                        self.assertNotContains(response, 'id="published-locks"')
+                    if index == 6:
+                        self.assertRegex(html, r"약초꾼 감금\s*· 금줄 반응으로 씐 자가 아님이 밝혀졌습니다")
                     if index == 7:
                         self.assertContains(response, "1일째 밤 · 대장장이 · 탁함")
+                    if index == 12:
+                        self.assertRegex(html, r"대장장이 감금\s*· 금줄 반응으로 씐 자임이 밝혀졌습니다")
         self.assertContains(whole, "판이 종료됐습니다.")
 
     def test_real_engine_runoff_hides_current_ballots_and_limits_candidates(self):
@@ -178,6 +184,7 @@ class Meeting(TestCase):
         self.assertContains(runoff, "결선 투표")
         self.assertContains(runoff, 'data-vote-round="main"', count=len(ballots["main"]))
         self.assertNotContains(runoff, 'data-vote-round="runoff"')
+        self.assertNotContains(runoff, 'id="published-locks"')
         candidates = _MeetingForms(runoff.content.decode()).targets_for("vote")
         expected = fixture["checks"][0]["expect"]["runoff_candidates"]
         self.assertCountEqual(candidates, expected)
@@ -190,9 +197,39 @@ class Meeting(TestCase):
         self.assertContains(night, "점칠 대상")
         self.assertContains(night, 'data-vote-round="main"', count=len(ballots["main"]))
         self.assertContains(night, 'data-vote-round="runoff"', count=len(ballots["runoff"]))
+        self.assertRegex(night.content.decode(), r"1일째 ·\s*무감금")
+        self.assertNotContains(night, "금줄 반응")
         latest, _ = self.service.repository.load(state.meta.game_id)
         self.assertIs(latest.phase, Phase.NIGHT)
         self.assertIsNone(latest.public.locks[-1].locked)
+
+    def test_divination_form_can_declare_a_result_other_than_the_private_one(self):
+        """실제 엔진에서 공개 주장과 본인의 실제 점괘를 분리한다."""
+        engine = PaldoEngine(NightPolicy(votes={(1, "main"): DAY1_LOCK_YAKCHO},
+                                         nights={1: NightPlan("blacksmith", "hunjang")}))
+        state, truth = to_night_yakcho(self, engine)
+        state, truth, _ = step(self, engine, state, truth, CommandKind.DIVINE, target="blacksmith")
+        state, truth = drive_to(self, engine, state, truth, Phase.ROUND1)
+        state = replace(state, meta=replace(state.meta, player_pseudonym=self.player))
+        self.service.engine = engine
+        self.service.repository.create(state, truth, [])
+        game_url = f"/games/{state.meta.game_id}"
+        self.command_url = game_url + "/commands"
+
+        before = self.client.get(game_url, HTTP_HX_REQUEST="true")
+        self.assertContains(before, 'value="1:blacksmith:clear"')
+        self.assertContains(before, 'value="1:blacksmith:murky"')
+        self.assertContains(before, "<li>1일째 밤 · 대장장이 · 탁함</li>", html=True)
+        self.assertNotContains(before, "<li>1일째 밤 · 대장장이 · 맑음</li>", html=True)
+
+        after = self._post_form({"game_id": state.meta.game_id, "kind": "reveal_divination",
+                                 "divination": "1:blacksmith:clear", "command_id": str(uuid4()),
+                                 "state_version": state.state_version})
+        self.assertContains(after, "점괘 공개 · 대장장이 · 맑음")
+        self.assertContains(after, "<li>1일째 밤 · 대장장이 · 탁함</li>", html=True)
+        latest, _ = self.service.repository.load(state.meta.game_id)
+        self.assertIs(latest.public.claims[-1].divination_result, DivinationResult.CLEAR)
+        self.assertIs(latest.player.divinations[1]["blacksmith"], DivinationResult.MURKY)
 
     def test_replay_and_conflict_replace_with_current_html(self):
         """CSRF·재전송·거절·409에서 HTML과 기존 JSON 계약을 함께 확인한다."""

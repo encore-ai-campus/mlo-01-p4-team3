@@ -8,11 +8,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from engine.domain.model import ClaimType, CommandKind
+from engine.domain.model import ClaimType, CommandKind, DivinationResult
 from engine.ports import PlayerView
 
 PLACE_KO = {"well": "우물가", "shrine": "서낭당", "tavern": "주막", "gate": "마을 어귀", "home": "집"}
 SLOT_KO = {"evening": "초저녁", "midnight": "한밤"}
+DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
 
 @dataclass
@@ -73,7 +74,8 @@ def build_meeting_vm(v: PlayerView) -> MeetingVM:
     claims = []
     for c in v.public.claims:
         if c.claim_type is ClaimType.DIVINATION_REVEAL:
-            text = f"점괘 공개 · {v.names.get(c.subject, c.subject)} · {c.divination_result.value if c.divination_result else ''}"
+            result = DIVINATION_KO.get(c.divination_result, "")
+            text = f"점괘 공개 · {v.names.get(c.subject, c.subject)} · {result}"
         else:
             where = PLACE_KO.get(c.place.value, "") if c.place else ""
             when = SLOT_KO.get(c.slot.value, "") if c.slot else ""

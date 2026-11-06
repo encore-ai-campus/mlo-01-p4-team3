@@ -1,9 +1,9 @@
 """공통 MeetingVM에 회의 템플릿의 이미지 ID와 폼 선택지를 더한다."""
 from dataclasses import dataclass
 
-from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, Phase
+from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, DivinationResult, Phase
 from engine.ports import PlayerView
-from .viewmodels import ClaimCardVM, DisappearanceVM, PersonVM, PLACE_KO, build_meeting_vm
+from .viewmodels import DIVINATION_KO, PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_meeting_vm
 
 
 @dataclass(frozen=True)
@@ -25,7 +25,7 @@ class MeetingDisappearance:
 
 @dataclass(frozen=True)
 class DivinationOption:
-    """플레이어가 공개할 수 있는 자신의 점괘 한 건."""
+    """플레이어가 선택한 공개 점괘의 폼 값과 이름."""
 
     value: str
     label: str
@@ -39,6 +39,15 @@ class PublishedVote:
     round: str
     voter: str
     target: str
+
+
+@dataclass(frozen=True)
+class PublishedLock:
+    """투표 종료 후 공개된 감금 대상과 금줄 반응."""
+
+    day: int
+    name: str | None
+    revealed_possessed: bool | None
 
 
 @dataclass(frozen=True)
@@ -62,14 +71,25 @@ def meeting_context(view: PlayerView):
         claims.append(MeetingClaim(card, _place_asset(record.place), f"{kind}:{card.claim_id}"))
     disappearances = [MeetingDisappearance(item, _place_asset(record.place))
                       for item, record in zip(vm.disappearances, view.public.disappearances, strict=True)]
-    divinations = [DivinationOption(f"{night}:{target}:{result.value}",
-                                    f"{night}일째 밤 · {view.names.get(target, target)} · "
-                                    f"{'맑음' if result.value == 'clear' else '탁함'}")
-                   for night, items in view.player.divinations.items() for target, result in items.items()]
+    own_divinations = []
+    divination_options = []
+    for night, items in view.player.divinations.items():
+        for target, result in items.items():
+            label = f"{night}일째 밤 · {view.names.get(target, target)}"
+            own_divinations.append(f"{label} · {DIVINATION_KO[result]}")
+            divination_options.extend(
+                DivinationOption(f"{night}:{target}:{declared.value}", f"{label} · {DIVINATION_KO[declared]}")
+                for declared in DivinationResult
+            )
     published_votes = [
         PublishedVote(vote.day, vote.round, view.names.get(vote.voter, vote.voter),
                       view.names.get(vote.target, vote.target))
         for vote in view.public.votes
+    ]
+    published_locks = [
+        PublishedLock(lock.day, view.names.get(lock.locked, lock.locked) if lock.locked is not None else None,
+                      lock.revealed_possessed)
+        for lock in view.public.locks
     ]
     active_targets = [person for person in vm.people if person.status == "active" and person.npc_id != PLAYER_ID]
     vote_targets = active_targets
@@ -83,6 +103,7 @@ def meeting_context(view: PlayerView):
             actions.extend(MeetingAction(kind, target) for target in active_targets)
         else:
             actions.append(MeetingAction(kind))
-    return {"vm": vm, "claims": claims, "disappearances": disappearances, "divination_options": divinations,
-            "published_votes": published_votes, "active_targets": active_targets,
+    return {"vm": vm, "claims": claims, "disappearances": disappearances,
+            "own_divinations": own_divinations, "divination_options": divination_options,
+            "published_votes": published_votes, "published_locks": published_locks, "active_targets": active_targets,
             "actions": actions}

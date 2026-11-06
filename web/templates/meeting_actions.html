@@ -63,8 +63,9 @@
         {% endif %}
       {% endif %}
       {% if kind == 'reveal_divination' %}
-        <label>공개할 점괘
+        <label>공개할 대상과 결과
           <select name="divination" required>
+            {% if divination_options %}<option value="">대상과 공개 결과를 선택하세요</option>{% endif %}
             {% for option in divination_options %}
               <option value="{{ option.value }}">{{ option.label }}</option>
             {% empty %}

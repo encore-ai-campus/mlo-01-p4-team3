@@ -52,10 +52,30 @@
       </ul>
     </section>
   {% endif %}
-  {% if divination_options %}
+  {% if published_locks %}
+    <section id="published-locks" aria-labelledby="published-locks-title">
+      <h2 id="published-locks-title">감금 결과</h2>
+      <ul>
+        {% for lock in published_locks %}
+          <li>
+            {{ lock.day }}일째 ·
+            {% if lock.name is None %}
+              무감금
+            {% else %}
+              {{ lock.name|display_name }} 감금
+              {% if lock.revealed_possessed is True %}· 금줄 반응으로 씐 자임이 밝혀졌습니다.
+              {% elif lock.revealed_possessed is False %}· 금줄 반응으로 씐 자가 아님이 밝혀졌습니다.
+              {% endif %}
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if own_divinations %}
     <section id="own-divinations" aria-labelledby="own-divinations-title">
       <h2 id="own-divinations-title">내 점괘</h2>
-      <ul>{% for option in divination_options %}<li>{{ option.label }}</li>{% endfor %}</ul>
+      <ul>{% for result in own_divinations %}<li>{{ result }}</li>{% endfor %}</ul>
     </section>
   {% endif %}
   {% if vm.ended %}
