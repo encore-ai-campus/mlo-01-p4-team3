@@ -27,7 +27,6 @@ erDiagram
 
 - Django 기본 사용자 모델(`User`)에 `accounts` 프로필(가명 ID, 동의 시각, 잠금 상태)을 붙인다. 인증·세션·admin 테이블도 같은 `default` DB에 둔다([privacy.md](privacy.md) 5절, B-06-04).
 - **로그인 ID와 비밀번호 해시는 이 저장소에만 있다.** 게임 쪽 저장소는 `player_pseudonym`만, 광고 저장소는 `session_pseudonym`만 쓴다(privacy.md 1절, ads.md).
-- 가입 남용 카운터도 이 저장소에 10분 동안만 두며, 계정·가명 ID와 연결하지 않는다(그래서 그리지 않았다).
 
 ## 2. 게임 MongoDB: 판 문서와 진행 상태
 
