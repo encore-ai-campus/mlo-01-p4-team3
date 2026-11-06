@@ -112,12 +112,9 @@ class AssetReplacement(TestCase):
                 for url in first_urls:
                     with self.subTest(stage="before", url=url):
                         response = self.client.get(url)
-                        try:
-                            self.assertEqual(response.status_code, 200)
-                            self.assertEqual(response["Content-Type"], "image/png")
-                            self.assertEqual(b"".join(response.streaming_content), first_png)
-                        finally:
-                            response.close()
+                        self.assertEqual(response.status_code, 200)
+                        self.assertEqual(response["Content-Type"], "image/png")
+                        self.assertEqual(b"".join(response.streaming_content), first_png)
 
                 for path in image_paths:
                     path.write_bytes(second_png)
@@ -131,9 +128,6 @@ class AssetReplacement(TestCase):
                 for url in first_urls:
                     with self.subTest(stage="after", url=url):
                         response = self.client.get(url)
-                        try:
-                            self.assertEqual(response.status_code, 200)
-                            self.assertEqual(response["Content-Type"], "image/png")
-                            self.assertEqual(b"".join(response.streaming_content), second_png)
-                        finally:
-                            response.close()
+                        self.assertEqual(response.status_code, 200)
+                        self.assertEqual(response["Content-Type"], "image/png")
+                        self.assertEqual(b"".join(response.streaming_content), second_png)

@@ -1,0 +1,11 @@
+{% extends "accounts/base.html" %}
+{% block content %}
+<h1>팔도무록</h1>
+{% if request.user.is_authenticated %}
+  {% if player_id %}<p>내 가명 ID <code>{{ player_id }}</code></p>{% endif %}
+  {% if request.user.is_staff %}<p><a href="{% url 'admin:index' %}">운영자 화면</a></p>{% endif %}
+  <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button>로그아웃</button></form>
+{% else %}
+  <p><a href="{% url 'accounts:signup' %}">가입</a> · <a href="{% url 'accounts:login' %}">로그인</a></p>
+{% endif %}
+{% endblock %}
