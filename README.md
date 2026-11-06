@@ -33,6 +33,8 @@ server/infra (인프라) → engine (포트 구현)
 | `engine/sim/` | 도메인 사용 | D | 봇 정책, 시뮬레이터(예정). 결정 층 최적화는 A가 `engine/domain`에서 맡는다 |
 | `server/app/` | 응용 | B | 유스케이스와 DTO(`dto.py`) |
 | `server/api/`, `web/` | 표현 | B | Django 뷰, 템플릿, htmx 조각, 뷰 모델(`viewmodels.py`), 웹소켓 Consumer(`consumers.py`, 예정) |
+| `server/paldo_web/` | Django 프로젝트 | B | 서버 설정, URL 등록, 요청 계측, DB 상태 확인과 Prometheus 지표 |
+| `server/tests/` | 테스트 | B | Django 요청 계측, 상태 확인 응답과 DB 장애 검증 |
 | `server/infra/` | 인프라 | C | Mongo 저장소, 아웃박스 발행기, 모델·LLM 어댑터(예정) |
 | `pipeline/`, `ops/` | 인프라 | C | Kafka → Spark → Delta, 배포·관측, HTTPS 프록시 `ops/proxy/`(예정) |
 | `ops/compose/` | 인프라 | C | 로컬 개발용 Compose(`dev.yml`), `.env` 생성·Garage 초기화·스모크(`run.py`), 패키지 확인(`pycheck.py`), 팀원 절차·점검표(`README.md`) |
