@@ -591,12 +591,22 @@ class EngineRuleV0(unittest.TestCase):
 
     def test_beliefs_stored_and_in_snapshot(self):
         """엔진이 결정 직전 정책의 믿음 갱신을 상태와 관측 스냅샷에 넣는다(의심도가 채워짐)."""
+        n = 0
+        for st, tr, events in self.games.values():
+            for e in events:
+                if e.event_type is EventType.OBSERVATION:   # 모든 관측: 의심도 키 = 후보(투표 판단과 같은 믿음이 기록됨)
+                    snap_ = e.payload["snapshot"]
+                    self.assertEqual(set(snap_["beliefs"]["suspicion"]), set(snap_["candidates"]))
+                    n += 1
+        self.assertGreater(n, 500)
         st, tr, events = self.games[("base6", 0)]
-        obs = [e for e in events if e.event_type is EventType.OBSERVATION]
-        self.assertTrue(any(e.payload["snapshot"]["beliefs"]["suspicion"] for e in obs))
-        alive = [n for n in st.npcs if n in st.active]
-        if alive:
-            self.assertTrue(self.engine.observe(st, tr, alive[0]).beliefs.suspicion is not None)
+        r = PaldoEngine(RuleV0Policy(CONTENT)).new_game(
+            GameMeta("g_obs", PRESETS["base6"], 1, DataSource.BOT, params.RULE_PARAMS_VERSION, "t",
+                     CONTENT.content_version), DEPS)
+        npc = next(x for x in r.state.npcs if x in r.state.active)
+        q = PaldoEngine(RuleV0Policy(CONTENT)).observe(r.state, r.truth, npc)
+        self.assertEqual(set(q.beliefs.suspicion), set(q.candidates))                   # 포트 observe도 같은 갱신
+        self.assertEqual(PaldoEngine().observe(r.state, r.truth, npc).beliefs.suspicion, {})   # baseline은 갱신 없음
 
     def test_confessions_happen_only_by_villagers(self):
         n = 0
