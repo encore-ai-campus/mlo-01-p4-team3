@@ -10,7 +10,8 @@ LLM은 엔진이 완성한 `fact_sentence`에 말투만 입힌다. 이 모듈은
   (죽였·홀렸 등)를 말했다. 어휘에 없는 새 이름은 찾지 못한다(덧붙임 길이 상한으로만 제한).
 - `added_assertion`: 사실 문장에 없던 부정("가지 않았소")·단정("틀림없이 무고하오") 표현을 덧붙였다.
 - `fact_changed`: 사실 문장의 장소·시간·인물을 빼거나 바꿨다(다른 시간대를 말함, 부정을 지움 포함). 그 밖의 어절
-  (행동·대상)도 같은 뜻 표현을 대표 이름으로 맞춘 뒤 그대로 남아 있어야 한다.
+  (행동·대상)도 같은 뜻 표현을 대표 이름으로 맞춘 뒤 그대로 남아 있어야 한다. 문장 끝 서술어는 어간만 남으면
+  어미를 인물 말투로 바꿔도 된다(의문형으로 바꾸면 거부).
 
 인물·장소·시간은 `Lexicon`(콘텐츠 묶음에서 만든 어휘)으로 찾는다. 어휘는 호출하는 쪽이 넘긴다
 (평가 세트 JSON의 `lexicon`, 서비스는 콘텐츠 묶음). 표준 라이브러리만 쓴다.
@@ -207,15 +208,80 @@ def canonicalize(text: str, lexicon: Lexicon) -> str:
     return "".join(out) + text[last:]
 
 
+# 사실 문장 끝 서술어의 어미. 이 어미를 떼고 남은 어간만 생성문에 있으면 어미는 인물 말투로 바꿔도 된다
+# (11/6 사용자 결정: 사실 문장에도 말투를 입힌다. 예: "있었소" → "있었어요", "옮겼습니다요" → "옮겼소잉").
+_FINAL_ENDING_RE = re.compile(r"(?:시오|세요|습니다요|습니다|니다|구먼|소|오|네|요|다|지|우|어|아|여|라|게|세)$")
+_SENT_END_CHARS = ".?!…"
+# 어간 뒤에 올 수 있는 끝 어미(허용 목록). 평서·명령(사실 문장 "말하지 마시오" 같은 경우)만 두고 의문(-ㄹ까요·
+# -나요)·추측(-겠-)·전언(-더라·-다던데)·부정 보조(-지 않-)는 넣지 않는다. 목록 밖 어미는 사실이 바뀐 것으로 본다
+# (PM 11/6: 사실 요소와 부정 여부는 그대로, 끝 어미만 화자 말투).
+ALLOWED_TAILS = frozenset("""
+소 오 요 다 네 수 우 어 아 여 지 라 게 세 응 죠 유 슈 쇼
+어요 아요 여요 에요 예요 이오 네요 지요 지유 습죠 소잉 쇼잉 어라 일세 다네 단다 구나 구려 구먼 구먼요 게나
+니다 니다요 습니다 습니다요 옵니다 사옵니다 답니다 당께 당께요 지라 소이다
+시오 세요 셔요 서요 십시오 소서 시옵소서
+""".split())
+
+
+def predicate_stem(word: str) -> str:
+    """끝 서술어 어절의 어간(어미 1개를 뗀 것). 떼고 남는 것이 없으면 어절 그대로."""
+    stem = _FINAL_ENDING_RE.sub("", word)
+    return stem or word
+
+
+def _final_words(fact: str) -> set[int]:
+    """사실 문장에서 문장 끝 서술어인 어절의 번호(띄어쓰기 기준). 문장부호가 붙었거나 마지막 어절이면 끝 서술어."""
+    words = fact.split()
+    return {i for i, w in enumerate(words) if i == len(words) - 1 or w.rstrip("\"'”’")[-1:] in _SENT_END_CHARS}
+
+
 def missing_fact_words(text: str, fact_sentence: str, lexicon: Lexicon) -> list[str]:
     """사실 문장의 어절(띄어쓰기 단위, 앞뒤 문장부호 제외) 중 생성문에 없는 것. 둘 다 `canonicalize`한 뒤 비교한다.
 
-    장소·시간·인물 밖의 내용(행동·대상, 예: "팔았소"→"샀소")이 바뀌거나 빠진 것을 잡는다. 어미를 바꾼 것도 바꾼 것으로 본다
-    (프롬프트가 사실 문장을 그대로 넣으라고 요구한다). 띄어쓰기만 다른 것("그날"↔"그 날")은 같은 것으로 본다.
+    장소·시간·인물 밖의 내용(행동·대상, 예: "팔았소"→"샀소")이 바뀌거나 빠진 것을 잡는다. 문장 끝 서술어는
+    어간(`predicate_stem`) 뒤에 허용 목록(`ALLOWED_TAILS`)의 어미가 붙어 나오면 된다. 의문형("있었소?"),
+    추측·전언·부정("있었겠지요", "있었다더라", "있었을까요")은 바뀐 것으로 본다. 띄어쓰기만 다른 것
+    ("그날"↔"그 날")은 같은 것으로 본다.
     """
-    out = canonicalize(text, lexicon).replace(" ", "")
-    words = [w.strip(_WORD_STRIP) for w in canonicalize(fact_sentence, lexicon).split()]
-    return [w for w in words if w and w not in out]
+    canon_out = canonicalize(text, lexicon)
+    out = canon_out.replace(" ", "")
+    canon_fact = canonicalize(fact_sentence, lexicon)
+    finals = _final_words(canon_fact)
+    missing = []
+    fact_words = canon_fact.split()
+    for i, raw in enumerate(fact_words):
+        w = raw.strip(_WORD_STRIP)
+        if not w:
+            continue
+        if i not in finals:
+            if w not in out:
+                missing.append(w)
+            continue
+        stem = predicate_stem(w)
+        # 어간은 어절 첫머리에서 시작해야 한다("있소"의 어간 "있"이 "재미있어요" 속에 있는 것은 아님, Codex 11/6).
+        # 사실 문장의 앞 어절에 띄어쓰기 없이 붙은 것("우물가에있었소")은 첫머리로 본다.
+        prev = fact_words[i - 1].strip(_WORD_STRIP) if i else ""
+        hits = [m.end() for m in re.finditer(re.escape(stem), canon_out)
+                if not re.match(r"[가-힣]", canon_out[m.start() - 1:m.start()])
+                or (prev and canon_out[:m.start()].replace(" ", "").endswith(prev))]
+        if not hits:
+            missing.append(w)
+            continue
+        tails = []
+        for e in hits:
+            t = re.match(r"[^\s.!…,~\"'”’)?]*", canon_out[e:]).group(0)
+            if re.match(r"\s*\?", canon_out[e + len(t):]):   # 띄어 쓴 물음표도 의문형("있었소 ?")
+                t += "?"
+            tails.append(t)
+        fact_q = "?" in raw
+        own = w[len(stem):]   # 사실 문장의 원래 어미(어미를 못 뗀 어절, 예: "뒤에서…"이면 빈 문자열)
+        if any((t.rstrip("?") in ALLOWED_TAILS or t.rstrip("?") == own) and (fact_q or "?" not in t) for t in tails):
+            continue
+        if not fact_q and all("?" in t for t in tails):
+            missing.append(w + "(의문형)")
+        else:
+            missing.append(w + "(어미)")
+    return missing
 
 
 def _count(patterns: list[re.Pattern], text: str) -> int:

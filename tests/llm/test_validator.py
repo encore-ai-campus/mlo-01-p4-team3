@@ -71,6 +71,16 @@ VIOLATIONS = [
     ("C08", DAY, "3일째 밤 초저녁엔 주막에 있었소.", v.FACT_CHANGED),
     ("C09", "제사 전날인데 주막에서 술을 마셨네.", "제사 전날인데 주막에서 술을 팔았네.", v.FACT_CHANGED),   # 행동 바뀜
     ("C10", WHERE, "한밤 우물가.", v.FACT_CHANGED),   # 장소·시간만 남기고 나머지를 뺌
+    ("C11", WHERE, "그날 한밤엔 우물가에 있었소?", v.FACT_CHANGED),   # 단언을 의문형으로 바꿈
+    ("C12", WHERE, "히잉… 그날 한밤엔 우물가에 갔어요.", v.FACT_CHANGED),   # 서술어 어간이 바뀜
+    ("C13", WHERE, "그날 한밤엔 우물가에 있지 않았어요.", v.ADDED_ASSERTION),   # 부정으로 바꿈(PM 11/6), fact_changed도 걸림
+    ("C14", WHERE, "히잉… 그날 한밤엔 우물가에 있었을까요.", v.FACT_CHANGED),   # 의문(-ㄹ까요), 물음표 없음
+    ("C15", WHERE, "그날 한밤엔 우물가에 있었다더라.", v.FACT_CHANGED),   # 전언(-더라)
+    ("C16", WHERE, "그날 한밤엔 우물가에 있었다던데요.", v.FACT_CHANGED),   # 전언(-다던데)
+    ("C17", WHERE, "그날 한밤엔 우물가에 있었나요.", v.FACT_CHANGED),   # 의문(-나요)
+    ("C18", WHERE, "그날 한밤엔 우물가에 있었겠지요.", v.FACT_CHANGED),   # 추측(-겠-)
+    ("C19", WHERE, "그날 한밤엔 우물가에 있었소 ?", v.FACT_CHANGED),   # 띄어 쓴 물음표(Codex 11/6)
+    ("C20", WHERE, "그날 한밤엔 우물가에서 재미있었어요.", v.FACT_CHANGED),   # 어간이 다른 낱말 속에만 있음(Codex 11/6)
 ]
 # C01은 장소를 바꿔 다른 장소를 말한 경우라 대표 사유가 forbidden_entity이고 fact_changed도 함께 걸린다.
 PRIMARY_OVERRIDE = {"C01": v.FORBIDDEN_ENTITY, "C03": v.FACT_CHANGED, "C08": v.FORMAT_LENGTH}
@@ -85,6 +95,10 @@ PASSES = [
     ("P07", SEEN, "그날 한밤중엔 서낭당에서 박 영감을 봤소. 무당 양반도 아시잖소?"),   # 별칭·한밤중·무당
     ("P08", NOSEE, "1일째 밤 초저녁엔 우물가에서 아무도 못 봤소. 그러는 무당 양반은?"),
     ("P09", CONFESS, "하아… 주막 뒷방에서 투전판에 끼었소. 식구들한테만은 말하지 마시오."),
+    ("P12", WHERE, "히잉… 그날 한밤엔 우물가에 있었어요. 그게 다예요."),   # 끝 서술어 어미를 아이 말투로(11/6)
+    ("P13", CONFESS, "히잉… 주막 뒷방에서 투전판에 끼었어요. 식구들한테만은 말하지 마세요."),
+    ("P14", DAY, "아따, 2일째 밤 초저녁엔 주막에 있었당께. 고것이 다여."),
+    ("P15", WHERE, "그날 한밤엔 우물가에있었어요."),   # 끝 서술어 앞 띄어쓰기 빠짐(Codex 11/6)
     ("P11", WHERE, "그 날 한밤엔 우물가에 있었소. 그게 다요."),   # 띄어쓰기만 다름(11/5 측정에서 오판)
     ("P10", WHERE, "그날 한밤엔 우물가에 있었소. 어쩔 수 없었소."),   # '수 없' 은 부정 사실이 아님
 ]
@@ -152,7 +166,15 @@ class Lexicon(unittest.TestCase):
     def test_canonicalize_and_missing_words(self):
         self.assertEqual(v.canonicalize("이튿날 밤 한밤중엔 박 영감을", LEX), "2일째 밤 한밤엔 약초꾼을")
         self.assertEqual(v.missing_fact_words("허허, " + DAY + " 그게 다요.", DAY, LEX), [])
-        self.assertEqual(v.missing_fact_words("2일째 밤 초저녁엔 주막에 있었네.", DAY, LEX), ["있었소"])
+        self.assertEqual(v.missing_fact_words("2일째 밤 초저녁엔 주막에 있었네.", DAY, LEX), [])   # 끝 서술어 어미는 말투로
+        self.assertEqual(v.missing_fact_words("2일째 밤 초저녁엔 주막에 갔네.", DAY, LEX), ["있었소"])
+        self.assertEqual(v.missing_fact_words("2일째 밤 초저녁엔 주막에 있었소?", DAY, LEX), ["있었소(의문형)"])
+
+    def test_predicate_stem(self):
+        self.assertEqual(v.predicate_stem("있었소"), "있었")
+        self.assertEqual(v.predicate_stem("옮겼습니다요"), "옮겼")
+        self.assertEqual(v.predicate_stem("마시오"), "마")
+        self.assertEqual(v.predicate_stem("소"), "소")
 
     def test_allowed_places_override(self):
         text = "그날 한밤엔 우물가에 있었소. 주막엔 들르지 않았소."

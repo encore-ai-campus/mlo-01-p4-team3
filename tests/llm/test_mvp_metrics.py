@@ -147,7 +147,7 @@ class RunEval(unittest.TestCase):
 
 
 class StyleExamples(unittest.TestCase):
-    """말투 계열별 예시(E-07-07 v2): 콘텐츠 인물 말투가 모두 계열에 맞고, 예시 대사가 검증기를 통과한다."""
+    """말투 계열별 예시(E-07-07 v2·v3): 콘텐츠 인물 말투가 모두 계열에 맞고, 끝 어미까지 말투로 바꾼 예시 대사가 검증기를 통과한다."""
 
     def test_every_bundle_style_has_profile(self):
         from llm import prompt
@@ -158,12 +158,12 @@ class StyleExamples(unittest.TestCase):
     def test_example_lines_pass_validator(self):
         from llm import prompt
         profiles = [p[1:] for p in prompt.STYLE_PROFILES] + [prompt.DEFAULT_PROFILE]
-        for prefix, tails in profiles:
+        for prefix, _ending, tails in profiles:
             for reaction in prompt.REACTION_KO:
                 self.assertEqual(set(tails), set(prompt.REACTION_KO))
                 style = next((p[0][0] for p in prompt.STYLE_PROFILES if p[1] == prefix), "")
                 fact, line = prompt.example_pair(style, reaction)
-                self.assertIn(fact, line)
+                self.assertNotIn(fact, line) if _ending != "소" else self.assertIn(fact, line)
                 r = v.validate(line, {"fact_sentence": fact, "allowed_names": []}, LEX)
                 self.assertTrue(r.ok, f"{prefix} {reaction}: {line} {r.details}")
 
@@ -171,6 +171,7 @@ class StyleExamples(unittest.TestCase):
         from llm.prompt import build_messages as bm
         req = dict(CASES[0]["request"], persona="아이. 말투: 어린아이 말투", reaction="explain")
         self.assertIn("히잉", bm(req)[2]["content"])
+        self.assertIn("방앗간에 있었어요.", bm(req)[2]["content"])   # 사실 문장 끝 어미도 아이 말투(v3)
 
 
 class Consistency(unittest.TestCase):
