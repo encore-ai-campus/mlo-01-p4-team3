@@ -1,0 +1,48 @@
+{
+  "task": "E-06-01",
+  "commit": "8f3bd21946ff04565e25d5f73e93890263447bf0",
+  "generated_at": "2026-11-06T03:41:25Z",
+  "source": "python -m tools.check_templates --bundle content/bundle_v1.json --result",
+  "metrics": {
+    "template_count": {
+      "value": 47,
+      "unit": "개"
+    },
+    "tempered_template_count": {
+      "value": 36,
+      "unit": "개"
+    },
+    "missing_combo_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "duplicate_combo_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "fact_missing_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "placeholder_typo_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "placeholder_not_allowed_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "engine_format_error_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "min_variants": {
+      "value": 2,
+      "unit": "개"
+    },
+    "problem_count": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
