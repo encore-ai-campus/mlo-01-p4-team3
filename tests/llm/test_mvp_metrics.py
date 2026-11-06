@@ -166,6 +166,15 @@ class StyleExamples(unittest.TestCase):
         for c in bundle["characters"]:
             self.assertIsNot(prompt.style_profile(c["speech_style"]), prompt.DEFAULT_PROFILE, c["speech_style"])
 
+    def test_real_content_styles_map_to_intended_family(self):
+        """실제 콘텐츠(content/bundle_v1.json) 인물의 긴 말투 설명도 의도한 계열로 잡힌다(11/6, 대장장이·과부 오분류 수정)."""
+        from llm import prompt
+        bundle = json.loads((ROOT / "content" / "bundle_v1.json").read_text(encoding="utf-8"))
+        want = {"훈장": "하오체", "주모": "하게체", "대장장이": "거친", "머슴": "더듬", "약초꾼": "노인", "과부": "단정"}
+        for c in bundle["characters"]:
+            fam = next(p[0][0] for p in prompt.STYLE_PROFILES if prompt.style_profile(c["speech_style"]) == p[1:])
+            self.assertEqual(fam, want[c["name_ko"]], c["speech_style"])
+
     def test_example_lines_pass_validator(self):
         """모든 계열 × 반응 × 앞말 후보 × 뒷말 후보 조합의 예시 대사가 검증기를 통과한다(v4, 11/6)."""
         from llm import prompt
