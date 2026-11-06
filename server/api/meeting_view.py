@@ -1,9 +1,11 @@
 """공통 MeetingVM에 회의 템플릿의 이미지 ID와 폼 선택지를 더한다."""
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, DivinationResult, Phase
 from engine.ports import PlayerView
-from .viewmodels import DIVINATION_KO, PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_meeting_vm
+from .viewmodels import PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_meeting_vm
+
+DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
 
 @dataclass(frozen=True)
@@ -68,6 +70,10 @@ def meeting_context(view: PlayerView):
     claims = []
     for card, record in zip(vm.claims, view.public.claims, strict=True):
         kind = "divination" if record.claim_type is ClaimType.DIVINATION_REVEAL else "claim"
+        if kind == "divination":
+            subject = view.names.get(record.subject, record.subject)
+            result = DIVINATION_KO.get(record.divination_result, "")
+            card = replace(card, text=f"점괘 공개 · {subject} · {result}")
         claims.append(MeetingClaim(card, _place_asset(record.place), f"{kind}:{card.claim_id}"))
     disappearances = [MeetingDisappearance(item, _place_asset(record.place))
                       for item, record in zip(vm.disappearances, view.public.disappearances, strict=True)]
