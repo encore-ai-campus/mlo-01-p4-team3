@@ -1,31 +1,31 @@
 {
   "task": "E-07-07",
-  "commit": "fa579ed4759d6e6c7c2044c56a96e9c5f7c9e51c",
-  "generated_at": "2026-11-05T14:57:24Z",
-  "source": "python -m llm.bench.run_bench --model kanana-2-3b-instruct.Q4_K_M.gguf --label kanana2_3b --mode win --eval fixtures/llm/interrogation_eval.json --threads 8 --max-tokens 128 --temperature 0.7 --top-p 0.8 --top-k 20 --n-ctx 1024 --eval-seed 0  # 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36; prompt interrogate-v1; n 100",
+  "commit": "5ef434e0fe535be59901ec068867d63e00cffb96",
+  "generated_at": "2026-11-06T04:19:02Z",
+  "source": "python -m llm.bench.run_bench --model kanana-2-3b-instruct.Q4_K_M.gguf --label kanana2_3b --mode win --eval fixtures/llm/interrogation_eval.json --threads 8 --max-tokens 128 --temperature 0.7 --top-p 0.8 --top-k 20 --n-ctx 1024 --eval-seed 0  # 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36; prompt interrogate-v3; n 100",
   "metrics": {
     "n_requests": {
       "value": 100,
       "unit": "건"
     },
     "success_count": {
-      "value": 98,
+      "value": 93,
       "unit": "건"
     },
     "success_rate_pct": {
-      "value": 98.0,
+      "value": 93.0,
       "unit": "%"
     },
     "fallback_count": {
-      "value": 2,
+      "value": 7,
       "unit": "건"
     },
     "fallback_rate_pct": {
-      "value": 2.0,
+      "value": 7.0,
       "unit": "%"
     },
     "validation_fail_count": {
-      "value": 2,
+      "value": 7,
       "unit": "건"
     },
     "error_count": {
@@ -73,15 +73,15 @@
       "unit": "건"
     },
     "reason_fact_changed_count": {
-      "value": 2,
+      "value": 7,
       "unit": "건"
     },
     "reason_fact_changed_pct": {
-      "value": 2.0,
+      "value": 7.0,
       "unit": "%"
     },
     "all_fact_changed_count": {
-      "value": 2,
+      "value": 7,
       "unit": "건"
     },
     "fallback_has_fact_pct": {
@@ -89,55 +89,55 @@
       "unit": "%"
     },
     "prompt_p50_ms": {
-      "value": 3426.26,
+      "value": 3966.72,
       "unit": "ms"
     },
     "prompt_p95_ms": {
-      "value": 3864.9,
+      "value": 4224.6,
       "unit": "ms"
     },
     "gen_p50_ms": {
-      "value": 1348.47,
+      "value": 1520.94,
       "unit": "ms"
     },
     "gen_p95_ms": {
-      "value": 1779.1,
+      "value": 2147.25,
       "unit": "ms"
     },
     "validate_p50_ms": {
-      "value": 0.89,
+      "value": 0.98,
       "unit": "ms"
     },
     "validate_p95_ms": {
-      "value": 1.139,
+      "value": 1.149,
       "unit": "ms"
     },
     "total_p50_ms": {
-      "value": 4798.87,
+      "value": 5473.4,
       "unit": "ms"
     },
     "total_p95_ms": {
-      "value": 5468.05,
+      "value": 6246.49,
       "unit": "ms"
     },
     "total_max_ms": {
-      "value": 7306.84,
+      "value": 7311.42,
       "unit": "ms"
     },
     "gen_tps_mean": {
-      "value": 13.14,
+      "value": 12.84,
       "unit": "tok/s"
     },
     "prompt_tokens_mean": {
-      "value": 191.19,
+      "value": 208.58,
       "unit": "tok"
     },
     "gen_tokens_mean": {
-      "value": 17.59,
+      "value": 19.34,
       "unit": "tok"
     },
     "wall_s": {
-      "value": 485.8,
+      "value": 550.6,
       "unit": "s"
     },
     "threads": {
