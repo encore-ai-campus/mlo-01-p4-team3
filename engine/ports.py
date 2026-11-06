@@ -109,6 +109,8 @@ class RenderStatus(str, enum.Enum):
 
 @dataclass
 class RenderRequest:
+    """엔진이 LLM 렌더러에 넘기는 대사 요청(사실 문장·폴백은 엔진이 완성, ports.md 4절)."""
+
     job_id: str
     game_id: str
     state_version: int           # 요청을 만든 전이 후의 버전
