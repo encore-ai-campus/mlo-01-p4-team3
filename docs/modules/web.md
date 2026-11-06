@@ -26,6 +26,7 @@ python -B server/preview.py --port 8769
 [화면 라우팅](../../web/ROUTING.md)과 [화면 설계](../../web/DESIGN.md)에 요청별 응답과 갱신 규칙을 정리했다.
 
 계정 화면은 `/accounts/signup`, `/accounts/login`, `/accounts/logout`을 사용한다. 새 계정 스키마는 환경 변수를 설정하고 저장소 루트에서 `python server/manage.py migrate`로 준비한다.
+로그인 성공 시 기존 로그인 여부와 관계없이 세션 ID를 교체한다.
 
 1. 현장에서 본인임을 확인한 뒤 `python server/manage.py changepassword <로그인 ID>`를 실행한다. 새 비밀번호는 가입과 같은 규칙으로 검사되며 변경 전 세션은 무효가 된다.
 2. 로그인 잠금을 해제하려면 `python server/manage.py unlock_account`를 실행하고 프롬프트에 로그인 ID를 입력한다.

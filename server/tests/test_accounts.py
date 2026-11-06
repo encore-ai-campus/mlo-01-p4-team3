@@ -279,6 +279,22 @@ class Accounts(TestCase):
         self.assertEqual(stale_browser.get("/players/me/progress", HTTP_ACCEPT="application/json").status_code, 401)
         self.assertTrue(self.client.get("/").wsgi_request.user.is_authenticated)
 
+    def test_relogin_with_same_account_replaces_session_key(self):
+        """로그인 중 다시 인증해도 새 세션을 발급하고 이전 쿠키를 무효화한다."""
+        self.assertEqual(self.signup().status_code, 302)
+        User.objects.filter(username="pilotone").update(is_staff=True)
+        for path in ("/accounts/login", "/admin/login/"):
+            with self.subTest(path=path):
+                old_key = self.client.cookies[settings.SESSION_COOKIE_NAME].value
+                self.assertEqual(self.client.post(path, {"username": "pilotone", "password": PASSWORD}).status_code, 302)
+                new_key = self.client.cookies[settings.SESSION_COOKIE_NAME].value
+                self.assertNotEqual(new_key, old_key)
+                self.assertFalse(Session.objects.filter(session_key=old_key).exists())
+                stale_browser = Client()
+                stale_browser.cookies[settings.SESSION_COOKIE_NAME] = old_key
+                self.assertEqual(stale_browser.get("/players/me/progress", HTTP_ACCEPT="application/json").status_code, 401)
+                self.assertTrue(self.client.get("/").wsgi_request.user.is_authenticated)
+
     def test_credentials_absent_from_logs_outbox_and_metrics(self):
         """계정 성공·실패와 녹화 판 완주 후 실제 로그·이벤트·지표에 인증 입력이 없다."""
         username = "privacy-" + secrets.token_hex(12)

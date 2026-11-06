@@ -68,7 +68,11 @@ def signin(request):
     if request.method == "POST":
         user = login_user(request, request.POST.get("username", ""), request.POST.get("password", ""))
         if user is not None:
+            previous_key = request.session.session_key
             login(request, user)
+            # Django는 같은 계정이 다시 로그인하면 기존 세션 키를 유지한다.
+            if previous_key is not None and request.session.session_key == previous_key:
+                request.session.cycle_key()
             return redirect("home")
         return render(request, "accounts/login.html", {"error": "로그인할 수 없습니다. 입력을 확인하거나 잠시 후 다시 시도해 주세요."}, status=400)
     return render(request, "accounts/login.html")
