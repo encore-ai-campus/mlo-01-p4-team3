@@ -82,6 +82,21 @@ class CheckEvents(unittest.TestCase):
         self.assertGreater(res["villager_votes"], 0)
 
 
+class RunnerRuleV0(unittest.TestCase):
+    def test_run_engine_games_rule_v0(self):
+        """`tools.run_engine_games --policy rule-v0`로 판을 돌리면 정책 버전 rule-v0, 이벤트 검사 위반 0건."""
+        from tools import run_engine_games
+        out = Path(tempfile.mkdtemp())
+        self.assertEqual(run_engine_games.main(["--preset", "base6", "--games", "3", "--seed", "2", "--out", str(out),
+                                                "--policy", "rule-v0"]), 0)
+        manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["npc_policy_version"], "rule-v0")
+        res = tool.check_events(out / "events.jsonl")
+        self.assertEqual((res["games"], res["legal_violations"], res["inference_violations"]), (3, 0, 0))
+        first = json.loads((out / "events.jsonl").read_text(encoding="utf-8").splitlines()[0])
+        self.assertEqual(set(first["npc_policy_versions"].values()), {"rule-v0"})
+
+
 class Bench(unittest.TestCase):
     def test_bench_samples(self):
         s = tool.bench("short5", 2, 0)
