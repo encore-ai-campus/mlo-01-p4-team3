@@ -17,7 +17,8 @@ from tools.assets.spec import SpecError, parse_spec_md, split_variant, variant_i
 
 SPEC_TEXT = sources.SPEC_PATH.read_text(encoding="utf-8")
 W, H = vn.SPRITE_SIZE
-FX0, FY0, FX1, FY1 = vn.FACE_BOX
+BOX = vn.face_box("hunjang")
+FX0, FY0, FX1, FY1 = BOX
 
 
 def _expected():
@@ -74,25 +75,38 @@ class ExpressionCheckTest(unittest.TestCase):
 
     def test_placeholder_variants_pass(self):
         for label in ("기쁨", "당황", "슬픔"):
-            self.assertEqual(vn.check_expression(self.base, pa.render_sprite("hunjang", W, H, "훈장", label)), [])
+            self.assertEqual(vn.check_expression(self.base, pa.render_sprite("hunjang", W, H, "훈장", label), BOX), [])
 
     def test_face_only_change_passes(self):
-        self.assertEqual(vn.check_expression(self.base, _paint_face(self.base)), [])
+        self.assertEqual(vn.check_expression(self.base, _paint_face(self.base), BOX), [])
 
     def test_identical_copy_fails(self):
-        msgs = vn.check_expression(self.base, [bytearray(r) for r in self.base])
+        msgs = vn.check_expression(self.base, [bytearray(r) for r in self.base], BOX)
         self.assertTrue(any("변화 없음" in m for m in msgs), msgs)
 
     def test_single_pixel_outside_face_fails(self):
         v = _paint_face(self.base)
         v[700][256 * 4:256 * 4 + 4] = bytes((1, 2, 3, 255))     # 몸통 한 점
-        msgs = vn.check_expression(self.base, v)
+        msgs = vn.check_expression(self.base, v, BOX)
         self.assertTrue(any("밖 1픽셀" in m for m in msgs), msgs)
 
     def test_invisible_rgb_change_ignored(self):
         v = _paint_face(self.base)
         v[5][0:4] = bytes((9, 9, 9, 0))                          # 완전 투명 픽셀의 RGB만 다름
-        self.assertEqual(vn.check_expression(self.base, v), [])
+        self.assertEqual(vn.check_expression(self.base, v, BOX), [])
+
+    def test_face_box_is_per_character(self):
+        """아이(boy)의 얼굴 영역은 어른보다 아래다. 아이 얼굴 칠하기는 통과, 어른 영역으로 보면 밖이라 실패."""
+        boy = pa.render_sprite("boy", W, H, "아이")
+        bx0, by0, bx1, by1 = vn.face_box("boy")
+        self.assertGreater(by0, FY1)
+        self.assertEqual(vn.check_expression(boy, pa.render_sprite("boy", W, H, "아이", "기쁨"), vn.face_box("boy")), [])
+        v = [bytearray(r) for r in boy]
+        for y in range((by0 + by1) // 2 - 5, (by0 + by1) // 2 + 5):
+            v[y][256 * 4:256 * 4 + 4] = bytes((200, 40, 40, 255))
+        self.assertEqual(vn.check_expression(boy, v, vn.face_box("boy")), [])
+        msgs = vn.check_expression(boy, v, BOX)
+        self.assertTrue(any("밖" in m for m in msgs), msgs)
 
 
 class MascotCheckTest(unittest.TestCase):
@@ -100,6 +114,31 @@ class MascotCheckTest(unittest.TestCase):
         for cid in mascot_art.SHAPES:
             rows = mascot_art.render(cid, 512, 512)
             self.assertEqual(vn.check_mascot(512, 512, 4, rows), [], cid)
+
+    def test_center_and_foot_like_sprite(self):
+        """가로 가운데 256±16·아래 여백 16~48px(sprite와 같은 판정). 옮기면 실패, 옅은 점(알파 < 16)은 무시."""
+        rows = mascot_art.render("kkachi", 512, 512)
+        x0, _, x1, y1 = vn.visible_box(512, rows)
+        self.assertLessEqual(abs((x0 + x1) / 2 - 256), vn.CENTER_TOLERANCE)
+        self.assertTrue(vn.BOTTOM_MARGIN[0] <= 512 - y1 <= vn.BOTTOM_MARGIN[1])
+
+        def shift(dx, dy):
+            out = [bytearray(512 * 4) for _ in range(512)]
+            for y in range(512):
+                sy = y - dy
+                if 0 <= sy < 512:
+                    src = rows[sy]
+                    out[y][max(0, dx) * 4:(512 + min(0, dx)) * 4] = src[max(0, -dx) * 4:(512 - max(0, dx)) * 4]
+            return out
+        self.assertTrue(any("가운데" in m for m in vn.check_mascot(512, 512, 4, shift(24, 0))))
+        self.assertTrue(any("발끝" in m for m in vn.check_mascot(512, 512, 4, shift(0, -40))))   # 떠 있음
+        self.assertTrue(any("발끝" in m for m in vn.check_mascot(512, 512, 4, shift(0, 24))))    # 잘림
+        self.assertEqual(vn.check_mascot(512, 512, 4, shift(8, 8)), [])
+        faint = [bytearray(r) for r in rows]
+        faint[505][256 * 4:256 * 4 + 4] = bytes((9, 9, 9, vn.VISIBLE_ALPHA - 1))
+        self.assertEqual(vn.check_mascot(512, 512, 4, faint), [])
+        faint[505][256 * 4 + 3] = vn.VISIBLE_ALPHA
+        self.assertTrue(any("발끝" in m for m in vn.check_mascot(512, 512, 4, faint)))
 
     def test_opaque_square_with_clear_corners_fails(self):
         rows = [bytearray(bytes((90, 90, 90, 255)) * 512) for _ in range(512)]

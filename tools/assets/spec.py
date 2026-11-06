@@ -4,7 +4,7 @@
 - `expected_entries`: 규격 + 콘텐츠 ID 목록 → manifest 기대 항목
 - `reconcile`: 기대 항목 ↔ manifest ↔ 디스크 파일 대조(유형별 수, 누락, 남는 것, 초상-sprite 쌍 상태)
 
-초상(portrait)은 같은 id의 sprite 위 512×512를 잘라 만든다(`derived_from: "sprite:<id>"`, 11/5 크로스체크 17).
+초상(portrait)은 같은 id의 sprite에서 인물별 크롭 위 y(`vn.portrait_top`)부터 512×512를 잘라 만든다(`derived_from: "sprite:<id>"`, 11/5 크로스체크 17).
 표정 변형(11/5 PM 결정, 크로스체크 19)은 id 접미사 `<인물 id>__<표정 id>`인 sprite·초상 항목이다. 평상시는 접미사 없는
 기본 항목 그대로다. 표정 목록과 대상 인물은 규격표 8절에서 읽는다.
 """

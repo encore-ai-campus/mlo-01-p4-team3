@@ -63,11 +63,28 @@ class SpecTableTest(unittest.TestCase):
         self.assertIn(f"알파 {vn.VISIBLE_ALPHA} 이상", rows["가로 가운데"])
         self.assertIn(f"{vn.SPRITE_SIZE[0] // 2}±{vn.CENTER_TOLERANCE}", rows["가로 가운데"])
         self.assertIn(f"{vn.TOP_MARGIN_MIN} 이상", rows["머리 위 여백"])
-        self.assertIn(f"y≈{vn.EYE_Y}", rows["눈높이"])
-        self.assertIn(f"y={vn.WAIST_Y}", rows["허리선"])
+        self.assertIn("키 등급", rows["머리 꼭대기"])
         self.assertIn(f"y={vn.FOOT_Y}, 아래 여백 {vn.BOTTOM_MARGIN[0]}~{vn.BOTTOM_MARGIN[1]}", rows["발끝"])
         self.assertEqual(vn.SPRITE_SIZE[1] - vn.FOOT_Y, vn.BOTTOM_MARGIN[0] * 2)
         self.assertIn(f"{vn.BACKGROUND_SIZE[0]}×{vn.BACKGROUND_SIZE[1]}", rows["장면 배경"])
+
+    def test_height_grade_table_matches_vn(self):
+        """6절 키 등급 표의 값·인물 배정이 vn.HEIGHT_GRADES·CHARACTER_GRADE·face_box·portrait_top과 같다."""
+        sec = SPEC_TEXT.split("## 6.", 1)[1].split("\n## ", 1)[0]
+        rows = re.findall(r"^\| [^|`]+`(\w+)` \| (.+) \|$", sec, re.M)
+        self.assertEqual({g for g, _ in rows}, set(vn.HEIGHT_GRADES))
+        for name, rest in rows:
+            cells = [c.strip() for c in rest.split(" | ")]
+            g = vn.HEIGHT_GRADES[name]
+            top, heads, head, eye, fx, fy, peye, ptop, people = cells
+            self.assertEqual((int(top), float(heads), int(peye)), (g.top, g.heads, g.portrait_eye), name)
+            self.assertAlmostEqual(float(head), g.head, delta=0.5)
+            self.assertEqual(int(eye), round(g.eye_y), name)
+            ids = re.findall(r"`(\w+)`", people)
+            self.assertEqual(sorted(ids), sorted(c for c, v in vn.CHARACTER_GRADE.items() if v == name))
+            x0, y0, x1, y1 = vn.face_box(ids[0])
+            self.assertEqual((fx, fy), (f"{x0}~{x1 - 1}", f"{y0}~{y1 - 1}"), name)
+            self.assertEqual(int(ptop), vn.portrait_top(ids[0]), name)
 
     def test_layout_table_matches_vn(self):
         """7절 배치 표의 평소·전신 컷 수치가 vn.py 모드와 같다."""

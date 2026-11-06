@@ -8,7 +8,7 @@
 - sprite·초상은 회색 실루엣 + 기준선 + "임시"/표시 이름(`portrait_art.py`), 장면 배경은 그라데이션 + 이름표
   (`background_art.py`). 모두 크기·기준선·배치 확인용이다. 나머지는 단색 + 도형(글자 없음). 이름은 콘텐츠 묶음의 공개
   표시 이름(`name_ko`), 글자는 저장소의 비트맵(`glyph_data.py`)만 쓴다. 같은 입력이면 같은 바이트. sprite만 RGBA(바탕 투명).
-- 초상은 같은 id의 sprite 위 512×512 크롭을 먹남 위에 알파 합성한 것이다. sprite가 실제 파일(`placeholder: false`)이면 그 파일을
+- 초상은 같은 id의 sprite에서 인물별 크롭 위 y(`vn.portrait_top`, 키 등급의 눈 위치로 계산)부터 512×512를 잘라 먹남 위에 알파 합성한 것이다. sprite가 실제 파일(`placeholder: false`)이면 그 파일을
   잘라 초상을 만들고 초상도 `false`로 바꾼다. 쌍의 표시가 다르면 대조에서 `pair_mismatch`로 보고한다.
 - manifest에서 `placeholder: false`(실제 파일)인 항목은 덮어쓰지 않는다.
 - 끝에 유형별 기대 수·manifest 항목 수·파일 수와 누락·남는 목록을 출력한다. 하나라도 어긋나면 종료 코드 1.
@@ -138,7 +138,7 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
             src_rows = _sprite_rows(repo, sprites[e.id], from_real, name, expr)
             if not from_real:
                 drawn[e.id] = src_rows      # 같은 실행의 sprite 항목이 다시 그리지 않게
-            rows = portrait_art.crop_portrait(e.width, src_rows)
+            rows = portrait_art.crop_portrait(e.width, src_rows, vn.portrait_top(split_variant(e.id)[0]))
             data = png.encode_rgb(e.width, e.height, rows, optimize=from_real)   # 실제 그림은 필터 선택으로 용량 줄임
         elif e.kind == "sprite" and e.id in drawn:
             data = png.encode_rgba(e.width, e.height, drawn[e.id])
@@ -235,7 +235,8 @@ def inspect_files(repo: Path, entries: list[AssetEntry], spec: AssetSpec) -> tup
             continue
         if any(decoded[x][:3] != (vn.SPRITE_SIZE[0], vn.SPRITE_SIZE[1], 4) for x in (e.path, base.path)):
             continue                        # 크기·형식 문제는 sprite 검사가 보고한다
-        bad += [f"{e.path}: {msg}" for msg in vn.check_expression(decoded[base.path][3], decoded[e.path][3])]
+        bad += [f"{e.path}: {msg}" for msg in vn.check_expression(decoded[base.path][3], decoded[e.path][3],
+                                                                  vn.face_box(base.id))]
     for e in entries:                       # 파생 초상 = 원본 sprite 위 크롭 + 먹남
         src = by_label.get(e.derived_from or "")
         if e.kind != "portrait" or src is None or e.path not in decoded or src.path not in decoded:
@@ -247,12 +248,13 @@ def inspect_files(repo: Path, entries: list[AssetEntry], spec: AssetSpec) -> tup
             continue
         if sch != 4 or pw != sw:
             continue                        # sprite 형식 문제는 위 검사가 보고한다
+        top = vn.portrait_top(split_variant(e.id)[0])
         try:
-            want = portrait_art.crop_portrait(sw, srows)
+            want = portrait_art.crop_portrait(sw, srows, top)
         except ValueError:
             continue                        # 반투명은 sprite 검사가 보고한다
         if [bytes(r) for r in want] != [bytes(r) for r in prows]:
-            bad.append(f"{e.path}: {src.path} 위 {sw}행 크롭과 다름(make_placeholders로 다시 파생)")
+            bad.append(f"{e.path}: {src.path}의 y {top}~{top + sw - 1} 크롭과 다름(make_placeholders로 다시 파생)")
     return biggest, bad
 
 

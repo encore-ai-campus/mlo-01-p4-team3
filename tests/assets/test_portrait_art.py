@@ -28,13 +28,25 @@ class SilhouetteTest(unittest.TestCase):
             self.assertEqual(vn.check_sprite(W, H, 4, rows), [], cid)
 
     def test_baselines(self):
-        """눈높이·허리선 점선이 실루엣 위에 있고, 발끝은 FOOT_Y."""
+        """등급별 눈 y·평소 표시 경계(640) 점선이 실루엣 위에 있고, 발끝은 FOOT_Y."""
         guide = bytes((*pa.GUIDE, 255))
         for cid, rows in self.sprites.items():
-            for y in (vn.EYE_Y, vn.WAIST_Y):
+            for y in (pa.eye_y(cid), vn.NORMAL_ROWS):
                 self.assertIn(guide, bytes(rows[y]), (cid, y))
             self.assertEqual(vn.visible_box(W, rows)[3], vn.FOOT_Y, cid)
-        self.assertEqual((pa.EYE_Y, pa.WAIST_Y, pa.FOOT_Y), (vn.EYE_Y, vn.WAIST_Y, vn.FOOT_Y))
+        self.assertEqual(pa.FOOT_Y, vn.FOOT_Y)
+
+    def test_height_follows_grade(self):
+        """장식 없는 인물은 보이는 꼭대기 = 등급 머리 꼭대기. 장식이 있어도 꼭대기는 그 위(여백 16 이상)."""
+        self.assertEqual(vn.visible_box(W, self.sprites["monk"])[1], vn.HEIGHT_GRADES["male"].top)
+        for cid, rows in self.sprites.items():
+            top = vn.visible_box(W, rows)[1]
+            self.assertLessEqual(top, vn.grade_for(cid).top, cid)
+            self.assertGreaterEqual(top, vn.TOP_MARGIN_MIN, cid)
+        tops = {g: vn.visible_box(W, self.sprites[c])[1] for c, g in (("hunter", "tall"), ("monk", "male"),
+                                                                      ("jumo", "female"), ("boy", "child"))}
+        self.assertLess(tops["tall"], tops["male"])
+        self.assertLess(tops["female"], tops["child"])
 
     def test_only_grey_body_and_label_colors(self):
         allowed = {bytes((*c, 255)) for c in (pa.FILL, pa.EDGE, pa.GUIDE, pa.TEXT)} | {bytes(4)}
@@ -44,16 +56,19 @@ class SilhouetteTest(unittest.TestCase):
 
     def test_label_inside_body_and_visible_in_normal_and_portrait(self):
         text = bytes((*pa.TEXT, 255))
-        ys = [y for y, r in enumerate(self.sprites["hunjang"]) if text in bytes(r)]
-        self.assertTrue(ys)
-        self.assertLess(max(ys), min(vn.WAIST_Y, W))          # 평소 표시(0~640)와 초상 크롭(0~511) 안
+        for cid, rows in self.sprites.items():
+            ys = [y for y, r in enumerate(rows) if text in bytes(r)]
+            self.assertTrue(ys, cid)
+            top = vn.portrait_top(cid)
+            self.assertLess(max(ys), min(vn.NORMAL_ROWS, top + W), cid)    # 평소 표시(0~639)와 초상 크롭 안
+            self.assertGreaterEqual(min(ys), max(top, vn.face_box(cid)[3]), cid)   # 얼굴 영역 밖(아래)
 
     def test_name_changes_only_label(self):
         a = pa.render_sprite("jumo", W, H, "주모")
         b = pa.render_sprite("jumo", W, H, "과부")
         diff = [y for y in range(H) if a[y] != b[y]]
         self.assertTrue(diff)
-        lo, hi = pa.LABEL_Y + glyphs.HEIGHT, pa.LABEL_Y + 2 * glyphs.HEIGHT + 6
+        lo, hi = pa.label_y("jumo") + glyphs.HEIGHT, pa.label_y("jumo") + 2 * glyphs.HEIGHT + pa.LABEL_GAP
         self.assertTrue(all(lo <= y < hi for y in diff))
 
     def test_label_fallback_to_id(self):
@@ -66,12 +81,12 @@ class SilhouetteTest(unittest.TestCase):
         for cid in ALL_IDS:
             self.assertEqual(pa.render_sprite(cid, W, H, NAMES.get(cid)), self.sprites[cid], cid)
         masks = {tuple(pa.body_mask(cid)) for cid in ALL_IDS}
-        self.assertEqual(len(masks), len(set(pa.HEADGEAR.values())))
+        self.assertEqual(len(masks), len({(vn.CHARACTER_GRADE[c], pa.HEADGEAR[c]) for c in ALL_IDS}))
 
     def test_portrait_crop_and_wiring(self):
-        for cid in ("hunjang", "mudang_m"):
+        for cid in ("hunjang", "mudang_m", "jumo", "boy"):
             rows = pa.render(cid, 512, 512, NAMES.get(cid))
-            self.assertEqual(rows, pa.crop_portrait(512, self.sprites[cid]))
+            self.assertEqual(rows, pa.crop_portrait(512, self.sprites[cid], vn.portrait_top(cid)))
             self.assertEqual(art.render("portrait", cid, 512, 512, NAMES.get(cid)).rows, rows)
             self.assertEqual(art.render_rows("sprite", cid, W, H, NAMES.get(cid)), (4, self.sprites[cid]))
 
