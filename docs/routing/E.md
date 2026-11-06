@@ -28,5 +28,5 @@
 |---|---|
 | 콘텐츠 추가 | `docs/contracts/content.md` |
 | LLM 모델·스레드·실행 방식 다시 재기 | 인프라 `llm/bench/run_bench.py`(`--help`), 결과·결정 `docs/reports/llm_bench.md` |
-| 추궁 답변 프롬프트·검증 규칙·지표 정의 바꾸기 | 도메인 `llm/prompt.py`·`llm/validator.py`·`llm/mvp_metrics.py`(테스트 `tests/llm/`). 평가 세트는 `python -m llm.eval_set --seed 1`로 다시 만들고, 측정은 `run_bench.py --eval` |
+| 추궁 답변 프롬프트·검증 규칙·지표 정의 바꾸기 | 도메인 `llm/prompt.py`·`llm/validator.py`·`llm/mvp_metrics.py`(테스트 `tests/llm/`). 평가 세트는 `python -m llm.eval_set --seed 1`로 다시 만들고, 측정은 `run_bench.py --eval`(검증 규칙만 바꿨으면 `--eval … --rejudge`로 저장된 기록 재판정) |
 | 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/A_engine.md` `[에셋]`, 담당 D) |

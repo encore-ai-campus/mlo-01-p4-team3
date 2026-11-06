@@ -1,7 +1,9 @@
 """E-06-07 벤치 스크립트의 순수 함수 테스트. llama_cpp 없이 돈다(CI core)."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import sys
 import unittest
@@ -81,6 +83,24 @@ class Prompt(unittest.TestCase):
     def test_eval_name(self):
         self.assertEqual(rb.eval_name("kanana2_3b", "win", 8, 0, 100), "eval_kanana2_3b_win_t8_s0_n100")
         self.assertEqual(rb.eval_name("k", "win", 8, 0, 20, "devoff"), "eval_k_win_t8_s0_n20_devoff")
+
+    def test_rejudge_needs_eval(self):
+        a = rb.parse_args(["--model", "m.gguf", "--label", "k", "--eval", "e.json", "--rejudge"])
+        self.assertTrue(a.rejudge)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            rb.parse_args(["--model", "m.gguf", "--label", "k", "--rejudge"])
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            rb.parse_args(["--model", "m.gguf", "--label", "k", "--eval", "e.json", "--rejudge", "--out", "o.json"])
+
+    def test_eval_set_changed_unknown_commit(self):
+        self.assertTrue(rb._eval_set_changed("fixtures/llm/interrogation_eval.json", "unknown"))
+        self.assertTrue(rb._eval_set_changed("out/없는_평가세트.json", "f4ac12b"))   # 그 커밋에 없는 파일
+
+    def test_rejudge_seed_mismatch(self):
+        recs = [{"seed": 1}, {"seed": 2}]
+        rb._check_seeds(recs, [2, 1], "c")
+        with self.assertRaises(ValueError):
+            rb._check_seeds(recs, [1, 3], "c")
 
     def test_consistency_out_path(self):
         self.assertEqual(Path(rb.consistency_out_path("d/r.json")).as_posix(), "d/r_consistency.json")

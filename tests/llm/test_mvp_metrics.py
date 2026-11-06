@@ -119,6 +119,32 @@ class RunEval(unittest.TestCase):
         self.assertEqual(recs[0]["reasons"], [v.FACT_CHANGED])
         self.assertEqual(mm.success_metrics(recs)["ending_only_fail_count"]["value"], 1)
 
+    def test_rejudge_keeps_text_and_timing(self):
+        """재판정: 생성문·시간은 그대로, 지금 검증기로 상태·폴백만 다시 정한다(11/6 PM 결정)."""
+        c0, c1 = SAMPLE[0], SAMPLE[1]
+        f0 = c0["request"]["fact_sentence"]
+        recs = mm.run_eval([c0, c1], fake_generate({c0["case_id"]: "에 이, " + f0}), seed=0, lexicon=LEX,
+                           clock=FakeClock())
+        stale = [dict(r, valid=True, reasons=[], details=[], status=mm.DONE, fallback=False, text=r["generated"],
+                      fallback_has_fact=None) for r in recs]   # 예전 검증기가 통과시킨 기록이라고 친다
+        new = mm.rejudge(stale, CASES, lexicon=LEX)
+        self.assertEqual([r["case_id"] for r in new], [c0["case_id"], c1["case_id"]])
+        self.assertEqual(new[0]["status"], mm.FAILED)
+        self.assertEqual(new[0]["reasons"][0], v.FORMAT_LENGTH)   # 쪼개진 감탄사
+        self.assertEqual(new[0]["text"], mm.fallback_text(c0["request"]))
+        self.assertEqual(new[1]["status"], mm.DONE)
+        for old, r in zip(recs, new):
+            for k in ("generated", "raw", "prompt_ms", "gen_ms", "validate_ms", "total_ms", "gen_tokens"):
+                self.assertEqual(r[k], old[k])
+        self.assertTrue(stale[0]["valid"])   # 입력 기록은 바꾸지 않는다
+        with self.assertRaises(KeyError):
+            mm.rejudge([dict(recs[0], case_id="없는_사례")], CASES, lexicon=LEX)
+        self.assertEqual(recs[0]["fact_sentence"], f0)
+        with self.assertRaises(ValueError):   # 평가 세트가 바뀌어 같은 ID가 다른 사실을 가리킴
+            mm.rejudge([dict(recs[0], fact_sentence="그날 새벽엔 집에 있었소.")], CASES, lexicon=LEX)
+        legacy = {k: val for k, val in stale[1].items() if k != "fact_sentence"}   # 사실 문장이 없는 이전 기록
+        self.assertEqual(mm.rejudge([legacy], CASES, lexicon=LEX)[0]["status"], mm.DONE)
+
     def test_timeout_is_fallback(self):
         case = json.loads(json.dumps(SAMPLE[0]))
         case["request"]["deadline_ms"] = 100

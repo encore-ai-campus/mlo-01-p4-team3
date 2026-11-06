@@ -92,11 +92,17 @@ VIOLATIONS = [
     ("C21", WHERE, "히잉… 그날 한밤엔 우물가에 있었네.", v.FACT_CHANGED),   # 아이가 하게체 어미(말투 계열 밖, 11/6)
     ("C22", WHERE, "허허, 그날 한밤엔 우물가에 있었어요.", v.FACT_CHANGED),   # 하오체 훈장이 해요체 어미
     ("C23", DAY, "아따, 2일째 밤 초저녁엔 주막에 있었사옵니다.", v.FACT_CHANGED),   # 사투리 인물이 승려 어미
+    # 묻는 쪽 말·쪼개진 감탄사(11/6 사용자 확인·PM 결정, f4ac12b 측정 ev_071·ev_074·ev_089에서 나온 꼴)
+    ("C24", DAY, "고만 물어보자요. 2일째 밤 초저녁엔 주막에 있었드래요.", v.FORMAT_LENGTH),
+    ("C25", DAY, "이 참, 2일째 밤 초저녁엔 주막에 있었드래요. 더는 안 묻겠소.", v.FORMAT_LENGTH),
+    ("C26", DAY, "에 이, 2일째 밤 초저녁엔 주막에 있었드래요. 미안하오.", v.FORMAT_LENGTH),
+    ("C27", WHERE, "아 이고, 그날 한밤엔 우물가에 있었소.", v.FORMAT_LENGTH),
 ]
 # C01은 장소를 바꿔 다른 장소를 말한 경우라 대표 사유가 forbidden_entity이고 fact_changed도 함께 걸린다.
 # 사례별 인물(없으면 JUMO). 끝 어미는 인물 말투 계열 안에서만 허용된다.
 PERSONA = {"C12": CHILD, "C14": CHILD, "C21": CHILD, "C22": HAO, "C23": DIALECT,
-           "P12": CHILD, "P13": CHILD, "P14": DIALECT, "P15": CHILD, "P16": HAO}
+           "P12": CHILD, "P13": CHILD, "P14": DIALECT, "P15": CHILD, "P16": HAO,
+           "C24": DIALECT, "C25": DIALECT, "C26": DIALECT, "P17": DIALECT, "P18": DIALECT, "P19": DIALECT, "P20": CHILD}
 PRIMARY_OVERRIDE = {"C01": v.FORBIDDEN_ENTITY, "C03": v.FACT_CHANGED, "C08": v.FORMAT_LENGTH}
 
 PASSES = [
@@ -114,6 +120,11 @@ PASSES = [
     ("P14", DAY, "아이고 참… 2일째 밤 초저녁엔 주막에 있었드래요. 그기 다래요."),
     ("P15", WHERE, "그날 한밤엔 우물가에있었어요."),   # 끝 서술어 앞 띄어쓰기 빠짐(Codex 11/6)
     ("P16", WHERE, "허허, 이것 참. 그날 한밤엔 우물가에 있었구려."),   # 하오체 계열 어미
+    # 묻는 쪽 말·감탄사 검사의 오탐 방지: 정상 예시 후보는 통과한다(PM 11/6)
+    ("P17", DAY, "아이고 참… 2일째 밤 초저녁엔 주막에 있었드래요. 고만 물어보시오."),
+    ("P18", DAY, "에이 참, 2일째 밤 초저녁엔 주막에 있었드래요. 더는 묻지 마시오."),
+    ("P19", DAY, "그기 말이요… 2일째 밤 초저녁엔 주막에 있었드래요. 무당 양반은 어디 있었소?"),
+    ("P20", WHERE, "저기요, 그날 한밤엔 우물가에 있었어요. 이제 그만 물어보면 좋겠어요."),
     ("P11", WHERE, "그 날 한밤엔 우물가에 있었소. 그게 다요."),   # 띄어쓰기만 다름(11/5 측정에서 오판)
     ("P10", WHERE, "그날 한밤엔 우물가에 있었소. 어쩔 수 없었소."),   # '수 없' 은 부정 사실이 아님
 ]
