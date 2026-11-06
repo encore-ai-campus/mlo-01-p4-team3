@@ -217,6 +217,24 @@ def summarize(rows: list[IntentExample]) -> dict:
     return metrics
 
 
+def result_metrics(summary: dict) -> dict:
+    """`summarize` 결과를 결과 JSON 형식(키마다 `value`·`unit`, README 4절)으로 평평하게 편다.
+
+    행 수는 `개`, 위반·중복 수는 `건`. 중첩 dict는 `<묶음>_<키>`(예: `authored_suspect`)로 편다.
+    """
+    prefixes = {"authored_by_label": "authored", "contrast_pairs_by_label": "contrast_pairs",
+                "resolution_types": "type", "modern_by_label": "modern"}
+    out = {}
+    for key, value in summary.items():
+        if isinstance(value, dict):
+            for sub, n in value.items():
+                out[f"{prefixes[key]}_{sub}"] = {"value": n, "unit": "개"}
+        else:
+            unit = "건" if key.endswith(("_errors", "_groups")) else "개"
+            out[key] = {"value": value, "unit": unit}
+    return out
+
+
 # ---------------------------------------------------------------- 인프라
 def load_rows(path: Path | str = DEFAULT_PATH) -> list[IntentExample]:
     """JSONL을 `IntentExample`로 엄격하게 읽는다(알 수 없는 필드·누락은 예외)."""
@@ -235,7 +253,8 @@ def main(argv: list[str] | None = None) -> int:
     print(json.dumps(metrics, ensure_ascii=False, indent=2))
     if args.write:
         from tools.evidence_result import write_result
-        print(write_result("E-06-02", args.write, metrics, "python -m tools.intent_examples"))
+        print(write_result("E-06-02", args.write, result_metrics(metrics),
+                           f"python -m tools.intent_examples --write {args.write}"))
     return 0
 
 

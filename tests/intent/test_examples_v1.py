@@ -69,6 +69,11 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(ie.modern_counts([replace(self.sus, notes="register=modern")])["suspect"], 1)
         self.assertEqual(ie.slot_errors([replace(self.sus, notes="type=pronoun; ctx=last_addressee:<P1>")]), [])
 
+    def test_result_metrics_flat(self):
+        flat = ie.result_metrics({"rows": 3, "slot_errors": 0, "authored_by_label": {"suspect": 2}})
+        self.assertEqual(flat, {"rows": {"value": 3, "unit": "개"}, "slot_errors": {"value": 0, "unit": "건"},
+                                "authored_suspect": {"value": 2, "unit": "개"}})
+
     def test_duplicate_normalization(self):
         a = replace(self.sus, text="<P1>이 수상하오!")
         b = replace(self.defend, text="<P1>이  수상하오")
