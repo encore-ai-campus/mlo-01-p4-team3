@@ -21,11 +21,15 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
+from llm.prompt import all_style_endings, allowed_endings
+
 FORMAT_LENGTH = "format_length"
 FORBIDDEN_ENTITY = "forbidden_entity"
 ADDED_ASSERTION = "added_assertion"
 FACT_CHANGED = "fact_changed"
 REASONS = (FORMAT_LENGTH, FORBIDDEN_ENTITY, ADDED_ASSERTION, FACT_CHANGED)
+STYLE_ENDING_TAG = "(말투 어미)"   # 끝 어미가 다른 말투 계열의 것일 때 사실 어절 뒤에 붙는 표시
+FACT_WORDS_DETAIL = "사실 문장 어절 빠짐·바뀜 "   # fact_changed 설명 중 사실 어절 줄의 머리말(`ending_only`가 읽는다)
 
 MAX_CHARS = 120          # 생성문 최대 글자 수(공백 포함). 폴백 문장은 60자 안팎
 MAX_SENTENCES = 4        # 문장 끝(. ? !) 개수 상한
@@ -212,15 +216,6 @@ def canonicalize(text: str, lexicon: Lexicon) -> str:
 # (11/6 사용자 결정: 사실 문장에도 말투를 입힌다. 예: "있었소" → "있었어요", "옮겼습니다요" → "옮겼소잉").
 _FINAL_ENDING_RE = re.compile(r"(?:시오|세요|습니다요|습니다|니다|구먼|소|오|네|요|다|지|우|어|아|여|라|게|세)$")
 _SENT_END_CHARS = ".?!…"
-# 어간 뒤에 올 수 있는 끝 어미(허용 목록). 평서·명령(사실 문장 "말하지 마시오" 같은 경우)만 두고 의문(-ㄹ까요·
-# -나요)·추측(-겠-)·전언(-더라·-다던데)·부정 보조(-지 않-)는 넣지 않는다. 목록 밖 어미는 사실이 바뀐 것으로 본다
-# (PM 11/6: 사실 요소와 부정 여부는 그대로, 끝 어미만 화자 말투).
-ALLOWED_TAILS = frozenset("""
-소 오 요 다 네 수 우 어 아 여 지 라 게 세 응 죠 유 슈 쇼
-어요 아요 여요 에요 예요 이오 네요 지요 지유 습죠 소잉 쇼잉 어라 일세 다네 단다 구나 구려 구먼 구먼요 게나
-니다 니다요 습니다 습니다요 옵니다 사옵니다 답니다 당께 당께요 지라 소이다
-시오 세요 셔요 서요 십시오 소서 시옵소서
-""".split())
 
 
 def predicate_stem(word: str) -> str:
@@ -235,12 +230,14 @@ def _final_words(fact: str) -> set[int]:
     return {i for i, w in enumerate(words) if i == len(words) - 1 or w.rstrip("\"'”’")[-1:] in _SENT_END_CHARS}
 
 
-def missing_fact_words(text: str, fact_sentence: str, lexicon: Lexicon) -> list[str]:
+def missing_fact_words(text: str, fact_sentence: str, lexicon: Lexicon,
+                       allowed_tails: frozenset[str] = frozenset()) -> list[str]:
     """사실 문장의 어절(띄어쓰기 단위, 앞뒤 문장부호 제외) 중 생성문에 없는 것. 둘 다 `canonicalize`한 뒤 비교한다.
 
     장소·시간·인물 밖의 내용(행동·대상, 예: "팔았소"→"샀소")이 바뀌거나 빠진 것을 잡는다. 문장 끝 서술어는
-    어간(`predicate_stem`) 뒤에 허용 목록(`ALLOWED_TAILS`)의 어미가 붙어 나오면 된다. 의문형("있었소?"),
-    추측·전언·부정("있었겠지요", "있었다더라", "있었을까요")은 바뀐 것으로 본다. 띄어쓰기만 다른 것
+    어간(`predicate_stem`) 뒤에 엔진 원래 어미나 `allowed_tails`(인물 말투 계열의 어미, `llm.prompt.allowed_endings`)가
+    붙어 나오면 된다. 그 밖의 어미, 곧 의문형("있었소?")·추측·전언·부정("있었겠지요", "있었다더라", "있었을까요")과
+    다른 말투 계열의 어미(아이가 "있었네")는 바뀐 것으로 본다(PM 11/6, 사용자 11/6). 띄어쓰기만 다른 것
     ("그날"↔"그 날")은 같은 것으로 본다.
     """
     canon_out = canonicalize(text, lexicon)
@@ -275,12 +272,14 @@ def missing_fact_words(text: str, fact_sentence: str, lexicon: Lexicon) -> list[
             tails.append(t)
         fact_q = "?" in raw
         own = w[len(stem):]   # 사실 문장의 원래 어미(어미를 못 뗀 어절, 예: "뒤에서…"이면 빈 문자열)
-        if any((t.rstrip("?") in ALLOWED_TAILS or t.rstrip("?") == own) and (fact_q or "?" not in t) for t in tails):
+        if any((t.rstrip("?") in allowed_tails or t.rstrip("?") == own) and (fact_q or "?" not in t) for t in tails):
             continue
         if not fact_q and all("?" in t for t in tails):
             missing.append(w + "(의문형)")
+        elif any("?" not in t and t in all_style_endings() for t in tails):
+            missing.append(w + STYLE_ENDING_TAG)   # 다른 말투 계열의 어미: 사실은 그대로, 말투만 어긋남
         else:
-            missing.append(w + "(어미)")
+            missing.append(w + "(어미)")   # 어느 말투에도 없는 어미: 추측·전언 등 뜻이 바뀐 것
     return missing
 
 
@@ -379,14 +378,25 @@ def validate(text: str, req: dict, lexicon: Lexicon, allowed_places: list[str] |
     changed += [f"시간 {m.surface} 추가" for m in mentions if m.kind == "time" and m.key not in facts.times]
     if neg_out < neg_fact:
         changed.append(f"부정 표현 빠짐 {neg_fact}→{neg_out}")
-    missing = missing_fact_words(text, fact, lexicon)
+    missing = missing_fact_words(text, fact, lexicon, allowed_endings(req.get("persona", "")))
     if missing:
-        changed.append("사실 문장 어절 빠짐·바뀜 " + ",".join(missing))
+        changed.append(FACT_WORDS_DETAIL + ",".join(missing))
     if changed:
         reasons.append(FACT_CHANGED)
         details.extend(changed)
 
     return ValidationResult(not reasons, tuple(reasons), tuple(details))
+
+
+def ending_only(reasons, details) -> bool:
+    """사실은 그대로이고 끝 서술어 어미만 말투 계열 밖이라 거부된 경우인가(지표에서 따로 센다, 11/6).
+
+    사유가 `fact_changed` 하나이고, 설명이 사실 어절 줄 하나뿐이며 그 어절이 모두 "(말투 어미)"로 표시된 경우다.
+    추측·전언처럼 어느 말투 계열에도 없는 어미("(어미)")는 실제 사실 변경으로 본다(Codex 11/6).
+    """
+    if tuple(reasons) != (FACT_CHANGED,) or len(details) != 1 or not details[0].startswith(FACT_WORDS_DETAIL):
+        return False
+    return all(w.endswith(STYLE_ENDING_TAG) for w in details[0][len(FACT_WORDS_DETAIL):].split(","))
 
 
 def fallback_text(req: dict) -> str:

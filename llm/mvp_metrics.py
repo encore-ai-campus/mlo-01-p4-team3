@@ -37,7 +37,7 @@ import time
 from typing import Callable
 
 from llm.prompt import build_messages
-from llm.validator import FACT_CHANGED, REASONS, Lexicon, fallback_text, normalize_output, validate
+from llm.validator import FACT_CHANGED, REASONS, Lexicon, ending_only, fallback_text, normalize_output, validate
 
 DONE, FAILED, TIMEOUT, ERROR = "done", "failed", "timeout", "error"
 
@@ -134,6 +134,9 @@ def success_metrics(records: list[dict]) -> dict:
         out[f"reason_{code}_count"] = {"value": c, "unit": "건"}
         out[f"reason_{code}_pct"] = _m(100 * c / n, "%")
         out[f"all_{code}_count"] = {"value": count(lambda r: code in r["reasons"]), "unit": "건"}
+    # fact_changed 중 사실은 그대로이고 끝 어미만 말투 계열 밖이라 거부된 건(폴백 원인 구분용, 11/6)
+    out["ending_only_fail_count"] = {"value": count(lambda r: r["status"] != ERROR and not r["valid"]
+                                                    and ending_only(r["reasons"], r.get("details", ()))), "unit": "건"}
     fb = [r for r in records if r["fallback"]]
     out["fallback_has_fact_pct"] = _m(100 * sum(r["fallback_has_fact"] for r in fb) / len(fb), "%") if fb \
         else {"value": 100.0, "unit": "%"}

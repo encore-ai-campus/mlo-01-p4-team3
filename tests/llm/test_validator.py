@@ -7,6 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 from llm import validator as v
+from llm.prompt import allowed_endings
 
 ROOT = Path(__file__).resolve().parents[2]
 BUNDLE = json.loads((ROOT / "fixtures" / "content_min" / "bundle.json").read_text(encoding="utf-8"))
@@ -15,10 +16,17 @@ REQS = {r["job_id"]: r for r in json.loads((ROOT / "fixtures" / "llm" / "interro
                                          .read_text(encoding="utf-8"))}
 
 
-def req(fact: str, names=("주모", "약초꾼", "대장장이", "머슴", "훈장"), fallback: str | None = None) -> dict:
+JUMO = "주모. 말투: 시원시원한 반말 섞인 하게체"
+CHILD = "아이. 말투: 어린아이 말투"
+DIALECT = "뱃사공. 말투: 투박한 사투리"
+HAO = "훈장. 말투: 점잖은 하오체, 문자를 섞음"
+
+
+def req(fact: str, names=("주모", "약초꾼", "대장장이", "머슴", "훈장"), fallback: str | None = None,
+        persona: str = JUMO) -> dict:
     """RenderRequest 필드 dict(검증에 쓰는 필드만 의미 있음)."""
     return {"job_id": "t", "game_id": "g", "state_version": 1, "speech_id": "s", "npc_id": "jumo",
-            "persona": "주모. 말투: 시원시원한 반말 섞인 하게체", "reaction": "evade", "fact_sentence": fact,
+            "persona": persona, "reaction": "evade", "fact_sentence": fact,
             "allowed_names": list(names), "fallback_text": fallback if fallback is not None else fact,
             "priority": 0, "deadline_ms": 15000}
 
@@ -81,8 +89,14 @@ VIOLATIONS = [
     ("C18", WHERE, "그날 한밤엔 우물가에 있었겠지요.", v.FACT_CHANGED),   # 추측(-겠-)
     ("C19", WHERE, "그날 한밤엔 우물가에 있었소 ?", v.FACT_CHANGED),   # 띄어 쓴 물음표(Codex 11/6)
     ("C20", WHERE, "그날 한밤엔 우물가에서 재미있었어요.", v.FACT_CHANGED),   # 어간이 다른 낱말 속에만 있음(Codex 11/6)
+    ("C21", WHERE, "히잉… 그날 한밤엔 우물가에 있었네.", v.FACT_CHANGED),   # 아이가 하게체 어미(말투 계열 밖, 11/6)
+    ("C22", WHERE, "허허, 그날 한밤엔 우물가에 있었어요.", v.FACT_CHANGED),   # 하오체 훈장이 해요체 어미
+    ("C23", DAY, "아따, 2일째 밤 초저녁엔 주막에 있었사옵니다.", v.FACT_CHANGED),   # 사투리 인물이 승려 어미
 ]
 # C01은 장소를 바꿔 다른 장소를 말한 경우라 대표 사유가 forbidden_entity이고 fact_changed도 함께 걸린다.
+# 사례별 인물(없으면 JUMO). 끝 어미는 인물 말투 계열 안에서만 허용된다.
+PERSONA = {"C12": CHILD, "C14": CHILD, "C21": CHILD, "C22": HAO, "C23": DIALECT,
+           "P12": CHILD, "P13": CHILD, "P14": DIALECT, "P15": CHILD, "P16": HAO}
 PRIMARY_OVERRIDE = {"C01": v.FORBIDDEN_ENTITY, "C03": v.FACT_CHANGED, "C08": v.FORMAT_LENGTH}
 
 PASSES = [
@@ -99,13 +113,14 @@ PASSES = [
     ("P13", CONFESS, "히잉… 주막 뒷방에서 투전판에 끼었어요. 식구들한테만은 말하지 마세요."),
     ("P14", DAY, "아따, 2일째 밤 초저녁엔 주막에 있었당께. 고것이 다여."),
     ("P15", WHERE, "그날 한밤엔 우물가에있었어요."),   # 끝 서술어 앞 띄어쓰기 빠짐(Codex 11/6)
+    ("P16", WHERE, "허허, 이것 참. 그날 한밤엔 우물가에 있었구려."),   # 하오체 계열 어미
     ("P11", WHERE, "그 날 한밤엔 우물가에 있었소. 그게 다요."),   # 띄어쓰기만 다름(11/5 측정에서 오판)
     ("P10", WHERE, "그날 한밤엔 우물가에 있었소. 어쩔 수 없었소."),   # '수 없' 은 부정 사실이 아님
 ]
 
 
-def run(fact, text):
-    return v.validate(v.normalize_output(text), req(fact), LEX)
+def run(fact, text, cid=""):
+    return v.validate(v.normalize_output(text), req(fact, persona=PERSONA.get(cid, JUMO)), LEX)
 
 
 class Violations(unittest.TestCase):
@@ -118,7 +133,7 @@ class Violations(unittest.TestCase):
     def test_all_rejected_with_expected_reason(self):
         for cid, fact, text, want in VIOLATIONS:
             with self.subTest(cid):
-                r = run(fact, text)
+                r = run(fact, text, cid)
                 self.assertFalse(r.ok, f"{cid} 통과하면 안 됨: {text}")
                 self.assertIn(want, r.reasons, f"{cid}: {r.reasons} {r.details}")
                 self.assertEqual(r.reason, PRIMARY_OVERRIDE.get(cid, want), f"{cid}: {r.reasons} {r.details}")
@@ -127,7 +142,7 @@ class Violations(unittest.TestCase):
     def test_passes(self):
         for cid, fact, text in PASSES:
             with self.subTest(cid):
-                r = run(fact, text)
+                r = run(fact, text, cid)
                 self.assertTrue(r.ok, f"{cid}: {r.reasons} {r.details}")
                 self.assertIsNone(r.reason)
 
@@ -166,9 +181,20 @@ class Lexicon(unittest.TestCase):
     def test_canonicalize_and_missing_words(self):
         self.assertEqual(v.canonicalize("이튿날 밤 한밤중엔 박 영감을", LEX), "2일째 밤 한밤엔 약초꾼을")
         self.assertEqual(v.missing_fact_words("허허, " + DAY + " 그게 다요.", DAY, LEX), [])
-        self.assertEqual(v.missing_fact_words("2일째 밤 초저녁엔 주막에 있었네.", DAY, LEX), [])   # 끝 서술어 어미는 말투로
+        hage = allowed_endings(JUMO)
+        self.assertEqual(v.missing_fact_words("2일째 밤 초저녁엔 주막에 있었네.", DAY, LEX, hage), [])   # 끝 어미는 말투로
+        self.assertEqual(v.missing_fact_words("2일째 밤 초저녁엔 주막에 있었네.", DAY, LEX), ["있었소(말투 어미)"])   # 계열 밖
         self.assertEqual(v.missing_fact_words("2일째 밤 초저녁엔 주막에 갔네.", DAY, LEX), ["있었소"])
         self.assertEqual(v.missing_fact_words("2일째 밤 초저녁엔 주막에 있었소?", DAY, LEX), ["있었소(의문형)"])
+
+    def test_ending_only(self):
+        """끝 어미만 말투 계열 밖인 거부(C21~C23)와 실제 사실 변경(C12 어간, C11 의문형, C13 부정)을 가른다."""
+        cases = {cid: (fact, text) for cid, fact, text, _ in VIOLATIONS}
+        for cid, want in (("C21", True), ("C22", True), ("C23", True), ("C12", False), ("C11", False), ("C13", False),
+                          ("C01", False), ("C15", False), ("C18", False)):   # C15 전언, C18 추측(Codex 11/6)
+            with self.subTest(cid):
+                r = run(*cases[cid], cid)
+                self.assertEqual(v.ending_only(r.reasons, r.details), want, r.details)
 
     def test_predicate_stem(self):
         self.assertEqual(v.predicate_stem("있었소"), "있었")

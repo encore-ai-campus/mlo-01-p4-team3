@@ -107,6 +107,17 @@ class RunEval(unittest.TestCase):
         self.assertEqual(m["reason_fact_changed_pct"]["value"], 10.0)
         self.assertEqual(m["fallback_has_fact_pct"]["value"], 100.0)
         self.assertEqual(sum(m[f"reason_{c}_count"]["value"] for c in v.REASONS), 3)
+        self.assertEqual(m["ending_only_fail_count"]["value"], 0)   # c1은 시간이 바뀐 실제 사실 변경
+
+    def test_ending_only_counted_apart(self):
+        case = json.loads(json.dumps(SAMPLE[0]))
+        case["request"]["persona"] = "아이. 말투: 어린아이 말투"
+        fact = case["request"]["fact_sentence"]
+        hage = fact[:-2] + "네."   # "…있었소." → "…있었네.": 사실은 그대로, 어미만 아이 말투 밖
+        recs = mm.run_eval([case], fake_generate({case["case_id"]: hage}), seed=0, lexicon=LEX, clock=FakeClock())
+        self.assertTrue(recs[0]["fallback"])
+        self.assertEqual(recs[0]["reasons"], [v.FACT_CHANGED])
+        self.assertEqual(mm.success_metrics(recs)["ending_only_fail_count"]["value"], 1)
 
     def test_timeout_is_fallback(self):
         case = json.loads(json.dumps(SAMPLE[0]))
@@ -158,13 +169,14 @@ class StyleExamples(unittest.TestCase):
     def test_example_lines_pass_validator(self):
         from llm import prompt
         profiles = [p[1:] for p in prompt.STYLE_PROFILES] + [prompt.DEFAULT_PROFILE]
-        for prefix, _ending, tails in profiles:
+        for prefix, endings, tails in profiles:
             for reaction in prompt.REACTION_KO:
                 self.assertEqual(set(tails), set(prompt.REACTION_KO))
                 style = next((p[0][0] for p in prompt.STYLE_PROFILES if p[1] == prefix), "")
                 fact, line = prompt.example_pair(style, reaction)
-                self.assertNotIn(fact, line) if _ending != "소" else self.assertIn(fact, line)
-                r = v.validate(line, {"fact_sentence": fact, "allowed_names": []}, LEX)
+                self.assertNotIn(fact, line) if endings[0] != "소" else self.assertIn(fact, line)
+                persona = f"예시. 말투: {style}" if style else ""
+                r = v.validate(line, {"fact_sentence": fact, "allowed_names": [], "persona": persona}, LEX)
                 self.assertTrue(r.ok, f"{prefix} {reaction}: {line} {r.details}")
 
     def test_child_example_differs_from_default(self):

@@ -47,43 +47,55 @@ WHERE_FACT = "4일째 밤 해 질 무렵엔 방앗간에 있었소."
 CONFESS_FACT = "방앗간 뒤에서 몰래 쌀을 내다 팔았소."
 _PAST_SO = ("었소", "았소")   # 예시 사실 문장의 끝 서술어("있었소", "팔았소")에서 어미 "소"를 바꿀 자리
 
-# 말투 계열별 예시: (말투 설명에서 찾을 낱말들, 앞에 붙일 말, 끝 어미, 반응 의도별 뒤에 붙일 말).
+# 말투 계열: (말투 설명에서 찾을 낱말들, 앞에 붙일 말, 끝 어미들, 반응 의도별 뒤에 붙일 말).
 # 사실 문장은 엔진이 하오체로 완성한다. 장소·시간·인물·행동은 그대로 두고 끝 서술어의 어미("있었소"의 "소")만 이
-# 계열 어미로 바꾼다(11/6 사용자 결정, 검증기는 끝 서술어 어간만 본다). 위에서부터 처음 맞는 계열을 쓴다.
+# 계열 어미로 바꾼다(11/6 사용자 결정). 끝 어미들의 첫째는 예시에 쓰고, 전부는 검증기가 이 인물에게 허용하는 어미
+# 목록이다(`allowed_endings`, 목록 밖은 엔진 원래 어미만 허용). 평서·명령 어미만 두고 의문·추측·전언은 넣지
+# 않는다. 위에서부터 처음 맞는 계열을 쓴다.
 # 덧붙임에는 부정·단정 표현과 게임 어휘(인물·장소·시간·역할어)를 넣지 않는다(검증기 거부 대상, 테스트로 고정).
 STYLE_PROFILES = (
-    (("어린아이",), "히잉…", "어요", {"explain": "그게 다예요.", "evade": "몰라요, 그만 물어봐요.",
+    (("어린아이",), "히잉…", ("어요", "아요", "여요", "에요", "예요", "요", "세요"), {"explain": "그게 다예요.", "evade": "몰라요, 그만 물어봐요.",
                              "counter": "무당 아저씨는 어디 있었는데요?", "confess": "잘못했어요, 혼내지 마세요."}),
-    (("노인",), "허허… 그게 말이여…", "구먼", {"explain": "그게 다여.", "evade": "늙은이한테 더 묻지 말게나.",
+    (("노인",), "허허… 그게 말이여…", ("구먼", "구먼요", "여", "어", "아", "네", "지", "게", "게나"), {"explain": "그게 다여.", "evade": "늙은이한테 더 묻지 말게나.",
                                     "counter": "그러는 무당 양반은 어디 있었는감?", "confess": "늙은이가 주책이었구먼."}),
-    (("더듬",), "저, 저기…", "습니다요", {"explain": "그, 그게 다입니다요.", "evade": "더, 더는 묻지 말아 주십시오.",
+    (("더듬",), "저, 저기…", ("습니다요", "습니다", "니다요", "니다", "어요", "아요", "여요", "요", "십시오", "세요"), {"explain": "그, 그게 다입니다요.", "evade": "더, 더는 묻지 말아 주십시오.",
                             "counter": "무, 무당 나리는 어디 계셨습니까요?", "confess": "죄, 죄송합니다요…"}),
-    (("사투리",), "아따,", "당께", {"explain": "고것이 다여.", "evade": "더 묻지 마쇼잉.",
+    (("사투리",), "아따,", ("당께", "당께요", "소잉", "어라", "지라", "여", "어", "아", "쇼", "쇼잉"), {"explain": "고것이 다여.", "evade": "더 묻지 마쇼잉.",
                          "counter": "그라는 무당 양반은 어디 있었당가?", "confess": "에라, 다 불었소잉."}),
-    (("능청",), "어머나,", "답니다", {"explain": "그게 다랍니다.", "evade": "그 이상은 비밀이랍니다.",
+    (("능청",), "어머나,", ("답니다", "지요", "죠", "네요", "어요", "아요", "수", "우", "세요", "셔요"), {"explain": "그게 다랍니다.", "evade": "그 이상은 비밀이랍니다.",
                          "counter": "무당 나리야말로 어디 계셨수?", "confess": "호호, 들켜 버렸네요."}),
-    (("말수",), "…", "소", {"explain": "그뿐.", "evade": "됐소.", "counter": "당신은?", "confess": "…그랬소."}),
-    (("합장",), "나무아미타불…", "사옵니다", {"explain": "그뿐이옵니다.", "evade": "더 묻지 마시옵소서.",
+    (("말수",), "…", ("소", "오"), {"explain": "그뿐.", "evade": "됐소.", "counter": "당신은?", "confess": "…그랬소."}),
+    (("합장",), "나무아미타불…", ("사옵니다", "옵니다", "습니다", "니다", "소이다", "시옵소서", "소서", "십시오"), {"explain": "그뿐이옵니다.", "evade": "더 묻지 마시옵소서.",
                               "counter": "무당께서는 어디 계셨사옵니까?", "confess": "소승이 업을 지었사옵니다."}),
-    (("단정", "조용"), "…예.", "습니다", {"explain": "그뿐입니다.", "evade": "더는 여쭙지 마셔요.",
+    (("단정", "조용"), "…예.", ("습니다", "니다", "어요", "아요", "여요", "요", "지요", "셔요", "세요", "십시오"), {"explain": "그뿐입니다.", "evade": "더는 여쭙지 마셔요.",
                               "counter": "무당께서는 어디 계셨는지요?", "confess": "부끄러울 따름입니다."}),
-    (("하게체", "반말"), "에그, 참.", "네", {"explain": "그게 다일세.", "evade": "더 묻지 말게.",
+    (("하게체", "반말"), "에그, 참.", ("네", "다네", "일세", "어", "아", "지", "게", "게나", "라"), {"explain": "그게 다일세.", "evade": "더 묻지 말게.",
                                    "counter": "그러는 자네는 어디 있었나?", "confess": "에휴, 다 털어놨네."}),
-    (("하오체", "문자"), "허허, 이것 참.", "소", {"explain": "그뿐이오.", "evade": "그 이상은 묻지 마시오.",
+    (("하오체", "문자"), "허허, 이것 참.", ("소", "오", "이오", "구려", "소이다", "시오"), {"explain": "그뿐이오.", "evade": "그 이상은 묻지 마시오.",
                                        "counter": "그러는 무당은 어디 계셨소?", "confess": "참으로 부끄러운 일이오."}),
-    (("거친", "짧은"), "쳇.", "다", {"explain": "됐소?", "evade": "그만 물으쇼.", "counter": "그러는 당신은?",
+    (("거친", "짧은"), "쳇.", ("다", "소", "어", "아", "지", "쇼", "라"), {"explain": "됐소?", "evade": "그만 물으쇼.", "counter": "그러는 당신은?",
                              "confess": "젠장, 다 말했소."}),
 )
-DEFAULT_PROFILE = ("", "소", {"explain": "그게 다요.", "evade": "더는 묻지 마시오.", "counter": "그걸 왜 나한테 캐묻는 게요?",
+DEFAULT_PROFILE = ("", ("소", "오", "시오"), {"explain": "그게 다요.", "evade": "더는 묻지 마시오.", "counter": "그걸 왜 나한테 캐묻는 게요?",
                         "confess": "이제 속이 다 후련하오."})
 
 
-def style_profile(style: str) -> tuple[str, str, dict[str, str]]:
-    """말투 설명에 맞는 (앞 덧붙임, 끝 어미, 반응 의도별 뒤 덧붙임). 맞는 계열이 없으면 `DEFAULT_PROFILE`."""
-    for keywords, prefix, ending, tails in STYLE_PROFILES:
+def style_profile(style: str) -> tuple[str, tuple[str, ...], dict[str, str]]:
+    """말투 설명에 맞는 (앞 덧붙임, 끝 어미들, 반응 의도별 뒤 덧붙임). 맞는 계열이 없으면 `DEFAULT_PROFILE`."""
+    for keywords, prefix, endings, tails in STYLE_PROFILES:
         if any(k in style for k in keywords):
-            return prefix, ending, tails
+            return prefix, endings, tails
     return DEFAULT_PROFILE
+
+
+def all_style_endings() -> frozenset[str]:
+    """모든 말투 계열의 끝 어미. 검증기가 '다른 말투 어미'(사실은 그대로)와 그 밖의 어미(추측·전언 등)를 가른다."""
+    return frozenset(e for p in (*STYLE_PROFILES, DEFAULT_PROFILE) for e in p[-2])
+
+
+def allowed_endings(persona: str) -> frozenset[str]:
+    """이 인물(persona)의 사실 문장 끝 서술어에 허용하는 어미(말투 계열의 끝 어미들). 검증기가 쓴다."""
+    return frozenset(style_profile(speaker_and_style(persona)[1])[1])
 
 
 def restyle_example_fact(fact: str, ending: str) -> str:
@@ -98,8 +110,8 @@ def example_pair(style: str, reaction: str) -> tuple[str, str]:
     """예시 한 쌍(사실 문장, 대사). 대사 = 앞 덧붙임 + 끝 어미만 말투로 바꾼 사실 문장 + 반응 의도별 뒤 덧붙임."""
     key = reaction if reaction in REACTION_KO else "explain"
     fact = CONFESS_FACT if key == "confess" else WHERE_FACT
-    prefix, ending, tails = style_profile(style)
-    return fact, " ".join(x for x in (prefix, restyle_example_fact(fact, ending), tails[key]) if x)
+    prefix, endings, tails = style_profile(style)
+    return fact, " ".join(x for x in (prefix, restyle_example_fact(fact, endings[0]), tails[key]) if x)
 
 
 def build_messages(req: dict) -> list[dict]:
