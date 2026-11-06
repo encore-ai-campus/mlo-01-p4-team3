@@ -9,6 +9,7 @@ from prometheus_client import Counter, Histogram
 
 REQUESTS = Counter("paldo_http_requests_total", "HTTP requests", ["route", "method", "status"])
 DURATION = Histogram("paldo_http_request_duration_seconds", "HTTP latency", ["route", "method", "status"])
+LOGIN_RESULTS = Counter("paldo_auth_login_total", "Authentication results", ["result"])
 LOGGER = logging.getLogger("paldo.web")
 
 
