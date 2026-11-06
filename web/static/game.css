@@ -8,6 +8,9 @@ textarea { display: block; width: 100%; }
 button { border: 1px solid #35654f; background: #e4ede4; border-radius: .3rem; cursor: pointer; }
 button:disabled { opacity: .55; }
 .command-form { border: 1px solid #c6cbc5; border-radius: .5rem; padding: .8rem; margin: .8rem 0; }
+.target-form { display: inline-block; border: 0; padding: 0; margin: .25rem .5rem .25rem 0; }
+.claim-cards { list-style: none; padding: 0; }
+.claim-cards li { border-left: .2rem solid #c6cbc5; margin: .4rem 0; padding: .2rem .6rem; }
 #meeting-actions { scroll-margin-top: 1rem; }
 .preview-guide, .round-result { border-left: .25rem solid #35654f; padding: .65rem .85rem; background: #e4ede4; }
 .round-result h2 { margin: 0 0 .3rem; }

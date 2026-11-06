@@ -1,0 +1,16 @@
+{
+  "task": "A-08-04",
+  "commit": "ac1e974a8a3dcd5b3f605ded4062b58574d3c76e",
+  "generated_at": "2026-11-06T06:39:36Z",
+  "source": "python -B out/assets/A-08-04/run_cutout_tests.py",
+  "metrics": {
+    "tests_run": {
+      "value": 12,
+      "unit": "개"
+    },
+    "failures": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
