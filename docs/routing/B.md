@@ -1,0 +1,23 @@
+# B 웹 영역 안내
+
+루트 [`README.md`](../../README.md) "영역 안내"에서 들어오는 2단 라우팅 문서다. 범위: 게임 웹(Django 뷰·화면·웹소켓)과 응용 유스케이스, 게임 쪽 광고 포트.
+
+- 위치와 역할만 적는다. 상세는 모듈 문서 `docs/modules/web.md`(아직 없는 문서는 그 모듈을 처음 바꾸는 날 생긴다. 색인 [`docs/modules/README.md`](../modules/README.md)), 오늘 할 일은 `docs/tasks/B_web.md`.
+- 계층 규칙과 의존 방향은 루트 README "계층과 의존 방향", 파일 위치 원본은 [`docs/contracts/structure.md`](../contracts/structure.md).
+- 이 문서는 B 흐름이 관리한다. 다른 흐름이 이 영역에서 작업하며 안내가 필요하면 직접 행을 넣고, B 흐름이 PR에서 확인한다. 행은 기존 분류와 순서를 지켜 관련 항목 근처에 넣는다(`docs/tasks/README.md` 3절 "여럿이 고치는 파일").
+
+## 폴더 안내
+
+| 폴더 | 계층 | 담당 | 역할 |
+|---|---|---|---|
+| `server/app/` | 응용 | B | 유스케이스와 DTO(`dto.py`) |
+| `server/api/`, `web/` | 표현 | B | Django 뷰, 템플릿, htmx 조각, 뷰 모델(`viewmodels.py`), 웹소켓 Consumer(`consumers.py`, 예정) |
+| `server/app/ads_port.py` | 응용(게임 쪽) | B | `AdProvider` 포트와 보호 래퍼 `AdGateway` |
+
+## 작업별 위치
+
+| 하려는 일 | 볼 곳 |
+|---|---|
+| 화면이나 API 추가 | 표현 `server/api/`, 응용 `server/app/dto.py`, `docs/contracts/api.md` |
+| 광고 지면을 게임 화면에 붙이기 | `server/app/ads_port.py`, `docs/contracts/ports.md` 5절 |
+| 광고 비콘·클릭 중계(웹소켓) | 표현 `server/api/consumers.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py` → 인프라 `server/infra/ad_client.py`, `docs/contracts/api.md` 7절 |

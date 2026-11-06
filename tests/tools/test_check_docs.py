@@ -317,6 +317,17 @@ class Rule6ContractsAndRouting(unittest.TestCase):
         self.assertEqual(len(cd.check_routing_doc(["ml"], ["ml/x.py"])), 1)
         self.assertEqual(cd.check_routing_doc(["ml"], ["ml/x.py", "README.md"]), [])
 
+    def test_routing_two_levels(self):
+        """P-27: 최상위는 루트 README만, 두 번째 단계는 루트 README 또는 docs/routing/<A~E>.md."""
+        self.assertEqual(cd.check_routing_doc([], []), [])
+        self.assertEqual(cd.check_routing_doc(["ml/suspicion"], ["ml/suspicion/x.py", "docs/routing/D.md"]), [])
+        self.assertEqual(cd.check_routing_doc(["ml/suspicion"], ["ml/suspicion/x.py", "README.md"]), [])
+        self.assertEqual(len(cd.check_routing_doc(["ml/suspicion"], ["ml/suspicion/x.py", "docs/routing/notes.md"])), 1)
+        self.assertEqual(len(cd.check_routing_doc(["ml/suspicion"], ["ml/suspicion/x.py", "docs/modules/ml.md"])), 1)
+        self.assertEqual(len(cd.check_routing_doc(["newtop"], ["newtop/x.py", "docs/routing/A.md"])), 1)
+        self.assertEqual(cd.check_routing_doc(["newtop", "newtop/sub"], ["newtop/sub/x.py", "README.md"]), [])
+        self.assertEqual(len(cd.check_routing_doc(["newtop", "ads/new"], ["docs/routing/D.md"])), 1)
+
 
 # ---------------------------------------------------------------- 실제 git으로 E-05-02 조건 6의 위반 2·3 재현
 def git(cwd, *args):
@@ -378,7 +389,26 @@ class ViolationScenarios(unittest.TestCase):
         self.write("ml/model.py", '"""모델."""\n')  # 커밋하지 않은 새 파일도 변경으로 본다
         code, out = self.run_diff()
         self.assertEqual(code, 1)
-        self.assertIn("새 폴더(ml/)", out)
+        self.assertIn("새 최상위 폴더(ml/)", out)
+
+    def test_second_level_folder_with_area_routing_doc_passes(self):
+        """P-27: 기존 최상위 아래 새 폴더는 영역 문서 docs/routing/<흐름>.md 변경으로 통과."""
+        self.write("tools/newpkg/x.py", '"""x."""\n')
+        self.write("docs/routing/E.md", "# E\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-q", "-m", "second level")
+        code, out = self.run_diff()
+        self.assertEqual(code, 0, out)
+
+    def test_deleted_readme_does_not_count_as_routing_change(self):
+        """README를 지운 변경은 라우팅 문서 변경으로 인정하지 않는다."""
+        self.write("tools/newpkg/x.py", '"""x."""\n')
+        git(self.root, "rm", "-q", "README.md")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-q", "-m", "delete readme")
+        code, out = self.run_diff()
+        self.assertEqual(code, 1)
+        self.assertIn("새 폴더(tools/newpkg/)", out)
 
 
 if __name__ == "__main__":
