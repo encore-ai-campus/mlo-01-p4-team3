@@ -28,6 +28,15 @@ def _quiet_main(argv):
         return main(argv)
 
 
+def _recompress(data: bytes, level: int) -> bytes:
+    """같은 PNG를 다른 zlib 압축 수준으로 다시 묶는다(픽셀 같음, 바이트 다름). zlib 구현 차이 재현용."""
+    import zlib
+    ihdr = data[16:16 + 13]
+    return (png.SIGNATURE + png._chunk(b"IHDR", ihdr) + png._chunk(b"IDAT", zlib.compress(zlib.decompress(b"".join(
+        body for tag, body in png._chunks(data) if tag == b"IDAT")), level))
+            + png._chunk(b"IEND", b""))
+
+
 def _expected():
     spec = parse_spec_md(SPEC_TEXT)
     campaigns, slot_sizes = sources.load_campaigns()
@@ -232,6 +241,57 @@ class GenerateTest(unittest.TestCase):
         run(self.tmp)
         second = {p: p.read_bytes() for p in (self.tmp / "content/images").rglob("*") if p.is_file()}
         self.assertEqual(first, second)
+
+    def test_other_zlib_bytes_kept(self):
+        """압축 바이트만 다른 임시 PNG(zlib-ng 등 흉내: 압축 수준 6)는 같은 그림으로 보고 다시 쓰지 않는다. 대조·검사도 통과."""
+        run(self.tmp)
+        paths = [self.tmp / "content/images" / rel for rel in
+                 ("sprite/jumo.png", "portrait/jumo.png", "sprite/jumo__joy.png", "mascot/kkachi.png", "ui/vote.png",
+                  "background/village_day.png")]
+        paths = [x for x in paths if x.is_file()]
+        self.assertGreaterEqual(len(paths), 4)
+        other = {}
+        for x in paths:
+            old = x.read_bytes()
+            other[x] = _recompress(old, 6)
+            self.assertNotEqual(other[x], old, x.name)
+            self.assertTrue(png.same_image(other[x], old), x.name)
+            x.write_bytes(other[x])
+        r = run(self.tmp)
+        self.assertTrue(r.ok, format_report(r))
+        self.assertEqual(r.protected_files, [])
+        for x in paths:
+            self.assertEqual(x.read_bytes(), other[x], x.name)        # 파일 바이트(SHA) 보존
+        self.assertEqual(_quiet_main(["--repo", str(self.tmp), "--check"]), 0)
+
+    def test_same_pixels_over_limit_rewritten(self):
+        """픽셀이 같아도 용량 상한을 넘는 임시 PNG는 다시 쓴다(상한은 파일 바이트 기준)."""
+        run(self.tmp)
+        x = self.tmp / "content/images/ui/vote.png"
+        fresh = x.read_bytes()
+        limit = sources.load_spec().max_bytes_for("ui")
+        pad = png._chunk(b"tEXt", b"pad\x00" + b"x" * (limit + 1))
+        bloated = fresh[:-12] + pad + fresh[-12:]
+        self.assertTrue(png.same_image(bloated, fresh))
+        x.write_bytes(bloated)
+        r = run(self.tmp)
+        self.assertTrue(r.ok, format_report(r))
+        self.assertEqual(x.read_bytes(), fresh)
+
+    def test_same_image_pixels(self):
+        a = png.encode_rgb(4, 2, [bytes(range(12)), bytes(12)])
+        self.assertTrue(png.same_image(a, _recompress(a, 1)))
+        self.assertTrue(png.same_image(a, png.encode_rgb(4, 2, [bytes(range(12)), bytes(12)], optimize=True)))
+        self.assertFalse(png.same_image(a, png.encode_rgb(4, 2, [bytes(range(12)), bytes(11) + b""])))
+        self.assertFalse(png.same_image(a, png.encode_rgba(4, 2, [bytes(16), bytes(16)])))
+        self.assertFalse(png.same_image(a, png.encode_rgb(2, 4, [bytes(6)] * 4)))
+        self.assertFalse(png.same_image(a, b"not png"))
+        trns = a[:33] + png._chunk(b"tRNS", bytes(6)) + a[33:]            # 투명색 지정: 픽셀 해석이 달라짐
+        self.assertFalse(png.same_image(trns, a))
+        broken = bytearray(_recompress(a, 1))
+        broken[-5] ^= 1                                                  # IEND CRC 손상
+        self.assertFalse(png.same_image(bytes(broken), a))
+        self.assertFalse(png.same_image(a[:-12], a))                     # IEND 없음
 
     def test_real_file_is_kept(self):
         run(self.tmp)
