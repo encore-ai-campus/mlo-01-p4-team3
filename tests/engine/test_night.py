@@ -14,6 +14,7 @@ from engine.domain.engine import (
     FACT_CLAIMS, BaselinePolicy, PaldoEngine, can_confess, candidate_pool, judge_tell, night_divination,
 )
 from engine.domain.events import EventType
+from engine.domain.observation import Decision, ReasonCode, observe_npc
 from engine.domain.model import (
     PHASE_RULES, PLAYER_ID, ClaimTruth, ClaimType, Command, CommandKind, DivinationPayload, DivinationResult,
     EvidenceRef, EvidenceType, InterrogationKind, NightPlan, Phase, PlayerProgress, ReactionIntent, RejectCode,
@@ -35,11 +36,13 @@ class NightPolicy(ScriptedPolicy):
         self.reactions = reactions or {}
         self.talks = talks or {}
 
-    def react(self, state, npc_id, cmd, rng):
-        return self.reactions.get((state.day, npc_id)) or super().react(state, npc_id, cmd, rng)
+    def react(self, obs, cmd, rng):
+        got = self.reactions.get((obs.day, obs.observer))
+        return Decision(got, [ReasonCode.SCRIPTED]) if got else super().react(obs, cmd, rng)
 
-    def talk(self, state, npc_id, rng):
-        return self.talks.get((state.day, state.phase, npc_id)) or super().talk(state, npc_id, rng)
+    def talk(self, obs, rng):
+        got = self.talks.get((obs.day, obs.phase, obs.observer))
+        return Decision(got, [ReasonCode.SCRIPTED]) if got else super().talk(obs, rng)
 
 
 def contradiction(addressee: str, record_id: str) -> dict:
@@ -95,7 +98,8 @@ class SecretConfessionReplay(unittest.TestCase):
         ev = next(e for e in r.events if e.event_type is EventType.CONFESSION)
         self.assertEqual(ev.payload["secret_id"], want["secret_id"])
         self.assertEqual([e.event_type for e in r.events],
-                         [EventType.CLAIM_MADE, EventType.CONFESSION, EventType.INTERROGATION_ANSWERED])
+                         [EventType.OBSERVATION, EventType.DECISION,          # 답변 의도 결정 직전 관측(A-06-02)
+                          EventType.CLAIM_MADE, EventType.CONFESSION, EventType.INTERROGATION_ANSWERED])
 
     def test_checks(self):
         sc = scenario("secret_confession")
@@ -298,13 +302,18 @@ class Confession(unittest.TestCase):
         pol = BaselinePolicy()
         for npc in ("hunjang", "jumo", "meosum", "blacksmith"):
             with self.subTest(voter=npc):
-                self.assertNotEqual(pol.vote(st, npc, list(st.active), random.Random(0)), "yakcho")
+                obs, _ = observe_npc(st, npc, [CommandKind.VOTE], "snap_test")
+                d = pol.vote(obs, list(st.active), random.Random(0))
+                self.assertNotEqual(d.value, "yakcho")
+                self.assertIn(ReasonCode.SKIP_CONFESSED, d.reason_codes)
 
     def test_vote_fallback_when_only_confessors(self):
         """결선 후보가 고백자뿐이면 합법 후보로 돌아간다(투표는 반드시 한다)."""
         st, tr, _ = confess_day1(self, confess_engine())
-        got = BaselinePolicy().vote(st, "hunjang", ["yakcho", "hunjang"], random.Random(0))
-        self.assertEqual(got, "yakcho")
+        obs, _ = observe_npc(st, "hunjang", [CommandKind.VOTE], "snap_test")
+        got = BaselinePolicy().vote(obs, ["yakcho", "hunjang"], random.Random(0))
+        self.assertEqual(got.value, "yakcho")
+        self.assertIn(ReasonCode.FALLBACK_ALL_LEGAL, got.reason_codes)
 
     def test_illegal_confession_rejected_by_engine(self):
         for npc in ("blacksmith", "hunjang"):            # 씐 자, 비밀 없는 주민
