@@ -15,16 +15,9 @@ from server.app.dto import StartGameInput, SubmitCommandInput
 from server.app.interactions import InteractionConflict, InteractionUnavailable
 from server.app.usecases import ConsentRequired, ResourceNotFound, ReviewNotReady, StartUnavailable
 from server.paldo_web.composition import GameServiceUnavailable, get_game_service
+from .consent import player_context
 from .input_validation import parse_game_input
 from .meeting_view import meeting_context
-
-
-def _player_context(user):
-    # 계정 태스크가 연결하는 프로필만 신뢰한다. Django ID로 가명을 대체하지 않는다.
-    profile = getattr(user, "paldo_profile", None)
-    if profile is None:
-        return None
-    return str(profile.player_pseudonym), profile.consented_at is not None
 
 
 def _private_response(response):
@@ -45,7 +38,7 @@ def game_request(view):
             else:
                 response = redirect(settings.LOGIN_URL)
             return _private_response(response)
-        context = _player_context(request.user)
+        context = player_context(request.user)
         if context is None:
             return _private_response(JsonResponse({"error": "profile_required"}, status=403))
         request.player_pseudonym, request.consented = context
@@ -131,14 +124,25 @@ def _meeting_command_body(form):
 @game_request
 @require_http_methods(["POST"])
 def start_game(request):
-    """세션 계정의 가명 ID를 주입해 판 시작을 요청한다."""
-    body = _body(request)
+    """세션 계정의 가명 ID를 주입해 JSON 또는 계정 메뉴의 판 시작을 처리한다."""
+    from_form = request.content_type == "application/x-www-form-urlencoded"
+    if from_form:
+        form = request.POST
+        if set(form) - {"csrfmiddlewaretoken", "preset_id", "session_id", "mudang_variant", "seed"}:
+            raise ValueError("unknown_field")
+        body = {key: form.get(key) for key in ("preset_id", "session_id", "mudang_variant")}
+        if "seed" in form:
+            body["seed"] = int(form["seed"])
+    else:
+        body = _body(request)
     if "player_pseudonym" in body:
         raise ValueError("server_field")
     body["player_pseudonym"] = request.player_pseudonym
     data = parse_game_input(StartGameInput, body)
     output = get_game_service().start(data, request.player_pseudonym, request.consented)
     request.game_id = output.view.game_id
+    if from_form and request.headers.get("HX-Request") != "true":
+        return redirect("game-detail", game_id=output.view.game_id)
     if _wants_meeting(request):
         return _meeting_response(request, output.view, output.mudang_variant)
     return JsonResponse(to_jsonable(output))

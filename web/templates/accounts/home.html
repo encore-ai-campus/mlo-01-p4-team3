@@ -1,9 +1,36 @@
 {% extends "accounts/base.html" %}
+{% load l10n %}
 {% block content %}
 <h1>팔도무록</h1>
 {% if request.user.is_authenticated %}
   {% if player_id %}<p>내 가명 ID <code>{{ player_id }}</code></p>{% endif %}
-  {% if request.user.is_staff %}<p><a href="{% url 'admin:index' %}">운영자 화면</a></p>{% endif %}
+  {% if request.user.is_staff %}<p><a href="{% url 'admin:index' %}">운영자 화면</a> · <a href="{% url 'test-sessions' %}">테스트 세션 관리</a></p>{% endif %}
+  {% if assignments_unavailable %}<p>지금은 테스트 회차를 조회할 수 없습니다.</p>{% endif %}
+  {% for assignment in assignments %}
+    <section>
+      <h2>테스트 회차 {{ assignment.session_id }}</h2>
+      {% with plan=assignment.plan %}
+        {% if not plan %}
+          <p>배정된 판을 모두 마쳤습니다.</p>
+        {% elif plan.started %}
+          <p><a href="{% url 'game-detail' game_id=plan.game_id %}">{{ plan.number }}번째 판 이어 하기</a></p>
+        {% else %}
+          <form method="post" action="{% url 'game-start' %}">
+            {% csrf_token %}
+            <input type="hidden" name="session_id" value="{{ assignment.session_id }}">
+            <input type="hidden" name="preset_id" value="{{ plan.preset_id }}">
+            <input type="hidden" name="seed" value="{{ plan.seed|unlocalize }}">
+            <label>무당 초상
+              <select name="mudang_variant"><option value="f">여성</option><option value="m">남성</option></select>
+            </label>
+            <button>{{ plan.number }}번째 판 시작</button>
+          </form>
+        {% endif %}
+      {% endwith %}
+    </section>
+  {% empty %}
+    {% if assignments is not None and not assignments_unavailable %}<p>배정된 테스트 회차가 없습니다.</p>{% endif %}
+  {% endfor %}
   <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button>로그아웃</button></form>
 {% else %}
   <p><a href="{% url 'accounts:signup' %}">가입</a> · <a href="{% url 'accounts:login' %}">로그인</a></p>

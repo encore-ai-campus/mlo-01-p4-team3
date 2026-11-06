@@ -4,6 +4,7 @@ from django.urls import include, path
 
 from server.accounts import views as account_views
 from server.api.assets import asset_file
+from server.api.sessions import sessions
 from . import probes
 
 urlpatterns = [
@@ -15,6 +16,7 @@ urlpatterns = [
     path("accounts/", include("server.accounts.urls")),
     # Django admin도 일반 계정과 같은 잠금 규칙을 적용한다.
     path("admin/login/", account_views.signin, name="admin-login"),
+    path("admin/sessions", sessions, name="test-sessions"),
     path("admin/", admin.site.urls),
     path("", include("server.api.urls")),
 ]
