@@ -1,0 +1,18 @@
+:root { font-family: system-ui, sans-serif; color: #242b28; background: #f6f5ef; }
+body { max-width: 960px; margin: auto; padding: 1.25rem; line-height: 1.7; }
+header { border-bottom: 1px solid #c6cbc5; padding-bottom: .8rem; }
+a { color: #215c43; }
+label { display: inline-block; margin: .35rem; }
+input, select, button, textarea { font: inherit; box-sizing: border-box; max-width: 100%; padding: .45rem; }
+textarea { display: block; width: 100%; }
+button { border: 1px solid #35654f; background: #e4ede4; border-radius: .3rem; cursor: pointer; }
+button:disabled { opacity: .55; }
+.command-form { border: 1px solid #c6cbc5; border-radius: .5rem; padding: .8rem; margin: .8rem 0; }
+#meeting-actions { scroll-margin-top: 1rem; }
+.preview-guide, .round-result { border-left: .25rem solid #35654f; padding: .65rem .85rem; background: #e4ede4; }
+.round-result h2 { margin: 0 0 .3rem; }
+.people { display: flex; flex-wrap: wrap; list-style: none; padding: 0; gap: 1rem; }
+.people li { display: grid; justify-items: center; }
+fieldset { min-width: 0; }
+[role=alert] { color: #9b3024; }
+@media (max-width: 480px) { body { padding: .75rem; } label { display: block; } }
