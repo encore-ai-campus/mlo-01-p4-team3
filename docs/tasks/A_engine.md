@@ -191,7 +191,7 @@
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 A](../troubles/A.md)에 `### A-10-06` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 공개 함수·클래스 docstring(CI `docs` 검사) · 모듈 문서 [`assets`](../modules/assets.md)는 그날 일괄 갱신(A-10-03)
 - 완료 조건:
   1. 대상: `docs/assets/spec.md` 9절 표정 대상 8명 × 8절 표정 3종(기쁨 `joy`·당황 `flustered`·슬픔 `sad`) = 24장. 평상시는 A-09-05의 기본 sprite 그대로다.
-  2. 순서(처음부터 새로 생성 금지): **기본 sprite 확정(A-09-05 병합분) → 그 파일을 P-10 편집 도구의 입력으로 사용 → 그 인물의 얼굴 영역(spec 6절 키 등급 표, 등급마다 다름)만 변경 → 편집 결과의 얼굴 영역만 기본 sprite에 붙여 넣어 `sprite/<id>__<표정 id>.png` 저장 → `placeholder: false` → `make_placeholders`로 표정 초상 파생**. 몸·옷·외곽·기준선은 기본과 같아야 한다(자동 검사: 얼굴 밖 다른 픽셀 0.5% 이하).
+  2. 순서(처음부터 새로 생성 금지): **기본 sprite 확정(A-09-05 병합분) → 그 파일을 P-10 편집 도구의 입력으로 사용 → 그 인물의 얼굴 영역(spec 6절 키 등급 표, 등급마다 다름)만 변경 → 편집 결과의 얼굴 영역만 기본 sprite에 붙여 넣어 `sprite/<id>__<표정 id>.png` 저장 → `placeholder: false` → `make_placeholders`로 표정 초상 파생**. 몸·옷·외곽·기준선은 기본과 같아야 한다(자동 검사: 얼굴 영역 밖이 기본 sprite와 정확히 같음, spec 6절).
   3. manifest 표정 sprite 항목의 `edited_from`이 기본 sprite(`sprite:<id>`)를 가리키고, `SOURCES.md`에 표정 파일마다 편집 입력 파일(기본 sprite 경로·커밋)과 편집 지시문을 기록한다(에셋2).
   4. 표정은 공개 사건 매핑(spec 7절)용이라 역할·비공개 상태를 암시하는 표현(예: 씐 자만 다른 음영)을 넣지 않는다(스타일 가이드 6절).
   5. 에셋2~4(에셋1·5는 E-11-10 일괄 검수). `make_placeholders --check` 통과.
