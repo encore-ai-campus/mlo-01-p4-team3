@@ -3,23 +3,25 @@
   <h2 id="meeting-actions-title">행동 선택</h2>
   <p id="command-status" role="status" aria-live="polite"></p>
   {% url 'game-command' vm.game_id as command_url %}
-  {% for kind in vm.allowed_actions %}
-    <form class="command-form" method="post" action="{{ command_url }}" hx-post="{{ command_url }}" hx-target="#meeting"
+  {% if 'vote' in vm.allowed_actions %}<h3>투표할 대상</h3>{% endif %}
+  {% if 'divine' in vm.allowed_actions %}<h3>점칠 대상</h3>{% endif %}
+  {% for action in actions %}
+    {% with kind=action.kind %}
+    <form class="command-form{% if action.target %} target-form{% endif %}" method="post"
+          action="{{ command_url }}" hx-post="{{ command_url }}" hx-target="#meeting"
           hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
       {% csrf_token %}
       <input type="hidden" name="game_id" value="{{ vm.game_id }}">
       <input type="hidden" name="state_version" value="{{ vm.state_version }}">
       <input type="hidden" name="command_id">
       <input type="hidden" name="kind" value="{{ kind }}">
-      {% if kind == 'suspect' or kind == 'defend' or kind == 'vote' or kind == 'divine' %}
+      {% if action.target %}
+        <input type="hidden" name="target" value="{{ action.target.npc_id }}">
+      {% elif kind == 'suspect' or kind == 'defend' %}
         <label>대상
           <select name="target" required>
-            {% for person in vm.people %}
-              {% if person.status == 'active' and person.npc_id != 'mudang' %}
-                {% if kind != 'vote' or not vm.runoff_candidates or person.npc_id in vm.runoff_candidates %}
-                  <option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>
-                {% endif %}
-              {% endif %}
+            {% for person in active_targets %}
+              <option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>
             {% endfor %}
           </select>
         </label>
@@ -27,10 +29,8 @@
       {% if kind == 'interrogate' %}
         <label>대상
           <select name="addressee" required>
-            {% for person in vm.people %}
-              {% if person.status == 'active' and person.npc_id != 'mudang' %}
-                <option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>
-              {% endif %}
+            {% for person in active_targets %}
+              <option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>
             {% endfor %}
           </select>
         </label>
@@ -77,9 +77,10 @@
         {% with icon=kind|action_icon %}
           {% if icon %}<img src="{% asset_url icon %}" alt="" width="20" height="20">{% endif %}
         {% endwith %}
-        {{ kind|action_label }}
+        {% if action.target %}{{ action.target.name|display_name }} {% endif %}{{ kind|action_label }}
       </button>
     </form>
+    {% endwith %}
   {% empty %}
     <p>지금 선택할 행동이 없습니다.</p>
   {% endfor %}
