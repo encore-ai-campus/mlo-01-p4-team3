@@ -1,5 +1,6 @@
 # E PM 태스크 (콘텐츠·LLM·에셋·테스트, 통합 주관)
 
+- 기획서 절 번호: 이 문서의 "기획서 N.N"은 **v1.1 번호**다. 기획서 v1.2와 번호가 겹치므로(예: v1.1 6.3 VM 배치 ≠ v1.2 6.3 시뮬레이션) 기획서 부록 B 대응표로 찾는다(P-28).
 - 담당자: PM · 노트북: 3, 2(관리)
 - 폴더: `content/`(인물·비밀·단서·템플릿), `content/images/`(임시 파일·`manifest.json`. 실제 파일·`SOURCES.md` 생성 기록은 A), `docs/assets/`(스타일 가이드·규격), `tools/assets/`(`make_placeholders.py`, `check_assets.py`. 투명 바탕 처리 `cutout.py`는 A), `llm/`(LLM 서비스, LangGraph), `.github/workflows/`, `tools/check_evidence.py`, `tools/check_docs.py`, `tools/check_secrets.py`, `tools/evidence_result.py`
 - 늘 볼 문서: `docs/contracts/content.md`, `ports.md` 4절, `privacy.md`, 기획서 3·7·10장.
@@ -118,7 +119,7 @@
 ## 11/6(금)
 
 ### E-06-01 템플릿 대사
-- 2.5h · 완료 조건: 행동 유형 × 성향 4종 템플릿(의심, 감싸기, 모순 지적, 해명, 침묵, 점괘 공개, 행적 진술, 캐묻기 반응 4종: 해명·회피·역공·고백). 모든 반응 템플릿에 `{fact}` 포함(검사 스크립트 `tools/check_templates.py`), 자리표시자 오탈자 0건, 템플릿당 변형 **2개 이상**(11/5 잠정 확정값, README 7절).
+- 2.5h · 완료 조건: 행동 유형 × 성향 4종 템플릿(의심, 감싸기, 모순 지적, 해명, 침묵, 캐묻기 반응 4종: 해명·회피·역공·고백). 점괘 공개(무당 전용)와 행적 진술(엔진이 사실 문장으로 쓰는 중립 문장)은 성향별로 만들지 않고 공용 1개 + 변형 2개 이상, 캐묻기 반응 4종은 공용 템플릿도 하나씩 둔다(11/6 PM 결정). 캐묻기 반응 템플릿에 `{fact}` 포함(회의 발언은 엔진이 `{target}`만 넘기므로 넣지 않는다. 검사 스크립트 `tools/check_templates.py`), 자리표시자 오탈자 0건, 템플릿당 변형 **2개 이상**(11/5 잠정 확정값, README 7절).
 - 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-06-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`content`](../modules/content.md)는 그날 일괄 갱신(E-06-07)
 - 근거: 기획서 7.1, 10장 / content.md 4
 
@@ -163,10 +164,10 @@
 - 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-07-07` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`llm`](../modules/llm.md)는 그날 일괄 갱신(E-07-05)
 - 산출물: `llm/prompt.py`(추궁 프롬프트 생성), `llm/validator.py`(검증기와 폴백 문장), `llm/eval_set.py`(평가 세트 생성), `fixtures/llm/interrogation_eval.json`(평가 세트 100건), `llm/mvp_metrics.py`(지표 계산: 성공률·사유 분포·지연 p50/p95·일관성), `tests/llm/test_validator.py`, `tests/llm/test_mvp_metrics.py`. `llm/prompt.py`·`llm/validator.py`·`llm/eval_set.py`·`llm/mvp_metrics.py`는 서버·LangGraph·llama.cpp 없이 쓰는 순수 함수이고 표준 라이브러리만 쓴다(`tests/contract/test_layers.py`에 검사 추가). 11/8 서비스(E-08-09)와 MVP 노트북(E-07-06)이 같은 함수를 부른다.
 - 완료 조건:
-  1. 검증기: 형식·길이, 허용되지 않은 인물·장소·역할어, 부정·단정 표현 추가 여부, `fact_sentence` 장소·시간·인물 보존. 위반 예시 20개 이상 단위 테스트 전부 거부. 위반 사유는 코드 4종(`format_length`, `forbidden_entity`, `added_assertion`, `fact_changed`)으로 돌려준다.
+  1. 검증기: 형식·길이, 허용되지 않은 인물·장소·역할어, 부정·단정 표현 추가 여부, `fact_sentence` 장소·시간·인물·행동·부정 여부 보존(끝 어미만 화자 말투로 바꿀 수 있고 의문형·추측형·전언형·부정형 어미는 금지, 11/6 PM 결정·`ports.md` 4절). 위반 예시 20개 이상 단위 테스트 전부 거부. 위반 사유는 코드 4종(`format_length`, `forbidden_entity`, `added_assertion`, `fact_changed`)으로 돌려준다.
   2. 평가 세트: 콘텐츠 묶음(인물·비밀·주장)에서 추궁 요청 100건을 `python -m llm.eval_set --seed 1`로 자동 생성. 같은 명령이면 같은 파일(테스트). 요청마다 `fact_sentence`와 허용 인물·장소 목록을 담는다. 기존 `fixtures/llm/interrogation_requests.json`(3건)은 계약 예시로 둔다.
   3. 추궁 예시 100건 측정(E-06-07 선정 모델·실행 설정, 로컬): 전체 응답 **p95 15초 이하**, 폴백률, 검증 실패 사유 분포. 폴백 문장 = `fact_sentence` 포함(정보량 동일) 100%. 측정은 `llm/mvp_metrics.py`로 하고, MVP 노트북(E-07-06)도 같은 함수를 불러 숫자 정의를 맞춘다.
-  4. 말투 사람 평가는 P-09 방법·합격선대로 실시하고 결과 표. P-09 미정이면 평가 결과만 기록하고 완료 판정은 보류. MVP 제출(E-07-06)은 1~3번만 선행으로 보므로 이 항목이 미완이어도 막지 않는다.
+  4. 말투 사람 평가는 P-09 방법·합격선대로 실시하고 결과 표(11/6 PM 결정: 평가자 D 1명, 1~5점 3항목, 항목별 평균 3.5, 샘플 20건. 상세는 README 7절 확정된 결정). P-09 미정이면 평가 결과만 기록하고 완료 판정은 보류. MVP 제출(E-07-06)은 1~3번만 선행으로 보므로 이 항목이 미완이어도 막지 않는다.
 - 근거: 기획서 7.2, 7.3
 
 ### E-07-06 LLM MVP 제출 (코랩 노트북)
@@ -175,7 +176,7 @@
 - 산출물: `tools/build_llm_bundle.py`(제출 묶음 zip 생성), `llm/colab/paldo_llm_mvp.ipynb`(코랩 노트북, 지표는 E-07-07의 `llm/mvp_metrics.py`를 부른다), `tests/tools/test_build_llm_bundle.py`
 - 완료 조건:
   1. 묶음: `python -m tools.build_llm_bundle --out out/llm_mvp/`가 zip 1개를 만든다. 안에는 `llm/prompt.py`, `llm/validator.py`, `llm/mvp_metrics.py`, 평가 세트(`interrogation_eval.json`), 실행 함수(노트북이 부르는 `run_eval`)만 넣는다. 저장소는 비공개라 강사는 이 zip만 받는다. 같은 커밋이면 같은 zip(파일 목록·내용 고정, 테스트). zip에 비밀값·접속 주소가 없음(`check_secrets` 규칙으로 zip 안 파일 검사).
-  2. 노트북 단계: ① 맨 위 입력 칸(모델 파일 ID, zip 파일 ID. 저장소에는 빈 값) ② llama-cpp-python 설치(미리 빌드된 CPU 휠, GPU 런타임이면 GPU 휠과 `n_gpu_layers`) ③ 구글 드라이브에서 모델 GGUF와 zip 받기 ④ 예시 3건 추론 ⑤ 지표 표(아래 3~5번) ⑥ 강사가 직접 질문을 넣는 칸(인물·사실 문장·질문 입력 → 답변, 검증 결과, 지연 시간). 생성 설정(온도·top_p·최대 토큰·컨텍스트 길이·스레드 수)은 E-07-07 측정과 같게 고정하고 첫 칸에 표시한다. 커밋하는 노트북은 출력 셀을 비운다.
+  2. 노트북 단계: ① 맨 위 입력 칸(모델 파일 ID, zip 파일 ID. 저장소에는 빈 값) ② llama-cpp-python 설치(미리 빌드된 CPU 휠, GPU 런타임이면 GPU 휠과 `n_gpu_layers`) ③ 구글 드라이브에서 모델 GGUF와 zip 받기 ④ 예시 3건 추론 ⑤ 지표 표(아래 3~5번) ⑥ 강사가 직접 넣는 칸(인물·사실 문장·반응 의도(해명·회피·역공·고백) 선택과 질문 입력 → 답변, 검증 결과, 지연 시간. 질문은 표시만 한다: 실제 게임에서는 해석기·엔진이 질문을 반응 의도·사실 문장으로 바꾼다, 기획서 v1.2 5.2). 샘플링 설정(온도·top_p·top_k·최대 토큰·컨텍스트 길이)은 E-07-07 측정과 같게 고정하고, 스레드 수는 min(E-07-07 값 8, 실행 환경 코어 수)로 해 실제 값을 표시한다. 설정은 zip 안에 있으므로 ③에서 zip을 푼 직후 표로 출력하고 ① 아래에 그 위치를 안내한다(11/6 PM 결정). 커밋하는 노트북은 출력 셀을 비운다.
   3. 성공률: 평가 세트 100건을 시드 0으로 1회씩 생성. 성공 = 검증기 통과이고 폴백 없이 나온 답. 성공률(%)과 위반 사유 4종(`format_length`, `forbidden_entity`, `added_assertion`, `fact_changed`)별 건수·비율, 생성 오류·시간 초과 건수를 표로.
   4. 지연 시간: 요청마다 프롬프트 처리·생성·검증 시간과 합계를 재서 p50·p95, 생성 토큰/초 평균을 표로. 실행 환경(CPU 모델명·코어 수, GPU 이름 또는 없음, 스레드 수, `n_gpu_layers`, llama-cpp-python 버전)을 함께 출력한다. 코랩 사양이 달라 15초 기준(NFR-LLM-001)은 참고로만 표시한다.
   5. 일관성: 평가 세트 앞 20건을 시드 1~5로 5회씩 생성(k=5, 생성 설정은 2번과 같음). 요청별로 ① 판정 일치(5회의 검증 통과·실패 판정이 모두 같음) ② 사실 요소 일치(5회 모두 `fact_sentence`의 장소·시간·인물을 보존) ③ 문자 유사도(5회 답변 10쌍의 `difflib.SequenceMatcher` 비율 평균)를 구하고, 20건에 대한 ①·② 비율(%)과 ③ 평균을 표로.

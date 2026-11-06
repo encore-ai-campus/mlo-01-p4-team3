@@ -1,0 +1,72 @@
+{
+  "task": "D-05-02",
+  "commit": "a1d4e8a9a149b4100c45aa5ee08f8583576c9ca1",
+  "generated_at": "2026-11-05T16:21:45Z",
+  "source": "python -m tools.perf.bert_bench --candidate koelectra --n 200 --threads 4 --length 64 --batch 4",
+  "metrics": {
+    "inference_p50": {
+      "value": 82.08200009539723,
+      "unit": "ms"
+    },
+    "inference_p95": {
+      "value": 154.52719992026687,
+      "unit": "ms"
+    },
+    "inference_calls": {
+      "value": 200,
+      "unit": "회"
+    },
+    "loaded_rss": {
+      "value": 788.45703125,
+      "unit": "MiB"
+    },
+    "loaded_rss_delta": {
+      "value": 541.70703125,
+      "unit": "MiB"
+    },
+    "inference_peak_rss": {
+      "value": 837.78515625,
+      "unit": "MiB"
+    },
+    "training_peak_rss": {
+      "value": 2335.34765625,
+      "unit": "MiB"
+    },
+    "training_samples": {
+      "value": 40,
+      "unit": "문장"
+    },
+    "training_steps": {
+      "value": 10,
+      "unit": "회"
+    },
+    "sample_epoch": {
+      "value": 13.91384209971875,
+      "unit": "s"
+    },
+    "first_step": {
+      "value": 1622.668899828568,
+      "unit": "ms"
+    },
+    "steady_step": {
+      "value": 1365.2796999861796,
+      "unit": "ms"
+    },
+    "parameters": {
+      "value": 112929034,
+      "unit": "개"
+    },
+    "epoch_50": {
+      "value": 18.01059517468093,
+      "unit": "s"
+    },
+    "epoch_200": {
+      "value": 68.53965369922419,
+      "unit": "s"
+    },
+    "epoch_1000": {
+      "value": 341.6687116967514,
+      "unit": "s"
+    }
+  }
+}

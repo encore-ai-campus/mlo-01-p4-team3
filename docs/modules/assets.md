@@ -5,7 +5,7 @@
 게임 화면(B)과 광고 서버(D)가 쓰는 이미지 파일의 규격, 파일 목록(`manifest.json`), 임시 세트를 관리한다.
 - 입력: 규격표 `docs/assets/spec.md`, 콘텐츠 ID(`fixtures/content_min/bundle.json` 인물 + 무당 2종, 계약 `Place`, 규격표의 UI 아이콘 10개, `fixtures/ads/campaigns.json` 소재 × 지면 규격)
 - 출력: `content/images/<kind>/…` PNG와 `content/images/manifest.json`(kind, id, size(광고만), path, url, placeholder, derived_from(초상만), edited_from·edited_from_sha256(표정 변형 sprite만))
-- 유형 8개: portrait·sprite·background·mascot·place·ui·map·ad. 비주얼 노벨 회의 화면용 sprite(전신 512×1280, 바탕 투명)를 원본으로 두고, 초상은 sprite 위 512×512를 먹남 위에 알파 합성해 만든다(크로스체크 17·18). 표정 변형은 `<인물 id>__<표정 id>` sprite·초상이고 기본 sprite에서 얼굴만 편집한다(크로스체크 19). 마스코트는 까치·족제비 512×512 RGBA다.
+- 유형 8개: portrait·sprite·background·mascot·place·ui·map·ad. 비주얼 노벨 회의 화면용 sprite(전신 512×1280, 바탕 투명)를 원본으로 두고, 초상은 sprite에서 인물별 크롭 위 y(`vn.portrait_top`)부터 512×512를 먹남 위에 알파 합성해 만든다(크로스체크 17·18, 11/6 키 등급). 표정 변형은 `<인물 id>__<표정 id>` sprite·초상이고 기본 sprite에서 얼굴만 편집한다(크로스체크 19). 마스코트는 까치·족제비 512×512 RGBA다.
 - 계층(`tools/assets/`)
   - 도메인: `spec.py`(규격표 해석, 기대 항목, 대조, 초상-sprite 쌍 검사)·`art.py`(유형별 임시 그림 배분)·`portrait_art.py`(임시 sprite: 회색 실루엣·기준선·이름표, 초상 합성 크롭)·`background_art.py`(임시 장면 배경: 그라데이션·이름표)·`mascot_art.py`(임시 마스코트: 동물 실루엣·이름표)·`glyphs.py`(이름표 글자 찍기, 비트맵 `glyph_data.py`)·`vn.py`(sprite 기준선·배경·표정 얼굴 영역·마스코트 검사, 평소/전신 컷·마스코트 배치 수치, 부드러운 축소, 검수용 합성)
   - 인프라: `sources.py`(파일·로그·결과 JSON, 인물 표시 이름)·`png.py`(PNG RGB/RGBA 쓰기·읽기)·`build_glyphs.py`(Windows 글꼴 → `glyph_data.py`, GDI·ctypes, 개발 도구 CLI)
@@ -21,7 +21,7 @@
 - 규격표(`spec.md`)를 사람과 스크립트가 함께 읽는 원본으로 둬, 값이 문서와 코드에 따로 적혀 어긋나는 일을 막는다.
 - 표준 라이브러리만 쓴다(zlib PNG). `precheck`가 설치 없이 돌고, 같은 입력이면 같은 바이트가 나와 diff가 생기지 않는다. 이름표 글자도 시스템 글꼴 대신 커밋한 비트맵을 써서 노트북마다 결과가 같다(`build_glyphs`만 Windows 글꼴을 쓰고 `precheck`는 돌리지 않는다).
 - 임시 그림을 회색 실루엣 + 이름으로 둔 이유(11/5 PM 결정): 코드로 그린 인물 그림은 최종 반실사 그림과 너무 달라 팀원에게 잘못된 인상을 준다. 실루엣은 크기·기준선·배치만 보여 주고 그림 기대를 만들지 않는다.
-- 초상을 sprite에서 파생하는 이유: 한 인물을 한 번만 만들면 초상과 서 있는 그림의 얼굴·옷이 어긋나지 않고, 실제 에셋 작업(D, A 흐름 `[에셋]` 태스크)도 인물당 1장이다. 눈높이 기준선(y≈200)이 모든 인물에서 같아 초상을 나란히 놓아도 얼굴 크기가 튀지 않는다(크로스체크 18).
+- 초상을 sprite에서 파생하는 이유: 한 인물을 한 번만 만들면 초상과 서 있는 그림의 얼굴·옷이 어긋나지 않고, 실제 에셋 작업(D, A 흐름 `[에셋]` 태스크)도 인물당 1장이다. 모든 인물을 같은 축척으로 그리고 초상 크롭은 눈이 초상 안 등급별 위치(`HeightGrade.portrait_eye`)에 오게 인물별로 잡아, 키가 달라도 초상의 얼굴 위치가 맞는다(11/6 PM 결정).
 - 외형은 공개 인물 ID로만 정한다. 숨은 역할·성격·일과에 따라 그림·크기·폴백이 달라지면 정체 단서가 되기 때문이다(스타일 가이드 6절 4번). 밤 화면에는 sprite를 두지 않는다.
 
 ## 사용법
@@ -54,8 +54,8 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 | `spec.md` 1절 `용량 상한(바이트)` | 512000 | 파일 용량 공통 상한(P-15 잠정) | 넘는 임시 파일이 생기면 생성 실패 |
 | `spec.md` 1절 `용량 상한(바이트) <kind>` | sprite 8388608, portrait 3145728, background 10485760, mascot 3145728 | kind별 상한(11/5 PM 결정, 반실사 실제 그림용) | 행이 없는 kind는 공통 상한 |
 | `spec.md` 2절 크기 | portrait 512×512, sprite 512×1280, background·map 1280×720, place·ui 128×128 | 유형별 픽셀 크기 | 바꾸면 B 화면 레이아웃과 실제 에셋 전부 영향. 바꾸지 않는다 |
-| `vn.py` sprite 기준선 | 가운데 256±16px(알파 16 이상), 머리 위 여백 ≥ 16px, 발끝 y=1248(아래 여백 16~48px), 눈높이 y≈200·허리선 y=640(사람 검수) | sprite 검사 기준(`spec.md` 6절과 같은 값, 테스트가 대조) | 실제 sprite 생성(A-09-05) 결과를 보고 PM이 조정 |
-| `vn.py` 표정·마스코트 | 얼굴 영역 x 160~351·y 104~311(밖은 기본과 정확히 같음, 완전 투명 RGB 무시, 얼굴은 달라야 함), 마스코트 512×512 RGBA·모서리 투명·투명 20% 이상 | 표정 변형·마스코트 검사(`spec.md` 6절) | 실제 편집 시험(A-10-06) 결과로 PM이 조정 |
+| `vn.py` sprite 기준선 | 가운데 256±16px(알파 16 이상), 머리 위 여백 ≥ 16px, 발끝 y=1248(아래 여백 16~48px). 키 등급 4개(`HEIGHT_GRADES`: 머리 꼭대기 y/등신/초상 안 눈 y = 큰 키 48/7.2/200, 남성 보통 94/7/200, 여성 보통 185/6.8/200, 아이 339/6/230, 사람 검수)와 인물 → 등급 표(`CHARACTER_GRADE`) | sprite 검사 기준(`spec.md` 6절과 같은 값, 테스트가 대조) | 등급 값·인물 배정은 PM 결정(11/6). 새 인물은 등급을 넣어야 그려진다 |
+| `vn.py` 표정·마스코트 | 얼굴 영역 `face_box(인물 id)`(등급에서 계산: x 256±0.6h, y 눈−0.6h~눈+0.69h. 밖은 기본과 정확히 같음, 완전 투명 RGB 무시, 얼굴은 달라야 함), 마스코트 512×512 RGBA·모서리 투명·투명 20% 이상·가로 가운데 256±16·아래 여백 16~48px(sprite와 같은 판정 함수) | 표정 변형·마스코트 검사(`spec.md` 6절) | 실제 편집 시험(A-10-06) 결과로 PM이 조정 |
 | `vn.py` 배치 | 무대 1280×720, 평소 0~640행 0.8배 410×512 위 28, 전신 컷 0.5배 256×640 위 40(대사창 숨김), 마스코트 0.5배 256×256 x 64·y 260, 대사창 180px, 밤 sprite 0 | 검수용 합성과 B-10-07의 기준 수치(`spec.md` 7절) | B 화면 배치와 함께 바꾼다 |
 | `spec.md` 3절 | 아이콘 10개 | UI 아이콘 ID 목록 | 추가하면 기대 수가 늘어남 |
 | `spec.md` 8·9절 | 표정 3개(joy·flustered·sad), 대상 8명(무당 2 + 첫 플레이 인물 6, `yakcho`·`gwabu`는 E-05-03이 정함) | 표정 변형 목록과 대상 | 대상 1명마다 sprite·초상 3장씩 늘어남. 새 표정 이름은 `build_glyphs` 다시 실행 |
@@ -69,8 +69,8 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 - 임시 sprite·초상은 회색 실루엣과 이름표라, 화면에서는 머리 장식과 이름으로만 인물을 구분한다. 얼굴·옷·색은 최종 그림 판단에 쓰지 않는다.
 - 장소·UI·지도·광고 임시 그림은 kind마다 같은 도형이다. id 해시로 보조색만 달라서, 화면에서 구분하는 용도로는 쓰지 못한다.
 - 형식(PNG 구조·CRC·데이터 길이)·크기·용량·누락·남는 파일·manifest path/url 불일치, sprite·배경 규칙(`vn.py`), 초상-sprite 쌍만 본다. 생성 기록(에셋2)과 정식 검사는 `check_assets.py`(E-08-07)가 맡는다.
-- 임시 sprite는 모두 같은 실루엣(머리 중심 = 눈높이 y=200)이고, 머리 장식 때문에 머리 위 여백만 60~120px로 다르다.
-- 눈높이·허리선은 그림에서 자동으로 찾을 수 없어 사람 검수 항목이다(자동은 가운데·머리 위 여백·발끝만).
+- 임시 sprite는 키 등급별로 같은 축척의 실루엣이고 머리 장식만 사람마다 다르다.
+- 머리 꼭대기·등신(키 등급)은 그림에서 자동으로 찾을 수 없어 사람 검수 항목이다(자동은 가운데·머리 위 여백·발끝, 표정의 얼굴 영역만).
 - PNG 읽기(`png.decode`)는 8비트 RGB/RGBA·인터레이스 없음만 지원한다. 다른 형식으로 저장한 실제 sprite는 오류로 알려 준다.
 - 지도 장소 영역 좌표는 아직 없다(실제 지도 E-11-07에서 manifest에 추가).
 - 결과 JSON은 `tools/evidence_result.write_result`(E-05-02)로 쓴다. 그 모듈이 없는 환경에서만 `sources.write_result`가 같은 형식으로 직접 쓴다.
@@ -84,3 +84,4 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 | E-05-05 | 11/5 | 규격표(도트 격자 포함)·스타일 가이드(도트), 임시 세트 생성기(`make_placeholders`)와 37개 임시 세트·manifest, 임시 초상 13장은 코드로 그린 도트 그림(`portrait_art`). 도트 기준은 같은 날 반실사 개정으로 대체(아래 E-08-07 행) |
 | E-08-07 | 11/8 | (11/5 사전 작업) 유형 sprite·background 추가(기대 52), 초상을 sprite 크롭으로 파생(`derived_from`, 쌍 상태 검사), RGBA PNG 쓰기·읽기, sprite·배경 검사(`vn.py`), 검수용 합성(`preview_vn`), 임시 sprite 13장·배경 2장. 같은 날 화풍을 반실사로 바꿔(크로스체크 18) sprite를 전신 512×1280으로, 검사를 px 기준선으로 바꾸고 도트 격자·팔레트·블록·알파 이진 검사를 뺐다. 초상은 알파 합성 크롭, 배치는 평소/전신 컷 두 모드. 이어서 임시 sprite·초상·배경을 회색 실루엣 + 이름표로 바꾸고(`glyphs`·`glyph_data`·`build_glyphs`) 코드 인물 그림·마을 그림을 지웠다 |
 | E-08-07 | 11/8 | (11/5 사전 작업, 크로스체크 19) 표정 변형(`<id>__<표정 id>`, 규격표 8·9절, `edited_from`·`edited_from_sha256`, 얼굴 영역 밖 동일·얼굴 변화 검사)과 마스코트 유형(`mascot`, 까치·족제비, `mascot_art`) 추가, 기대 90. `preview_vn --expr --mascot` |
+| E-05-05 | 11/6 | (11/6 PM 결정) sprite 키 등급: 눈높이·허리선 통일을 없애고 같은 축척에 인물별 머리 꼭대기·등신(`HEIGHT_GRADES`·`CHARACTER_GRADE`). 얼굴 영역(`face_box`)·초상 크롭 위 y(`portrait_top`, 등급별 초상 안 눈 위치)를 등급에서 계산, 임시 실루엣을 등급별로 다시 그림. 마스코트 가로 가운데·아래 여백 자동 검사(sprite와 같은 판정)와 임시 마스코트 위치 조정 |

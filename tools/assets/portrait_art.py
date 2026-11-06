@@ -1,25 +1,27 @@
 """임시 sprite·초상 그리기(도메인). 회색 사람 실루엣 + 기준선 + 이름표. 크기·기준선·배치 확인용이며 최종 그림이 아니다.
 
-- sprite: 사람마다 전신 1장, 512×1280 RGBA(바탕 투명). 회색 실루엣(머리·목·몸통·팔·다리·발)과 진한 회색 윤곽,
-  눈높이 y=200(`EYE_Y`)·허리선 y=640(`WAIST_Y`) 점선, 발끝 y=1248(`FOOT_Y`). 가로 가운데 정렬.
-- 머리 장식(`HEADGEAR`: 갓·쪽머리·상투·삿갓·벙거지)만 사람마다 다르고 나머지 실루엣은 모두 같다. 모르는 id는 장식 없음.
-- 이름표: 몸통(허리 위, 평소 표시 범위 0~640행 안)에 2줄 "임시" / 표시 이름. 이름은 호출 쪽이 공개 표시 이름(`name_ko`,
-  무당은 `HERO_LABELS`)으로 넘긴다. 비트맵에 없는 글자가 있으면 이름 대신 id를 쓴다(`glyphs.fits`).
+- sprite: 사람마다 전신 1장, 512×1280 RGBA(바탕 투명). 회색 실루엣(머리·목·어깨·몸통·팔·다리·발)과 진한 회색 윤곽,
+  발끝 y=1248(`FOOT_Y`), 가로 가운데 정렬. 키는 인물의 키 등급(`vn.grade_for`: 머리 꼭대기 y·등신)대로 그리고, 모든 부위를
+  머리 높이 h에 비례해 같은 축척으로 그린다(머리 타원 가로 반지름 0.39h, 어깨 꼭대기+1.3h, 허리 +3.1h, 엉덩이 +3.6h).
+  점선 기준선은 눈 y(등급마다 다름)와 평소 표시 경계 y=640(`vn.NORMAL_ROWS`)이다.
+- 머리 장식(`HEADGEAR`: 갓·쪽머리·상투·삿갓·벙거지)은 사람마다 다르고 머리 크기에 비례한다. 모르는 id는 장식 없음.
+  장식이 머리 위 여백(`vn.TOP_MARGIN_MIN`)을 넘으면 그 위는 그리지 않는다(안전장치. 지금 등급 값에서는 잘리는 장식이 없다).
+- 이름표: 어깨 아래(평소 표시 0~639행과 그 인물의 초상 크롭 안, 얼굴 영역 밖)에 2줄 "임시" / 표시 이름. 이름은 호출 쪽이
+  공개 표시 이름(`name_ko`, 무당은 `HERO_LABELS`)으로 넘긴다. 비트맵에 없는 글자가 있으면 이름 대신 id를 쓴다(`glyphs.fits`).
   역할·진영 같은 게임 정보는 쓰지 않는다.
-- 표정 변형(`expression` 이름을 주면): 기본과 같은 그림에 얼굴 영역(`vn.FACE_BOX`) 안에만 표정 이름을 찍는다. 얼굴 밖 픽셀은
+- 표정 변형(`expression` 이름을 주면): 기본과 같은 그림에 얼굴 영역(`vn.face_box`) 안에만 표정 이름을 찍는다. 얼굴 밖 픽셀은
   기본 sprite와 같다(표정 변형 검사 `vn.check_expression`과 같은 규칙).
-- 초상: sprite 위 512×512를 잘라 먹남 위에 알파 합성한다(`crop_portrait`, 실제 sprite에도 같은 함수를 쓴다).
+- 초상: sprite에서 `vn.portrait_top(인물 id)`부터 512행을 잘라 먹남 위에 알파 합성한다(`crop_portrait`, 실제 sprite에도 같은
+  함수를 쓴다).
 - 같은 (id, 이름, 크기)면 같은 픽셀이다.
 """
 from __future__ import annotations
 
-from tools.assets import glyphs
+from tools.assets import glyphs, vn
 
 RGB = tuple[int, int, int]
 W, H = 512, 1280               # sprite 크기(spec.md 2절)
-EYE_Y = 200                    # 눈높이(px). spec.md 6절 기준선과 같다
-WAIST_Y = 640                  # 허리선(px). 평소 표시는 0~640행
-FOOT_Y = 1248                  # 발끝(px)
+FOOT_Y = vn.FOOT_Y             # 발끝(px)
 CX = W // 2
 
 BG: RGB = (0x2E, 0x34, 0x4A)   # 먹남: 초상의 투명 부분을 채우는 색
@@ -30,8 +32,8 @@ TEXT: RGB = (0xF4, 0xF4, 0xF4)
 EDGE_PX = 3
 LABEL_PREFIX = "임시"
 HERO_LABELS = {"mudang_f": "무당(여)", "mudang_m": "무당(남)"}
-LABEL_Y = 380                  # 이름표 첫 줄 위(px). 두 줄 모두 초상 크롭(0~511)과 평소 표시(0~639) 안
-EXPR_Y = 222                   # 표정 이름 위(px). 얼굴 영역 vn.FACE_BOX(y 104~311) 안
+LABEL_GAP = 6                  # 이름표 두 줄 사이(px)
+LABEL_FLOOR = 4                # 이름표 아래와 평소 표시 경계(640) 사이 최소 간격(px)
 EXPR_TEXT: RGB = (0x30, 0x30, 0x30)
 
 # 머리 장식: 공개 id → 종류. 실루엣 구분용 단순 도형일 뿐 역할과 무관하다.
@@ -71,38 +73,60 @@ def _trapezoid(m: Mask, y0: int, y1: int, half0: float, half1: float) -> None:
 
 
 def body_mask(cid: str) -> Mask:
-    """실루엣 마스크(장식 포함)."""
+    """실루엣 마스크(장식 포함). 키 등급(`vn.grade_for`)의 머리 꼭대기·머리 높이로 그린다."""
+    g = vn.grade_for(cid)
+    t, h = g.top, g.head
     m: Mask = [0] * H
-    _ellipse(m, CX, EYE_Y, 62, 80)                    # 머리: 눈높이가 머리 중심
-    _rect(m, CX - 24, 270, CX + 24, 310)              # 목
-    _ellipse(m, CX, 340, 130, 46)                     # 어깨
-    _trapezoid(m, 330, WAIST_Y + 10, 124, 104)        # 몸통(허리까지)
-    _trapezoid(m, WAIST_Y, 700, 104, 112)             # 엉덩이
+    _ellipse(m, CX, t + h / 2, 0.39 * h, h / 2)                        # 머리
+    _rect(m, CX - 0.16 * h, round(t + 0.9 * h), CX + 0.16 * h, round(t + 1.35 * h))   # 목
+    sh, waist, hip = round(t + 1.3 * h), round(t + 3.1 * h), round(t + 3.6 * h)
+    _ellipse(m, CX, sh + 0.06 * h, 0.81 * h, 0.29 * h)               # 어깨
+    _trapezoid(m, sh, waist, 0.78 * h, 0.62 * h)                       # 몸통(허리까지)
+    _trapezoid(m, waist, hip, 0.62 * h, 0.7 * h)                       # 엉덩이
     for side in (-1, 1):
-        _trapezoid_side(m, side)
-        _rect(m, CX + side * 54 - 34, 690, CX + side * 54 + 34, FOOT_Y - 24)   # 다리
-        _ellipse(m, CX + side * 62, FOOT_Y - 20, 46, 20)                      # 발(아랫변 = FOOT_Y)
+        _arm(m, side, sh, round(t + 3.9 * h), h)
+        _rect(m, CX + side * 0.34 * h - 0.21 * h, hip - 2, CX + side * 0.34 * h + 0.21 * h, round(FOOT_Y - 0.15 * h))  # 다리
+        _ellipse(m, CX + side * 0.39 * h, FOOT_Y - 0.12 * h, 0.29 * h, 0.12 * h)              # 발(아랫변 = FOOT_Y)
     gear = HEADGEAR.get(cid)
     if gear == "gat":
-        _ellipse(m, CX, 130, 130, 14)                 # 챙
-        _rect(m, CX - 44, 60, CX + 44, 130)           # 모정
+        _ellipse(m, CX, t + 0.0625 * h, 0.8125 * h, 0.0875 * h)       # 챙
+        _rect(m, CX - 0.275 * h, round(t - 0.375 * h), CX + 0.275 * h, round(t + 0.0625 * h))  # 모정
     elif gear == "bun":
-        _ellipse(m, CX, 110, 40, 30)                  # 쪽머리(위)
+        _ellipse(m, CX, t - 0.0625 * h, 0.25 * h, 0.1875 * h)         # 쪽머리(위)
     elif gear == "topknot":
-        _ellipse(m, CX, 112, 18, 22)                  # 상투
+        _ellipse(m, CX, t - 0.05 * h, 0.1125 * h, 0.1375 * h)         # 상투
     elif gear == "straw":
-        _trapezoid(m, 70, 150, 20, 140)               # 삿갓(원뿔)
+        _trapezoid(m, round(t - 0.3125 * h), round(t + 0.1875 * h), 0.125 * h, 0.875 * h)  # 삿갓(원뿔)
     elif gear == "cap":
-        _ellipse(m, CX, 135, 72, 40)                  # 벙거지
+        _ellipse(m, CX, t + 0.09375 * h, 0.45 * h, 0.25 * h)          # 벙거지
+    for y in range(vn.TOP_MARGIN_MIN):                                 # 위 여백 안은 비운다(큰 키의 장식)
+        m[y] = 0
     return m
 
 
-def _trapezoid_side(m: Mask, side: int) -> None:
+def _arm(m: Mask, side: int, y0: int, y1: int, h: float) -> None:
     """팔: 어깨에서 허리 아래로 조금 벌어진 막대."""
-    for y in range(330, 700):
-        t = (y - 330) / 370
-        x = CX + side * (128 + 14 * t)
-        m[y] |= _span(x - 26, x + 26)
+    for y in range(y0, y1):
+        t = (y - y0) / max(1, y1 - y0)
+        x = CX + side * (0.8 * h + 0.09 * h * t)
+        m[y] |= _span(x - 0.16 * h, x + 0.16 * h)
+
+
+def eye_y(cid: str) -> int:
+    """눈 기준선 y(정수)."""
+    return vn._round(vn.grade_for(cid).eye_y)
+
+
+def label_y(cid: str) -> int:
+    """이름표 첫 줄 위 y: 어깨 아래. 두 줄 끝이 평소 표시 경계(640)보다 LABEL_FLOOR 이상 위."""
+    g = vn.grade_for(cid)
+    return min(round(g.top + 1.45 * g.head), vn.NORMAL_ROWS - (2 * glyphs.HEIGHT + LABEL_GAP) - LABEL_FLOOR)
+
+
+def expr_y(cid: str) -> int:
+    """표정 이름 위 y: 눈 조금 아래(얼굴 영역 안)."""
+    g = vn.grade_for(cid)
+    return round(g.eye_y + 0.14 * g.head)
 
 
 def _erode(m: Mask, r: int) -> Mask:
@@ -126,6 +150,7 @@ def render_sprite(cid: str, width: int, height: int, name: str | None = None,
     if (width, height) != (W, H):
         raise ValueError(f"sprite 크기는 {W}x{H}여야 함: {width}x{height}")
     m = body_mask(cid)
+    guides = (eye_y(cid), vn.NORMAL_ROWS)
     inner = _erode(m, EDGE_PX)
     fill_px, edge_px = bytes((*FILL, 255)), bytes((*EDGE, 255))
     guide_px = bytes((*GUIDE, 255))
@@ -139,7 +164,7 @@ def render_sprite(cid: str, width: int, height: int, name: str | None = None,
             for x in range(W):
                 if bits[x] == "1":
                     line[x * 4:x * 4 + 4] = fill_px if ibits[x] == "1" else edge_px
-        if y in (EYE_Y, WAIST_Y):                      # 기준선: 실루엣 위에만 점선(8px 칠하고 8px 비움)
+        if y in guides:                                # 기준선: 실루엣 위에만 점선(8px 칠하고 8px 비움)
             for x in range(W):
                 if line[x * 4 + 3] and (x // 8) % 2 == 0:
                     line[x * 4:x * 4 + 4] = guide_px
@@ -147,24 +172,25 @@ def render_sprite(cid: str, width: int, height: int, name: str | None = None,
     second = label_for(cid, name)
     for i, text in enumerate((LABEL_PREFIX, second)):
         x = CX - glyphs.width(text) // 2
-        glyphs.draw(rows, 4, x, LABEL_Y + i * (glyphs.HEIGHT + 6), text, TEXT)
+        glyphs.draw(rows, 4, x, label_y(cid) + i * (glyphs.HEIGHT + LABEL_GAP), text, TEXT)
     if expression:
         if not glyphs.fits(expression):
             raise ValueError(f"표정 이름 글자 비트맵 없음: {expression!r} (build_glyphs 다시 실행)")
-        glyphs.draw(rows, 4, CX - glyphs.width(expression) // 2, EXPR_Y, expression, EXPR_TEXT)
+        glyphs.draw(rows, 4, CX - glyphs.width(expression) // 2, expr_y(cid), expression, EXPR_TEXT)
     return rows
 
 
-def crop_portrait(width: int, rows: list[bytes]) -> list[bytearray]:
-    """sprite RGBA 행(가로 `width`) → 위 `width`행을 자른 정사각 RGB 초상. 먹남 위에 알파 합성한다.
+def crop_portrait(width: int, rows: list[bytes], top: int) -> list[bytearray]:
+    """sprite RGBA 행(가로 `width`) → `top`행부터 `width`행을 자른 정사각 RGB 초상. 먹남 위에 알파 합성한다.
+    `top`은 그 인물의 `vn.portrait_top(인물 id)`다.
 
     반투명(8비트 알파)도 받는다: 색 = round((c·a + 먹남·(255 − a)) / 255). 생성 도구가 만든 실제 sprite에도 쓴다.
     """
-    if len(rows) < width or any(len(r) != width * 4 for r in rows[:width]):
-        raise ValueError("sprite 행이 초상 크기보다 작거나 RGBA가 아님")
+    if top < 0 or len(rows) < top + width or any(len(r) != width * 4 for r in rows[top:top + width]):
+        raise ValueError("sprite 행이 초상 크롭 범위보다 작거나 RGBA가 아님")
     bg = bytes(BG)
     out: list[bytearray] = []
-    for r in rows[:width]:
+    for r in rows[top:top + width]:
         r = bytes(r)
         alpha = r[3::4]
         line = bytearray(width * 3)
@@ -182,7 +208,7 @@ def crop_portrait(width: int, rows: list[bytes]) -> list[bytearray]:
 
 def render(cid: str, width: int, height: int, name: str | None = None,
            expression: str | None = None) -> list[bytearray]:
-    """512×512 RGB 초상 = sprite 위 512×512 크롭 + 먹남 알파 합성. 크기가 512 정사각형이 아니면 ValueError."""
+    """512×512 RGB 초상 = sprite의 `vn.portrait_top(cid)`부터 512×512 크롭 + 먹남 알파 합성. 크기가 512 정사각형이 아니면 ValueError."""
     if (width, height) != (W, W):
         raise ValueError(f"초상 크기는 {W}x{W}여야 함: {width}x{height}")
-    return crop_portrait(width, render_sprite(cid, W, H, name, expression))
+    return crop_portrait(width, render_sprite(cid, W, H, name, expression), vn.portrait_top(cid))

@@ -61,7 +61,7 @@ server/infra (인프라) → engine (포트 구현)
 |---|---|
 | 이벤트나 학습 데이터 형식 변경 | `engine/domain/events.py`, `contracts/datasets.py`, `docs/contracts/events.md` |
 | 개인정보 처리 | `docs/contracts/privacy.md` |
-| 서버와 버전 | `docs/contracts/tech_stack.md`, 기획서 6.3 |
+| 서버와 버전 | `docs/contracts/tech_stack.md`, `ops/runbook/vm_roles.md` |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
 | 새 파일·폴더를 어디에 만들지 | `docs/contracts/structure.md`(1절 트리, 6절 허용 폴더 목록) |
 | 새 폴더 만들기(허용 목록 밖) | PM 승인 → `docs/contracts/structure.md` 6절·1절 먼저 고침 → 검사 `python -m tools.check_structure --diff <base>`(로컬 CI `core`, GitHub CI `core`는 `--all`) |

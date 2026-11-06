@@ -84,10 +84,47 @@ class SpriteCheckTest(unittest.TestCase):
         self.assertEqual(vn.check_sprite(W, H, 3, rgb), ["투명 채널 없음(RGBA로 저장)"])
 
     def test_baselines_of_placeholder_art(self):
-        """임시 그림은 spec 기준선으로 그린다: 머리 중심 = 눈높이 y=200, 발끝 y=1248."""
-        self.assertEqual(pa.EYE_Y, vn.EYE_Y)
+        """임시 그림은 키 등급으로 그린다: 눈 점선 = 등급 눈 y, 발끝 y=1248."""
+        guide = bytes((*pa.GUIDE, 255))
         for cid in ALL_IDS:
+            self.assertIn(guide, bytes(_sprite(cid)[pa.eye_y(cid)]), cid)
             self.assertEqual(vn.visible_box(W, _sprite(cid))[3], vn.FOOT_Y, cid)
+
+
+class HeightGradeTest(unittest.TestCase):
+    """키 등급(11/6 PM 결정): 같은 축척, 인물별 머리 꼭대기·등신, 얼굴 영역·초상 크롭은 등급에서 계산."""
+
+    def test_grade_values(self):
+        got = {g.name: (g.top, g.heads, g.portrait_eye) for g in vn.HEIGHT_GRADES.values()}
+        self.assertEqual(got, {"tall": (48, 7.2, 200), "male": (94, 7.0, 200), "female": (185, 6.8, 200),
+                               "child": (339, 6.0, 230)})
+        g = vn.HEIGHT_GRADES["male"]
+        self.assertAlmostEqual(g.head, (1248 - 94) / 7)
+        self.assertAlmostEqual(g.eye_y, 94 + g.head / 2)
+
+    def test_every_character_has_grade(self):
+        self.assertEqual(set(vn.CHARACTER_GRADE), set(ALL_IDS))
+        self.assertLessEqual(set(vn.CHARACTER_GRADE.values()), set(vn.HEIGHT_GRADES))
+        with self.assertRaises(ValueError):
+            vn.grade_for("new_villager")
+        with self.assertRaises(ValueError):
+            vn.face_box("hunjang__joy")                 # 표정 접미사는 호출 쪽이 뗀다
+
+    def test_face_box_and_portrait_top(self):
+        want = {"hunter": ((156, 31, 356, 246), 0), "hunjang": ((157, 78, 355, 290), 0),
+                "jumo": ((162, 169, 350, 371), 63), "boy": ((165, 324, 347, 519), 185)}
+        for cid, (box, top) in want.items():
+            self.assertEqual((vn.face_box(cid), vn.portrait_top(cid)), (box, top), cid)
+
+    def test_portrait_top_clamped(self):
+        from unittest import mock
+        extra = {"low": vn.HeightGrade("low", 1100, 1.0, 0), "high": vn.HeightGrade("high", 16, 7.0, 400)}
+        with mock.patch.dict(vn.HEIGHT_GRADES, extra), mock.patch.dict(vn.CHARACTER_GRADE, {"x": "low", "y": "high"}):
+            self.assertEqual(vn.portrait_top("x"), H - 512)
+            self.assertEqual(vn.portrait_top("y"), 0)
+
+    def test_round_half_up(self):
+        self.assertEqual((vn._round(2.5), vn._round(3.5), vn._round(-0.5)), (3, 4, 0))
 
 
 class BackgroundTest(unittest.TestCase):
@@ -119,9 +156,17 @@ class BackgroundTest(unittest.TestCase):
 
 
 class PortraitDerivationTest(unittest.TestCase):
-    def test_portrait_is_top_crop(self):
+    def test_portrait_is_grade_crop(self):
         for cid in ALL_IDS:
-            self.assertEqual(pa.render(cid, 512, 512), pa.crop_portrait(512, _sprite(cid)), cid)
+            self.assertEqual(pa.render(cid, 512, 512), pa.crop_portrait(512, _sprite(cid), vn.portrait_top(cid)), cid)
+
+    def test_crop_range_checked(self):
+        rows = _sprite()
+        with self.assertRaises(ValueError):
+            pa.crop_portrait(512, rows, H - 511)
+        with self.assertRaises(ValueError):
+            pa.crop_portrait(512, rows, -1)
+        self.assertEqual(len(pa.crop_portrait(512, rows, H - 512)), 512)
 
     def test_alpha_composite_over_ink_navy(self):
         """알파 0 → 먹남, 255 → 원색, 128 → 반씩 섞음(반올림)."""
@@ -129,7 +174,7 @@ class PortraitDerivationTest(unittest.TestCase):
         for a in (0, 128, 255):
             row += bytes((200, 100, 0, a))
         rows = [row + bytes(4 * 509)] + [bytearray(512 * 4)] * 511
-        out = pa.crop_portrait(512, rows)[0]
+        out = pa.crop_portrait(512, rows, 0)[0]
         bg = pa.BG
         self.assertEqual(bytes(out[0:3]), bytes(bg))
         self.assertEqual(bytes(out[3:6]), bytes((200 * 128 + c * 127 + 127) // 255 for c in bg)[:0]
@@ -202,7 +247,8 @@ class RealSpriteFlowTest(unittest.TestCase):
         self.assertEqual(r.kept_real, 1)
         self.assertEqual((self.tmp / d["path"]).read_bytes(), real)
         portrait = (self.tmp / "content/images/portrait/hunjang.png").read_bytes()
-        want = png.encode_rgb(512, 512, pa.crop_portrait(512, png.decode(real)[3]), optimize=True)
+        want = png.encode_rgb(512, 512, pa.crop_portrait(512, png.decode(real)[3], vn.portrait_top("hunjang")),
+                               optimize=True)
         self.assertEqual(portrait, want)
         items = json.loads(self.mpath.read_text(encoding="utf-8"))
         p = next(x for x in items if x["kind"] == "portrait" and x["id"] == "hunjang")
@@ -262,7 +308,7 @@ class LayoutTest(unittest.TestCase):
         """평소: 머리~허리 0.8배 410×512, 아랫변 = 대사창 윗변 540. 전신 컷: 0.5배 256×640, 위 40, 대사창 숨김."""
         self.assertEqual(vn.place(vn.NORMAL), (435, 28, 845, 540))
         self.assertEqual(vn.dialogue_box()[1], 540)
-        self.assertEqual(vn.NORMAL.rows, (0, vn.WAIST_Y))
+        self.assertEqual(vn.NORMAL.rows, (0, vn.NORMAL_ROWS))
         self.assertEqual(vn.place(vn.FULL), (512, 40, 768, 680))
         self.assertFalse(vn.FULL.dialogue)
 

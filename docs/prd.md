@@ -7,7 +7,7 @@
 - version: `v1`
 - document_state: `Draft`
 - brd_reference: `BRD-PALDO-001@v1`
-- scope_basis: `기획서 paldo_design_v1.md v1.1(2026-11-04 확정 결정과 1.1절 합격선), 계약 contracts/(contract-0.3, ads-0.4), 태스크 tasks/(커밋 c953d22 + E 11/6 일부 미룸·C-11-04 추가 반영분)`
+- scope_basis: `기획서 paldo_design_v1.md v1.1(2026-11-04 확정 결정과 1.1절 합격선. 11/6 v1.2에서 기획서는 구성만 정리했고 합격선은 이 PRD가 원본), 계약 contracts/(contract-0.3, ads-0.4), 태스크 tasks/(커밋 c953d22 + E 11/6 일부 미룸·C-11-04 추가 반영분)`
 - owner_role: `STK-PM-001`
 - reviewer_roles: [`STK-ENGINE-001`, `STK-WEB-001`, `STK-INFRA-001`, `STK-MLAD-001`] (흐름별로 다른 흐름 1명이 검토, 11절)
 
@@ -107,7 +107,7 @@
 | 관측 | Prometheus, Grafana, node_exporter | metrics-01 | C |
 | 배포 자동화 | Ansible | bastion-01 | C |
 
-- VM 20대의 노트북별 배치와 자원 근거는 기획서 6.3절이 원본이다. mysql-03, media-storage-01은 끈다.
+- VM 20대의 노트북별 배치와 자원 근거는 `ops/runbook/vm_roles.md`가 원본이다(11/6 기획서 v1.1 6.3에서 옮김). mysql-03, media-storage-01은 끈다.
 - 기술 버전은 `contracts/tech_stack.md`의 기록값이며 11/5 실측(C-05-01, C-05-03)으로 확정한다. ML·LLM 작업도 Python 3.14 단일 환경이다(11/5 PM 확정, C-05-03 실측).
 - 개발은 각자 PC의 Docker Compose 축소 구성(`ops/compose/dev.yml`), 통합·사용자 테스트는 VM, 시연은 AWS(범위 P-05)로 한다.
 
@@ -584,7 +584,7 @@
 
 **문서의 역할**
 - PRD는 "무엇을 만들고 무엇으로 합격인가"를 정한다. 태스크(`tasks/`)는 "누가 언제 하는가", 기획서는 "왜 그렇게 정했는가"를 담는다.
-- 요구사항과 합격선이 서로 다르면 이 PRD가 기준이다. 변경은 PRD를 기준으로 하고, 같은 변경(같은 PR)에서 태스크·기획서 1.1절·BRD 3절을 함께 고친다.
+- 요구사항과 합격선이 서로 다르면 이 PRD가 기준이다. 변경은 PRD를 기준으로 하고, 같은 변경(같은 PR)에서 태스크(`tasks/README.md` 6절 포함)·BRD 3절을 함께 고친다. 기획서(v1.2부터)는 합격선을 적지 않고 PRD를 가리킨다.
 
 **검토와 상태**
 - BRD는 PM이 검토하고 11/5 오전에 baseline한다.
@@ -617,6 +617,7 @@
 | 2026-11-05 | v1 | 담당 변경(11/5 PM 결정): A 엔진은 PM, A 흐름 `[에셋]` 태스크는 D(`STK-ENGINE-001`·`STK-MLAD-001`, ID 유지). `AC-LLM-004` 검수자 A → D |
 | 2026-11-05 | v1 | 범위 축소(11/5 PM 결정): `FR-ENG-008`·`FR-ENG-009`(11인 판 부분)·`FR-LLM-004`~`006`·`AC-LLM-004`·`AC-LLM-005`를 "(여유 시)" Could로, `FR-ENG-009`·`AC-ENG-006`은 프리셋·주인공 선택·8인 판 화면을 Must, 나머지를 여유 시로 나눔, `AC-ENG-008`·`FR-CONT-001`·`FR-ASSET-002`·`AC-CONT-002`에서 9·11인·확장 부분을 여유 시로, 프리셋 5~8인 Must·9·11인 Could. `AC-WEB-010` 녹화 판 11인 → 8인 |
 | 2026-11-05 | v1 | LLM MVP 일정(11/5 PM 결정): `FR-LLM-007`·`AC-LLM-006` 신설(11/7 23:59 코랩 노트북 제출). 추궁 프롬프트·검증기 E-08-01 → E-07-07(11/7), LLM 서버·LangGraph E-07-01 → E-08-09(11/8)로 추적 ID·날짜 변경 |
+| 2026-11-06 | v1 | 기획서 v1.2 구성 정리 반영: 합격선 원본은 PRD(문서의 역할), VM 배치 원본은 `ops/runbook/vm_roles.md`(3.2절). 요구사항·AC 내용은 그대로 | 기획서 v1.2 |
 
 ## 12. 구현 준비 검토
 

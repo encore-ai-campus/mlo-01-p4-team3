@@ -1,5 +1,6 @@
 """게임 엔진(`GameEngine` 포트 구현). A-05-01: 판 생성·배정·아침 진술(`new_game`).
 A-05-02: 명령 처리(`apply`) — 회의 라운드·캐묻기·투표·감금·종료 판정, 최소 밤 처리, `player_view`.
+A-06-01: 밤 처리(행적·목격·실종·점 결과)와 다음 날 아침 진술, 점괘 공개의 실제값·공개값 분리, 고백, 기색.
 
 계층: 도메인. 표준 라이브러리와 engine 패키지만 사용한다.
 순수 함수처럼 동작한다: 같은 메타(시드 포함)·콘텐츠면 같은 판을 만든다. 난수는 `random.Random`
@@ -18,10 +19,10 @@ from .content import Assignment, Character, ContentBundle, Secret, required_coun
 from .events import DomainEvent, EventType
 from .model import (
     LIMITS, PHASE_RULES, PLAYER_ID, Claim, ClaimTruth, ClaimType, Command, CommandEnvelope, CommandKind,
-    DisappearanceRecord, EndReason, EvidenceRef, EvidenceType, GameMeta, GameResult, GameState, GameTruth,
+    ConfessionRecord, DisappearanceRecord, DivinationResult, EndReason, EvidenceRef, EvidenceType, GameMeta, GameResult, GameState, GameTruth,
     InterrogationKind, LockRecord, NightPlan, NpcState, ObservationSnapshot, Phase, Place, Preset,
     PrivateKnowledge, PUBLIC_PLACES, PublicRecord, ReactionIntent, RejectCode, Role, Sighting, Slot, Speech,
-    VoteRecord, check_end, check_player_limits, divination_of, is_legal_kind, missing_slots, resolve_vote,
+    TellRecord, VoteRecord, check_end, check_player_limits, divination_of, is_legal_kind, missing_slots, resolve_vote,
     winner_of,
 )
 from ..ports import EngineDeps, PlayerView, RenderRequest, TransitionResult
@@ -158,19 +159,27 @@ def executor_alibi(rng: random.Random, crime: Place, own_sightings: list[Sightin
 
 # ---------------------------------------------------------------- 목격과 거짓 행적
 def _draw_sightings(rng: random.Random, a: Assignment) -> dict[str, list[Sighting]]:
-    """같은 시간대·같은 공공장소의 두 사람은 WITNESS_PROB로 서로를 본다(기획서 4.2)."""
-    seen: dict[str, dict[Slot, list[str]]] = {r: {s: [] for s in SLOTS} for r in a.residents}
+    """0일째 밤 목격(`draw_sightings`에 배정의 행적을 넣는다)."""
+    return draw_sightings(rng, NIGHT0, a.residents, a.night0_whereabouts)
+
+
+def draw_sightings(rng: random.Random, night: int, people: list[str],
+                   where: dict[str, dict[Slot, Place]]) -> dict[str, list[Sighting]]:
+    """같은 시간대·같은 공공장소의 두 사람은 WITNESS_PROB로 서로를 본다(기획서 4.2, domain.md 5절 4-3).
+
+    0일째와 이후 밤이 같은 규칙을 쓴다. 쌍마다 한 번 뽑고 서로 본다. 못 봤다는 것은 부재 증명이 아니다.
+    """
+    seen: dict[str, dict[Slot, list[str]]] = {r: {s: [] for s in SLOTS} for r in people}
     for slot in SLOTS:
         for place in PUBLIC_PLACES:
-            here = [r for r in a.residents if a.night0_whereabouts[r][slot] is place]
+            here = [r for r in people if where[r][slot] is place]
             for i, x in enumerate(here):
                 for y in here[i + 1:]:
                     if rng.random() < params.WITNESS_PROB:
                         seen[x][slot].append(y)
                         seen[y][slot].append(x)
-    return {r: [Sighting(NIGHT0, s, a.night0_whereabouts[r][s], sorted(seen[r][s]))
-                for s in SLOTS if seen[r][s]]
-            for r in a.residents}
+    return {r: [Sighting(night, s, where[r][s], sorted(seen[r][s])) for s in SLOTS if seen[r][s]]
+            for r in people}
 
 
 def _lies_of(a: Assignment, content: ContentBundle, alibi: Place) -> dict[str, dict[Slot, Place]]:
@@ -193,26 +202,40 @@ def morning_claims(speakers: list[str], a: Assignment, sightings: dict[str, list
     거짓으로 말하는 시간대(비밀·홀림)는 거짓 장소를 말하고 그 시간대의 목격은 말하지 않는다.
     씐 자는 범행 장소·시간대의 목격(실행자·피해자가 보임)을 말하지 않는다.
     """
+    crime = a.night0_whereabouts[a.night0_victim][Slot.MIDNIGHT]
+    return night_claims(speakers, NIGHT0, FIRST_DAY, a.night0_whereabouts, sightings, lies, a.roles, crime,
+                        first_id)
+
+
+def night_claims(speakers: list[str], night: int, day: int, where: dict[str, dict[Slot, Place]],
+                 sightings: dict[str, list[Sighting]], lies: dict[str, dict[Slot, Place]],
+                 roles: dict[str, Role], crime: Place, first_id: int) -> tuple[list[Claim], dict[str, ClaimTruth]]:
+    """밤 `night`에 대한 `day`일째 아침 진술. 0일째(`morning_claims`)와 이후 밤이 같은 규칙을 쓴다.
+
+    화자마다 시간대 순으로 자기 행적 주장 1개, 그 시간대에 사실대로 말하는 목격이 있으면 목격 주장 1개.
+    거짓으로 말하는 시간대는 거짓 장소를 말하고 그 시간대의 목격은 말하지 않는다.
+    씐 자는 범행 장소·한밤의 목격(실행자·피해자가 보임)을 말하지 않는다.
+    """
     claims: list[Claim] = []
     truths: dict[str, ClaimTruth] = {}
-    crime = (a.night0_whereabouts[a.night0_victim][Slot.MIDNIGHT], Slot.MIDNIGHT)
+    scene = (crime, Slot.MIDNIGHT)
     n = first_id
     for sp in speakers:
         mine = {s.slot: s for s in sightings.get(sp, [])}
         for slot in SLOTS:
             lie = lies.get(sp, {}).get(slot)
-            place = lie if lie is not None else a.night0_whereabouts[sp][slot]
+            place = lie if lie is not None else where[sp][slot]
             cid = f"cl{n:02d}"
             n += 1
-            claims.append(Claim(cid, sp, ClaimType.WHEREABOUTS, sp, NIGHT0, slot, place, day=FIRST_DAY))
+            claims.append(Claim(cid, sp, ClaimType.WHEREABOUTS, sp, night, slot, place, day=day))
             truths[cid] = ClaimTruth(cid, is_true=lie is None, deliberate_lie=lie is not None)
             s = mine.get(slot)
-            hide = a.roles[sp] is Role.POSSESSED and (s is not None and (s.place, slot) == crime)
+            hide = roles[sp] is Role.POSSESSED and (s is not None and (s.place, slot) == scene)
             if lie is None and s is not None and not hide:
                 cid = f"cl{n:02d}"
                 n += 1
-                claims.append(Claim(cid, sp, ClaimType.SIGHTING, sp, NIGHT0, slot, s.place,
-                                    seen=list(s.seen), day=FIRST_DAY))
+                claims.append(Claim(cid, sp, ClaimType.SIGHTING, sp, night, slot, s.place,
+                                    seen=list(s.seen), day=day))
                 truths[cid] = ClaimTruth(cid, is_true=True, deliberate_lie=False)
     return claims, truths
 
@@ -247,18 +270,34 @@ class NpcPolicy(Protocol):
         """씐 자 공동 밤 명령(실행자 = 활동 씐 자, 피해자 = 활동 마을 주민 NPC)."""
         ...
 
+    def react(self, state: GameState, npc_id: str, cmd: Command, rng: random.Random) -> ReactionIntent:
+        """캐묻기를 받은 NPC의 답변 의도(해명·회피·역공·고백). 고백은 `can_confess`일 때만 엔진이 받는다.
+
+        압박 누적과 고백 문턱값(성향 보정)은 A-07-01이 이 자리에 끼운다.
+        """
+        ...
+
 
 class BaselinePolicy:
-    """임시 NPC 규칙. 말 차례는 침묵, 투표는 의심도 최댓값(동률은 시드), 홀림은 시드로 고른다."""
+    """임시 NPC 규칙. 말 차례는 침묵, 투표는 의심도 최댓값(동률은 시드), 홀림은 시드로, 캐묻기 답은 해명."""
+
+    def react(self, state: GameState, npc_id: str, cmd: Command, rng: random.Random) -> ReactionIntent:
+        """캐묻기 답변 의도. 지금은 항상 해명한다(고백 결정은 A-07-01)."""
+        return ReactionIntent.EXPLAIN
 
     def talk(self, state: GameState, npc_id: str, rng: random.Random) -> Command:
         """회의 차례 행동. 지금은 침묵만 한다."""
         return Command(CommandKind.SILENCE, npc_id)
 
     def vote(self, state: GameState, npc_id: str, candidates: list[str], rng: random.Random) -> str:
-        """후보 중 자기 의심도가 가장 높은 사람. 씐 자는 짝을 피한다. 동률은 시드로 고른다."""
+        """후보 중 자기 의심도가 가장 높은 사람. 고백자는 빼고(`candidate_pool`), 씐 자는 짝을 피한다. 동률은 시드.
+
+        고백자를 빼면 후보가 남지 않을 때(예: 결선 후보가 모두 고백자)는 합법 후보 전체로 돌아간다.
+        """
         me = state.npcs[npc_id]
-        pool = [c for c in candidates if c != npc_id]
+        legal = [c for c in candidates if c != npc_id]
+        allowed = set(candidate_pool(state, npc_id)) | {PLAYER_ID}
+        pool = [c for c in legal if c in allowed] or legal
         if me.private.role is Role.POSSESSED:
             pool = [c for c in pool if c != me.private.partner_id] or pool
         sus = me.beliefs.suspicion
@@ -384,6 +423,7 @@ class _Tx:
         self.events: list[DomainEvent] = []
         self.renders: list[RenderRequest] = []
         self.chars = {c.npc_id: c for c in content.characters}
+        self.secrets = {s.secret_id: s for s in content.secrets}
         self.place_ko = {p.place: p.name_ko for p in content.places}
 
     # ---- 공통
@@ -416,6 +456,15 @@ class _Tx:
         c = Claim(claim_id=f"cl{len(self.st.public.claims) + 1:02d}", day=self.st.day, **kw)
         self.st.public.claims.append(c)
         return c
+
+    def record_claim(self, c: Claim, is_true: bool) -> None:
+        """새 주장의 진위를 진실에 저장하고 기색을 1회 판정한 뒤 `claim_made`를 낸다."""
+        ct = ClaimTruth(c.claim_id, is_true=is_true, deliberate_lie=not is_true)
+        self.tr.claim_truths[c.claim_id] = ct
+        payload: dict = {"claim_id": c.claim_id}
+        if record_tell(self.st, c, ct):
+            payload["tell"] = True              # 보인 기색만 싣는다(안 보임은 거짓 여부 누출)
+        self.emit(EventType.CLAIM_MADE, payload)
 
     # ---- 회의 라운드
     def start_round(self, phase: Phase) -> None:
@@ -453,11 +502,12 @@ class _Tx:
         st = self.st
         claim_ids: list[str] = []
         if cmd.kind is CommandKind.REVEAL_DIVINATION:
+            # 공개값은 공개 기록(주장)에, 실제값은 무당 개인 정보(player.divinations)에 따로 둔다. 거짓 공개도 합법.
             d = cmd.divination
             c = self.new_claim(speaker=PLAYER_ID, claim_type=ClaimType.DIVINATION_REVEAL, subject=d.target,
                                night=d.night, divination_result=d.result)
             claim_ids.append(c.claim_id)
-            self.emit(EventType.CLAIM_MADE, {"claim_id": c.claim_id})
+            self.record_claim(c, is_true=st.player.divinations[d.night][d.target] is d.result)
             st.player.reveals_left_today -= 1
             cmd = Command(cmd.kind, cmd.actor, target=d.target, evidence=list(cmd.evidence))
         sp = self.speak(PLAYER_ID, cmd, claim_ids)
@@ -472,14 +522,17 @@ class _Tx:
         npc = cmd.addressee
         st.player.interrogations_left -= 1
         claim_ids: list[str] = []
-        if cmd.interrogation_kind is InterrogationKind.WHEREABOUTS:
+        n_answers = sum(1 for s in st.public.speeches if s.kind is CommandKind.INTERROGATE)
+        reaction = self.policy.react(st, npc, cmd, self.rng(f"react:{n_answers}:{npc}"))
+        if reaction is ReactionIntent.CONFESS and not can_confess(st, self.tr, npc):
+            raise ValueError(f"NPC 정책이 불가능한 고백을 냄: {npc}")
+        if reaction is ReactionIntent.CONFESS:
+            claim_ids, fact = self.confess(npc)
+        elif cmd.interrogation_kind is InterrogationKind.WHEREABOUTS:
             claim, fact = self.whereabouts_answer(npc, cmd.night, cmd.slot)
             claim_ids.append(claim.claim_id)
-        elif cmd.interrogation_kind is InterrogationKind.CONTRADICTION:
-            fact = self.template(CommandKind.EXPLAIN)
         else:
             fact = self.template(CommandKind.EXPLAIN)
-        reaction = ReactionIntent.EXPLAIN   # 회피·역공·고백 선택은 A-06-01·A-07-01
         job_id = f"job_{sum(1 for s in st.public.speeches if s.render_job_id) + 1:03d}"
         q = Command(CommandKind.INTERROGATE, npc, addressee=PLAYER_ID, evidence=list(cmd.evidence))
         sp = self.speak(npc, q, claim_ids, reaction=reaction, fact_sentence=fact, render_job_id=job_id)
@@ -504,22 +557,63 @@ class _Tx:
             c = prior[-1]
         else:
             actual = tr.whereabouts[night][npc][slot]
-            plan = tr.night_plans.get(night)
             place = actual
-            if plan is not None and plan.executor == npc and slot is Slot.MIDNIGHT:
-                agreed = plan.agreed_alibis.get(npc)
-                own = [s for s in st.npcs[npc].private.witnessed if s.night == night]
-                place = Place(agreed) if agreed else executor_alibi(self.rng(f"alibi:{night}:{npc}"), actual, own)
+            if slot is Slot.MIDNIGHT:
+                place = self.executor_lie(night, npc) or actual
             c = self.new_claim(speaker=npc, claim_type=ClaimType.WHEREABOUTS, subject=npc, night=night,
                                slot=slot, place=place)
-            tr.claim_truths[c.claim_id] = ClaimTruth(c.claim_id, is_true=place is actual,
-                                                     deliberate_lie=place is not actual)
             if place is not actual:
                 st.npcs[npc].private.my_false_claims.append(c.claim_id)
-            self.emit(EventType.CLAIM_MADE, {"claim_id": c.claim_id})
+            self.record_claim(c, is_true=place is actual)
+        return c, self.whereabouts_sentence(c)
+
+    def whereabouts_sentence(self, c: Claim) -> str:
+        """행적 주장의 사실 문장(템플릿 `t_whereabouts`)."""
         fact = next((t.variants[0] for t in self.content.templates if t.template_id == "t_whereabouts"),
                     "{night}일째 밤 {slot}에 {place}에 있었소.")
-        return c, fact.format(night=night, slot=SLOT_KO[slot], place=self.place_ko.get(c.place, c.place.value))
+        return fact.format(night=c.night, slot=SLOT_KO[c.slot], place=self.place_ko.get(c.place, c.place.value))
+
+    def executor_lie(self, night: int, npc: str) -> Optional[Place]:
+        """그 밤 실행자면 한밤에 말할 거짓 장소(합의 알리바이, 없으면 `executor_alibi`). 실행자가 아니면 None.
+
+        아침 진술과 캐묻기 답이 같은 난수 키를 써서 같은 장소를 말한다.
+        """
+        plan = self.tr.night_plans.get(night)
+        if plan is None or plan.executor != npc:
+            return None
+        agreed = plan.agreed_alibis.get(npc)
+        if agreed:
+            return Place(agreed)
+        own = [s for s in self.st.npcs[npc].private.witnessed if s.night == night]
+        actual = self.tr.whereabouts[night][npc][Slot.MIDNIGHT]
+        return executor_alibi(random.Random(f"{self.st.meta.seed}:{night}:alibi:{npc}"), actual, own)
+
+    # ---- 고백
+    def confess(self, npc: str) -> tuple[list[str], str]:
+        """비밀 고백(기획서 4.6, domain.md 6-1). 비밀 시간대의 거짓 행적 주장을 `corrects`로 정정한다.
+
+        고백 기록·`confession` 이벤트를 남기고 `runtime.confessed`를 세운다. 다음 점부터 맑음으로 나오고
+        (`divination_of`는 밤 시작 상태로 판정), 후보에서 빠진다(`candidate_pool`). 반환: (정정 주장 ID, 사실 문장).
+        """
+        st, tr = self.st, self.tr
+        sec = self.secrets[tr.secrets[npc]]
+        wrong = [c for c in st.public.claims if c.speaker == npc and c.subject == npc and c.night == NIGHT0
+                 and c.claim_type is ClaimType.WHEREABOUTS and c.slot is sec.slot
+                 and not tr.claim_truths[c.claim_id].is_true]
+        new_ids: list[str] = []
+        for old in wrong or [None]:
+            c = self.new_claim(speaker=npc, claim_type=ClaimType.WHEREABOUTS, subject=npc, night=NIGHT0,
+                               slot=sec.slot, place=sec.actual_place, corrects=old.claim_id if old else None)
+            self.record_claim(c, is_true=True)
+            new_ids.append(c.claim_id)
+        rt = st.npcs[npc].runtime
+        rt.confessed, rt.confessed_day = True, st.day
+        corrected = [c.claim_id for c in wrong]
+        st.public.confessions.append(ConfessionRecord(st.day, npc, sec.secret_id, corrected))
+        self.emit(EventType.CONFESSION, {"npc_id": npc, "secret_id": sec.secret_id, "corrected_claims": corrected,
+                                         "claim_ids": new_ids, "grudge_clue_id": sec.grudge_clue_id})
+        fact = " ".join(x for x in (sec.confession_line, self.whereabouts_sentence(st.public.claims[-1])) if x)
+        return new_ids, fact
 
     # ---- 투표
     def npc_votes(self, candidates: list[str], round_: str) -> dict[str, str]:
@@ -590,7 +684,7 @@ class _Tx:
         else:
             self.start_night()
 
-    # ---- 밤(A-05-02 최소 처리. 밤 진술·목격·고백·기색은 A-06-01)
+    # ---- 밤
     def start_night(self) -> None:
         st, tr = self.st, self.tr
         st.phase = Phase.NIGHT
@@ -603,18 +697,23 @@ class _Tx:
             st.npcs[p].private.night_plans[st.day] = _copy_plan(plan)
 
     def divine(self, cmd: Command) -> None:
-        """점 대상을 받아 밤을 일괄 처리한다(domain.md 5절 4: 상태 고정 → 행적 → 실종 → 종료 판정 → 점 결과)."""
+        """점 대상을 받아 밤을 일괄 처리한다(domain.md 5절 4).
+
+        1. 상태 고정(점 결과를 밤 시작 상태로 판정) → 2. 행적 → 3. 목격 → 4. 실종 → 5. 종료 판정 →
+        6. 점 결과 전달(대상이 그 밤 실종돼도 전달, 확정 결정 ②). 끝나지 않았으면 다음 날 아침 진술.
+        """
         st, tr = self.st, self.tr
         night = st.day
         target = cmd.target
-        result = divination_of(tr.roles[target] is Role.POSSESSED,   # 1. 밤 시작 시 상태로 판정
-                               target in tr.secrets and not st.npcs[target].runtime.confessed)
+        result = night_divination(st, tr, target)                                              # 1
         plan = tr.night_plans[night]
         participants = [n for n in st.active if n != PLAYER_ID]
         where = _night_whereabouts(self.rng("whereabouts"), participants, self.chars, plan)   # 2
         tr.whereabouts[night] = where
+        sightings = draw_sightings(self.rng("sightings"), night, participants, where)          # 3
         for n in participants:
             st.npcs[n].private.whereabouts[night] = dict(where[n])
+            st.npcs[n].private.witnessed.extend(sightings[n])
         victim = plan.victim                                                                   # 4
         crime = where[victim][Slot.MIDNIGHT]
         st.active.remove(victim)
@@ -632,9 +731,30 @@ class _Tx:
         st.player.interrogations_left = LIMITS["interrogations_per_day"]
         st.player.reveals_left_today = LIMITS["divination_reveals_per_day"]
         st.player.talk_used_this_round = False
+        claims = self.morning_statements(night, where, sightings, crime)
         self.emit(EventType.MORNING_ANNOUNCED, {"missing": [victim],
                                                 "crime_scene": {"place": crime.value, "slot": Slot.MIDNIGHT.value},
-                                                "claims": []})
+                                                "claims": [c.claim_id for c in claims]})
+
+    def morning_statements(self, night: int, where: dict[str, dict[Slot, Place]],
+                           sightings: dict[str, list[Sighting]], crime: Place) -> list[Claim]:
+        """밤 `night`에 대한 아침 진술(`night_claims`). 실행자는 한밤을 거짓으로 말하고, 거짓 주장은 기색을 판정한다.
+
+        비밀 사건은 0일째 밤에만 있으므로 이후 밤의 비밀 보유자는 사실대로 말한다.
+        """
+        st, tr = self.st, self.tr
+        speakers = [n for n in st.active if n != PLAYER_ID]
+        lies = {n: {Slot.MIDNIGHT: p} for n in speakers if (p := self.executor_lie(night, n)) is not None
+                and p is not where[n][Slot.MIDNIGHT]}
+        claims, truths = night_claims(speakers, night, st.day, where, sightings, lies, tr.roles, crime,
+                                      len(st.public.claims) + 1)
+        for c in claims:
+            st.public.claims.append(c)
+            tr.claim_truths[c.claim_id] = truths[c.claim_id]
+            if truths[c.claim_id].deliberate_lie:
+                st.npcs[c.speaker].private.my_false_claims.append(c.claim_id)
+            record_tell(st, c, truths[c.claim_id])
+        return claims
 
     def finish(self, reason: EndReason) -> None:
         st = self.st
@@ -649,6 +769,71 @@ def end_reason(state: GameState, truth: GameTruth) -> Optional[EndReason]:
     g = sum(1 for n in state.active if truth.roles.get(n) is Role.POSSESSED)
     v = sum(1 for n in state.active if truth.roles.get(n) is Role.VILLAGER)
     return check_end(g, v, PLAYER_ID in state.active, PLAYER_ID in state.locked)
+
+
+def night_divination(state: GameState, truth: GameTruth, target: str) -> DivinationResult:
+    """밤 시작 시 대상 상태로 점 결과를 정한다(확정 결정 ②). 탁함 = 씐 자 또는 아직 고백하지 않은 비밀 보유자.
+
+    고백한 주민은 다음 점부터 맑음이다. 밤 처리 중 대상이 실종돼도 이 결과를 그대로 전달한다.
+    """
+    confessed = target in state.npcs and state.npcs[target].runtime.confessed
+    return divination_of(truth.roles[target] is Role.POSSESSED, target in truth.secrets and not confessed)
+
+
+def record_tell(state: GameState, claim: Claim, claim_truth: ClaimTruth) -> Optional[bool]:
+    """주장을 말한 직후 기색을 1회 판정해 화자의 `runtime.tells`에 고정한다. 이미 판정했으면 그 값을 돌려준다.
+
+    공개 기록 `tells`에는 보인 기색(shown=True)만 남긴다. 안 보인 판정을 공개하면 그 주장이 거짓이라는
+    진실이 드러나기 때문이다(11/6 PM 결정, domain.md 7절). 판정 대상이 아니면 None.
+    난수 키: `{seed}:{말한 날}:tell:{주장 ID}`.
+    """
+    npc = state.npcs.get(claim.speaker)
+    if npc is None:
+        return None
+    if claim.claim_id in npc.runtime.tells:
+        return npc.runtime.tells[claim.claim_id]
+    shown = judge_tell(random.Random(f"{state.meta.seed}:{claim.day}:tell:{claim.claim_id}"), claim, claim_truth)
+    if shown is None:
+        return None
+    npc.runtime.tells[claim.claim_id] = shown
+    if shown:
+        state.public.tells.append(TellRecord(claim.claim_id, claim.day, True))
+    return shown
+
+
+FACT_CLAIMS = (ClaimType.WHEREABOUTS, ClaimType.SIGHTING, ClaimType.NON_SIGHTING)
+
+
+def judge_tell(rng: random.Random, claim: Claim, claim_truth: ClaimTruth) -> Optional[bool]:
+    """기색 판정(기획서 4.2, domain.md 6-1). 사실 주장(행적·목격·비목격)이 거짓일 때만 판정한다.
+
+    판정 대상이 아니면 None, 대상이면 TELL_PROB로 보임(True)/안 보임(False). 엔진은 주장 ID당 한 번만 부른다.
+    """
+    if claim.claim_type not in FACT_CLAIMS or claim_truth.is_true:
+        return None
+    return rng.random() < params.TELL_PROB
+
+
+def can_confess(state: GameState, truth: GameTruth, npc_id: str) -> bool:
+    """고백할 수 있는가: 활동 중인 마을 주민이고, 비밀이 있고, 아직 고백하지 않았다. 씐 자는 고백하지 않는다(4.6)."""
+    npc = state.npcs.get(npc_id)
+    return (npc is not None and npc_id in state.active and truth.roles.get(npc_id) is Role.VILLAGER
+            and npc_id in truth.secrets and not npc.runtime.confessed)
+
+
+def confessed_ids(state: GameState) -> set[str]:
+    """고백한 주민(공개 기록 기준). 고백자는 확정 무고로 본다(domain.md 6-1)."""
+    return {c.npc_id for c in state.public.confessions}
+
+
+def candidate_pool(state: GameState, observer: str) -> list[str]:
+    """관찰자에게 씐 자 후보인 사람(ID 정렬): 활동 인원 − 무당 − 관찰자 − 고백자(domain.md 6-1).
+
+    공개 기록만 읽는다. 갇힌 사람(감금 공개)·실종자는 활동 인원이 아니므로 이미 빠진다.
+    관측 스냅샷 `candidates`(A-06-02)와 투표 안전 층(A-07-02)이 같은 함수를 쓴다.
+    """
+    out = confessed_ids(state) | {PLAYER_ID, observer}
+    return sorted(n for n in state.active if n not in out)
 
 
 def _night_whereabouts(rng: random.Random, participants: list[str], chars: dict[str, Character],
@@ -666,7 +851,7 @@ def _night_whereabouts(rng: random.Random, participants: list[str], chars: dict[
 
 # ---------------------------------------------------------------- 엔진
 class PaldoEngine:
-    """`GameEngine` 포트 구현. `new_game`(A-05-01), `apply`·`player_view`(A-05-02).
+    """`GameEngine` 포트 구현. `new_game`(A-05-01), `apply`·`player_view`(A-05-02), 밤·고백·기색(A-06-01).
 
     `policy`는 NPC 결정 규칙이다. 기본은 `BaselinePolicy`이고, 테스트·재현은 정해진 결정을 끼운다.
     """
@@ -718,6 +903,8 @@ class PaldoEngine:
                           whereabouts={NIGHT0: {r: dict(w) for r, w in a.night0_whereabouts.items()}},
                           night_plans={NIGHT0: _copy_plan(a.night0_plan)},
                           claim_truths=claim_truths)
+        for c in claims:                                     # 1일째 아침 진술도 말한 직후 기색 판정(11/6 PM 결정)
+            record_tell(state, c, claim_truths[c.claim_id])
         events = [
             DomainEvent(EventType.GAME_STARTED, FIRST_DAY, Phase.MORNING, {"preset_id": preset.preset_id}),
             DomainEvent(EventType.MORNING_ANNOUNCED, FIRST_DAY, Phase.MORNING,
