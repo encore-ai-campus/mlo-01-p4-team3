@@ -33,7 +33,7 @@
 
 | 메서드·경로 | 입력 | 결과 |
 |---|---|---|
-| GET·POST `/accounts/signup` | 로그인 ID, 비밀번호, 비밀번호 확인, 동의(privacy.md 3절), 초대 코드(`PALDO_SIGNUP_INVITE_CODE`가 있을 때만, 파일럿은 설정 안 함) | 계정 생성, 가명 ID 발급, 로그인 상태로 이동. 가입 속도 제한 초과는 429(privacy.md 5절) |
+| GET·POST `/accounts/signup` | 로그인 ID, 비밀번호, 비밀번호 확인, 동의(privacy.md 3절), 초대 코드(`PALDO_SIGNUP_INVITE_CODE`가 있을 때만, 파일럿은 설정 안 함) | 계정 생성, 가명 ID 발급, 로그인 상태로 이동. 가입 요청 수 제한 없음(11/6 삭제, privacy.md 5절) |
 | GET·POST `/accounts/login` | 로그인 ID, 비밀번호 | 세션 시작. 실패·잠금 규칙은 privacy.md 5절 |
 | POST `/accounts/logout` | - | 세션 종료 |
 
