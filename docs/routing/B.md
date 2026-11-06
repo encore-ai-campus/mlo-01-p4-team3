@@ -14,7 +14,7 @@
 | `server/api/`, `web/` | 표현 | B | Django 뷰, 템플릿, htmx 조각, 뷰 모델(`viewmodels.py`), 웹소켓 Consumer(`consumers.py`, 예정) |
 | `web/templates/`, `web/static/` | 표현 | B | 회의 화면과 htmx 조각, CSS·스크립트·기본 이미지 |
 | `server/paldo_web/` | Django 프로젝트 | B | 서버 설정, URL 등록, 요청 계측, DB 상태 확인과 Prometheus 지표 |
-| `server/tests/` | 테스트 | B | Django 요청 계측, 상태 확인 응답과 DB 장애 검증 |
+| `server/tests/` | 테스트 | B | 요청 계측·상태 확인·DB 장애·게임 API·명령 경합 시험 |
 | `server/app/ads_port.py` | 응용(게임 쪽) | B | `AdProvider` 포트와 보호 래퍼 `AdGateway` |
 
 ## 작업별 위치
@@ -24,5 +24,6 @@
 | 화면이나 API 추가 | 표현 `server/api/`, 응용 `server/app/dto.py`, `docs/contracts/api.md` |
 | 게임 JSON API 경로와 실행 흐름 | `server/api/urls.py`, `server/api/views.py`, `server/api/interactions.py` → `server/app/usecases.py`, `server/app/interactions.py` |
 | 회의 화면과 에셋 연결 | `server/api/views.py`, `server/api/meeting_view.py`, `server/api/assets.py`, [화면 라우팅](../../web/ROUTING.md) |
+| 명령 재전송·동시 요청·부하 사전 시험 | [서버 시험 안내](../../server/tests/README.md) |
 | 광고 지면을 게임 화면에 붙이기 | `server/app/ads_port.py`, `docs/contracts/ports.md` 5절 |
 | 광고 비콘·클릭 중계(웹소켓) | 표현 `server/api/consumers.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py` → 인프라 `server/infra/ad_client.py`, `docs/contracts/api.md` 7절 |
