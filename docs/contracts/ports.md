@@ -61,6 +61,7 @@
 
 ## 4. LLM 비동기 작업 (`LineRenderer`)
 - 엔진이 `RenderRequest`를 만든다(`TransitionResult.render_requests`). 사실 문장(`fact_sentence`)과 폴백 문장은 엔진이 완성한다. LLM은 말투만 입힌다.
+- 사실 요소(장소·시간·인물·행동·부정 여부)는 수정·추가 금지다. 사실 문장의 **끝 어미만** 화자 말투로 바꿀 수 있다(예: "있었소" → "있었어요"). 의문형·추측형·전언형·부정형 어미는 금지. 게임 증거는 엔진의 원래 사실 문장이고, 폴백은 엔진 문장 그대로다(11/6 PM 결정).
 - 수명주기: `queued → running → done | failed | timeout | cancelled`. 폴백이 확정된 뒤 도착한 결과는 `discarded`가 된다.
 - **작업 ID와 상태 버전**:
   - `job_id`는 전이마다 새로 만든다.

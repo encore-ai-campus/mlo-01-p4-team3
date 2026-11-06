@@ -116,7 +116,7 @@ class RenderRequest:
     npc_id: str
     persona: str
     reaction: ReactionIntent
-    fact_sentence: str           # 엔진이 완성. LLM은 수정·추가 금지
+    fact_sentence: str           # 엔진이 완성. LLM은 사실 요소 수정·추가 금지, 끝 어미만 말투 허용(ports.md 4절)
     allowed_names: list[str]
     fallback_text: str           # 템플릿 표현. 생성 결과와 같은 정보량
     priority: int = 0            # 0 = 캐묻기(최우선), 1 = 복기, 2 = 운영 분석
