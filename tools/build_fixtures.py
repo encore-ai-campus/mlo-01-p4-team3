@@ -70,7 +70,7 @@ CHARACTERS = [
     Character("gwabu", "과부", ["과부", "윗마을 과부", "이씨 부인"], "scholar",
               routine({W: 0.5, H: 0.5}, {H: 0.7, W: 0.3}), "조용하고 단정한 말투"),
     # 확장 인원 프리셋(7~11인) 검증용 추가 주민. 콘텐츠는 E가 실제 인물로 교체한다.
-    Character("ferryman", "뱃사공", ["뱃사공", "사공"], "hothead", routine({W: 0.5, H: 0.5}, {H: 1.0}), "투박한 사투리"),
+    Character("ferryman", "나무꾼", ["나무꾼"], "hothead", routine({W: 0.5, H: 0.5}, {H: 1.0}), "투박한 강원도 사투리"),   # 11/6 사용자 결정: 뱃사공 → 나무꾼(id 유지)
     Character("gisaeng", "퇴기", ["퇴기", "월향"], "keen", routine({T: 0.7, H: 0.3}, {T: 0.4, H: 0.6}), "능청스러운 말투"),
     Character("hunter", "포수", ["포수", "사냥꾼"], "hothead", routine({G: 0.7, H: 0.3}, {G: 0.3, H: 0.7}), "말수 적음"),
     Character("monk", "탁발승", ["탁발승", "스님"], "scholar", routine({S: 0.7, H: 0.3}, {S: 0.6, H: 0.4}), "합장하며 느린 말투"),
