@@ -132,7 +132,7 @@
 - 1.5h · 선행: B-07-05(웹소켓·중계) · 입력: `server/app/ads_port.py`(`AdGateway`), `ads/testing/fakes.py`
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 B](../troubles/B.md)에 `### B-07-03` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 공개 함수·클래스 docstring(CI `docs` 검사) · 모듈 문서 [`web`](../modules/web.md)는 그날 일괄 갱신(B-07-04)
 - 완료 조건:
-  1. 지면 4곳(`lobby_banner`, `llm_wait`, `result_banner`, `review_side`)만, 회의·투표·밤 화면에는 없음(테스트). 지면 칸 크기는 계약 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `llm_wait`·`review_side`, ads.md 2절)에서 읽고, 소재 이미지는 광고 응답의 `image_path`(지면 규격별 경로, E 임시 소재)를 그대로 쓴다. 모든 광고 칸에 "광고" 표시(테스트: 렌더된 광고 조각마다 표시 문구 존재).
+  1. 지면 3곳(`lobby_banner`, `result_banner`, `review_side`)만, 회의·투표·밤 화면에는 없음(테스트. 추궁 답변 대기 지면 `llm_wait`은 11/6 PM 결정으로 삭제). 지면 칸 크기는 계약 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `review_side`, ads.md 2절)에서 읽고, 소재 이미지는 광고 응답의 `image_path`(지면 규격별 경로, E 임시 소재)를 그대로 쓴다. 모든 광고 칸에 "광고" 표시(테스트: 렌더된 광고 조각마다 표시 문구 존재).
   2. 광고 칸은 `GET /ads/slot/{slot}` + `hx-trigger="load"` 지연 로드. 게임 명령 처리 경로에서 광고 호출 0회(테스트: 명령 처리 중 `FakeAdProvider` 호출 수 0).
   3. 노출 비콘: 광고 면적 50% 이상 1초 이상 보이면 1회(IntersectionObserver), B-07-05 웹소켓의 `ad.impression` 메시지로 보낸다. 클릭은 게임 웹 중계 링크 `/ads/click?t=<serve 토큰>`. 렌더된 광고 조각에 광고 서버 주소 0건(테스트, 11/4 PM 결정 #2 변경: 브라우저는 게임 웹 출처에만 접속).
   4. 결과 코드(ok, empty, timeout, error, busy, circuit_open) 지표 `paldo_ad_fetch_total{result}`.
@@ -162,7 +162,7 @@
 - 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: B-08-01, B-08-02, B-08-03 · 코드를 바꿨다면: 없음 · 모듈: [`web`](../modules/web.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/8 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
 - 산출물: `server/infra/ad_client.py`(`AdProvider` HTTP 구현: serve와 비콘·클릭·랜딩 중계, 11/4 PM 결정 #2·#6), `tools/perf/ad_fault_test.py`
 - 완료 조건:
-  1. 실제 광고 서버로 지면 4곳에서 serve → 노출 비콘(웹소켓 → 게임 웹 중계) → 클릭 리다이렉트(게임 웹 중계)가 동작하고, 광고 서버 로그와 `serve_id`로 이어짐(증빙에 같은 `serve_id`의 웹·광고 로그 각 1줄).
+  1. 실제 광고 서버로 지면 3곳에서 serve → 노출 비콘(웹소켓 → 게임 웹 중계) → 클릭 리다이렉트(게임 웹 중계)가 동작하고, 광고 서버 로그와 `serve_id`로 이어짐(증빙에 같은 `serve_id`의 웹·광고 로그 각 1줄).
   2. 장애 4종(중단, 무응답, 3초 지연, 오류 응답)을 주입하고 각 5분간 `api_bench.py` 부하: **게임 API p95 증가 50ms 이하, 게임 오류율 증가 0**(정상 대비 표). 같은 장애 중 비콘·클릭 중계도 함께 흘려 중계 실패가 게임 API에 번지지 않음을 같은 표에.
   3. 회로 차단 동작(5회 실패 → 30초 생략)이 지표로 확인됨.
   4. 실제 배치(게임 웹 app-01, 광고 서버 ad-01)에서 브라우저는 게임 웹 출처에만 접속하고(개발자 도구 네트워크 기록에 광고 서버 주소 요청 0건, 결정 #2 변경), serve·비콘·클릭·랜딩 중계 호출에 `X-Request-ID`를 넘겨 광고 서버 로그에 같은 `request_id`가 남음(결정 #14).

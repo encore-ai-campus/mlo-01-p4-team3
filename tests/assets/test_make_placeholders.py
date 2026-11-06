@@ -165,7 +165,7 @@ class ExpectedEntriesTest(unittest.TestCase):
         spec = parse_spec_md(SPEC_TEXT)
         cps = [{"campaign_id": "cp_x", "slots": ["lobby_banner", "result_banner"],
                 "creatives": [{"creative_id": "cr_x", "image_path": "/static/ads/x.png"}]},
-               {"campaign_id": "syn:cp_y", "slots": ["llm_wait"],
+               {"campaign_id": "syn:cp_y", "slots": ["review_side"],
                 "creatives": [{"creative_id": "cr_y", "image_path": "/static/ads/y.png"}]}]
         got = ad_entries(spec, cps, SLOT_SIZES_STR, slot_image_path)
         self.assertEqual([(e.id, e.size, e.url) for e in got],
@@ -173,7 +173,7 @@ class ExpectedEntriesTest(unittest.TestCase):
 
     def test_ad_url_outside_static_ads_fails(self):
         spec = parse_spec_md(SPEC_TEXT)
-        cps = [{"campaign_id": "cp_x", "slots": ["llm_wait"],
+        cps = [{"campaign_id": "cp_x", "slots": ["review_side"],
                 "creatives": [{"creative_id": "cr_x", "image_path": "/media/x.png"}]}]
         with self.assertRaises(SpecError):
             ad_entries(spec, cps, SLOT_SIZES_STR, slot_image_path)
@@ -186,7 +186,7 @@ class ExpectedEntriesTest(unittest.TestCase):
     def test_fixture_slot_sizes_mismatch_fails(self):
         with tempfile.TemporaryDirectory() as d:
             data = json.loads(sources.CAMPAIGNS_PATH.read_text(encoding="utf-8"))
-            data["slot_sizes"]["llm_wait"] = [320, 250]
+            data["slot_sizes"]["review_side"] = [320, 250]
             p = Path(d) / "campaigns.json"
             p.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(SpecError):
