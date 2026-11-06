@@ -132,7 +132,7 @@ erDiagram
     Campaign ||--o{ LedgerRow : "예산 차감"
     Campaign ||--o{ BudgetDay : "귀속일별 예산 합계"
     LedgerRow |o..o| LedgerRow : ":refund 음수 환입"
-    ServeRecord |o..o{ Judgement : "serve_id(serve 없으면 무효 판정)"
+    ServeRecord |o..o{ Judgement : "serve_id(serve 없으면 유예 뒤 무효)"
     Campaign {
         string campaign_id PK "합성은 syn: 접두어"
         string advertiser_id FK
@@ -169,7 +169,7 @@ erDiagram
 
 - 구조는 광고주 → `Campaign` → `Creative`, 지면은 4개이고 지면별 정책은 `SlotPolicy`다([ads.md](ads.md) 2절).
 - 원장은 예약 → 확정 → 해제로 상태가 바뀌고, 확정 뒤 무효 재판정은 원래 행을 두고 음수 환입 행(`:refund`)을 추가한다. 판정 결과 저장·예약 확정·아웃박스 행은 **같은 MySQL 트랜잭션**이다([ads.md](ads.md) 5절).
-- `Judgement`는 수신한 노출·클릭 이벤트마다 남는 판정이다. 서명 오류나 serve 기록이 없어도 무효 판정이 남으므로 serve는 선택 참조다. 예산은 (캠페인, 귀속일) 예산 행을 잠그고 원장 행과 함께 쓴다(`ads/domain/rules.py` `BudgetBook`).
+- `Judgement`는 수신한 노출·클릭 이벤트마다 남는 판정이다. 서명 오류여도 판정이 남고, serve 기록이 안 보이면 최초 수신부터 2분 동안 `pending`, 그 뒤 `no_serve` 무효가 되므로 serve는 선택 참조다(ads.md 6절 판정 순서). 예산은 (캠페인, 귀속일) 예산 행을 잠그고 원장 행과 함께 쓴다(`ads/domain/rules.py` `BudgetBook`).
 - `AdOutbox`(`ad.serve`·`ad.impression`·`ad.click` 발행 대기 행)와 `VersionRow`는 특정 엔터티에 매이지 않아 선 없이 두었다. `VersionRow`는 CTR·페이싱·자동 입찰가 갱신 값(`ctr_version`, `policy_version`, `bid_version`)으로, 광고 서버가 60초마다 다시 읽는다.
 - **광고 저장소에는 `player_pseudonym`도 게임 내용도 없다.** 사용자 키는 `session_pseudonym`뿐이다.
 
@@ -212,13 +212,14 @@ erDiagram
 ```mermaid
 flowchart LR
     G[판 문서 아웃박스] -->|paldo.*| K[(Kafka)]
+    SIM[시뮬레이터·배치 EventSink] -->|paldo.*| K
     A[광고 MySQL 아웃박스] -->|ad.serve·impression·click| K
     K --> B[Delta bronze] --> S[silver: event_id MERGE, 학습 행] --> GD[gold]
     S -->|Spark 재판정 ad.rejudge| K
     K -->|ad.rejudge 소비, 음수 환입| A
 ```
 
-- 게임·광고 이벤트는 모두 아웃박스 → Kafka → Delta로 흐르고, Delta는 `event_id`로 MERGE해 중복을 없앤다. 광고 재판정 결과는 Spark가 `ad.rejudge`로 보내고 환입 소비자가 원장에 음수 행을 쓴다([events.md](events.md), [ads.md](ads.md) 5·7절).
+- 웹 게임과 광고 서버의 이벤트는 아웃박스 → Kafka → Delta로 흐른다. 아웃박스가 없는 시뮬레이터·배치는 `EventSink.append`로 Kafka에 바로 보낸다([ports.md](ports.md) 1절). Delta는 `event_id`로 MERGE해 중복을 없앤다. 광고 재판정 결과는 Spark가 `ad.rejudge`로 보내고 환입 소비자가 원장에 음수 행을 쓴다([events.md](events.md), [ads.md](ads.md) 5·7절).
 - 학습 입력은 진실이 빠진 `ObservationSnapshot`이고, 정답은 판이 끝난 뒤 `game_id`로 붙인다(events.md 3절).
 
 ## 6. 이 문서를 고칠 때
