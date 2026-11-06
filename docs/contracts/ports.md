@@ -61,6 +61,7 @@
 
 ## 4. LLM 비동기 작업 (`LineRenderer`)
 - 엔진이 `RenderRequest`를 만든다(`TransitionResult.render_requests`). 사실 문장(`fact_sentence`)과 폴백 문장은 엔진이 완성한다. LLM은 말투만 입힌다.
+- 표시 경로: 진술표·수첩·복기 등 기록·증거 화면은 구조화된 주장(`Claim`)이나 엔진의 원래 `fact_sentence`로 그린다. LLM 생성 대사는 대화창(발화 연출)에만 쓴다. 생성 대사의 끝 어미는 사실 문장과 다를 수 있기 때문이다.
 - 수명주기: `queued → running → done | failed | timeout | cancelled`. 폴백이 확정된 뒤 도착한 결과는 `discarded`가 된다.
 - **작업 ID와 상태 버전**:
   - `job_id`는 전이마다 새로 만든다.
