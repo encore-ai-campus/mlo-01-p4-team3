@@ -11,6 +11,7 @@
 | 폴더 | 계층 | 담당 | 역할 |
 |---|---|---|---|
 | `content/` | 데이터 | E | 인물, 비밀, 단서, 템플릿(예정) |
+| `content/intent/` | 데이터 | E | 의도 해석 학습 예시 `examples_v1.jsonl`(사람 작성 원본 + LLM 변형, 계보 `lineage_root`). 검사 규칙 `tools/intent_examples.py`, 테스트 `tests/intent/test_examples_v1.py`. 형식은 `docs/contracts/intent.md` |
 | `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E(규격·스타일 가이드·임시 파일·검사), D(실제 파일·생성 기록·`cutout.py`, A 흐름 `[에셋]` 태스크, 11/5 결정) | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
 | `llm/` | 인프라 | E | LLM 서비스, LangGraph(예정) |
 | `llm/bench/` | 인프라(측정) | E | LLM 벤치마크 `run_bench.py`(llama.cpp, 모델 인스턴스 1개 + FIFO 큐로 지연·토큰/초·메모리 측정). 결과 `docs/reports/llm_bench.md` |
@@ -26,5 +27,6 @@
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 콘텐츠 추가 | `docs/contracts/content.md` |
+| 의도 예시 추가·검사 | 데이터 `content/intent/examples_v1.jsonl`, 규칙 `tools/intent_examples.py`(집계 `python -m tools.intent_examples`), 형식 `docs/contracts/intent.md` |
 | LLM 모델·스레드·실행 방식 다시 재기 | 인프라 `llm/bench/run_bench.py`(`--help`), 결과·결정 `docs/reports/llm_bench.md` |
 | 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/A_engine.md` `[에셋]`, 담당 D) |
