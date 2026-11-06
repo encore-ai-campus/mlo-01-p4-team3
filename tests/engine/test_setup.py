@@ -152,11 +152,17 @@ class AllPresets(unittest.TestCase):
                 places[claim.place] += 1
         self.assertEqual(len(places), len(PUBLIC_PLACES))   # 시드로 고르므로 네 곳 모두 나온다
 
-    def test_no_confession_state_yet(self):
-        """PM 결정(11/5): 고백은 A-06-01·A-07-01 범위. 이 태스크는 고백 문턱값을 채우지 않는다."""
+    def test_confession_threshold_only_for_secret_holders(self):
+        """A-07-01: 비밀 보유자만 비밀의 기본 고백 문턱값을 받는다(성향 보정은 정책). 나머지는 None.
+
+        A-05-01 때는 고백 범위 밖이라 비워 두는 것을 검사했다(11/5 PM 결정). A-07-01이 고백 판정을 넣으며 바꿨다.
+        """
+        secrets = {s.secret_id: s for s in CONTENT.secrets}
         for r in self.games.values():
             for npc in r.state.npcs.values():
-                self.assertIsNone(npc.private.confession_threshold)
+                sid = r.truth.secrets.get(npc.npc_id)
+                want = secrets[sid].confession_threshold if sid else None
+                self.assertEqual(npc.private.confession_threshold, want)
 
     def test_serde_round_trip(self):
         """조건 4: 상태·진실·이벤트의 serde 왕복이 손실 없다."""
