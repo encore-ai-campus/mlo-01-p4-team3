@@ -21,6 +21,10 @@
 | `paldo.player` | `notebook_updated`, `survey_submitted` | D 평가, E 분석 |
 | `paldo.truth` | `truth_revealed`(**판 종료 후에만**) | C 라벨 조인 |
 
+- **`survey_submitted` 본문**(P-29, api.md 2-2절): `skipped`(bool), `fun`·`unfair`·`npc_plausible`(1~5, 건너뛰면 셋 다 `null`), `comment`(마스킹 후, 건너뛰면 `""`), `mask_version`. 저장·아웃박스·Kafka·적재 단계에서 `null` 점수를 0이나 기본값으로 바꾸지 않는다.
+  - 점수 평균·보상·학습에는 `skipped=false`인 이벤트만 쓴다.
+  - 응답률은 `skipped=false` 건수 ÷ 설문 이벤트 수(= 판 수)다. 건너뜀은 분모에만 들어간다.
+
 ## 3. 학습 데이터와 진실의 경계
 - **스냅샷은 행동 직전에 찍는다**:
   - `observation` 이벤트는 그 결정을 내리기 직전의 관찰자 시점 상태다(`ObservationSnapshot`). 결정 이벤트(`decision`)는 같은 `snapshot_id`를 참조한다.
