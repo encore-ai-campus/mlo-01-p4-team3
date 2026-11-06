@@ -30,7 +30,7 @@ server/infra (인프라) → engine (포트 구현)
 | 흐름 | 영역 | 주요 폴더 | 안내 문서 |
 |---|---|---|---|
 | A | 엔진 | `engine/`(`engine/sim/`은 D) | [`docs/routing/A.md`](docs/routing/A.md) |
-| B | 웹 | `server/api/`, `server/app/`, `web/` | [`docs/routing/B.md`](docs/routing/B.md) |
+| B | 웹 | `server/api/`, `server/app/`, `web/templates/`, `web/static/` | [`docs/routing/B.md`](docs/routing/B.md) |
 | C | 인프라·파이프라인·운영 | `server/infra/`, `pipeline/`, `ops/` | [`docs/routing/C.md`](docs/routing/C.md) |
 | D | ML·광고 | `engine/sim/`, `intent/`, `ml/`, `ads/` | [`docs/routing/D.md`](docs/routing/D.md) |
 | E | 콘텐츠·LLM·에셋 규격·저장소 운영 | `content/`, `llm/`, `.github/`, `.githooks/`, `docs/ops/`, `docs/assets/` | [`docs/routing/E.md`](docs/routing/E.md) |
