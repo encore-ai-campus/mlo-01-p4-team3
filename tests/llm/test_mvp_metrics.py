@@ -188,6 +188,12 @@ class StyleExamples(unittest.TestCase):
         self.assertEqual(len(lines), len(prefixes) * len(tails["explain"]))   # 앞말·뒷말 조합이 모두 다르다
         self.assertTrue(any(not x.startswith("히잉") for x in lines))
 
+    def test_every_example_has_prefix(self):
+        """앞말 없는 예시는 모델이 예시 대사를 베끼게 했다(11/6 측정). 모든 계열의 앞말 후보는 비어 있지 않다."""
+        from llm import prompt
+        for p in (*prompt.STYLE_PROFILES, prompt.DEFAULT_PROFILE):
+            self.assertTrue(all(x.strip() for x in p[-3]), p[-3])
+
     def test_child_examples_vary_by_speech_id(self):
         """같은 발언 ID면 같은 예시(재현), 발언마다는 앞말이 달라진다(아이 말투에 '히잉'만 나오지 않게, 11/6)."""
         from llm.prompt import build_messages as bm
