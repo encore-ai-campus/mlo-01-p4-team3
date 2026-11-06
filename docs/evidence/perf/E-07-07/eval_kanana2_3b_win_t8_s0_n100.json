@@ -1,31 +1,31 @@
 {
   "task": "E-07-07",
-  "commit": "f4ac12b157ad385bf80ae7f28bad57ba15466d11",
-  "generated_at": "2026-11-06T09:23:32Z",
-  "source": "python -m llm.bench.run_bench --model kanana-2-3b-instruct.Q4_K_M.gguf --label kanana2_3b --mode win --eval fixtures/llm/interrogation_eval.json --threads 8 --max-tokens 128 --temperature 0.7 --top-p 0.8 --top-k 20 --n-ctx 1024 --eval-seed 0  # 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36; prompt interrogate-v6; n 100",
+  "commit": "d1330ea2edb2b84767f188018177ba2049c68505",
+  "generated_at": "2026-11-06T12:48:52Z",
+  "source": "python -m llm.bench.run_bench --model kanana-2-3b-instruct.Q4_K_M.gguf --label kanana2_3b --mode win --eval fixtures/llm/interrogation_eval.json --threads 8 --max-tokens 128 --temperature 0.7 --top-p 0.8 --top-k 20 --n-ctx 1024 --eval-seed 0  # 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36; prompt interrogate-v6; n 100; 재판정 --rejudge(생성 기록 f4ac12b, 검증기 HEAD)",
   "metrics": {
     "n_requests": {
       "value": 100,
       "unit": "건"
     },
     "success_count": {
-      "value": 89,
+      "value": 86,
       "unit": "건"
     },
     "success_rate_pct": {
-      "value": 89.0,
+      "value": 86.0,
       "unit": "%"
     },
     "fallback_count": {
-      "value": 11,
+      "value": 14,
       "unit": "건"
     },
     "fallback_rate_pct": {
-      "value": 11.0,
+      "value": 14.0,
       "unit": "%"
     },
     "validation_fail_count": {
-      "value": 11,
+      "value": 14,
       "unit": "건"
     },
     "error_count": {
@@ -37,15 +37,15 @@
       "unit": "건"
     },
     "reason_format_length_count": {
-      "value": 0,
+      "value": 4,
       "unit": "건"
     },
     "reason_format_length_pct": {
-      "value": 0.0,
+      "value": 4.0,
       "unit": "%"
     },
     "all_format_length_count": {
-      "value": 0,
+      "value": 4,
       "unit": "건"
     },
     "reason_forbidden_entity_count": {
@@ -61,11 +61,11 @@
       "unit": "건"
     },
     "reason_added_assertion_count": {
-      "value": 1,
+      "value": 0,
       "unit": "건"
     },
     "reason_added_assertion_pct": {
-      "value": 1.0,
+      "value": 0.0,
       "unit": "%"
     },
     "all_added_assertion_count": {
