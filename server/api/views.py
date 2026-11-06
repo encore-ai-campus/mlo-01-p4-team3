@@ -1,21 +1,22 @@
-"""게임 JSON API의 인증·입력 검증·응답 경계."""
+"""게임 API와 회의 화면의 인증·입력 검증·응답 경계."""
 import json
 from functools import wraps
 from uuid import UUID
 
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_GET, require_http_methods
 
-from engine.domain.model import RejectCode
+from engine.domain.model import EvidenceType, RejectCode
 from engine.domain.serde import SchemaError, to_jsonable
 from server.app.dto import StartGameInput, SubmitCommandInput
 from server.app.interactions import InteractionConflict, InteractionUnavailable
 from server.app.usecases import ConsentRequired, ResourceNotFound, ReviewNotReady, StartUnavailable
 from server.paldo_web.composition import GameServiceUnavailable, get_game_service
 from .input_validation import parse_game_input
+from .meeting_view import meeting_context
 
 
 def _player_context(user):
@@ -81,13 +82,50 @@ def _body(request):
 
 def command_response(output):
     """수락·재생 200, 상태 버전 충돌 409, 엔진 거절 422를 반환한다."""
+    return JsonResponse(to_jsonable(output), status=_command_status(output))
+
+
+def _command_status(output):
     if output.accepted or output.replayed:
-        status = 200
-    elif output.reject == RejectCode.STATE_VERSION_CONFLICT:
-        status = 409
-    else:
-        status = 422
-    return JsonResponse(to_jsonable(output), status=status)
+        return 200
+    if output.reject == RejectCode.STATE_VERSION_CONFLICT:
+        return 409
+    return 422
+
+
+def _wants_meeting(request):
+    return request.headers.get("HX-Request") == "true" or request.get_preferred_type(
+        ["application/json", "text/html"]
+    ) == "text/html"
+
+
+def _meeting_response(request, view, variant, status=200):
+    template = "meeting.html" if request.headers.get("HX-Request") == "true" else "game.html"
+    return render(request, template, {**meeting_context(view), "rejected": status >= 400,
+                                     "mudang_portrait_id": f"portrait:mudang_{variant or 'f'}"}, status=status)
+
+
+def _meeting_command_body(form):
+    allowed = {"csrfmiddlewaretoken", "game_id", "command_id", "state_version", "kind", "target",
+               "addressee", "night", "slot", "interrogation_kind", "evidence", "divination"}
+    if set(form) - allowed:
+        raise ValueError("unknown_field")
+    command = {"kind": form.get("kind"), "actor": "mudang", "evidence": []}
+    for field in ("target", "addressee", "slot", "interrogation_kind"):
+        if form.get(field):
+            command[field] = form[field]
+    if form.get("night"):
+        command["night"] = int(form["night"])
+    for value in form.getlist("evidence"):
+        evidence_type, separator, record_id = value.partition(":")
+        if not separator or evidence_type not in {EvidenceType.CLAIM.value, EvidenceType.DIVINATION.value} or not record_id:
+            raise ValueError("invalid_evidence")
+        command["evidence"].append({"type": evidence_type, "record_id": record_id})
+    if form.get("divination"):
+        night, target, result = form["divination"].split(":")
+        command["divination"] = {"night": int(night), "target": target, "result": result}
+    return {"game_id": form.get("game_id"), "command_id": form.get("command_id"),
+            "expected_state_version": int(form.get("state_version", "-1")), "command": command}
 
 
 @game_request
@@ -101,15 +139,19 @@ def start_game(request):
     data = parse_game_input(StartGameInput, body)
     output = get_game_service().start(data, request.player_pseudonym, request.consented)
     request.game_id = output.view.game_id
+    if _wants_meeting(request):
+        return _meeting_response(request, output.view, output.mudang_variant)
     return JsonResponse(to_jsonable(output))
 
 
 @game_request
 @require_GET
 def game_detail(request, game_id):
-    """자기 판의 공개 상태를 JSON으로 반환한다."""
+    """자기 판의 공개 상태를 JSON·전체 화면·htmx 조각으로 반환한다."""
     output = get_game_service().detail(game_id, request.player_pseudonym)
     request.game_id = output.view.game_id
+    if _wants_meeting(request):
+        return _meeting_response(request, output.view, output.mudang_variant)
     return JsonResponse(to_jsonable(output))
 
 
@@ -120,15 +162,28 @@ def submit_command(request, game_id):
     service = get_game_service()
     state, _ = service.owned(game_id, request.player_pseudonym)
     request.game_id = state.meta.game_id
-    data = parse_game_input(SubmitCommandInput, _body(request))
+    wants_meeting = _wants_meeting(request)
+    if wants_meeting and request.content_type == "application/x-www-form-urlencoded":
+        body = _meeting_command_body(request.POST)
+    else:
+        body = _body(request)
+    data = parse_game_input(SubmitCommandInput, body)
     if data.game_id != game_id or data.expected_state_version < 0:
         raise ValueError("invalid_command")
     UUID(data.command_id)
     if data.intent_attempt_id is None:
-        return command_response(service.command(data, request.player_pseudonym))
-    if service.interactions is None:
-        raise InteractionUnavailable
-    return command_response(service.interactions.submit_linked(data, request.player_pseudonym))
+        output = service.command(data, request.player_pseudonym)
+    else:
+        if service.interactions is None:
+            raise InteractionUnavailable
+        output = service.interactions.submit_linked(data, request.player_pseudonym)
+    if not wants_meeting:
+        return command_response(output)
+    if output.replayed:
+        # HTML만 최신 상태로 다시 그린다. JSON은 계약대로 저장 응답을 재생한다.
+        current = service.detail(game_id, request.player_pseudonym)
+        return _meeting_response(request, current.view, current.mudang_variant)
+    return _meeting_response(request, output.view, state.meta.mudang_variant, _command_status(output))
 
 
 @game_request
