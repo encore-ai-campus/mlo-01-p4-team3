@@ -146,6 +146,33 @@ class RunEval(unittest.TestCase):
         self.assertEqual(set(GEN_SETTINGS), {"temperature", "top_p", "top_k", "max_tokens", "n_ctx", "n_threads"})
 
 
+class StyleExamples(unittest.TestCase):
+    """말투 계열별 예시(E-07-07 v2): 콘텐츠 인물 말투가 모두 계열에 맞고, 예시 대사가 검증기를 통과한다."""
+
+    def test_every_bundle_style_has_profile(self):
+        from llm import prompt
+        bundle = json.loads((ROOT / "fixtures" / "content_min" / "bundle.json").read_text(encoding="utf-8"))
+        for c in bundle["characters"]:
+            self.assertIsNot(prompt.style_profile(c["speech_style"]), prompt.DEFAULT_PROFILE, c["speech_style"])
+
+    def test_example_lines_pass_validator(self):
+        from llm import prompt
+        profiles = [p[1:] for p in prompt.STYLE_PROFILES] + [prompt.DEFAULT_PROFILE]
+        for prefix, tails in profiles:
+            for reaction in prompt.REACTION_KO:
+                self.assertEqual(set(tails), set(prompt.REACTION_KO))
+                style = next((p[0][0] for p in prompt.STYLE_PROFILES if p[1] == prefix), "")
+                fact, line = prompt.example_pair(style, reaction)
+                self.assertIn(fact, line)
+                r = v.validate(line, {"fact_sentence": fact, "allowed_names": []}, LEX)
+                self.assertTrue(r.ok, f"{prefix} {reaction}: {line} {r.details}")
+
+    def test_child_example_differs_from_default(self):
+        from llm.prompt import build_messages as bm
+        req = dict(CASES[0]["request"], persona="아이. 말투: 어린아이 말투", reaction="explain")
+        self.assertIn("히잉", bm(req)[2]["content"])
+
+
 class Consistency(unittest.TestCase):
     def test_similarity(self):
         self.assertEqual(mm.similarity(["가나다", "가나다", "가나다"]), 1.0)
