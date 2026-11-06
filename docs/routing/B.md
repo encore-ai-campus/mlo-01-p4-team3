@@ -12,6 +12,8 @@
 |---|---|---|---|
 | `server/app/` | 응용 | B | 유스케이스와 DTO(`dto.py`) |
 | `server/api/`, `web/` | 표현 | B | Django 뷰, 템플릿, htmx 조각, 뷰 모델(`viewmodels.py`), 웹소켓 Consumer(`consumers.py`, 예정) |
+| `server/paldo_web/` | Django 프로젝트 | B | 서버 설정, URL 등록, 요청 계측, DB 상태 확인과 Prometheus 지표 |
+| `server/tests/` | 테스트 | B | Django 요청 계측, 상태 확인 응답과 DB 장애 검증 |
 | `server/app/ads_port.py` | 응용(게임 쪽) | B | `AdProvider` 포트와 보호 래퍼 `AdGateway` |
 
 ## 작업별 위치
