@@ -1,6 +1,6 @@
 # B 웹·API 태스크
 
-- 기획서 절 번호: 이 문서의 "기획서 N.N"은 **v1.1 번호**다. 기획서 v1.2와 번호가 겹치므로(예: v1.1 6.3 VM 배치 ≠ v1.2 6.3 시뮬레이션) 기획서 부록 B 대응표로 찾는다(P-28).
+- 기획서 절 번호: 이 문서의 "기획서 N.N"은 **v1.1 번호**다. 지금 기획서(v1.3)와 번호가 겹치므로(예: v1.1 6.3 VM 배치 ≠ v1.3 6.3 모델 선정) `docs/design_notes.md` 4절 대응표로 찾는다(P-28).
 - 담당자: 김영주 · 노트북: 4
 - 폴더: `server/`(Django 프로젝트, `server/api` 표현, `server/app` 응용), `web/`(템플릿·정적 파일). `server/app`은 Django를 import하지 않는다(`test_layers.py`).
 - 늘 볼 문서: `docs/contracts/api.md`, `ports.md` 2·4·5절, `privacy.md`, 기획서 4.5·6.1·8.4.
@@ -76,7 +76,7 @@
   3. 잠금(privacy.md 5절): 같은 로그인 ID로 5회 연속 실패하면 15분 거부, 잠금 중에는 맞는 비밀번호도 거부, 잠금 중 시도는 만료를 늘리지 않음, 성공하면 실패 횟수 초기화, 15분 뒤 해제. 상태는 계정 DB에 원자적으로 갱신(동시 실패 요청 테스트). 없는 ID도 같은 방식으로 세어, 없는 ID·틀린 비밀번호·잠김의 상태 코드·문구·이동 위치가 같음. 운영자 잠금 해제 관리 명령. 시계를 고정한 테스트.
   4. 로그인 필수·소유권: api.md 2절의 모든 엔드포인트와 화면을 순회해 비로그인 요청이 JSON 401 또는 로그인 화면 이동인지 테스트. 계정 2개로 상대 판·`attempt_id`·`job_id` 접근이 404인지(멱등 재요청 응답보다 먼저) 테스트. CSRF 검사 유지(`enforce_csrf_checks=True`로 가입·로그인·로그아웃과 모든 POST·PUT이 토큰 없으면 403). 로그인 전 세션 키 재사용 불가, 로그아웃·비밀번호 초기화 뒤 기존 세션 거부 테스트.
   5. 가명 분리: `StartGameInput.player_pseudonym`은 로그인 계정의 가명 ID로 채우고 요청 본문에 있으면 400(테스트). 테스트 계정으로 가입 → 로그인 → 판 1개 진행, 그리고 중복 ID 가입·틀린 비밀번호·잠금·`changepassword` 실패 경로까지 실행한 뒤 로그 파일, 이벤트(아웃박스), `/metrics` 출력, 광고 요청에서 그 로그인 ID 문자열 검색 0건(테스트). `DEBUG=False`, 인증 폼에 `sensitive_post_parameters`, admin 계정 표시는 가명 ID.
-  6. 가입 방식: 파일럿은 공개 가입(11/4 PM 결정). `PALDO_SIGNUP_INVITE_CODE`가 있으면 코드가 다른 가입 거부, 없으면 공개 가입. 두 경우 모두 테스트. 코드 값은 로그 0건. 가입 남용 최소 조건: 같은 접속 주소에서 가입 요청이 10분에 5회를 넘으면 429로 거부(카운터는 계정 저장소, 주소 값은 로그에 남기지 않음)(시계 고정 경계 테스트).
+  6. 가입 방식: 파일럿은 공개 가입(11/4 PM 결정). `PALDO_SIGNUP_INVITE_CODE`가 있으면 코드가 다른 가입 거부, 없으면 공개 가입. 두 경우 모두 테스트. 코드 값은 로그 0건. 가입 요청 수 제한은 두지 않는다(11/6 사용자 결정, privacy.md 5절).
   7. 복구는 관리자 초기화만: 모듈 문서 `web` 사용법 절에 `python manage.py changepassword <로그인 ID>` 절차를 적고, 로그인 화면에 "비밀번호를 잊으면 운영자에게 문의" 안내. 로그인 성공·실패·잠금 지표 `paldo_auth_login_total{result}`와 로그(가명 ID만).
 - 근거: privacy.md 1·3·5절, api.md 2-1절 / 11/4 PM 결정
 
@@ -119,7 +119,7 @@
 - 문서화(+0.25h, 공통 ⑦): [트러블 B](../troubles/B.md)에 `### B-07-05` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`web`](../modules/web.md)는 그날 일괄 갱신(B-07-04)
 - 산출물: `server/paldo_web/asgi.py`(ASGI 진입점), `server/api/routing.py`·`server/api/consumers.py`(표현: 웹소켓 받기·검증), `server/app/ad_events.py`(응용: 비콘·클릭·랜딩 중계), `server/app/ads_port.py`의 중계 메서드(ports.md 5절), `ads/testing/fakes.py`의 `FakeAdProvider` 중계 가짜(D가 PR 리뷰), `web/static/js/paldo_ws.js`(연결·재연결·대기열), `server/tests/test_ws.py`
 - 완료 조건:
-  1. ASGI 전환(11/4 PM 결정, integration.md 7절 #2): `channels`·`daphne`(tech_stack.md 2절)로 `ProtocolTypeRouter`가 HTTP는 Django, 웹소켓은 `OriginValidator(AuthMiddlewareStack(URLRouter(...)), [PALDO_PUBLIC_ORIGIN])`로 나눈다(전체 출처 비교, api.md 7절). `CHANNEL_LAYERS`는 `InMemoryChannelLayer`이고, 게임 웹은 **Daphne 프로세스 1개**로 띄운다(InMemory 채널 계층은 프로세스끼리 공유되지 않는다. 그룹 방송은 쓰지 않는다). `ALLOWED_HOSTS`·`CSRF_TRUSTED_ORIGINS`는 `PALDO_PUBLIC_ORIGIN`(integration.md 4.1)에서 만들고, 값이 `https://`이면 `SECURE_PROXY_SSL_HEADER`·`SESSION_COOKIE_SECURE`·`CSRF_COOKIE_SECURE`를 켠다. 프록시 뒤 접속 주소: Daphne는 루프백 주소에만 열고(C-07-04 프록시를 거쳐서만 접속), 직접 연결 주소가 루프백일 때만 `X-Forwarded-For`의 마지막 값을 참가자 주소로 쓴다(가입 속도 제한 privacy.md 5절이 모든 참가자를 한 주소로 세지 않게. 테스트 2개). 전환 뒤 기존 B 테스트 전부 통과, 게임 API p95를 전환 전후 같은 조건(`api_bench.py`)으로 비교한 표. `channels`·`daphne`가 Python 3.14·Django 6.1에 설치되지 않거나 위 테스트가 실패하면 오류 발췌와 함께 즉시 PM에 보고한다. 통과한 정확한 버전을 tech_stack.md 2절에 고정한다.
+  1. ASGI 전환(11/4 PM 결정, integration.md 7절 #2): `channels`·`daphne`(tech_stack.md 2절)로 `ProtocolTypeRouter`가 HTTP는 Django, 웹소켓은 `OriginValidator(AuthMiddlewareStack(URLRouter(...)), [PALDO_PUBLIC_ORIGIN])`로 나눈다(전체 출처 비교, api.md 7절). `CHANNEL_LAYERS`는 `InMemoryChannelLayer`이고, 게임 웹은 **Daphne 프로세스 1개**로 띄운다(InMemory 채널 계층은 프로세스끼리 공유되지 않는다. 그룹 방송은 쓰지 않는다). `ALLOWED_HOSTS`·`CSRF_TRUSTED_ORIGINS`는 `PALDO_PUBLIC_ORIGIN`(integration.md 4.1)에서 만들고, 값이 `https://`이면 `SECURE_PROXY_SSL_HEADER`·`SESSION_COOKIE_SECURE`·`CSRF_COOKIE_SECURE`를 켠다. 프록시 뒤 접속: Daphne는 루프백 주소에만 연다(C-07-04 프록시를 거쳐서만 접속). 참가자 접속 주소를 쓰는 규칙이 없으므로 `X-Forwarded-For`를 참가자 주소로 해석하지 않는다(11/6 가입 남용 제한 삭제). 전환 뒤 기존 B 테스트 전부 통과, 게임 API p95를 전환 전후 같은 조건(`api_bench.py`)으로 비교한 표. `channels`·`daphne`가 Python 3.14·Django 6.1에 설치되지 않거나 위 테스트가 실패하면 오류 발췌와 함께 즉시 PM에 보고한다. 통과한 정확한 버전을 tech_stack.md 2절에 고정한다.
   2. `/ws/game/` 연결 규칙(api.md 7절): 비로그인 연결과 연결 중 로그아웃은 닫힘 코드 4401, 허용되지 않은 출처(스킴·포트만 다른 출처 포함)는 핸드셰이크 거부, 메시지 4,096바이트 초과는 닫힘 코드 1009. `channels.testing.WebsocketCommunicator` 테스트로 네 경우와 정상 연결을 확인.
   3. 메시지 검증: `hello`·`ad.impression`만 받는다. 형식 위반·알 수 없는 `type`·연결당 초당 5개 초과는 `error` 응답 후 연결 유지(테스트 각 1개). Consumer는 받기·검증·응답만 하고 중계 순서는 응용 `ad_events.py`가 맡는다(`server/app`은 Django·channels를 import하지 않는다, `test_layers.py`).
   4. 비콘 중계: `ad.impression` → `ad_events.relay_impression` → `AdGateway.report_impression` → `AdProvider.send_impression`. `ack.relayed`가 결과이고 재시도는 없다. 시간 제한·회로 차단·비동기 경계(`sync_to_async`, 이벤트 루프에서 동기 호출 0건)·전달 헤더(참가자 `Cookie`·`Authorization`·`X-Forwarded-For`·`User-Agent`·`Referer` 0건, 테스트)는 ports.md 5절. 가짜 광고 서버에 지연·실패를 주입하고 웹소켓 비콘을 함께 보내도 실제 Daphne에서 게임 API p95 증가 50ms 이하(B-08-03 2번 기준을 가짜로 먼저 확인).
@@ -132,7 +132,7 @@
 - 1.5h · 선행: B-07-05(웹소켓·중계) · 입력: `server/app/ads_port.py`(`AdGateway`), `ads/testing/fakes.py`
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 B](../troubles/B.md)에 `### B-07-03` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 공개 함수·클래스 docstring(CI `docs` 검사) · 모듈 문서 [`web`](../modules/web.md)는 그날 일괄 갱신(B-07-04)
 - 완료 조건:
-  1. 지면 4곳(`lobby_banner`, `llm_wait`, `result_banner`, `review_side`)만, 회의·투표·밤 화면에는 없음(테스트). 지면 칸 크기는 계약 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `llm_wait`·`review_side`, ads.md 2절)에서 읽고, 소재 이미지는 광고 응답의 `image_path`(지면 규격별 경로, E 임시 소재)를 그대로 쓴다. 모든 광고 칸에 "광고" 표시(테스트: 렌더된 광고 조각마다 표시 문구 존재).
+  1. 지면 3곳(`lobby_banner`, `result_banner`, `review_side`)만, 회의·투표·밤 화면에는 없음(테스트. 추궁 답변 대기 지면 `llm_wait`은 11/6 PM 결정으로 삭제). 지면 칸 크기는 계약 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `review_side`, ads.md 2절)에서 읽고, 소재 이미지는 광고 응답의 `image_path`(지면 규격별 경로, E 임시 소재)를 그대로 쓴다. 모든 광고 칸에 "광고" 표시(테스트: 렌더된 광고 조각마다 표시 문구 존재).
   2. 광고 칸은 `GET /ads/slot/{slot}` + `hx-trigger="load"` 지연 로드. 게임 명령 처리 경로에서 광고 호출 0회(테스트: 명령 처리 중 `FakeAdProvider` 호출 수 0).
   3. 노출 비콘: 광고 면적 50% 이상 1초 이상 보이면 1회(IntersectionObserver), B-07-05 웹소켓의 `ad.impression` 메시지로 보낸다. 클릭은 게임 웹 중계 링크 `/ads/click?t=<serve 토큰>`. 렌더된 광고 조각에 광고 서버 주소 0건(테스트, 11/4 PM 결정 #2 변경: 브라우저는 게임 웹 출처에만 접속).
   4. 결과 코드(ok, empty, timeout, error, busy, circuit_open) 지표 `paldo_ad_fetch_total{result}`.
@@ -162,7 +162,7 @@
 - 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: B-08-01, B-08-02, B-08-03 · 코드를 바꿨다면: 없음 · 모듈: [`web`](../modules/web.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/8 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
 - 산출물: `server/infra/ad_client.py`(`AdProvider` HTTP 구현: serve와 비콘·클릭·랜딩 중계, 11/4 PM 결정 #2·#6), `tools/perf/ad_fault_test.py`
 - 완료 조건:
-  1. 실제 광고 서버로 지면 4곳에서 serve → 노출 비콘(웹소켓 → 게임 웹 중계) → 클릭 리다이렉트(게임 웹 중계)가 동작하고, 광고 서버 로그와 `serve_id`로 이어짐(증빙에 같은 `serve_id`의 웹·광고 로그 각 1줄).
+  1. 실제 광고 서버로 지면 3곳에서 serve → 노출 비콘(웹소켓 → 게임 웹 중계) → 클릭 리다이렉트(게임 웹 중계)가 동작하고, 광고 서버 로그와 `serve_id`로 이어짐(증빙에 같은 `serve_id`의 웹·광고 로그 각 1줄).
   2. 장애 4종(중단, 무응답, 3초 지연, 오류 응답)을 주입하고 각 5분간 `api_bench.py` 부하: **게임 API p95 증가 50ms 이하, 게임 오류율 증가 0**(정상 대비 표). 같은 장애 중 비콘·클릭 중계도 함께 흘려 중계 실패가 게임 API에 번지지 않음을 같은 표에.
   3. 회로 차단 동작(5회 실패 → 30초 생략)이 지표로 확인됨.
   4. 실제 배치(게임 웹 app-01, 광고 서버 ad-01)에서 브라우저는 게임 웹 출처에만 접속하고(개발자 도구 네트워크 기록에 광고 서버 주소 요청 0건, 결정 #2 변경), serve·비콘·클릭·랜딩 중계 호출에 `X-Request-ID`를 넘겨 광고 서버 로그에 같은 `request_id`가 남음(결정 #14).

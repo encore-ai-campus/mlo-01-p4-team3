@@ -17,6 +17,7 @@ from engine.domain.engine import (
     BaselinePolicy, PaldoEngine, assignment_of, end_reason, setup_from_assignment,
 )
 from engine.domain.events import EventType
+from engine.domain.observation import Decision, ReasonCode
 from engine.domain.model import (
     LIMITS, PHASE_RULES, PLAYER_ID, PRESETS, ClaimType, Command, CommandEnvelope, CommandKind,
     DataSource, DivinationPayload, DivinationResult, EvidenceRef, EvidenceType, GameMeta, InterrogationKind,
@@ -42,19 +43,23 @@ def scenario(sid: str) -> Scenario:
 
 
 class ScriptedPolicy(BaselinePolicy):
-    """정해진 NPC 결정. 없으면 기본 규칙. votes[(day, round)][npc] = 대상, nights[day] = NightPlan."""
+    """정해진 NPC 결정. 없으면 기본 규칙. votes[(day, round)][npc] = 대상, nights[day] = NightPlan.
+
+    정책은 관측 스냅샷만 받는다(A-06-02). 정해 준 결정은 이유 코드 `scripted`로 남긴다.
+    """
 
     def __init__(self, votes: Optional[dict] = None, nights: Optional[dict] = None):
         self.votes = votes or {}
         self.nights = nights or {}
 
-    def vote(self, state, npc_id, candidates, rng):
-        round_ = "runoff" if state.phase is Phase.RUNOFF else "main"
-        got = self.votes.get((state.day, round_), {}).get(npc_id)
-        return got if got is not None else super().vote(state, npc_id, candidates, rng)
+    def vote(self, obs, candidates, rng):
+        round_ = "runoff" if obs.phase is Phase.RUNOFF else "main"
+        got = self.votes.get((obs.day, round_), {}).get(obs.observer)
+        return Decision(got, [ReasonCode.SCRIPTED]) if got is not None else super().vote(obs, candidates, rng)
 
-    def night_plan(self, state, rng):
-        return self.nights.get(state.day) or super().night_plan(state, rng)
+    def night_plan(self, obs, executors, victims, rng):
+        got = self.nights.get(obs.day)
+        return Decision(got, [ReasonCode.SCRIPTED]) if got else super().night_plan(obs, executors, victims, rng)
 
 
 def meta(preset_id: str, seed: int = 0, game_id: str = "g_test") -> GameMeta:
@@ -540,7 +545,8 @@ class EndOrder(unittest.TestCase):
         npc = next(n for n in st.active if n != PLAYER_ID)
         st, tr, r = step(self, engine, st, tr, CommandKind.DIVINE, target=npc)
         kinds = [e.event_type for e in r.events]
-        self.assertEqual(kinds, [EventType.NIGHT_RESOLVED, EventType.DIVINATION_DONE, EventType.GAME_ENDED])
+        self.assertEqual(kinds, [EventType.NIGHT_RESOLVED, EventType.DIVINATION_DONE, EventType.GAME_ENDED,
+                                 EventType.TRUTH_REVEALED])                  # 종료 뒤 진실(A-06-02)
         self.assertEqual(r.events[0].payload["end"], "possessed_parity")
         self.assertEqual(st.result.reason.value, "possessed_parity")
         self.assertIn(npc, st.player.divinations[1])   # 대상이 그 밤에 실종돼도 점 결과는 전달
@@ -566,7 +572,8 @@ class Interrogation(unittest.TestCase):
                          (sp.speech_id, "jumo", sp.fact_sentence, st.state_version))
         self.assertTrue(req.fallback_text)
         self.assertEqual(engine.player_view(st, CONTENT).pending_render_jobs, [req.job_id])
-        self.assertEqual([e.event_type for e in r.events], [EventType.INTERROGATION_ANSWERED])
+        self.assertEqual([e.event_type for e in r.events],
+                         [EventType.OBSERVATION, EventType.DECISION, EventType.INTERROGATION_ANSWERED])
 
     def test_executor_uses_agreed_alibi(self):
         """밤 명령에 합의 알리바이가 있으면 실행자는 그 밤 한밤 행적 질문에 그 장소로 답한다."""

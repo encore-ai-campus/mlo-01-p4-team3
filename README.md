@@ -2,7 +2,7 @@
 
 무당이 되어 마을에 숨은 씐 자를 찾는 추리 게임이다.
 
-- 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md)
+- 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md) · 기획서 보조 기록(설계 결정 기록·미확정 사항·서버 배치 요약·이전 판 절 번호 대응표): [`docs/design_notes.md`](docs/design_notes.md)
 - 팀 일정과 역할: [`docs/team_plan.md`](docs/team_plan.md)
 - BRD(업무 요구): [`docs/brd.md`](docs/brd.md) · PRD(제품 요구·합격 기준, 요구사항 기준 문서): [`docs/prd.md`](docs/prd.md)
 - 계약 문서: [`docs/contracts/`](docs/contracts/)(색인·DB 스키마 위치: [`README.md`](docs/contracts/README.md)) · 디렉터리 트리(새 파일 위치): [`structure.md`](docs/contracts/structure.md) · 영역 간 호출 지도: [`integration.md`](docs/contracts/integration.md)
@@ -30,7 +30,7 @@ server/infra (인프라) → engine (포트 구현)
 | 흐름 | 영역 | 주요 폴더 | 안내 문서 |
 |---|---|---|---|
 | A | 엔진 | `engine/`(`engine/sim/`은 D) | [`docs/routing/A.md`](docs/routing/A.md) |
-| B | 웹 | `server/api/`, `server/app/`, `web/` | [`docs/routing/B.md`](docs/routing/B.md) |
+| B | 웹 | `server/api/`, `server/app/`, `web/templates/`, `web/static/` | [`docs/routing/B.md`](docs/routing/B.md) |
 | C | 인프라·파이프라인·운영 | `server/infra/`, `pipeline/`, `ops/` | [`docs/routing/C.md`](docs/routing/C.md) |
 | D | ML·광고 | `engine/sim/`, `intent/`, `ml/`, `ads/` | [`docs/routing/D.md`](docs/routing/D.md) |
 | E | 콘텐츠·LLM·에셋 규격·저장소 운영 | `content/`, `llm/`, `.github/`, `.githooks/`, `docs/ops/`, `docs/assets/` | [`docs/routing/E.md`](docs/routing/E.md) |
@@ -46,7 +46,7 @@ server/infra (인프라) → engine (포트 구현)
 | `requirements/` | 의존성 | 공용 | 영역별 Python 패키지(`web`·`ml`·`llm`·`pipeline`, Python 3.14) |
 | `contracts/` | 데이터 계약 | 공용 | 학습 행, 의도 예시, 시나리오 스키마 |
 | `fixtures/` | 생성물 | 공용 | 계약 예시. `tools/build_fixtures.py`가 만든다 |
-| `tools/` | 도구 | 공용 | 픽스처 생성, 합성 데이터 생성, 태스크 문서 파서(`tasks_md.py`)·이슈 동기화(`tasks_to_issues.py`), 저장소 배정 전 임시 운영(`interim.py` 표현·응용, `interim_rules.py` 도메인) |
+| `tools/` | 도구 | 공용 | 픽스처 생성, 합성 데이터 생성, 태스크 문서 파서(`tasks_md.py`)·이슈 동기화(`tasks_to_issues.py`), 저장소 배정 전 임시 운영(`interim.py` 표현·응용, `interim_rules.py` 도메인), 엔진 판 실행·인수 검사(`run_engine_games.py`, `check_handoff_a06.py`) |
 | `tools/perf/` | 도구(측정) | 각 흐름 | 측정 스크립트. 결과 JSON은 `tools/evidence_result.py`로 `docs/evidence/perf/<ID>/`에 쓴다(엔진 `engine_bench.py`) |
 | `tests/contract/` | 테스트 | 공용 | 계약 테스트(unittest) |
 | `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화·임시 운영 흐름은 임시 git 저장소와 임시 폴더로) |

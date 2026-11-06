@@ -14,7 +14,7 @@ import random
 from dataclasses import dataclass
 from typing import Optional, Protocol
 
-from . import params
+from . import params, serde
 from .content import Assignment, Character, ContentBundle, Secret, required_counts, validate_assignment
 from .events import DomainEvent, EventType
 from .model import (
@@ -25,7 +25,12 @@ from .model import (
     TellRecord, VoteRecord, check_end, check_player_limits, divination_of, is_legal_kind, missing_slots, resolve_vote,
     winner_of,
 )
+from .observation import (   # candidate_pool·confessed_ids는 이전 위치(engine)에서 import하던 곳을 위해 함께 둔다
+    Decision, ReasonCode, candidate_pool, confessed_ids, decision_payload, observation_payload, observe_npc,
+    snapshot_id_of,
+)
 from ..ports import EngineDeps, PlayerView, RenderRequest, TransitionResult
+
 
 NIGHT0 = 0
 FIRST_DAY = 1
@@ -252,26 +257,35 @@ def setup_from_assignment(a: Assignment, content: ContentBundle, seed: int) -> S
 
 # ---------------------------------------------------------------- NPC 결정(임시 규칙)
 class NpcPolicy(Protocol):
-    """엔진이 NPC 차례에 부르는 결정 규칙. 각 NPC는 공개 기록과 자기 상태(`state.npcs[npc]`)만 본다.
+    """엔진이 NPC 차례에 부르는 결정 규칙(A-06-02). 입력은 관찰자의 `ObservationSnapshot`뿐이다.
 
+    `GameState`·`GameTruth`를 받지 않으므로 진실(①)과 다른 NPC의 개인 지식·믿음을 읽을 수 없다(기획서 v1.1 5.1).
+    모든 메서드는 `Decision`(행동 + 이유 코드 + 근거 ID)을 돌려준다. 엔진이 행동 직전 `observation`,
+    직후 `decision` 이벤트를 같은 snapshot_id로 남긴다.
     A-05-02는 `BaselinePolicy`(침묵·시드 투표·시드 홀림)만 둔다. 의심·감싸기 같은 실제 결정은
     A-07-01(`npc/policy_*.py`)·A-07-02(`npc/vote.py`)가 같은 자리에 끼운다.
     """
 
-    def talk(self, state: GameState, npc_id: str, rng: random.Random) -> Command:
-        """회의 라운드 차례의 말 행동(`PHASE_RULES` NPC 합법 종류)."""
+    def talk(self, obs: ObservationSnapshot, rng: random.Random) -> Decision:
+        """회의 라운드 차례의 말 행동. value는 `Command`(`obs.legal_kinds` 안의 종류)."""
         ...
 
-    def vote(self, state: GameState, npc_id: str, candidates: list[str], rng: random.Random) -> str:
-        """투표·결선 대상(후보 중 자기 아닌 1명). vote·runoff 단계에 들어갈 때 한 번 부른다."""
+    def vote(self, obs: ObservationSnapshot, candidates: list[str], rng: random.Random) -> Decision:
+        """투표·결선 대상. value는 후보 중 자기 아닌 1명. vote·runoff 단계에 들어갈 때 한 번 부른다."""
         ...
 
-    def night_plan(self, state: GameState, rng: random.Random) -> NightPlan:
-        """씐 자 공동 밤 명령(실행자 = 활동 씐 자, 피해자 = 활동 마을 주민 NPC)."""
+    def night_plan(self, obs: ObservationSnapshot, executors: list[str], victims: list[str],
+                   rng: random.Random) -> Decision:
+        """씐 자 공동 밤 명령. value는 `NightPlan`(실행자는 executors, 피해자는 victims 중).
+
+        obs는 활동 씐 자 중 ID가 가장 앞선 사람의 스냅샷이다. executors(그 사람과 활동 중인 짝)와
+        victims(활동 NPC − 그 사람 − 짝)는 그 씐 자가 이미 아는 정보(자기 역할·`partner_id`)와 공개된 활동 인원으로만
+        만든 목록이라 역할을 새로 드러내지 않는다. 이 목록은 씐 자 본인의 결정에만 넘긴다.
+        """
         ...
 
-    def react(self, state: GameState, npc_id: str, cmd: Command, rng: random.Random) -> ReactionIntent:
-        """캐묻기를 받은 NPC의 답변 의도(해명·회피·역공·고백). 고백은 `can_confess`일 때만 엔진이 받는다.
+    def react(self, obs: ObservationSnapshot, cmd: Command, rng: random.Random) -> Decision:
+        """캐묻기를 받은 NPC의 답변 의도. value는 `ReactionIntent`. 고백은 `can_confess`일 때만 엔진이 받는다.
 
         압박 누적과 고백 문턱값(성향 보정)은 A-07-01이 이 자리에 끼운다.
         """
@@ -281,36 +295,49 @@ class NpcPolicy(Protocol):
 class BaselinePolicy:
     """임시 NPC 규칙. 말 차례는 침묵, 투표는 의심도 최댓값(동률은 시드), 홀림은 시드로, 캐묻기 답은 해명."""
 
-    def react(self, state: GameState, npc_id: str, cmd: Command, rng: random.Random) -> ReactionIntent:
+    version = "baseline-0"
+
+    def react(self, obs: ObservationSnapshot, cmd: Command, rng: random.Random) -> Decision:
         """캐묻기 답변 의도. 지금은 항상 해명한다(고백 결정은 A-07-01)."""
-        return ReactionIntent.EXPLAIN
+        return Decision(ReactionIntent.EXPLAIN, [ReasonCode.BASELINE_EXPLAIN])
 
-    def talk(self, state: GameState, npc_id: str, rng: random.Random) -> Command:
+    def talk(self, obs: ObservationSnapshot, rng: random.Random) -> Decision:
         """회의 차례 행동. 지금은 침묵만 한다."""
-        return Command(CommandKind.SILENCE, npc_id)
+        return Decision(Command(CommandKind.SILENCE, obs.observer), [ReasonCode.BASELINE_SILENCE])
 
-    def vote(self, state: GameState, npc_id: str, candidates: list[str], rng: random.Random) -> str:
-        """후보 중 자기 의심도가 가장 높은 사람. 고백자는 빼고(`candidate_pool`), 씐 자는 짝을 피한다. 동률은 시드.
+    def vote(self, obs: ObservationSnapshot, candidates: list[str], rng: random.Random) -> Decision:
+        """후보 중 자기 의심도가 가장 높은 사람. 고백자는 빼고(`obs.candidates`), 씐 자는 짝을 피한다. 동률은 시드.
 
         고백자를 빼면 후보가 남지 않을 때(예: 결선 후보가 모두 고백자)는 합법 후보 전체로 돌아간다.
         """
-        me = state.npcs[npc_id]
-        legal = [c for c in candidates if c != npc_id]
-        allowed = set(candidate_pool(state, npc_id)) | {PLAYER_ID}
-        pool = [c for c in legal if c in allowed] or legal
-        if me.private.role is Role.POSSESSED:
-            pool = [c for c in pool if c != me.private.partner_id] or pool
-        sus = me.beliefs.suspicion
+        me = obs.observer
+        legal = [c for c in candidates if c != me]
+        allowed = set(obs.candidates) | {PLAYER_ID}
+        codes: list[ReasonCode] = []
+        pool = [c for c in legal if c in allowed]
+        if len(pool) < len(legal):
+            codes.append(ReasonCode.SKIP_CONFESSED)
+        if not pool:
+            pool = legal
+            codes.append(ReasonCode.FALLBACK_ALL_LEGAL)
+        partner = obs.private.partner_id
+        if obs.private.role is Role.POSSESSED and partner in pool and len(pool) > 1:
+            pool = [c for c in pool if c != partner]
+            codes.append(ReasonCode.AVOID_PARTNER)
+        sus = obs.beliefs.suspicion
         top = max(sus.get(c, 50.0) for c in pool)
-        return rng.choice(sorted(c for c in pool if sus.get(c, 50.0) == top))
+        tied = sorted(c for c in pool if sus.get(c, 50.0) == top)
+        target = rng.choice(tied)
+        codes.insert(0, ReasonCode.MAX_SUSPICION)
+        if len(tied) > 1:
+            codes.append(ReasonCode.TIE_SEEDED)
+        return Decision(target, codes)                  # 목격 근거는 쓰지 않으므로 붙이지 않는다(witness_basis는 A-07-01용)
 
-    def night_plan(self, state: GameState, rng: random.Random) -> NightPlan:
-        """활동 씐 자 중 실행자, 활동 마을 주민 NPC 중 피해자를 시드로 고른다."""
-        possessed = sorted(n for n in state.active if n in state.npcs
-                           and state.npcs[n].private.role is Role.POSSESSED)
-        villagers = sorted(n for n in state.active if n in state.npcs
-                           and state.npcs[n].private.role is Role.VILLAGER)
-        return NightPlan(executor=rng.choice(possessed), victim=rng.choice(villagers))
+    def night_plan(self, obs: ObservationSnapshot, executors: list[str], victims: list[str],
+                   rng: random.Random) -> Decision:
+        """실행자·피해자를 시드로 고른다(정렬한 목록에서)."""
+        plan = NightPlan(executor=rng.choice(sorted(executors)), victim=rng.choice(sorted(victims)))
+        return Decision(plan, [ReasonCode.SEEDED_EXECUTOR, ReasonCode.SEEDED_VICTIM])
 
 
 # ---------------------------------------------------------------- 명령 검증(거부 판정)
@@ -425,6 +452,7 @@ class _Tx:
         self.chars = {c.npc_id: c for c in content.characters}
         self.secrets = {s.secret_id: s for s in content.secrets}
         self.place_ko = {p.place: p.name_ko for p in content.places}
+        self.n_obs = 0                                  # 이 전이 안 관측 순번(스냅샷 ID)
 
     # ---- 공통
     def rng(self, purpose: str) -> random.Random:
@@ -466,6 +494,24 @@ class _Tx:
             payload["tell"] = True              # 보인 기색만 싣는다(안 보임은 거짓 여부 누출)
         self.emit(EventType.CLAIM_MADE, payload)
 
+    # ---- NPC 결정 지점: 관측 투영 → 믿음 갱신 → 행동 선택(A-06-02)
+    def decide(self, npc: str, legal_kinds: list[CommandKind], choose) -> Decision:
+        """NPC 결정 1회. 스냅샷을 찍어 믿음을 갱신하고 `observation`을 낸 뒤, 정책(`choose(스냅샷)`)의 결정을
+        같은 snapshot_id로 `decision`에 남긴다. 정책은 스냅샷만 받는다(진실·다른 NPC 상태 없음)."""
+        st = self.st
+        sid = snapshot_id_of(st.meta.game_id, st.state_version, self.n_obs, npc)
+        self.n_obs += 1
+        snap, beliefs = observe_npc(st, npc, legal_kinds, sid)
+        st.npcs[npc].beliefs = beliefs
+        self.emit(EventType.OBSERVATION, observation_payload(snap))
+        d = choose(snap)
+        if not isinstance(d, Decision):
+            raise ValueError(f"NPC 정책이 Decision이 아닌 값을 냄: {npc} {d!r}")
+        kind, target = _kind_target(d.value)
+        version = st.meta.npc_policy_versions.get(npc) or getattr(self.policy, "version", "unknown")
+        self.emit(EventType.DECISION, decision_payload(npc, sid, kind, target, d, version))
+        return d
+
     # ---- 회의 라운드
     def start_round(self, phase: Phase) -> None:
         st = self.st
@@ -481,7 +527,11 @@ class _Tx:
         st = self.st
         while st.turn_index < len(st.turn_order) and st.turn_order[st.turn_index] != PLAYER_ID:
             npc = st.turn_order[st.turn_index]
-            cmd = self.policy.talk(st, npc, self.rng(f"talk:{st.phase.value}:{npc}"))
+            rng = self.rng(f"talk:{st.phase.value}:{npc}")
+            cmd = self.decide(npc, list(PHASE_RULES[st.phase].npc_kinds),
+                              lambda o: self.policy.talk(o, rng)).value
+            if not isinstance(cmd, Command) or cmd.actor != npc:
+                raise ValueError(f"NPC 정책이 잘못된 말 명령을 냄: {npc} {cmd!r}")
             if not is_legal_kind(st.phase, cmd.kind, False):
                 raise ValueError(f"NPC 정책이 불법 명령을 냄: {npc} {cmd.kind}")
             sp = self.speak(npc, cmd, line_text=self.template(cmd.kind).format(target=self.name(cmd.target)))
@@ -523,7 +573,10 @@ class _Tx:
         st.player.interrogations_left -= 1
         claim_ids: list[str] = []
         n_answers = sum(1 for s in st.public.speeches if s.kind is CommandKind.INTERROGATE)
-        reaction = self.policy.react(st, npc, cmd, self.rng(f"react:{n_answers}:{npc}"))
+        rng = self.rng(f"react:{n_answers}:{npc}")
+        reaction = self.decide(npc, [], lambda o: self.policy.react(o, cmd, rng)).value
+        if not isinstance(reaction, ReactionIntent):
+            raise ValueError(f"NPC 정책이 잘못된 답변 의도를 냄: {npc} {reaction!r}")
         if reaction is ReactionIntent.CONFESS and not can_confess(st, self.tr, npc):
             raise ValueError(f"NPC 정책이 불가능한 고백을 냄: {npc}")
         if reaction is ReactionIntent.CONFESS:
@@ -623,7 +676,8 @@ class _Tx:
         for npc in st.active:
             if npc == PLAYER_ID:
                 continue
-            t = self.policy.vote(st, npc, list(candidates), self.rng(f"vote:{round_}:{npc}"))
+            rng = self.rng(f"vote:{round_}:{npc}")
+            t = self.decide(npc, [CommandKind.VOTE], lambda o: self.policy.vote(o, list(candidates), rng)).value
             if t == npc or t not in candidates:
                 raise ValueError(f"NPC 정책이 불법 표를 냄: {npc} -> {t}")
             out[npc] = t
@@ -688,8 +742,17 @@ class _Tx:
     def start_night(self) -> None:
         st, tr = self.st, self.tr
         st.phase = Phase.NIGHT
-        plan = self.policy.night_plan(st, self.rng("night_plan"))
         possessed = [n for n in st.active if tr.roles.get(n) is Role.POSSESSED]
+        leader = min(possessed)                     # 공동 밤 명령은 활동 씐 자 중 ID가 가장 앞선 사람의 관측으로 정한다
+        partner = st.npcs[leader].private.partner_id
+        # 아래 두 목록은 leader의 개인 지식(자기 역할·짝 ID)과 공개된 활동 인원만으로 만든다. leader 결정에만 넘긴다.
+        executors = [n for n in (leader, partner) if n in st.active]
+        victims = [n for n in st.active if n not in (PLAYER_ID, leader, partner)]
+        rng = self.rng("night_plan")
+        plan = self.decide(leader, [CommandKind.NIGHT_PLAN],
+                           lambda o: self.policy.night_plan(o, list(executors), list(victims), rng)).value
+        if not isinstance(plan, NightPlan):
+            raise ValueError(f"NPC 정책이 잘못된 밤 명령을 냄: {plan!r}")
         if plan.executor not in possessed or plan.victim not in st.active or tr.roles.get(plan.victim) is not Role.VILLAGER:
             raise ValueError(f"NPC 정책이 불법 밤 명령을 냄: {plan}")
         tr.night_plans[st.day] = _copy_plan(plan)
@@ -762,6 +825,30 @@ class _Tx:
         st.turn_order, st.turn_index, st.pending_votes, st.runoff_candidates = [], 0, {}, []
         st.result = GameResult(winner_of(reason), reason, st.day)
         self.emit(EventType.GAME_ENDED, {"winner": st.result.winner.value, "reason": reason.value})
+        self.emit(EventType.TRUTH_REVEALED, truth_payload(self.tr))   # phase=ended 뒤에만(events.md 3절)
+
+
+def _kind_target(value) -> tuple[str, object]:
+    """결정 값에서 `decision` 이벤트의 (kind, target)을 꺼낸다."""
+    if isinstance(value, Command):
+        return value.kind.value, value.target
+    if isinstance(value, ReactionIntent):
+        return "react", value.value
+    if isinstance(value, NightPlan):
+        return CommandKind.NIGHT_PLAN.value, {"executor": value.executor, "victim": value.victim}
+    return CommandKind.VOTE.value, value
+
+
+def truth_payload(truth: GameTruth) -> dict:
+    """`truth_revealed` 본문(판 종료 후 라벨 조인용): 역할·비밀 배정·거짓 주장 ID·밤별 행적·밤 명령.
+
+    엔진이 `finish`에서 phase를 ended로 바꾼 뒤에만 부른다. 관측 스냅샷과 화면에는 넣지 않는다(domain.md 7절).
+    """
+    return {"roles": {k: v.value for k, v in truth.roles.items()},
+            "secrets": dict(truth.secrets),
+            "lies": sorted(cid for cid, ct in truth.claim_truths.items() if not ct.is_true),
+            "whereabouts": serde.to_jsonable(truth.whereabouts),
+            "night_plans": serde.to_jsonable(truth.night_plans)}
 
 
 def end_reason(state: GameState, truth: GameTruth) -> Optional[EndReason]:
@@ -819,21 +906,6 @@ def can_confess(state: GameState, truth: GameTruth, npc_id: str) -> bool:
     npc = state.npcs.get(npc_id)
     return (npc is not None and npc_id in state.active and truth.roles.get(npc_id) is Role.VILLAGER
             and npc_id in truth.secrets and not npc.runtime.confessed)
-
-
-def confessed_ids(state: GameState) -> set[str]:
-    """고백한 주민(공개 기록 기준). 고백자는 확정 무고로 본다(domain.md 6-1)."""
-    return {c.npc_id for c in state.public.confessions}
-
-
-def candidate_pool(state: GameState, observer: str) -> list[str]:
-    """관찰자에게 씐 자 후보인 사람(ID 정렬): 활동 인원 − 무당 − 관찰자 − 고백자(domain.md 6-1).
-
-    공개 기록만 읽는다. 갇힌 사람(감금 공개)·실종자는 활동 인원이 아니므로 이미 빠진다.
-    관측 스냅샷 `candidates`(A-06-02)와 투표 안전 층(A-07-02)이 같은 함수를 쓴다.
-    """
-    out = confessed_ids(state) | {PLAYER_ID, observer}
-    return sorted(n for n in state.active if n not in out)
 
 
 def _night_whereabouts(rng: random.Random, participants: list[str], chars: dict[str, Character],
@@ -956,9 +1028,15 @@ class PaldoEngine:
             runoff_candidates=list(state.runoff_candidates), result=copy.deepcopy(state.result),
             names=names, pending_render_jobs=pending)
 
-    def observe(self, state: GameState, truth: GameTruth, npc_id: str) -> ObservationSnapshot:  # pragma: no cover
-        """관측 스냅샷. A-06-02에서 구현한다."""
-        raise NotImplementedError("A-06-02")
+    def observe(self, state: GameState, truth: GameTruth, npc_id: str) -> ObservationSnapshot:
+        """지금 상태에서 NPC의 관측 스냅샷(포트 시그니처). `truth`는 읽지 않는다(observation.py가 상태만 받는다).
+
+        상태는 바꾸지 않는다. 스냅샷 ID는 `snapshot_id_of(판, 상태 버전, 0, npc, origin="q")`(결정 스냅샷과 겹치지 않음),
+        합법 종류는 지금 단계의 NPC 합법 종류.
+        """
+        sid = snapshot_id_of(state.meta.game_id, state.state_version, 0, npc_id, origin="q")
+        snap, _ = observe_npc(state, npc_id, list(PHASE_RULES[state.phase].npc_kinds), sid)
+        return snap
 
 
 def _copy_plan(p: NightPlan) -> NightPlan:

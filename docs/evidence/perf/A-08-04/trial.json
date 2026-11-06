@@ -1,0 +1,80 @@
+{
+  "task": "A-08-04",
+  "commit": "ac1e974a8a3dcd5b3f605ded4062b58574d3c76e",
+  "generated_at": "2026-11-06T06:39:57Z",
+  "source": "python -B out/assets/A-08-04/verify_trial.py",
+  "metrics": {
+    "sprite_count": {
+      "value": 4,
+      "unit": "장"
+    },
+    "background_count": {
+      "value": 1,
+      "unit": "장"
+    },
+    "trial_sprite_count": {
+      "value": 2,
+      "unit": "장"
+    },
+    "repeat_count": {
+      "value": 1,
+      "unit": "회"
+    },
+    "request_identical": {
+      "value": 1,
+      "unit": ""
+    },
+    "repeat_duration_ms": {
+      "value": 21823,
+      "unit": "ms"
+    },
+    "repeat_changed_pixels": {
+      "value": 1436361,
+      "unit": "px"
+    },
+    "file_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "preview_count": {
+      "value": 24,
+      "unit": "장"
+    },
+    "trial_female_bytes": {
+      "value": 710906,
+      "unit": "바이트"
+    },
+    "trial_female_partial": {
+      "value": 7284,
+      "unit": "px"
+    },
+    "trial_male_bytes": {
+      "value": 792973,
+      "unit": "바이트"
+    },
+    "trial_male_partial": {
+      "value": 10360,
+      "unit": "px"
+    },
+    "mudang_f_bytes": {
+      "value": 700675,
+      "unit": "바이트"
+    },
+    "mudang_f_partial": {
+      "value": 311636,
+      "unit": "px"
+    },
+    "mudang_m_bytes": {
+      "value": 760153,
+      "unit": "바이트"
+    },
+    "mudang_m_partial": {
+      "value": 353460,
+      "unit": "px"
+    },
+    "meeting_bytes": {
+      "value": 1795518,
+      "unit": "바이트"
+    }
+  }
+}

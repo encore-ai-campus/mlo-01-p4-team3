@@ -1,0 +1,36 @@
+{
+  "task": "A-06-03",
+  "commit": "2f7b6b484313695a0e692e3d9ea9231372c34c46",
+  "generated_at": "2026-11-06T07:39:37Z",
+  "source": "python -m tools.run_engine_games --preset base6 --games 200 --seed 1 --out out/handoff/a06",
+  "metrics": {
+    "games": {
+      "value": 200,
+      "unit": "판"
+    },
+    "events": {
+      "value": 17823,
+      "unit": "개"
+    },
+    "elapsed": {
+      "value": 13.649,
+      "unit": "s"
+    },
+    "games_per_sec": {
+      "value": 14.653,
+      "unit": "판/초"
+    },
+    "events_per_game_mean": {
+      "value": 89.115,
+      "unit": "개"
+    },
+    "events_per_game_min": {
+      "value": 51,
+      "unit": "개"
+    },
+    "events_per_game_max": {
+      "value": 151,
+      "unit": "개"
+    }
+  }
+}
