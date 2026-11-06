@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>회의 화면 미리보기</h1>
+  <p>로그인하면 녹화 판으로 이동합니다.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">로그인</button>
+  </form>
+{% endblock %}
