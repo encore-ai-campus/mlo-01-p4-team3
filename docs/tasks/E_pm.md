@@ -4,7 +4,7 @@
 - 폴더: `content/`(인물·비밀·단서·템플릿), `content/images/`(임시 파일·`manifest.json`. 실제 파일·`SOURCES.md` 생성 기록은 A), `docs/assets/`(스타일 가이드·규격), `tools/assets/`(`make_placeholders.py`, `check_assets.py`. 투명 바탕 처리 `cutout.py`는 A), `llm/`(LLM 서비스, LangGraph), `.github/workflows/`, `tools/check_evidence.py`, `tools/check_docs.py`, `tools/check_secrets.py`, `tools/evidence_result.py`
 - 늘 볼 문서: `docs/contracts/content.md`, `ports.md` 4절, `privacy.md`, 기획서 3·7·10장.
 - 발표 작업(구성안·자료·발표용 이미지·시연 영상·리허설·제출)은 발표 트랙 [P_presentation.md](P_presentation.md)(S-xx, 담당 결정 대기 P-24)로 옮겼다(11/5 PM 결정 ②안). 발표용 이미지(S-11-01)도 에셋 기준(아래)을 따른다.
-- **에셋(이미지) 담당(11/4 PM 결정, 같은 날 실제 에셋 제작을 B로 이전, 11/5 PM 결정으로 다시 A로 이전, 같은 날 담당 변경으로 D 담당)**: E는 규격·스타일 가이드·임시 에셋(E-05-05), 검사 도구(E-08-07), 교체 무수정 확인(E-11-10 5번)을 맡는다. 실제 에셋 제작(생성 도구 확정·투명 바탕 처리, sprite(초상은 파생)·장면 배경, 일괄 검수 탈락분 재생성(A-11-01 안에서): A-08-04, A-09-05, A-10-05, A-10-06, A-11-04)은 [A_engine.md](A_engine.md)의 `[에셋]` 태스크이고 D가 한다(11/5 PM 결정으로 담당 변경, ID 유지). 에셋 제출의 검토자(⑧)는 화면에서 쓰는 B다. 이미지 생성 도구 결정(P-10, 11/6 12:00)에는 D 담당이 참여한다. 이 파일의 "에셋 작업 기준"은 두 흐름 모두의 기준이다. 에셋 태스크는 제목에 `[에셋]`. 실제 에셋의 에셋1·5 판정은 개별 태스크에서 하지 않고 11/11 E-11-10에서 **검수자 E**가 한 번에 판정하고 교체를 확정한다(작성자 D와 다른 사람, README 3절. 11/5 PM 결정으로 B에서 이전). 스타일 가이드 확인만 11/5 E-05-05에서 B가 한다(작성자 E).
+- **에셋(이미지) 담당(11/4 PM 결정, 같은 날 실제 에셋 제작을 B로 이전, 11/5 PM 결정으로 다시 A로 이전, 같은 날 담당 변경으로 D 담당)**: E는 규격·스타일 가이드·임시 에셋(E-05-05), 검사 도구(E-08-07), 교체 무수정 확인(E-11-10 5번)을 맡는다. 실제 에셋 제작(생성 도구 확정·투명 바탕 처리, sprite(초상은 파생)·장면 배경, 일괄 검수 탈락분 재생성(A-11-01 안에서): A-08-04, A-09-05, A-10-05, A-10-06, A-11-04)은 [A_engine.md](A_engine.md)의 `[에셋]` 태스크이고 D가 한다(11/5 PM 결정으로 담당 변경, ID 유지). 에셋 제출의 검토자(⑧)는 화면에서 쓰는 B다. 이미지 생성 도구 결정(P-10, 11/6 12:00)에는 D 담당이 참여한다. 이 파일의 "에셋 작업 기준"은 두 흐름 모두의 기준이다. 에셋 태스크는 제목에 `[에셋]`. 실제 에셋의 에셋1·5 판정은 개별 태스크에서 하지 않고 11/11 E-11-10에서 **검수자 E**가 한 번에 판정하고 교체를 확정한다(작성자 D와 다른 사람, README 3절. 11/5 PM 결정으로 B에서 이전). 스타일 가이드 문서 확인은 11/5 E-05-05에서 한다(작성자 E. 11/6 PM 결정으로 B 검수 대신 Claude 검토와 Codex 교차검토, README 7절).
 - PM 감독 방법: [README.md](README.md) 3절. 매일 스탠드업에서 각 흐름의 전날 태스크를 "PR 병합·CI·check_evidence" 세 가지로만 확인한다(저장소 배정 전에는 README 10-1절 진행표).
 
 ## 에셋 작업 기준
@@ -75,9 +75,9 @@
 - 2.5h · 산출물: `tools/precheck.py`, `.githooks/pre-push`(11/5 PM 결정으로 `.github/workflows/ci.yml`을 대체), `tools/check_evidence.py`, `tools/check_docs.py`, `tools/check_secrets.py`, `tools/secrets_allowlist.txt`, `tools/evidence_result.py`
 - 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-05-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ci`](../modules/ci.md)는 그날 일괄 갱신(E-05-05)
 - 완료 조건:
-  1. **(11/5 PM 결정으로 바꿈: GitHub Actions CI 폐지)** 로컬 검사 한 명령 `python -m tools.precheck`(README 3절 ②)가 구조·비밀정보·단위 테스트(`tests/assets` 제외, `--with-assets`로 포함)·문서화(아래 4번)·증빙(아래 3번)을 차례로 돌리고, 하나라도 실패하면 종료 코드 1과 실패 항목을, 통과하면 `precheck: 통과 …` 한 줄을 낸다. `.githooks/pre-push`가 `git push` 때 이를 돌려 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 비교 기준을 못 구하면 문서·증빙 단계를 실패로 본다. 아래는 폐지 전 원래 문구로, 외부 서비스 테스트 경로 규칙(결정 #12)은 통합(INT)과 로컬 실행에 그대로 쓴다: PR마다 필수 체크 4개(README 3절 ②): `core`(Python 3.14, 프로젝트 전체 3.14 단일(11/5 PM 결정), `python -m unittest discover -s tests -t .`, `python -m tools.check_secrets`), `django`(Mongo·MySQL 서비스 컨테이너 + `python manage.py test`; `server/manage.py`가 생기기 전에는 "건너뜀" 대신 실패하지 않는 빈 단계로 두고, B-05-01 병합과 함께 실제 실행으로 바꿈), `evidence`(아래 3번), `docs`(아래 4번). 네 체크를 `dev`·`main` 보호 규칙의 필수 체크로 등록. 테스트 경로(11/4 PM 결정 #12): `core`는 외부 서비스가 필요한 `tests/infra/`·`tests/ads/`를 discover에서 뺀다(예: 그 폴더의 `__init__.py`에 `load_tests`를 두어 `PALDO_SERVICE_TESTS` 환경 변수가 없으면 빈 묶음 반환). `django` 작업이 서비스 컨테이너와 그 변수를 주고 `tests/infra/`, `tests/ads/`, `server/tests/`를 경로별로 따로 실행한다. 광고 테스트는 `ads/project` 설정(결정 #1)으로 돈다.
+  1. **(11/5 PM 결정으로 바꿈: GitHub Actions CI 폐지)** 로컬 검사 한 명령 `python -m tools.precheck`(README 3절 ②)가 구조·비밀정보·단위 테스트(`tests/assets` 제외, `--with-assets`로 포함)·문서화(아래 4번)·증빙(아래 3번)을 차례로 돌리고, 하나라도 실패하면 종료 코드 1과 실패 항목을, 통과하면 `precheck: 통과 …` 한 줄을 낸다. `.githooks/pre-push`가 `git push` 때 이를 돌려 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 비교 기준을 못 구하면 문서·증빙 단계를 실패로 본다. 외부 서비스가 필요한 테스트(11/4 PM 결정 #12): `tests/infra/`·`tests/ads/`는 `PALDO_SERVICE_TESTS` 환경 변수가 없으면 빈 묶음을 돌려 precheck에서 빠지고, 통합(INT)과 로컬에서 서비스를 띄운 뒤 그 변수를 주고 경로별로 따로 실행한다. 광고 테스트는 `ads/project` 설정(결정 #1)으로 돈다.
   2. `check_evidence`: `--format`은 README 4절 양식 제목이 모두 있고(`## 검수`는 `[검수]` 태스크만), `- 작성자(흐름):` 값이 A~E·S 중 하나인지만 본다(`상태: 실패` 문서도 통과. 실제 소요 시간 줄 검사는 11/5 PM 결정으로 폐지). `--complete <ID>`는 README 4절 "검사 규칙" 1~6을 모두 검사한다(조건 번호 누락, 통과 아님, `상태: 실패`, 결과 JSON과 다른 측정값·단위, 해석할 수 없는 기준 칸, 없는 커밋 SHA, 검수 기록 누락·검수자 흐름 = 작성자 흐름, **문서화 검사(`check_docs --task <ID>`) 실패**면 실패). 결과 JSON·기준 문법·반올림 대조는 README 4절 "결과 JSON 형식"·"수치 표 작성 규칙"을 그대로 따른다. `--all --until <날짜>`는 예정일이 그 날짜까지인 태스크 전부를 `--complete`로 검사(GitHub 조회 없음). `tools/evidence_result.py`의 `write_result(task, name, metrics, source)`는 4절 형식의 결과 JSON을 쓰고 `commit`·`generated_at`을 채운다. 규칙마다 실패 사례 자체 테스트 포함.
-  3. `evidence` 체크(PR 본문 연결, README 11절 "PR과 이슈 잇기"): `--pr-body-env PR_BODY`로 환경 변수에서 본문을 읽는다. `Task:` 줄이 정확히 1개, ID가 1개이고 태스크 문서에 있어야 한다(없거나 여러 개면 실패). 연결 줄은 `Closes #` 또는 `Refs #` 중 정확히 하나(둘 다·둘 다 없음·다른 닫기 키워드 `Fixes`/`Resolves` 등이면 실패). `Closes #`면 그 ID로 `check_evidence --complete`, `Refs #`면 `--changed <base>`로 PR base 커밋 이후 바뀐 증빙에 `--format`만 돌린다. push 이벤트에서는 PR 본문 검사를 하지 않고 `--changed <github.event.before>`로 바뀐 증빙의 `--format`만 돌린다. (본문의 실제 소요 시간 줄 검사는 11/5 PM 결정으로 폐지.) PR base 이후 커밋 메시지에 닫기 키워드(`Closes` 포함)가 하나라도 있으면 실패(README 11절, 11/4 PM 결정. 체크아웃은 `fetch-depth: 0`). `Task: P-xx`(결정 대기)는 README 7절 "확정된 결정"에 그 ID가 기록됐는지만 본다. 이 검사는 `precheck --pr-body <PR 본문 파일>`로 돌리고, PM이 병합 전에 다시 돌려 실패하면 병합하지 않으므로, 이슈는 `--complete`를 통과한 PR의 병합으로만 닫힌다(11/5 CI 폐지 뒤).
+  3. 증빙 단계(PR 본문 연결, README 11절 "PR과 이슈 잇기"): `precheck --pr-body <PR 본문 파일>`이 본문을 `check_evidence --pr-body-env`로 넘긴다. `Task:` 줄이 정확히 1개, ID가 1개이고 태스크 문서에 있어야 한다(없거나 여러 개면 실패). 연결 줄은 `Closes #` 또는 `Refs #` 중 정확히 하나(둘 다·둘 다 없음·다른 닫기 키워드 `Fixes`/`Resolves` 등이면 실패). `Closes #`면 그 ID로 `check_evidence --complete`, `Refs #`면 `--changed <base>`로 PR base 커밋 이후 바뀐 증빙에 `--format`만 돌린다. PR 본문 없이 돌리면(pre-push 훅) 본문 검사 없이 `--changed <base>`로 바뀐 증빙의 `--format`만 돌린다. (본문의 실제 소요 시간 줄 검사는 11/5 PM 결정으로 폐지.) PR base 이후 커밋 메시지에 닫기 키워드(`Closes` 포함)가 하나라도 있으면 실패(README 11절, 11/4 PM 결정). `Task: P-xx`(결정 대기)는 README 7절 "확정된 결정"에 그 ID가 기록됐는지만 본다. PM이 병합 전에 다시 돌려 실패하면 병합하지 않으므로, 이슈는 `--complete`를 통과한 PR의 병합으로만 닫힌다(11/5 CI 폐지 뒤).
   4. `check_docs`(README 10절 검사 규칙 1~6, 태스크 정보는 `tools/tasks_md.py`로 읽는다): `--task <ID>`는 트러블 항목(규칙 1), 그 태스크에 "모듈 문서 일괄 갱신" 줄이 있으면 줄에 적힌 모듈 문서의 필수 절과 대상 태스크마다 그날 날짜(태스크 예정일, README 10절)의 `변경 이력` 행(규칙 2, "코드를 바꿨다면" 태스크는 그 증빙 커밋이 모듈 코드를 바꿨을 때만), 문서 산출 태스크의 제목 규칙(규칙 3)을 검사. `--all --until <날짜>`는 "완료된 태스크"(README 10절 정의: 증빙 있음, `상태: 실패` 없음, 통과 칸 전부 "예". `check_evidence`를 부르지 않고 GitHub도 조회하지 않음)인 구현 태스크마다 `변경 이력` 행이 있는지(규칙 4). `--diff <base>`는 PR 변경분에 대해 공개 함수·클래스 docstring, 계약 파일 ↔ 계약 문서 동시 변경, 새 폴더 ↔ `paldo/README.md` 동시 변경을 검사. 규칙마다 실패 사례 자체 테스트 포함.
   5. `check_secrets`(11/4 PM 결정으로 규칙 확정. 원래 문구는 이 저장소에서 오탐이 나서 아래로 대체): 검사 대상은 **Git이 추적하는 텍스트 파일만**(`git ls-files`, 바이너리 제외, `tests/fixtures/secrets/`는 제외). 아래 셋 중 하나를 찾으면 실패하고, 파일:줄과 이유를 출력한다.
      - 사설 IP 대역(10/8, 172.16/12, 192.168/16 대역의 점 네 개 IPv4 주소)
@@ -86,70 +86,9 @@
      - **비밀 키 이름 + 문자열 값**: 키 이름을 `_`·`-`·`.`·camelCase 경계로 나눈 **마지막 조각**이 `password`, `passwd`, `pwd`, `secret`, `token`, `apikey`, `credential(s)` 중 하나이거나, 마지막 두 조각이 `api_key`, `access_key`, `private_key`, `secret_key`, `signing_key`, `hmac_key` 중 하나다(부분 문자열 일치가 아니다. 게임 용어 `secret_id`, `secrets`, `TOKEN_TTL_MS`는 대상이 아니다). 값은 따옴표 문자열 리터럴, 또는 줄 전체가 `KEY=값`·`KEY: 값` 형태인 따옴표 없는 값만 본다(타입 표기·변수·함수 호출은 대상이 아니다).
      - 허용: 빈 값, `${VAR}`, `<자리표시자>`, `{`가 들어간 템플릿 값, `{`(보간)가 들어간 f-string(보간 없는 상수 f-string은 일반 문자열과 같이 검사한다, 11/4 PM 결정), 그리고 **예외 목록 `tools/secrets_allowlist.txt`**의 항목.
      - 예외 목록 형식: 한 줄에 `정확한 파일 경로 | 키 이름 | 사유`(와일드카드·폴더 경로 금지, `#`은 주석). 그 파일의 그 키 이름만 값과 관계없이 허용한다. 목록에 있지만 더 이상 걸리지 않는 항목도 실패로 처리한다(죽은 예외 방지). 예외 목록 변경은 PR 리뷰·승인(⑧)으로 통제한다.
-     - 처음 예외 목록(11/4 저장소 전체 검사 결과 39줄, 이 4항목으로 전부 설명됨): `fixtures/ads/validity_cases.json | token | 광고 serve 토큰 자리의 가짜 이름(D 픽스처)`, `tools/build_ads_fixtures.py | token | 위 픽스처 생성 코드`, `docs/tasks/E_pm.md | MYSQL_ALLOW_EMPTY_PASSWORD | CI 예시의 켜기·끄기 설정, 비밀 아님`, `.github/workflows/ci.yml | MYSQL_ALLOW_EMPTY_PASSWORD | 같은 설정`.
+     - 처음 예외 목록(11/4 저장소 전체 검사 결과 39줄, 이 4항목으로 전부 설명됨): `fixtures/ads/validity_cases.json | token | 광고 serve 토큰 자리의 가짜 이름(D 픽스처)`, `tools/build_ads_fixtures.py | token | 위 픽스처 생성 코드`, `docs/tasks/E_pm.md | MYSQL_ALLOW_EMPTY_PASSWORD | CI 예시의 켜기·끄기 설정, 비밀 아님`, `.github/workflows/ci.yml | MYSQL_ALLOW_EMPTY_PASSWORD | 같은 설정`. 11/5 CI 폐지로 `ci.yml`과 이 문서의 워크플로 예시를 지워 뒤의 두 항목은 목록에서 뺐다(현재 2항목).
      - 자체 테스트: 현재 저장소 전체 검사 0건, 탐지 유형마다 양성 사례(`tests/fixtures/secrets/`), 오탐 방지 사례(`secret_id`, `serve_token: Optional[str] = None`, f-string `token`, `TOKEN_TTL_MS = 30_000`, `"unlock": "secret:gambling 고백"`), 죽은 예외 항목 실패.
   6. 일부러 규칙을 어긴 사례 3개(증빙 누락 + `Closes`, docstring 누락, 계약 파일만 변경)가 각각 `precheck`의 해당 단계에서 실패하는 출력을 증빙에(11/5 PM 결정으로 "PR 3개와 체크 화면"에서 바꿈).
-- 워크플로 예시(그대로 써도 됨):
-
-```yaml
-name: ci
-on: [pull_request, push]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.14" }
-  core:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.14" }
-      - run: python -m unittest discover -s tests -t .
-      - run: python -m tools.check_secrets
-  django:
-    runs-on: ubuntu-latest
-    services:
-      mongo: { image: "mongo:8.0.34", ports: ["27017:27017"] }
-      mysql: { image: "mysql:8.4.11", env: { MYSQL_ALLOW_EMPTY_PASSWORD: "yes" }, ports: ["3306:3306"] }
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.14" }
-      - run: pip install -r server/requirements.txt
-      - run: cd server && python manage.py test
-      - run: python -m unittest discover -s tests/infra -t .
-        env: { PALDO_SERVICE_TESTS: "1", PALDO_MONGO_URI: "mongodb://localhost:27017/?directConnection=true" }
-      - run: python -m unittest discover -s tests/ads -t .
-        env: { PALDO_SERVICE_TESTS: "1", DJANGO_SETTINGS_MODULE: "ads.project.settings" }
-  evidence:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.14" }
-      - name: PR 본문의 태스크 ID로 증빙 검사
-        env: { PR_BODY: "${{ github.event.pull_request.body }}" }
-        if: github.event_name == 'pull_request'
-        run: python -m tools.check_evidence --pr-body-env PR_BODY --changed ${{ github.event.pull_request.base.sha }}
-      - name: push에서 바뀐 증빙 형식 검사
-        if: github.event_name == 'push'
-        run: python -m tools.check_evidence --changed ${{ github.event.before }}
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.14" }
-      - run: python -m tools.check_docs --diff ${{ github.event.pull_request.base.sha }}
-        if: github.event_name == 'pull_request'
-```
-
-(위 예시의 첫 `test` 작업은 `core`로 대체한다. 서비스 이미지 버전은 `tech_stack.md`에 맞춘다. PR 본문은 셸 명령에 직접 넣지 말고 환경 변수로 넘긴다. push 이벤트의 처리는 조건 3과 README 11절을 따른다.)
 
 ### E-05-03 인물 6·비밀 6 초안 (첫 플레이 버전)
 - 2h · 입력: `docs/contracts/content.md`, `fixtures/content_min/bundle.json`, 기획서 3.3·4.6·5.3
@@ -163,7 +102,7 @@ jobs:
   5. 새로 정한 인물 2명의 ID를 `docs/assets/spec.md` 9절 표정 대상에 넣고 `make_placeholders`를 다시 실행해 임시 표정 변형을 만든다(11/5 PM 결정 P-20, A-10-06의 대상).
 - 근거: 기획서 3.3, 4.6, 5.3, 10장
 
-### E-05-05 스타일 가이드·파일 규격·임시 에셋 [에셋] [검수]
+### E-05-05 스타일 가이드·파일 규격·임시 에셋 [에셋]
 - 2.5h · 인계: **12:00까지 임시 에셋 세트 → B·D**. 인계는 PM 세션이 사전 작업 브랜치(`pre/*`)를 통합 브랜치에 통합한 커밋 SHA로 한다(배정 전에는 로컬 `main`, 11/5 배정 후에는 원격 `dev`). 받은 쪽은 그 SHA를 자기 증빙에 적는다.
 - 문서화(+0.25h, 공통 ⑦): [트러블 E](../troubles/E.md)에 `### E-05-05` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`assets`](../modules/assets.md)는 그날 일괄 갱신(이 태스크의 일괄 갱신 줄)
 - 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: E-05-01, E-05-02, E-05-03, E-05-05 · 코드를 바꿨다면: 없음 · 모듈: [`project`](../modules/project.md), [`ci`](../modules/ci.md), [`content`](../modules/content.md), [`assets`](../modules/assets.md) · 할 일: 그날 마지막에 모듈 문서마다 필수 절 6개를 확인·갱신하고 `변경 이력`에 대상 태스크마다 `| <ID> | 11/5 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
@@ -173,7 +112,7 @@ jobs:
   1. 규격표(`docs/assets/spec.md`): 형식 PNG, 유형별 픽셀 크기 — 초상 512×512, 장소 아이콘 128×128(5개, `Place` 1:1), UI 아이콘 128×128(에셋 범위 표의 10개, 아이콘 ID 포함), 지도 1280×720(1장), 광고 소재는 계약 그대로 `SLOT_SIZES`(728×90, 300×250). 용량 상한은 모든 파일 **512,000바이트 이하**(500KB, P-15). 파일명 규칙 `content/images/<kind>/<콘텐츠 ID>.png`(광고는 `slot_image_path(image_path, slot)`이 만드는 이름, 예: `gat__728x90.png`, ads.md 2절). 파일 픽셀 크기는 위 값 그대로 둔다(B·D 코드와 광고 계약 ads-0.3 불변). 화풍 변경(11/5 PM 결정, 크로스체크 18)으로 원본 격자·배율 규칙은 두지 않고, sprite 기준선(px)을 규격표 6절에 둔다.
   2. `manifest.json` 형식: 항목 배열. 항목마다 `kind`(`portrait`·`place`·`ui`·`map`·`ad`), `id`(콘텐츠 ID, 광고는 `creative_id`), `size`(광고만, `[가로, 세로]`), `path`(저장소 기준 파일 경로), `url`(웹 주소: 광고는 `slot_image_path` 결과 `/static/ads/…`, 나머지는 `/static/assets/<kind>/<id>.png`), `placeholder`(임시면 `true`). 키는 (`kind`, `id`, `size`)로 유일하다. 임시 파일과 실제 파일은 **같은 `path`에 덮어쓰고** `placeholder`만 `false`로 바꾼다.
   3. `make_placeholders.py`가 규격표와 콘텐츠 ID 목록(`fixtures/content_min/bundle.json`의 인물 + 무당 2(`mudang_f`, `mudang_m`), `Place`, 규격표의 UI 아이콘 목록, `campaigns.json`)으로 **실제와 같은 경로·이름·크기·형식**의 임시 이미지를 만든다. 초상은 Claude가 코드로 그린 임시 그림(실루엣·배치 확인용, 최종 화풍 아님), 나머지는 단색 + 도형이다. 모두 글자 없음, 같은 입력이면 같은 바이트. 광고는 소재마다 **그 소재가 속한 캠페인 지면의 규격만** 만든다(중복 제거한 (`creative_id`, 규격), 현재 픽스처 기준 8장). 임시 에셋은 에셋2(생성 기록) 면제: 생성 스크립트와 실행 명령만 증빙에 남긴다.
-  4. 스타일 가이드 1장(에셋1 항목 전부, 금지 요소에 "새 게임 정보를 주는 표현" 포함). **화풍(11/5 PM 결정, 크로스체크 18)**: 애니풍에 가까운 반실사 일러스트. 빛은 왼쪽 위, 선 굵기·기준 색·같은 화풍 프롬프트와 시드를 체크리스트로 맞춘다. sprite·초상·장면 배경·장소/UI 아이콘·지도·광고 소재 **전부**에 같은 화풍으로 쓴다. 주인공(무당)은 여·남 2종, 30대, 약간 미화. 주민은 미화 없이 평범하고 자연스럽게 그리되 외모를 우스꽝스럽게 깎아내리는 묘사는 금지 요소에 넣는다(외모로 창귀가 짐작되지 않게). 실존 인물과 닮지 않게 한다. 검수자 B 확인(11/11 일괄 검수 E-11-10의 기준이 된다).
+  4. 스타일 가이드 1장(에셋1 항목 전부, 금지 요소에 "새 게임 정보를 주는 표현" 포함). **화풍(11/5 PM 결정, 크로스체크 18)**: 애니풍에 가까운 반실사 일러스트. 빛은 왼쪽 위, 선 굵기·기준 색·같은 화풍 프롬프트와 시드를 체크리스트로 맞춘다. sprite·초상·장면 배경·장소/UI 아이콘·지도·광고 소재 **전부**에 같은 화풍으로 쓴다. 주인공(무당)은 여·남 2종, 30대, 약간 미화. 주민은 미화 없이 평범하고 자연스럽게 그리되 외모를 우스꽝스럽게 깎아내리는 묘사는 금지 요소에 넣는다(외모로 창귀가 짐작되지 않게). 실존 인물과 닮지 않게 한다. 문서 검토는 11/6 PM 결정으로 B 검수 대신 Claude 검토(PM 지시)와 Codex 교차검토로 하고 지적 반영을 증빙에 남긴다(11/11 일괄 검수 E-11-10의 기준이 된다).
   5. `make_placeholders.py` 출력으로 **유형별 기대 수 = manifest 항목 수 = 파일 수**를 증빙(기대 수 = 인물 + 무당 2 + 장소 5 + UI 10 + 지도 1 + 광고 8, 현재 픽스처 기준 11 + 2 + 5 + 10 + 1 + 8 = 37). 기대 키와 실제 키의 누락·남는 파일 목록(0건)도 출력. 검사 도구 통과는 E-08-07(11/8)에서 확인한다.
 
 ## 11/6(금)

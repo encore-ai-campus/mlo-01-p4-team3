@@ -8,8 +8,8 @@
 
 | 파일 | 계층 | 하는 일 |
 |---|---|---|
-| `.githooks/pre-push` | 표현(진입점) | `git push` 때 푸시하는 커밋마다 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 그 커밋이 HEAD가 아니거나 작업 트리에 변경이 있으면 임시 worktree에서 검사 |
-| `tools/precheck.py` | 도메인(`summarize` 등) + 인프라(`SubprocessRunner`) + 응용(`run_precheck`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다 |
+| `.githooks/pre-push` | 표현(진입점) | `git push` 때 푸시하는 커밋마다 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 그 커밋이 HEAD가 아니거나 작업 트리에 변경이 있으면 임시 worktree에서 검사. precheck를 부를 때만 git이 훅에 넘긴 저장소 지정 변수(`GIT_DIR` 등, `git rev-parse --local-env-vars`)를 지운다 |
+| `tools/precheck.py` | 도메인(`summarize` 등) + 인프라(`SubprocessRunner`) + 응용(`run_precheck`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다. 하위 명령 환경에서 저장소 지정 git 변수를 뺀다(`clean_env`) |
 | `tools/check_evidence.py` | 도메인 규칙 + 응용 + 표현(`main`) | 증빙 형식(`--format`), 완료 검사(`--complete`, 4절 규칙 1~6), PR 본문 문법(11절) |
 | `tools/check_docs.py` | 도메인 규칙 + 응용 + 표현(`main`) | 문서화 검사(10절 규칙 1~6) |
 | `tools/check_secrets.py` | 도메인 규칙 + 응용 + 표현(`main`) | 비밀정보 검사(E-05-02 조건 5), 예외 `tools/secrets_allowlist.txt` |
@@ -29,6 +29,7 @@
 - 비밀 키 규칙을 "마지막 조각 일치"로 한 이유: 게임 용어 `secret_id`·`secrets`와 `TOKEN_TTL_MS`를 오탐하지 않기 위해(11/4 PM 결정, 조건 5).
 - 표준 라이브러리만 쓴다(`docs/contracts/tech_stack.md`: 도구 코드는 외부 패키지 없음). 설치 단계가 없다.
 - CI를 없앤 이유(11/5 PM 결정): 조직 저장소 68개가 무료 플랜 Actions 분량(월 2,000분)을 함께 쓰는데, 잡마다 1분 단위로 올려 세서 PR 하나에 약 30분이 들었다(11/5 하루 약 15회·140분). 검사 자체는 수십 초라 각자 노트북에서 돌려도 부담이 없다.
+- 저장소 지정 git 변수를 지우는 이유: 훅이 받은 `GIT_DIR`·`GIT_INDEX_FILE`이 precheck의 테스트까지 이어지면, 테스트가 임시 저장소 대신 실제 저장소에 `git init`·commit·config를 한다(11/5 사고, [트러블 E](../troubles/E.md#e-05-02)).
 - 비교 기준을 못 구하면 문서·증빙 단계를 실패로 보는 이유: 건너뛰면 검사 없이 `precheck: 통과` 줄이 나와 PR 본문의 결과 줄을 믿을 수 없게 된다.
 
 ## 사용법
@@ -83,7 +84,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | `PRECHECK_PR_BODY` | - | `precheck --pr-body`가 `check_evidence --pr-body-env`에 넘기는 환경 변수 | 이름을 바꾸면 `tools/precheck.py`의 `PR_BODY_ENV`도 같이 |
 | `core.hooksPath` | `.githooks` | git 훅 폴더(각 clone에서 한 번 설정) | 설정하지 않으면 push 때 자동 검사가 돌지 않는다 |
 | `PALDO_LOG_DIR` | `out/logs` | 구조화 로그 파일 폴더(`ci.jsonl`) | 로그만 옮겨진다. 검사 결과와 무관 |
-| `tools/secrets_allowlist.txt` | 3항목(11/5 `ci.yml` 삭제로 1항목 제거) | 한 줄에 경로·키 이름·사유(`\|`로 구분). 그 파일의 그 키만 허용 | 항목 추가는 PR 승인(⑧)으로 통제. 걸리지 않는 항목은 죽은 예외로 실패 |
+| `tools/secrets_allowlist.txt` | 2항목(11/5 CI 폐지로 `ci.yml`과 E_pm.md 워크플로 예시 항목 제거) | 한 줄에 경로·키 이름·사유(`\|`로 구분). 그 파일의 그 키만 허용 | 항목 추가는 PR 승인(⑧)으로 통제. 걸리지 않는 항목은 죽은 예외로 실패 |
 | 허용 폴더 목록 | `docs/contracts/structure.md` 6절 펜스 블록 | `dir/` = 그 폴더만, `dir/**` = 아래 전부. 루트 파일은 늘 허용 | 폴더 추가는 PM 승인 후 이 목록과 1절 트리를 같이 고친다 |
 | `tests/fixtures/secrets/` | - | 탐지 테스트용 가짜 값. 비밀정보 검사에서 이 폴더만 제외 | 다른 폴더에 가짜 값을 두면 검사가 실패한다 |
 | base 커밋 | `origin/dev`와 HEAD의 merge-base(`--base`로 지정) | 변경분 비교 기준 | 못 구하면 문서·증빙 단계 실패. `git fetch origin` 뒤 다시 |
@@ -114,3 +115,5 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | E-05-02 | 11/5 | 디렉터리 트리 검사 `check_structure` 추가(`core`에 `--all`, 로컬 CI `core`에 `--diff`), 11/5 PM 결정 |
 | E-05-01 | 11/5 | 저장소 배정에 맞춘 브랜치 모델(통합 `dev`·배포 `main`): 승격 PR의 `evidence` 형식 검사 분기, 이슈 원본 링크 `dev` |
 | E-05-02 | 11/5 | GitHub Actions CI(`ci.yml`) 폐지, 로컬 검사 `tools/precheck.py`와 `.githooks/pre-push`로 대체(조직 공용 Actions 분량, 11/5 PM 결정). 실제 소요 시간 검사 폐지 |
+| E-05-02 | 11/5 | 훅과 `precheck`가 git 저장소 지정 환경 변수를 지움(`clean_env`, 훅은 precheck 호출 때만). 물려받은 `GIT_DIR`이 다른 저장소를 바꾸지 않는 회귀 테스트 |
+| P-27 | 11/6 | `check_docs` 규칙 6을 라우팅 2단 구조에 맞춤: 새 최상위 폴더는 루트 `README.md`, 두 번째 단계는 루트 README 또는 `docs/routing/<A~E>.md`. 삭제된 경로는 문서 변경으로 치지 않음 |

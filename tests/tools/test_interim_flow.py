@@ -12,6 +12,7 @@ from pathlib import Path
 
 from tools import interim
 from tools.interim import InterimError, InterimGit, SubmitInfo
+from tools.precheck import clean_env
 
 TASKS_E = """# E
 
@@ -63,10 +64,14 @@ def write(root: Path, path: str, text: str):
     p.write_text(text, encoding="utf-8", newline="\n")
 
 
+# 원격 저장소 전 임시 운영(11/5 전환으로 종료)의 전체 흐름 테스트. 약 28초로 precheck 테스트 시간의 대부분이라
+# 기본은 건너뛴다. tools/interim.py를 고칠 때 `PALDO_SLOW_TESTS=1`로 돌린다(docs/modules/ci.md).
+@unittest.skipUnless(os.environ.get("PALDO_SLOW_TESTS") == "1", "임시 운영 흐름(느림): PALDO_SLOW_TESTS=1일 때만")
 class InterimFlowTest(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="paldo_interim_test_"))
-        self.env = {**os.environ, "PALDO_LOG_DIR": str(self.tmp / "logs")}
+        # 훅이 물려받은 GIT_DIR 등이 남으면 임시 저장소 대신 실제 저장소에 git 명령이 간다(11/5 사고).
+        self.env = {**clean_env(dict(os.environ)), "PALDO_LOG_DIR": str(self.tmp / "logs")}
         self.env.pop("PALDO_SERVICE_TESTS", None)
         self._old_log = os.environ.get("PALDO_LOG_DIR")
         os.environ["PALDO_LOG_DIR"] = str(self.tmp / "logs")

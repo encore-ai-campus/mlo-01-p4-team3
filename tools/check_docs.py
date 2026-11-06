@@ -35,6 +35,7 @@ CONTRACT_FILES = (
 )
 CONTRACT_GLOBS = ("ads/domain/*.py",)
 ROUTING_DOC = "README.md"
+AREA_ROUTING_DOCS = tuple(f"docs/routing/{f}.md" for f in "ABCDE")  # 2단 라우팅 문서(P-27)
 _BACKTICK_RE = re.compile(r"`([^`]+)`")
 _DATE_CELL_RE = re.compile(r"^(\d{1,2})/(\d{1,2})$")
 
@@ -276,11 +277,21 @@ def candidate_new_dirs(added_paths: list[str]) -> list[str]:
     return dirs
 
 
-def check_routing_doc(new_dirs: list[str], changed_paths: list[str]) -> list[str]:
-    """규칙 6 뒷부분: 새 폴더가 생기면 `paldo/README.md`(저장소 루트 README.md)도 바뀐다."""
-    if new_dirs and ROUTING_DOC not in changed_paths:
-        return [f"새 폴더({', '.join(d + '/' for d in new_dirs)})가 생겼는데 `README.md`(라우팅 문서) 변경이 없음(규칙 6)"]
-    return []
+def check_routing_doc(new_dirs: list[str], touched_paths: list[str]) -> list[str]:
+    """규칙 6 뒷부분(P-27): 새 최상위 폴더면 루트 `README.md`, 새 두 번째 단계 폴더면 루트 `README.md` 또는
+    영역 문서 `docs/routing/<A~E>.md` 중 하나가 바뀐다. `touched_paths`는 추가·수정된 경로(삭제 제외).
+
+    어느 영역 문서인지, 안내 내용이 맞는지는 보지 않는다(리뷰 몫).
+    """
+    touched = set(touched_paths)
+    top = [d for d in new_dirs if "/" not in d]
+    second = [d for d in new_dirs if "/" in d]
+    errors: list[str] = []
+    if top and ROUTING_DOC not in touched:
+        errors.append(f"새 최상위 폴더({', '.join(d + '/' for d in top)})가 생겼는데 루트 `README.md`(라우팅 문서) 변경이 없음(규칙 6)")
+    if second and not touched & {ROUTING_DOC, *AREA_ROUTING_DOCS}:
+        errors.append(f"새 폴더({', '.join(d + '/' for d in second)})가 생겼는데 루트 `README.md`나 영역 문서 `docs/routing/<흐름>.md` 변경이 없음(규칙 6)")
+    return errors
 
 
 # ---------------------------------------------------------------- 응용
@@ -407,7 +418,7 @@ def check_diff(base: str, repo) -> list[str]:
     errors += check_contract_docs(changed_paths)
     added = [p for s, p in changes if s == "A"]
     new_dirs = [d for d in candidate_new_dirs(added) if not repo.dir_existed(base, d)]
-    errors += check_routing_doc(new_dirs, changed_paths)
+    errors += check_routing_doc(new_dirs, [p for s, p in changes if s != "D"])
     return errors
 
 

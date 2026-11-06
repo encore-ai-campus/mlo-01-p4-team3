@@ -46,6 +46,10 @@ class FakeRunner:
         return self.dirs
 
 
+def _call(runner, module):
+    return next((a, e) for a, e in runner.calls if a[1] == "-m" and a[2] == module)
+
+
 def _modules(runner):
     return [a[2] if a[1] == "-m" else a[0] for a, _ in runner.calls]
 
@@ -57,9 +61,9 @@ class Flow(unittest.TestCase):
         self.assertEqual([x.name for x in results], ["구조", "비밀", "테스트", "문서", "증빙"])
         self.assertTrue(all(x.ok for x in results))
         folders = [a[a.index("-s") + 1] for a, _ in r.calls if "-s" in a]
-        self.assertEqual(folders, ["tests/contract", "tests/tools"])
+        self.assertEqual(sorted(folders), ["tests/contract", "tests/tools"])
         self.assertEqual(results[2].tests, 6)
-        evidence = r.calls[-1][0]
+        evidence = _call(r, "tools.check_evidence")[0]
         self.assertEqual(evidence[2:], ["tools.check_evidence", "--changed", "b" * 40])
 
     def test_with_assets(self):
@@ -82,7 +86,7 @@ class Flow(unittest.TestCase):
     def test_pr_body_passed_by_env(self):
         r = FakeRunner()
         run_precheck(r, "b" * 40, pr_body="Task: E-05-02\n\nRefs #95\n")
-        args, env = r.calls[-1]
+        args, env = _call(r, "tools.check_evidence")
         self.assertEqual(args[2:5], ["tools.check_evidence", "--pr-body-env", precheck.PR_BODY_ENV])
         self.assertEqual(env, {precheck.PR_BODY_ENV: "Task: E-05-02\n\nRefs #95\n"})
 
@@ -112,3 +116,36 @@ class Cli(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GitEnvIsolation(unittest.TestCase):
+    """훅이 넘긴 GIT_DIR 등이 하위 명령에 새지 않는다(11/5 사고 재발 방지)."""
+
+    def test_clean_env_drops_repository_vars(self):
+        env = {"GIT_DIR": "x", "GIT_INDEX_FILE": "y", "GIT_CONFIG_KEY_0": "user.name",
+               "GIT_CONFIG_VALUE_0": "t", "GIT_AUTHOR_NAME": "a", "PATH": "p"}
+        self.assertEqual(precheck.clean_env(env), {"GIT_AUTHOR_NAME": "a", "PATH": "p"})
+
+    def test_runner_does_not_see_inherited_git_dir(self):
+        import os
+        import subprocess
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as victim, tempfile.TemporaryDirectory() as work:
+            subprocess.run(["git", "init", "-q", victim], check=True)
+            old = os.environ.get("GIT_DIR")
+            os.environ["GIT_DIR"] = str(Path(victim) / ".git")
+            try:
+                rc, _ = precheck.SubprocessRunner(Path(work)).run(["git", "init", "-q"])
+                self.assertEqual(rc, 0)
+                rc, _ = precheck.SubprocessRunner(Path(work)).run(
+                    ["git", "config", "user.name", "t"])
+                self.assertEqual(rc, 0)
+            finally:
+                if old is None:
+                    os.environ.pop("GIT_DIR")
+                else:
+                    os.environ["GIT_DIR"] = old
+            victim_cfg = (Path(victim) / ".git" / "config").read_text(encoding="utf-8")
+            self.assertNotIn("name = t", victim_cfg)
+            self.assertTrue((Path(work) / ".git").is_dir())

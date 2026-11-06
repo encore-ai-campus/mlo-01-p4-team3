@@ -1,0 +1,20 @@
+{
+  "task": "E-05-03",
+  "commit": "b0671f4210b45dab0ebc435b387c50ed63cfdd4e",
+  "generated_at": "2026-11-05T11:41:07Z",
+  "source": "python -m tools.check_content --bundle content/bundle_v1.json --preset base6 --seeds 200 --result",
+  "metrics": {
+    "seeds": {
+      "value": 200,
+      "unit": "개"
+    },
+    "violation_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "structure_problem_count": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

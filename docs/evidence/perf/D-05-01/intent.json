@@ -1,0 +1,48 @@
+{
+  "task": "D-05-01",
+  "commit": "2a0318b6d447cdf5393557aacec6cc60502a8d6a",
+  "generated_at": "2026-11-05T15:22:05Z",
+  "source": "python -m tools.perf.intent_bench --n 1000 --seed 7",
+  "metrics": {
+    "macro_f1": {
+      "value": 0.24999999999999994,
+      "unit": ""
+    },
+    "command_exact_match": {
+      "value": 0.26666666666666666,
+      "unit": ""
+    },
+    "unsupported_recall": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "evaluation_rows": {
+      "value": 15,
+      "unit": "문장"
+    },
+    "unsupported_rows": {
+      "value": 1,
+      "unit": "문장"
+    },
+    "parse_p50": {
+      "value": 0.4615,
+      "unit": "ms"
+    },
+    "parse_p95": {
+      "value": 0.7161,
+      "unit": "ms"
+    },
+    "parse_calls": {
+      "value": 1000,
+      "unit": "회"
+    },
+    "train_rows": {
+      "value": 35,
+      "unit": "문장"
+    },
+    "lineage_overlap": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
