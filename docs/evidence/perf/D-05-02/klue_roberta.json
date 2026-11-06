@@ -1,0 +1,72 @@
+{
+  "task": "D-05-02",
+  "commit": "a1d4e8a9a149b4100c45aa5ee08f8583576c9ca1",
+  "generated_at": "2026-11-05T16:22:13Z",
+  "source": "python -m tools.perf.bert_bench --candidate klue_roberta --n 200 --threads 4 --length 64 --batch 4",
+  "metrics": {
+    "inference_p50": {
+      "value": 38.29369996674359,
+      "unit": "ms"
+    },
+    "inference_p95": {
+      "value": 48.0119998101145,
+      "unit": "ms"
+    },
+    "inference_calls": {
+      "value": 200,
+      "unit": "회"
+    },
+    "loaded_rss": {
+      "value": 619.91796875,
+      "unit": "MiB"
+    },
+    "loaded_rss_delta": {
+      "value": 373.8671875,
+      "unit": "MiB"
+    },
+    "inference_peak_rss": {
+      "value": 627.0078125,
+      "unit": "MiB"
+    },
+    "training_peak_rss": {
+      "value": 1637.55859375,
+      "unit": "MiB"
+    },
+    "training_samples": {
+      "value": 40,
+      "unit": "문장"
+    },
+    "training_steps": {
+      "value": 10,
+      "unit": "회"
+    },
+    "sample_epoch": {
+      "value": 7.0471118001732975,
+      "unit": "s"
+    },
+    "first_step": {
+      "value": 662.3931999783963,
+      "unit": "ms"
+    },
+    "steady_step": {
+      "value": 709.0518666793489,
+      "unit": "ms"
+    },
+    "parameters": {
+      "value": 68098570,
+      "unit": "개"
+    },
+    "epoch_50": {
+      "value": 9.175080350231536,
+      "unit": "s"
+    },
+    "epoch_200": {
+      "value": 35.4221936676703,
+      "unit": "s"
+    },
+    "epoch_1000": {
+      "value": 177.2976030051553,
+      "unit": "s"
+    }
+  }
+}
