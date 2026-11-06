@@ -116,3 +116,4 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | E-05-01 | 11/5 | 저장소 배정에 맞춘 브랜치 모델(통합 `dev`·배포 `main`): 승격 PR의 `evidence` 형식 검사 분기, 이슈 원본 링크 `dev` |
 | E-05-02 | 11/5 | GitHub Actions CI(`ci.yml`) 폐지, 로컬 검사 `tools/precheck.py`와 `.githooks/pre-push`로 대체(조직 공용 Actions 분량, 11/5 PM 결정). 실제 소요 시간 검사 폐지 |
 | E-05-02 | 11/5 | 훅과 `precheck`가 git 저장소 지정 환경 변수를 지움(`clean_env`, 훅은 precheck 호출 때만). 물려받은 `GIT_DIR`이 다른 저장소를 바꾸지 않는 회귀 테스트 |
+| P-27 | 11/6 | `check_docs` 규칙 6을 라우팅 2단 구조에 맞춤: 새 최상위 폴더는 루트 `README.md`, 두 번째 단계는 루트 README 또는 `docs/routing/<A~E>.md`. 삭제된 경로는 문서 변경으로 치지 않음 |
