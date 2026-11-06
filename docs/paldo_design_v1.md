@@ -32,6 +32,7 @@
 | 요구사항과 합격선(밸런스 승률, 응답 지연, 모델 지표, 광고 검증 기준 등) | `prd.md`(태스크 기준표는 `tasks/README.md` 6절) |
 | 사업 배경, 팀·기간·서버 같은 전제와 제약, 업무 위험 | `brd.md` |
 | 상태·주장·비밀·이벤트·API·광고 원장 같은 계약 세부 | `contracts/`(색인 `contracts/README.md`) |
+| 저장소별 엔터티와 관계(개념 ERD) | `contracts/erd.md`(전체 그림은 v1.2 4.5) |
 | 일정, 담당, 태스크와 완료 조건, 결정 대기 목록 | `team_plan.md`, `tasks/`(결정 대기는 `tasks/README.md` 7절) |
 | VM 배치, 노트북 사양, LLM 자원 운영, 디스크 | `../ops/runbook/vm_roles.md` |
 | LLM 벤치마크 결과, 기술 스택 버전 | `reports/llm_bench.md`, `contracts/tech_stack.md` |
@@ -318,6 +319,40 @@ flowchart LR
 | mysql-03, media-storage-01 | 끈다(LLM 노트북 자원 확보) |
 
 - 사용자 테스트 중에는 llm-01·ad-01·app-01에 학습 작업을 올리지 않는다. 학습·시뮬레이션은 nifi-01과 k3s 노드에서 돌린다.
+
+### 4.5 데이터 모델 (개념 ERD)
+저장소 사이의 엔터티와 관계만 그린 전체 그림이다. 저장소별 그림(계정 MySQL, 판 문서와 진행 상태, 콘텐츠 묶음, 광고 MySQL)과 확인할 항목은 `contracts/erd.md`가 원본이고, 컬럼은 각 저장소를 만드는 태스크의 산출물이다.
+
+```mermaid
+erDiagram
+    AccountProfile |o..o{ GameDocument : "player_pseudonym(사람 판만)"
+    AccountProfile ||..o| PlayerProgress : "player_pseudonym"
+    AccountProfile ||..o{ PseudonymMap : "player_pseudonym"
+    PseudonymMap |o..o{ ServeRecord : "session_pseudonym(합성 트래픽은 없음)"
+    PlayerProgress |o..o{ GameDocument : "game_ids"
+    ContentBundle ||..o{ GameDocument : "content_version 고정"
+    AccountProfile {
+        uuid player_pseudonym "계정 MySQL"
+    }
+    GameDocument {
+        string game_id "MongoDB"
+    }
+    PlayerProgress {
+        uuid player_pseudonym "MongoDB"
+    }
+    ContentBundle {
+        string content_version "MongoDB"
+    }
+    ServeRecord {
+        string session_pseudonym "광고 MySQL"
+    }
+    PseudonymMap {
+        string session_pseudonym "저장소 미정(7절)"
+    }
+```
+
+- 저장소 사이는 ID 값으로만 이어진다(점선). 로그인 ID는 계정 MySQL에만 있고, 게임 데이터는 `player_pseudonym`만, 광고는 `session_pseudonym`만 쓴다.
+- 두 가명을 잇는 대응표는 개인정보 삭제 요청 때만 쓴다. 시뮬레이션 판과 합성 광고 트래픽에는 계정이 없다. 이벤트가 Kafka를 거쳐 Delta로 가는 흐름은 4.2와 `contracts/erd.md` 5절에 있다.
 
 ---
 
@@ -749,3 +784,4 @@ v1.1(2026-11-04~11-05) 번호를 쓰는 문서(태스크, 증빙, 코드 주석 
 - 상태: 방향 확정(v1), 세부 수치와 기술 선택은 측정 전 가정
 - 관련 문서: `claude_code_4th_project_handoff.md`(기획 배경), `crosscheck.md`(검토 이력)
 - v1.2 변경: 개요를 맨 앞으로 옮기고, 합격선·전제·계약 세부·VM 배치는 담당 문서로 넘겼다(1.4). 설계 내용은 바꾸지 않았다. v1.1 절 번호는 부록 B 대응표로 찾는다.
+- 11/6 추가: v1.2 4.5 데이터 모델(개념 ERD). 4장 끝에 추가해 기존 절 번호는 그대로다.
