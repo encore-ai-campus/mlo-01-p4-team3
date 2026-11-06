@@ -12,7 +12,7 @@
 
 ```
 paldo/
-├─ README.md                       라우팅 문서(폴더 안내, 작업별 위치) (있음)
+├─ README.md                       라우팅 문서 1단(영역 안내, 공용 폴더·작업 위치) (있음). 영역 상세는 docs/routing/<흐름>.md [P-27]
 ├─ .env.example                    환경 변수 이름 + 자리표시자만 [C-05-03]
 ├─ .gitignore                      out/, .env, .venv/ 등 (있음)
 ├─ .github/                        저장소 운영 · E
@@ -152,6 +152,7 @@ VM 이름과 배치의 원본은 기획서 6.3이다. 실제 노트북 대응은
 | `docs/paldo_design_v1.md`, `docs/team_plan.md`, `docs/brd.md`, `docs/prd.md` | 기획서, 팀 계획, 요구 문서 | - |
 | `docs/contracts/` | 계약(이 문서 포함) | [parallel_dev.md 4절](parallel_dev.md) 변경 절차 |
 | `docs/tasks/` | 흐름별 태스크와 완료 조건 | [tasks/README.md](../tasks/README.md) |
+| `docs/routing/<흐름>.md` | 라우팅 문서 2단(A~E 영역별 폴더 안내·작업별 위치) | 루트 README "영역 안내", tasks/README.md 10절 [P-27] |
 | `docs/evidence/<ID>.md` | 태스크 증빙 | tasks/README.md 4절 |
 | `docs/evidence/perf/<ID>/<이름>.json` | 측정 결과 JSON | tasks/README.md 4절 "결과 JSON 형식" |
 | `docs/modules/<모듈>.md` | 모듈 문서(무엇을·왜·사용법·설정값·한계) | [modules/README.md](../modules/README.md) |
