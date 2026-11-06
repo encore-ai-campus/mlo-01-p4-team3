@@ -41,7 +41,7 @@
 - **마스코트**(11/5 PM 결정 P-21): 까치 `kkachi`(아침 희생자 발표 장면)와 족제비 `jokjebi`(무당의 짝, 안내·도움말)다. 512×512 RGBA 바탕 투명, 표정 없음. 연출·안내만 하고 새 게임 정보를 주지 않는다(스타일 가이드 6절).
 - **초상은 sprite에서 파생**한다: sprite에서 인물별 크롭 위 y(6절)부터 512×512를 잘라 먹남(`#2E344A`) 위에 알파 합성한다(6절). 한 인물은 sprite 1장만 만들고, 초상은 `make_placeholders`가 만든다. manifest의 초상 항목에 `"derived_from": "sprite:<id>"`가 붙고, 쌍의 `placeholder`는 같아야 한다(4절).
 - **장면 배경**: 회의 `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), 밤 `night`(밤 마을 공통 1장). 장소별 배경은 만들지 않는다(7절).
-- **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `llm_wait`·`review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
+- **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
 - **지도**: ID는 `village`다. 11/5 PM 결정으로 지도는 **시연까지 임시 에셋**이다. 장소 5곳의 영역 좌표는 E-08-07이 임시 지도용 안내 고정값(정보가 없는 균등 배치)으로 manifest에 넣는다(B-10-02 아이콘 배치용). 현재 임시 지도에는 좌표가 없다.
 - **정적 파일 연결**(B-05-03 5번): `/static/assets/<kind>/…` → `content/images/<kind>/…`, `/static/ads/…` → `content/images/ad/…`.
 

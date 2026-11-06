@@ -1,0 +1,86 @@
+{% load meeting %}
+<section id="meeting" data-state-version="{{ vm.state_version }}">
+  <h1>{{ vm.day }}일째 · {{ vm.phase|phase_label }}</h1>
+  {% if vm.phase == 'vote' or vm.phase == 'runoff' %}
+    <p>이번 투표는 비공개이며, 투표가 끝나면 모두의 표가 함께 공개됩니다.</p>
+  {% endif %}
+  {% if rejected %}<p role="alert">행동을 적용하지 못했습니다. 현재 화면을 확인해 주세요.</p>{% endif %}
+  <ul class="people" aria-label="인물">
+    {% for person in vm.people %}
+      <li>
+        {% if person.npc_id == 'mudang' %}
+          <img src="{% asset_url mudang_portrait_id %}" alt="" width="64" height="64">
+        {% else %}
+          {% with portrait_id="portrait:"|add:person.npc_id %}
+            <img src="{% asset_url portrait_id %}" alt="" width="64" height="64">
+          {% endwith %}
+        {% endif %}
+        {{ person.name|display_name }} · {{ person.status|status_label }}
+      </li>
+    {% endfor %}
+  </ul>
+  {% for event in disappearances %}
+    <p>
+      {% if event.place_asset_id %}<img src="{% asset_url event.place_asset_id %}" alt="" width="20" height="20">{% endif %}
+      {{ event.record.text }}
+    </p>
+  {% endfor %}
+  {% if claims %}
+    <section aria-labelledby="claim-list-title">
+      <h2 id="claim-list-title">진술표</h2>
+      <ul class="claim-cards">
+        {% for claim in claims %}
+          <li>
+            {% if claim.place_asset_id %}<img src="{% asset_url claim.place_asset_id %}" alt="" width="20" height="20">{% endif %}
+            <strong>{{ claim.card.speaker_name|display_name }}</strong> · {{ claim.card.text }}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if vm.speeches %}
+    <h2>발언</h2>
+    {% for speech in vm.speeches %}<p>{{ speech.speaker_name|display_name }}: {{ speech.text }}</p>{% endfor %}
+  {% endif %}
+  {% if published_votes %}
+    <section id="published-votes" aria-labelledby="published-votes-title">
+      <h2 id="published-votes-title">공개된 투표</h2>
+      <ul>
+        {% for vote in published_votes %}
+          <li data-vote-round="{{ vote.round }}">{{ vote.day }}일째 {% if vote.round == 'runoff' %}결선{% else %}본투표{% endif %} · {{ vote.voter|display_name }} → {{ vote.target|display_name }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if published_locks %}
+    <section id="published-locks" aria-labelledby="published-locks-title">
+      <h2 id="published-locks-title">감금 결과</h2>
+      <ul>
+        {% for lock in published_locks %}
+          <li>
+            {{ lock.day }}일째 ·
+            {% if lock.name is None %}
+              무감금
+            {% else %}
+              {{ lock.name|display_name }} 감금
+              {% if lock.revealed_possessed is True %}· 금줄 반응으로 씐 자임이 밝혀졌습니다.
+              {% elif lock.revealed_possessed is False %}· 금줄 반응으로 씐 자가 아님이 밝혀졌습니다.
+              {% endif %}
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if own_divinations %}
+    <section id="own-divinations" aria-labelledby="own-divinations-title">
+      <h2 id="own-divinations-title">내 점괘</h2>
+      <ul>{% for result in own_divinations %}<li>{{ result }}</li>{% endfor %}</ul>
+    </section>
+  {% endif %}
+  {% if vm.ended %}
+    <p class="round-result">판이 종료됐습니다.</p>
+  {% else %}
+    {% include "meeting_actions.html" %}
+  {% endif %}
+</section>

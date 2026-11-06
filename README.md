@@ -2,7 +2,7 @@
 
 무당이 되어 마을에 숨은 씐 자를 찾는 추리 게임이다.
 
-- 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md)
+- 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md) · 기획서 보조 기록(설계 결정 기록·미확정 사항·서버 배치 요약·이전 판 절 번호 대응표): [`docs/design_notes.md`](docs/design_notes.md)
 - 팀 일정과 역할: [`docs/team_plan.md`](docs/team_plan.md)
 - BRD(업무 요구): [`docs/brd.md`](docs/brd.md) · PRD(제품 요구·합격 기준, 요구사항 기준 문서): [`docs/prd.md`](docs/prd.md)
 - 계약 문서: [`docs/contracts/`](docs/contracts/)(색인·DB 스키마 위치: [`README.md`](docs/contracts/README.md)) · 디렉터리 트리(새 파일 위치): [`structure.md`](docs/contracts/structure.md) · 영역 간 호출 지도: [`integration.md`](docs/contracts/integration.md)
@@ -30,7 +30,7 @@ server/infra (인프라) → engine (포트 구현)
 | 흐름 | 영역 | 주요 폴더 | 안내 문서 |
 |---|---|---|---|
 | A | 엔진 | `engine/`(`engine/sim/`은 D) | [`docs/routing/A.md`](docs/routing/A.md) |
-| B | 웹 | `server/api/`, `server/app/`, `web/` | [`docs/routing/B.md`](docs/routing/B.md) |
+| B | 웹 | `server/api/`, `server/app/`, `web/templates/`, `web/static/` | [`docs/routing/B.md`](docs/routing/B.md) |
 | C | 인프라·파이프라인·운영 | `server/infra/`, `pipeline/`, `ops/` | [`docs/routing/C.md`](docs/routing/C.md) |
 | D | ML·광고 | `engine/sim/`, `intent/`, `ml/`, `ads/` | [`docs/routing/D.md`](docs/routing/D.md) |
 | E | 콘텐츠·LLM·에셋 규격·저장소 운영 | `content/`, `llm/`, `.github/`, `.githooks/`, `docs/ops/`, `docs/assets/` | [`docs/routing/E.md`](docs/routing/E.md) |

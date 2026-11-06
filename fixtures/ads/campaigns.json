@@ -6,7 +6,7 @@
       "name": "주막 국밥",
       "slots": [
         "lobby_banner",
-        "llm_wait"
+        "review_side"
       ],
       "billing": "cpc",
       "max_bid_mw": 300000,
@@ -111,8 +111,7 @@
       "advertiser_id": "adv_gat",
       "name": "갓 공방",
       "slots": [
-        "review_side",
-        "llm_wait"
+        "review_side"
       ],
       "billing": "cpm",
       "max_bid_mw": 2500000,
@@ -155,13 +154,6 @@
       "frequency_cap": 3
     },
     {
-      "slot": "llm_wait",
-      "reserve_ecpm_mw": 800000,
-      "prior_ctr": 0.03,
-      "prior_strength": 200.0,
-      "frequency_cap": 3
-    },
-    {
       "slot": "result_banner",
       "reserve_ecpm_mw": 600000,
       "prior_ctr": 0.025,
@@ -184,10 +176,6 @@
     "result_banner": [
       728,
       90
-    ],
-    "llm_wait": [
-      300,
-      250
     ],
     "review_side": [
       300,

@@ -1,6 +1,6 @@
 # 광고 시스템 계약 (D 소유: ads/ 전체)
 
-기획서: `../paldo_design_v1.md` 8장(v1.1의 14장. 크로스체크 6을 반영한 판). 코드 기준은 다음 세 파일이다.
+기획서: `../paldo_design_v1.md` 9장(v1.2의 8장, v1.1의 14장. 크로스체크 6을 반영한 판). 코드 기준은 다음 세 파일이다.
 - `ads/domain/model.py`: 데이터
 - `ads/domain/rules.py`: 규칙
 - `ads/domain/events.py`: 이벤트
@@ -26,13 +26,13 @@
 - **구조**: 광고주 → `Campaign` → `Creative`.
   - 캠페인 속성: 지면, 과금 방식(cpc, cpm), `max_bid_mw`, `daily_budget_mw`, `Targeting`(프리셋, 판 결과, 재방문, 시간대), 기간, 상태
   - 소재의 랜딩은 사이트 안 가상 경로다. 화면에는 "광고"로 표시한다.
-- **지면(`AdSlot`)**: `lobby_banner`, `llm_wait`, `result_banner`, `review_side` 네 곳이다. 회의, 투표, 밤 화면에는 광고를 넣지 않는다.
+- **지면(`AdSlot`)**: `lobby_banner`, `result_banner`, `review_side` 세 곳이다. 회의, 투표, 밤 화면에는 예외 없이 광고를 넣지 않는다(추궁 답변 대기 지면 `llm_wait`은 11/6 PM 결정으로 삭제, `ads-0.5`).
 - **지면 규격(`SLOT_SIZES`, P-19, 11/5 PM 잠정 확정, `ads-0.3`)**:
 
   | 지면 | 규격(가로×세로 px) |
   |---|---|
   | `lobby_banner`, `result_banner` | 728×90 |
-  | `llm_wait`, `review_side` | 300×250 |
+  | `review_side` | 300×250 |
 
   - 소재 이미지는 지면이 아니라 **규격마다 1장**이다. `Creative.image_path`는 기본 경로이고, 지면별 실제 파일은 `slot_image_path(image_path, slot)`이다(예: `/static/ads/gat.png` → `/static/ads/gat__728x90.png`). 소재가 나가는 지면들의 규격 수만큼 파일이 있다.
   - 광고 서버는 `AdCreativeView.image_path`에 요청 지면의 `slot_image_path` 결과를 넣는다(`FakeAdProvider`도 같다). 화면(B)은 그 경로를 그대로 쓰고, 이미지 크기는 `SLOT_SIZES[slot]`로 잡는다.
@@ -104,7 +104,6 @@
 | 클릭 | `bad_signature` → `expired` → `load_test` → `no_serve` → `duplicate`(토큰 재사용) | **클릭은 노출 증거다.** 비콘보다 먼저 도착한 클릭은 노출도 인정한다(`implied_by_click`). 그 뒤에 온 비콘은 `duplicate`. 같은 세션의 1초 내 연속 클릭은 `suspect` 표시만 하고 무효 근거로 쓰지 않는다 |
 
 - 판정 버전(`JUDGE_VERSION`)을 이벤트에 남긴다. 광고 서버(온라인)와 Spark silver(배치)가 같은 규칙을 쓴다.
-- `llm_wait`은 답변이 1초 안에 오면 노출 기준에 못 미칠 수 있다. 이 경우 serve만 남는다. 지면별 노출률로 따로 보고한다.
 
 ## 7. 대사와 마감
 - **건별 대사**(`reconcile`): 원장의 확정 charge_id와 Delta의 유효 이벤트를 charge_id마다 비교한다. 다음 네 가지를 센다.

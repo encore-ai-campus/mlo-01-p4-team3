@@ -53,12 +53,12 @@ DATABASES = {"default": {
 import pymysql
 pymysql.install_as_MySQLdb()
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
-              "DIRS": [], "APP_DIRS": True,
+              "DIRS": [BASE_DIR / "web" / "templates"], "APP_DIRS": True,
               "OPTIONS": {"context_processors": [
                   "django.template.context_processors.request",
                   "django.contrib.auth.context_processors.auth",
                   "django.contrib.messages.context_processors.messages",
-              ]}}]
+              ], "libraries": {"meeting": "server.api.template_tags"}}}]
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -69,6 +69,8 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "out" / "static"
+STATICFILES_DIRS = [BASE_DIR / "web" / "static"]
+ASSET_MANIFEST = BASE_DIR / "content" / "images" / "manifest.json"
 LOG_DIR = BASE_DIR / "out" / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOGGING = {
