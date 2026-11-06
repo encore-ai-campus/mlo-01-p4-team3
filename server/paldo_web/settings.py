@@ -24,6 +24,8 @@ if SESSION_COOKIE_SECURE:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 ROOT_URLCONF = "server.paldo_web.urls"
 WSGI_APPLICATION = "server.paldo_web.wsgi.application"
+LOGIN_URL = "/accounts/login"
+GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
