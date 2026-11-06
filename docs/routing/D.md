@@ -11,7 +11,7 @@
 
 | 폴더 | 계층 | 담당 | 역할 |
 |---|---|---|---|
-| `engine/sim/` | 도메인 사용 | D | 봇 정책, 시뮬레이터(예정). 결정 층 최적화는 A가 `engine/domain`에서 맡는다 |
+| `engine/sim/` | 도메인 사용 | D | 플레이어 봇 4종(`bots.py`), GameEngine 포트 실행기(`runner.py`), 결과 지표 표(`report.py`). 결정 층 최적화는 A가 `engine/domain`에서 맡는다 |
 | `intent/`, `ml/` | 인프라(모델) | D | 의도 해석기, 씐 자 확률 모델(예정) |
 | `ads/domain/` | 광고 도메인 | D | 경매, 2등 가격, 예산 예약·확정·해제, 페이싱, CTR, 유효 판정, 대사, 지면 규격(`SLOT_SIZES`)(표준 라이브러리만) |
 | `ads/app/`, `ads/infra/`, `ads/web/` | 광고 응용, 인프라, 표현 | D | 요청·비콘·클릭 흐름, MySQL 원장·아웃박스·Kafka, Django 뷰·admin(예정) |
@@ -22,4 +22,5 @@
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 모델 교체·승격·롤백 | `docs/contracts/ml_lifecycle.md` |
+| 플레이어 봇 실행·같은 시드 재현·지표 표·처리량 측정 | `engine/sim/`, CLI `tools/perf/sim_bench.py`, 테스트 `tests/sim/`, 증빙 `docs/evidence/D-06-01.md` |
 | 경매·과금·광고 판정 규칙 변경 | 광고 도메인 `ads/domain/`, `docs/contracts/ads.md` |
