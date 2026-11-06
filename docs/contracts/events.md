@@ -14,8 +14,8 @@
 
 | 토픽 | 이벤트 | 소비자 |
 |---|---|---|
-| `paldo.game` | 상태 전이 이벤트(감금, 밤, 발언, 결정 등) | C 적재, D 분석 |
-| `paldo.observations` | `observation`(행동 직전 스냅샷 참조) | D 학습 |
+| `paldo.game` | 상태 전이 이벤트(감금, 밤, 발언 등) | C 적재, D 분석 |
+| `paldo.observations` | `observation`, `decision`(같은 snapshot_id) | D 학습, C 적재 |
 | `paldo.intent` | `intent_attempt` | D 의도 학습, E 검수 |
 | `paldo.llm` | `render_job` | E 품질, C 지표 |
 | `paldo.player` | `notebook_updated`, `survey_submitted` | D 평가, E 분석 |
@@ -30,6 +30,7 @@
   - 라벨은 C의 배치가 `game_id`로 조인해 `TrainingRow.label`과 `label_joined_at`을 채운다.
   - 중단된 판(`completed=false`)에는 라벨을 붙이지 않는다.
 - **학습 대상 관찰자**: 씐 자 확률 모델은 마을 주민 관찰자의 행만 쓴다. 씐 자 관찰자는 정답을 알고 있기 때문이다. 이 필터는 학습 쪽(D)에서 건다.
+  - 마을 주민 관찰자 필터는 `decision`에도 같은 `snapshot_id` 기준으로 적용한다. 씐 자 결정(밤 명령, `avoid_partner` 등)은 판 도중 `paldo.game`에 싣지 않는다. 플레이어·봇 결정도 같은 토픽(`paldo.observations`)으로 간다(11/6 PM 결정).
 - **생성 문장의 계보**: LLM이 만든 의도 예시는 `lineage_root`에 원본 예시 ID를 담는다. 분할할 때 같은 계보를 같은 쪽에 넣는다.
 - **분할 키(`SplitKey`)**:
   - 사람 데이터는 `user`(가명) 단위로 나눈다. 한 사람의 판과 문장은 한 분할에만 들어간다.

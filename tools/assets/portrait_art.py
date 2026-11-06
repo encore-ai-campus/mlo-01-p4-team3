@@ -17,6 +17,8 @@
 """
 from __future__ import annotations
 
+from functools import lru_cache
+
 from tools.assets import glyphs, vn
 
 RGB = tuple[int, int, int]
@@ -146,9 +148,20 @@ def label_for(cid: str, name: str | None) -> str:
 
 def render_sprite(cid: str, width: int, height: int, name: str | None = None,
                   expression: str | None = None) -> list[bytearray]:
-    """512×1280 RGBA 행 목록. `cid`는 인물 id(표정 접미사 없음), `expression`은 표정 이름(기본이면 None). 크기가 다르면 ValueError."""
+    """512×1280 RGBA 행 목록. `cid`는 인물 id(표정 접미사 없음), `expression`은 표정 이름(기본이면 None). 크기가 다르면 ValueError.
+
+    같은 입력이면 같은 픽셀이라 결과를 기억해 두고, 부를 때마다 새 행 목록(복사본)을 돌려준다(고쳐도 다음 결과에 영향 없음).
+    기억의 키에는 id와 함께 그 id의 키 등급(`vn.grade_for`)·머리 장식(`HEADGEAR`)을 넣어, 표가 바뀌면 다시 그린다.
+    """
     if (width, height) != (W, H):
         raise ValueError(f"sprite 크기는 {W}x{H}여야 함: {width}x{height}")
+    return [bytearray(r) for r in _sprite_rows(cid, vn.grade_for(cid), HEADGEAR.get(cid), name, expression)]
+
+
+@lru_cache(maxsize=64)
+def _sprite_rows(cid: str, grade: vn.HeightGrade, gear: str | None, name: str | None,
+                 expression: str | None) -> tuple[bytes, ...]:
+    """`render_sprite`의 실제 그리기. `grade`·`gear`는 기억 키 구분용(그리기는 `cid`로 같은 값을 다시 읽는다)."""
     m = body_mask(cid)
     guides = (eye_y(cid), vn.NORMAL_ROWS)
     inner = _erode(m, EDGE_PX)
@@ -177,7 +190,7 @@ def render_sprite(cid: str, width: int, height: int, name: str | None = None,
         if not glyphs.fits(expression):
             raise ValueError(f"표정 이름 글자 비트맵 없음: {expression!r} (build_glyphs 다시 실행)")
         glyphs.draw(rows, 4, CX - glyphs.width(expression) // 2, expr_y(cid), expression, EXPR_TEXT)
-    return rows
+    return tuple(bytes(r) for r in rows)
 
 
 def crop_portrait(width: int, rows: list[bytes], top: int) -> list[bytearray]:
@@ -189,21 +202,26 @@ def crop_portrait(width: int, rows: list[bytes], top: int) -> list[bytearray]:
     if top < 0 or len(rows) < top + width or any(len(r) != width * 4 for r in rows[top:top + width]):
         raise ValueError("sprite 행이 초상 크롭 범위보다 작거나 RGBA가 아님")
     bg = bytes(BG)
+    bg_rows = [int.from_bytes(bytes((v,)) * width, "big") for v in bg]
     out: list[bytearray] = []
     for r in rows[top:top + width]:
         r = bytes(r)
         alpha = r[3::4]
         line = bytearray(width * 3)
-        line[0::3], line[1::3], line[2::3] = r[0::4], r[1::4], r[2::4]
-        for x, a in enumerate(alpha):
-            if a == 255:
-                continue
-            if a == 0:
-                line[x * 3:x * 3 + 3] = bg
-            else:
-                line[x * 3:x * 3 + 3] = bytes((r[x * 4 + c] * a + bg[c] * (255 - a) + 127) // 255 for c in range(3))
+        # 알파 0·255는 바이트 마스크 한 번으로 고른다(255 → sprite 색, 0 → 먹남). 반투명만 아래에서 픽셀마다 합성
+        mask = int.from_bytes(alpha.translate(_OPAQUE_MASK), "big")
+        for c in range(3):
+            chan = int.from_bytes(r[c::4], "big")
+            line[c::3] = ((chan & mask) | (bg_rows[c] & ~mask)).to_bytes(width, "big")
+        if alpha.translate(None, b"\x00\xff"):
+            for x, a in enumerate(alpha):
+                if a != 0 and a != 255:
+                    line[x * 3:x * 3 + 3] = bytes((r[x * 4 + c] * a + bg[c] * (255 - a) + 127) // 255 for c in range(3))
         out.append(line)
     return out
+
+
+_OPAQUE_MASK = bytes(255 if a == 255 else 0 for a in range(256))   # 알파 → 바이트 마스크(255만 불투명)
 
 
 def render(cid: str, width: int, height: int, name: str | None = None,

@@ -2,7 +2,7 @@
 
 무당이 되어 마을에 숨은 씐 자를 찾는 추리 게임이다.
 
-- 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md)
+- 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md) · 기획서 보조 기록(설계 결정 기록·미확정 사항·서버 배치 요약·이전 판 절 번호 대응표): [`docs/design_notes.md`](docs/design_notes.md)
 - 팀 일정과 역할: [`docs/team_plan.md`](docs/team_plan.md)
 - BRD(업무 요구): [`docs/brd.md`](docs/brd.md) · PRD(제품 요구·합격 기준, 요구사항 기준 문서): [`docs/prd.md`](docs/prd.md)
 - 계약 문서: [`docs/contracts/`](docs/contracts/)(색인·DB 스키마 위치: [`README.md`](docs/contracts/README.md)) · 디렉터리 트리(새 파일 위치): [`structure.md`](docs/contracts/structure.md) · 영역 간 호출 지도: [`integration.md`](docs/contracts/integration.md)

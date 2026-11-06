@@ -10,7 +10,7 @@ import enum
 from dataclasses import dataclass, field
 from typing import Optional
 
-AD_CONTRACT_VERSION = "ads-0.4"   # 0.4(11/5): serve 이벤트 context, 공통 bid_version, ad.rejudge 형식
+AD_CONTRACT_VERSION = "ads-0.5"   # 0.5(11/6): 지면 llm_wait 삭제(지면 3곳). 0.4(11/5): serve 이벤트 context, 공통 bid_version, ad.rejudge 형식
 MW_PER_WON = 1000
 
 
@@ -21,16 +21,14 @@ def won(x: float) -> int:
 
 class AdSlot(str, enum.Enum):
     LOBBY_BANNER = "lobby_banner"
-    LLM_WAIT = "llm_wait"
     RESULT_BANNER = "result_banner"
     REVIEW_SIDE = "review_side"
 
 
-# 지면 규격(P-19, 11/5 PM 잠정 확정): 지면 → (가로, 세로) 픽셀. 소재 이미지는 지면이 아니라 **규격마다 1장**이다.
+# 지면 규격(P-19, 11/5 PM 잠정 확정. 11/6 PM 결정으로 llm_wait 삭제): 지면 → (가로, 세로) 픽셀. 소재 이미지는 지면이 아니라 **규격마다 1장**이다.
 SLOT_SIZES: dict[AdSlot, tuple[int, int]] = {
     AdSlot.LOBBY_BANNER: (728, 90),
     AdSlot.RESULT_BANNER: (728, 90),
-    AdSlot.LLM_WAIT: (300, 250),
     AdSlot.REVIEW_SIDE: (300, 250),
 }
 

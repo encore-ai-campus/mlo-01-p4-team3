@@ -38,8 +38,13 @@ class SlotSizes(unittest.TestCase):
         self.assertEqual(set(SLOT_SIZES), set(AdSlot))
         self.assertEqual(SLOT_SIZES[AdSlot.LOBBY_BANNER], (728, 90))
         self.assertEqual(SLOT_SIZES[AdSlot.RESULT_BANNER], (728, 90))
-        self.assertEqual(SLOT_SIZES[AdSlot.LLM_WAIT], (300, 250))
         self.assertEqual(SLOT_SIZES[AdSlot.REVIEW_SIDE], (300, 250))
+
+    def test_three_slots_no_meeting_screen_slot(self):
+        # 11/6 PM 결정(ads-0.5): llm_wait 삭제. 회의·투표·밤 화면 지면은 없다
+        self.assertEqual({s.value for s in AdSlot}, {"lobby_banner", "result_banner", "review_side"})
+        with self.assertRaises(ValueError):
+            AdSlot("llm_wait")
 
     def test_fixture_copy_matches(self):
         d = load_json("fixtures/ads/campaigns.json")
@@ -58,7 +63,7 @@ class SlotSizes(unittest.TestCase):
                 self.assertEqual(len(paths), len({SLOT_SIZES[s] for s in c.slots}), cr.creative_id)
 
     def test_fake_returns_slot_sized_path(self):
-        req = AdRequest("r1", AdSlot.LLM_WAIT, "p1", AdContext("base6", None, False, 12))
+        req = AdRequest("r1", AdSlot.REVIEW_SIDE, "p1", AdContext("base6", None, False, 12))
         resp = FakeAdProvider().request_ad(req, 50, 120)
         self.assertTrue(resp.creative.image_path.endswith("__300x250.png"))
 
@@ -180,7 +185,7 @@ class AdsReviewRegressions(unittest.TestCase):
         class Broken:
             def request_ad(self, req, c, t):
                 return None
-        self.assertEqual(AdGateway(Broken()).fetch(AdRequest("r", AdSlot.LLM_WAIT, "s", AdContext()))[1], "error")
+        self.assertEqual(AdGateway(Broken()).fetch(AdRequest("r", AdSlot.REVIEW_SIDE, "s", AdContext()))[1], "error")
 
 
 class Validity(unittest.TestCase):
@@ -233,7 +238,7 @@ class Validity(unittest.TestCase):
 
 class GamePathProtection(unittest.TestCase):
     def req(self, i=0):
-        return AdRequest(f"r{i}", AdSlot.LLM_WAIT, "sess", AdContext())
+        return AdRequest(f"r{i}", AdSlot.REVIEW_SIDE, "sess", AdContext())
 
     def test_fake_is_provider(self):
         self.assertIsInstance(FakeAdProvider(), AdProvider)
@@ -264,7 +269,7 @@ class GamePathProtection(unittest.TestCase):
 class RejudgeEvent(unittest.TestCase):
     def test_rejudge_event_contract(self):
         e = AdRejudgeEvent("rj_1", "ad_syn_1_0000001", "sv_1:click", InvalidReason.DUPLICATE, rules.JUDGE_VERSION,
-                           1_000, "synthetic", "ads-0.4")
+                           1_000, "synthetic", "ads-0.5")
         self.assertEqual(TOPIC_REJUDGE, "ad.rejudge")
         strict(AdRejudgeEvent, serde.to_jsonable(e))
 
@@ -308,12 +313,12 @@ class GatewayReviewRegressions(unittest.TestCase):
 
     def test_timed_out_call_keeps_slot(self):
         gw = AdGateway(FakeAdProvider(latency_ms=400), total_timeout_ms=50, max_concurrent=1)
-        r = AdRequest("r1", AdSlot.LLM_WAIT, "s", AdContext())
+        r = AdRequest("r1", AdSlot.REVIEW_SIDE, "s", AdContext())
         self.assertEqual(gw.fetch(r)[1], "timeout")
-        self.assertEqual(gw.fetch(AdRequest("r2", AdSlot.LLM_WAIT, "s", AdContext()))[1], "busy")
+        self.assertEqual(gw.fetch(AdRequest("r2", AdSlot.REVIEW_SIDE, "s", AdContext()))[1], "busy")
         time.sleep(0.5)
         gw.provider.latency_ms = 0
-        self.assertEqual(gw.fetch(AdRequest("r3", AdSlot.LLM_WAIT, "s", AdContext()))[1], "ok")
+        self.assertEqual(gw.fetch(AdRequest("r3", AdSlot.REVIEW_SIDE, "s", AdContext()))[1], "ok")
 
     def test_half_open_single_probe(self):
         now = [0.0]

@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import unittest
 
-from tools.assets import art, background_art, build_glyphs, glyphs, png, portrait_art as pa, sources, vn
+from tools.assets import (art, background_art, build_glyphs, glyphs, make_placeholders as mp, mascot_art, png,
+                          portrait_art as pa, sources, vn)
 from tools.assets.spec import split_variant
 
 ROOT = sources.ROOT
@@ -99,7 +100,7 @@ class SilhouetteTest(unittest.TestCase):
                 pa.render("jumo", w, h)
 
     def test_committed_files_match_generator(self):
-        """커밋된 임시 sprite·초상이 지금 생성기와 같은 바이트다(표시가 true인 것만)."""
+        """커밋된 임시 sprite·초상이 지금 생성기와 같은 그림이다(표시가 true인 것만). 해상도·채널·디코드 픽셀로 비교(zlib 차이 허용)."""
         spec = sources.load_spec()
         seen = 0
         labels = dict(spec.expressions)
@@ -112,9 +113,50 @@ class SilhouetteTest(unittest.TestCase):
                 data = png.encode_rgba(e.width, e.height, pa.render_sprite(*args))
             else:
                 data = png.encode_rgb(e.width, e.height, pa.render(*args))
-            self.assertEqual((ROOT / e.path).read_bytes(), data, e.path)
+            self.assertTrue(png.same_image((ROOT / e.path).read_bytes(), data), e.path)
             seen += 1
         self.assertEqual(seen, 74)          # 인물 13 + 표정 변형 24, sprite·초상 각각
+
+
+class CacheTest(unittest.TestCase):
+    """그린 결과 기억(가속): 복사본 반환, 표 값이 바뀌면 다시 그림, 합성 결과는 픽셀마다 계산한 것과 같음."""
+
+    def test_returns_copies(self):
+        a = pa.render_sprite("jumo", W, H)
+        a[700][0:4] = b""
+        self.assertNotEqual(pa.render_sprite("jumo", W, H)[700][0:4], b"")
+        m = mascot_art.render("kkachi", 512, 512)
+        m[0][0:4] = b""
+        self.assertNotEqual(mascot_art.render("kkachi", 512, 512)[0][0:4], b"")
+
+    def test_table_change_redraws(self):
+        from unittest import mock
+        before = pa.render_sprite("jumo", W, H)
+        with mock.patch.dict(vn.CHARACTER_GRADE, {"jumo": "male"}):
+            self.assertNotEqual(pa.render_sprite("jumo", W, H), before)
+            with mock.patch.dict(pa.HEADGEAR, {"jumo": None}):   # 장식 없이 보면 머리 꼭대기가 바뀐 등급 값
+                self.assertEqual(vn.visible_box(W, pa.render_sprite("jumo", W, H))[1], vn.HEIGHT_GRADES["male"].top)
+        self.assertEqual(pa.render_sprite("jumo", W, H), before)
+        with mock.patch.dict(pa.HEADGEAR, {"jumo": None}):
+            self.assertNotEqual(pa.render_sprite("jumo", W, H), before)
+        m = mascot_art.render("kkachi", 512, 512)
+        with mock.patch.dict(mascot_art.OFFSET, {"kkachi": (0, 0)}):
+            self.assertNotEqual(mascot_art.render("kkachi", 512, 512), m)
+        with mock.patch.dict(vn.CHARACTER_GRADE, {"jumo": "male"}):
+            moved = mp._placeholder_png("portrait", "jumo", 512, 512, None, None)
+        self.assertNotEqual(moved, mp._placeholder_png("portrait", "jumo", 512, 512, None, None))
+
+    def test_mask_composite_matches_per_pixel(self):
+        bg = pa.BG
+        row = bytearray()
+        for x in range(512):
+            a = (0, 255, 1, 128, 254)[x % 5]
+            row += bytes((x % 256, (x * 7) % 256, (x * 13) % 256, a))
+        want = bytearray()
+        for x in range(512):
+            r, g, b, a = row[x * 4:x * 4 + 4]
+            want += bytes((c * a + bg[i] * (255 - a) + 127) // 255 for i, c in enumerate((r, g, b)))
+        self.assertEqual(pa.crop_portrait(512, [row] * 512, 0)[0], want)
 
 
 class GlyphTest(unittest.TestCase):

@@ -1,6 +1,6 @@
 # E PM 태스크 (콘텐츠·LLM·에셋·테스트, 통합 주관)
 
-- 기획서 절 번호: 이 문서의 "기획서 N.N"은 **v1.1 번호**다. 기획서 v1.2와 번호가 겹치므로(예: v1.1 6.3 VM 배치 ≠ v1.2 6.3 시뮬레이션) 기획서 부록 B 대응표로 찾는다(P-28).
+- 기획서 절 번호: 이 문서의 "기획서 N.N"은 **v1.1 번호**다. 지금 기획서(v1.3)와 번호가 겹치므로(예: v1.1 6.3 VM 배치 ≠ v1.3 6.3 모델 선정) `docs/design_notes.md` 4절 대응표로 찾는다(P-28).
 - 담당자: PM · 노트북: 3, 2(관리)
 - 폴더: `content/`(인물·비밀·단서·템플릿), `content/images/`(임시 파일·`manifest.json`. 실제 파일·`SOURCES.md` 생성 기록은 A), `docs/assets/`(스타일 가이드·규격), `tools/assets/`(`make_placeholders.py`, `check_assets.py`. 투명 바탕 처리 `cutout.py`는 A), `llm/`(LLM 서비스, LangGraph), `.github/workflows/`, `tools/check_evidence.py`, `tools/check_docs.py`, `tools/check_secrets.py`, `tools/evidence_result.py`
 - 늘 볼 문서: `docs/contracts/content.md`, `ports.md` 4절, `privacy.md`, 기획서 3·7·10장.
@@ -27,7 +27,7 @@
 | 마을 지도 | 1장(**임시 유지**, 11/5 PM 결정) | 장소 5곳(`well`, `shrine`, `tavern`, `gate`, `home`)의 위치 영역(임시 지도는 E-08-07이 안내용 고정 좌표를 넣음) | B-10-02 |
 | 장소 아이콘 | 5개(**임시 유지**) | `Place` 값 1:1 | 진술표·아침 발표·지도 |
 | UI 아이콘 | 10개(**임시 유지**, 11/4 PM 결정): 점괘 맑음, 점괘 탁함, 금줄(감금), 투표, 의심, 감싸기, 캐묻기, 고백, 실종(짚신), 수첩. 아이콘 ID와 목록 원본은 `docs/assets/spec.md`(E-05-05) | 아이콘 ID 1:1 | B 화면 |
-| 가상 광고주 소재 | (**임시 유지**) `campaigns.json`의 소재 전부(현재 5개: `cr_gukbap_a`, `cr_gukbap_b`, `cr_bujeok`, `cr_yakcho`, `cr_gat`) × 소재가 나가는 지면 규격(728×90: `lobby_banner`·`result_banner`, 300×250: `llm_wait`·`review_side`. P-19 잠정 확정) | `creative_id` × 지면 규격 1:1 | D 광고 서버(`image_path`), B 지면 |
+| 가상 광고주 소재 | (**임시 유지**) `campaigns.json`의 소재 전부(현재 5개: `cr_gukbap_a`, `cr_gukbap_b`, `cr_bujeok`, `cr_yakcho`, `cr_gat`) × 소재가 나가는 지면 규격(728×90: `lobby_banner`·`result_banner`, 300×250: `review_side`. P-19 잠정 확정, `llm_wait`은 11/6 삭제) | `creative_id` × 지면 규격 1:1 | D 광고 서버(`image_path`), B 지면 |
 | 발표용 이미지 | S-10-01 구성안이 요구하는 수(표지, 장면 삽화) | 슬라이드 번호 | S-11-06 |
 | 마스코트 | 2장(11/5 PM 결정 P-21): 까치 `kkachi`(아침 소식), 족제비 `jokjebi`(무당의 짝, 안내). 표정 없음. 연출·안내만 하고 새 정보를 주지 않음. 로고는 만들지 않는다 | 마스코트 ID 1:1 | 까치는 아침 희생자 발표, 족제비는 안내·도움말(B-10-07) |
 

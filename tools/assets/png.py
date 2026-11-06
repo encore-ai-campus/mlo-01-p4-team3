@@ -1,7 +1,9 @@
 """PNG 쓰기·읽기(표준 라이브러리만, 인프라). 쓰기는 8비트 RGB/RGBA, zlib 9(같은 입력이면 같은 바이트).
 필터는 기본 0(임시 그림), `optimize=True`면 행마다 0·1·2·4 중 절댓값 합이 가장 작은 것(실제 sprite에서 파생한 초상이
 용량 상한 512,000바이트를 지키도록).
-읽기(`decode`)는 8비트 RGB/RGBA, 인터레이스 없음, 필터 0~4를 지원한다(생성 도구가 만든 실제 sprite를 크롭할 때 쓴다)."""
+읽기(`decode`)는 8비트 RGB/RGBA, 인터레이스 없음, 필터 0~4를 지원한다(생성 도구가 만든 실제 sprite를 크롭할 때 쓴다).
+같은 픽셀이라도 zlib 구현(표준 zlib, Windows 공식 Python의 zlib-ng 등)에 따라 압축 바이트가 다를 수 있다.
+임시 그림이 같은지는 `same_image`(해상도·채널·디코드 픽셀)로 본다."""
 from __future__ import annotations
 
 import struct
@@ -52,6 +54,51 @@ def encode_rgb(width: int, height: int, rows: Sequence[bytes], optimize: bool = 
 def encode_rgba(width: int, height: int, rows: Sequence[bytes], optimize: bool = False) -> bytes:
     """RGBA 행(각 가로 × 4바이트) → PNG 바이트(투명 sprite). optimize면 행마다 필터를 골라 작게(느림)."""
     return _encode(width, height, rows, 4, 6, optimize)
+
+
+_PLAIN_CHUNKS = {b"IHDR", b"IDAT", b"IEND", b"tEXt", b"zTXt", b"iTXt"}   # 픽셀 해석을 바꾸지 않는 청크(글자 정보만)
+
+
+def _chunks(data: bytes) -> list[tuple[bytes, bytes]]:
+    """PNG 청크 목록 [(태그, 본문)]. 서명·길이·CRC가 맞고 IHDR로 시작해 IEND로 끝나야 한다. 아니면 ValueError."""
+    if not data.startswith(SIGNATURE):
+        raise ValueError("PNG 서명 아님")
+    pos, out = 8, []
+    while pos < len(data):
+        if pos + 12 > len(data):
+            raise ValueError("청크가 잘림")
+        (length,) = struct.unpack(">I", data[pos:pos + 4])
+        tag, body = data[pos + 4:pos + 8], data[pos + 8:pos + 8 + length]
+        if len(body) != length or pos + 12 + length > len(data):
+            raise ValueError("청크가 잘림")
+        (crc,) = struct.unpack(">I", data[pos + 8 + length:pos + 12 + length])
+        if crc != zlib.crc32(tag + body) & 0xFFFFFFFF:
+            raise ValueError(f"CRC 불일치 {tag!r}")
+        out.append((tag, body))
+        pos += 12 + length
+    if not out or out[0][0] != b"IHDR" or out[-1][0] != b"IEND":
+        raise ValueError("IHDR로 시작하고 IEND로 끝나야 함")
+    return out
+
+
+def same_image(a: bytes, b: bytes) -> bool:
+    """두 PNG가 같은 그림인지: 해상도·채널(IHDR)과 디코드한 픽셀이 같으면 True. 압축 바이트 차이는 무시한다.
+
+    두 파일 모두 구조가 온전하고(CRC·IHDR·IEND) 픽셀 해석을 바꾸는 청크(tRNS·PLTE·gAMA 등)가 없어야 한다. 글자 청크는 허용.
+    압축을 푼 바이트(필터 포함)가 같으면 같음. 다르면 필터가 달라도 픽셀이 같을 수 있어 `decode`로 행을 비교한다.
+    어느 한쪽이라도 PNG가 아니거나 읽을 수 없으면 False.
+    """
+    try:
+        ca, cb = _chunks(a), _chunks(b)
+        if any(tag not in _PLAIN_CHUNKS for tag, _ in ca + cb) or ca[0][1] != cb[0][1]:
+            return False
+        if a == b:
+            return True
+        raw_a = zlib.decompress(b"".join(body for tag, body in ca if tag == b"IDAT"))
+        raw_b = zlib.decompress(b"".join(body for tag, body in cb if tag == b"IDAT"))
+        return raw_a == raw_b or decode(a) == decode(b)
+    except (ValueError, zlib.error, struct.error):
+        return False
 
 
 def _paeth(a: int, b: int, c: int) -> int:
