@@ -1,5 +1,6 @@
 # B 웹·API 태스크
 
+- 기획서 절 번호: 이 문서의 "기획서 N.N"은 **v1.1 번호**다. 기획서 v1.2와 번호가 겹치므로(예: v1.1 6.3 VM 배치 ≠ v1.2 6.3 시뮬레이션) 기획서 부록 B 대응표로 찾는다(P-28).
 - 담당자: 김영주 · 노트북: 4
 - 폴더: `server/`(Django 프로젝트, `server/api` 표현, `server/app` 응용), `web/`(템플릿·정적 파일). `server/app`은 Django를 import하지 않는다(`test_layers.py`).
 - 늘 볼 문서: `docs/contracts/api.md`, `ports.md` 2·4·5절, `privacy.md`, 기획서 4.5·6.1·8.4.

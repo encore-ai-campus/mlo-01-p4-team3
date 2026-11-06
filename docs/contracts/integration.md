@@ -18,9 +18,9 @@
 
 ## 2. 실행 단위
 
-통합 환경(VM)의 배치 원본은 기획서 6.3이다. 개발 환경은 각자 PC의 Docker Compose(`paldo-dev`, C-05-03)이고, AWS 범위는 결정 대기(P-05)다.
+통합 환경(VM)의 배치 원본은 `ops/runbook/vm_roles.md`다(11/6 기획서 v1.1 6.3에서 옮김). 개발 환경은 각자 PC의 Docker Compose(`paldo-dev`, C-05-03)이고, AWS 범위는 결정 대기(P-05)다.
 
-| 실행 단위 | 코드 | VM(기획서 6.3) | 담당 |
+| 실행 단위 | 코드 | VM(`vm_roles.md`) | 담당 |
 |---|---|---|---|
 | 게임 웹(Django) | `server/`, `web/`, 같은 프로세스 안에 `engine/`. `intent/`, `ml/adapters/`도 같은 프로세스에서 import해 먼저 시험한다(결정 #4. 환경 실패나 p95 초과면 분리) | app-01 | B |
 | 게임 아웃박스 발행기 | `server/infra/outbox_publisher.py` | app-01 | C |
