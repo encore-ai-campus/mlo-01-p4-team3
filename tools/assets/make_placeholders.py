@@ -86,6 +86,15 @@ def _placeholder_png_cached(kind: str, cid: str, width: int, height: int, name: 
     return _encode(channels, width, height, rows)
 
 
+def _keep_existing(existing: bytes, max_bytes: int) -> bool:
+    """새로 만든 그림과 같은 그림(`png.same_image`: 해상도·채널·디코드 픽셀)인 기존 임시 PNG를 그대로 둘지: 규격 용량 상한 이내면 둔다.
+
+    zlib 구현(표준 zlib·zlib-ng)마다 압축 바이트가 달라도 커밋된 파일과 그 SHA-256을 바꾸지 않는다. 상한을 넘으면 다시 쓴다
+    (상한은 파일 바이트 기준. 크기·채널은 `same_image`가 이미 같다고 본 것).
+    """
+    return len(existing) <= max_bytes
+
+
 def _real_sprite_rows(repo: Path, entry: AssetEntry) -> list:
     """실제 sprite(`placeholder: false`) 파일을 읽어 초상을 자를 RGBA 행을 돌려준다."""
     p = repo / entry.path
@@ -114,7 +123,8 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
         rederive_portraits: bool = False) -> RunResult:
     """임시 세트를 만들고(write=False면 건너뜀) 기대 ↔ manifest ↔ 파일을 대조한다.
 
-    `placeholder: true` 항목이라도 디스크의 파일이 지금 만들 임시 그림과 다르면 덮어쓰지 않고
+    디스크의 임시 파일이 지금 만들 그림과 같은 그림(해상도·채널·디코드 픽셀)이고 용량 상한 이내면 압축 바이트가 달라도 그대로 둔다.
+    `placeholder: true` 항목이라도 디스크의 파일이 지금 만들 임시 그림과 다른 그림이면 덮어쓰지 않고
     `protected_files`로 보고한다(실제 파일을 넣고 표시를 안 바꾼 경우). `force=True`면 덮어쓴다.
     `rederive_portraits=True`면 `placeholder: true`인 초상만 내용이 달라도 sprite 파생으로 다시 쓴다
     (흉상 생성기 → sprite 크롭으로 바꾼 1회 이전용. 실제 초상·다른 유형은 보호 그대로).
@@ -165,7 +175,12 @@ def run(repo: Path, spec_path: Path = sources.SPEC_PATH, bundle_path: Path = sou
         if len(data) > spec.max_bytes_for(e.kind):
             raise SpecError(f"{e.path}: {len(data)}바이트 > 상한 {spec.max_bytes_for(e.kind)}")
         current = repo / e.path
-        if current.is_file() and current.read_bytes() != data:
+        same = current.is_file() and not from_real and png.same_image(current.read_bytes(), data)
+        if same and _keep_existing(current.read_bytes(), spec.max_bytes_for(e.kind)):
+            final.append(target)            # 같은 그림이 이미 있음(압축 바이트만 다를 수 있음): 파일 바이트·SHA 보존
+            written += 1
+            continue
+        if current.is_file() and not same and current.read_bytes() != data:   # 같은 그림인데 상한 초과면 그대로 다시 쓴다
             # 임시 그림은 결정적이라, 내용이 다르면 표시(placeholder)를 안 바꾼 실제 파일일 수 있다
             was_placeholder = old is None or old.placeholder
             # 실제 표시(placeholder: false) 파일은 --force로도 덮어쓰지 않는다

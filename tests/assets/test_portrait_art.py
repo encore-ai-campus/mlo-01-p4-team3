@@ -100,7 +100,7 @@ class SilhouetteTest(unittest.TestCase):
                 pa.render("jumo", w, h)
 
     def test_committed_files_match_generator(self):
-        """커밋된 임시 sprite·초상이 지금 생성기와 같은 바이트다(표시가 true인 것만)."""
+        """커밋된 임시 sprite·초상이 지금 생성기와 같은 그림이다(표시가 true인 것만). 해상도·채널·디코드 픽셀로 비교(zlib 차이 허용)."""
         spec = sources.load_spec()
         seen = 0
         labels = dict(spec.expressions)
@@ -113,7 +113,7 @@ class SilhouetteTest(unittest.TestCase):
                 data = png.encode_rgba(e.width, e.height, pa.render_sprite(*args))
             else:
                 data = png.encode_rgb(e.width, e.height, pa.render(*args))
-            self.assertEqual((ROOT / e.path).read_bytes(), data, e.path)
+            self.assertTrue(png.same_image((ROOT / e.path).read_bytes(), data), e.path)
             seen += 1
         self.assertEqual(seen, 74)          # 인물 13 + 표정 변형 24, sprite·초상 각각
 
