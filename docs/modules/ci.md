@@ -84,7 +84,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | `PRECHECK_PR_BODY` | - | `precheck --pr-body`가 `check_evidence --pr-body-env`에 넘기는 환경 변수 | 이름을 바꾸면 `tools/precheck.py`의 `PR_BODY_ENV`도 같이 |
 | `core.hooksPath` | `.githooks` | git 훅 폴더(각 clone에서 한 번 설정) | 설정하지 않으면 push 때 자동 검사가 돌지 않는다 |
 | `PALDO_LOG_DIR` | `out/logs` | 구조화 로그 파일 폴더(`ci.jsonl`) | 로그만 옮겨진다. 검사 결과와 무관 |
-| `tools/secrets_allowlist.txt` | 3항목(11/5 `ci.yml` 삭제로 1항목 제거) | 한 줄에 경로·키 이름·사유(`\|`로 구분). 그 파일의 그 키만 허용 | 항목 추가는 PR 승인(⑧)으로 통제. 걸리지 않는 항목은 죽은 예외로 실패 |
+| `tools/secrets_allowlist.txt` | 2항목(11/5 CI 폐지로 `ci.yml`과 E_pm.md 워크플로 예시 항목 제거) | 한 줄에 경로·키 이름·사유(`\|`로 구분). 그 파일의 그 키만 허용 | 항목 추가는 PR 승인(⑧)으로 통제. 걸리지 않는 항목은 죽은 예외로 실패 |
 | 허용 폴더 목록 | `docs/contracts/structure.md` 6절 펜스 블록 | `dir/` = 그 폴더만, `dir/**` = 아래 전부. 루트 파일은 늘 허용 | 폴더 추가는 PM 승인 후 이 목록과 1절 트리를 같이 고친다 |
 | `tests/fixtures/secrets/` | - | 탐지 테스트용 가짜 값. 비밀정보 검사에서 이 폴더만 제외 | 다른 폴더에 가짜 값을 두면 검사가 실패한다 |
 | base 커밋 | `origin/dev`와 HEAD의 merge-base(`--base`로 지정) | 변경분 비교 기준 | 못 구하면 문서·증빙 단계 실패. `git fetch origin` 뒤 다시 |
