@@ -1,5 +1,6 @@
 # E PM 태스크 (콘텐츠·LLM·에셋·테스트, 통합 주관)
 
+- 기획서 절 번호: 이 문서의 "기획서 N.N"은 **v1.1 번호**다. 기획서 v1.2와 번호가 겹치므로(예: v1.1 6.3 VM 배치 ≠ v1.2 6.3 시뮬레이션) 기획서 부록 B 대응표로 찾는다(P-28).
 - 담당자: PM · 노트북: 3, 2(관리)
 - 폴더: `content/`(인물·비밀·단서·템플릿), `content/images/`(임시 파일·`manifest.json`. 실제 파일·`SOURCES.md` 생성 기록은 A), `docs/assets/`(스타일 가이드·규격), `tools/assets/`(`make_placeholders.py`, `check_assets.py`. 투명 바탕 처리 `cutout.py`는 A), `llm/`(LLM 서비스, LangGraph), `.github/workflows/`, `tools/check_evidence.py`, `tools/check_docs.py`, `tools/check_secrets.py`, `tools/evidence_result.py`
 - 늘 볼 문서: `docs/contracts/content.md`, `ports.md` 4절, `privacy.md`, 기획서 3·7·10장.
