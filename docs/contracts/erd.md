@@ -77,7 +77,7 @@ erDiagram
     PlayerProgress |o..o{ GameDocument : "game_ids(사람 판만)"
 ```
 
-- 상태·진실·아웃박스·명령 기록은 `GameRepository.commit` 한 번에 **같은 문서에 원자적으로** 쓴다. 상태를 바꾸지 않는 이벤트(해석 시도, 카드 반응, 수첩, 설문, 렌더 결과)는 `append_events`로 같은 아웃박스에 `dedup_key` 멱등으로 넣는다. `seq`·`event_id`는 저장소가 `next_seq`로 매긴다([ports.md](ports.md) 1절, [기획서](../paldo_design_v1.md) v1.2 4.3).
+- 상태·진실·아웃박스·명령 기록은 `GameRepository.commit` 한 번에 **같은 문서에 원자적으로** 쓴다. 상태를 바꾸지 않는 이벤트(해석 시도, 카드 반응, 수첩, 설문, 렌더 결과)는 `append_events`로 같은 아웃박스에 `dedup_key` 멱등으로 넣는다. `seq`·`event_id`는 저장소가 `next_seq`로 매긴다([ports.md](ports.md) 1절, [기획서](../paldo_design_v1.md) v1.3 5.3).
 - `PublicRecord`에는 그림의 네 가지 외에 `LockRecord`, `DisappearanceRecord`, `TellRecord`도 들어 있다(그림을 줄이려고 뺐다). `NpcState`는 다시 비공개 지식(`PrivateKnowledge`, 목격 `Sighting`), 믿음(`Beliefs`), 런타임(`NpcRuntime`)을 품는다([domain.md](domain.md), `engine/domain/model.py`).
 - `GameTruth`는 브라우저 응답·관측에 섞이지 않는다. 진실 이벤트(`paldo.truth`)는 판이 끝난 뒤에만 나간다([events.md](events.md) 3절).
 - `GameMeta.player_pseudonym`은 사람 판에만 있다(시뮬레이션 판은 없음). `PlayerProgress`는 가명 ID별 진행 상태(단서, 결말 해금, 본 고백)로 판 문서와 별도로 저장하고, 원천 이벤트 ID(`source_event_id`)로 멱등하게 갱신한다(`ProgressRepository`).
@@ -234,7 +234,7 @@ flowchart LR
 | `PseudonymMap`(세션 가명 ↔ 플레이어 가명 대응표)의 저장소와 이름 | "서버에 저장"만 정해졌다 | B-06-03 4-1, C-09-02 |
 | 계정 프로필 실제 모델 이름과 잠금 상태 저장 방식 | `server/accounts/models.py`가 아직 없다 | B-06-04 |
 | 광고 MySQL 실제 테이블 구성(광고주·캠페인·지면 정책·버전 행을 각각 테이블로 둘지) | `ads/infra/schema.sql`이 아직 없다. 4절은 `ads/domain/model.py`·`rules.py` 클래스 기준 | D-06-02 |
-| `PlayerProgress`를 어떤 컬렉션에 둘지 | 기획서 v1.2 4.4에 mongo-01~03이 "플레이어 상태"를 맡는다고만 있다 | C-06-01 |
+| `PlayerProgress`를 어떤 컬렉션에 둘지 | `ops/runbook/vm_roles.md`에 mongo-01~03이 "플레이어 상태"를 맡는다고만 있다 | C-06-01 |
 | 테스트 세션(`session_id`)과 고정 시드 판 목록의 저장 위치 | 운영자가 만들고 지정한다(B-06-03 3) | B-06-03 |
 | 설문·복기, LLM 작업(`job_id`)·의도 해석 시도(`attempt_id`)의 조회용 저장 구조 | 이벤트는 판 아웃박스(`append_events`)에 들어간다. 따로 조회용 저장 구조를 둘지는 미정 | B·C 해당 태스크 |
 | 멱등 기록의 배치: `append_events`의 `dedup_key`, `PlayerProgress`가 반영한 `source_event_id` | 멱등 동작은 정해졌다(`engine/ports.py`). 판 문서·진행 문서 안에 둘지 따로 둘지는 미정 | C-06-01 |

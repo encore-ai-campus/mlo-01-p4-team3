@@ -1,6 +1,6 @@
 # 광고 시스템 계약 (D 소유: ads/ 전체)
 
-기획서: `../paldo_design_v1.md` 8장(v1.1의 14장. 크로스체크 6을 반영한 판). 코드 기준은 다음 세 파일이다.
+기획서: `../paldo_design_v1.md` 9장(v1.2의 8장, v1.1의 14장. 크로스체크 6을 반영한 판). 코드 기준은 다음 세 파일이다.
 - `ads/domain/model.py`: 데이터
 - `ads/domain/rules.py`: 규칙
 - `ads/domain/events.py`: 이벤트

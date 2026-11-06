@@ -1,6 +1,6 @@
 # C 인프라/파이프라인 태스크
 
-- 기획서 절 번호: 이 문서의 "기획서 N.N"은 **v1.1 번호**다. 기획서 v1.2와 번호가 겹치므로(예: v1.1 6.3 VM 배치 ≠ v1.2 6.3 시뮬레이션) 기획서 부록 B 대응표로 찾는다(P-28).
+- 기획서 절 번호: 이 문서의 "기획서 N.N"은 **v1.1 번호**다. 지금 기획서(v1.3)와 번호가 겹치므로(예: v1.1 6.3 VM 배치 ≠ v1.3 6.3 모델 선정) `docs/design_notes.md` 4절 대응표로 찾는다(P-28).
 - 담당자: 신성민 · 노트북: 1
 - 폴더: `server/infra/`(Mongo 저장소, 아웃박스 발행기, 어댑터), `pipeline/`(Kafka 소비자, Spark 작업), `ops/`(Compose, Ansible, k3s, Prometheus·Grafana, AWS, 런북)
 - 늘 볼 문서: `docs/contracts/ports.md` 1·2절, `events.md`, `ads.md` 5·7절, `ml_lifecycle.md` 5절, `tech_stack.md`, 기획서 6.2·6.3·14.4·14.7.
