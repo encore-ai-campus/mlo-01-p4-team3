@@ -6,10 +6,13 @@
 """
 from __future__ import annotations
 
-RULE_PARAMS_VERSION = "rule-0.2"   # 0.2: 실행자 거짓 행적을 고정 장소(집)에서 반박되지 않는 공공장소 무작위 선택으로 바꿈
+RULE_PARAMS_VERSION = "rule-0.3"   # 0.2: 실행자 거짓 행적을 고정 장소(집)에서 반박되지 않는 공공장소 무작위 선택으로 바꿈. 0.3: 기색 확률 TELL_PROB 추가
 
 # 같은 시간대·같은 공공장소에 있던 두 사람이 서로를 목격할 확률(쌍마다 한 번 뽑고 서로 본다, domain.md 5절 3).
 WITNESS_PROB = 0.7   # 초기값, A-08-03에서 조정
+
+# 거짓 사실 주장(행적·목격·비목격)에 기색이 보일 확률. 주장 ID당 한 번 판정하고 고정한다(domain.md 6-1).
+TELL_PROB = 0.5      # 11/6 PM 잠정, 근거 문서 없음, A-08-03에서 조정
 
 # 배정 검증기 위반이 나오면 파생 시드로 다시 뽑는 최대 횟수(domain.md 10절). 넘으면 콘텐츠 부족으로 본다.
 ASSIGNMENT_MAX_ATTEMPTS = 200

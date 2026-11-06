@@ -579,8 +579,10 @@ class Interrogation(unittest.TestCase):
         st, tr = drive_to(self, engine, st, tr, Phase.INTERROGATION)
         st, tr, _ = step(self, engine, st, tr, CommandKind.INTERROGATE, addressee="blacksmith",
                          interrogation_kind=InterrogationKind.WHEREABOUTS, night=1, slot=Slot.MIDNIGHT)
-        c = st.public.claims[-1]
-        self.assertEqual((c.speaker, c.night, c.slot, c.place.value), ("blacksmith", 1, Slot.MIDNIGHT, "shrine"))
+        (cid,) = st.public.speeches[-1].claim_ids          # A-06-01: 2일째 아침 진술을 되풀이한다
+        c = next(x for x in st.public.claims if x.claim_id == cid)
+        self.assertEqual((c.speaker, c.night, c.slot, c.place.value, c.day),
+                         ("blacksmith", 1, Slot.MIDNIGHT, "shrine", 2))
         self.assertEqual(tr.claim_truths[c.claim_id].is_true, tr.whereabouts[1]["blacksmith"][Slot.MIDNIGHT].value == "shrine")
 
 
