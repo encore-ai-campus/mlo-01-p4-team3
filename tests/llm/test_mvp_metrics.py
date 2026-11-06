@@ -167,23 +167,35 @@ class StyleExamples(unittest.TestCase):
             self.assertIsNot(prompt.style_profile(c["speech_style"]), prompt.DEFAULT_PROFILE, c["speech_style"])
 
     def test_example_lines_pass_validator(self):
+        """모든 계열 × 반응 × 앞말 후보 × 뒷말 후보 조합의 예시 대사가 검증기를 통과한다(v4, 11/6)."""
         from llm import prompt
-        profiles = [p[1:] for p in prompt.STYLE_PROFILES] + [prompt.DEFAULT_PROFILE]
-        for prefix, endings, tails in profiles:
+        rows = [(p[0][0], p[1:]) for p in prompt.STYLE_PROFILES] + [("", prompt.DEFAULT_PROFILE)]
+        for style, (prefixes, endings, tails) in rows:
+            self.assertEqual(set(tails), set(prompt.REACTION_KO))
+            persona = f"예시. 말투: {style}" if style else ""
             for reaction in prompt.REACTION_KO:
-                self.assertEqual(set(tails), set(prompt.REACTION_KO))
-                style = next((p[0][0] for p in prompt.STYLE_PROFILES if p[1] == prefix), "")
-                fact, line = prompt.example_pair(style, reaction)
-                self.assertNotIn(fact, line) if endings[0] != "소" else self.assertIn(fact, line)
-                persona = f"예시. 말투: {style}" if style else ""
-                r = v.validate(line, {"fact_sentence": fact, "allowed_names": [], "persona": persona}, LEX)
-                self.assertTrue(r.ok, f"{prefix} {reaction}: {line} {r.details}")
+                for pick in range(len(prefixes) * len(tails[reaction])):
+                    fact, line = prompt.example_pair(style, reaction, pick)
+                    self.assertNotIn(fact, line) if endings[0] != "소" else self.assertIn(fact, line)
+                    r = v.validate(line, {"fact_sentence": fact, "allowed_names": [], "persona": persona}, LEX)
+                    with self.subTest(style=style, reaction=reaction, pick=pick):
+                        self.assertTrue(r.ok, f"{line} {r.details}")
 
-    def test_child_example_differs_from_default(self):
+    def test_pick_covers_every_candidate(self):
+        from llm import prompt
+        prefixes, _, tails = prompt.style_profile("어린아이 말투")
+        lines = {prompt.example_pair("어린아이 말투", "explain", k)[1] for k in range(len(prefixes) * 2)}
+        self.assertEqual(len(lines), len(prefixes) * len(tails["explain"]))   # 앞말·뒷말 조합이 모두 다르다
+        self.assertTrue(any(not x.startswith("히잉") for x in lines))
+
+    def test_child_examples_vary_by_speech_id(self):
+        """같은 발언 ID면 같은 예시(재현), 발언마다는 앞말이 달라진다(아이 말투에 '히잉'만 나오지 않게, 11/6)."""
         from llm.prompt import build_messages as bm
-        req = dict(CASES[0]["request"], persona="아이. 말투: 어린아이 말투", reaction="explain")
-        self.assertIn("히잉", bm(req)[2]["content"])
-        self.assertIn("방앗간에 있었어요.", bm(req)[2]["content"])   # 사실 문장 끝 어미도 아이 말투(v3)
+        base = dict(CASES[0]["request"], persona="아이. 말투: 어린아이 말투", reaction="explain")
+        ex = {sid: bm(dict(base, speech_id=sid))[2]["content"] for sid in (f"sp_{k}" for k in range(20))}
+        self.assertEqual(bm(dict(base, speech_id="sp_3"))[2]["content"], ex["sp_3"])
+        self.assertGreaterEqual(len({line.split(" 4일째")[0] for line in ex.values()}), 3)
+        self.assertTrue(all("있었어요" in line for line in ex.values()))   # 끝 어미는 계열 어미 그대로
 
 
 class Consistency(unittest.TestCase):
