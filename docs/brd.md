@@ -1,7 +1,7 @@
 # BRD · 팔도무록: 귀신이 숨어든 마을
 
 > 작성 규칙: 실제 접속 정보(IP, 계정, 비밀번호, 키)와 개인정보는 쓰지 않는다. 담당자 실명은 쓰지 않고 역할 ID로만 부른다. 시장 규모·이용자 수·매출 같은 수치는 근거 없이 쓰지 않고 "검증할 가정"으로만 적는다.
-> 근거 문서: 기획서 `paldo_design_v1.md`(v1.2. 11/6 구성 정리, v1.1 절 번호는 기획서 부록 B), 계약 `contracts/`, 결정 대기 목록 `tasks/README.md` 7절. 요구사항·합격 기준·태스크 연결은 `prd.md`(`PRD-PALDO-001`).
+> 근거 문서: 기획서 `paldo_design_v1.md`(v1.3. 11/6 구성 정리, 이전 판 절 번호 대응표·설계 결정 기록은 `design_notes.md`), 계약 `contracts/`, 결정 대기 목록 `tasks/README.md` 7절. 요구사항·합격 기준·태스크 연결은 `prd.md`(`PRD-PALDO-001`).
 
 - document_id: `BRD-PALDO-001`
 - version: `v1`
