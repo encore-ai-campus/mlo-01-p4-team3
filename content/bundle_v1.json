@@ -367,7 +367,8 @@
       "temperament_id": null,
       "reaction": null,
       "variants": [
-        "{target}은(는) 그럴 사람이 아니오."
+        "{target}은(는) 그럴 사람이 아니오.",
+        "{target}을(를) 의심할 까닭은 없다고 보오."
       ]
     },
     {
@@ -376,7 +377,8 @@
       "temperament_id": null,
       "reaction": null,
       "variants": [
-        "두 사람 말이 서로 맞지 않소."
+        "두 사람 말이 서로 맞지 않소.",
+        "앞서 나온 말과 지금 말이 어긋나오."
       ]
     },
     {
@@ -385,7 +387,8 @@
       "temperament_id": null,
       "reaction": null,
       "variants": [
-        "나는 귀신과 상관없소."
+        "나는 귀신과 상관없소.",
+        "나는 떳떳하오. 숨길 것이 없소."
       ]
     },
     {
@@ -394,7 +397,8 @@
       "temperament_id": null,
       "reaction": null,
       "variants": [
-        "……"
+        "……",
+        "……할 말이 없소."
       ]
     },
     {
@@ -403,7 +407,8 @@
       "temperament_id": null,
       "reaction": null,
       "variants": [
-        "간밤 {target}의 점괘는 {result}였소."
+        "간밤 {target}의 점괘는 {result}였소.",
+        "{target}을(를) 점쳐 보니 {result}로 나왔소."
       ]
     },
     {
@@ -412,7 +417,8 @@
       "temperament_id": null,
       "reaction": null,
       "variants": [
-        "{night}일째 밤 {slot}엔 {place}에 있었소."
+        "{night}일째 밤 {slot}엔 {place}에 있었소.",
+        "{night}일째 밤 {slot}, 나는 {place}에 있었소."
       ]
     },
     {
@@ -421,7 +427,8 @@
       "temperament_id": null,
       "reaction": "explain",
       "variants": [
-        "{fact}"
+        "{fact}",
+        "{fact} 내가 아는 건 그게 다요."
       ]
     },
     {
@@ -430,7 +437,8 @@
       "temperament_id": null,
       "reaction": "evade",
       "variants": [
-        "{fact} …더 묻지 마시오."
+        "{fact} …더 묻지 마시오.",
+        "{fact} 그 이상은 묻지 말아 주시오."
       ]
     },
     {
@@ -439,7 +447,8 @@
       "temperament_id": "hothead",
       "reaction": "counter",
       "variants": [
-        "{fact} 그러는 무당 양반은 어디 있었소?"
+        "{fact} 그러는 무당 양반은 어디 있었소?",
+        "{fact} 왜 나만 붙잡고 늘어지는 거야!"
       ]
     },
     {
@@ -448,7 +457,368 @@
       "temperament_id": null,
       "reaction": "confess",
       "variants": [
-        "{fact}"
+        "{fact}",
+        "…사실대로 말하겠소. {fact}"
+      ]
+    },
+    {
+      "template_id": "t_ans_counter_common",
+      "kind": "interrogate",
+      "temperament_id": null,
+      "reaction": "counter",
+      "variants": [
+        "{fact} 그런데 어째서 나만 캐묻는 거요?",
+        "{fact} 묻는 쪽도 떳떳한지 모르겠소."
+      ]
+    },
+    {
+      "template_id": "t_suspect_scholar",
+      "kind": "suspect",
+      "temperament_id": "scholar",
+      "reaction": null,
+      "variants": [
+        "{target}의 말은 아무리 따져 보아도 이치에 닿지 않소.",
+        "{target}을(를) 좀 더 지켜보아야 하겠소."
+      ]
+    },
+    {
+      "template_id": "t_defend_scholar",
+      "kind": "defend",
+      "temperament_id": "scholar",
+      "reaction": null,
+      "variants": [
+        "{target}을(를) 의심할 근거는 아직 없소.",
+        "근거 없이 {target}을(를) 몰아세우는 것은 옳지 않소."
+      ]
+    },
+    {
+      "template_id": "t_contra_scholar",
+      "kind": "point_contradiction",
+      "temperament_id": "scholar",
+      "reaction": null,
+      "variants": [
+        "앞의 말과 뒤의 말이 맞지 않으니 짚고 넘어가야 하겠소.",
+        "말의 앞뒤를 맞춰 보면 어긋나는 데가 있소."
+      ]
+    },
+    {
+      "template_id": "t_explain_scholar",
+      "kind": "explain",
+      "temperament_id": "scholar",
+      "reaction": null,
+      "variants": [
+        "나는 부끄러운 일을 한 적이 없소.",
+        "의심은 이해하나, 나는 떳떳하오."
+      ]
+    },
+    {
+      "template_id": "t_silence_scholar",
+      "kind": "silence",
+      "temperament_id": "scholar",
+      "reaction": null,
+      "variants": [
+        "……지금은 말을 아끼겠소.",
+        "……더 들어 보고 말하리다."
+      ]
+    },
+    {
+      "template_id": "t_ans_explain_scholar",
+      "kind": "interrogate",
+      "temperament_id": "scholar",
+      "reaction": "explain",
+      "variants": [
+        "{fact} 그 이상도 이하도 아니오.",
+        "차분히 말하리다. {fact}"
+      ]
+    },
+    {
+      "template_id": "t_ans_evade_scholar",
+      "kind": "interrogate",
+      "temperament_id": "scholar",
+      "reaction": "evade",
+      "variants": [
+        "{fact} 나머지는 지금 말할 때가 아니오.",
+        "{fact} 더 캐묻는 것은 예의가 아니오."
+      ]
+    },
+    {
+      "template_id": "t_ans_counter_scholar",
+      "kind": "interrogate",
+      "temperament_id": "scholar",
+      "reaction": "counter",
+      "variants": [
+        "{fact} 그렇게 묻는 까닭부터 들어 봅시다.",
+        "{fact} 의심하려면 근거를 먼저 대시오."
+      ]
+    },
+    {
+      "template_id": "t_ans_confess_scholar",
+      "kind": "interrogate",
+      "temperament_id": "scholar",
+      "reaction": "confess",
+      "variants": [
+        "더는 감출 수 없구려. {fact}",
+        "부끄럽지만 바로 말하겠소. {fact}"
+      ]
+    },
+    {
+      "template_id": "t_suspect_keen",
+      "kind": "suspect",
+      "temperament_id": "keen",
+      "reaction": null,
+      "variants": [
+        "{target}, 아까부터 눈빛이 영 수상한데?",
+        "내 눈은 못 속이네. {target}이(가) 뭔가 숨기고 있어."
+      ]
+    },
+    {
+      "template_id": "t_defend_keen",
+      "kind": "defend",
+      "temperament_id": "keen",
+      "reaction": null,
+      "variants": [
+        "{target}은(는) 아니야. 그건 내가 보증하지.",
+        "에이, {target}을(를) 잡아 봐야 헛다리일세."
+      ]
+    },
+    {
+      "template_id": "t_contra_keen",
+      "kind": "point_contradiction",
+      "temperament_id": "keen",
+      "reaction": null,
+      "variants": [
+        "어라, 방금 한 말이랑 아까 한 말이 다른데?",
+        "말이 왔다 갔다 하는구먼. 내가 다 듣고 있었네."
+      ]
+    },
+    {
+      "template_id": "t_explain_keen",
+      "kind": "explain",
+      "temperament_id": "keen",
+      "reaction": null,
+      "variants": [
+        "나 말인가? 괜한 데 힘 빼지 말게.",
+        "날 의심하는 건 헛수고일세."
+      ]
+    },
+    {
+      "template_id": "t_silence_keen",
+      "kind": "silence",
+      "temperament_id": "keen",
+      "reaction": null,
+      "variants": [
+        "……지금은 듣기만 하겠네.",
+        "……흠, 좀 더 두고 보지."
+      ]
+    },
+    {
+      "template_id": "t_ans_explain_keen",
+      "kind": "interrogate",
+      "temperament_id": "keen",
+      "reaction": "explain",
+      "variants": [
+        "{fact} 시원하게 말했으니 됐지?",
+        "숨길 거 없네. {fact}"
+      ]
+    },
+    {
+      "template_id": "t_ans_evade_keen",
+      "kind": "interrogate",
+      "temperament_id": "keen",
+      "reaction": "evade",
+      "variants": [
+        "{fact} 그 얘긴 이쯤 해 두세.",
+        "{fact} 에이, 더 물어 뭐 하나."
+      ]
+    },
+    {
+      "template_id": "t_ans_counter_keen",
+      "kind": "interrogate",
+      "temperament_id": "keen",
+      "reaction": "counter",
+      "variants": [
+        "{fact} 그러는 자네는 그때 뭘 했나?",
+        "{fact} 남 캐기 전에 자기 얘기부터 해 보게."
+      ]
+    },
+    {
+      "template_id": "t_ans_confess_keen",
+      "kind": "interrogate",
+      "temperament_id": "keen",
+      "reaction": "confess",
+      "variants": [
+        "에휴, 들켰구먼. {fact}",
+        "이제 와서 숨겨 뭐 하겠나. {fact}"
+      ]
+    },
+    {
+      "template_id": "t_suspect_hothead",
+      "kind": "suspect",
+      "temperament_id": "hothead",
+      "reaction": null,
+      "variants": [
+        "{target}! 너지?",
+        "{target}, 수상하다. 딱 보면 안다!"
+      ]
+    },
+    {
+      "template_id": "t_defend_hothead",
+      "kind": "defend",
+      "temperament_id": "hothead",
+      "reaction": null,
+      "variants": [
+        "{target}은(는) 아니다! 괜히 몰지 마!",
+        "{target}을(를) 건드리지 마라. 그런 사람 아니다."
+      ]
+    },
+    {
+      "template_id": "t_contra_hothead",
+      "kind": "point_contradiction",
+      "temperament_id": "hothead",
+      "reaction": null,
+      "variants": [
+        "말이 다르잖아! 아까랑!",
+        "앞뒤가 안 맞는다. 똑바로 말해!"
+      ]
+    },
+    {
+      "template_id": "t_explain_hothead",
+      "kind": "explain",
+      "temperament_id": "hothead",
+      "reaction": null,
+      "variants": [
+        "난 아니다! 몇 번을 말해!",
+        "날 의심해? 어림없다!"
+      ]
+    },
+    {
+      "template_id": "t_silence_hothead",
+      "kind": "silence",
+      "temperament_id": "hothead",
+      "reaction": null,
+      "variants": [
+        "……흥.",
+        "……할 말 없다."
+      ]
+    },
+    {
+      "template_id": "t_ans_explain_hothead",
+      "kind": "interrogate",
+      "temperament_id": "hothead",
+      "reaction": "explain",
+      "variants": [
+        "{fact} 됐냐?",
+        "{fact} 그게 다다!"
+      ]
+    },
+    {
+      "template_id": "t_ans_evade_hothead",
+      "kind": "interrogate",
+      "temperament_id": "hothead",
+      "reaction": "evade",
+      "variants": [
+        "{fact} 그만 물어!",
+        "{fact} 귀찮게 하지 마라!"
+      ]
+    },
+    {
+      "template_id": "t_ans_confess_hothead",
+      "kind": "interrogate",
+      "temperament_id": "hothead",
+      "reaction": "confess",
+      "variants": [
+        "에잇, 그래! {fact}",
+        "…알았다, 말한다. {fact}"
+      ]
+    },
+    {
+      "template_id": "t_suspect_timid",
+      "kind": "suspect",
+      "temperament_id": "timid",
+      "reaction": null,
+      "variants": [
+        "저, 저기… {target}이(가) 좀 이상한 것 같습니다요.",
+        "{target}… 무, 무언가 숨기는 것 같아 무섭습니다요."
+      ]
+    },
+    {
+      "template_id": "t_defend_timid",
+      "kind": "defend",
+      "temperament_id": "timid",
+      "reaction": null,
+      "variants": [
+        "{target}은(는)… 그, 그럴 사람이 아닙니다요.",
+        "저, {target}을(를) 너무 몰아세우지 마셔요…"
+      ]
+    },
+    {
+      "template_id": "t_contra_timid",
+      "kind": "point_contradiction",
+      "temperament_id": "timid",
+      "reaction": null,
+      "variants": [
+        "그, 그런데… 말씀이 앞뒤가 다른 것 같습니다요.",
+        "저, 저만 그렇게 들었나요? 아까랑 말이 달라서요…"
+      ]
+    },
+    {
+      "template_id": "t_explain_timid",
+      "kind": "explain",
+      "temperament_id": "timid",
+      "reaction": null,
+      "variants": [
+        "저, 저는 아닙니다요! 정말입니다요!",
+        "제발 믿어 주셔요. 저는 아무 짓도 안 했습니다요."
+      ]
+    },
+    {
+      "template_id": "t_silence_timid",
+      "kind": "silence",
+      "temperament_id": "timid",
+      "reaction": null,
+      "variants": [
+        "……저, 저는 잘 모르겠습니다요.",
+        "……죄, 죄송합니다요."
+      ]
+    },
+    {
+      "template_id": "t_ans_explain_timid",
+      "kind": "interrogate",
+      "temperament_id": "timid",
+      "reaction": "explain",
+      "variants": [
+        "그, 그러니까… {fact}",
+        "{fact} 정말입니다요."
+      ]
+    },
+    {
+      "template_id": "t_ans_evade_timid",
+      "kind": "interrogate",
+      "temperament_id": "timid",
+      "reaction": "evade",
+      "variants": [
+        "{fact} 더, 더는 묻지 말아 주셔요…",
+        "{fact} 그, 그것밖에 모릅니다요."
+      ]
+    },
+    {
+      "template_id": "t_ans_counter_timid",
+      "kind": "interrogate",
+      "temperament_id": "timid",
+      "reaction": "counter",
+      "variants": [
+        "{fact} 그, 그런데 왜 저만 물으셔요?",
+        "{fact} 다, 다른 분들도 물어봐 주셔요…"
+      ]
+    },
+    {
+      "template_id": "t_ans_confess_timid",
+      "kind": "interrogate",
+      "temperament_id": "timid",
+      "reaction": "confess",
+      "variants": [
+        "용서해 주셔요… {fact}",
+        "흐흑, 다 말씀드리겠습니다요. {fact}"
       ]
     }
   ]
