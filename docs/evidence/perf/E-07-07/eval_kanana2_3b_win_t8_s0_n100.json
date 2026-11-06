@@ -1,8 +1,8 @@
 {
   "task": "E-07-07",
-  "commit": "d1330ea2edb2b84767f188018177ba2049c68505",
-  "generated_at": "2026-11-06T12:48:52Z",
-  "source": "python -m llm.bench.run_bench --model kanana-2-3b-instruct.Q4_K_M.gguf --label kanana2_3b --mode win --eval fixtures/llm/interrogation_eval.json --threads 8 --max-tokens 128 --temperature 0.7 --top-p 0.8 --top-k 20 --n-ctx 1024 --eval-seed 0  # 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36; prompt interrogate-v6; n 100; 재판정 --rejudge(생성 기록 f4ac12b, 검증기 HEAD)",
+  "commit": "f98158ecf9cb87a395f86731b023cb836ff8796b",
+  "generated_at": "2026-11-06T14:34:14Z",
+  "source": "python -m llm.bench.run_bench --model kanana-2-3b-instruct.Q4_K_M.gguf --label kanana2_3b --mode win --eval fixtures/llm/interrogation_eval.json --threads 8 --max-tokens 128 --temperature 0.7 --top-p 0.8 --top-k 20 --n-ctx 1024 --eval-seed 0  # 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36; prompt interrogate-v8; n 100",
   "metrics": {
     "n_requests": {
       "value": 100,
@@ -93,55 +93,55 @@
       "unit": "%"
     },
     "prompt_p50_ms": {
-      "value": 4167.71,
+      "value": 3553.22,
       "unit": "ms"
     },
     "prompt_p95_ms": {
-      "value": 4717.04,
+      "value": 3756.63,
       "unit": "ms"
     },
     "gen_p50_ms": {
-      "value": 1512.44,
+      "value": 1325.24,
       "unit": "ms"
     },
     "gen_p95_ms": {
-      "value": 2269.31,
+      "value": 1867.25,
       "unit": "ms"
     },
     "validate_p50_ms": {
-      "value": 1.12,
+      "value": 1.02,
       "unit": "ms"
     },
     "validate_p95_ms": {
-      "value": 1.503,
+      "value": 1.18,
       "unit": "ms"
     },
     "total_p50_ms": {
-      "value": 5696.21,
+      "value": 4856.31,
       "unit": "ms"
     },
     "total_p95_ms": {
-      "value": 6902.15,
+      "value": 5574.55,
       "unit": "ms"
     },
     "total_max_ms": {
-      "value": 7794.93,
+      "value": 5963.21,
       "unit": "ms"
     },
     "gen_tps_mean": {
-      "value": 12.12,
+      "value": 14.13,
       "unit": "tok/s"
     },
     "prompt_tokens_mean": {
-      "value": 208.15,
+      "value": 208.04,
       "unit": "tok"
     },
     "gen_tokens_mean": {
-      "value": 18.1,
+      "value": 17.99,
       "unit": "tok"
     },
     "wall_s": {
-      "value": 573.7,
+      "value": 482.3,
       "unit": "s"
     },
     "threads": {
