@@ -26,7 +26,7 @@
 - **구조**: 광고주 → `Campaign` → `Creative`.
   - 캠페인 속성: 지면, 과금 방식(cpc, cpm), `max_bid_mw`, `daily_budget_mw`, `Targeting`(프리셋, 판 결과, 재방문, 시간대), 기간, 상태
   - **1건 최대 청구액**(11/7 PM 결정): 최대 입찰가로 정한 한 건의 청구 상한이다. CPC는 `max_bid_mw`, CPM은 `ceil(max_bid_mw / 1000)`이다. 4절 예산 필터가 이 값을 쓴다.
-  - **등록 검증**(11/7 PM 결정): `daily_budget_mw`가 1건 최대 청구액보다 작은 캠페인은 저장을 거부한다(admin 폼 오류, 도메인 검증 함수). 받아 주면 예산 필터에 항상 걸려 한 번도 나가지 않는 캠페인이 생기기 때문이다. 자동 입찰(`target_cpc_mw`)이 입찰가를 바꿔도 기준은 `max_bid_mw`다.
+  - **등록 검증**(11/7 PM 결정): `daily_budget_mw`가 1건 최대 청구액보다 작은 캠페인은 저장을 거부한다(admin 폼의 `daily_budget_mw` 오류, 도메인 `rules.validate_campaign_budget(billing, max_bid_mw, daily_budget_mw)`의 `ValueError`). 받아 주면 예산 필터에 항상 걸려 한 번도 나가지 않는 캠페인이 생기기 때문이다. 자동 입찰(`target_cpc_mw`)이 입찰가를 바꿔도 기준은 `max_bid_mw`다.
   - 소재의 랜딩은 사이트 안 가상 경로다. 화면에는 "광고"로 표시한다.
 - **지면(`AdSlot`)**: `lobby_banner`, `result_banner`, `review_side` 세 곳이다. 회의, 투표, 밤 화면에는 예외 없이 광고를 넣지 않는다(추궁 답변 대기 지면 `llm_wait`은 11/6 PM 결정으로 삭제, `ads-0.5`).
 - **지면 규격(`SLOT_SIZES`, P-19, 11/5 PM 잠정 확정, `ads-0.3`)**:
