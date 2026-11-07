@@ -54,7 +54,7 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 | Mongo `--wiredTigerCacheSizeGB` | 0.25 | WiredTiger 캐시 | 메모리 사용량 |
 | 버킷 | `paldo-lake`, `paldo-mlflow` | Delta·MLflow 아티팩트 | `run.py` `BUCKETS` |
 
-C-06-03 MySQL 생성·분리·복제 검증은 `ops/mysql/README.md`, C-06-04 외부 GPU 후보는 `ops/runbook/runpod.md`를 따른다. 해당 코드 PR은 선행 병합이 필요하다. 실제 MySQL 복제는 binlog 만료로 중단되어 재구성이 남았다. P-31로 상시 LLM 배정은 없으며 RunPod는 E-10-12 지연 측정만 계획한다.
+C-06-03 MySQL 생성·분리·복제 검증은 `ops/mysql/README.md`, C-06-04 GPU 실험 인계는 `ops/runbook/runpod.md`를 따른다. MySQL 코드는 dev에 병합됐으며 Kafka 발행기 PR #226은 병합 대기다. 실제 MySQL 복제는 binlog 만료로 중단되어 재구성이 남았다. P-31로 상시 LLM 배정은 없으며 RunPod는 E-10-12 지연 측정만 계획한다.
 
 ## 한계
 

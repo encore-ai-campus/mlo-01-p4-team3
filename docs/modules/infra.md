@@ -31,7 +31,7 @@ python -m unittest tests.infra.test_outbox_publisher -v
 
 ## 한계
 
-운영 전용 Mongo DB·계정 생성은 관리자 인증 위치 확인이 남았다. 기존 권한의 고유 검증 컬렉션 시험과 구분한다. 한 문서 Outbox는 Mongo 용량 한도를 가지며 보관 정책이 필요하다. 발행은 at-least-once이며 프로세스 정지·lease 경계의 중복은 소비자가 제거한다. 광고 DB 발행은 D 담당이다. LLM 운영 P-31 반영·RunPod 측정 전용는 [런북](../../ops/runbook/runpod.md)과 최종 자원 확정이 남았다.
+운영 전용 Mongo DB·계정 생성은 관리자 인증 위치 확인이 남았다. 기존 권한의 고유 검증 컬렉션 시험과 구분한다. 한 문서 Outbox는 Mongo 용량 한도를 가지며 보관 정책이 필요하다. 발행은 at-least-once이며 프로세스 정지·lease 경계의 중복은 소비자가 제거한다. 광고 DB 발행은 D 담당이다. P-31로 상시 LLM 배정은 없고 RunPod는 E-10-12 지연 측정 범위다. [런북](../../ops/runbook/runpod.md)을 따른다.
 
 ## 변경 이력
 
@@ -40,4 +40,4 @@ python -m unittest tests.infra.test_outbox_publisher -v
 | C-06-01 | 11/6 | Mongo majority/CAS·진척·불변 콘텐츠, 실제 VM 계약 시험과 지연 측정 |
 | C-06-02 | 11/6 | 별도 Outbox 발행·실패 재시도·lease·지표, Kafka 실제 소비 확인 |
 | C-06-03 | 11/6 | 본 모듈 변경 없음, 광고·계정 MySQL 분리는 ops/mysql 인계 |
-| C-06-04 | 11/6 | 당일 모듈 문서 일괄 갱신, P-31 반영·RunPod 측정 전용와 미확정 자원 구분 |
+| C-06-04 | 11/6 | 당일 모듈 문서 일괄 갱신, P-31 상시 LLM 취소·오프라인 생성·RunPod 측정 범위 구분 |
