@@ -1,11 +1,11 @@
 # ML 모델
 
 ## 무엇을
-
 `ml/suspicion/`은 씐 자 1명 판의 마을 NPC 관측을 학습·평가하는 인프라 모듈이다.
 `features.py`는 실제 엔진 bot JSONL을 `TrainingRow` JSONL과 provenance manifest로 변환한다.
 `train.py`는 게임 분할·로지스틱 회귀·LightGBM·로컬 MLflow 추적을 수행한다.
 `evaluate.py`는 관측별 softmax, 다중분류 로그 손실·상위1 적중률·후보별 ECE를 계산한다.
+의도 기준선은 [intent.md](intent.md), 광고 서버는 [ads.md](ads.md)를 따른다.
 
 ## 왜
 
@@ -17,14 +17,14 @@
 ## 사용법
 
 ```powershell
-python -m tools.run_engine_games --preset base6 --games 360 --seed 702 --policy rule-v0 --out out/suspicion/engine --record D-07-02
-python -m tools.check_handoff_a06 --dir out/suspicion/engine --record D-07-02
-python -m ml.suspicion.features --events out/suspicion/engine/events.jsonl --out out/suspicion/data
-python -m ml.suspicion.train --rows out/suspicion/data/rows.jsonl --out out/suspicion/run1 --seed 7 --record D-07-02
+python -m tools.run_engine_games --preset base6 --games 200 --seed 2 --policy rule-v0 --out out/handoff/a0701
+python -m tools.check_handoff_a06 --dir out/handoff/a0701 --record D-07-02
+python -m ml.suspicion.features --events out/handoff/a0701/events.jsonl --out out/suspicion/pm-data
+python -m ml.suspicion.train --rows out/suspicion/pm-data/rows.jsonl --out out/suspicion/pm-run --seed 7 --record D-07-02
 python -m unittest tests.test_suspicion -q
 ```
 
-출력 경로는 새 경로여야 한다. 학습 모델·온도·보고서·게임 분할은 `out/suspicion/run1/`과
+특징 변환과 학습의 출력 경로는 새 경로여야 한다. 학습 모델·온도·보고서·게임 분할은 `out/suspicion/pm-run/`과
 `mlruns/suspicion-artifacts/`에 보존한다. 추적 DB는 `mlruns/suspicion.db`다.
 `models.pkl`은 이 실행이 만든 로컬 모델이며 신뢰하는 산출물만 불러온다.
 의존성은 `requirements/ml.txt`의 scikit-learn 1.9.1·LightGBM 4.7.0·MLflow 3.18.0을 사용한다.
@@ -57,9 +57,11 @@ VM Python 3.14에서 torch·transformers·lightgbm·pyspark import는 미완료�
 행동 감사는 입력 엔진 판의 `legal_problem`과 대상 존재·`vote_conflicts` 집계이며,
 새 모델을 엔진에 연결한 행동 위반·승률 검증을 대체하지 않는다(D-08-01).
 두 모델은 같은 bot 정책에 대한 오프라인 수치만 제공하며 운영 승격·배포·성능 우열을 판정하지 않는다.
+모델 v0 어댑터는 D-08-01, 관문·밴딧은 D-09-02, 광고 CTR LightGBM은 D-10-02 범위다.
 
 ## 변경 이력
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
+| D-05-03 | 11/5 | 하루 일괄 문서화로 ML 패키지의 미구현 범위와 후속 작업 위치를 명시 |
 | D-07-02 | 11/7 | 로컬 TrainingRow 변환·게임 분할·두 추정기·규칙 비교·MLflow·경계 테스트 |

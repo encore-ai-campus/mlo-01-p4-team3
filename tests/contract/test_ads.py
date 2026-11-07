@@ -108,6 +108,24 @@ def _serve(sid: str, billing: BillingType, price_mw: int, at_ms: int = 0, sessio
                        "2026-11-06")
 
 
+class CampaignBudgetRegistration(unittest.TestCase):
+    """등록 검증은 최대 입찰가를 쓰며 CPM은 밀리원 단위로 올림한다."""
+
+    def test_maximum_charge_boundary_for_cpc_and_cpm(self):
+        for billing, bid, budget, accepted in (
+                (BillingType.CPC, 300000, 100000, False),
+                (BillingType.CPC, 300000, 300000, True),
+                (BillingType.CPM, 300000, 100000, True),
+                (BillingType.CPM, 300001, 300, False),
+                (BillingType.CPM, 300001, 301, True)):
+            with self.subTest(billing=billing, bid=bid, budget=budget):
+                if accepted:
+                    rules.validate_campaign_budget(billing, bid, budget)
+                else:
+                    with self.assertRaises(ValueError):
+                        rules.validate_campaign_budget(billing, bid, budget)
+
+
 class Budget(unittest.TestCase):
     def test_reserve_confirm_release(self):
         c = load_json("fixtures/ads/budget_cases.json")[0]

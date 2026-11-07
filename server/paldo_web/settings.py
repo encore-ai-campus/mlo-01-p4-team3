@@ -24,9 +24,12 @@ if SESSION_COOKIE_SECURE:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 ROOT_URLCONF = "server.paldo_web.urls"
 WSGI_APPLICATION = "server.paldo_web.wsgi.application"
+ASGI_APPLICATION = "server.paldo_web.asgi.application"
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 LOGIN_URL = "/accounts/login"
 SIGNUP_INVITE_CODE = os.environ.get("PALDO_SIGNUP_INVITE_CODE", "")
 GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
+INTENT_PARSER_FACTORY = ""  # 기준선 사용 시 "intent.parser.BaselineIntentParser"를 지정한다.
 SESSION_MONGO_URI = os.environ.get("PALDO_MONGO_URI", "")
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
@@ -61,7 +64,7 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
                   "django.template.context_processors.request",
                   "django.contrib.auth.context_processors.auth",
                   "django.contrib.messages.context_processors.messages",
-              ], "libraries": {"meeting": "server.api.template_tags"}}}]
+              ], "libraries": {"meeting": "server.api.template_tags", "ad_slots": "server.api.ad_slot_tags"}}}]
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "server.accounts.validators.PasswordRulesValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},

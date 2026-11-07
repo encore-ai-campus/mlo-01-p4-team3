@@ -1,0 +1,28 @@
+{
+  "task": "E-07-06",
+  "commit": "41b23ea2ec87f702889c60b7b4b1e2a47ecb7c6f",
+  "generated_at": "2026-11-07T04:08:52Z",
+  "source": "사용자 코랩 실행 결과 paldo_llm_mvp_results.json에서 옮김(11/7, 노트북 llm/colab/paldo_llm_mvp.ipynb 4eb74cb, zip sha256 20d267a3…e69d9834, 런타임 T4 GPU n_gpu_layers -1, 스레드 2, llama_cpp 0.3.36, Python 3.13.16, prompt interrogate-v8, eval interrogation-eval-1, temperature 0.7 top_p 0.8 top_k 20 max_tokens 128 n_ctx 1024, 앞 20건 × 시드 1~5, 축소 없음",
+  "metrics": {
+    "consistency_cases": {
+      "value": 20,
+      "unit": "건"
+    },
+    "consistency_k": {
+      "value": 5,
+      "unit": "회"
+    },
+    "verdict_agree_pct": {
+      "value": 85.0,
+      "unit": "%"
+    },
+    "facts_kept_pct": {
+      "value": 85.0,
+      "unit": "%"
+    },
+    "similarity_mean": {
+      "value": 0.9103,
+      "unit": ""
+    }
+  }
+}

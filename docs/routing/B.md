@@ -12,7 +12,7 @@
 | 폴더 | 계층 | 담당 | 역할 |
 |---|---|---|---|
 | `server/app/` | 응용 | B | 유스케이스와 DTO(`dto.py`) |
-| `server/api/`, `web/` | 표현 | B | Django 뷰, 템플릿, htmx 조각, 뷰 모델(`viewmodels.py`), 웹소켓 Consumer(`consumers.py`, 예정) |
+| `server/api/`, `web/` | 표현 | B | Django 뷰, 템플릿, htmx 조각, 뷰 모델(`viewmodels.py`), 광고 웹소켓 Consumer(`consumers.py`) |
 | `web/templates/`, `web/static/` | 표현 | B | 회의 화면과 htmx 조각, CSS·스크립트·기본 이미지 |
 | `server/accounts/` | Django 인증 | B | 계정 폼·가명 프로필·로그인 잠금·운영 명령 |
 | `web/templates/accounts/`, `web/templates/admin/` | 표현 | B | 계정 화면과 가명으로 표시하는 관리자 화면 |
@@ -27,8 +27,12 @@
 | 화면이나 API 추가 | 표현 `server/api/`, 응용 `server/app/dto.py`, `docs/contracts/api.md` |
 | 게임 JSON API 경로와 실행 흐름 | `server/api/urls.py`, `server/api/views.py`, `server/api/interactions.py` → `server/app/usecases.py`, `server/app/interactions.py` |
 | 회의 화면과 에셋 연결 | `server/api/views.py`, `server/api/meeting_view.py`, `server/api/assets.py`, [화면 라우팅](../../web/ROUTING.md) |
+| 자유 입력 카드·추궁 답변 폴링 | `server/api/interactions.py`, `interaction_forms.py`, `interaction_view.py` → `server/app/interactions.py`; `web/templates/speech_cards.html`, `speech_line.html` |
+| 수첩·투표 확신도·판 종료 설문 | `server/api/participant_forms.py`, `server/api/interactions.py`, `web/templates/notebook.html`, `survey.html`, `survey_done.html` |
 | 명령 재전송·동시 요청·부하 사전 시험 | [서버 시험 안내](../../server/tests/README.md) |
 | 가입·로그인·로그아웃과 계정 복구 | `server/accounts/urls.py`, `server/accounts/views.py`, `web/templates/accounts/`, [웹 모듈 사용법](../modules/web.md#사용법) |
+| Mongo 게임·진척·콘텐츠·회차 조립 | `server/paldo_web/mongo.py` → C 저장소 3종·B 회차 저장소. B의 `WebMongoGameRepository`가 commit 연결 오류를 정규화해 응용의 1회 재시도·CAS 재생으로 연결. 실제 시험은 `server/tests/mongo_game_sessions.py` |
 | 테스트 회차 등록과 고정 판 배정 | `server/api/sessions.py`, `server/app/test_sessions.py`, `server/infra/test_sessions.py`, [서버 라우팅](../../server/ROUTING.md) |
-| 광고 지면을 게임 화면에 붙이기 | `server/app/ads_port.py`, `docs/contracts/ports.md` 5절 |
-| 광고 비콘·클릭 중계(웹소켓, 예정 B-07-05·B-08-03) | 표현 `server/api/consumers.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py` → 인프라 `server/infra/ad_client.py`, `docs/contracts/api.md` 7절 |
+| 광고 비콘·클릭·랜딩 중계 | ASGI `server/paldo_web/asgi.py` → 표현 `server/api/consumers.py`·`ad_relay.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py`. 실제 HTTP 인프라 `server/infra/ad_client.py`는 B-08-03 예정 |
+| 웹소켓 재연결·비콘 폐기 사유 | `web/static/js/paldo_ws.js` → `server/api/consumers.py` → `server/api/ad_metrics.py`. 클라이언트·Consumer·실제 Daphne 검증은 [B-07-05 증빙](../evidence/B-07-05.md) |
+| 광고 지면을 게임 화면에 붙이기 | `server/api/ad_slots.py`·`ad_slot_tags.py`, `web/templates/ad_slot.html·ad_placeholder.html`, `web/static/js/ad_slots.js` → `server/app/ads_port.py`. 웹소켓 중계는 병합된 B-07-05 조립 사용 |

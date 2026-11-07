@@ -50,6 +50,7 @@
 - 위 두 경우가 아닌 조합(점수 일부만, `skipped=true`인데 점수나 의견이 있음, `skipped=false`인데 점수가 `null`)은 400이다. `skipped`가 없는 기존 응답 요청은 그대로 통과한다.
 - 설문은 판마다 한 번이다. 같은 내용을 다시 보내면 204이고 이벤트를 더 만들지 않는다. 처음과 다른 내용(건너뛴 뒤 응답으로 바꾸기 포함)은 409다.
 - 건너뛰어도 `survey_submitted` 이벤트를 1건 낸다(INT-09 7번: 판 수 = 설문 이벤트 수). 이벤트 본문은 [events.md](events.md) 2절.
+- 입력 형식과 화면·재전송 동작은 [설문 처리 경로](../../server/ROUTING.md)와 [B-07-02 검증](../evidence/B-07-02.md)에서 확인한다.
 
 ## 3. 명령과 충돌
 - 모든 명령에는 클라이언트가 만든 `command_id`(UUID)와 `expected_state_version`이 있다. 화면의 각 폼은 현재 `state_version`을 hidden 필드로 갖는다.
@@ -80,6 +81,7 @@
 5. 시도가 해석한 시점의 `state_version`이 바뀌면, 그 시도로는 실행할 수 없다(409). 다시 입력해야 한다.
 
 ## 5. LLM 답변 폴링
+- 추궁 답변 영역에는 `Powered by Kanana`를 사용자가 쉽게 알아보게 고정 표시한다(11/7 PM 결정, B-07-01 조건 8). 최초 폴백·폴링 조각·완료 후 화면 재조회에 유지하며 작은 페이지 푸터만으로 대신하지 않는다.
 - 캐묻기가 수락되면, 응답 화면의 해당 발언 자리에 폴백 문장이 먼저 표시된다. 그 자리에 `hx-get="/games/{id}/renders/{job_id}" hx-trigger="every 1s"` 조각이 붙는다.
 - `RenderOutput.final`이 true이면(done, timeout, failed, cancelled, discarded) 폴링 속성이 없는 조각으로 바꿔 폴링을 멈춘다. done이 아니면 `text`는 폴백 문장이다.
 - 판이 다음 단계로 넘어가면 응용 계층이 미완료 작업을 취소한다. 그 뒤의 폴링 응답은 `final=true`(폴백)다.

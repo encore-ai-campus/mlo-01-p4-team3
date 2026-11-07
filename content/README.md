@@ -6,12 +6,13 @@
 | 파일 | 내용 | 담당 |
 |---|---|---|
 | `bundle_v1.json` | 첫 플레이 버전(`content-1.0`). 인물 6·성향 4·비밀 6·원한 단서 4·템플릿 47 | E (E-05-03, 템플릿 E-06-01) |
+| `endings_v1.json` | 결말 문안 2개(퇴마 `exorcism`, 한풀이 `haewon:h1`). 엔진은 읽지 않고 게임 웹 결말 선택·종료 연출과 복기 해설이 읽는다 | E (E-07-05) |
 | `images/` | 이미지 에셋과 `manifest.json`. [`docs/assets/spec.md`](../docs/assets/spec.md) | E·A |
 
-검사: `python -m tools.check_content`(구조) · `python -m tools.check_content --preset base6 --seeds 200`(엔진 배정기로 배정 검증, A-05-01 병합 뒤) · `python -m tools.check_templates`(템플릿 대사).
+검사: `python -m tools.check_content`(구조) · `python -m tools.check_content --preset base6 --seeds 200`(엔진 배정기로 배정 검증, A-05-01 병합 뒤) · `python -m tools.check_templates`(템플릿 대사) · `python -m tools.check_endings`(결말 문안).
 
 ## 원전과 창작의 구분
-- **원전 문장 인용 0건.** 이 묶음의 인물·비밀·고백 대사·원한 단서·템플릿은 모두 이 프로젝트에서 새로 쓴 창작 설정이다. 설화집·문헌의 문장을 옮기지 않았다.
+- **원전 문장 인용 0건.** 이 묶음의 인물·비밀·고백 대사·원한 단서·템플릿과 결말 문안(`endings_v1.json`)은 모두 이 프로젝트에서 새로 쓴 창작 설정이다. 설화집·문헌의 문장을 옮기지 않았다.
 - 원전에서 빌린 것은 개념뿐이다: "창귀"(호랑이에게 죽은 사람의 혼이 호랑이의 앞잡이가 된다는 전승, "위호작창"). 기획서 3.3에 원전 개념과 게임 설정을 나눠 적었다.
 - 게임 설정(창작): 창귀가 주민에게 씌어 밤마다 사람을 산으로 홀려 낸다. 마을 "솔뫼골", 인물, 원한 이야기(곳간 일꾼, 노름빚, 걸어 잠근 사립문)는 모두 창작이다.
 - 실존 인물·특정 작품의 인물을 쓰지 않는다. 인물 이름은 직업 호칭과 흔한 성씨·이름(김 훈장, 최씨, 돌쇠 등)만 쓴다.

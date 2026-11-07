@@ -11,6 +11,11 @@ document.addEventListener("change", (event) => {
   if (form) form.elements.command_id.value = "";
 });
 document.addEventListener("htmx:beforeSwap", (event) => {
+  // 화면 전환으로 제거된 발언의 늦은 응답은 새 단계에 끼워 넣지 않는다.
+  if (event.detail.elt?.matches("[data-job-id]") && !event.detail.elt.isConnected) {
+    event.detail.shouldSwap = false;
+    return;
+  }
   if (event.detail.target?.id === "meeting" && [409, 422].includes(event.detail.xhr.status)) {
     event.detail.shouldSwap = true;
     event.detail.isError = false;

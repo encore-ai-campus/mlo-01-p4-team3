@@ -1,0 +1,76 @@
+"""수첩·확신도·설문 화면 모델과 HTML 폼을 공통 DTO 입력으로 바꾼다."""
+from dataclasses import dataclass
+
+from django.http import QueryDict
+
+from server.app.dto import SaveNotebookInput, SubmitSurveyInput
+from .input_validation import parse_game_input
+
+
+@dataclass(frozen=True)
+class NotebookEntryVM:
+    """공개 주민 이름과 플레이어가 저장한 의심도만 담는다."""
+
+    npc_id: str
+    name: str
+    value: int
+
+
+def participant_context(service, view):
+    """판 화면에 수첩·설문 상태를 더한다. 저장소 미연결 시 입력 폼을 숨긴다."""
+    if service.interactions is None:
+        return {"participant_forms_available": False}
+    with service.interactions.store.edit(view.game_id) as records:
+        confidence = records.notebook.get("vote_confidence")
+        submitted = records.survey is not None
+    return {
+        "participant_forms_available": True,
+        "notebook_entries": [NotebookEntryVM(npc, name, view.player.notebook.get(npc, 50))
+                             for npc, name in view.names.items() if npc != "mudang"],
+        "vote_confidence": confidence,
+        "survey_submitted": submitted,
+        "survey_questions": [("fun", "이번 판은 재미있었나요?"),
+                             ("unfair", "이번 판의 결과가 억울하게 느껴졌나요?"),
+                             ("npc_plausible", "마을 사람들의 말과 행동이 그럴듯했나요?")],
+        "survey_choices": [(1, "전혀 그렇지 않다"), (2, "그렇지 않다"), (3, "보통이다"),
+                           (4, "그렇다"), (5, "매우 그렇다")],
+    }
+
+
+def participant_input(request, dto, game_id):
+    """HTML 폼을 DTO 입력으로 변환하고 알 수 없는 필드·반복 필드와 URL 불일치를 거부한다."""
+    from .views import _body
+
+    if request.content_type != "application/x-www-form-urlencoded":
+        body = _body(request)
+    else:
+        form = QueryDict(request.body)
+        if any(len(form.getlist(key)) != 1 for key in form):
+            raise ValueError("duplicate_field")
+        allowed = {"csrfmiddlewaretoken", "game_id"}
+        if dto is SaveNotebookInput:
+            allowed |= {"vote_confidence"} | {key for key in form if key.startswith("entry:")}
+            body = {"game_id": form.get("game_id"),
+                    "entries": {key[6:]: int(value) for key, value in form.items() if key.startswith("entry:")}}
+            if form.get("vote_confidence"):
+                body["vote_confidence"] = int(form["vote_confidence"])
+        elif dto is SubmitSurveyInput:
+            allowed |= {"fun", "unfair", "npc_plausible", "comment", "skipped"}
+            skipped = form.get("skipped", "false")
+            if skipped not in ("true", "false"):
+                raise ValueError("invalid_survey_skipped")
+            body = {"game_id": form.get("game_id"), "comment": form.get("comment", ""),
+                    "skipped": skipped == "true"}
+            for field in ("fun", "unfair", "npc_plausible"):
+                if field in form:
+                    body[field] = int(form[field])
+                elif body["skipped"]:
+                    body[field] = None
+        else:
+            raise ValueError("unknown_participant_input")
+        if set(form) - allowed:
+            raise ValueError("unknown_field")
+    data = parse_game_input(dto, body)
+    if data.game_id != game_id:
+        raise ValueError("path_body_mismatch")
+    return data

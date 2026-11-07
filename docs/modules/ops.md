@@ -54,6 +54,8 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 | Mongo `--wiredTigerCacheSizeGB` | 0.25 | WiredTiger 캐시 | 메모리 사용량 |
 | 버킷 | `paldo-lake`, `paldo-mlflow` | Delta·MLflow 아티팩트 | `run.py` `BUCKETS` |
 
+C-06-03 MySQL 생성·분리·복제 검증은 `ops/mysql/README.md`, C-06-04 GPU 실험 인계는 `ops/runbook/runpod.md`를 따른다. MySQL 코드는 dev에 병합됐으며 Kafka 발행기 PR #226은 병합 대기다. 실제 MySQL 복제는 binlog 만료로 중단되어 재구성이 남았다. P-31로 상시 LLM 배정은 없으며 RunPod는 E-10-12 지연 측정만 계획한다.
+
 ## 한계
 
 - 이 결과는 **기준 PC 한 대(11/4)**의 것이다. 다른 노트북은 `ops/compose/README.md` 5절 점검표로 각자 확인해야 한다.
@@ -72,3 +74,7 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | C-05-03 | 11/5 | 로컬 개발용 Compose(`ops/compose/dev.yml`), `.env` 생성·Garage 초기화·스모크(`run.py`·`devenv.py`), 패키지 확인(`pycheck.py`), Delta 확인(`spark/delta_rw.py`), 팀원 절차·점검표(`README.md`), 계정 저장소 스키마·계정 분리(MySQL initdb)와 `PALDO_AUTH_DB_*`·`PALDO_PUBLIC_ORIGIN`·`PALDO_SIGNUP_INVITE_CODE` 반영. 사전 작업(실제 작업일 11/4) |
+| C-06-01 | 11/6 | 저장 어댑터는 infra 모듈, 실제 Mongo VM 시험·외부 보호 설정 인계 |
+| C-06-02 | 11/6 | 공식 Kafka 10종 토픽 RF3·ISR2·보존1일 실적용, 발행·소비 시험 인계 |
+| C-06-03 | 11/6 | MySQL 두 스키마·TLS 계정 분리, 실제 상호 거부·복제 probe 실패와 복구 계획 |
+| C-06-04 | 11/6 | P-31 반영·RunPod 측정 전용와 CPU 잠정값 비교, 자원·시간표·Garage 두 노드 유지 정정 |

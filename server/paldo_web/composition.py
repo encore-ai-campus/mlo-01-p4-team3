@@ -10,6 +10,22 @@ _game_service = None
 _lock = Lock()
 _session_service = None
 _session_lock = Lock()
+_ad_gateway = None
+_ad_lock = Lock()
+
+
+def get_ad_gateway():
+    """명시적으로 조립한 광고 게이트웨이만 반환한다."""
+    if _ad_gateway is None:
+        raise GameServiceUnavailable("ad_gateway_not_configured")
+    return _ad_gateway
+
+
+def configure_ad_gateway(gateway):
+    """광고 서버 인수 조립이나 테스트에서 게이트웨이를 주입한다."""
+    global _ad_gateway
+    with _ad_lock:
+        _ad_gateway = gateway
 
 
 class GameServiceUnavailable(RuntimeError):
@@ -22,7 +38,9 @@ def get_game_service():
     if _game_service is None and settings.GAME_SERVICE_FACTORY:
         with _lock:
             if _game_service is None:
-                _game_service = import_string(settings.GAME_SERVICE_FACTORY)()
+                service = import_string(settings.GAME_SERVICE_FACTORY)()
+                _configure_parser(service)
+                _game_service = service
     if _game_service is None:
         raise GameServiceUnavailable("game_service_not_configured")
     service = _game_service
@@ -39,7 +57,20 @@ def configure_game_service(service):
     """호스트 조립이나 테스트에서 계약 구현을 주입한다."""
     global _game_service
     with _lock:
+        if service is not None:
+            _configure_parser(service)
         _game_service = service
+
+
+def _configure_parser(service):
+    from .intent import ObservedIntentParser
+    interactions = service.interactions
+    if interactions is None or isinstance(interactions.parser, ObservedIntentParser):
+        return
+    factory = getattr(settings, "INTENT_PARSER_FACTORY", "")
+    parser = import_string(factory)() if factory else interactions.parser
+    if parser is not None:
+        interactions.parser = ObservedIntentParser(parser)
 
 
 def get_session_service():

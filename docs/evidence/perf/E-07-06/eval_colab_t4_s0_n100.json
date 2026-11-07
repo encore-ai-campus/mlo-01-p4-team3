@@ -1,0 +1,96 @@
+{
+  "task": "E-07-06",
+  "commit": "41b23ea2ec87f702889c60b7b4b1e2a47ecb7c6f",
+  "generated_at": "2026-11-07T04:08:52Z",
+  "source": "사용자 코랩 실행 결과 paldo_llm_mvp_results.json에서 옮김(11/7, 노트북 llm/colab/paldo_llm_mvp.ipynb 4eb74cb, zip sha256 20d267a3…e69d9834, 런타임 T4 GPU n_gpu_layers -1, 스레드 2, llama_cpp 0.3.36, Python 3.13.16, prompt interrogate-v8, eval interrogation-eval-1, temperature 0.7 top_p 0.8 top_k 20 max_tokens 128 n_ctx 1024, 시드 0, 100건",
+  "metrics": {
+    "n_requests": {
+      "value": 100,
+      "unit": "건"
+    },
+    "success_count": {
+      "value": 93,
+      "unit": "건"
+    },
+    "success_rate_pct": {
+      "value": 93.0,
+      "unit": "%"
+    },
+    "fallback_count": {
+      "value": 7,
+      "unit": "건"
+    },
+    "fallback_rate_pct": {
+      "value": 7.0,
+      "unit": "%"
+    },
+    "validation_fail_count": {
+      "value": 7,
+      "unit": "건"
+    },
+    "error_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "timeout_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_format_length_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_format_length_pct": {
+      "value": 0.0,
+      "unit": "%"
+    },
+    "all_format_length_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_forbidden_entity_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_forbidden_entity_pct": {
+      "value": 0.0,
+      "unit": "%"
+    },
+    "all_forbidden_entity_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_added_assertion_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_added_assertion_pct": {
+      "value": 0.0,
+      "unit": "%"
+    },
+    "all_added_assertion_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_fact_changed_count": {
+      "value": 7,
+      "unit": "건"
+    },
+    "reason_fact_changed_pct": {
+      "value": 7.0,
+      "unit": "%"
+    },
+    "all_fact_changed_count": {
+      "value": 7,
+      "unit": "건"
+    },
+    "ending_only_fail_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "fallback_has_fact_pct": {
+      "value": 100.0,
+      "unit": "%"
+    }
+  }
+}

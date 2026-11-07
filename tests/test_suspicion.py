@@ -33,6 +33,7 @@ class Features(unittest.TestCase):
             self.assertEqual(set(r.features), set(ft.FEATURE_NAMES))
         self.assertEqual(audit['legal_action_violations'], 0)
         self.assertEqual(audit['town_inference_violations'], 0)
+        self.assertEqual(audit['knowledge_boundary_violations'], 0)
 
     def test_truth_is_only_used_after_feature_extraction(self):
         rows, _ = ft.engine_rows(self.events)

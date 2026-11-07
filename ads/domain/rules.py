@@ -104,9 +104,17 @@ def run_auction(bidders: list[Bidder], reserve_ecpm_mw: int, request_id: str) ->
 
 
 def charge_amount_mw(billing: BillingType, price_mw: int) -> int:
-    """예약에 쓰는 1건 최대 청구액. CPC=청구 CPC, CPM=ceil(청구 CPM/1000).
+    """단가 기준 1건 상한. CPC=단가, CPM=ceil(단가/1000).
+    등록·필터는 최대 입찰가를, 예약은 실제 낙찰 단가를 넣는다.
     CPM 확정액은 BudgetBook이 캠페인별 나머지(1/1000 밀리원)를 이월해 누적 합이 정확하도록 정한다."""
     return price_mw if billing is BillingType.CPC else -(-price_mw // 1000)
+
+
+def validate_campaign_budget(billing: BillingType, max_bid_mw: int, daily_budget_mw: int) -> None:
+    """등록 예산이 최대 입찰가 기준 1건 최대 청구액보다 작으면 거부한다."""
+    minimum = charge_amount_mw(billing, max_bid_mw)
+    if daily_budget_mw < minimum:
+        raise ValueError(f"일 예산은 1건 최대 청구액 {minimum}밀리원 이상이어야 합니다.")
 
 
 def charge_id(serve_id: str, billing: BillingType) -> str:

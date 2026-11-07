@@ -19,4 +19,6 @@ urlpatterns = [
     path("admin/sessions", sessions, name="test-sessions"),
     path("admin/", admin.site.urls),
     path("", include("server.api.urls")),
+    path("", include("server.api.ad_relay_urls")),
+    path("", include("server.api.ad_slots_urls")),
 ]

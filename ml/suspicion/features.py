@@ -147,7 +147,8 @@ def engine_rows(events: list[dict]) -> tuple[list[TrainingRow], dict]:
                     codes = p['reason_codes']
                     # 좁은 정적 감사: 씐 자 전용 이유 코드·개인 지식 오염을 분리 집계한다.
                     forbidden = any(c == 'avoid_partner' or c.startswith(('frame_', 'lie_', 'night_')) for c in codes)
-                    polluted = bool(obs.private.partner_id or obs.private.night_plans or obs.private.my_false_claims)
+                    # 비밀을 숨기는 마을 NPC도 자기 거짓 주장 ID는 안다.
+                    polluted = bool(obs.private.partner_id or obs.private.night_plans)
                     audit['knowledge_boundary_violations'] += int(forbidden or polluted)
                     if p['kind'] == 'vote':
                         audit['town_votes_checked'] += 1
