@@ -42,7 +42,7 @@ paldo/
 │  ├─ infra/                       인프라(C 저장소·발행기·조회, E LLM 렌더러, B 광고 HTTP 클라이언트·모델 선택 적용)
 │  │  ├─ mongo_repo.py, content_store.py   [C-06-01]
 │  │  ├─ outbox_publisher.py       [C-06-02]
-│  │  ├─ llm_renderer.py           LineRenderer 구현 [E-08-09]
+│  │  ├─ llm_renderer.py           LineRenderer 구현 [E-08-09, 11/7 P-31 (나)로 취소]
 │  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03]
 │  │  ├─ ad_client.py              AdProvider HTTP 구현(serve·비콘·클릭·랜딩 중계) [B-08-03] 결정 #2·#6
 │  │  └─ model_selector.py         ModelSelector 최소 구현 [D-08-04] → 카나리아·고정 [B-09-01], 레지스트리 [C-09-01] 결정 #5
@@ -76,8 +76,8 @@ paldo/
 │  ├─ prompt.py, validator.py, eval_set.py  추궁 프롬프트·검증기·평가 세트, 순수 함수(표준 라이브러리만) [E-07-07]
 │  ├─ mvp_metrics.py               MVP 지표(성공률·지연·일관성) [E-07-07]
 │  ├─ colab/paldo_llm_mvp.ipynb    MVP 코랩 노트북, 출력 셀 비움 [E-07-06]
-│  ├─ service/                     HTTP 서비스 [E-08-09]
-│  └─ graph.py                     LangGraph 흐름 [E-08-09]
+│  ├─ service/                     HTTP 서비스 [E-08-09, 11/7 P-31 (나)로 취소]
+│  └─ graph.py                     LangGraph 흐름 [E-08-09, 11/7 P-31 (나)로 취소]
 │
 ├─ pipeline/                       데이터 파이프라인 · C
 │  ├─ topics.yaml, consumers/      [C-06-02]
@@ -158,7 +158,7 @@ VM 이름과 배치의 원본은 `ops/runbook/vm_roles.md`다(11/6 기획서 v1.
 | `docs/evidence/perf/<ID>/<이름>.json` | 측정 결과 JSON | tasks/README.md 4절 "결과 JSON 형식" |
 | `docs/modules/<모듈>.md` | 모듈 문서(무엇을·왜·사용법·설정값·한계) | [modules/README.md](../modules/README.md) |
 | `docs/troubles/<흐름>.md` | 트러블 기록(A~E, 발표 트랙 S) | tasks/README.md 10절 |
-| `docs/reports/` | llm_bench.md [E-06-07], user_test.md [E-10-03], ops_agent/ [E-10-02], ads_scenarios.md [D-10-02], presets.md [D-10-03] | - |
+| `docs/reports/` | llm_bench.md [E-06-07], user_test.md [E-10-03], ops_agent/ [E-10-02, 11/7 P-31 (나)로 취소], ads_scenarios.md [D-10-02], presets.md [D-10-03] | - |
 | `docs/presentation/` | A.md~D.md(흐름별 기록), outline.md [S-10-01], paldo_final.pptx [S-11-06] | P_presentation.md |
 | `docs/assets/` | style_guide.md, spec.md [E-05-05] | E_pm.md 에셋 |
 | `docs/user_test/plan.md` | 사용자 테스트 일정·절차(명단 없음) [E-06-04] | privacy.md |

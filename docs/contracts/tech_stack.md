@@ -30,7 +30,7 @@
 | 배치 실행 | k3s 2노드(CronJob, Job) | 미설치 | C |
 | 의도 해석 | BERT 계열(한국어) + 규칙 매칭 | 11/5 모델 후보 확정 | D |
 | 씐 자 확률 | LightGBM(+ 보정) | - | D |
-| LLM | llama.cpp(CPU 양자화) + LangGraph | 11/5 벤치마크로 모델 확정 | E |
+| LLM | llama.cpp(CPU 양자화) + LangGraph(11/7 P-31 (나): 오프라인 사전 생성에만 쓰고 LangGraph·런타임 서비스는 두지 않는다) | 11/5 벤치마크로 모델 확정 | E |
 
 ## 3. 테스트
 - 계약 테스트는 표준 `unittest`로 작성한다. pytest가 설치되지 않은 환경에서도 돌아가야 하기 때문이다. 실행: `python -m unittest discover -s tests -t .`
