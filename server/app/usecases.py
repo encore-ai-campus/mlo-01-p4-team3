@@ -75,12 +75,27 @@ class GameService:
             raise StartUnavailable
         meta = self.prepare_start(data, player_pseudonym)
         # HTTP 입력으로 소유자·출처·판 ID를 선택할 수 없다.
-        meta = replace(meta, game_id=str(uuid.uuid4()), source=DataSource.HUMAN,
+        fixed_id = meta.game_id
+        if fixed_id:
+            try:
+                output = self.detail(fixed_id, player_pseudonym)
+            except ResourceNotFound:
+                pass
+            else:
+                self.progress.add_game(player_pseudonym, fixed_id)
+                return output
+        meta = replace(meta, game_id=fixed_id or str(uuid.uuid4()), source=DataSource.HUMAN,
                        player_pseudonym=player_pseudonym, mudang_variant=data.mudang_variant)
         result = self.engine.new_game(meta, self.dependencies(meta))
         if not result.accepted or result.state is None or result.truth is None:
             raise ValueError("start_rejected")
-        self.repository.create(result.state, result.truth, self._events(result.state, result.events))
+        try:
+            self.repository.create(result.state, result.truth, self._events(result.state, result.events))
+        except ValueError:
+            if not fixed_id:
+                raise
+            # 같은 순번의 동시 시작에서 먼저 저장된 판만 반환한다.
+            self.owned(fixed_id, player_pseudonym)
         self.progress.add_game(meta.player_pseudonym, meta.game_id)
         return self.detail(meta.game_id, player_pseudonym)
 

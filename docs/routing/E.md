@@ -2,7 +2,7 @@
 
 루트 [`README.md`](../../README.md) "영역 안내"에서 들어오는 2단 라우팅 문서다. 범위: 콘텐츠 묶음, LLM 서비스, 에셋 규격·검사, 이슈 양식·훅·운영 기록.
 
-- 위치와 역할만 적는다. 상세는 모듈 문서 `docs/modules/content.md`, `docs/modules/llm.md`, `docs/modules/assets.md`, `docs/modules/ci.md`, `docs/modules/project.md`(아직 없는 문서는 그 모듈을 처음 바꾸는 날 생긴다. 색인 [`docs/modules/README.md`](../modules/README.md)), 오늘 할 일은 `docs/tasks/E_pm.md`.
+- 위치와 역할만 적는다. 상세는 모듈 문서 `docs/modules/content.md`, `docs/modules/llm.md`, `docs/modules/assets.md`, `docs/modules/user_test.md`, `docs/modules/ci.md`, `docs/modules/project.md`(아직 없는 문서는 그 모듈을 처음 바꾸는 날 생긴다. 색인 [`docs/modules/README.md`](../modules/README.md)), 오늘 할 일은 `docs/tasks/E_pm.md`.
 - 계층 규칙과 의존 방향은 루트 README "계층과 의존 방향", 파일 위치 원본은 [`docs/contracts/structure.md`](../contracts/structure.md).
 - 이 문서는 E 흐름이 관리한다. 다른 흐름이 이 영역에서 작업하며 안내가 필요하면 직접 행을 넣고, E 흐름이 PR에서 확인한다. 행은 기존 분류와 순서를 지켜 관련 항목 근처에 넣는다(`docs/tasks/README.md` 3절 "여럿이 고치는 파일").
 

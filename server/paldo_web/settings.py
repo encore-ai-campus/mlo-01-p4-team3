@@ -25,10 +25,13 @@ if SESSION_COOKIE_SECURE:
 ROOT_URLCONF = "server.paldo_web.urls"
 WSGI_APPLICATION = "server.paldo_web.wsgi.application"
 LOGIN_URL = "/accounts/login"
+SIGNUP_INVITE_CODE = os.environ.get("PALDO_SIGNUP_INVITE_CODE", "")
 GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
+SESSION_MONGO_URI = os.environ.get("PALDO_MONGO_URI", "")
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
+    "server.accounts",
 ]
 MIDDLEWARE = [
     "server.paldo_web.middleware.RequestTelemetryMiddleware",
@@ -60,6 +63,7 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
                   "django.contrib.messages.context_processors.messages",
               ], "libraries": {"meeting": "server.api.template_tags"}}}]
 AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "server.accounts.validators.PasswordRulesValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
 ]

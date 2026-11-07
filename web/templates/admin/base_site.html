@@ -1,0 +1,4 @@
+{% extends "admin/base.html" %}
+{% block title %}팔도무록 운영{% endblock %}
+{% block branding %}<h1>팔도무록 운영</h1>{% endblock %}
+{% block usertools %}<div id="user-tools">운영자 <form method="post" action="/accounts/logout">{% csrf_token %}<button>로그아웃</button></form></div>{% endblock %}
