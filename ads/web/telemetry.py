@@ -24,9 +24,10 @@ class JsonFormatter(logging.Formatter):
     """허용된 필드만 JSON 한 줄로 출력한다."""
     def format(self, record):
         """예외 원문·쿼리·접속 헤더를 제외하고 구조화한다."""
+        fields = {"component": "http"} | getattr(record, "fields", {})
         return json.dumps(dict(ts=datetime.now(timezone.utc).isoformat(),
-            level=record.levelname.lower(), service="ad-server", component="http",
-            msg=record.getMessage(), **getattr(record, "fields", {})), ensure_ascii=False)
+            level=record.levelname.lower(), service="ad-server",
+            msg=record.getMessage(), **fields), ensure_ascii=False)
 
 
 class RequestLogMiddleware:

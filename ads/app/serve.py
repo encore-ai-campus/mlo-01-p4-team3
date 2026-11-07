@@ -1,4 +1,4 @@
-"""광고 요청 흐름: 캠페인 필터·소재 선택·경매·메모리 예산 예약."""
+"""광고 요청 흐름: 캠페인 필터·소재 선택·경매·예산 예약."""
 from __future__ import annotations
 
 import hashlib
@@ -7,7 +7,7 @@ import threading
 import time
 import uuid
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from ads.domain.events import ServeCandidate
 from ads.domain.model import (
@@ -21,6 +21,7 @@ from ads.domain.rules import (
 
 POLICY_VERSION = "auction-v0.1"
 CTR_VERSION = "beta-prior-v0.1"
+ATTRIBUTION_TZ = timezone(timedelta(hours=9), "Asia/Seoul")
 
 
 class RequestConflict(ValueError):
@@ -28,16 +29,13 @@ class RequestConflict(ValueError):
 
 
 class AdService:
-    """한 프로세스의 serve·판정·예산 상태를 한 잠금으로 보호한다.
+    """공통 광고 규칙을 실행한다. 운영은 영속 저장소, 격리 시험은 메모리를 사용한다."""
 
-    shortcut: 상태는 메모리이므로 재시작·다중 worker에서 공유되지 않는다. D-06-02에서 MySQL로 교체한다.
-    campaigns는 매 요청 최신 캠페인을 반환하는 함수, policies는 지면별 SlotPolicy다.
-    """
-
-    def __init__(self, campaigns, policies, key: bytes, clock=None):
+    def __init__(self, campaigns, policies, key: bytes, clock=None, *, book=None, store=None):
         self.campaigns, self.policies, self.key = campaigns, policies, key
         self.clock = clock or (lambda: time.time_ns() // 1_000_000)
-        self.book, self.state = BudgetBook(), ValidityState()
+        self.book, self.state = book if book is not None else BudgetBook(), ValidityState()
+        self.store = store
         self.lock = threading.RLock()
         self.responses, self.auctions, self.requests, self.candidates = {}, {}, {}, {}
         self.frequencies, self.load_tests, self.pending = {}, {}, {}
@@ -49,14 +47,20 @@ class AdService:
 
     def serve(self, req: AdRequest) -> AdResponse:
         """동일 입력은 동일 응답을 반환하고 예산을 한 번만 예약한다."""
+        if self.store is not None:
+            return self.store.serve(self, req)
+        return self._serve(req)
+
+    def _serve(self, req, frequency=None):
         with self.lock:
             if req.request_id in self.responses:
                 if self.requests[req.request_id] != asdict(req):
                     raise RequestConflict("request_id reused with different input")
                 return self.responses[req.request_id]
             now = self.clock()
-            self.book.release_expired(now)
-            day = datetime.fromtimestamp(now / 1000, timezone.utc).date().isoformat()
+            if self.store is None:
+                self.book.release_expired(now)
+            day = datetime.fromtimestamp(now / 1000, ATTRIBUTION_TZ).date().isoformat()
             policy = self.policies[req.slot]
             request_hash = hashlib.sha256(req.request_id.encode())
             rng = random.Random(int.from_bytes(request_hash.digest(), "big"))
@@ -73,7 +77,8 @@ class AdService:
                 for cr in c.creatives:
                     if cr.creative_id.startswith("syn:") != synthetic:
                         continue
-                    count = self.frequencies.get((req.session_pseudonym, cr.creative_id), 0)
+                    count = (frequency(cr.creative_id) if frequency is not None
+                             else self.frequencies.get((req.session_pseudonym, cr.creative_id), 0))
                     if frequency_ok(count, policy):
                         choices.append((self.rank_ctr(c, cr, policy, rng), cr))
                 if not choices:

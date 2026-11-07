@@ -1,4 +1,4 @@
-"""광고 admin·캠페인은 MySQL, D-05-03 예산·판정은 프로세스 메모리."""
+"""게임 웹과 분리된 광고 서버의 MySQL·로깅 설정."""
 import os
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -44,6 +44,9 @@ DATABASES = {"default": {
     "OPTIONS": {"charset": "utf8mb4", "isolation_level": "read committed"},
     "TEST": {"NAME": os.environ.get("PALDO_ADS_DB_TEST_NAME", "test_paldo_ads")},
 }}
+if _db_ca := os.environ.get("PALDO_ADS_DB_SSL_CA"):
+    DATABASES["default"]["OPTIONS"].update(
+        ssl_ca=_db_ca, ssl_verify_cert=True, ssl_verify_identity=True)
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
     "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": [
         "django.template.context_processors.request", "django.contrib.auth.context_processors.auth",

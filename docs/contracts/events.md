@@ -80,6 +80,7 @@
   - 예약: `reserved_charge_id`, `reserved_mw`(1건 금액: CPC 청구 CPC, CPM `floor(청구 CPM/1000)`, ads.md 2절, `ads-0.6`)
 - **노출·클릭 이벤트**:
   - 판정: `status`(pending, valid, invalid), `invalid_reason`, `judge_version`
+  - 같은 HTTP 이벤트가 `pending`에서 최종 판정으로 바뀌면 최종 행은 새 `event_id`를 쓰고 `source_event_id`로 pending 행을 가리킨다. 같은 행의 Kafka 재발행은 기존 `event_id`를 유지한다.
   - 과금: `charge_id`, `charge_mw`(확정했을 때만. 같은 건의 `reserved_mw`와 같다. 11/7 PM 결정으로 나머지 이월을 폐지해 1건 금액이 그 건의 `billing`·`price_mw`만으로 정해진다, `ads-0.6`. `ads-0.5` 이하 이벤트의 CPM `charge_mw`는 나머지 이월이 반영된 값이라 새 식으로 다시 계산하지 않는다)
   - 재판정·환입: `source_event_id`(원본 이벤트 ID)
   - 클릭에만: `suspect`
