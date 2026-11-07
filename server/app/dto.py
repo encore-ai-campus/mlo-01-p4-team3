@@ -123,11 +123,14 @@ class SaveNotebookInput:
 
 @dataclass
 class SubmitSurveyInput:
+    """판 종료 설문의 응답 또는 전체 건너뛰기 입력."""
+
     game_id: str
-    fun: int                     # 1~5
-    unfair: int                  # 1~5
-    npc_plausible: int           # 1~5
+    fun: Optional[int]           # 응답이면 1~5, 건너뛰면 null
+    unfair: Optional[int]
+    npc_plausible: Optional[int]
     comment: str = ""
+    skipped: bool = False
 
 
 @dataclass

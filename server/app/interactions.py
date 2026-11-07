@@ -220,32 +220,39 @@ class InteractionService:
             return self.resolve(resolved, player)
 
     def notebook(self, data, player):
-        """수첩 값을 별도로 보존하고 게임 버전 변경 없이 이벤트를 추가한다."""
+        """같은 날짜·단계의 동일 저장만 생략하고 버전 소비 없이 기록한다."""
         state, _ = self.game.owned(data.game_id, player)
         view = self.game.detail(data.game_id, player).view
         if set(data.entries) - set(view.names) or "mudang" in data.entries:
             raise ValueError("unknown_npc")
         payload = {"entries": dict(data.entries), "vote_confidence": data.vote_confidence}
         with self.store.edit(data.game_id) as records:
-            if records.notebook == payload:
+            state, _ = self.game.owned(data.game_id, player)
+            stored = {**payload, "_saved_context": {"day": state.day, "phase": state.phase.value}}
+            if records.notebook == stored:
                 return
             self._event(state, EventType.NOTEBOOK_UPDATED, payload, "notebook:" + str(uuid.uuid4()))
-            records.notebook = payload
+            records.notebook = stored
 
-    def survey(self, data, player):
-        """종료된 판의 설문을 한 번 저장한다. 같은 내용의 재전송은 성공한다."""
+    def survey(self, data, player, comment_digest):
+        """종료된 판의 설문을 한 번 저장하고 최초 저장 여부를 반환한다."""
         state, _ = self.game.owned(data.game_id, player)
         if state.result is None:
             raise InteractionConflict
-        if len(data.comment) > 4000:
-            raise ValueError("comment_too_long")
-        payload = {"fun": data.fun, "unfair": data.unfair, "npc_plausible": data.npc_plausible,
+        payload = {"skipped": data.skipped, "fun": data.fun, "unfair": data.unfair,
+                   "npc_plausible": data.npc_plausible,
                    "comment": mask_text(data.comment), "mask_version": "b-mask-1"}
         with self.store.edit(data.game_id) as records:
-            if records.survey is not None and records.survey != payload:
-                raise InteractionConflict
+            if records.survey is not None:
+                previous = dict(records.survey)
+                previous.setdefault("skipped", False)
+                previous_digest = previous.pop("comment_digest", comment_digest)
+                if previous != payload or not secrets.compare_digest(previous_digest, comment_digest):
+                    raise InteractionConflict
+                return False
             self._event(state, EventType.SURVEY_SUBMITTED, payload, "survey:submitted")
-            records.survey = payload
+            records.survey = {**payload, "comment_digest": comment_digest}
+            return True
 
     def register_renders(self, state, requests):
         """수락·저장된 전이의 렌더 요청만 등록한다. 외부 실패는 폴백으로 닫는다."""

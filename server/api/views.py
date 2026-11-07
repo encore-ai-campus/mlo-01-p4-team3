@@ -93,6 +93,8 @@ def _wants_meeting(request):
 
 
 def _meeting_response(request, view, variant, status=200):
+    from .participant_forms import participant_context
+
     template = "meeting.html" if request.headers.get("HX-Request") == "true" else "game.html"
     context = meeting_context(view)
     service = get_game_service()
@@ -104,7 +106,7 @@ def _meeting_response(request, view, variant, status=200):
         if result is not None and result.speech_id == speech.speech_id:
             speech.text = result.text
             speech.pending_job_id = None if result.final else result.job_id
-    return render(request, template, {**context, "rejected": status >= 400,
+    return render(request, template, {**context, **participant_context(service, view), "rejected": status >= 400,
                                      "mudang_portrait_id": f"portrait:mudang_{variant or 'f'}"}, status=status)
 
 

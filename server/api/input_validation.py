@@ -16,12 +16,23 @@ def parse_game_input(dto_type, body):
         if data.vote_confidence is not None and not 0 <= data.vote_confidence <= 100:
             raise SchemaError("$.vote_confidence", "투표 확신도는 0부터 100까지입니다.")
     elif isinstance(data, SubmitSurveyInput):
-        for field in ("fun", "unfair", "npc_plausible"):
-            if not 1 <= getattr(data, field) <= 5:
-                raise SchemaError(f"$.{field}", "설문 점수는 1부터 5까지입니다.")
+        _validate_survey(data)
     elif isinstance(data, ResolveUtteranceInput):
         _validate_reaction(data)
     return data
+
+
+def _validate_survey(data):
+    scores = (data.fun, data.unfair, data.npc_plausible)
+    if data.skipped:
+        if any(score is not None for score in scores) or data.comment:
+            raise SchemaError("$", "설문을 건너뛰면 점수와 의견을 비워야 합니다.")
+        return
+    for field, score in zip(("fun", "unfair", "npc_plausible"), scores):
+        if score is None or not 1 <= score <= 5:
+            raise SchemaError(f"$.{field}", "설문 점수는 1부터 5까지입니다.")
+    if len(data.comment) > 4000:
+        raise SchemaError("$.comment", "설문 의견은 4000자 이하여야 합니다.")
 
 
 def _validate_reaction(data):
