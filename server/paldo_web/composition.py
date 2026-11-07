@@ -10,6 +10,22 @@ _game_service = None
 _lock = Lock()
 _session_service = None
 _session_lock = Lock()
+_ad_gateway = None
+_ad_lock = Lock()
+
+
+def get_ad_gateway():
+    """명시적으로 조립한 광고 게이트웨이만 반환한다."""
+    if _ad_gateway is None:
+        raise GameServiceUnavailable("ad_gateway_not_configured")
+    return _ad_gateway
+
+
+def configure_ad_gateway(gateway):
+    """광고 서버 인수 조립이나 테스트에서 게이트웨이를 주입한다."""
+    global _ad_gateway
+    with _ad_lock:
+        _ad_gateway = gateway
 
 
 class GameServiceUnavailable(RuntimeError):

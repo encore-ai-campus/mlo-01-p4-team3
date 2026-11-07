@@ -24,7 +24,24 @@ BREAKER_OPEN_MS = 30_000
 
 @runtime_checkable
 class AdProvider(Protocol):
+    """serve와 비콘·클릭·랜딩을 격리된 광고 서버에 전달하는 포트."""
     def request_ad(self, req: AdRequest, connect_timeout_ms: int, total_timeout_ms: int) -> AdResponse: ...
+
+    def send_impression(self, serve_token: str, visible_ratio: float, visible_ms: int,
+                        occurred_at_ms: int, request_id: str, connect_timeout_ms: int,
+                        total_timeout_ms: int) -> bool:
+        """노출 비콘을 한 번 전달한다."""
+        ...
+
+    def send_click(self, serve_token: str, request_id: str, connect_timeout_ms: int,
+                   total_timeout_ms: int) -> str | None:
+        """리다이렉트를 따라가지 않고 랜딩 경로를 반환한다."""
+        ...
+
+    def fetch_landing(self, creative_id: str, request_id: str, connect_timeout_ms: int,
+                      total_timeout_ms: int) -> str | None:
+        """가상 랜딩 HTML을 가져온다."""
+        ...
 
 
 @dataclass
@@ -79,6 +96,47 @@ class AdGateway:
         self.total_timeout_ms = total_timeout_ms
         self._slots = threading.BoundedSemaphore(max_concurrent)
         self._pool = ThreadPoolExecutor(max_workers=max_concurrent, thread_name_prefix="adgw")
+        self._relay_slots = threading.BoundedSemaphore(max_concurrent)
+        self._relay_pool = ThreadPoolExecutor(max_workers=max_concurrent, thread_name_prefix="adrelay")
+
+    def report_impression(self, token, ratio, visible_ms, occurred_at_ms, request_id):
+        """노출을 한 번 중계하고 성공 여부와 계측 결과를 반환한다."""
+        return self._relay("send_impression", (token, ratio, visible_ms, occurred_at_ms, request_id), bool, False)
+
+    def click(self, token, request_id):
+        """클릭을 한 번 중계한다. 외부 주소는 응용 계층에서 거부한다."""
+        return self._relay("send_click", (token, request_id), str, None)
+
+    def landing(self, creative_id, request_id):
+        """가상 랜딩을 한 번 가져온다."""
+        return self._relay("fetch_landing", (creative_id, request_id), str, None)
+
+    def _relay(self, method, args, expected, fallback):
+        gen = self.breaker.allow()
+        if gen is None:
+            return fallback, "circuit_open"
+        if not self._relay_slots.acquire(blocking=False):
+            self.breaker.cancel_probe()
+            return fallback, "busy"
+        try:
+            future = self._relay_pool.submit(getattr(self.provider, method), *args,
+                                            CONNECT_TIMEOUT_MS, self.total_timeout_ms)
+        except Exception:
+            self._relay_slots.release()
+            self.breaker.record(False, gen)
+            return fallback, "error"
+        future.add_done_callback(lambda _: self._relay_slots.release())
+        try:
+            value = future.result(timeout=self.total_timeout_ms / 1000)
+        except FutureTimeout:
+            self.breaker.record(False, gen)
+            return fallback, "timeout"
+        except Exception:
+            self.breaker.record(False, gen)
+            return fallback, "error"
+        ok = isinstance(value, expected) and bool(value)
+        self.breaker.record(ok, gen)
+        return (value, "ok") if ok else (fallback, "error")
 
     def fetch(self, req: AdRequest) -> tuple[AdResponse, str]:
         """반환: (응답, 결과 코드 ok|empty|timeout|error|busy|circuit_open). 결과 코드는 지표용이다."""

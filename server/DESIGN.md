@@ -20,6 +20,18 @@
 
 후속 광고 연동은 [서버 가명 발급 함수](api/sessions.py)에서 로그인 세션별 광고 UUID를 받는다. 대응표에는 플레이어 가명과 광고 UUID, 로그인 세션을 HMAC으로 변환한 내부 키를 둔다. C-09-02는 `ad_identities(player)`로 광고 기록을 찾고, 광고 기록을 삭제한 뒤 `delete_player(player)`로 대응표와 회차 참가 배정을 제거한다.
 
+## 광고 신호와 ASGI
+
+[ASGI 진입점](paldo_web/asgi.py)은 HTTP를 Django에, `/ws/game/`을 전체 출처 검사와 Django 세션 인증 뒤 Consumer에 보낸다. 허용 출처는 `PALDO_PUBLIC_ORIGIN` 하나다. 비로그인은 수락 직후 4401로 닫고, 매 비콘 전에 DB에서 세션·사용자·인증 해시를 새로 읽어 로그아웃·만료·비밀번호 변경을 확인한다. 크기 제한은 UTF-8 바이트 기준 4,096이며 초당 비콘 5개를 넘으면 연결을 유지하고 거부한다.
+
+Consumer는 검증과 응답만 맡는다. 중계는 `ad_events` → `AdGateway` → `AdProvider` 순서이며 `sync_to_async(thread_sensitive=False)`로 동기 호출을 이벤트 루프 밖에서 실행한다. serve와 중계의 호출 상한은 각각 8이고 회로 차단기는 공유한다. 전체 300ms·연결 100ms, 재시도 없음 규칙을 유지한다. HTTP 클릭은 같은 출처 `/ads/landing/<id>`만 허용하며 실패하면 `/`로 이동한다.
+
+광고 제공자는 `configure_ad_gateway`로 명시적으로 주입한다. 운영에서 가짜로 자동 대체하지 않는다. 미조립 상태는 비콘 실패 응답과 HTTP 대체 화면으로 처리한다. 참가자 헤더나 요청 객체는 포트 인자에 전달하지 않는다. 실제 HTTP 클라이언트의 헤더 검증은 B-08-03에서 이어 간다.
+
+`InMemoryChannelLayer`를 사용하므로 Daphne는 루프백 주소의 프로세스 하나로 실행한다. HTTPS 프록시·VM 검증은 C-07-04와 이어 간다. 로컬 Channels·Daphne 시험은 대상 VM 호환 확정이나 실제 Mongo 성능 증빙을 대신하지 않는다.
+
+P-29에 따라 `hello`를 연결당 한 번 받는다. `dropped_by_reason`의 `queue_full`과 `page_exit`는 각각 0 이상 정수이며 합계가 `dropped`와 같아야 한다. 누락·합계 불일치·알 수 없는 사유·중복 보고는 `bad_message`로 응답하고 집계하지 않는다. 지표는 `paldo_ad_beacon_dropped_total{reason}` 하나를 사용한다. `rate_limited`는 서버가 비콘을 빈도 제한으로 거절한 때만 더한다. [웹소켓 계약](../docs/contracts/api.md#7-웹소켓과-광고-중계-114-pm-결정-b-07-05)
+
 ## 검증 경계
 
 계정 기능은 격리 MySQL에서 검증했다. 고정 판 배정은 실제 엔진과 녹화 엔진으로 시험하고, B 회차 저장·광고 가명 대응표는 [로컬 Mongo 시험](tests/README.md)으로 확인한다. C의 게임·진척 저장소를 연결한 운영 판, VM 계정 DB, 실제 광고 요청은 통합 환경에서 확인한다.
