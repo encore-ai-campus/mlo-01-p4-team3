@@ -1,0 +1,16 @@
+{
+  "task": "B-06-03",
+  "commit": "98b6cc99c0de7cc00f879a64842c7c1ef2a1dc86",
+  "generated_at": "2026-11-07T18:16:44Z",
+  "source": "python -B server/manage.py test server.tests.mongo_game_sessions server.tests.mongo_sessions --settings=server.paldo_web.mongo_test_settings --noinput --verbosity=2; isolated MySQL: python -B -m out.handoff.run_pr_mysql",
+  "metrics": {
+    "mongo_tests": {
+      "value": 8,
+      "unit": "개"
+    },
+    "server_tests": {
+      "value": 156,
+      "unit": "개"
+    }
+  }
+}
