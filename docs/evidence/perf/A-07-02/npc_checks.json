@@ -1,0 +1,40 @@
+{
+  "task": "A-07-02",
+  "commit": "bd469f1d3e6924d495817715fe7ae1607f79a8b1",
+  "generated_at": "2026-11-07T01:43:02Z",
+  "source": "python -m tools.perf.npc_rule_check --events out/a0702/events.jsonl",
+  "metrics": {
+    "games": {
+      "value": 500,
+      "unit": "판"
+    },
+    "decisions": {
+      "value": 13122,
+      "unit": "건"
+    },
+    "villager_votes": {
+      "value": 3184,
+      "unit": "건"
+    },
+    "legal_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "fallback_votes": {
+      "value": 0,
+      "unit": "건"
+    },
+    "suspicion_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "confessions": {
+      "value": 70,
+      "unit": "건"
+    }
+  }
+}

@@ -47,6 +47,14 @@ class Layers(unittest.TestCase):
     def test_tools_no_third_party(self):
         self.check("tools", {"engine", "contracts", "tools", "ads"})
 
+    def test_llm_rules_stdlib_only(self):
+        # E-07-07: 서비스(E-08-09)와 MVP 노트북(E-07-06)이 그대로 쓰는 순수 규칙 4개. llm/bench·llm/service는 대상 아님
+        for name in ("prompt.py", "validator.py", "eval_set.py", "mvp_metrics.py"):
+            f = ROOT / "llm" / name
+            self.assertTrue(f.exists(), str(f))
+            for mod, level in imports(f):
+                self.assertTrue(level == 0 and (mod in STDLIB or mod == "llm"), f"llm/{name}: {mod}")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,172 @@
+{
+  "task": "E-07-07",
+  "commit": "f98158ecf9cb87a395f86731b023cb836ff8796b",
+  "generated_at": "2026-11-06T14:34:14Z",
+  "source": "python -m llm.bench.run_bench --model kanana-2-3b-instruct.Q4_K_M.gguf --label kanana2_3b --mode win --eval fixtures/llm/interrogation_eval.json --threads 8 --max-tokens 128 --temperature 0.7 --top-p 0.8 --top-k 20 --n-ctx 1024 --eval-seed 0  # 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36; prompt interrogate-v8; n 100",
+  "metrics": {
+    "n_requests": {
+      "value": 100,
+      "unit": "건"
+    },
+    "success_count": {
+      "value": 86,
+      "unit": "건"
+    },
+    "success_rate_pct": {
+      "value": 86.0,
+      "unit": "%"
+    },
+    "fallback_count": {
+      "value": 14,
+      "unit": "건"
+    },
+    "fallback_rate_pct": {
+      "value": 14.0,
+      "unit": "%"
+    },
+    "validation_fail_count": {
+      "value": 14,
+      "unit": "건"
+    },
+    "error_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "timeout_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_format_length_count": {
+      "value": 4,
+      "unit": "건"
+    },
+    "reason_format_length_pct": {
+      "value": 4.0,
+      "unit": "%"
+    },
+    "all_format_length_count": {
+      "value": 4,
+      "unit": "건"
+    },
+    "reason_forbidden_entity_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_forbidden_entity_pct": {
+      "value": 0.0,
+      "unit": "%"
+    },
+    "all_forbidden_entity_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_added_assertion_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reason_added_assertion_pct": {
+      "value": 0.0,
+      "unit": "%"
+    },
+    "all_added_assertion_count": {
+      "value": 1,
+      "unit": "건"
+    },
+    "reason_fact_changed_count": {
+      "value": 10,
+      "unit": "건"
+    },
+    "reason_fact_changed_pct": {
+      "value": 10.0,
+      "unit": "%"
+    },
+    "all_fact_changed_count": {
+      "value": 10,
+      "unit": "건"
+    },
+    "ending_only_fail_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "fallback_has_fact_pct": {
+      "value": 100.0,
+      "unit": "%"
+    },
+    "prompt_p50_ms": {
+      "value": 3553.22,
+      "unit": "ms"
+    },
+    "prompt_p95_ms": {
+      "value": 3756.63,
+      "unit": "ms"
+    },
+    "gen_p50_ms": {
+      "value": 1325.24,
+      "unit": "ms"
+    },
+    "gen_p95_ms": {
+      "value": 1867.25,
+      "unit": "ms"
+    },
+    "validate_p50_ms": {
+      "value": 1.02,
+      "unit": "ms"
+    },
+    "validate_p95_ms": {
+      "value": 1.18,
+      "unit": "ms"
+    },
+    "total_p50_ms": {
+      "value": 4856.31,
+      "unit": "ms"
+    },
+    "total_p95_ms": {
+      "value": 5574.55,
+      "unit": "ms"
+    },
+    "total_max_ms": {
+      "value": 5963.21,
+      "unit": "ms"
+    },
+    "gen_tps_mean": {
+      "value": 14.13,
+      "unit": "tok/s"
+    },
+    "prompt_tokens_mean": {
+      "value": 208.04,
+      "unit": "tok"
+    },
+    "gen_tokens_mean": {
+      "value": 17.99,
+      "unit": "tok"
+    },
+    "wall_s": {
+      "value": 482.3,
+      "unit": "s"
+    },
+    "threads": {
+      "value": 8,
+      "unit": ""
+    },
+    "max_tokens": {
+      "value": 128,
+      "unit": "tok"
+    },
+    "n_ctx": {
+      "value": 1024,
+      "unit": "tok"
+    },
+    "temperature": {
+      "value": 0.7,
+      "unit": ""
+    },
+    "top_p": {
+      "value": 0.8,
+      "unit": ""
+    },
+    "top_k": {
+      "value": 20,
+      "unit": ""
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "task": "E-07-07",
+  "commit": "f98158ecf9cb87a395f86731b023cb836ff8796b",
+  "generated_at": "2026-11-06T14:42:10Z",
+  "source": "python -m llm.bench.run_bench --model kanana-2-3b-instruct.Q4_K_M.gguf --label kanana2_3b --mode win --eval fixtures/llm/interrogation_eval.json --threads 8 --max-tokens 128 --temperature 0.7 --top-p 0.8 --top-k 20 --n-ctx 1024  # 전원 ac_power=충전기, battery_saver=꺼짐, power_plan=균형, power_mode=균형; llama_cpp 0.3.36; prompt interrogate-v8; n 20; --consistency-n 20 --consistency-seeds 1,2,3,4,5",
+  "metrics": {
+    "consistency_cases": {
+      "value": 20,
+      "unit": "건"
+    },
+    "consistency_k": {
+      "value": 5,
+      "unit": "회"
+    },
+    "verdict_agree_pct": {
+      "value": 95.0,
+      "unit": "%"
+    },
+    "facts_kept_pct": {
+      "value": 95.0,
+      "unit": "%"
+    },
+    "similarity_mean": {
+      "value": 0.9106,
+      "unit": ""
+    }
+  }
+}

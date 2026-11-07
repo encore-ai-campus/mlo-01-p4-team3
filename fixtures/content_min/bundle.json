@@ -211,10 +211,9 @@
     },
     {
       "npc_id": "ferryman",
-      "name_ko": "뱃사공",
+      "name_ko": "나무꾼",
       "aliases": [
-        "뱃사공",
-        "사공"
+        "나무꾼"
       ],
       "temperament_id": "hothead",
       "routine": {
@@ -226,7 +225,7 @@
           "home": 1.0
         }
       },
-      "speech_style": "투박한 사투리"
+      "speech_style": "투박한 강원도 사투리"
     },
     {
       "npc_id": "gisaeng",
@@ -369,7 +368,7 @@
       "slot": "evening",
       "actual_place": "gate",
       "false_place": "shrine",
-      "confession_line": "산신께 금한 골짜기에서 약초를 캤소.",
+      "confession_line": "산신이 금한 골짜기에서 약초를 캤소.",
       "confession_threshold": 55.0,
       "conflicts_with": [],
       "grudge_clue_id": "clue_valley"

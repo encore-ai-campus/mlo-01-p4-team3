@@ -30,6 +30,7 @@ from .observation import (   # candidate_pool·confessed_ids는 이전 위치(en
     snapshot_id_of,
 )
 from ..ports import EngineDeps, PlayerView, RenderRequest, TransitionResult
+from .npc.vote import FALLBACK_SUFFIX, VoteOutcome
 
 
 NIGHT0 = 0
@@ -437,16 +438,40 @@ def _contradiction_claims(evidence: list[EvidenceRef]) -> list[str]:
     return ids[:2] if len(ids) >= 2 else []
 
 
+def _check_npc_talk(state: GameState, cmd: Command) -> Optional[str]:
+    """NPC 말 명령의 대상·근거 검사(합법 행동 필터, 기획서 4.2 공통). 문제가 있으면 설명, 없으면 None.
+
+    의심·감싸기 대상은 자기 아닌 활동 인원(무당 포함), 근거는 공개 기록에 있어야 한다(`_check_evidence`).
+    """
+    if cmd.kind in (CommandKind.SUSPECT, CommandKind.DEFEND) and (cmd.target not in state.active
+                                                                  or cmd.target == cmd.actor):
+        return f"대상 아님: {cmd.target}"
+    bad = _check_evidence(state, cmd)
+    return None if bad is None else f"{bad[0].value} {bad[1]}"
+
+
+def _policy_beliefs(policy, snap: ObservationSnapshot, beliefs):
+    """정책에 믿음 갱신(`update_beliefs`)이 있으면 그 결과로 스냅샷 믿음을 바꾸고 돌려준다. 없으면 관측 믿음 그대로."""
+    upd = getattr(policy, "update_beliefs", None)
+    if upd is None:
+        return beliefs
+    out = upd(snap)
+    snap.beliefs = copy.deepcopy(out)
+    return out
+
+
 # ---------------------------------------------------------------- 상태 전이
 class _Tx:
     """명령 1개의 전이 작업 공간. 복사본(state, truth)만 고치고 이벤트·렌더 요청을 모은다."""
 
-    def __init__(self, state: GameState, truth: GameTruth, content: ContentBundle, policy: NpcPolicy):
+    def __init__(self, state: GameState, truth: GameTruth, content: ContentBundle, policy: NpcPolicy,
+                 suspicion=None):
         self.st = copy.deepcopy(state)
         self.tr = copy.deepcopy(truth)
         self.st.state_version = state.state_version + 1
         self.content = content
         self.policy = policy
+        self.suspicion = suspicion                      # 의심 모델 포트(EngineDeps.suspicion). 없으면 규칙 투표만
         self.events: list[DomainEvent] = []
         self.renders: list[RenderRequest] = []
         self.chars = {c.npc_id: c for c in content.characters}
@@ -462,10 +487,17 @@ class _Tx:
     def emit(self, et: EventType, payload: dict) -> None:
         self.events.append(DomainEvent(et, self.st.day, self.st.phase, payload))
 
-    def template(self, kind: CommandKind, reaction: Optional[ReactionIntent] = None) -> str:
-        for t in self.content.templates:
-            if t.kind is kind and t.reaction is reaction and t.temperament_id is None:
-                return t.variants[0]
+    def template(self, kind: CommandKind, reaction: Optional[ReactionIntent] = None,
+                 speaker: Optional[str] = None) -> str:
+        """(kind, reaction) 템플릿 첫 변형. 화자 인물의 성향 템플릿이 있으면 그것, 없으면 공용(A-07-01 조건 7).
+
+        speaker가 없으면(무당·행적 진술 등) 공용만 쓴다.
+        """
+        temp = self.chars[speaker].temperament_id if speaker in self.chars else None
+        for want in ((temp, None) if temp else (None,)):
+            for t in self.content.templates:
+                if t.kind is kind and t.reaction is reaction and t.temperament_id == want:
+                    return t.variants[0]
         return ""
 
     def name(self, pid: Optional[str]) -> str:
@@ -497,18 +529,26 @@ class _Tx:
     # ---- NPC 결정 지점: 관측 투영 → 믿음 갱신 → 행동 선택(A-06-02)
     def decide(self, npc: str, legal_kinds: list[CommandKind], choose) -> Decision:
         """NPC 결정 1회. 스냅샷을 찍어 믿음을 갱신하고 `observation`을 낸 뒤, 정책(`choose(스냅샷)`)의 결정을
-        같은 snapshot_id로 `decision`에 남긴다. 정책은 스냅샷만 받는다(진실·다른 NPC 상태 없음)."""
+        같은 snapshot_id로 `decision`에 남긴다. 정책은 스냅샷만 받는다(진실·다른 NPC 상태 없음).
+
+        choose가 `VoteOutcome`(의심 모델 투표, A-07-02)을 내고 폴백이었으면 policy_version에 `-fallback`을 붙인다.
+        """
         st = self.st
         sid = snapshot_id_of(st.meta.game_id, st.state_version, self.n_obs, npc)
         self.n_obs += 1
         snap, beliefs = observe_npc(st, npc, legal_kinds, sid)
+        beliefs = _policy_beliefs(self.policy, snap, beliefs)
         st.npcs[npc].beliefs = beliefs
         self.emit(EventType.OBSERVATION, observation_payload(snap))
         d = choose(snap)
+        suffix = ""
+        if isinstance(d, VoteOutcome):
+            suffix = FALLBACK_SUFFIX if d.fallback is not None else ""
+            d = d.decision
         if not isinstance(d, Decision):
             raise ValueError(f"NPC 정책이 Decision이 아닌 값을 냄: {npc} {d!r}")
         kind, target = _kind_target(d.value)
-        version = st.meta.npc_policy_versions.get(npc) or getattr(self.policy, "version", "unknown")
+        version = (st.meta.npc_policy_versions.get(npc) or getattr(self.policy, "version", "unknown")) + suffix
         self.emit(EventType.DECISION, decision_payload(npc, sid, kind, target, d, version))
         return d
 
@@ -534,7 +574,11 @@ class _Tx:
                 raise ValueError(f"NPC 정책이 잘못된 말 명령을 냄: {npc} {cmd!r}")
             if not is_legal_kind(st.phase, cmd.kind, False):
                 raise ValueError(f"NPC 정책이 불법 명령을 냄: {npc} {cmd.kind}")
-            sp = self.speak(npc, cmd, line_text=self.template(cmd.kind).format(target=self.name(cmd.target)))
+            bad = _check_npc_talk(st, cmd)
+            if bad is not None:
+                raise ValueError(f"NPC 정책이 불법 말 명령을 냄: {npc} {bad}")
+            line = self.template(cmd.kind, speaker=npc).format(target=self.name(cmd.target))
+            sp = self.speak(npc, cmd, line_text=line)
             self.emit(EventType.SPEECH_MADE, {"speech_id": sp.speech_id})
             st.turn_index += 1
         if st.turn_index >= len(st.turn_order):
@@ -585,11 +629,11 @@ class _Tx:
             claim, fact = self.whereabouts_answer(npc, cmd.night, cmd.slot)
             claim_ids.append(claim.claim_id)
         else:
-            fact = self.template(CommandKind.EXPLAIN)
+            fact = self.template(CommandKind.EXPLAIN, speaker=npc)
         job_id = f"job_{sum(1 for s in st.public.speeches if s.render_job_id) + 1:03d}"
         q = Command(CommandKind.INTERROGATE, npc, addressee=PLAYER_ID, evidence=list(cmd.evidence))
         sp = self.speak(npc, q, claim_ids, reaction=reaction, fact_sentence=fact, render_job_id=job_id)
-        fallback = self.template(CommandKind.INTERROGATE, reaction).format(fact=fact) or fact
+        fallback = self.template(CommandKind.INTERROGATE, reaction, speaker=npc).format(fact=fact) or fact
         names = [self.name(n) for n in st.active + st.locked + st.missing if n != PLAYER_ID]
         self.renders.append(RenderRequest(job_id, st.meta.game_id, st.state_version, sp.speech_id, npc,
                                           self.chars[npc].speech_style if npc in self.chars else "",
@@ -627,7 +671,7 @@ class _Tx:
         return fact.format(night=c.night, slot=SLOT_KO[c.slot], place=self.place_ko.get(c.place, c.place.value))
 
     def executor_lie(self, night: int, npc: str) -> Optional[Place]:
-        """그 밤 실행자면 한밤에 말할 거짓 장소(합의 알리바이, 없으면 `executor_alibi`). 실행자가 아니면 None.
+        """그 밤 실행자면 한밤에 말할 거짓 장소(합의 알리바이, 없거나 실제 범행 장소와 같으면 `executor_alibi`). 실행자가 아니면 None.
 
         아침 진술과 캐묻기 답이 같은 난수 키를 써서 같은 장소를 말한다.
         """
@@ -635,10 +679,10 @@ class _Tx:
         if plan is None or plan.executor != npc:
             return None
         agreed = plan.agreed_alibis.get(npc)
-        if agreed:
+        actual = self.tr.whereabouts[night][npc][Slot.MIDNIGHT]
+        if agreed and Place(agreed) is not actual:      # 합의 알리바이가 실제 범행 장소면 알리바이가 아니므로 쓰지 않는다(A-07-01)
             return Place(agreed)
         own = [s for s in self.st.npcs[npc].private.witnessed if s.night == night]
-        actual = self.tr.whereabouts[night][npc][Slot.MIDNIGHT]
         return executor_alibi(random.Random(f"{self.st.meta.seed}:{night}:alibi:{npc}"), actual, own)
 
     # ---- 고백
@@ -677,11 +721,18 @@ class _Tx:
             if npc == PLAYER_ID:
                 continue
             rng = self.rng(f"vote:{round_}:{npc}")
-            t = self.decide(npc, [CommandKind.VOTE], lambda o: self.policy.vote(o, list(candidates), rng)).value
+            t = self.decide(npc, [CommandKind.VOTE], lambda o: self.policy_vote(o, list(candidates), rng)).value
             if t == npc or t not in candidates:
                 raise ValueError(f"NPC 정책이 불법 표를 냄: {npc} -> {t}")
             out[npc] = t
         return out
+
+    def policy_vote(self, obs: ObservationSnapshot, candidates: list[str], rng: random.Random):
+        """정책에 `vote_with_model`이 있고 의심 모델이 주어졌으면 투표 3층(A-07-02), 아니면 `vote`."""
+        with_model = getattr(self.policy, "vote_with_model", None)
+        if with_model is None or self.suspicion is None:
+            return self.policy.vote(obs, candidates, rng)
+        return with_model(obs, candidates, rng, self.suspicion)
 
     def start_vote(self) -> None:
         st = self.st
@@ -960,7 +1011,7 @@ class PaldoEngine:
             if r in a.secrets:
                 s = secrets[a.secrets[r]]
                 pk.hidden_whereabouts = [{"night": str(NIGHT0), "slot": s.slot.value}]
-                # 고백(confession_threshold 등)은 A-06-01·A-07-01 범위. 여기서는 비밀 사건과 그 시간대 거짓말만 만든다.
+                pk.confession_threshold = s.confession_threshold   # 기본 문턱값. 성향 보정은 정책(A-07-01)이 한다
             pk.my_false_claims = [c.claim_id for c in claims
                                   if c.speaker == r and claim_truths[c.claim_id].deliberate_lie]
             npcs[r] = NpcState(npc_id=r, temperament_id=temperaments[r], private=pk)
@@ -994,7 +1045,7 @@ class PaldoEngine:
         bad = validate_command(state, truth, env)
         if bad is not None:
             return TransitionResult(False, None, None, [], reject=bad[0], reject_detail=bad[1])
-        tx = _Tx(state, truth, deps.content, self.policy)
+        tx = _Tx(state, truth, deps.content, self.policy, getattr(deps, "suspicion", None))
         cmd = env.command
         k = cmd.kind
         if k is CommandKind.ADVANCE:
@@ -1035,7 +1086,8 @@ class PaldoEngine:
         합법 종류는 지금 단계의 NPC 합법 종류.
         """
         sid = snapshot_id_of(state.meta.game_id, state.state_version, 0, npc_id, origin="q")
-        snap, _ = observe_npc(state, npc_id, list(PHASE_RULES[state.phase].npc_kinds), sid)
+        snap, beliefs = observe_npc(state, npc_id, list(PHASE_RULES[state.phase].npc_kinds), sid)
+        _policy_beliefs(self.policy, snap, beliefs)
         return snap
 
 
