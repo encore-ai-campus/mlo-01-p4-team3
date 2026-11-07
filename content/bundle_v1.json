@@ -317,34 +317,34 @@
       "confession_line": "제사 전날인데 주막에서 술을 마셨소. 그 자리에서 십 년 전 그 밤 일을 두고 수군대는 소리를 들었소.",
       "confession_threshold": 40.0,
       "conflicts_with": [],
-      "grudge_clue_id": "clue_tiger"
+      "grudge_clue_id": "clue_gate"
     }
   ],
   "grudge_clues": [
     {
       "clue_id": "clue_famine",
-      "text_ko": "창귀는 생전에 흉년 든 해 마을 곳간을 지키던 떠돌이 일꾼이었다.",
+      "text_ko": "창귀는 생전에 십 년 전 흉년 든 해 마을 곳간을 지키던 떠돌이 일꾼 삼돌이다. 곳간 옆에 버려진 낡은 이름패에 그 이름이 남아 있다.",
       "unlock": "secret:grain 고백",
       "part": "identity",
       "hypothesis_id": "h1"
     },
     {
       "clue_id": "clue_valley",
-      "text_ko": "금한 골짜기 깊은 곳에 아무도 돌보지 않는 이름 없는 돌무덤이 있다.",
+      "text_ko": "금한 골짜기 깊은 곳 이름 없는 돌무덤은 흉년 든 해 곳간을 지키던 떠돌이 일꾼 삼돌의 무덤이다. 돌 틈에 낀 녹슨 곳간 열쇠가 그가 누구였는지 알려 준다.",
       "unlock": "secret:taboo_herb 고백",
       "part": "identity",
       "hypothesis_id": "h1"
     },
     {
       "clue_id": "clue_debt",
-      "text_ko": "그 일꾼은 노름빚 독촉에 쫓겨 밤 산길로 나섰다가 돌아오지 못했다.",
+      "text_ko": "삼돌은 주막 뒷방 투전판에서 진 빚 독촉에 쫓겨 밤 산길로 나섰다가, 범에게 쫓겨 마을 어귀까지 내달려 왔으나 끝내 살아 들어오지 못했다.",
       "unlock": "secret:gambling 고백",
       "part": "death",
       "hypothesis_id": "h1"
     },
     {
-      "clue_id": "clue_tiger",
-      "text_ko": "그 밤 마을 어귀 사립문은 누군가의 지시로 일찍 걸려, 산에서 쫓겨 온 일꾼을 들이지 않았다.",
+      "clue_id": "clue_gate",
+      "text_ko": "그 밤 마을 어귀 사립문을 일찍 걸라고 시킨 이는 김 훈장이다. 곳간 곡식이 샐까 봐 누구에게도 문을 열지 말라 일렀고, 문밖에서 살려 달라 외치던 삼돌은 끝내 들어오지 못했다.",
       "unlock": "secret:drinking 고백",
       "part": "target",
       "hypothesis_id": "h1"
