@@ -15,7 +15,7 @@ from typing import Optional
 
 from .model import (
     AdContext, AdSlot, AuctionResult, Bidder, BillingType, Campaign, CampaignStatus, ChargeState,
-    InvalidReason, JudgeStatus, LedgerRow, ServeClaims, ServeRecord, SlotPolicy,
+    MIN_RESERVE_ECPM_MW, InvalidReason, JudgeStatus, LedgerRow, ServeClaims, ServeRecord, SlotPolicy,
 )
 
 JUDGE_VERSION = "judge-0.2"
@@ -26,6 +26,7 @@ VIEWABLE_RATIO = 0.5
 VIEWABLE_MS = 1000
 SUSPECT_CLICK_MS = 1000                # 같은 세션의 직전 클릭과 이 간격 미만이면 의심 표시(무효 근거 아님)
 MIN_RANK_CTR = 0.0001
+REFUND_SUFFIX = ":refund"            # 환입 행 charge_id = 원과금 charge_id + 이 접미사
 PACING_MIN_P, PACING_MAX_P, PACING_STEP = 0.05, 1.0, 0.2
 
 
@@ -104,10 +105,10 @@ def run_auction(bidders: list[Bidder], reserve_ecpm_mw: int, request_id: str) ->
 
 
 def charge_amount_mw(billing: BillingType, price_mw: int) -> int:
-    """단가 기준 1건 상한. CPC=단가, CPM=ceil(단가/1000).
-    등록·필터는 최대 입찰가를, 예약은 실제 낙찰 단가를 넣는다.
-    CPM 확정액은 BudgetBook이 캠페인별 나머지(1/1000 밀리원)를 이월해 누적 합이 정확하도록 정한다."""
-    return price_mw if billing is BillingType.CPC else -(-price_mw // 1000)
+    """단가 기준 1건 금액. CPC=단가, CPM=floor(단가/1000).
+    등록·필터는 최대 입찰가를, 예약·확정은 실제 낙찰 단가를 넣는다. 1건 금액은 그 건의 단가만으로 정해진다
+    (11/7 PM 결정: 나머지 이월 폐지. 밀리원 미만은 건마다 버린다. 손실은 CPM 노출 1건당 1밀리원 미만)."""
+    return price_mw if billing is BillingType.CPC else price_mw // 1000
 
 
 def validate_campaign_budget(billing: BillingType, max_bid_mw: int, daily_budget_mw: int) -> None:
@@ -132,7 +133,6 @@ class BudgetBook:
     """
     rows: dict[str, LedgerRow] = field(default_factory=dict)
     totals: dict[tuple[str, str], int] = field(default_factory=dict)   # (캠페인, 귀속일) -> 예약+확정(해제 제외, 환입 포함)
-    cpm_carry: dict[str, int] = field(default_factory=dict)            # 캠페인 -> CPM 나머지(1/1000 밀리원)
 
     def __post_init__(self) -> None:
         self._lock = threading.RLock()
@@ -148,11 +148,18 @@ class BudgetBook:
         return self.committed_mw(c.campaign_id, day) + amount_mw <= c.daily_budget_mw
 
     def reserve(self, c: Campaign, serve: ServeRecord) -> bool:
+        """1건 금액을 원자적으로 예약한다. 불변조건 위반은 ValueError, 중복·예산 초과는 False.
+
+        불변조건: 청구 단가 0 이상·최대 입찰가 이하, CPM 단가 ≥ 최저 eCPM 하한, 1건 금액 > 0, 캠페인·과금 방식 일치."""
         if serve.campaign_id != c.campaign_id or serve.billing is not c.billing:
             raise ValueError("serve와 캠페인 불일치")
         if not (0 <= serve.price_mw <= c.max_bid_mw):
             raise ValueError("청구 단가는 0 이상, 최대 입찰가 이하")
+        if serve.billing is BillingType.CPM and serve.price_mw < MIN_RESERVE_ECPM_MW:
+            raise ValueError(f"CPM 청구 단가는 {MIN_RESERVE_ECPM_MW}밀리원(지면 최저 eCPM 하한) 이상")
         amt = charge_amount_mw(serve.billing, serve.price_mw)
+        if amt <= 0:
+            raise ValueError("1건 금액은 0보다 커야 한다(0원 과금 금지)")
         cid = charge_id(serve.serve_id, serve.billing)
         with self._lock:
             if cid in self.rows or not self.can_reserve(c, serve.attribution_day, amt):
@@ -164,17 +171,11 @@ class BudgetBook:
             return True
 
     def confirm(self, cid: str, source_event_id: str) -> bool:
-        """확정하면 True(확정액은 rows[cid].amount_mw). 이미 확정·해제·없음이면 False. CPM은 나머지를 이월한다."""
+        """확정하면 True(확정액 = 예약액 = rows[cid].amount_mw). 이미 확정·해제·없음이면 False."""
         with self._lock:
             r = self.rows.get(cid)
             if r is None or r.state is not ChargeState.RESERVED:
                 return False
-            if r.billing is BillingType.CPM:
-                acc = self.cpm_carry.get(r.campaign_id, 0) + r.price_mw
-                actual, self.cpm_carry[r.campaign_id] = divmod(acc, 1000)
-                self._add(r, -1)
-                r.amount_mw = actual
-                self._add(r, 1)
             r.state, r.source_event_id = ChargeState.CONFIRMED, source_event_id
             return True
 
@@ -190,18 +191,16 @@ class BudgetBook:
         return out
 
     def refund(self, cid: str, reason_event_id: str) -> Optional[LedgerRow]:
-        """확정 뒤 무효로 다시 판정된 건: 원래 행은 두고 음수 환입 행을 추가한다."""
+        """확정 뒤 무효로 다시 판정된 건: 원래 행은 두고 음수 환입 행(원래 금액의 부호 반전)을 추가한다.
+
+        원과금(kind=charge)만 대상이고 원과금당 1회다. 환입 행은 원과금의 귀속일에 기록된다.
+        MySQL은 환입 charge_id(`<charge_id>:refund`) 유일 제약과 예산 행 잠금을 같은 트랜잭션에 둔다."""
         with self._lock:
             r = self.rows.get(cid)
-            rid = f"{cid}:refund"
-            if r is None or r.state is not ChargeState.CONFIRMED or rid in self.rows:
+            rid = f"{cid}{REFUND_SUFFIX}"
+            if r is None or r.kind != "charge" or r.state is not ChargeState.CONFIRMED or rid in self.rows:
                 return None
-            amount = -r.amount_mw
-            if r.billing is BillingType.CPM:
-                # 이 노출의 정확한 기여(price/1000)를 누적에서 빼고, 그만큼만 환입한다(나머지 이월 보정)
-                q, self.cpm_carry[r.campaign_id] = divmod(self.cpm_carry.get(r.campaign_id, 0) - r.price_mw, 1000)
-                amount = q
-            row = LedgerRow(rid, r.campaign_id, amount, ChargeState.CONFIRMED, r.attribution_day,
+            row = LedgerRow(rid, r.campaign_id, -r.amount_mw, ChargeState.CONFIRMED, r.attribution_day,
                             reason_event_id, "refund", r.billing, r.price_mw)
             self.rows[rid] = row
             self._add(row, 1)
@@ -324,19 +323,35 @@ def judge_click(st: ValidityState, claims, token_reason, first_received_ms: int,
 
 # ---------------------------------------------------------------- 건별 대사(기획서 14.4)
 def reconcile(ledger: dict[str, int], delta: dict[str, list[int]]) -> dict[str, list[str]]:
-    """ledger: 확정 charge_id -> 금액(원장). delta: charge_id -> 금액 목록(Delta 유효 이벤트, 중복이면 여러 개).
+    """ledger: 확정 원장 행 charge_id -> 금액(환입 행 `<charge_id>:refund` 포함).
+    delta: charge_id -> 금액 목록(Delta의 과금 대상 유효 건, 중복이면 여러 개).
 
-    반환: ledger_only(발행 누락), delta_only, duplicate, amount_mismatch 각 charge_id 목록. 모두 비면 일치.
+    원장은 원래 charge_id로 묶은 순액(원과금 + 환입)으로 비교한다(11/7 PM 결정). 순액 0이고 Delta에 없으면
+    환입으로 상계된 건이라 일치다(0원 과금은 금지라 발행 누락과 구분된다).
+    반환: ledger_only(발행 누락), delta_only, duplicate, amount_mismatch, orphan_refund(원과금 없는 환입 행)
+    각 charge_id 목록. 모두 비면 일치.
     """
-    out = {"ledger_only": [], "delta_only": [], "duplicate": [], "amount_mismatch": []}
-    for cid in sorted(set(ledger) | set(delta)):
+    out = {"ledger_only": [], "delta_only": [], "duplicate": [], "amount_mismatch": [], "orphan_refund": []}
+    net: dict[str, int] = {}
+    for cid, amount in ledger.items():
+        if cid.endswith(REFUND_SUFFIX):
+            base = cid[:-len(REFUND_SUFFIX)]
+            if base not in ledger:
+                out["orphan_refund"].append(cid)
+                continue
+        else:
+            base = cid
+        net[base] = net.get(base, 0) + amount
+    out["orphan_refund"].sort()
+    for cid in sorted(set(net) | set(delta)):
         amounts = delta.get(cid, [])          # 빈 목록 = Delta에 없음
         if len(amounts) > 1:
             out["duplicate"].append(cid)      # 존재 여부와 독립적으로 센다
-        if cid in ledger and not amounts:
-            out["ledger_only"].append(cid)
-        elif cid not in ledger and amounts:
+        if cid in net and not amounts:
+            if net[cid] != 0:                 # 순액 0 = 환입으로 상계
+                out["ledger_only"].append(cid)
+        elif cid not in net and amounts:
             out["delta_only"].append(cid)
-        elif cid in ledger and any(a != ledger[cid] for a in amounts):
+        elif cid in net and any(a != net[cid] for a in amounts):
             out["amount_mismatch"].append(cid)
     return out

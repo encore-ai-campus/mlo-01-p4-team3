@@ -2,7 +2,8 @@
 
 계층: 도메인. ads/app, ads/infra, ads/web과 게임 쪽 server/app(요청·응답 DTO만)이 이것을 쓴다.
 게임 엔진(engine/)과 서로 import하지 않는다.
-금액은 모두 정수 밀리원(_mw, 1원 = 1000)이다. 누적은 밀리원으로 하고 청구서는 원 단위로 내림한다.
+금액은 모두 정수 밀리원(_mw, 1원 = 1000)이다. 1건 금액은 그 건의 단가만으로 정한다(CPM은 floor(단가/1000),
+밀리원 미만은 건마다 버림, 11/7 PM 결정). 누적은 밀리원으로 하고 청구서는 원 단위로 내림한다.
 """
 from __future__ import annotations
 
@@ -10,8 +11,9 @@ import enum
 from dataclasses import dataclass, field
 from typing import Optional
 
-AD_CONTRACT_VERSION = "ads-0.5"   # 0.5(11/6): 지면 llm_wait 삭제(지면 3곳). 0.4(11/5): serve 이벤트 context, 공통 bid_version, ad.rejudge 형식
+AD_CONTRACT_VERSION = "ads-0.6"   # 0.6(11/7): CPM 나머지 이월 폐지, 1건 금액 floor(단가/1000), 지면 최저 eCPM 하한, 순액 대사. 0.5(11/6): 지면 llm_wait 삭제(지면 3곳). 0.4(11/5): serve 이벤트 context, 공통 bid_version, ad.rejudge 형식
 MW_PER_WON = 1000
+MIN_RESERVE_ECPM_MW = 100_000   # 지면 최저 eCPM 하한 100원(11/7 PM 결정). CPM 1건 ≥ 100밀리원 → 건별 내림 손실 < 1%
 
 
 def won(x: float) -> int:
@@ -116,11 +118,22 @@ class Campaign:
 
 @dataclass
 class SlotPolicy:
+    """지면 정책. 최저 eCPM은 하한(MIN_RESERVE_ECPM_MW, 100원) 이상이어야 하며 만들 때 검사한다."""
     slot: AdSlot
     reserve_ecpm_mw: int            # 지면 최저 eCPM
     prior_ctr: float                # μ: 지면 평균 CTR
     prior_strength: float = 200.0   # κ: 사전분포 가상 노출 수
     frequency_cap: int = 3          # 같은 사용자·같은 소재, 세션당 최대 serve
+
+    def __post_init__(self) -> None:
+        validate_reserve_ecpm(self.reserve_ecpm_mw)
+
+
+def validate_reserve_ecpm(reserve_ecpm_mw: int) -> None:
+    """지면 최저 eCPM이 하한(100원) 미만이면 거부한다. CPM 청구 단가 ≥ T ≥ 최저 eCPM이므로
+    이 하한이 CPM 1건 금액(floor(단가/1000))을 100밀리원 이상으로 보장한다."""
+    if reserve_ecpm_mw < MIN_RESERVE_ECPM_MW:
+        raise ValueError(f"지면 최저 eCPM은 {MIN_RESERVE_ECPM_MW}밀리원 이상이어야 합니다.")
 
 
 # ---------------------------------------------------------------- 요청·응답(게임 서버 → 광고 서버 내부 HTTP)
