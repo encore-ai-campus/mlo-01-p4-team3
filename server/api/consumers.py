@@ -1,7 +1,6 @@
 """웹소켓 메시지를 검증하고 광고 응용 중계를 스레드 경계 밖에서 실행한다."""
 from collections import deque
 import json
-import math
 import time
 from types import SimpleNamespace
 from uuid import UUID, uuid4
@@ -147,7 +146,7 @@ def _valid_impression(data, message_id):
         return False
     ratio = data["visible_ratio"]
     return (isinstance(data["token"], str) and bool(data["token"])
-            and type(ratio) in (int, float) and math.isfinite(ratio) and 0 <= ratio <= 1
+            and type(ratio) in (int, float) and 0 <= ratio <= 1
             and type(data["visible_ms"]) is int and data["visible_ms"] >= 0
             and type(data["occurred_at_ms"]) is int and data["occurred_at_ms"] >= 0)
 

@@ -97,7 +97,7 @@ def main():
                 _send(sock, {"type": "hello", "dropped": 3,
                              "dropped_by_reason": {"queue_full": 2, "page_exit": 1}})
                 from uuid import uuid4
-                event = {"type": "ad.impression", "msg_id": str(uuid4()), "token": "fake-smoke",
+                event = {"type": "ad.impression", "msg_id": str(uuid4()), "token": str(uuid4()),
                          "visible_ratio": .5, "visible_ms": 1000, "occurred_at_ms": 1000}
                 _send(sock, event)
                 opcode, body = _receive(sock)

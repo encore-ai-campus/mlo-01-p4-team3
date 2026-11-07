@@ -23,7 +23,7 @@ from server.paldo_web.asgi import application
 
 def message(**changes):
     """유효한 노출 비콘을 만들고 시험별 오류를 주입한다."""
-    data = {"type": "ad.impression", "msg_id": str(uuid4()), "token": "fake-test-token",
+    data = {"type": "ad.impression", "msg_id": str(uuid4()), "token": str(uuid4()),
             "visible_ratio": 0.5, "visible_ms": 1000, "occurred_at_ms": 1000}
     return dict(data, **changes)
 
@@ -150,6 +150,21 @@ class WebsocketContract(TransactionTestCase):
         self.assertEqual(REGISTRY.get_sample_value("paldo_ad_beacon_dropped_total", rate_labels), rate_before + 1)
         await ws.send_to(text_data="한" * 1366)
         self.assertEqual((await ws.receive_output())["code"], 1009)
+        await ws.disconnect()
+
+    async def test_out_of_range_integer_ratio_keeps_connection_open(self):
+        """실수로 변환할 수 없는 큰 정수도 거부하고 다음 비콘은 처리한다."""
+        ws = self.connection()
+        await ws.connect()
+        invalid = message(visible_ratio=10**400)
+        await ws.send_json_to(invalid)
+        self.assertEqual(await ws.receive_json_from(),
+                         {"type": "error", "msg_id": invalid["msg_id"], "code": "bad_message"})
+        self.assertEqual(self.provider.relay_calls, [])
+        valid = message()
+        await ws.send_json_to(valid)
+        self.assertEqual(await ws.receive_json_from(),
+                         {"type": "ack", "msg_id": valid["msg_id"], "relayed": True})
         await ws.disconnect()
 
     async def test_logout_expiry_password_reset_close(self):
