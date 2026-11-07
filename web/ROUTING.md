@@ -26,4 +26,9 @@
 | `GET /ads/click`, `GET /ads/landing/{creative_id}` | 서버 광고 중계 | 클릭은 같은 출처 랜딩으로 이동하고 실패하면 홈으로 돌아간다. 랜딩 실패에는 돌아가기 링크를 표시한다. |
 
 - [서버 라우팅](../server/ROUTING.md)
+- [ad_slots.js](static/js/ad_slots.js)는 노출 조건을 확인해 B-07-05의 `paldoWS.impression`으로 비콘을 보낸다. 클릭은 `/ads/click?t=` 게임 웹 중계 경로다.
 - [웹 화면 설계](DESIGN.md)
+
+## 광고 지면
+
+`ad_slot_tags.py`가 `ad_placeholder.html`의 크기를 공통 `SLOT_SIZES`에서 읽는다. 로비 `accounts/home.html`은 `lobby_banner`, 종료된 `meeting.html`은 `result_banner`만 배치한다. `GET /ads/slot/{slot}`은 `ad_slot.html`을 반환한다. 소재가 없으면 200 빈 조각으로 기존 내용을 비우며, 복기 `review_side`는 조각까지만 제공한다(B-10-01에서 화면 배치). 로그인된 공통 화면은 `paldo_ws.js`와 `ad_slots.js`를 한 번 로드한다. 회의·투표·밤에는 광고 칸이 없다.

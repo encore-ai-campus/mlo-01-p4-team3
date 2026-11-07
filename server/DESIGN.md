@@ -32,6 +32,14 @@ Consumer는 검증과 응답만 맡는다. 중계는 `ad_events` → `AdGateway`
 
 P-29에 따라 `hello`를 연결당 한 번 받는다. `dropped_by_reason`의 `queue_full`과 `page_exit`는 각각 0 이상 정수이며 합계가 `dropped`와 같아야 한다. 누락·합계 불일치·알 수 없는 사유·중복 보고는 `bad_message`로 응답하고 집계하지 않는다. 지표는 `paldo_ad_beacon_dropped_total{reason}` 하나를 사용한다. `rate_limited`는 서버가 비콘을 빈도 제한으로 거절한 때만 더한다. [웹소켓 계약](../docs/contracts/api.md#7-웹소켓과-광고-중계-114-pm-결정-b-07-05)
 
+## 광고 지면 (B-07-03)
+
+지면 GET은 로그인·동의를 확인하고 저장된 광고 UUID만 `AdRequest.session_pseudonym`으로 보낸다. 로그인 ID·플레이어 가명·쿠키·요청 헤더는 광고 DTO에 넣지 않는다. `SLOT_SIZES`를 읽어 크기를 정하고 응답 이미지 경로를 그대로 사용한다. 외부 출처 이미지 응답은 빈 지면으로 처리한다. 광고 서버 내부 비콘·클릭 경로는 HTML에 넣지 않는다.
+
+광고 응답은 `paldo_ad_fetch_total{result}`로 기록한다. `ok`, `empty`, `timeout`, `error`, `busy`, `circuit_open`을 구분하며 게임 명령 처리에서는 게이트웨이를 부르지 않는다. 게이트웨이는 B-07-05 조립을 사용하고 미연결이면 빈 지면을 반환한다. 운영 설정에 가짜 광고 제공자를 자동으로 연결하지 않는다. 소재가 없는 결과는 안내문·광고 표시·링크·토큰 없이 200 빈 HTML 조각을 반환한다. htmx는 자리의 내용을 비우며 204로 기존 내용을 남기지 않는다.
+
+병합된 B-07-05의 웹소켓·클릭 중계를 사용한다. B-07-03은 `review_side` 광고 조각까지 검증하며 복기 화면 배치는 B-10-01 범위다. C 저장소·실제 광고 서버 연결은 별도 인수 검증 대상이다.
+
 ## 검증 경계
 
 추궁 답변은 공개 발언의 종류가 `interrogate`이고 화자가 무당이 아닌 경우로 식별한다. 화면용 `SpeechVM.is_interrogation_answer`와 같은 판정 함수를 사용하며, 폴링 응답은 공개 발언의 발언 ID·작업 ID까지 대조한다. 최초 폴백, 모든 렌더 상태, 완료 후 재조회에서 답변 아래 `Powered by Kanana`를 표시한다. 표시 정보는 화면 모델에만 추가하며 API 출력 DTO·원문·이벤트 본문은 바꾸지 않는다.

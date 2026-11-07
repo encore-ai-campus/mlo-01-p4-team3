@@ -220,7 +220,8 @@ class Accounts(TestCase):
 
     def test_changepassword_validates_rules_and_invalidates_sessions(self):
         """관리 명령의 규칙 거부는 기존 비밀번호를 보존하고 성공은 이전 세션을 폐기한다."""
-        username = "reset-" + secrets.token_hex(8)
+        # 비밀번호의 16진 문자와 겹치지 않아 우연한 유사성 거부를 막는다.
+        username = "reset-" + "".join(secrets.choice("ghjkmnpqrstuvwxyz") for _ in range(16))
         self.assertEqual(self.signup(username=username).status_code, 302)
         user = User.objects.get(username=username)
         original_hash = user.password

@@ -32,6 +32,6 @@
 | 명령 재전송·동시 요청·부하 사전 시험 | [서버 시험 안내](../../server/tests/README.md) |
 | 가입·로그인·로그아웃과 계정 복구 | `server/accounts/urls.py`, `server/accounts/views.py`, `web/templates/accounts/`, [웹 모듈 사용법](../modules/web.md#사용법) |
 | 테스트 회차 등록과 고정 판 배정 | `server/api/sessions.py`, `server/app/test_sessions.py`, `server/infra/test_sessions.py`, [서버 라우팅](../../server/ROUTING.md) |
-| 광고 지면을 게임 화면에 붙이기 | `server/app/ads_port.py`, `docs/contracts/ports.md` 5절 |
 | 광고 비콘·클릭·랜딩 중계 | ASGI `server/paldo_web/asgi.py` → 표현 `server/api/consumers.py`·`ad_relay.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py`. 실제 HTTP 인프라 `server/infra/ad_client.py`는 B-08-03 예정 |
 | 웹소켓 재연결·비콘 폐기 사유 | `web/static/js/paldo_ws.js` → `server/api/consumers.py` → `server/api/ad_metrics.py`. 클라이언트·Consumer·실제 Daphne 검증은 [B-07-05 증빙](../evidence/B-07-05.md) |
+| 광고 지면을 게임 화면에 붙이기 | `server/api/ad_slots.py`·`ad_slot_tags.py`, `web/templates/ad_slot.html·ad_placeholder.html`, `web/static/js/ad_slots.js` → `server/app/ads_port.py`. 웹소켓 중계는 병합된 B-07-05 조립 사용 |
