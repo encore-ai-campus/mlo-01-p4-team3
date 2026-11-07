@@ -25,3 +25,9 @@
 - 원인: Delta 4.4.1의 기본 jar는 Spark 4.2.0을 대상으로 빌드됐다(pom의 `spark-sql_2.13` 4.2.0). Delta는 Spark 버전별 jar(`delta-spark_4.1_2.13`, `delta-spark_4.2_2.13`)를 따로 낸다.
 - 대응: 같은 Delta 4.4.1의 Spark 4.1용 jar `io.delta:delta-spark_4.1_2.13:4.4.1`로 바꿔 다시 시험했다. 계약(`tech_stack.md`)에 jar 좌표를 적는 것은 PM 승인 뒤에 한다.
 - 결과: 기본 jar는 쓰기 0회 성공(실패 1회), Spark 4.1용 jar는 쓰기 2회·읽기(현재 11행, 버전 0은 10행) 성공, 약 30초. 증빙 [`docs/evidence/C-05-03.md`](../evidence/C-05-03.md)
+
+### C-06-03 MySQL 분리·복제 중단
+- 문제: Replica IO가 멈췄고 재개 후에도 probe가 도착하지 않았다.
+- 원인: 연결 실패 중 필요한 Primary binlog가 만료되어 GTID 자동 재개가 실패했다.
+- 대응: 기존 복제 설정 유지, 새 광고·계정 스키마와 TLS 전용 계정 분리, 상호 접근 거부 확인, 백업 후 재구성 범위 문서화. 기존 Replica 데이터 대체는 미실행.
+- 결과: 두 스키마 자기 접속 성공·상호 ERROR 1044. Replica probe 불일치·지연 NULL로 미완료 기록. 증빙 [C-06-03](../evidence/C-06-03.md).
