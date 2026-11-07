@@ -1,0 +1,20 @@
+{
+  "task": "C-06-03",
+  "commit": "19765dcca5bc3493c4647856ecf4067f24afebce",
+  "generated_at": "2026-11-07T11:26:18Z",
+  "source": "actual Primary/Replica ops.mysql.replication_check --marker c06_20261107_handoff; code 19765dc",
+  "metrics": {
+    "probe_replicated": {
+      "value": 0,
+      "unit": "건"
+    },
+    "io_running": {
+      "value": 0,
+      "unit": ""
+    },
+    "sql_running": {
+      "value": 1,
+      "unit": ""
+    }
+  }
+}
