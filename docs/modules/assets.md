@@ -81,7 +81,10 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
+| A-08-04 | 11/8 | (11/6 선행 작업) `cutout.py`·`test_cutout.py`: 실제 생성 원본의 단색 바탕 편차·가는 머리카락·색 번짐을 처리하고 straight alpha로 복원, 키 등급별 단일 배율 배치. 생성·처리 기록 `content/images/SOURCES.md`, 시험 증빙 `docs/evidence/A-08-04.md`. 시험 파일은 out/ 보관, 실제 manifest 교체 전 |
 | E-05-05 | 11/5 | 규격표(도트 격자 포함)·스타일 가이드(도트), 임시 세트 생성기(`make_placeholders`)와 37개 임시 세트·manifest, 임시 초상 13장은 코드로 그린 도트 그림(`portrait_art`). 도트 기준은 같은 날 반실사 개정으로 대체(아래 E-08-07 행) |
 | E-08-07 | 11/8 | (11/5 사전 작업) 유형 sprite·background 추가(기대 52), 초상을 sprite 크롭으로 파생(`derived_from`, 쌍 상태 검사), RGBA PNG 쓰기·읽기, sprite·배경 검사(`vn.py`), 검수용 합성(`preview_vn`), 임시 sprite 13장·배경 2장. 같은 날 화풍을 반실사로 바꿔(크로스체크 18) sprite를 전신 512×1280으로, 검사를 px 기준선으로 바꾸고 도트 격자·팔레트·블록·알파 이진 검사를 뺐다. 초상은 알파 합성 크롭, 배치는 평소/전신 컷 두 모드. 이어서 임시 sprite·초상·배경을 회색 실루엣 + 이름표로 바꾸고(`glyphs`·`glyph_data`·`build_glyphs`) 코드 인물 그림·마을 그림을 지웠다 |
 | E-08-07 | 11/8 | (11/5 사전 작업, 크로스체크 19) 표정 변형(`<id>__<표정 id>`, 규격표 8·9절, `edited_from`·`edited_from_sha256`, 얼굴 영역 밖 동일·얼굴 변화 검사)과 마스코트 유형(`mascot`, 까치·족제비, `mascot_art`) 추가, 기대 90. `preview_vn --expr --mascot` |
 | E-05-05 | 11/6 | (11/6 PM 결정) sprite 키 등급: 눈높이·허리선 통일을 없애고 같은 축척에 인물별 머리 꼭대기·등신(`HEIGHT_GRADES`·`CHARACTER_GRADE`). 얼굴 영역(`face_box`)·초상 크롭 위 y(`portrait_top`, 등급별 초상 안 눈 위치)를 등급에서 계산, 임시 실루엣을 등급별로 다시 그림. 마스코트 가로 가운데·아래 여백 자동 검사(sprite와 같은 판정)와 임시 마스코트 위치 조정 |
+| E-05-05 | 11/6 | 임시 그림 생성 가속(판정·생성 결과는 그대로, 바이트 동일): `portrait_art.render_sprite`·`mascot_art.render`는 그린 결과를 기억하고 복사본을 돌려줌(키에 키 등급·머리 장식·마스코트 위치 포함), `crop_portrait`는 알파 0·255를 바이트 마스크로 한 번에 합성, `make_placeholders`는 임시 PNG 바이트를 프로세스 안에서 기억 |
+| E-05-05 | 11/6 | 임시 에셋 동일성을 해상도·채널·디코드 픽셀로(`png.same_image`): zlib 구현(표준 zlib·Windows 공식 Python zlib-ng)마다 압축 바이트가 달라도 생성기가 기존 임시 PNG를 보존(용량 상한 이내일 때). 용량 상한·실제 에셋 SHA-256은 파일 바이트 기준 그대로 |

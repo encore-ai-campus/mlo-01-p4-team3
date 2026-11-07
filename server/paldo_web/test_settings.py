@@ -8,6 +8,7 @@ from .settings import *  # noqa: F403
 
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
 ALLOWED_HOSTS = ["testserver", "localhost"]
+SESSION_MONGO_URI = ""
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.PBKDF2PasswordHasher"]
 LOGGING["loggers"]["paldo.web"]["handlers"] = ["console"]
 LOGGING["handlers"].pop("file")

@@ -41,7 +41,7 @@
 - **마스코트**(11/5 PM 결정 P-21): 까치 `kkachi`(아침 희생자 발표 장면)와 족제비 `jokjebi`(무당의 짝, 안내·도움말)다. 512×512 RGBA 바탕 투명, 표정 없음. 연출·안내만 하고 새 게임 정보를 주지 않는다(스타일 가이드 6절).
 - **초상은 sprite에서 파생**한다: sprite에서 인물별 크롭 위 y(6절)부터 512×512를 잘라 먹남(`#2E344A`) 위에 알파 합성한다(6절). 한 인물은 sprite 1장만 만들고, 초상은 `make_placeholders`가 만든다. manifest의 초상 항목에 `"derived_from": "sprite:<id>"`가 붙고, 쌍의 `placeholder`는 같아야 한다(4절).
 - **장면 배경**: 회의 `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), 밤 `night`(밤 마을 공통 1장). 장소별 배경은 만들지 않는다(7절).
-- **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `llm_wait`·`review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
+- **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
 - **지도**: ID는 `village`다. 11/5 PM 결정으로 지도는 **시연까지 임시 에셋**이다. 장소 5곳의 영역 좌표는 E-08-07이 임시 지도용 안내 고정값(정보가 없는 균등 배치)으로 manifest에 넣는다(B-10-02 아이콘 배치용). 현재 임시 지도에는 좌표가 없다.
 - **정적 파일 연결**(B-05-03 5번): `/static/assets/<kind>/…` → `content/images/<kind>/…`, `/static/ads/…` → `content/images/ad/…`.
 
@@ -93,6 +93,7 @@
 ## 5. 임시 세트
 
 - `python -m tools.assets.make_placeholders`가 1~3절과 ID 출처로 모든 항목을 만든다. 같은 입력이면 같은 바이트가 나온다.
+- 임시 에셋 동일성 = 해상도·채널·디코드 픽셀(`tools/assets/png.py` `same_image`). 압축 바이트 차이는 허용한다(Windows 공식 Python의 zlib-ng 등). 생성기는 기존 임시 PNG가 같은 그림이고 용량 상한 이내면 파일을 그대로 둔다. 용량 상한·실제 에셋 SHA-256(`edited_from_sha256`)은 파일 바이트 기준이다.
 - **임시 에셋은 회색 실루엣과 이름 표기다. 크기·기준선·배치 확인용이며 최종 그림이 아니다**(11/5 PM 결정).
   - sprite(`tools/assets/portrait_art.py`): 회색 사람 실루엣(바탕 투명), 인물의 키 등급(6절)대로 같은 축척으로 그린다. 눈 y(등급별)·평소 표시 경계 y=640 점선, 발끝 y=1248, 어깨 아래에 "임시"와 표시 이름 2줄. 키 등급과 머리 장식(갓·쪽머리 등)만 공개 인물 ID로 다르고 나머지 실루엣 비율은 모두 같다. 역할·규칙·해시로 모양을 고르지 않는다.
   - 초상: 그 sprite의 인물별 512×512 합성 크롭(6절, 이름표가 보인다).
@@ -101,7 +102,7 @@
   - 장면 배경(`tools/assets/background_art.py`): 2색 그라데이션 + 왼쪽 위 "회의 배경(임시)"·"밤 배경(임시)".
   - 나머지(장소·UI 아이콘, 지도, 광고)는 단색 배경 + 도형, 글자 없음.
   - 이름은 콘텐츠 묶음의 공개 표시 이름(`name_ko`, 무당은 "무당(여)"·"무당(남)")이다. 글자는 저장소에 커밋한 비트맵(`tools/assets/glyph_data.py`)만 써서 노트북 글꼴과 무관하게 같은 바이트가 나온다. 비트맵에 없는 글자가 있는 이름은 인물 ID로 찍힌다. 인물을 추가하면 `python -m tools.assets.build_glyphs`(Windows, 관리자만)로 비트맵을 다시 만든다.
-- 이미 실제 파일(manifest `placeholder: false`)이 있는 항목은 덮어쓰지 않는다. 표시가 `true`여도 파일 내용이 임시 그림과 다르면 덮어쓰지 않고 보고한다(`--force`로만 덮어씀).
+- 이미 실제 파일(manifest `placeholder: false`)이 있는 항목은 덮어쓰지 않는다. 표시가 `true`여도 파일이 임시 그림과 다른 그림(픽셀)이면 덮어쓰지 않고 보고한다(`--force`로만 덮어씀).
 - **실제 파일을 넣으면 바로 그 항목을 `"placeholder": false`로 바꾸고 커밋한다.** 실제 sprite를 넣고 표시를 바꾼 뒤 `make_placeholders`를 실행하면 초상이 그 sprite에서 다시 잘리고 초상 표시도 `false`가 된다. 초상 파일을 따로 그려 넣지 않는다.
 - 이전 절차(11/5, 1회): 흉상 생성기로 만든 임시 초상은 새 파생 결과와 바이트가 달라 보호에 걸린다. `python -m tools.assets.make_placeholders --rederive-portraits`는 `placeholder: true`인 초상만 덮어쓴다(실제 파일·다른 유형은 보호 그대로).
 - 현재 픽스처 기준 기대 수: portrait 37(주민 11 + 무당 2 + 표정 변형 24), sprite 37, background 2, mascot 2, place 5, ui 10, map 1, ad 8 = **102**. 표정 변형 24는 9절 대상 8명 × 표정 3개다(E-05-03에서 첫 플레이 인물 2명을 넣어 90 → 102).

@@ -150,6 +150,7 @@ VM 이름과 배치의 원본은 `ops/runbook/vm_roles.md`다(11/6 기획서 v1.
 | 경로 | 내용 | 기준 |
 |---|---|---|
 | `docs/paldo_design_v1.md`, `docs/team_plan.md`, `docs/brd.md`, `docs/prd.md` | 기획서, 팀 계획, 요구 문서 | - |
+| `docs/design_notes.md` | 기획서 보조 기록(설계 결정 기록, 미확정 사항, 서버 배치 요약, 이전 판 절 번호 대응표) | - |
 | `docs/contracts/` | 계약(이 문서 포함) | [parallel_dev.md 4절](parallel_dev.md) 변경 절차 |
 | `docs/tasks/` | 흐름별 태스크와 완료 조건 | [tasks/README.md](../tasks/README.md) |
 | `docs/routing/<흐름>.md` | 라우팅 문서 2단(A~E 영역별 폴더 안내·작업별 위치) | 루트 README "영역 안내", tasks/README.md 10절 [P-27] |

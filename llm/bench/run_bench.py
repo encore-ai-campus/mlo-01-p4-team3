@@ -10,6 +10,8 @@
 
 `--eval`(E-07-07 완료 조건 3): 평가 세트를 `llm.mvp_metrics.run_eval`로 차례로 돌려(동시 1건) 성공률·사유 분포·
 지연을 결과 JSON(`docs/evidence/perf/E-07-07/`)으로 쓴다. 생성 설정 기본값은 `llm.prompt.GEN_SETTINGS`다.
+`--eval … --rejudge`: 모델을 부르지 않고 `out/perf/E-07-07/`의 요청 기록을 지금 검증기로 다시 판정해(`mvp_metrics.rejudge`)
+결과 JSON을 다시 쓴다. 검증 규칙만 바꾸고 프롬프트는 그대로일 때 쓴다(11/6 PM 결정). 인자는 원래 측정과 같게 준다.
 
 계층: 위쪽 순수 함수(백분위·검증·로그 해석·요약, 단독 테스트) / 아래쪽 인프라(llama.cpp 호출, 프로세스 메모리,
 결과 기록) / `main`(인자 파싱과 흐름 조립). `llama_cpp`·`jinja2`는 함수 안에서 늦게 import한다
@@ -430,11 +432,17 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--eval-n", type=int, help="평가 세트 앞 N건만(기본 전부)")
     p.add_argument("--consistency-n", type=int, default=0, help="일관성: 앞 N건을 --consistency-seeds로 반복(0이면 안 함)")
     p.add_argument("--consistency-seeds", default="1,2,3,4,5")
+    p.add_argument("--rejudge", action="store_true",
+                   help="--eval과 함께: 모델 없이 저장된 요청 기록을 지금 검증기로 다시 판정(프롬프트가 같을 때만)")
     a = p.parse_args(argv)
     if a.threads is None:
         a.threads = GEN_SETTINGS["n_threads"] if a.eval else 6
     if not a.import_json and not (a.model and a.label):
         p.error("--model과 --label이 필요(또는 --import-json)")
+    if a.rejudge and not a.eval:
+        p.error("--rejudge는 --eval과 함께 쓴다")
+    if a.rejudge and a.out:   # 재판정은 증빙 결과 JSON(이전 측정의 벽시계·커밋·source)을 읽고 다시 쓴다(Codex 11/6)
+        p.error("--rejudge는 --out과 함께 쓸 수 없다")
     return a
 
 
@@ -507,6 +515,97 @@ def run_eval_mode(a: argparse.Namespace, env: dict) -> int:
     return 0
 
 
+def _read_records(path: Path) -> list[dict]:
+    """`_write_records`의 역."""
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _old_source(task: str, name: str) -> tuple[str, dict, str]:
+    """이전 결과 JSON의 (측정 커밋, metrics, source). 없으면 ("unknown", {}, "")."""
+    path = ROOT / "docs" / "evidence" / "perf" / task / f"{name}.json"
+    if not path.is_file():
+        return "unknown", {}, ""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    src = data.get("source", "")
+    prev = re.search(r"생성 기록 ([0-9a-f]+)", src)   # 이미 재판정한 결과면 처음 생성한 커밋을 이어 쓴다
+    return (prev.group(1) if prev else data.get("commit", "unknown")), data.get("metrics", {}), src
+
+
+def _eval_set_changed(path: str, since: str) -> bool:
+    """평가 세트 파일이 생성 기록의 커밋 since 이후 바뀌었는가(작업 트리 포함). 커밋을 모르면 True(Codex 11/6)."""
+    import subprocess
+    if not re.fullmatch(r"[0-9a-f]{7,40}", since):
+        return True
+    rel = Path(path).resolve().relative_to(ROOT).as_posix() if Path(path).is_absolute() else Path(path).as_posix()
+    tracked = subprocess.run(["git", "cat-file", "-e", f"{since}:{rel}"], cwd=ROOT, capture_output=True)
+    if tracked.returncode != 0:   # 그 커밋에 없는 파일(추적 안 함 포함)은 내용을 확인할 수 없다
+        return True
+    r = subprocess.run(["git", "diff", "--quiet", since, "--", rel], cwd=ROOT, capture_output=True)
+    return r.returncode != 0
+
+
+def _check_seeds(records: list[dict], seeds: list[int], what: str) -> None:
+    """저장된 기록의 시드가 요청한 시드와 정확히 같은지 본다. 다르면 지표가 조용히 틀리므로 ValueError(Codex 11/6)."""
+    got = sorted({r["seed"] for r in records})
+    if got != sorted(seeds):
+        raise ValueError(f"{what} 기록의 시드 {got}가 요청한 시드 {sorted(seeds)}와 다름. 원래 측정과 같은 인자를 준다")
+
+
+def run_rejudge_mode(a: argparse.Namespace) -> int:
+    """재판정 모드: 저장된 평가·일관성 요청 기록 → 지금 검증기로 다시 판정 → 결과 JSON·요청 기록을 다시 쓴다.
+
+    벽시계(`wall_s`)는 이전 결과 JSON 값을 그대로 옮긴다(생성은 다시 하지 않았으므로). source에 생성 기록의 측정 커밋을 남긴다.
+    """
+    data = json.loads(Path(a.eval).read_text(encoding="utf-8"))
+    lexicon = Lexicon.from_json(data["lexicon"])
+    cases = data["cases"][: a.eval_n] if a.eval_n else data["cases"]
+    env = {"llama_cpp": "-", "note": a.note}
+    name = eval_name(a.label, a.mode, a.threads, a.eval_seed, len(cases), a.tag)
+    rec_dir = ROOT / "out" / "perf" / EVAL_TASK
+    gen_commit, old, old_src = _old_source(EVAL_TASK, name)
+    if _eval_set_changed(a.eval, gen_commit):
+        raise ValueError(f"평가 세트 {a.eval}가 생성 기록 커밋 {gen_commit[:7]} 이후 바뀌었거나 커밋을 모름. 다시 측정한다")
+    saved = _read_records(rec_dir / f"{name}_records.jsonl")
+    _check_seeds(saved, [a.eval_seed], name)
+    if len(saved) != len(cases):
+        raise ValueError(f"{name} 기록 {len(saved)}건이 사례 {len(cases)}건과 다름")
+    records = mvp_metrics.rejudge(saved, cases, lexicon=lexicon)
+    metrics = {**mvp_metrics.success_metrics(records), **mvp_metrics.latency_metrics(records),
+               "wall_s": old.get("wall_s", {"value": None, "unit": "s"})}
+    # 생성 설정은 생성하지 않았으므로 이전 결과 값을 옮긴다(인자를 잘못 줘도 실제 설정이 남게, Codex 11/6)
+    cli = {"threads": (a.threads, ""), "max_tokens": (a.max_tokens, "tok"), "n_ctx": (a.n_ctx, "tok"),
+           "temperature": (a.temperature, ""), "top_p": (a.top_p, ""), "top_k": (a.top_k, "")}
+    for k, (val, unit) in cli.items():
+        metrics[k] = old.get(k, {"value": val, "unit": unit})
+    _write_records(rec_dir / f"{name}_records.jsonl", records)
+    tail = f"; 재판정 --rejudge(생성 기록 {gen_commit[:7]}, 검증기 HEAD)"
+    src = old_src.split("; 재판정")[0] or _eval_source(a, a.eval_seed, len(cases), env)   # 원래 측정 명령·전원 메모를 남긴다
+    path = write_outputs(name, metrics, src + tail, a.out, env, EVAL_TASK)
+    log("bench", "info", "재판정 끝", run=name, path=str(path).replace("\\", "/"),
+        success_rate_pct=metrics["success_rate_pct"]["value"], total_p95_ms=metrics["total_p95_ms"]["value"])
+    if a.consistency_n:
+        seeds = [int(x) for x in a.consistency_seeds.split(",") if x.strip()]
+        sub = data["cases"][: a.consistency_n]
+        cname = f"consistency_{a.label}_{a.mode}_t{a.threads}_n{len(sub)}_k{len(seeds)}" + (f"_{a.tag}" if a.tag else "")
+        cgen, _, cold_src = _old_source(EVAL_TASK, cname)
+        if _eval_set_changed(a.eval, cgen):
+            raise ValueError(f"평가 세트 {a.eval}가 일관성 기록 커밋 {cgen[:7]} 이후 바뀌었거나 커밋을 모름. 다시 측정한다")
+        csaved = _read_records(rec_dir / f"{cname}_records.jsonl")
+        _check_seeds(csaved, seeds, cname)
+        flat = mvp_metrics.rejudge(csaved, sub, lexicon=lexicon)
+        runs = [[r for r in flat if r["seed"] == s] for s in seeds]
+        cm = mvp_metrics.consistency_metrics(runs)
+        _write_records(rec_dir / f"{cname}_records.jsonl", flat)
+        csrc = (cold_src.split("; 재판정")[0]
+                or _eval_source(a, None, len(sub), env) + f"; --consistency-n {len(sub)} --consistency-seeds {a.consistency_seeds}")
+        csrc += f"; 재판정 --rejudge(생성 기록 {cgen[:7]}, 검증기 HEAD)"
+        cout = consistency_out_path(a.out) if a.out else None
+        cpath = write_outputs(cname, cm, csrc, cout, env, EVAL_TASK)
+        log("bench", "info", "재판정 일관성 끝", run=cname, path=str(cpath).replace("\\", "/"),
+            verdict_agree_pct=cm["verdict_agree_pct"]["value"], facts_kept_pct=cm["facts_kept_pct"]["value"])
+    return 0
+
+
 def consistency_out_path(out: str) -> str:
     """`--out` 경로 옆 일관성 결과 경로: a/b.json → a/b_consistency.json."""
     path = Path(out)
@@ -538,6 +637,8 @@ def main(argv: list[str] | None = None) -> int:
         path = import_received(a.import_json, a.import_name, a.origin)
         log("bench", "info", "받은 결과 기록", path=str(path.relative_to(ROOT)).replace("\\", "/"))
         return 0
+    if a.rejudge:
+        return run_rejudge_mode(a)
     import llama_cpp
 
     if a.eval:

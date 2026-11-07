@@ -1,0 +1,172 @@
+{
+  "task": "D-06-01",
+  "commit": "5e355cae3b5c57318cc3862f0e843f4291fc0e33",
+  "generated_at": "2026-11-06T14:35:20Z",
+  "source": "python -m tools.perf.sim_bench --games 200 --seed 7 --preset base6",
+  "metrics": {
+    "random_games": {
+      "value": 200,
+      "unit": "판"
+    },
+    "random_illegal_commands": {
+      "value": 0,
+      "unit": "건"
+    },
+    "random_games_per_sec": {
+      "value": 25.481926618357807,
+      "unit": "판/초"
+    },
+    "random_village_win_rate": {
+      "value": 37.0,
+      "unit": "%"
+    },
+    "random_changgwi_win_rate": {
+      "value": 63.0,
+      "unit": "%"
+    },
+    "random_no_lock_rate": {
+      "value": 10.364145658263306,
+      "unit": "%"
+    },
+    "random_confession_rate": {
+      "value": 0.0,
+      "unit": "%"
+    },
+    "random_days_mean": {
+      "value": 1.785,
+      "unit": "낮"
+    },
+    "random_meaningful_choices_mean": {
+      "value": 10.185,
+      "unit": "회/판"
+    },
+    "logic_games": {
+      "value": 200,
+      "unit": "판"
+    },
+    "logic_illegal_commands": {
+      "value": 0,
+      "unit": "건"
+    },
+    "logic_games_per_sec": {
+      "value": 21.29794262753809,
+      "unit": "판/초"
+    },
+    "logic_village_win_rate": {
+      "value": 43.5,
+      "unit": "%"
+    },
+    "logic_changgwi_win_rate": {
+      "value": 56.49999999999999,
+      "unit": "%"
+    },
+    "logic_no_lock_rate": {
+      "value": 13.262599469496022,
+      "unit": "%"
+    },
+    "logic_confession_rate": {
+      "value": 0.0,
+      "unit": "%"
+    },
+    "logic_days_mean": {
+      "value": 1.885,
+      "unit": "낮"
+    },
+    "logic_meaningful_choices_mean": {
+      "value": 11.005,
+      "unit": "회/판"
+    },
+    "repeat_games": {
+      "value": 200,
+      "unit": "판"
+    },
+    "repeat_illegal_commands": {
+      "value": 0,
+      "unit": "건"
+    },
+    "repeat_games_per_sec": {
+      "value": 22.038808887579634,
+      "unit": "판/초"
+    },
+    "repeat_village_win_rate": {
+      "value": 39.0,
+      "unit": "%"
+    },
+    "repeat_changgwi_win_rate": {
+      "value": 61.0,
+      "unit": "%"
+    },
+    "repeat_no_lock_rate": {
+      "value": 12.668463611859837,
+      "unit": "%"
+    },
+    "repeat_confession_rate": {
+      "value": 0.0,
+      "unit": "%"
+    },
+    "repeat_days_mean": {
+      "value": 1.855,
+      "unit": "낮"
+    },
+    "repeat_meaningful_choices_mean": {
+      "value": 10.86,
+      "unit": "회/판"
+    },
+    "lie_pressure_games": {
+      "value": 200,
+      "unit": "판"
+    },
+    "lie_pressure_illegal_commands": {
+      "value": 0,
+      "unit": "건"
+    },
+    "lie_pressure_games_per_sec": {
+      "value": 19.76020516797136,
+      "unit": "판/초"
+    },
+    "lie_pressure_village_win_rate": {
+      "value": 43.5,
+      "unit": "%"
+    },
+    "lie_pressure_changgwi_win_rate": {
+      "value": 56.49999999999999,
+      "unit": "%"
+    },
+    "lie_pressure_no_lock_rate": {
+      "value": 13.262599469496022,
+      "unit": "%"
+    },
+    "lie_pressure_confession_rate": {
+      "value": 0.0,
+      "unit": "%"
+    },
+    "lie_pressure_days_mean": {
+      "value": 1.885,
+      "unit": "낮"
+    },
+    "lie_pressure_meaningful_choices_mean": {
+      "value": 11,
+      "unit": "회/판"
+    },
+    "completed_games": {
+      "value": 800,
+      "unit": "판"
+    },
+    "replayed_games": {
+      "value": 800,
+      "unit": "판"
+    },
+    "replay_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "elapsed_s": {
+      "value": 36.435531500028446,
+      "unit": "s"
+    },
+    "games_per_sec": {
+      "value": 21.95658927054146,
+      "unit": "판/초"
+    }
+  }
+}

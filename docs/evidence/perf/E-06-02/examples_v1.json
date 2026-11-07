@@ -1,0 +1,188 @@
+{
+  "task": "E-06-02",
+  "commit": "e4bc6f751e7ea2a2b167106502261b7331f66f23",
+  "generated_at": "2026-11-06T08:17:23Z",
+  "source": "python -m tools.intent_examples --write examples_v1",
+  "metrics": {
+    "rows": {
+      "value": 280,
+      "unit": "개"
+    },
+    "authored": {
+      "value": 280,
+      "unit": "개"
+    },
+    "generated": {
+      "value": 0,
+      "unit": "개"
+    },
+    "generated_reviewed": {
+      "value": 0,
+      "unit": "개"
+    },
+    "authored_suspect": {
+      "value": 33,
+      "unit": "개"
+    },
+    "authored_defend": {
+      "value": 33,
+      "unit": "개"
+    },
+    "authored_point_contradiction": {
+      "value": 24,
+      "unit": "개"
+    },
+    "authored_explain": {
+      "value": 31,
+      "unit": "개"
+    },
+    "authored_silence": {
+      "value": 25,
+      "unit": "개"
+    },
+    "authored_reveal_divination": {
+      "value": 24,
+      "unit": "개"
+    },
+    "authored_interrogate_whereabouts": {
+      "value": 25,
+      "unit": "개"
+    },
+    "authored_interrogate_contradiction": {
+      "value": 24,
+      "unit": "개"
+    },
+    "authored_interrogate_suspicion_reason": {
+      "value": 30,
+      "unit": "개"
+    },
+    "authored_unsupported": {
+      "value": 31,
+      "unit": "개"
+    },
+    "contrast_pairs_suspect": {
+      "value": 11,
+      "unit": "개"
+    },
+    "contrast_pairs_defend": {
+      "value": 11,
+      "unit": "개"
+    },
+    "contrast_pairs_point_contradiction": {
+      "value": 6,
+      "unit": "개"
+    },
+    "contrast_pairs_explain": {
+      "value": 11,
+      "unit": "개"
+    },
+    "contrast_pairs_silence": {
+      "value": 6,
+      "unit": "개"
+    },
+    "contrast_pairs_reveal_divination": {
+      "value": 6,
+      "unit": "개"
+    },
+    "contrast_pairs_interrogate_whereabouts": {
+      "value": 6,
+      "unit": "개"
+    },
+    "contrast_pairs_interrogate_contradiction": {
+      "value": 6,
+      "unit": "개"
+    },
+    "contrast_pairs_interrogate_suspicion_reason": {
+      "value": 11,
+      "unit": "개"
+    },
+    "contrast_pairs_unsupported": {
+      "value": 12,
+      "unit": "개"
+    },
+    "type_alias": {
+      "value": 15,
+      "unit": "개"
+    },
+    "type_josa": {
+      "value": 16,
+      "unit": "개"
+    },
+    "type_unregistered_alias": {
+      "value": 14,
+      "unit": "개"
+    },
+    "type_pronoun": {
+      "value": 15,
+      "unit": "개"
+    },
+    "type_ellipsis": {
+      "value": 18,
+      "unit": "개"
+    },
+    "modern_suspect": {
+      "value": 3,
+      "unit": "개"
+    },
+    "modern_defend": {
+      "value": 3,
+      "unit": "개"
+    },
+    "modern_point_contradiction": {
+      "value": 2,
+      "unit": "개"
+    },
+    "modern_explain": {
+      "value": 3,
+      "unit": "개"
+    },
+    "modern_silence": {
+      "value": 3,
+      "unit": "개"
+    },
+    "modern_reveal_divination": {
+      "value": 2,
+      "unit": "개"
+    },
+    "modern_interrogate_whereabouts": {
+      "value": 3,
+      "unit": "개"
+    },
+    "modern_interrogate_contradiction": {
+      "value": 2,
+      "unit": "개"
+    },
+    "modern_interrogate_suspicion_reason": {
+      "value": 3,
+      "unit": "개"
+    },
+    "modern_unsupported": {
+      "value": 2,
+      "unit": "개"
+    },
+    "slot_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "lineage_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "duplicate_text_groups": {
+      "value": 0,
+      "unit": "건"
+    },
+    "min_authored_per_label": {
+      "value": 24,
+      "unit": "개"
+    },
+    "min_contrast_pairs_per_label": {
+      "value": 6,
+      "unit": "개"
+    },
+    "min_rows_per_resolution_type": {
+      "value": 14,
+      "unit": "개"
+    }
+  }
+}

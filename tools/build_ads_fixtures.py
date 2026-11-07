@@ -19,8 +19,9 @@ S = AdSlot
 
 
 def campaigns() -> list[Campaign]:
+    """가상 광고주 캠페인 4개. 지면은 계약 `AdSlot` 3곳(ads-0.5) 안에서만 고른다."""
     return [
-        Campaign("cp_gukbap", "adv_jumak", "주막 국밥", [S.LOBBY_BANNER, S.LLM_WAIT], BillingType.CPC,
+        Campaign("cp_gukbap", "adv_jumak", "주막 국밥", [S.LOBBY_BANNER, S.REVIEW_SIDE], BillingType.CPC,
                  won(300), won(30_000), Targeting(), "2026-11-05", "2026-11-12", CampaignStatus.ACTIVE,
                  [Creative("cr_gukbap_a", "cp_gukbap", "뜨끈한 국밥", "주막에서 쉬어 가시오", "/static/ads/gukbap_a.png", "/ads/landing/gukbap"),
                   Creative("cr_gukbap_b", "cp_gukbap", "국밥 한 그릇", "기다리는 동안 한 술", "/static/ads/gukbap_b.png", "/ads/landing/gukbap")]),
@@ -32,7 +33,7 @@ def campaigns() -> list[Campaign]:
                  won(150), won(10_000), Targeting(returning=True), "2026-11-05", "2026-11-12",
                  CampaignStatus.ACTIVE,
                  [Creative("cr_yakcho", "cp_yakcho", "산삼 한 뿌리", "기운이 탁할 땐 약초방", "/static/ads/yakcho.png", "/ads/landing/yakcho")]),
-        Campaign("cp_gat", "adv_gat", "갓 공방", [S.REVIEW_SIDE, S.LLM_WAIT], BillingType.CPM,
+        Campaign("cp_gat", "adv_gat", "갓 공방", [S.REVIEW_SIDE], BillingType.CPM,
                  won(2_500), won(5_000), Targeting(hours=list(range(18, 24))), "2026-11-05", "2026-11-12",
                  CampaignStatus.PAUSED,
                  [Creative("cr_gat", "cp_gat", "새 갓", "무당 어른도 갓 하나", "/static/ads/gat.png", "/ads/landing/gat")]),
@@ -40,8 +41,9 @@ def campaigns() -> list[Campaign]:
 
 
 def slot_policies() -> list[SlotPolicy]:
-    return [SlotPolicy(S.LOBBY_BANNER, won(500), 0.02), SlotPolicy(S.LLM_WAIT, won(800), 0.03),
-            SlotPolicy(S.RESULT_BANNER, won(600), 0.025), SlotPolicy(S.REVIEW_SIDE, won(400), 0.015)]
+    """지면별 최저 eCPM·사전 CTR. 계약 `AdSlot`의 지면마다 1행."""
+    return [SlotPolicy(S.LOBBY_BANNER, won(500), 0.02), SlotPolicy(S.RESULT_BANNER, won(600), 0.025),
+            SlotPolicy(S.REVIEW_SIDE, won(400), 0.015)]
 
 
 def _b(cid, crid, billing, bid_won, ctr):

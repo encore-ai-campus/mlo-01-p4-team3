@@ -59,7 +59,8 @@ def run_case(case: dict, generate: Callable, *, seed: int, lexicon: Lexicon,
     req = case["request"]
     t0 = clock()
     messages = build_messages(req)
-    rec = {"case_id": case.get("case_id", req["job_id"]), "seed": seed, "raw": None, "generated": None,
+    rec = {"case_id": case.get("case_id", req["job_id"]), "seed": seed, "fact_sentence": req["fact_sentence"],
+           "raw": None, "generated": None,
            "valid": False, "reasons": [], "details": [], "prompt_ms": 0.0, "gen_ms": 0.0, "validate_ms": 0.0,
            "queue_ms": 0.0, "prompt_tokens": 0, "gen_tokens": 0, "error_type": None}
     try:
@@ -77,6 +78,11 @@ def run_case(case: dict, generate: Callable, *, seed: int, lexicon: Lexicon,
         rec["validate_ms"] = (clock() - v0) * 1000
         rec.update(generated=text, valid=result.ok, reasons=list(result.reasons), details=list(result.details))
     rec["total_ms"] = rec["queue_ms"] + (clock() - t0) * 1000
+    return _finish(rec, req)
+
+
+def _finish(rec: dict, req: dict) -> dict:
+    """검증 결과·합계 시간이 채워진 기록에 상태·폴백·화면 문장을 정한다."""
     if rec["error_type"]:
         status = ERROR
     elif rec["total_ms"] > req.get("deadline_ms", 15000):
@@ -92,11 +98,34 @@ def run_case(case: dict, generate: Callable, *, seed: int, lexicon: Lexicon,
     return rec
 
 
+def rejudge(records: list[dict], cases: list[dict], *, lexicon: Lexicon) -> list[dict]:
+    """저장된 요청 기록(`run_eval` 결과)을 지금 검증기로 다시 판정한 새 기록 목록(순수, 생성하지 않음).
+
+    생성문(`generated`)과 시간(프롬프트·생성·검증·합계)은 기록 그대로 두고, 검증 결과·상태·폴백·화면 문장만
+    다시 정한다. 프롬프트가 같으면 시드 고정 생성은 같으므로, 검증 규칙만 바꿨을 때 재측정 없이 지표를 다시 낸다
+    (11/6 PM 결정). 기록의 case_id가 cases에 없으면 KeyError, 기록에 남은 사실 문장(`fact_sentence`)이 사례와 다르면
+    ValueError(평가 세트가 바뀐 것, Codex 11/6). 사실 문장이 없는 이전 기록은 호출하는 쪽이 평가 세트 동일성을 확인한다.
+    """
+    by_id = {c.get("case_id", c["request"]["job_id"]): c for c in cases}
+    out = []
+    for old in records:
+        case = by_id[old["case_id"]]
+        req = case["request"]
+        if old.get("fact_sentence", req["fact_sentence"]) != req["fact_sentence"]:
+            raise ValueError(f"{old['case_id']}: 기록의 사실 문장이 평가 세트와 다름")
+        rec = dict(old)
+        if rec["error_type"] is None and rec["generated"] is not None:
+            result = validate(rec["generated"], req, lexicon, case.get("allowed_places"))
+            rec.update(valid=result.ok, reasons=list(result.reasons), details=list(result.details))
+        out.append(_finish(rec, req))
+    return out
+
+
 def run_eval(cases: list[dict], generate: Callable, *, seed: int, lexicon: Lexicon,
              clock: Callable[[], float] = time.perf_counter, on_record: Callable[[dict], None] | None = None) -> list[dict]:
     """사례들을 차례로 돌려 요청 기록 목록을 돌려준다(순수: 생성·시계는 주입).
 
-    기록 필드: case_id, seed, status(done|failed|timeout|error), fallback, text(화면에 보일 문장),
+    기록 필드: case_id, seed, fact_sentence, status(done|failed|timeout|error), fallback, text(화면에 보일 문장),
     raw(생성 원문), generated(다듬은 생성문), valid, reasons, details, prompt_ms, gen_ms, validate_ms, queue_ms,
     total_ms, prompt_tokens, gen_tokens, error_type, fallback_has_fact. on_record는 기록마다 부른다(로그용).
     """

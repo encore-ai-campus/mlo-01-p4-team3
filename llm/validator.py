@@ -5,7 +5,8 @@ LLM은 엔진이 완성한 `fact_sentence`에 말투만 입힌다. 이 모듈은
 위반 사유 코드 4종(검사 순서이자 대표 사유 우선순위):
 
 - `format_length`: 비었거나 너무 길다(전체 글자 수, 사실 문장보다 늘어난 한글 수), 문장이 너무 많다, 따옴표·괄호·줄바꿈·마크다운·화자 표시(`이름:`)·
-  로마자·한자·사실 문장에 없는 숫자가 들어 있다.
+  로마자·한자·사실 문장에 없는 숫자가 들어 있다. 덧붙임에 묻는 쪽(무당)이 할 말("더는 안 묻겠소")이나 쪼개진 감탄사
+  ("에 이,")가 있다(11/6 사용자 확인·PM 결정: 모델이 예시 후보를 비틀어 쓴 출력. 사유 코드는 4종 그대로).
 - `forbidden_entity`: 허용 목록 밖의 인물, 사실 문장에 없는 장소, 역할어(창귀·씐 자 등)나 사건 단정 동사
   (죽였·홀렸 등)를 말했다. 어휘에 없는 새 이름은 찾지 못한다(덧붙임 길이 상한으로만 제한).
 - `added_assertion`: 사실 문장에 없던 부정("가지 않았소")·단정("틀림없이 무고하오") 표현을 덧붙였다.
@@ -79,6 +80,14 @@ _NEGATION = (
 _ASSERTION = (
     r"틀림없", r"분명", r"결코", r"절대", r"맹세", r"확실", r"무고", r"결백", r"죄가\s*없", r"참말", r"정말로",
 )
+# 묻는 쪽(무당)이 할 말: 답하는 인물의 대사로는 어색하다. 목록은 좁게 둔다(정상 후보 "고만 물어보시오",
+# "더는 묻지 마시오", "그만 물어보면 좋겠어요"는 걸리지 않는다). 사실 문장보다 많이 나오면 덧붙인 것으로 본다.
+_ASKER_VOICE = (r"묻겠", r"물어보자", r"물어볼\s*(?:건|것|게)")
+# 쪼개진 감탄사("에이"→"에 이", "아이고"→"아 이고"/"아이 고"). 앞 글자가 한글이면 단어 중간이라 보지 않는다("우물가에 이").
+_SPLIT_INTERJECTION = (r"(?<![가-힣])에\s+이(?![가-힣])", r"(?<![가-힣])아\s+이\s*고(?![가-힣])",
+                       r"(?<![가-힣])아이\s+고(?![가-힣])")
+_ASKER_VOICE_RE = [re.compile(p) for p in _ASKER_VOICE]
+_SPLIT_INTERJECTION_RE = [re.compile(p) for p in _SPLIT_INTERJECTION]
 _NEGATION_RE = [re.compile(p) for p in _NEGATION]
 _ASSERTION_RE = [re.compile(p) for p in _ASSERTION]
 _THINK_RE = re.compile(r"<think>.*?</think>", re.S)
@@ -328,6 +337,10 @@ def check_format(text: str, fact_sentence: str) -> list[str]:
         out.append("사실 문장에 없는 숫자 " + ",".join(extra_digits))
     if not _HANGUL.search(text):
         out.append("한글 없음")
+    for label, pats in (("묻는 쪽 말", _ASKER_VOICE_RE), ("감탄사 띄어쓰기", _SPLIT_INTERJECTION_RE)):
+        hits = [m.group(0) for p in pats for m in p.finditer(text)]
+        if len(hits) > _count(pats, fact_sentence):
+            out.append(f"{label} " + ",".join(hits))
     return out
 
 

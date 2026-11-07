@@ -8,11 +8,14 @@
 
 | 파일 | 계층 | 하는 일 |
 |---|---|---|
-| `engine/domain/engine.py` | 도메인 | `PaldoEngine`(`new_game`, `new_game_from_setup`, `apply`, `player_view`), 배정·아침 진술, 명령 검증(`validate_command`, `legal_player_kinds`), 투표·감금·종료 판정(`end_reason`), 최소 밤 처리, NPC 결정 자리(`NpcPolicy`, 기본 `BaselinePolicy`) |
-| `engine/domain/params.py` | 도메인 | 밸런스 상수(`RULE_PARAMS_VERSION`, `WITNESS_PROB`, `ASSIGNMENT_MAX_ATTEMPTS`) |
+| `engine/domain/engine.py` | 도메인 | `PaldoEngine`(`new_game`, `new_game_from_setup`, `apply`, `player_view`, `observe`), 배정·아침 진술, 명령 검증(`validate_command`, `legal_player_kinds`), 투표·감금·종료 판정(`end_reason`), 밤 처리(목격·다음 날 아침 진술)·점괘·고백·기색, 종료 후 진실 본문(`truth_payload`), NPC 결정 자리(`NpcPolicy`, 기본 `BaselinePolicy`) |
+| `engine/domain/observation.py` | 도메인 | 관측 투영·믿음 갱신(`observe_npc`, `update_beliefs`), 스냅샷 ID(`snapshot_id_of`), 결정과 이유 코드(`Decision`, `ReasonCode`), `observation`·`decision` 이벤트 본문 |
+| `engine/domain/params.py` | 도메인 | 밸런스 상수(`RULE_PARAMS_VERSION`, `WITNESS_PROB`, `TELL_PROB`, `ASSIGNMENT_MAX_ATTEMPTS`) |
 | `engine/domain/model.py`·`events.py`·`serde.py`·`content.py`, `engine/ports.py` | 도메인(계약) | 타입·`PHASE_RULES`·`LIMITS`·이벤트·직렬화·포트. 바꾸려면 계약 변경 절차(`docs/contracts/parallel_dev.md` 4절) |
 | `engine/testing/fakes.py` | 테스트용 가짜 | `ScriptedGameEngine` 등. B-05-02가 같은 포트로 `PaldoEngine`과 갈아 끼운다 |
 | `tools/perf/engine_bench.py` | 표현·응용 | `new_game`·`apply` 1회 시간 측정, 결과 JSON 기록 |
+| `tools/run_engine_games.py` | 표현·응용 | 실제 엔진 판 N개 실행 → `out/<경로>/events.jsonl`(`EventEnvelope` 한 줄씩)·`manifest.json`. `JsonlEventSink`는 `EventSink` 포트의 파일 구현. NPC 정책 선택지 `POLICIES` |
+| `tools/check_handoff_a06.py` | 표현·응용 | 판 실행 출력 검사: 종료 1회·`seq` 연속·`serde` 엄격 검증, 11/6 A → D 인수 조건 4개 |
 
 의존 방향: `tools/` → `engine/domain/`. `engine/domain/`은 표준 라이브러리만 쓰고 `server`·`ads`·`ml`·`llm`·`pipeline`·`intent`·`contracts`를 import하지 않는다(`tests/contract/test_layers.py`).
 
@@ -24,6 +27,9 @@
 - 종료 판정 순서 G=0 → 무당 감금 → G≥V+M: 마지막 씐 자 감금과 동수 도달이 겹치면 마을 승리가 먼저다(domain.md 5절).
 - NPC 결정을 `NpcPolicy`로 분리한 이유: 규칙 진행(엔진)과 NPC 판단(A-07-01 발언, A-07-02 투표)을 따로 바꾸고, 테스트·녹화 재생은 정해진 결정을 끼우려고.
 - `new_game_from_setup`을 나눈 이유: 시나리오 파일의 고정 배정을 그대로 재현해 실제 엔진으로 재생하려고.
+- 정책 입력을 관찰자 `ObservationSnapshot` 하나로 둔 이유: 상태 전체를 넘기면 다른 NPC의 개인 지식(역할·밤 명령)을 통해 진실이 새기 때문이다(기획서 v1.1 5.1 네 층 분리, A-06-02). 엔진은 결정 직전 `observation`, 직후 `decision`을 같은 `snapshot_id`로 `paldo.observations`에 남기고, 진실은 판 종료 뒤 `truth_revealed`(`paldo.truth`)로만 낸다(events.md 3절, 기획서 8.2).
+- 기색은 공개 기록에 보인 것만 남긴다: 판정 대상이 거짓 주장뿐이라 "판정했다"는 사실 자체가 진위 정보이기 때문이다(domain.md 7절, A-06-01).
+- 판 실행 도구가 고정 시각·시드로 같은 바이트를 내는 이유: D·C가 같은 명령으로 인수 데이터를 다시 만들고 해시로 대조하려고(A-06-03). 판 메타의 `npc_policy_versions`를 채우는 이유: D가 정책 버전이 다른 데이터를 한 학습에 섞지 않게(parallel_dev.md 3절).
 
 ## 사용법
 
@@ -32,7 +38,11 @@ python -m unittest discover -s tests/engine -t .                 # 엔진 테스
 python -m tools.perf.engine_bench --op new_game --n 1000          # 판 생성 p95, 결과 JSON 기록
 python -m tools.perf.engine_bench --op apply --n 1000             # apply 1회 p95(base6, 판 생성 시간 제외)
 python -m tools.perf.engine_bench --op apply --n 1000 --preset duo11 --no-write   # 다른 프리셋, 기록 없이
+python -m tools.run_engine_games --preset base6 --games 200 --seed 1 --out out/handoff/a06   # D·C 인수 데이터(약 14초)
+python -m tools.check_handoff_a06 --dir out/handoff/a06                                      # 인수 조건 검사(약 75초), 위반이 있으면 종료 코드 1
 ```
+
+판 실행 규칙: 판 i(0부터)의 시드 = `seed * 1000000 + i`, 판 ID = `eng_<preset>_<seed>_<i:05d>`. `--policy min-legal`은 `BaselinePolicy`(정책 버전 `baseline-0`)다. `--record <태스크 ID>`를 붙이면 처리량·검사 수치를 `docs/evidence/perf/<ID>/engine_games.json`·`handoff_check.json`에 쓴다.
 
 코드에서:
 
@@ -48,19 +58,24 @@ view = eng.player_view(res2.state, deps.content)
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
-| `RULE_PARAMS_VERSION`(`params.py`) | `rule-0.2` | 규칙 파라미터 버전. 판 메타에 들어가 재현에 쓴다 | 상수를 바꾸면 반드시 올린다 |
+| `RULE_PARAMS_VERSION`(`params.py`) | `rule-0.3` | 규칙 파라미터 버전. 판 메타에 들어가 재현에 쓴다 | 상수를 바꾸면 반드시 올린다 |
 | `WITNESS_PROB`(`params.py`) | 0.7 | 같은 시간대·공공장소 두 사람이 서로 목격할 확률 | 단서 양·승률이 바뀐다(A-08-03 조정) |
+| `TELL_PROB`(`params.py`) | 0.5 | 거짓 사실 주장에 기색이 보일 확률(주장 ID당 1회 판정, 11/6 PM 잠정) | 기색 단서 양이 바뀐다(A-08-03 조정) |
 | `ASSIGNMENT_MAX_ATTEMPTS`(`params.py`) | 200 | 배정 검증 실패 때 재추첨 최대 횟수 | 넘으면 콘텐츠 부족 오류 |
 | `LIMITS`(`model.py`, 계약) | 캐묻기 하루 2, 점 공개 하루 1, 라운드당 발언 1 | 횟수 제한 | 계약 변경 절차 필요 |
 | `PaldoEngine(policy=…)` | `BaselinePolicy` | NPC 발언·투표·밤 계획 결정 규칙 | 같은 시드라도 NPC 행동이 바뀐다 |
 | `engine_bench --preset` | `base6` | 측정 프리셋 | 인원이 많을수록 `apply` 시간이 늘어난다 |
+| `run_engine_games --policy` | `min-legal` | NPC 정책(`POLICIES` 등록. A-07-01이 `rule-v0` 추가) | 정책 버전이 봉투 `npc_policy_versions`·`decision.policy_version`에 들어간다 |
+| `run_engine_games --seed`·`--games` | 1·200 | 판 시드 기준·판 수 | 시드가 다르면 판 시드가 겹치지 않는다(판 수 < 1000000) |
 
 ## 한계
 
-- 밤 처리는 최소 구현이다: 상태 고정 → 행적 → 실종 → 종료 판정 → 점 결과. 밤 증언·목격·고백·말버릇(tell)은 A-06-01 범위라 2일째 아침 진술 목록은 비어 있다.
-- `observe`와 `truth_revealed` 이벤트는 A-06-02에서 구현한다(지금은 `NotImplementedError`).
-- 캐묻기 반응은 항상 `EXPLAIN`이다. 반응 선택은 A-06-01·A-07-01 범위.
-- `BaselinePolicy`는 회의에서 침묵하고, 의심도 최고 후보에 투표(동률은 시드), 밤 피해자는 시드로 고른다. NPC 정책은 A-07-01·A-07-02가 바꾼다.
+- 고백은 처리와 `NpcPolicy.react` 자리만 있다. 압박 누적·고백 문턱값 발동 규칙은 A-07-01 범위라 `BaselinePolicy`에서는 고백이 나오지 않는다.
+- `BaselinePolicy`는 회의에서 침묵하고, 캐묻기에는 해명하고, 의심도 최고 후보에 투표(동률은 시드), 밤 피해자는 시드로 고른다. NPC 정책은 A-07-01·A-07-02가 바꾼다. 그래서 `run_engine_games --policy min-legal` 데이터는 학습용 초기 데이터이고, 정책이 바뀌면 D가 다시 만든다(parallel_dev.md 3절).
+- `run_engine_games`의 무당(플레이어) 명령은 판 시드로 고정한 단순 선택(`bench_player_command`: 캐묻기 1회·의심·무작위 투표·무작위 점)이다. 플레이어 결정 이벤트는 남기지 않는다. 의심 모델은 가짜(`FakeSuspicionModel`)다.
+- `occurred_at`은 실제 시각이 아니라 고정 기준 시각(2026-11-06T00:00Z) + 판 순번 분 + 이벤트 순번 밀리초다. 시간 창 집계에는 쓰지 않는다.
+- `check_handoff_a06`은 관측 스냅샷을 모두 엄격 역직렬화해 200판에 약 75초 걸린다(스냅샷 1개 약 12 ms).
+- 실제 게임에서 `npc_policy_versions`를 채우는 일은 판 시작 유스케이스(B) 몫이다. 지금은 판 실행 도구만 채운다.
 - 이벤트 순서는 domain.md대로 `night_resolved` → `divination_done`이다. 녹화 판(`normal_game.json`)은 반대 순서다.
 - 실제 엔진은 주장·발언·렌더 작업 ID를 스스로 매기므로 녹화 판의 ID와 다르다. ID나 발언 순서를 녹화와 직접 비교하는 B 쪽 테스트는 교체 때 맞춰야 할 수 있다.
 
@@ -69,3 +84,6 @@ view = eng.player_view(res2.state, deps.content)
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | A-05-02 | 11/5 | `apply`(회의 라운드·캐묻기·동시 비공개 투표·결선·재동점 무감금·감금 공개·종료 판정·최소 밤), `player_view`, 명령 검증, `NpcPolicy`·`BaselinePolicy`, `new_game_from_setup`·`setup_from_assignment`, `engine_bench --op apply` |
+| A-06-01 | 11/6 | 밤 목격·다음 날 아침 진술, 점괘 공개 분리 저장, 고백 처리 자리, 기색(보인 것만 공개, `TELL_PROB`, rule-0.3) |
+| A-06-02 | 11/6 | `observation.py`(관측 투영·믿음 갱신·이유 코드), 정책 입력을 `ObservationSnapshot`으로, `observe` 구현, 결정 직전 `observation`·직후 `decision`(`paldo.observations`), 종료 후 `truth_revealed` |
+| A-06-03 | 11/6 | `tools/run_engine_games.py`(실제 엔진 판 → jsonl·manifest, `--policy min-legal`, `npc_policy_versions` 채움), `tools/check_handoff_a06.py`(인수 조건 4개 검사) |

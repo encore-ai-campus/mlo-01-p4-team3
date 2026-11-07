@@ -1,0 +1,60 @@
+{
+  "task": "A-06-03",
+  "commit": "2f7b6b484313695a0e692e3d9ea9231372c34c46",
+  "generated_at": "2026-11-06T07:40:53Z",
+  "source": "python -m tools.check_handoff_a06",
+  "metrics": {
+    "games": {
+      "value": 200,
+      "unit": "판"
+    },
+    "events": {
+      "value": 17823,
+      "unit": "개"
+    },
+    "observations": {
+      "value": 5704,
+      "unit": "개"
+    },
+    "decisions": {
+      "value": 5704,
+      "unit": "개"
+    },
+    "truths": {
+      "value": 200,
+      "unit": "개"
+    },
+    "violations_c1_schema": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_c1_seq": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_c1_ended_once": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_c1_game_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_h1_base6_completed": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_h2_observation_before_decision": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_h3_truth_after_end": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_h4_reason_codes": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
