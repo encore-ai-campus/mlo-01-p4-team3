@@ -6,9 +6,10 @@
 - `--events`: `tools.run_engine_games`가 쓴 `events.jsonl`을 읽어, 결정(`decision`)마다 같은 snapshot_id의 관측
   스냅샷과 맞춰 센다. 합법 행동 위반(관측의 합법 종류 밖, 자기 투표, 자기 대상 의심·감싸기, 씐 자 아닌 고백 판정은
   엔진이 막음)과 마을 추론 위반(마을 주민 표가 그 스냅샷의 확정 명제 `not_possessed`와 충돌, `npc.beliefs.vote_conflicts`).
-  결과 이름 `npc_checks`.
+  안전 층 대체 표(`fallback_votes`)와 의심 모델 폴백 결정(`suspicion_fallbacks`, policy_version `-fallback`, A-07-02)도
+  센다. 결과 이름 `npc_checks`.
 - `--bench`: 엔진으로 판을 돌리며 NPC 1명 결정 시간(정책의 믿음 갱신 + 행동 선택, 관측 투영 제외)을 잰다.
-  플레이어 명령은 `engine_bench.bench_player_command`, 판 시드는 `seed * 1000000 + i`. 결과 이름 `npc_decision_time`.
+  의심 모델 투표(`vote_with_model`, A-07-02)는 모델 호출 시간을 포함한다. 플레이어 명령은 `engine_bench.bench_player_command`, 판 시드는 `seed * 1000000 + i`. 결과 이름 `npc_decision_time`.
 
 계층: 표현·응용(인자 파싱, 파일 읽기, 집계, 출력). 판정 규칙은 `engine/domain/npc/`에 있다.
 """
@@ -28,6 +29,7 @@ from engine.domain.model import (
 )
 from engine.domain.npc import RuleV0Policy
 from engine.domain.npc.beliefs import vote_conflicts
+from engine.domain.npc.vote import is_fallback_version
 from engine.ports import EngineDeps
 from engine.testing.fakes import FakeSuspicionModel, FixtureContentSource
 from tools.evidence_result import write_result
@@ -63,7 +65,7 @@ def check_events(path: Path) -> dict:
     snaps: dict[str, ObservationSnapshot] = {}
     games: set[str] = set()
     out = {"decisions": 0, "villager_votes": 0, "legal_violations": 0, "inference_violations": 0,
-           "fallback_votes": 0, "confessions": 0, "examples": []}
+           "fallback_votes": 0, "suspicion_fallbacks": 0, "confessions": 0, "examples": []}
     with path.open(encoding="utf-8") as f:
         for line in f:
             env = json.loads(line)
@@ -75,6 +77,8 @@ def check_events(path: Path) -> dict:
                 out["confessions"] += 1
             elif et == "decision":
                 out["decisions"] += 1
+                if is_fallback_version(str(p.get("policy_version", ""))):
+                    out["suspicion_fallbacks"] += 1
                 snap = snaps.pop(p["snapshot_id"])
                 bad = legal_problem(snap, p["kind"], p["target"], p["actor"])
                 if bad:
@@ -82,7 +86,7 @@ def check_events(path: Path) -> dict:
                     _example(out, env, bad)
                 if p["kind"] == "vote" and snap.private.role is Role.VILLAGER and p["actor"] != PLAYER_ID:
                     out["villager_votes"] += 1
-                    if "fallback_all_legal" in p["reason_codes"]:
+                    if {"fallback_all_legal", "fallback_max_suspicion"} & set(p["reason_codes"]):
                         out["fallback_votes"] += 1
                     if vote_conflicts(snap.beliefs, p["target"]):
                         out["inference_violations"] += 1
@@ -127,6 +131,10 @@ class TimedPolicy:
     def vote(self, obs, candidates, rng):
         """투표(시간 측정)."""
         return self._timed(self.inner.vote, obs, candidates, rng)
+
+    def vote_with_model(self, obs, candidates, rng, model, clock=None):
+        """의심 모델 투표 3층(A-07-02, 시간 측정. 모델 호출 시간 포함)."""
+        return self._timed(self.inner.vote_with_model, obs, candidates, rng, model, clock)
 
     def night_plan(self, obs, executors, victims, rng):
         """밤 명령(시간 측정)."""
@@ -177,7 +185,8 @@ def main(argv=None) -> int:
         r = check_events(Path(a.events))
         metrics = {k: {"value": r[k], "unit": u} for k, u in (
             ("games", "판"), ("decisions", "건"), ("villager_votes", "건"), ("legal_violations", "건"),
-            ("inference_violations", "건"), ("fallback_votes", "건"), ("confessions", "건"))}
+            ("inference_violations", "건"), ("fallback_votes", "건"), ("suspicion_fallbacks", "건"),
+            ("confessions", "건"))}
         name = "npc_checks"
         log(COMPONENT, "info", "검사 완료", duration_ms=round((time.perf_counter() - t0) * 1000, 3),
             examples=r["examples"], **{k: v["value"] for k, v in metrics.items()})
