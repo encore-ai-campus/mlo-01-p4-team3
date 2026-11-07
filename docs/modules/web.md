@@ -36,6 +36,16 @@ python -B server/preview.py --port 8769
 
 고정 회차는 운영자 로그인 뒤 `/admin/sessions`에서 등록한다. 회차 ID, 참가자 화면에 표시된 가명 ID, 실행에 쓸 규칙·엔진·콘텐츠 버전을 입력한다. 고정 판 목록은 [사용자 테스트 계획의 순서](../user_test/plan.md#8-고정-시드-판-목록)에 따라 `preset_id`와 `seed`를 가진 JSON 배열로 입력한다. 참가자는 로그인 뒤 홈에서 다음 판을 시작하거나 진행 중인 판을 이어 간다.
 
+운영 게임 서비스(실제 엔진·Mongo, A-07-03)로 로컬에서 판을 하려면 저장소 루트에서 다음 순서로 한다. 값은 셸 환경 변수로만 넣는다.
+
+1. 계정 MySQL·Mongo(레플리카셋)를 띄우고 `DJANGO_SECRET_KEY`, `PALDO_PUBLIC_ORIGIN`, `PALDO_AUTH_DB_*`를 설정한다(로컬 Compose는 `ops/compose/README.md`).
+2. `PALDO_MONGO_URI`에 DB 이름 `paldo_web`을 넣은 레플리카셋 연결 문자열을, `PALDO_GAME_SERVICE_FACTORY`에 `server.infra.game_factory.build_game_service`를 넣는다. 연결·컬렉션(`games`·`progress`·`content`·`b_test_sessions`·`b_ad_identities`)은 B 실행 자원(`server/paldo_web/mongo.py`)이 맡고, 운영 조립은 `b_interactions`만 더한다.
+3. 콘텐츠를 한 번 적재한다: `python -m tools.load_content content/bundle_v1.json`(버전 `content-1.0`). 적재 도구는 B 실행 자원이 읽는 `content` 컬렉션에 쓴다(11/7 이름 통일).
+4. `python server/manage.py migrate`, 운영자 계정은 `python server/manage.py createsuperuser`로 만든다.
+5. 서버를 띄운다: `python -m daphne -b 127.0.0.1 -p 8000 server.paldo_web.asgi:application`. 브라우저는 `PALDO_PUBLIC_ORIGIN` 주소로 연다.
+6. 참가자로 가입해 홈의 가명 ID를 확인하고, 운영자로 `/admin/sessions`에서 회차를 등록한다. 버전은 규칙 `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"`가 출력하는 값(`engine/domain/params.py`의 `RULE_PARAMS_VERSION`, 결정 층 파라미터가 바뀌면 함께 바뀐다), 엔진 `paldo-engine`, 콘텐츠 `content-1.0`이다. 고정 판은 `[{"preset_id": "base6", "seed": 1}]`처럼 넣는다.
+7. 참가자로 로그인해 홈에서 판을 시작한다.
+
 웹소켓 실행은 환경을 준비한 뒤 `python -m daphne -b 127.0.0.1 -p 8769 server.paldo_web.asgi:application`을 사용한다. 프로세스는 하나로 유지하고 외부 연결은 C 프록시를 거친다. `configure_ad_gateway`로 실제 광고 제공자를 조립하기 전에는 중계가 실패 응답과 대체 화면으로 끝난다. `server/preview.py`는 HTTP 화면용이며 웹소켓 실행 명령을 대신하지 않는다.
 
 로컬 통신 검증: `python -m server.tests.ws_smoke`. 임시 SQLite·가짜 광고를 별도 Daphne 프로세스에 연결한 뒤 정리한다. 클라이언트 검증: `node server/tests/ws_client_test.cjs`.
@@ -50,8 +60,8 @@ python -B server/preview.py --port 8769
 | `PALDO_AUTH_DB_*` | [통합 계약 4.1](../contracts/integration.md) | Django 계정 MySQL 접속값 | 인증·세션·관리자 테이블의 연결 대상이 바뀜 |
 | `PALDO_SIGNUP_INVITE_CODE` | 비어 있음 | 비어 있으면 공개 가입 | 값이 있으면 일치하는 초대 코드를 제출해야 가입 가능 |
 | `SESSION_COOKIE_AGE` | 1,209,600초 | 세션 유효 기간 | 새 세션의 기본 유효 기간이 바뀜 |
-| `PALDO_GAME_SERVICE_FACTORY` | 비어 있음 | 운영 게임 서비스를 조립하는 함수 경로 | 운영 게임 API가 사용하는 서비스가 바뀜 |
-| `PALDO_MONGO_URI` | 비어 있음 | Mongo 게임·진척·콘텐츠·회차·광고 가명 접속값 | DB 경로 생략 시 `paldo_web`을 사용한다. 미설정 시 Mongo 게임·회차 조립을 사용할 수 없다 |
+| `PALDO_GAME_SERVICE_FACTORY` | 비어 있음. 운영 예: `server.infra.game_factory.build_game_service` | 운영 게임 서비스를 조립하는 함수 경로 | 운영 게임 API가 사용하는 서비스가 바뀜. 비어 있으면 게임 API를 쓸 수 없다 |
+| `PALDO_MONGO_URI` | 비어 있음 | Mongo 게임·진척·콘텐츠·회차·광고 가명 접속값. 운영 조립은 같은 DB에 보조 기록 `b_interactions`를 더한다 | DB 경로 생략 시 `paldo_web`을 사용한다. 콘텐츠 적재 도구·발행기와 같은 DB를 쓰도록 경로에 DB 이름을 넣는다. 미설정 시 Mongo 게임·회차 조립을 사용할 수 없다 |
 | `ASSET_MANIFEST` | `content/images/manifest.json` | 콘텐츠 ID, URL, 이미지 경로 목록 | 화면 조회와 정적 이미지 응답에 함께 적용 |
 | 미리보기 `--port` | 8766 | 로컬 HTTP 포트 | 루프백 미리보기 접속 주소가 바뀜 |
 
@@ -59,10 +69,10 @@ python -B server/preview.py --port 8769
 
 자유 입력 화면은 `utterance_input.html`·`speech_cards.html`, 추궁 답변은 `speech_line.html`에서 처리한다. JSON·htmx가 같은 수명주기를 사용한다. 게임 서비스 조립 때 해석기를 한 번 생성한다. Django 설정 `INTENT_PARSER_FACTORY = "intent.parser.BaselineIntentParser"`로 D-07-01 기준선으로 전환할 수 있다. 동일 화면 시험과 실제 후보·버전 기록을 [B-07-01 증빙](../evidence/B-07-01.md)에 기록했다. 해석 지연은 `/metrics`의 `paldo_intent_parse_duration_seconds{stage,status}` 히스토그램으로 노출하며 p95는 `histogram_quantile(0.95, sum by (le) (rate(paldo_intent_parse_duration_seconds_bucket[5m])))`로 조회한다.
 
-실제 기준선 수신 확인은 B-07-01에서 수행했다. 다중 카드의 확인 가능 여부는 카드별로 정하고, 직전 대화 상대는 공개 캐묻기 기록에서 보완한다. 재입력에도 선택 인물·근거·직전 상대를 전달한다. B-06-03은 C 게임 저장소를 연결하며 이 자유 입력 흐름의 영속 보조 저장은 별도다. P-31 (나)에 따라 런타임 LLM 서비스 교체는 없으며 폴백·미리 생성한 문장 변형 경로를 사용한다.
+실제 기준선 수신 확인은 B-07-01에서 수행했다. 다중 카드의 확인 가능 여부는 카드별로 정하고, 직전 대화 상대는 공개 캐묻기 기록에서 보완한다. 재입력에도 선택 인물·근거·직전 상대를 전달한다. B-06-03은 C 게임 저장소를 연결하고, 자유 입력 흐름의 영속 보조 저장은 A-07-03 운영 조립이 `b_interactions`로 더한다. P-31 (나)에 따라 런타임 LLM 서비스 교체는 없으며 폴백·미리 생성한 문장 변형 경로를 사용한다.
 B-07-02의 설문은 같은 API에서 응답과 전체 건너뛰기를 받는다. 건너뜀의 세 점수는 `null`로 기록한다. 수첩·확신도·설문의 `paldo.player` 아웃박스는 메모리 시험으로 확인했다. 실제 Kafka 수신은 [C 인수 뒤 확인](../../server/DESIGN.md#b-07-02-인수계약-확인)한다. 슬라이더와 저장 안내는 로컬 Alpine.js 3.14.9로 동작한다.
 
-미리보기는 임시 SQLite와 녹화 엔진, 메모리 게임 저장소를 사용한다. 현재 C 저장소는 `paldo_web/mongo.py`의 명시적 조립으로 연결하며 회차 정책도 같은 자원에 고정한다. 기존 사용자 정의 팩토리는 `prepare_start`를 비워 두면 B 기본 회차 정책을 사용한다. 배포 계정 DB 권한, 운영 게임 저장소, 실제 광고 요청의 식별자는 통합 환경에서 확인한다.
+미리보기는 임시 SQLite와 녹화 엔진, 메모리 게임 저장소를 사용한다. 현재 C 저장소는 `paldo_web/mongo.py`의 명시적 조립으로 연결하며 회차 정책도 같은 자원에 고정한다. 기존 사용자 정의 팩토리는 `prepare_start`를 비워 두면 B 기본 회차 정책을 사용한다. 운영 게임 서비스는 `server/infra/game_factory.py`(A-07-03)가 이 실행 자원(`open_mongo_runtime`)에 실제 엔진(NPC 규칙 v0, 콘텐츠 버전별)과 규칙 의심도 기반 가짜 의심 모델을 넘겨 만들고, 그 게임 서비스에 보조 기록 Mongo 저장소(`server/infra/interaction_store.py`, `<접두어>b_interactions`), 기준선 해석기, 템플릿 렌더러를 끼운다. 보조 기록 저장은 같은 프로세스 안에서 판별 잠금, 프로세스 사이에서 판 문서 임대(30초, 요청이 도는 동안 10초마다 연장, 최대 5초 대기)로 직렬화하고, 임대를 5초 안에 못 잡거나 만료 뒤 늦은 저장은 503으로 거절하며 덮어쓰지 않는다. Mongo 일시 오류 중에는 연장을 다시 시도한다. Mongo가 임대 시간(30초) 내내 응답하지 않으면 연장이 끊겨 다른 프로세스가 임대를 잡을 수 있다(그동안 같은 Mongo에 쓰는 게임 저장도 실패하며, 게임 명령은 판 저장소 버전 검사로 한 번만 반영된다). 배포 계정 DB 권한, 운영 게임 저장소, 실제 광고 요청의 식별자는 통합 환경에서 확인한다.
 
 ## 변경 이력
 
@@ -78,6 +88,7 @@ B-07-02의 설문은 같은 API에서 응답과 전체 건너뛰기를 받는다
 | B-07-05 | 11/7 | ASGI·인증 웹소켓·광고 중계·재연결. P-29의 비콘 폐기 사유 검증·집계와 페이지 간 보고 반영. VM·성능 시험 대기 |
 | B-07-01 | 11/7 | 자유 입력 카드의 모든 반응·실패 화면, 해석기 선택·계측, 발언 폴링과 단계 취소. 신규 조건 8의 Kanana 답변 표기·폴링/재조회 유지 검증 |
 | B-07-02 | 11/7 | 수첩·확신도·설문과 전체 건너뛰기 화면, P-29 입력·재전송 검증. 날짜·단계별 동일 확신도 기록 보완. 실제 토픽 수신 대기 |
+| A-07-03 | 11/7 | 운영 게임 서비스 조립 `server.infra.game_factory.build_game_service`(B 실행 자원 위에 실제 엔진·의심 모델·보조 기록 저장·기준선 해석기·템플릿 렌더러)과 로컬 실행 순서 |
 | B-07-03 | 11/7 | 로비·결과 광고 지연 로드, 3지면 조각·가명 분리·serve별 노출 비콘·동일 출처 클릭 검증. 미제공·실패의 200 빈 조각 검증. 복기 배치는 B-10-01 범위 |
 
 B-06-03의 실제 Mongo 조립은 `server/paldo_web/mongo.py`를 사용한다. 엔진·모델을 명시적으로 넘겨 `open_mongo_runtime`을 호출하고 HTTP 처리 전 `configure()`로 연결한다. 기존 `PALDO_GAME_SERVICE_FACTORY` 함수 안에서는 `factory_service()`를 반환한다. 고정된 콘텐츠 버전·같은 고정 판을 복원한다. 접속 정보는 기존 `PALDO_MONGO_URI` 하나를 사용한다. 고유 컬렉션의 실제 시험은 `server/tests/mongo_game_sessions.py`이며 VM·부하·보조 저장은 후속 검증이다.
