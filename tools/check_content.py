@@ -3,6 +3,7 @@
     python -m tools.check_content                              # content/bundle_v1.json 구조 검사
     python -m tools.check_content --preset base6 --seeds 200   # + 엔진 배정기로 시드 200개 배정 검증
     python -m tools.check_content --preset base6 --seeds 200 --result   # 결과 JSON(docs/evidence/perf/E-05-03/)
+    python -m tools.check_content --preset large8 --seeds 200 --result --task E-08-02   # 다른 태스크 증빙 폴더에
 
 검사 항목(docs/contracts/content.md):
 - 엄격 검증: `serde.from_jsonable(ContentBundle)` 통과, 다시 직렬화하면 원본과 같다.
@@ -156,7 +157,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--bundle", default=DEFAULT_BUNDLE, help="저장소 기준 경로")
     ap.add_argument("--preset", default=None, help="배정 검증할 프리셋 ID(예: base6)")
     ap.add_argument("--seeds", type=int, default=200, help="배정 검증 시드 수(0부터)")
-    ap.add_argument("--result", action="store_true", help=f"결과 JSON을 docs/evidence/perf/{TASK}/에 쓴다")
+    ap.add_argument("--result", action="store_true", help="결과 JSON을 docs/evidence/perf/<태스크>/에 쓴다")
+    ap.add_argument("--task", default=TASK, help=f"--result를 쓸 태스크 ID(기본 {TASK})")
     args = ap.parse_args(argv)
     try:
         r = run(args.bundle, args.preset, args.seeds)
@@ -172,7 +174,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.result and r.preset:
         from tools.evidence_result import write_result
         src = f"python -m tools.check_content --bundle {r.bundle} --preset {r.preset} --seeds {r.seeds} --result"
-        write_result(TASK, f"assign_{r.preset}", {
+        if args.task != TASK:
+            src += f" --task {args.task}"
+        write_result(args.task, f"assign_{r.preset}", {
             "seeds": {"value": r.seeds, "unit": "개"},
             "violation_count": {"value": sum(r.violations.values()), "unit": "건"},
             "structure_problem_count": {"value": len(r.problems), "unit": "건"},
