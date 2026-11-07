@@ -64,7 +64,7 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
                   "django.template.context_processors.request",
                   "django.contrib.auth.context_processors.auth",
                   "django.contrib.messages.context_processors.messages",
-              ], "libraries": {"meeting": "server.api.template_tags"}}}]
+              ], "libraries": {"meeting": "server.api.template_tags", "ad_slots": "server.api.ad_slot_tags"}}}]
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "server.accounts.validators.PasswordRulesValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},

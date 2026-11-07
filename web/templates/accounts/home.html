@@ -1,5 +1,6 @@
 {% extends "accounts/base.html" %}
 {% load l10n %}
+{% load ad_slots %}
 {% block content %}
 <h1>팔도무록</h1>
 {% if request.user.is_authenticated %}
@@ -32,6 +33,7 @@
     {% if assignments is not None and not assignments_unavailable %}<p>배정된 테스트 회차가 없습니다.</p>{% endif %}
   {% endfor %}
   <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button>로그아웃</button></form>
+  {% ad_slot 'lobby_banner' %}
 {% else %}
   <p><a href="{% url 'accounts:signup' %}">가입</a> · <a href="{% url 'accounts:login' %}">로그인</a></p>
 {% endif %}

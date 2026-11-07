@@ -81,6 +81,7 @@
     </section>
   {% endif %}
   {% if vm.ended %}
+    {% load ad_slots %}{% ad_slot 'result_banner' %}
     <p class="round-result">판이 종료됐습니다.</p>
     {% if participant_forms_available %}{% include "survey.html" %}{% endif %}
     <p><a href="{% url 'home' %}">테스트 회차로 돌아가기</a></p>

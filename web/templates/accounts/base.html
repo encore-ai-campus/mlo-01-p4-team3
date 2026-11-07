@@ -1,10 +1,11 @@
-<!doctype html>
+{% load meeting %}<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>팔도무록 계정</title>
-  {% if request.user.is_authenticated %}<script src="/static/js/vendor/htmx.min.js" defer></script><script src="/static/js/paldo_ws.js" defer></script>{% endif %}
+  <link rel="icon" href="{% asset_url 'ui:notebook' %}">
+  {% if request.user.is_authenticated %}<script src="/static/js/vendor/htmx.min.js" defer></script><script src="/static/js/paldo_ws.js" defer></script><script src="/static/js/ad_slots.js" defer></script>{% endif %}
 </head>
 <body>
   <header><a href="{% url 'home' %}">팔도무록</a></header>
