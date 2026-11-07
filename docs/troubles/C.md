@@ -25,3 +25,9 @@
 - 원인: Delta 4.4.1의 기본 jar는 Spark 4.2.0을 대상으로 빌드됐다(pom의 `spark-sql_2.13` 4.2.0). Delta는 Spark 버전별 jar(`delta-spark_4.1_2.13`, `delta-spark_4.2_2.13`)를 따로 낸다.
 - 대응: 같은 Delta 4.4.1의 Spark 4.1용 jar `io.delta:delta-spark_4.1_2.13:4.4.1`로 바꿔 다시 시험했다. 계약(`tech_stack.md`)에 jar 좌표를 적는 것은 PM 승인 뒤에 한다.
 - 결과: 기본 jar는 쓰기 0회 성공(실패 1회), Spark 4.1용 jar는 쓰기 2회·읽기(현재 11행, 버전 0은 10행) 성공, 약 30초. 증빙 [`docs/evidence/C-05-03.md`](../evidence/C-05-03.md)
+
+### C-06-04 LLM 최종 자원 미확정·Garage 역할 정정
+- 문제: E CPU 잠정값과 Colab MVP를 게임 운영 확정으로 볼 수 없고, 초기 media-storage 끄기 계획은 현재 Garage 두 노드 쓰기와 충돌했다.
+- 원인: 최종 GPU·예산·실측·B/E 서비스 인계가 아직 없고 기존 두 노드 스토리지 구성을 초기 계획에 반영하지 않았다.
+- 대응: 사용자 RunPod 의견을 후보로 문서화, CPU 8스레드·6GB와 GPU 실배정을 구분, 렌더/poll/cancel 계약·예열·정지·계측 절차 기록, Garage 두 노드 유지.
+- 결과: 자원 생성·과금·확정·RAM 반환은 미실행으로 기록. infra/ops 모듈 당일 일괄 갱신. 증빙 [C-06-04](../evidence/C-06-04.md).
