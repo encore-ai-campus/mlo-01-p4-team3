@@ -32,9 +32,17 @@ class DecisionParamsFile(unittest.TestCase):
         p = params.load()
         self.assertEqual(p.version, raw["version"])
         self.assertEqual(params.DECISION_PARAMS_VERSION, p.version)
-        self.assertEqual(params.RULE_PARAMS_VERSION, f"{params.RULE_BASE_VERSION}+{p.version}")
+        self.assertEqual(params.RULE_PARAMS_VERSION, f"{params.RULE_BASE_VERSION}.{p.version}")
+        # 회차 등록 검증(server/app/test_sessions.py)과 같은 문자 집합이어야 운영자가 이 버전으로 회차를 등록할 수 있다
+        self.assertRegex(params.RULE_PARAMS_VERSION, r"^[a-zA-Z0-9_.-]{1,80}$")
         self.assertEqual((params.WITNESS_PROB, params.TELL_PROB, params.Q_MAX),
                          (p.witness_prob, p.tell_prob, p.q_max))
+
+    def test_rejects_version_with_unsafe_chars(self):
+        raw = json.loads(params.DECISION_PARAMS_FILE.read_text(encoding="utf-8"))
+        for bad in ("decision+1", "decision 1", ""):
+            with self.assertRaises(ValueError):
+                params.DecisionParams.from_dict({**raw, "version": bad})
 
     def test_rejects_out_of_range_and_missing(self):
         with self.assertRaises(ValueError):
@@ -46,7 +54,7 @@ class DecisionParamsFile(unittest.TestCase):
 
     def test_apply_is_read_at_call_time(self):
         params.apply(_params(version="t1", q_max=0.8, vote_noise=0.0, conformity_scale=0.0))
-        self.assertEqual(params.RULE_PARAMS_VERSION, f"{params.RULE_BASE_VERSION}+t1")
+        self.assertEqual(params.RULE_PARAMS_VERSION, f"{params.RULE_BASE_VERSION}.t1")
         self.assertAlmostEqual(vt.mudang_q(0), 0.8)
         scores = vt.decision_scores({"b": 0.3}, {"b": 1.0}, 1.0, random.Random(0))
         self.assertEqual(scores, {"b": 0.3})           # 잡음 0·동조 0
