@@ -82,6 +82,22 @@ class CheckEvents(unittest.TestCase):
         self.assertGreater(res["villager_votes"], 0)
 
 
+class SuspicionFallbacks(unittest.TestCase):
+    def test_counts_fallback_decisions(self):
+        """policy_version이 `-fallback`인 결정(의심 모델 폴백, A-07-02)과 안전 층 대체 표를 센다."""
+        s = serde.to_jsonable(_snap())
+        rows = [_env("g", 0, "observation", {"snapshot_id": "s1", "snapshot": s}),
+                _env("g", 1, "decision", {"snapshot_id": "s1", "actor": "a", "kind": "vote", "target": "b",
+                                          "reason_codes": ["max_suspicion", "model_fallback_unavailable"],
+                                          "policy_version": "rule-v0-fallback"}),
+                _env("g", 2, "observation", {"snapshot_id": "s2", "snapshot": s}),
+                _env("g", 3, "decision", {"snapshot_id": "s2", "actor": "a", "kind": "vote", "target": "c",
+                                          "reason_codes": ["model_estimate", "fallback_max_suspicion"],
+                                          "policy_version": "rule-v0"})]
+        res = tool.check_events(CheckEvents.write(self, rows))
+        self.assertEqual((res["suspicion_fallbacks"], res["fallback_votes"]), (1, 1))
+
+
 class RunnerRuleV0(unittest.TestCase):
     def test_run_engine_games_rule_v0(self):
         """`tools.run_engine_games --policy rule-v0`로 판을 돌리면 정책 버전 rule-v0, 이벤트 검사 위반 0건."""

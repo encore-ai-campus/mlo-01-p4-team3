@@ -8,7 +8,7 @@
   → ③ 나에 대한 새 의심이 있으면 해명 → ④ 직접 목격으로 알리바이를 아는 사람이 의심받으면 감싸기 → ⑤ 침묵.
 - 투표(안전 층 포함): 확정 명제(`not_possessed`)로 무고가 확정된 사람과 고백자는 빼고, 무당은 신뢰도가 아주 낮을 때만 후보.
   남은 후보 중 의심도 + 작은 잡음이 가장 큰 사람. 걸러서 후보가 없으면 합법 후보 전체로 돌아간다.
-  투표 3층(성향 가중 확률·동조·잡음)과 의심 모델 연결은 A-07-02가 이 자리를 바꾼다.
+  엔진이 의심 모델을 넘기면 `vote_with_model`(투표 3층, A-07-02 `vote.py`)을 쓰고, 이 규칙은 모델 실패 때의 대체 결정이다.
 - 캐묻기 답: 비밀 보유자는 압박이 고백 문턱값 이상이면 고백, 숨기는 시간대·모순 추궁이면 회피. 그 밖은 성향에 따라 역공 또는 해명.
 - 목격 근거(`others_claim`·`mutual_vouch`)를 의심도에 쓴 대상에 대한 결정에만 `observation.witness_basis`를 붙인다.
 
@@ -27,6 +27,7 @@ from ..model import (
 )
 from ..observation import Decision, ReasonCode, witness_basis
 from . import beliefs as bl
+from . import vote as vt
 
 SUSPECT_MIN = 62.0          # 의심 발언을 고려하는 의심도(잠정)
 VOTE_NOISE = 2.0            # 투표 점수 잡음 폭(±, 잠정)
@@ -195,6 +196,21 @@ class VillagerPolicy(RuleBase):
             codes.append(ReasonCode.TIE_SEEDED)
         refs = vote_refs(b, target)
         return self.with_witness(obs, b, target, target, codes, refs)
+
+    def vote_with_model(self, obs: ObservationSnapshot, candidates: list[str], rng: random.Random,
+                        model, clock=None) -> "vt.VoteOutcome":
+        """투표 3층(A-07-02): 의심 모델 추정 → 성향 가중·동조·잡음 결정 → 안전 층. 근거는 대상 의심도를 올린 기록.
+
+        모델이 실패하거나(없음·버전 불일치·출력 불일치) 100ms를 넘으면 이 결정만 규칙 v0 투표(`vote`)로 하고
+        폴백 이유 코드를 붙여 `VoteOutcome.fallback`에 이유를 담는다(엔진이 policy_version에 `-fallback`).
+        """
+        b = self.update_beliefs(obs)
+        est, why = vt.estimate(model, obs) if clock is None else vt.estimate(model, obs, clock)
+        if est is None:
+            d = self.vote(obs, candidates, rng)
+            return vt.VoteOutcome(Decision(d.value, d.reason_codes + [vt.FALLBACK_CODE[why]], d.evidence), why)
+        target, codes = vt.choose_target(obs, b, candidates, est, self.temperament(obs.observer), rng)
+        return vt.VoteOutcome(self.with_witness(obs, b, target, target, codes, vote_refs(b, target)))
 
     def react(self, obs: ObservationSnapshot, cmd: Command, rng: random.Random) -> Decision:
         """캐묻기 답: 비밀 보유자는 압박 ≥ 문턱값이면 고백, 숨기는 시간대·모순 추궁이면 회피. 아니면 역공 또는 해명."""

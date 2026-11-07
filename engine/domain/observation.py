@@ -59,6 +59,13 @@ class ReasonCode(str, enum.Enum):
     NIGHT_WITNESS = "night_witness"                # 밤 대상: 내 거짓을 목격했을 수 있는 사람
     NIGHT_TRUSTS_MUDANG = "night_trusts_mudang"    # 밤 대상: 무당을 따르는 사람
     NIGHT_ANY = "night_any"                        # 밤 대상: 고른 묶음이 비어 전체에서
+    MODEL_ESTIMATE = "model_estimate"              # 투표: 의심 모델 추정 + 성향 가중·동조·잡음 최댓값(A-07-02)
+    VOTE_CONFORM = "vote_conform"                  # 투표: 동조 항(예상 득표) 때문에 의심도 1위가 아닌 사람을 고름
+    FALLBACK_MAX_SUSPICION = "fallback_max_suspicion"  # 투표 안전 층이 후보를 모두 빼 합법 후보 중 의심도 최댓값으로
+    MODEL_FALLBACK_UNAVAILABLE = "model_fallback_unavailable"  # 의심 모델 없음(ModelUnavailable) → 규칙 v0 투표
+    MODEL_FALLBACK_VERSION = "model_fallback_version"          # 특징 버전 불일치 → 규칙 v0 투표
+    MODEL_FALLBACK_TIMEOUT = "model_fallback_timeout"          # 호출 100ms 초과 → 규칙 v0 투표
+    MODEL_FALLBACK_INVALID = "model_fallback_invalid"          # 출력 후보·확률이 스냅샷과 맞지 않음 → 규칙 v0 투표
 
 
 # 근거 기록이 없어도 되는 이유 코드(조건 4 "근거 ID"는 근거가 있을 때만 요구, 11/6 PM 결정).
@@ -71,6 +78,9 @@ NO_EVIDENCE_CODES: frozenset[ReasonCode] = frozenset({
     ReasonCode.REACT_EXPLAIN, ReasonCode.REACT_EVADE, ReasonCode.REACT_COUNTER,
     ReasonCode.LIE_UNREFUTED, ReasonCode.LIE_ROUTINE, ReasonCode.NIGHT_ACCUSER, ReasonCode.NIGHT_WITNESS,
     ReasonCode.NIGHT_TRUSTS_MUDANG, ReasonCode.NIGHT_ANY,
+    ReasonCode.MODEL_ESTIMATE, ReasonCode.VOTE_CONFORM, ReasonCode.FALLBACK_MAX_SUSPICION,
+    ReasonCode.MODEL_FALLBACK_UNAVAILABLE, ReasonCode.MODEL_FALLBACK_VERSION, ReasonCode.MODEL_FALLBACK_TIMEOUT,
+    ReasonCode.MODEL_FALLBACK_INVALID,
 })
 SOURCE_CODE: dict[EvidenceSource, ReasonCode] = {
     EvidenceSource.OTHERS_CLAIM: ReasonCode.WITNESS_OTHERS_CLAIM,
