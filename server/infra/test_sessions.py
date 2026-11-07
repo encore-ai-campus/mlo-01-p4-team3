@@ -31,11 +31,11 @@ def connect_session_store(uri):
 
 
 class MongoSessionStore:
-    """지정 DB의 b_test_sessions·b_ad_identities만 사용한다."""
+    """회차·광고 가명 컬렉션을 사용한다. 시험은 접두어로 기존 자료와 분리한다."""
 
-    def __init__(self, database):
-        self.sessions = database["b_test_sessions"]
-        self.identities = database["b_ad_identities"]
+    def __init__(self, database, collection_prefix=""):
+        self.sessions = database[collection_prefix + "b_test_sessions"]
+        self.identities = database[collection_prefix + "b_ad_identities"]
         self.sessions.create_index("participants")
         self.identities.create_index("player_pseudonym")
         self.identities.create_index("session_pseudonym", unique=True)
