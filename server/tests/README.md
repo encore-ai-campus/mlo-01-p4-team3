@@ -23,8 +23,23 @@ python -B server/tests/bench.py --memory --users 10 --minutes 3
 python -B server/manage.py test server.tests.mongo_sessions --settings=server.paldo_web.mongo_test_settings --noinput
 ```
 
-## C-06-01 인수 뒤 확인할 사항
+## C-06-01 인수 상태와 남은 부하 시험
 
-- [통합 계약 G5·G5b](../../docs/contracts/integration.md)의 `GameRepository`와 `ProgressRepository` 구현 및 생성 방법을 인수한다. 게임 저장소의 버전 비교·원자 저장 시험 결과도 확인한다.
+- [통합 계약 G5·G5b](../../docs/contracts/integration.md)의 `GameRepository`와 `ProgressRepository` 구현은 C-06-01에서 병합됐다. 생성·공유 연결은 아래 B-06-03 조립을 사용한다. C의 버전 비교·원자 저장 결과는 [C 증빙](../../docs/evidence/C-06-01.md)에 있다.
 - 로컬 Compose Mongo 레플리카셋의 접속 문자열은 `PALDO_MONGO_URI`로 전달한다. 측정에는 격리된 시험 DB를 사용한다.
 - 태스크가 지정한 `tools/perf/api_bench.py`에서 인수한 저장소를 연결하고 사용자 10명으로 3분 측정한다. 필수 p95는 1초 이하이며 300ms 목표와 비교해 기록한다.
+
+## B-06-03 실제 Mongo 게임·회차 통합 시험
+
+`mongo_game_sessions`에는 저장 전 연결 오류·실제 저장 직후 응답 유실·연속 실패 시험이 있다. `AutoReconnect`·`NetworkTimeout` 각각에 대해 동일 commit 두 번 이하, 엔진 한 번, 상태 버전·명령·이벤트 단일 반영과 클라이언트 재전송의 `replayed=true`를 검사한다. DB는 실제 Replica Set이며 오류만 쓰기 호출 경계에 주입한다. 물리 네트워크 단절이나 VM 장애 시험은 아니다.
+
+C-06-01의 게임·진척·콘텐츠 저장소는 dev에 병합됐다. `server/paldo_web/mongo.py`의 B 조립으로 실제 엔진·고정 회차·광고 가명을 연결한다. 기존 환경 변수 또는 `server/.env`의 `PALDO_MONGO_URI`를 사용한다. 이 시험은 콘텐츠 적재 트랜잭션이 필요하므로 Replica Set에 연결해야 한다. 기존 Standalone 서비스나 데이터를 변경하지 않는다. 접속 DB 안의 고유 `b0603_<UUID>_` 컬렉션 5개만 만들고 종료 시 그 컬렉션만 삭제한다. 계정은 기본 시험 설정의 임시 SQLite다.
+
+```powershell
+python -B server/manage.py test server.tests.test_mongo_composition --settings=server.paldo_web.test_settings --noinput
+python -B server/manage.py test server.tests.mongo_game_sessions --settings=server.paldo_web.mongo_test_settings --noinput --verbosity=2
+```
+
+로컬에서 기존 회차 전용 시험까지 함께 실행하려면 `server.tests.mongo_sessions`도 지정한다. 이 기존 시험은 루프백만 허용하고 별도 시험 DB를 사용한다. 게임 통합 시험은 실제 엔진·규칙 NPC와 모델 없는 규칙 투표 경로를 사용한다. 진척 포트 보존 검사는 해금 로직·Kafka 수신·성능 검사를 대신하지 않는다. 대상 VM·실제 부하는 별도로 측정한다.
+
+기존 서비스 팩토리 함수에서는 `runtime = open_mongo_runtime(engine=실제엔진, suspicion=선택한모델)` 뒤 `return runtime.factory_service()`를 사용한다. 연결 정보는 환경의 `PALDO_MONGO_URI`를 읽는다. 서버 기동 전에 직접 설치하는 경로는 `runtime.configure()`다. 실행 자원은 서버 수명 동안 보유하고 서버의 모든 요청 처리가 끝난 뒤 `runtime.close()`한다.
