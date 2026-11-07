@@ -40,7 +40,7 @@ python -B server/preview.py --port 8769
 
 1. 계정 MySQL·Mongo(레플리카셋)를 띄우고 `DJANGO_SECRET_KEY`, `PALDO_PUBLIC_ORIGIN`, `PALDO_AUTH_DB_*`를 설정한다(로컬 Compose는 `ops/compose/README.md`).
 2. `PALDO_MONGO_URI`에 DB 이름 `paldo_web`을 넣은 레플리카셋 연결 문자열을, `PALDO_GAME_SERVICE_FACTORY`에 `server.infra.game_factory.build_game_service`를 넣는다. 연결·컬렉션(`games`·`progress`·`content`·`b_test_sessions`·`b_ad_identities`)은 B 실행 자원(`server/paldo_web/mongo.py`)이 맡고, 운영 조립은 `b_interactions`만 더한다.
-3. 콘텐츠를 B 실행 자원이 읽는 `content` 컬렉션에 한 번 적재한다. 지금 적재 도구 `server.infra.load_content`는 `content_bundles`에 써서 B 실행 자원이 읽지 못한다(이름 맞춤은 B·C 확인 대기). 맞춰지기 전에는 `python -c "import os; from pymongo import MongoClient; from server.infra.content_store import MongoContentSource; from pathlib import Path; from tools.check_content import load_bundle; MongoContentSource(MongoClient(os.environ['PALDO_MONGO_URI']).get_default_database()['content']).insert(load_bundle(Path('content/bundle_v1.json')))"`로 넣는다(버전 `content-1.0`).
+3. 콘텐츠를 한 번 적재한다: `python -m tools.load_content content/bundle_v1.json`(버전 `content-1.0`). 적재 도구는 B 실행 자원이 읽는 `content` 컬렉션에 쓴다(11/7 이름 통일).
 4. `python server/manage.py migrate`, 운영자 계정은 `python server/manage.py createsuperuser`로 만든다.
 5. 서버를 띄운다: `python -m daphne -b 127.0.0.1 -p 8000 server.paldo_web.asgi:application`. 브라우저는 `PALDO_PUBLIC_ORIGIN` 주소로 연다.
 6. 참가자로 가입해 홈의 가명 ID를 확인하고, 운영자로 `/admin/sessions`에서 회차를 등록한다. 버전은 규칙 `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"`가 출력하는 값(`engine/domain/params.py`의 `RULE_PARAMS_VERSION`, 결정 층 파라미터가 바뀌면 함께 바뀐다), 엔진 `paldo-engine`, 콘텐츠 `content-1.0`이다. 고정 판은 `[{"preset_id": "base6", "seed": 1}]`처럼 넣는다.

@@ -19,7 +19,7 @@ def main(argv=None):
         from pymongo import MongoClient
         client=MongoClient(os.environ['PALDO_MONGO_URI'],serverSelectionTimeoutMS=5000,timeoutMS=10000)
         database=client.get_default_database()
-        MongoContentSource(database['content_bundles']).insert(bundle)
+        MongoContentSource(database['content']).insert(bundle)
         log('load_content','info','content_version_inserted',content_version=bundle.content_version)
     except Exception as error:
         log('load_content','error','content_insert_failed',error_type=type(error).__name__)
