@@ -24,6 +24,8 @@ if SESSION_COOKIE_SECURE:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 ROOT_URLCONF = "server.paldo_web.urls"
 WSGI_APPLICATION = "server.paldo_web.wsgi.application"
+ASGI_APPLICATION = "server.paldo_web.asgi.application"
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 LOGIN_URL = "/accounts/login"
 SIGNUP_INVITE_CODE = os.environ.get("PALDO_SIGNUP_INVITE_CODE", "")
 GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
