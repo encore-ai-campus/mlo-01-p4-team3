@@ -2,6 +2,12 @@
 
 ## B-06-02 로컬 시험
 
+Compose를 준비하려면 저장소 루트에서 `python -B -m ops.compose.run make-env` 뒤 `docker compose -p paldo-dev -f ops/compose/dev.yml up -d --wait mongo`를 실행한다. Docker Desktop은 Linux 엔진이어야 한다. Mongo만 실행하며 다른 Compose 서비스를 띄울 필요는 없다. 컨테이너가 healthy이면 `python -B tools/perf/api_bench.py --users 10 --minutes 3 --result-name compose_10x3`을 실행한다. 부하 CLI와 Mongo 전용 시험 설정은 환경 → `server/.env` → Compose 루트 `.env` 순으로 URI를 읽는다. 생성된 `.env`는 Git에서 제외하고 기존 볼륨을 삭제하지 않는다.
+
+실제 Mongo 부하: `python -B tools/perf/api_bench.py --users 10 --minutes 3 --result-name local_native_10x3`. 연결은 `PALDO_MONGO_URI` 환경 또는 `server/.env`를 사용하며 Replica Set이 필요하다. 고유 접두어의 컬렉션과 임시 SQLite 계정만 만들고 정리한다. 실제 HTTP 계약·동시 요청 시험은 `python -B server/manage.py test server.tests.mongo_commands.MongoCommands --settings=server.paldo_web.mongo_test_settings --noinput`이다. 기존 메모리 경합 시나리오를 실제 Mongo로 교체해 그대로 실행한다.
+
+측정 경로는 Django test client → 인증·CSRF → B API/응용 → C Mongo이며 엔진은 명시적인 녹화 대역이다. 운영 진입점은 이 시험 모듈을 import하지 않는다. 실제 네트워크·ASGI·VM 부하와 구분하며 p50·p95·오류·완주 판 수를 보고한다. 자세한 기준은 [성능 모듈](../../docs/modules/perf.md)에 둔다.
+
 저장소 루트에서 Django 6.1.2가 설치된 Python으로 실행한다.
 
 ```powershell
@@ -23,11 +29,12 @@ python -B server/tests/bench.py --memory --users 10 --minutes 3
 python -B server/manage.py test server.tests.mongo_sessions --settings=server.paldo_web.mongo_test_settings --noinput
 ```
 
-## C-06-01 인수 상태와 남은 부하 시험
+## C-06-01 인수 상태와 부하 시험 범위
 
 - [통합 계약 G5·G5b](../../docs/contracts/integration.md)의 `GameRepository`와 `ProgressRepository` 구현은 C-06-01에서 병합됐다. 생성·공유 연결은 아래 B-06-03 조립을 사용한다. C의 버전 비교·원자 저장 결과는 [C 증빙](../../docs/evidence/C-06-01.md)에 있다.
 - 로컬 Compose Mongo 레플리카셋의 접속 문자열은 `PALDO_MONGO_URI`로 전달한다. 측정에는 격리된 시험 DB를 사용한다.
 - 태스크가 지정한 `tools/perf/api_bench.py`에서 인수한 저장소를 연결하고 사용자 10명으로 3분 측정한다. 필수 p95는 1초 이하이며 300ms 목표와 비교해 기록한다.
+- 저장소 Compose Mongo 측정은 [B-06-02 증빙](../../docs/evidence/B-06-02.md)에 있다. VM·Daphne·광고 비콘을 함께 쓰는 성능 비교는 B-07-05에서 별도로 검증한다.
 
 ## B-06-03 실제 Mongo 게임·회차 통합 시험
 

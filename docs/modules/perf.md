@@ -15,9 +15,12 @@ B의 명령 재전송·동시 요청 시험과 게임 API 지연 측정 방법�
 ```powershell
 python -B server/manage.py test server.tests.test_concurrent_commands --settings=server.paldo_web.test_settings --noinput
 python -B server/tests/bench.py --memory --users 10 --minutes 3
+python -B tools/perf/api_bench.py --users 10 --minutes 3 --result-name local_native_10x3
+python -B tools/perf/api_bench.py --users 10 --minutes 3 --result-name compose_10x3
+python -B server/manage.py test server.tests.mongo_commands.MongoCommands --settings=server.paldo_web.mongo_test_settings --noinput
 ```
 
-실제 부하 시험의 저장소 인수와 결과 기록 절차는 [서버 시험 안내](../../server/tests/README.md#c-06-01-인수-뒤-확인할-사항)에 둔다.
+실제 Mongo 명령은 환경 → `server/.env` → Compose 루트 `.env` 순으로 `PALDO_MONGO_URI`를 읽는다. Replica Set이 필요하다. 시험은 임시 SQLite 계정·Django 세션/CSRF와 고유 `b0602_<UUID>_` Mongo 컬렉션 5개를 사용하고 종료 시 자기 자료만 정리한다. URI·쿠키·로그인 ID는 결과에 넣지 않는다. Compose Mongo의 준비·실행 순서는 [서버 시험 안내](../../server/tests/README.md)에 둔다.
 
 ## 설정값
 
@@ -26,14 +29,18 @@ python -B server/tests/bench.py --memory --users 10 --minutes 3
 | `--users` | 10 | 독립 판을 진행하는 시험 사용자 수 | 동시 요청 수가 바뀐다 |
 | `--minutes` | 3 | 측정 시간(분) | 지연 표본 수가 바뀐다 |
 | `--memory` | 사전 시험 필수 | 녹화 엔진과 메모리 저장 대역 사용 | Mongo 부하 결과로 사용하지 않는다 |
+| `--result-name` | 생략 | 실제 Mongo 결과 JSON 이름 | 지정하면 `docs/evidence/perf/B-06-02/<이름>.json`에 표준 형식으로 쓴다 |
+| `PALDO_MONGO_URI` | 없음 | 시험 대상 Replica Set | 환경·`server/.env`·Compose 루트 `.env`로 받는다 |
 
 ## 한계
 
-현재 제공하는 사전 시험은 메모리 저장소를 사용한다. C-06-01 저장소가 병합됐고 B-06-03 조립·재기동 시험을 추가했다. 부하 시험은 아직 미실행이며 B-06-02에서 Compose Mongo로 측정하고 공식 결과를 기록한다. [B-06-02 증빙](../evidence/B-06-02.md)
+`api_bench.py`는 녹화 엔진과 실제 Mongo 게임·진척·콘텐츠를 연결한다. 사용자마다 독립 판을 초당 한 요청으로 진행하는 closed-loop 시험이다. nearest-rank p50·p95에 시작·명령 응답을 모두 넣으며 오류도 제외하지 않는다. 응답 오류 또는 p95 1,000ms 초과면 종료 코드 1이다. 이벤트는 모두 `load_test=true`로 표시한다.
+
+전송은 Django test client이며 실제 소켓·Daphne·HTTPS·VM MySQL·Kafka 부하를 포함하지 않는다. 자유 입력·보조 저장·광고도 측정하지 않는다. Windows 네이티브 Replica Set 결과와 태스크의 Compose Mongo 결과를 구분하며, 10명·3분은 B-06-02 기준이고 P-07의 통합 30판·60판 측정을 대신하지 않는다. [B-06-02 증빙](../evidence/B-06-02.md)
 
 ## 변경 이력
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
-| B-06-02 | 11/6 | 명령 경합 20건과 메모리 사전 시험 추가. Compose Mongo 실측 대기 |
-| B-06-03 | 11/6 | C Mongo 연결 조립·실제 회차 재개 검증. API p95 부하는 B-06-02 잔여 항목 |
+| B-06-02 | 11/6 | 실제 Mongo API 부하 CLI·20개 HTTP 경합·재생/충돌/거부 검증. 저장소 Compose Mongo 10명·3분 p95 244.861ms·오류 0, 네이티브 결과와 분리 |
+| B-06-03 | 11/6 | C Mongo 연결 조립·실제 회차 재개 검증. Compose API p95 측정은 B-06-02 증빙, VM·ASGI 비교는 B-07-05에서 관리 |
