@@ -1,0 +1,24 @@
+{
+  "task": "B-07-02",
+  "commit": "efdc0453382cb660a4f21a5392cdefbb9e696795",
+  "generated_at": "2026-11-07T16:37:22Z",
+  "source": "python -B server/manage.py test server.tests --settings=server.paldo_web.mysql_test_settings --noinput --verbosity=2",
+  "metrics": {
+    "targeted_tests": {
+      "value": 38,
+      "unit": "개"
+    },
+    "server_regressions": {
+      "value": 156,
+      "unit": "개"
+    },
+    "browser_requests": {
+      "value": 10,
+      "unit": "건"
+    },
+    "confidence_choices": {
+      "value": 5,
+      "unit": "개"
+    }
+  }
+}

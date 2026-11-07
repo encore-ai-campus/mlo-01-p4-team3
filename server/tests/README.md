@@ -1,5 +1,19 @@
 # 게임 명령 시험
 
+## B-07-02 실제 Mongo·Kafka 시험
+
+`requirements/web.txt`의 패키지와 Docker Desktop Linux 엔진을 준비한다. Mongo는 위에서 쓰는 Compose Replica Set을 실행하고, 환경·`server/.env`·Compose 루트 `.env` 중 하나에 `PALDO_MONGO_URI`를 지정한다. 실제 Kafka는 CA·클라이언트 인증서·키와 hostname 검증을 켠 SSL JSON을 Git 제외 경로에 두고 `PALDO_TEST_KAFKA_CONFIG`에 그 파일 경로만 지정한다. 운영 C 발행기의 TLS 검증을 완화하지 않는다.
+
+로컬 TLS 브로커가 없으면 `python -B -m server.tests.kafka_local`을 실행한다. 저장소와 같은 Kafka 4.3.2 이미지에 고유 컨테이너·루프백 포트·2일 만료 시험 인증서를 만들고 연결 JSON 경로와 컨테이너 이름을 출력한다. 비밀·로그·설정은 `out/handoff/kafka-b0702-<실행ID>/`에만 남는다. PowerShell에서 `$env:PALDO_TEST_KAFKA_CONFIG='<출력된 client.json 경로>'`를 지정한다. C가 제공한 실제 TLS 설정을 사용할 수도 있다.
+
+```powershell
+python -B server/manage.py test server.tests.mongo_participant.KafkaParticipants --settings=server.paldo_web.mongo_test_settings --noinput --verbosity=2
+```
+
+`MongoParticipants`만 지정하면 Kafka 없이 Mongo 시험을 실행한다. `KafkaParticipants`는 Mongo 시험도 상속하며 브로커 설정 누락을 건너뛰지 않고 실패로 처리한다. 각 실행은 `b0702_<UUID>_` 접두어의 정확한 6개 Mongo 컬렉션만 정리한다. 재시작 시험은 같은 가명과 서버 비밀을 새 Python 프로세스에 전달해 메모리 없이 HTTP를 재실행하며 계정·세션은 자식의 임시 SQLite다. Kafka 시험은 `load_test=true`, 고유 판 ID·소비자 그룹을 사용한다. 실제 C 발행기와 소비자 중복 제거를 호출하지만 VM 복제·장애·Spark 적재는 포함하지 않는다.
+
+시험 종료 후 이 도구가 출력한 고유 컨테이너 이름으로 `docker stop <이름>`·`docker rm <이름>`을 실행한다. 다른 컨테이너·공용 토픽·볼륨을 삭제하지 않는다. 기존 Compose Mongo도 이번 실행에서 기동했으면 `docker compose -p paldo-dev -f ops/compose/dev.yml stop mongo`로 정지한다. 인증서·설정은 Git에 포함하지 않는다.
+
 ## B-06-02 로컬 시험
 
 Compose를 준비하려면 저장소 루트에서 `python -B -m ops.compose.run make-env` 뒤 `docker compose -p paldo-dev -f ops/compose/dev.yml up -d --wait mongo`를 실행한다. Docker Desktop은 Linux 엔진이어야 한다. Mongo만 실행하며 다른 Compose 서비스를 띄울 필요는 없다. 컨테이너가 healthy이면 `python -B tools/perf/api_bench.py --users 10 --minutes 3 --result-name compose_10x3`을 실행한다. 부하 CLI와 Mongo 전용 시험 설정은 환경 → `server/.env` → Compose 루트 `.env` 순으로 URI를 읽는다. 생성된 `.env`는 Git에서 제외하고 기존 볼륨을 삭제하지 않는다.

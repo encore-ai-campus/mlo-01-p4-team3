@@ -30,6 +30,10 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 | `GET /ads/click?t=…`, `GET /ads/landing/{creative_id}` | [api/ad_relay.py](api/ad_relay.py) → [app/ad_events.py](app/ad_events.py) → [app/ads_port.py](app/ads_port.py). 실패 시 홈 이동 또는 돌아가기 링크를 제공한다. |
 | `GET /ads/slot/{slot}` | [api/ad_slots.py](api/ad_slots.py) → B-07-05의 광고 게이트웨이 조립 → `AdGateway.fetch`. 게임 명령과 분리해 광고 HTML 조각만 반환한다. 미제공·실패는 200 빈 조각이다. |
 
+B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은 `InteractionService.participant_records`를 거친다. 저장 계획은 보조 저장의 `effects`, 공개 표시 값은 `state`에 보존하고 C 게임 아웃박스의 동일 키 재생으로 복구한다. C의 별도 `outbox_publisher`가 `paldo.player`로 발행한다. API·이벤트 형식은 그대로다.
+
+실제 검증은 `tests/mongo_participant.py` → 기존 HTTP → B 응용·실제 Mongo → C 발행기 → TLS Kafka 수신이다. `tests/participant_worker.py`는 새 프로세스 재시작·경합, `tests/kafka_local.py`는 로컬 격리 TLS 브로커 준비 전용이다. 운영 진입점은 이 시험 모듈을 사용하지 않는다.
+
 - [전체 API 계약](../docs/contracts/api.md)
 
 자유 입력의 직전 상대는 응용이 공개 캐묻기 발언에서 보완한다. 재입력 경로도 시도에 보존된 선택 인물·근거·직전 상대를 전달하며, 확인 요청은 선택한 카드의 누락 슬롯과 근거 모호성만 검사한다.

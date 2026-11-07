@@ -17,6 +17,13 @@ class WebMongoGameRepository(MongoGameRepository):
         except ConnectionFailure:
             raise ConnectionError("mongo_commit_unavailable") from None
 
+    def append_events(self, *args, **kwargs):
+        """참가자 기록 복구는 B 응용이 맡고 연결 예외만 공통 포트 예외로 바꾼다."""
+        try:
+            return super().append_events(*args, **kwargs)
+        except ConnectionFailure:
+            raise ConnectionError('mongo_append_unavailable') from None
+
 
 class MongoRuntime:
     """공유 연결과 게임·진척·콘텐츠·회차 서비스를 보유하는 실행 자원."""

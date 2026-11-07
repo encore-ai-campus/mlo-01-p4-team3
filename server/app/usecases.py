@@ -58,7 +58,7 @@ class GameService:
     def _player_view(self, state):
         view = self.engine.player_view(state, self.dependencies(state.meta).content)
         if self.interactions is not None:
-            with self.interactions.store.edit(state.meta.game_id) as records:
+            with self.interactions.participant_records(state.meta.game_id) as records:
                 if records.notebook:
                     view = replace(view, player=replace(view.player, notebook=dict(records.notebook["entries"])))
         return view
