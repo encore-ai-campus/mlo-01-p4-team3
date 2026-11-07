@@ -110,7 +110,7 @@
 - 근거: 기획서 4.5, 9.1 실행 정책 / api.md 4·5, intent.md
 
 ### B-07-02 수첩·확신도·판 종료 설문
-- 1.5h · 완료 조건: 수첩(인물별 의심 슬라이더) 저장 `notebook_updated`, 투표 직전 확신도, 판 종료 설문(재미·억울함·NPC 그럴듯함, 5점 척도, 문항은 E-06-04 확정본) `survey_submitted`. 세 이벤트가 `paldo.player` 토픽으로 나가는 테스트. 설문은 건너뛸 수 있고 건너뜀도 기록.
+- 1.5h · 완료 조건: 수첩(인물별 의심 슬라이더) 저장 `notebook_updated`, 투표 직전 확신도, 판 종료 설문(재미·억울함·NPC 그럴듯함, 5점 척도, 문항은 E-06-04 확정본) `survey_submitted`. 세 이벤트가 `paldo.player` 토픽으로 나가는 테스트. 설문은 건너뛸 수 있고 건너뜀도 기록: 형식·중복·409 규칙은 api.md 2-2절, 이벤트 본문은 events.md 2절(11/6 PM 결정). `SubmitSurveyInput`에 `skipped` 추가와 입력 검증·건너뛰기 버튼·`survey_submitted`의 `skipped`·`null` 점수 테스트도 이 태스크에서 한다.
 - 문서화(+0h, 공통 ⑦, 트러블만): [트러블 B](../troubles/B.md)에 `### B-07-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 공개 함수·클래스 docstring(CI `docs` 검사) · 모듈 문서 [`web`](../modules/web.md)는 그날 일괄 갱신(B-07-04)
 - 근거: 기획서 8.4
 
@@ -124,8 +124,8 @@
   3. 메시지 검증: `hello`·`ad.impression`만 받는다. 형식 위반·알 수 없는 `type`·연결당 초당 5개 초과는 `error` 응답 후 연결 유지(테스트 각 1개). Consumer는 받기·검증·응답만 하고 중계 순서는 응용 `ad_events.py`가 맡는다(`server/app`은 Django·channels를 import하지 않는다, `test_layers.py`).
   4. 비콘 중계: `ad.impression` → `ad_events.relay_impression` → `AdGateway.report_impression` → `AdProvider.send_impression`. `ack.relayed`가 결과이고 재시도는 없다. 시간 제한·회로 차단·비동기 경계(`sync_to_async`, 이벤트 루프에서 동기 호출 0건)·전달 헤더(참가자 `Cookie`·`Authorization`·`X-Forwarded-For`·`User-Agent`·`Referer` 0건, 테스트)는 ports.md 5절. 가짜 광고 서버에 지연·실패를 주입하고 웹소켓 비콘을 함께 보내도 실제 Daphne에서 게임 API p95 증가 50ms 이하(B-08-03 2번 기준을 가짜로 먼저 확인).
   5. 클릭·랜딩 중계(HTTP): `GET /ads/click?t=` → `ad_events.relay_click` → 광고 서버 클릭 엔드포인트 → 302 `/ads/landing/<creative_id>`(같은 출처). 광고 서버 실패·시간 초과면 302 `/`(항상 이동, ads.md 3절). `GET /ads/landing/<creative_id>`는 광고 서버 가상 랜딩 HTML을 그대로 전달하고, 실패하면 대체 조각(돌아가기 링크). 세 경우 테스트.
-  6. 브라우저 클라이언트 `paldo_ws.js`(api.md 7절 끊김 처리): 페이지당 연결 1개, 끊기면 1·2·4·8·16·30초 간격으로 자동 재연결(이후 30초마다), 끊긴 동안 비콘 대기열 최대 20개(넘으면 가장 오래된 것을 버림), 재연결 후 초당 4개 이하로 비움, `ack` 전에 끊긴 비콘은 다시 보냄, 닫힘 코드 4401이면 재연결 안 함, 페이지 이동·닫기 때 남은 대기열은 버리고 버린 수를 다음 연결의 `hello.dropped`로 보고.
-  7. 지표: `paldo_ws_connections`(게이지), `paldo_ws_messages_total{type,result}`, `paldo_ad_relay_total{kind,result}`(kind: impression·click·landing), `paldo_ad_beacon_dropped_total{reason}`.
+  6. 브라우저 클라이언트 `paldo_ws.js`(api.md 7절 끊김 처리): 페이지당 연결 1개, 끊기면 1·2·4·8·16·30초 간격으로 자동 재연결(이후 30초마다), 끊긴 동안 비콘 대기열 최대 20개(넘으면 가장 오래된 것을 버림), 재연결 후 초당 4개 이하로 비움, `ack` 전에 끊긴 비콘은 다시 보냄, 닫힘 코드 4401이면 재연결 안 함, 대기열 초과(`queue_full`)와 페이지 이동·닫기(`page_exit`)로 버린 수를 사유별로 쌓아 다음 연결의 `hello.dropped_by_reason`으로 보고(`rate_limited`는 보고하지 않음, api.md 7절, 11/6 PM 결정).
+  7. 지표: `paldo_ws_connections`(게이지), `paldo_ws_messages_total{type,result}`, `paldo_ad_relay_total{kind,result}`(kind: impression·click·landing), `paldo_ad_beacon_dropped_total{reason}`(이것 하나만, 총수 지표 따로 없음. `rate_limited`는 서버 거부 때만 더함, api.md 7절). `hello` 형식 위반·합계 불일치는 더하지 않음(테스트).
 - 근거: 11/4 PM 결정(integration.md 7절 #2 변경, BRD `BR-OQ-023`), 기획서 14.4·14.7
 
 ### B-07-03 광고 지면 연동 (가짜 광고 서버)
@@ -136,6 +136,7 @@
   2. 광고 칸은 `GET /ads/slot/{slot}` + `hx-trigger="load"` 지연 로드. 게임 명령 처리 경로에서 광고 호출 0회(테스트: 명령 처리 중 `FakeAdProvider` 호출 수 0).
   3. 노출 비콘: 광고 면적 50% 이상 1초 이상 보이면 1회(IntersectionObserver), B-07-05 웹소켓의 `ad.impression` 메시지로 보낸다. 클릭은 게임 웹 중계 링크 `/ads/click?t=<serve 토큰>`. 렌더된 광고 조각에 광고 서버 주소 0건(테스트, 11/4 PM 결정 #2 변경: 브라우저는 게임 웹 출처에만 접속).
   4. 결과 코드(ok, empty, timeout, error, busy, circuit_open) 지표 `paldo_ad_fetch_total{result}`.
+  5. 범위(11/6 PM 결정): 화면 배치는 로비(`lobby_banner`)·결과(`result_banner`)까지다. `review_side`는 광고 조각(`GET /ads/slot/review_side`)의 규격·"광고" 표시·비콘·클릭 시험까지 하고, 복기 화면 배치는 B-10-01에서 한다. 광고 제공자는 가짜(`FakeAdProvider`)로 시험하고 실제 광고 서버 연결은 B-08-03이다.
 - 근거: 기획서 14.2, 14.7 / ports.md 5
 
 ### B-07-04 통합 1 참여
@@ -212,7 +213,7 @@
 ### B-10-01 복기 화면
 - 3h · 선행: E-10-10의 1번(10:00, 샘플 픽스처). 샘플로 화면을 먼저 만들고 실제 연결은 오후. LLM 해설은 11/5 범위 축소로 확장 태스크라 기다리지 않는다
 - 문서화(+0.25h, 공통 ⑦): [트러블 B](../troubles/B.md)에 `### B-10-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 모듈 문서 [`web`](../modules/web.md)는 그날 일괄 갱신(B-10-04)
-- 완료 조건: 판 종료 후에만 열림(그 전 403 테스트). NPC 행동마다 이유 코드·근거·기여 상위 3개 표시, 해설은 E-10-10의 템플릿 해설 문구로 표시(테스트). 확장 E-10-01을 했으면 LLM 해설을 폴링으로 붙이고 실패 시 템플릿 해설. `review_trace.win_prob`가 있으면 날짜별 마을 승리 확률 그래프 표시(D-10-03, 없으면 숨김. 둘 다 테스트). `review_side` 광고 지면 포함.
+- 완료 조건: 판 종료 후에만 열림(그 전 403 테스트). NPC 행동마다 이유 코드·근거·기여 상위 3개 표시, 해설은 E-10-10의 템플릿 해설 문구로 표시(테스트). 확장 E-10-01을 했으면 LLM 해설을 폴링으로 붙이고 실패 시 템플릿 해설. `review_trace.win_prob`가 있으면 날짜별 마을 승리 확률 그래프 표시(D-10-03, 없으면 숨김. 둘 다 테스트). `review_side` 광고 지면을 복기 화면에 배치(B-07-03의 광고 조각 사용, 화면에 렌더된 지면 1개와 "광고" 표시 테스트, 11/6 PM 결정).
 - 근거: 기획서 7.1(복기), api.md 2
 
 ### B-10-02 마을 지도·인물 초상

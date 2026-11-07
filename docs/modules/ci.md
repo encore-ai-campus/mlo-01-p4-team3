@@ -8,8 +8,8 @@
 
 | 파일 | 계층 | 하는 일 |
 |---|---|---|
-| `.githooks/pre-push` | 표현(진입점) | `git push` 때 푸시하는 커밋마다 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 그 커밋이 HEAD가 아니거나 작업 트리에 변경이 있으면 임시 worktree에서 검사. precheck를 부를 때만 git이 훅에 넘긴 저장소 지정 변수(`GIT_DIR` 등, `git rev-parse --local-env-vars`)를 지운다 |
-| `tools/precheck.py` | 도메인(`summarize` 등) + 인프라(`SubprocessRunner`) + 응용(`run_precheck`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다. 하위 명령 환경에서 저장소 지정 git 변수를 뺀다(`clean_env`) |
+| `.githooks/pre-push` | 표현(진입점) | `git push` 때 푸시하는 커밋마다 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 먼저 `precheck --check-pass <SHA>`로 통과 기록을 보고, 같은 비교 기준으로 이미 통과한 커밋이면 생략. 그 커밋이 HEAD가 아니거나 작업 트리에 변경이 있으면 임시 worktree에서 검사. precheck를 부를 때만 git이 훅에 넘긴 저장소 지정 변수(`GIT_DIR` 등, `git rev-parse --local-env-vars`)를 지운다 |
+| `tools/precheck.py` | 도메인(`summarize`·`may_record`·`skip_decision` 등) + 인프라(`SubprocessRunner`·`PassStore`) + 응용(`run_precheck`·`record_pass`·`check_pass`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. 깨끗한 트리에서 전체 통과하면 통과 기록을 남기고, `--check-pass`로 훅에 생략 여부를 알려 준다. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다. 하위 명령 환경에서 저장소 지정 git 변수를 뺀다(`clean_env`) |
 | `tools/check_evidence.py` | 도메인 규칙 + 응용 + 표현(`main`) | 증빙 형식(`--format`), 완료 검사(`--complete`, 4절 규칙 1~6), PR 본문 문법(11절) |
 | `tools/check_docs.py` | 도메인 규칙 + 응용 + 표현(`main`) | 문서화 검사(10절 규칙 1~6) |
 | `tools/check_secrets.py` | 도메인 규칙 + 응용 + 표현(`main`) | 비밀정보 검사(E-05-02 조건 5), 예외 `tools/secrets_allowlist.txt` |
@@ -30,6 +30,7 @@
 - 표준 라이브러리만 쓴다(`docs/contracts/tech_stack.md`: 도구 코드는 외부 패키지 없음). 설치 단계가 없다.
 - CI를 없앤 이유(11/5 PM 결정): 조직 저장소 68개가 무료 플랜 Actions 분량(월 2,000분)을 함께 쓰는데, 잡마다 1분 단위로 올려 세서 PR 하나에 약 30분이 들었다(11/5 하루 약 15회·140분). 검사 자체는 수십 초라 각자 노트북에서 돌려도 부담이 없다.
 - 저장소 지정 git 변수를 지우는 이유: 훅이 받은 `GIT_DIR`·`GIT_INDEX_FILE`이 precheck의 테스트까지 이어지면, 테스트가 임시 저장소 대신 실제 저장소에 `git init`·commit·config를 한다(11/5 사고, [트러블 E](../troubles/E.md#e-05-02)).
+- 통과 기록으로 훅 검사를 생략하는 이유(11/7 PM 결정): 작업 세션이 PR 본문 검사로 같은 커밋을 이미 통과시켰는데 푸시 때 같은 검사가 다시 돌아 1~2분씩 들었다. 기록은 커밋 SHA와 비교 기준이 모두 같을 때만 쓰고, 깨끗한 작업 트리·전체 통과일 때만 남긴다. `--pr-body` 실행은 본문 종류(P-xx)에 따라 push 때의 `check_evidence --changed`를 건너뛸 수 있어, 기록 전에 그 검사를 한 번 더 돌린다.
 - 비교 기준을 못 구하면 문서·증빙 단계를 실패로 보는 이유: 건너뛰면 검사 없이 `precheck: 통과` 줄이 나와 PR 본문의 결과 줄을 믿을 수 없게 된다.
 
 ## 사용법
@@ -40,6 +41,7 @@ python -m tools.precheck                                     # 구조·비밀·�
 python -m tools.precheck --pr-body pr.md                     # PR 본문까지(Closes면 --complete). 마지막 줄을 PR 본문에
 python -m tools.precheck --with-assets                       # 에셋 관련 파일을 바꿨을 때 tests/assets 포함
 python -m tools.precheck --base <커밋>                        # 비교 기준 직접 지정(기본 origin/dev와의 merge-base)
+python -m tools.precheck --check-pass <SHA>                  # 훅용: 통과 기록이 지금 비교 기준과 맞으면 0(생략), 아니면 1
 python -m unittest discover -s tests -t .                    # 단위 테스트 전체(검사 도구 자체 테스트 포함)
 python -m tools.check_secrets                                # 비밀정보
 python -m tools.check_structure --all                        # 추적 파일의 모든 폴더가 structure.md 6절 안
@@ -81,6 +83,8 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
 | Python | `3.14` | 각자 노트북의 Python(`precheck`는 자기를 실행한 인터프리터로 하위 검사를 돈다) | 프로젝트 전체 Python 3.14 단일(11/5 PM 결정, `tech_stack.md`) |
+| `PALDO_PRECHECK_NO_CACHE` | 없음 | `1`이면 훅이 통과 기록을 보지 않고 항상 전체 검사 | 기록 판정이 의심될 때 끈다 |
+| 통과 기록 보관 | 14일 | `<git 공용 폴더>/precheck-pass/`의 오래된 기록은 새 기록을 남길 때 지움(`RECORD_MAX_AGE`) | 짧게 하면 오래 묵은 브랜치 푸시 때 전체 검사 |
 | `PRECHECK_PR_BODY` | - | `precheck --pr-body`가 `check_evidence --pr-body-env`에 넘기는 환경 변수 | 이름을 바꾸면 `tools/precheck.py`의 `PR_BODY_ENV`도 같이 |
 | `core.hooksPath` | `.githooks` | git 훅 폴더(각 clone에서 한 번 설정) | 설정하지 않으면 push 때 자동 검사가 돌지 않는다 |
 | `PALDO_LOG_DIR` | `out/logs` | 구조화 로그 파일 폴더(`ci.jsonl`) | 로그만 옮겨진다. 검사 결과와 무관 |
@@ -92,6 +96,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 ## 한계
 
 - 자동으로 막는 장치가 없다. 훅은 `core.hooksPath`를 설정한 clone에서만 돌고 `git push --no-verify`로 건너뛸 수 있으며, PR 본문의 결과 줄은 손으로 쓸 수 있다. 실수로 빼먹는 것만 막는다. PM은 `Closes` PR을 병합하기 전에 PR 브랜치에서 `precheck --pr-body`를 다시 돌린다(README 11절).
+- 통과 기록은 각자 노트북의 git 폴더에만 있다. 다른 사람·다른 clone이 같은 커밋을 푸시하면 다시 검사한다. 기록은 손으로 만들 수 있으므로 실수 방지용이다(위와 같은 한계).
 - 병합 뒤 `dev`에서 자동 검사가 돌지 않는다. 두 PR이 각각 통과해도 합친 결과가 깨질 수 있어, PM이 매일 `dev`에서 `precheck`를 한 번 돌린다.
 - `tests/assets`(단일 테스트가 10초를 넘는다)는 기본에서 빠진다. 에셋 관련 파일(`tools/assets/`, `tests/assets/`, `docs/assets/`, `content/images/`)을 바꾼 사람만 `--with-assets`로 돌린다.
 - Django(`server/manage.py test`)와 외부 서비스 테스트(결정 #12, `tests/infra/`·`tests/ads/`, `PALDO_SERVICE_TESTS=1`)는 `precheck`에 넣지 않았다. 두 폴더를 기본 discover에서 빼는 `load_tests`는 폴더를 처음 만드는 태스크(C-06-01, D-05-03)가 그 `__init__.py`에 두고, 실제 실행은 각자 Compose와 통합(INT)에서 한다.
@@ -117,3 +122,4 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | E-05-02 | 11/5 | GitHub Actions CI(`ci.yml`) 폐지, 로컬 검사 `tools/precheck.py`와 `.githooks/pre-push`로 대체(조직 공용 Actions 분량, 11/5 PM 결정). 실제 소요 시간 검사 폐지 |
 | E-05-02 | 11/5 | 훅과 `precheck`가 git 저장소 지정 환경 변수를 지움(`clean_env`, 훅은 precheck 호출 때만). 물려받은 `GIT_DIR`이 다른 저장소를 바꾸지 않는 회귀 테스트 |
 | P-27 | 11/6 | `check_docs` 규칙 6을 라우팅 2단 구조에 맞춤: 새 최상위 폴더는 루트 `README.md`, 두 번째 단계는 루트 README 또는 `docs/routing/<A~E>.md`. 삭제된 경로는 문서 변경으로 치지 않음 |
+| P-10 | 11/7 | 통과 기록: 깨끗한 트리에서 전체 통과한 커밋을 `<git 공용 폴더>/precheck-pass/<SHA>`에 기록, 훅은 `--check-pass`로 같은 비교 기준이면 검사 생략(11/7 PM 결정, 끄기 `PALDO_PRECHECK_NO_CACHE=1`) |

@@ -1,7 +1,9 @@
 """E-06-07 벤치 스크립트의 순수 함수 테스트. llama_cpp 없이 돈다(CI core)."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import sys
 import unittest
@@ -44,33 +46,73 @@ class Percentile(unittest.TestCase):
 
 
 class Validate(unittest.TestCase):
+    """벤치의 검증은 E-07-07 검증기(llm.validator)를 부른다."""
+
     def setUp(self):
         self.req = FIXTURES[1]
+        self.lex = rb.lexicon_from_bundle(json.loads(rb.BUNDLE.read_text(encoding="utf-8")))
 
     def test_ok(self):
-        self.assertEqual(rb.validate_output("허허… " + self.req["fact_sentence"], self.req), (True, "ok"))
+        self.assertEqual(rb.validate_output("허허… " + self.req["fact_sentence"], self.req, self.lex), (True, "ok"))
 
     def test_fact_changed(self):
-        changed = self.req["fact_sentence"].replace("뒷방", "뒤방")
-        self.assertEqual(rb.validate_output(changed, self.req), (False, "fact_missing"))
+        changed = self.req["fact_sentence"].replace("한밤", "새벽")
+        self.assertEqual(rb.validate_output(changed, self.req, self.lex), (False, "fact_changed"))
 
     def test_empty_and_long(self):
-        self.assertEqual(rb.validate_output("", self.req), (False, "empty"))
-        long = self.req["fact_sentence"] + "가" * rb.MAX_CHARS
-        self.assertEqual(rb.validate_output(long, self.req), (False, "too_long"))
+        self.assertEqual(rb.validate_output("", self.req, self.lex), (False, "format_length"))
+        long = self.req["fact_sentence"] + "가" * 200
+        self.assertEqual(rb.validate_output(long, self.req, self.lex), (False, "format_length"))
+
+    def test_think_block_removed(self):
+        raw = "<think>\n음\n</think>\n\n " + self.req["fact_sentence"]
+        self.assertEqual(rb.validate_output(raw, self.req, self.lex), (True, "ok"))
 
     def test_strip_think(self):
         self.assertEqual(rb.strip_think("<think>\n음\n</think>\n\n 대사 "), "대사")
 
 
 class Prompt(unittest.TestCase):
-    def test_messages_carry_fact_and_names(self):
+    def test_messages_carry_fact(self):
         for req in FIXTURES:
-            msgs = rb.build_messages(req)
-            self.assertEqual([m["role"] for m in msgs], ["system", "user"])
-            self.assertIn(req["fact_sentence"], msgs[1]["content"])
-            for name in req["allowed_names"]:
-                self.assertIn(name, msgs[0]["content"])
+            msgs = rb.build_messages(req)   # llm.prompt.build_messages
+            self.assertEqual(msgs[0]["role"], "system")
+            self.assertEqual(msgs[-1]["role"], "user")
+            self.assertIn(req["fact_sentence"], msgs[-1]["content"])
+
+    def test_eval_name(self):
+        self.assertEqual(rb.eval_name("kanana2_3b", "win", 8, 0, 100), "eval_kanana2_3b_win_t8_s0_n100")
+        self.assertEqual(rb.eval_name("k", "win", 8, 0, 20, "devoff"), "eval_k_win_t8_s0_n20_devoff")
+
+    def test_rejudge_needs_eval(self):
+        a = rb.parse_args(["--model", "m.gguf", "--label", "k", "--eval", "e.json", "--rejudge"])
+        self.assertTrue(a.rejudge)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            rb.parse_args(["--model", "m.gguf", "--label", "k", "--rejudge"])
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            rb.parse_args(["--model", "m.gguf", "--label", "k", "--eval", "e.json", "--rejudge", "--out", "o.json"])
+
+    def test_eval_set_changed_unknown_commit(self):
+        self.assertTrue(rb._eval_set_changed("fixtures/llm/interrogation_eval.json", "unknown"))
+        self.assertTrue(rb._eval_set_changed("out/없는_평가세트.json", "f4ac12b"))   # 그 커밋에 없는 파일
+
+    def test_rejudge_seed_mismatch(self):
+        recs = [{"seed": 1}, {"seed": 2}]
+        rb._check_seeds(recs, [2, 1], "c")
+        with self.assertRaises(ValueError):
+            rb._check_seeds(recs, [1, 3], "c")
+
+    def test_consistency_out_path(self):
+        self.assertEqual(Path(rb.consistency_out_path("d/r.json")).as_posix(), "d/r_consistency.json")
+
+    def test_eval_record_log_has_no_text(self):
+        rec = {"case_id": "ev_001", "seed": 0, "status": "failed", "fallback": True, "reasons": ["fact_changed"],
+               "total_ms": 1.0, "prompt_ms": 0.5, "gen_ms": 0.4, "gen_tokens": 3, "error_type": None,
+               "raw": "원문", "generated": "원문", "text": "폴백"}
+        line = rb.eval_record_log(rec)
+        self.assertEqual(line["job_id"], "ev_001")
+        self.assertEqual(line["reason"], "fact_changed")
+        self.assertNotIn("원문", json.dumps(line, ensure_ascii=False))
 
     def test_pick_requests_cycles(self):
         ids = [r["job_id"] for r in rb.pick_requests(FIXTURES, 1, 4)]
