@@ -33,6 +33,10 @@ python -B server/tests/bench.py --memory --users 10 --minutes 3
 
 메모리 부하 시험은 임시 SQLite 세션과 녹화 엔진·원자 저장 대역으로 사용자마다 독립 판을 진행한다. 응답 p50·p95와 오류 건수를 출력한다.
 
+## B-06-04 계정과 광고 포트 비노출
+
+B-06-04의 `test_accounts.Accounts.test_credentials_absent_from_logs_outbox_and_metrics`는 가입·로그인·실패·잠금·녹화 판 완주를 거쳐 파일 로그·아웃박스·지표와 광고 포트 DTO의 인증 입력 비노출을 함께 검사한다. 광고 요청은 세 지면과 판 종료를 포함한 4건이다. 계정 가명·로그인 세션 키·판 ID·쿼리 위조값도 전달하지 않는다. 이 시험의 `FakeAdProvider`·메모리 회차 조립은 테스트 전용이며 실제 HTTP 광고 서버 수신 검증은 B-08-03 연결 뒤 별도로 한다.
+
 ## B-06-03 고정 회차와 광고 가명
 
 `server.tests.test_sessions`는 운영자 인증·CSRF, 고정 판 배정과 사람 판 시작 이벤트를 확인한다. 실제 로컬 Mongo에서는 회차 보존, 동시 광고 가명 발급, 참가자별 삭제를 확인한다.
