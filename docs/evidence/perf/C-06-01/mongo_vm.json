@@ -1,0 +1,24 @@
+{
+  "task": "C-06-01",
+  "commit": "1af91beb31272a060bb3f62770a24476ccbccada",
+  "generated_at": "2026-11-07T11:04:21Z",
+  "source": "VM: python -m tools.perf.mongo_repo_bench --samples 50 (실행 소스 1af91be, 보호된 연결 환경)",
+  "metrics": {
+    "samples": {
+      "value": 50,
+      "unit": ""
+    },
+    "commit_p50_ms": {
+      "value": 4.4523980031954125,
+      "unit": "ms"
+    },
+    "commit_p95_ms": {
+      "value": 8.431113994447514,
+      "unit": "ms"
+    },
+    "histogram_exposed": {
+      "value": 1,
+      "unit": ""
+    }
+  }
+}

@@ -11,6 +11,7 @@
 | 폴더 | 계층 | 담당 | 역할 |
 |---|---|---|---|
 | `server/infra/` | 인프라 | C | Mongo 저장소, 아웃박스 발행기, 모델·LLM 어댑터(예정) |
+| `server/infra/` Mongo | 인프라 | C | 판 저장 `mongo_repo.py`, 진척 `progress_store.py`, 버전 콘텐츠 `content_store.py`. 실제 Replica Set 시험은 `tests/infra/test_mongo_repo.py`, 콘텐츠 적재는 `tools/load_content.py` |
 | `pipeline/`, `ops/` | 인프라 | C | Kafka → Spark → Delta, 배포·관측, HTTPS 프록시 `ops/proxy/`(예정) |
 | `pipeline/spark/` | 인프라(배치) | C | 공식 게임 봉투 검증(`bronze_contract.py`), Kafka → Delta bronze 멱등 적재(`ingest_bronze.py`). 사용법·미완 범위는 `pipeline/README.md` |
 | `ops/compose/` | 인프라 | C | 로컬 개발용 Compose(`dev.yml`), `.env` 생성·Garage 초기화·스모크(`run.py`), 패키지 확인(`pycheck.py`), 팀원 절차·점검표(`README.md`) |
@@ -21,8 +22,10 @@
 
 | 하려는 일 | 볼 곳 |
 |---|---|
+| 광고·계정 MySQL 생성·권한 분리·복제 점검 | `ops/mysql/README.md`, `provision.py`, `verify.py`, `replication_check.py` |
 | 공식 토픽·게임 Outbox 발행 | `pipeline/topics.yaml`, `pipeline/apply_topics.py`, `server/infra/outbox_publisher.py`, `pipeline/consumers/dedup.py`, `tests/infra/` |
 | 저장소나 Kafka 교체 | 인프라 `server/infra/`, `docs/contracts/ports.md` 2절 |
+| Mongo 계약·CAS·콘텐츠 적재 확인 | `tests/infra/test_mongo_repo.py`, `tools/perf/mongo_repo_bench.py`, `tools/load_content.py` |
 | 공식 게임 토픽 bronze 적재·재처리 | `pipeline/README.md`, `pipeline/spark/ingest_bronze.py`, 계약 단위 테스트 `tests/contract/test_pipeline_bronze.py` |
 | 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |
 | VM 상태 점검(기동·자원·디스크·스냅샷) | `ops/inventory_check.md`(방법과 20대 표), `ops/inventory_host.ps1`, `tools/perf/vm_probe.sh` |
