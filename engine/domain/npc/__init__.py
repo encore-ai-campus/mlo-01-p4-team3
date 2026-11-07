@@ -14,8 +14,9 @@ from ..model import Beliefs, Command, ObservationSnapshot, Role
 from ..observation import Decision
 from .policy_possessed import MixSource, PossessedPolicy, StrategyMix, UniformMix
 from .policy_villager import VillagerPolicy
+from .vote import VoteOutcome
 
-__all__ = ["RuleV0Policy", "VillagerPolicy", "PossessedPolicy", "StrategyMix", "MixSource", "UniformMix"]
+__all__ = ["RuleV0Policy", "VillagerPolicy", "PossessedPolicy", "StrategyMix", "MixSource", "UniformMix", "VoteOutcome"]
 
 
 class RuleV0Policy:
@@ -44,6 +45,13 @@ class RuleV0Policy:
     def vote(self, obs: ObservationSnapshot, candidates: list[str], rng: random.Random) -> Decision:
         """투표·결선 대상."""
         return self._for(obs).vote(obs, candidates, rng)
+
+    def vote_with_model(self, obs: ObservationSnapshot, candidates: list[str], rng: random.Random,
+                        model, clock=None) -> VoteOutcome:
+        """의심 모델을 쓰는 투표(A-07-02). 마을 주민만 모델을 부르고, 씐 자는 자기 전략 투표를 그대로 쓴다."""
+        if obs.private.role is Role.POSSESSED:
+            return VoteOutcome(self.possessed.vote(obs, candidates, rng))
+        return self.villager.vote_with_model(obs, candidates, rng, model, clock)
 
     def night_plan(self, obs: ObservationSnapshot, executors: list[str], victims: list[str],
                    rng: random.Random) -> Decision:
