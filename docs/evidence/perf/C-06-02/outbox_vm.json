@@ -1,0 +1,28 @@
+{
+  "task": "C-06-02",
+  "commit": "0d2ee48d2412f31444f21436d4285d999accc90e",
+  "generated_at": "2026-11-07T11:20:17Z",
+  "source": "VM protected-profile runner: tests.infra.outbox_kafka_smoke equivalent; actual Kafka/Mongo; measured code 0d2ee48",
+  "metrics": {
+    "published": {
+      "value": 10,
+      "unit": "건"
+    },
+    "received": {
+      "value": 11,
+      "unit": "건"
+    },
+    "unique": {
+      "value": 10,
+      "unit": "건"
+    },
+    "pending": {
+      "value": 0,
+      "unit": "건"
+    },
+    "publish_lag_p95_ms": {
+      "value": 971.0,
+      "unit": "ms"
+    }
+  }
+}

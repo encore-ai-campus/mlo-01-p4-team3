@@ -42,3 +42,7 @@ S3 Delta는 한 driver에서만 쓴다. `lock_path`는 같은 호스트에서의
 ```sh
 python -m unittest tests.contract.test_pipeline_bronze -v
 ```
+
+## C-06-02 공식 토픽과 발행
+
+`topics.yaml`은 JSON 문법의 YAML이다. `python -m pipeline.apply_topics`로 검증하고 관리자 보호 TLS JSON과 `--apply`로 없는 토픽만 만든다. 기존 토픽 설정이 계약과 다르면 변경하지 않고 실패한다. 게임 발행은 별도 프로세스 `python -m server.infra.outbox_publisher --kafka-config <보호 JSON>`이며 PALDO_MONGO_URI를 외부 주입한다. ack 뒤 Mongo 표시·실패 재시도와 지표를 제공한다. 소비자는 event_id와 내용 hash를 durable sink와 함께 저장한다. 광고 MySQL 발행은 D 담당이다. 실제 시험·제한은 [C-06-02 증빙](../docs/evidence/C-06-02.md)을 따른다.
