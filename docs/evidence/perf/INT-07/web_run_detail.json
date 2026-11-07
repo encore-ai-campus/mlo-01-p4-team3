@@ -1,0 +1,96 @@
+{
+  "task": "INT-07",
+  "commit": "a69b75abbde75337b47c793f06603a51725d8daf",
+  "source": "python -m tools.perf.int07_web_run --out <임시 폴더> --record",
+  "rule_version": "rule-0.5.decision-1",
+  "content_version": "content-1.0",
+  "seeds": [
+    70301,
+    70302,
+    70303
+  ],
+  "account_db": "sqlite(실행용 설정)",
+  "game_store": "mongo replica set",
+  "server": "daphne HTTP",
+  "duplicate": {
+    "replayed": true,
+    "same_view": true,
+    "stale_status": 409
+  },
+  "restart": {
+    "after_commands": 3,
+    "status": 200,
+    "same_view": true,
+    "finished_after": true
+  },
+  "games": [
+    {
+      "number": 1,
+      "commands": 6,
+      "renders": 4,
+      "winner": "changgwi",
+      "mornings_checked": 1,
+      "nights_seen": [
+        0
+      ],
+      "morning_missing": [],
+      "errors": [],
+      "game_id": "a28679bf-ac24-5aba-8fc9-ac7d92411e31",
+      "view_result_matches": true
+    },
+    {
+      "number": 2,
+      "commands": 6,
+      "renders": 4,
+      "winner": "changgwi",
+      "mornings_checked": 1,
+      "nights_seen": [
+        0
+      ],
+      "morning_missing": [],
+      "errors": [],
+      "game_id": "530c7283-067e-5835-9ffe-daecafd4db99",
+      "view_result_matches": true
+    },
+    {
+      "number": 3,
+      "commands": 13,
+      "renders": 15,
+      "winner": "changgwi",
+      "mornings_checked": 2,
+      "nights_seen": [
+        0,
+        1
+      ],
+      "morning_missing": [],
+      "errors": [],
+      "game_id": "beaee3f9-c0ee-5c2f-8be1-2e9500bd5a4a",
+      "view_result_matches": true
+    }
+  ],
+  "progress_has_games": true,
+  "responses_checked": 86,
+  "json_checked": 58,
+  "html_checked": 28,
+  "http_5xx": 0,
+  "forbidden_hits": [],
+  "elapsed_s": 19.0,
+  "verdicts": {
+    "1": {
+      "result": "자동 확인 통과",
+      "detail": "완주 3/3, 명령 [6, 6, 13], 500·503 0건, 판 오류 0건, 최종 화면 결과 일치 True, 진척 기록 True"
+    },
+    "3": {
+      "result": "자동 확인 완료, 사람 브라우저 확인 대기",
+      "detail": "아침 화면 확인 4회, 최대 공개 밤 1, 빠진 문장 0"
+    },
+    "4": {
+      "result": "자동 확인 완료, 사람 브라우저 확인 대기",
+      "detail": "재전송 재생 True·같은 화면 True, 오래된 버전 409, 서버 재시작 뒤 같은 화면 True·완주 True"
+    },
+    "6": {
+      "result": "자동 확인 통과",
+      "detail": "응답 86개(JSON 58, HTML 28) 금지 키 0건"
+    }
+  }
+}
