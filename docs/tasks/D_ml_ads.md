@@ -95,6 +95,7 @@
 
 ### D-07-02 씐 자 확률 모델 첫 학습·평가
 - 3h · 선행: A-06-03(실제 엔진 판), C-07-01(14:00 인계). 그 전에는 A-06-03 jsonl을 `contracts/datasets.py`로 직접 학습 행으로 바꿔 개발하고, 최종 수치는 C-07-01의 Delta 학습 행으로 낸다
+- 학습 데이터 정책(11/7 PM 결정): A-06-03 데이터는 `baseline-0` 정책이라 회의 발언이 0건이어서 학습 코드 확인용으로만 쓴다. 수치는 A-07-01(`rule-v0`) 병합 뒤 `python -m tools.run_engine_games --preset base6 --games 200 --seed 2 --policy rule-v0 --out out/handoff/a0701`로 다시 만든 데이터로 낸다. rule-v0 base6 500판의 마을 승률이 약 83%(목표 40~60%)라 씐 자가 일찍 잡히는 판이 많을 수 있다. 가중치 조정은 A-08-03에서 한다.
 - 문서화(+0.25h, 공통 ⑦): [트러블 D](../troubles/D.md)에 `### D-07-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ml`](../modules/ml.md)는 그날 일괄 갱신(D-07-04)
 - 산출물: `ml/suspicion/features.py`, `train.py`, `evaluate.py`
 - 완료 조건:
