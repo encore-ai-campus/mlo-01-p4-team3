@@ -40,7 +40,7 @@
   2. `fixtures/ads/auction_cases.json`·`validity_cases.json`·`budget_cases.json`을 HTTP 경유로 재생해 기대값과 같음.
   3. 구조화 로그(`serve_id`, `charge_id`)와 `/metrics`(`paldo_ad_serve_total{filled}`, `paldo_ad_serve_duration_seconds`, 클릭·노출 유효/무효 카운터).
   4. 광고 요청 처리 지연 p95 기록(목표: B의 전체 시간 제한 300ms 안).
-  5. 캠페인·소재·예산을 Django admin에서 관리: admin으로 캠페인을 만들면 다음 serve부터 후보가 되고, 중지하면 빠짐(테스트). admin은 로그인 필수. 일 예산이 1건 최대 청구액(CPC `max_bid_mw`, CPM `ceil(max_bid_mw/1000)`)보다 작으면 저장 거부(ads.md 2절 등록 검증, 11/7 PM 결정, 테스트: CPC 입찰가 300원·예산 100원 거부, 같은 값 CPM 허용).
+  5. 캠페인·소재·예산을 Django admin에서 관리: admin으로 캠페인을 만들면 다음 serve부터 후보가 되고, 중지하면 빠짐(테스트). admin은 로그인 필수. 일 예산이 1건 최대 청구액(CPC `max_bid_mw`, CPM `floor(max_bid_mw/1000)`, 11/7 PM 결정으로 올림 → 내림)보다 작으면 저장 거부(ads.md 2절 등록 검증, 11/7 PM 결정, 테스트: CPC 입찰가 300원·예산 100원 거부, 같은 값 CPM 허용).
   6. 클릭 리다이렉트의 도착지는 사이트 안 가상 랜딩(`/ads/landing/<creative_id>`). 외부 URL로 나가지 않음(테스트).
   7. 소재 이미지는 캠페인 데이터의 `image_path`(E 임시 소재와 같은 경로·이름·규격, E-05-05)로만 가리킨다. 광고 서버 코드에 이미지 파일명 없음, 실제 소재로 덮어써도 테스트가 코드 수정 없이 통과(E-11-10 5번이 검사).
   8. 게임 웹 중계(11/4 PM 결정 #2 변경, #14): 브라우저는 광고 서버에 직접 접속하지 않는다. 비콘·클릭·랜딩은 게임 웹 서버가 내부 주소(`PALDO_ADS_INTERNAL_URL`)로 부른다. 비콘 본문은 ads.md 3절의 JSON이고 `Content-Type`과 무관하게 파싱한다(게임 웹은 `application/json`으로 보냄). 비콘·클릭 엔드포인트는 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다(테스트: CSRF 토큰 없는 JSON 비콘이 204). 클릭 응답의 `Location`은 상대 경로 `/ads/landing/<creative_id>`다(게임 웹이 같은 경로로 중계). 게임 웹이 넘긴 `X-Request-ID`를 로그 `request_id`로 남긴다([integration.md](../contracts/integration.md) 4.2절).
@@ -65,13 +65,13 @@
 - 문서화(+0.25h, 공통 ⑦): [트러블 D](../troubles/D.md)에 `### D-06-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ads`](../modules/ads.md)는 그날 일괄 갱신(D-06-03)
 - 산출물: `ads/infra/mysql_ledger.py`, `ads/infra/outbox.py`, `ads/infra/schema.sql`
 - 완료 조건:
-  1. `BudgetBook` 기준 동작과 같은 시나리오(`tests/contract/test_ads.py::Budget`, `AdsReviewRegressions`)를 MySQL 구현으로 통과.
+  1. `BudgetBook` 기준 동작과 같은 시나리오(`tests/contract/test_ads.py::Budget`, `AdsReviewRegressions`)를 MySQL 구현으로 통과. 11/7 PM 결정(나머지 이월 폐지, `ads-0.6`)대로 1건 금액은 CPC 청구 CPC, CPM `floor(청구 CPM/1000)`이고 예약액 = 확정액이다. MySQL에 캠페인별 나머지 열·행을 두지 않는다. 회귀 시나리오에 날짜 경계 환입(11/6 확정 → 11/7 확정 → 11/6 환입, 어느 날도 음수 없음), 지면별 합 비음수, 중복 환입·환입 행 재환입 거부, 하한 미만 CPM·0원 예약 거부를 포함한다.
   2. 예약은 조건부 UPDATE(잔액·예약 합계 조건) 또는 행 잠금으로 원자적. 동시 예약 100건 경합 테스트에서 예약 합계 + 확정 합계 ≤ 일 예산.
   3. `charge_id` 유일 제약, 원장 변경과 아웃박스 행을 같은 트랜잭션에.
   4. 아웃박스 → `ad.serve`/`ad.impression`/`ad.click` 발행, 재발행 시 소비자가 `event_id`로 중복 제거.
   5. 예약 만료 해제 작업 `ads/app/expire_reservations.py`가 주기 실행 프로세스로 돌고(로그·지표), 실제 MySQL에서 만료 시각이 지난 예약이 해제됨. 작업을 죽였다 다시 띄워도 밀린 만료가 해제됨(테스트).
   6. 지연 이벤트: 유효 시간 창이 지난 클릭·노출은 과금하지 않고 무효 사유를 남김(ads.md 규칙, 테스트).
-  7. 환입 소비자 `ads/app/refund_consumer.py`: silver 재판정(C-08-02)이 낸 무효 판정 이벤트를 받아 원장에 환입 행을 쓰고, 같은 `charge_id` 환입은 1회만(테스트). C-08-02의 재판정 시험에서 실제로 동작.
+  7. 환입 소비자 `ads/app/refund_consumer.py`: silver 재판정(C-08-02)이 낸 무효 판정 이벤트를 받아 원장에 환입 행(원래 금액의 부호 반전, 원과금의 귀속일)을 쓰고, 같은 `charge_id` 환입은 1회만(환입 행 `<charge_id>:refund` 유일 제약 + 원과금 예산 행 잠금과 같은 트랜잭션, 동시 중복 환입 테스트). 원과금(`kind=charge`)만 환입한다(ads.md 5절). C-08-02의 재판정 시험에서 실제로 동작.
   8. 실행 형태(11/4 PM 결정 #11·#15): 예약 만료 해제 작업, 환입 소비자, 광고 아웃박스 발행기는 웹 서버와 별도 프로세스로 ad-01에서 돈다. 환입 소비자는 `ad.rejudge` 토픽(events.md 5절)을 읽는다.
 - 근거: 기획서 14.3, 14.4 / ads.md 5·7
 

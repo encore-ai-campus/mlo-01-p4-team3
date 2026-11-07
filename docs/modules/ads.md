@@ -22,7 +22,7 @@ python ads/manage.py runserver 127.0.0.1:8001 --noreload
 ```
 
 - `load_ad_fixtures`는 없는 가상 캠페인·소재만 최초 적재하며 기존 admin 수정은 유지한다.
-- 등록·수정은 `validate_campaign_budget`로 일 예산이 최대 입찰가 기준 1건 상한(CPC 입찰가, CPM 입찰가/1000 올림) 이상인지 검사하고 admin `daily_budget_mw` 오류로 표시한다.
+- 등록·수정은 `validate_campaign_budget`로 일 예산이 최대 입찰가 기준 1건 상한(CPC 입찰가, CPM 입찰가/1000 내림, 11/7 PM 결정) 이상인지 검사하고 admin `daily_budget_mw` 오류로 표시한다.
 - 후보 예산 필터도 같은 상한을 쓰며 제외 사유는 메모리 `ServeCandidate.filtered`와 구조화 로그 `candidates`에 `budget`으로 남긴다. 예약은 실제 낙찰 단가 기준이다.
 - admin `/admin/`은 로그인·관리 권한이 필요하다. 캠페인 생성·중지·일 예산 변경은 **새 request_id의 다음 serve**부터 반영한다.
 - API: POST `/ads/v1/serve`, POST `/ads/v1/impression`, GET `/ads/v1/click?t=`, GET `/ads/landing/<creative_id>`. 경로·JSON은 광고 계약 3절을 따른다.
@@ -76,7 +76,7 @@ python -m unittest tests.tools.test_ad_traffic_sim -v
 | PALDO_LOG_DIR | 기본 out/logs |
 | 지면 정책 | fixtures/ads/campaigns.json의 slot_policies. 프로세스 시작 시 읽음 |
 | 버전 | 계약 ads-0.5(지면 3곳, llm_wait 삭제), auction-v0.1, beta-prior-v0.1. 토큰 30분, 짝 맞추기 유예 2분 |
-| 금액·귀속일 | 정수 밀리원, serve 시각의 UTC 날짜. CPM 나머지 이월은 BudgetBook 기준 |
+| 금액·귀속일 | 정수 밀리원, serve 시각의 UTC 날짜. 1건 금액은 그 건의 단가만으로 정함(CPM `floor(단가/1000)`, 나머지 이월 없음, `ads-0.6`). 지면 최저 eCPM 하한 100원 |
 | DB 드라이버 | requirements/web.txt의 PyMySQL. 게임 웹 설정은 import하지 않음 |
 
 ## 한계
@@ -93,6 +93,6 @@ python -m unittest tests.tools.test_ad_traffic_sim -v
 ## 변경 이력
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
-| D-05-03 | 11/5 | 독립 Django API·admin, 메모리 예산·판정, 로그·지표·HTTP 테스트·지연 측정. 조건 2 미충족 범위 기록. 11/7 변경 기준 5·9: 등록 예산 검증·budget 후보 기록과 경계값 테스트 보강 |
+| D-05-03 | 11/5 | 독립 Django API·admin, 메모리 예산·판정, 로그·지표·HTTP 테스트·지연 측정. 조건 2 미충족 범위 기록. 11/7 변경 기준 5·9: 등록 예산 검증·budget 후보 기록과 경계값 테스트 보강. 11/7 PM 결정(나머지 이월 폐지, `ads-0.6`): CPM 1건 금액 floor, 지면 최저 eCPM 하한 100원, 환입은 원과금만 1회, 순액 대사(`orphan_refund`) |
 | D-06-01 | 11/6 | 게임 플레이어 봇의 실행·지표는 sim 모듈 문서로 연결하고 광고 HTTP 선택과 분리(일괄 문서화) |
 | D-06-03 | 11/6 | 실제 Django HTTP 합성 트래픽·정답 격리·피로·4종 무효 클릭·재전송·재현 검증. D-05-03 조건 2 보류 및 D-06-02 외부 저장 범위 유지 |
