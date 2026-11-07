@@ -1,7 +1,7 @@
 {
   "task": "B-06-02",
-  "commit": "531b20676f8df38f33f38238b35e05b2fa56bfab",
-  "generated_at": "2026-11-07T14:29:38Z",
+  "commit": "8c4018d80697a5aec6cffb13520a0f459de1795c",
+  "generated_at": "2026-11-07T14:48:06Z",
   "source": "python -B tools/perf/api_bench.py --users 10 --minutes 3.0 --result-name compose_10x3",
   "metrics": {
     "users": {
@@ -21,11 +21,11 @@
       "unit": "건"
     },
     "p50_ms": {
-      "value": 59.481,
+      "value": 63.911,
       "unit": "ms"
     },
     "p95_ms": {
-      "value": 238.278,
+      "value": 244.861,
       "unit": "ms"
     },
     "finished_games": {

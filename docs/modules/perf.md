@@ -42,5 +42,5 @@ python -B server/manage.py test server.tests.mongo_commands.MongoCommands --sett
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
-| B-06-02 | 11/6 | 실제 Mongo API 부하 CLI·20개 HTTP 경합·재생/충돌/거부 검증. 저장소 Compose Mongo 10명·3분 p95 238.278ms·오류 0, 네이티브 결과와 분리 |
+| B-06-02 | 11/6 | 실제 Mongo API 부하 CLI·20개 HTTP 경합·재생/충돌/거부 검증. 저장소 Compose Mongo 10명·3분 p95 244.861ms·오류 0, 네이티브 결과와 분리 |
 | B-06-03 | 11/6 | C Mongo 연결 조립·실제 회차 재개 검증. Compose API p95 측정은 B-06-02 증빙, VM·ASGI 비교는 B-07-05에서 관리 |
