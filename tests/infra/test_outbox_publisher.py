@@ -97,5 +97,17 @@ class OutboxTests(unittest.TestCase):
         self.assertEqual(self.sent,[])
         self.assertEqual(self.store.pending(),3)
 
+    def test_invalid_game_does_not_starve_other_games(self):
+        document=self.collection.find_one({'_id':self.envelope['game_id']})
+        other=deepcopy(document);other['_id']='z_healthy_'+uuid.uuid4().hex
+        for entry in other['outbox']:
+            envelope=entry['envelope'];envelope['game_id']=other['_id']
+            envelope['event_id']=f'{other["_id"]}:{envelope["seq"]:05d}'
+        self.collection.insert_one(other)
+        self.collection.update_one({'_id':document['_id']},{'$set':{'outbox.0.envelope.topic':'invalid'}})
+        with self.assertRaises(ValueError):self.publisher.tick()
+        self.assertEqual(self.publisher.tick(),3)
+        self.assertEqual([e.game_id for e in self.sent],[other['_id']]*3)
+
 
 if __name__=='__main__':unittest.main()

@@ -27,8 +27,9 @@ class MongoOutboxStore:
         return self.collection.find_one_and_update(
             {'outbox':{'$elemMatch':{'published':False}},'$or':[{'publisher_lease':{'$exists':False}},
              {'publisher_lease.until':{'$lte':now}}]},
-            {'$set':{'publisher_lease':{'owner':owner,'until':now+timedelta(seconds=self.lease_seconds)}}},
-            sort=[('_id',1)],return_document=ReturnDocument.AFTER)
+            {'$set':{'publisher_lease':{'owner':owner,'until':now+timedelta(seconds=self.lease_seconds)},
+                     'publisher_last_claimed_at':now}},
+            sort=[('publisher_last_claimed_at',1),('_id',1)],return_document=ReturnDocument.AFTER)
 
     def renew(self,game,owner):
         """유효한 자기 lease만 연장한다. 만료 후에는 발행을 중단한다."""
