@@ -82,8 +82,10 @@
   {% endif %}
   {% if vm.ended %}
     <p class="round-result">판이 종료됐습니다.</p>
+    {% if participant_forms_available %}{% include "survey.html" %}{% endif %}
     <p><a href="{% url 'home' %}">테스트 회차로 돌아가기</a></p>
   {% else %}
+    {% if participant_forms_available %}{% include "notebook.html" %}{% endif %}
     {% include "meeting_actions.html" %}
     {% include "utterance_input.html" %}
   {% endif %}

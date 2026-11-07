@@ -16,6 +16,8 @@
 | `POST /games/{id}/utterances` | `utterance_input.html` → `speech_cards.html` | 공개 인물·근거와 자유 입력을 보내 카드 0~N장을 표시한다. 모호한 근거는 후보 주장 중 두 개를 선택해 수정할 수 있다. 빈 입력은 204로 현재 화면을 유지한다. |
 | `POST /games/{id}/utterances/{attempt_id}` | `speech_cards.html` → 카드 또는 `meeting.html` | 확인·수정은 한 명령을 실행한다. 재입력·취소·버튼 전환·해당 없음은 소비하지 않는다. 버튼 전환은 `reaction=switch_to_buttons`를 전송해 시도를 닫는다. 오래된 카드 실행은 409 현재 회의로 교체한다. |
 | `GET /games/{id}/renders/{job_id}` | `speech_line.html` | 1초 간격으로 발언 영역의 해당 문장만 교체한다. 완료되거나 단계가 바뀌면 폴링을 멈춘다. 진술표는 `meeting.html`에서 공개 주장으로 표시한다. |
+| `PUT /games/{id}/notebook` | `notebook.html` | 인물별 의심도와 투표·결선 단계의 확신도를 저장한다. 204 뒤 저장 안내를 표시하고 재조회하면 값을 복원한다. 다음 날·결선에서 같은 값을 저장해도 새 기록이 남는다. |
+| `POST /games/{id}/survey` | `survey.html` → `survey_done.html` | 종료 화면의 제출·건너뛰기 폼이 같은 경로를 쓴다. 최초 성공은 `#survey`를 완료 조각으로 교체하고, 동일 요청의 204는 화면을 새로 읽어 완료 안내를 표시한다. |
 | `GET /static/assets/…`, `GET /static/ads/…` | `content/images/manifest.json` | 등록된 이미지 파일을 제공한다. |
 | `GET /static/game.css`, `GET /static/js/…` | `web/static/` | 화면 스타일과 행동 폼 스크립트를 제공한다. |
 | `/ws/game/` | `static/js/paldo_ws.js` | 로그인된 전체 페이지에서 연결 하나를 열고 광고 비콘을 전송한다. 연결·재연결 때 `hello`로 대기열 초과와 페이지 이탈의 폐기 수를 보낸다. 게임 요청은 기존 HTTP를 유지한다. |

@@ -125,6 +125,8 @@ class Meeting(TestCase):
                     if index < len(self.recording) - 1:
                         self.assertTrue(forms.forms)
                     for attrs, inputs in forms.forms:
+                        if "participant-form" in attrs.get("class", "").split():
+                            continue
                         utterance = attrs["hx-post"] == self.game_url + "/utterances"
                         self.assertEqual(attrs["hx-target"], "#speech-cards" if utterance else "#meeting")
                         self.assertIn(attrs["hx-post"], (self.command_url, self.game_url + "/utterances"))

@@ -1,6 +1,7 @@
 """공통 API의 자유 입력·렌더·수첩·설문 HTTP 경계."""
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.utils.crypto import salted_hmac
 from django.views.decorators.http import require_GET, require_http_methods
 from engine.domain.serde import to_jsonable
 from server.app.dto import (CommandOutput, ParseUtteranceInput, ResolveUtteranceInput,
@@ -11,6 +12,7 @@ from .input_validation import parse_game_input
 from .views import game_request, command_response, _body, _meeting_response, _command_status
 from .interaction_forms import utterance_form
 from .interaction_view import cards_context, line_context
+from .participant_forms import participant_input
 
 
 def _service(request, game_id):
@@ -84,14 +86,21 @@ def poll_render(request, game_id, job_id):
 def save_notebook(request, game_id):
     """의심도·확신도를 검증하고 성공 시 본문 없는 204를 반환한다."""
     service = _service(request, game_id)
-    service.notebook(_input(request, SaveNotebookInput, game_id), request.player_pseudonym)
+    service.notebook(participant_input(request, SaveNotebookInput, game_id), request.player_pseudonym)
     return HttpResponse(status=204)
 
 
 @game_request
 @require_http_methods(["POST"])
 def submit_survey(request, game_id):
-    """종료 후 설문을 저장하고 본문 없는 204를 반환한다."""
+    """종료 후 설문을 저장하고 같은 입력의 재전송에는 204로 답한다."""
     service = _service(request, game_id)
-    service.survey(_input(request, SubmitSurveyInput, game_id), request.player_pseudonym)
+    data = participant_input(request, SubmitSurveyInput, game_id)
+    comment_digest = salted_hmac(f"paldo.survey-comment:{game_id}", data.comment,
+                                 algorithm="sha256").hexdigest()
+    created = service.survey(data, request.player_pseudonym, comment_digest)
+    if request.headers.get("HX-Request") == "true":
+        if created:
+            return render(request, "survey_done.html")
+        return HttpResponse(status=204, headers={"HX-Refresh": "true"})
     return HttpResponse(status=204)

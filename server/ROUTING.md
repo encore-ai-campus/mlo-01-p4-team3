@@ -12,6 +12,8 @@
 | `/games/{id}/…`, `/players/me/progress` | [api/urls.py](api/urls.py) → [api/views.py](api/views.py)·[api/interactions.py](api/interactions.py) → [app/](app/). |
 | `POST /games/{id}/utterances`, `POST /games/{id}/utterances/{attempt_id}` | [api/interaction_forms.py](api/interaction_forms.py)가 폼을 공통 DTO로 변환한다. [api/interactions.py](api/interactions.py) → [app/interactions.py](app/interactions.py). [paldo_web/composition.py](paldo_web/composition.py)가 선택한 해석기를 조립할 때 주입한다. JSON은 DTO, htmx는 카드 또는 현재 회의 조각이다. |
 | `GET /games/{id}/renders/{job_id}` | [app/interactions.py](app/interactions.py)의 소유권·완료 상태 검사 뒤 JSON 또는 `speech_line.html`을 반환한다. `speech_line.html`은 발언만 갱신하고 완료하면 폴링을 멈춘다. 회의 진술표는 [api/meeting_view.py](api/meeting_view.py)가 공개 주장으로 만든다. |
+| `PUT /games/{id}/notebook` | [api/participant_forms.py](api/participant_forms.py)가 JSON·폼을 `SaveNotebookInput`으로 검증한다. `InteractionService.notebook`이 의심도·투표 확신도를 저장하고 204를 반환한다. 동일 값은 같은 날짜·단계에서만 생략하며 다음 날·결선은 별도 기록한다. |
+| `POST /games/{id}/survey` | `SubmitSurveyInput`의 응답·전체 건너뛰기를 검증하고 종료 후 저장한다. 최초 JSON은 204, 최초 htmx는 200 `survey_done.html`을 반환한다. 같은 요청은 204이며 htmx는 화면을 새로 읽는다. 다른 내용은 409, 잘못된 입력 조합은 400이다. |
 | `GET /healthz`, `GET /readyz`, `GET /metrics` | [paldo_web/probes.py](paldo_web/probes.py). |
 | `GET /static/…` | [api/assets.py](api/assets.py). |
 | `/ws/game/` | [paldo_web/asgi.py](paldo_web/asgi.py)의 출처·세션 인증 → [api/routing.py](api/routing.py) → [api/consumers.py](api/consumers.py). `hello`의 폐기 사유는 [api/ad_metrics.py](api/ad_metrics.py)에 집계하고, `ad.impression`은 [app/ad_events.py](app/ad_events.py)로 중계한다. |
