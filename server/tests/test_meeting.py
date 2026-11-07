@@ -125,8 +125,9 @@ class Meeting(TestCase):
                     if index < len(self.recording) - 1:
                         self.assertTrue(forms.forms)
                     for attrs, inputs in forms.forms:
-                        self.assertEqual(attrs["hx-target"], "#meeting")
-                        self.assertEqual(attrs["hx-post"], self.command_url)
+                        utterance = attrs["hx-post"] == self.game_url + "/utterances"
+                        self.assertEqual(attrs["hx-target"], "#speech-cards" if utterance else "#meeting")
+                        self.assertIn(attrs["hx-post"], (self.command_url, self.game_url + "/utterances"))
                         versions = [entry for entry in inputs if entry.get("name") == "state_version"]
                         self.assertEqual(versions, [{"type": "hidden", "name": "state_version", "value": str(index)}])
                     view = step["view"]

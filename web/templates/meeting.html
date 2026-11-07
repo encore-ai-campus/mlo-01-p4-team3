@@ -40,7 +40,9 @@
   {% endif %}
   {% if vm.speeches %}
     <h2>발언</h2>
-    {% for speech in vm.speeches %}<p>{{ speech.speaker_name|display_name }}: {{ speech.text }}</p>{% endfor %}
+    {% for speech in vm.speeches %}<p>{{ speech.speaker_name|display_name }}:
+      <span id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
+    </p>{% endfor %}
   {% endif %}
   {% if published_votes %}
     <section id="published-votes" aria-labelledby="published-votes-title">
@@ -83,5 +85,6 @@
     <p><a href="{% url 'home' %}">테스트 회차로 돌아가기</a></p>
   {% else %}
     {% include "meeting_actions.html" %}
+    {% include "utterance_input.html" %}
   {% endif %}
 </section>

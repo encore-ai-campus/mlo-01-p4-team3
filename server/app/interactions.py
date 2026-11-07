@@ -10,8 +10,9 @@ from dataclasses import dataclass, field, replace
 from typing import ContextManager, Protocol
 
 from engine.domain.events import DomainEvent, EventType
+from engine.domain.model import CommandKind, PLAYER_ID
 from engine.domain.serde import to_jsonable
-from engine.ports import ParseContext, RenderStatus
+from engine.ports import ParseContext, ParseFailure, RenderStatus
 from .dto import (CommandOutput, ParseUtteranceInput, ParseUtteranceOutput, RenderOutput, ResolveUtteranceInput,
                   SubmitCommandInput, UtteranceReaction)
 from .usecases import ResourceNotFound
@@ -112,8 +113,13 @@ class InteractionService:
             raise ValueError("unknown_npc")
         content = self.game.dependencies(state.meta).content
         aliases = {c.npc_id: [c.name_ko, *c.aliases] for c in content.characters if c.npc_id in view.active}
+        last_addressee = data.last_addressee or next((
+            speech.addressee if speech.speaker == PLAYER_ID else speech.speaker
+            for speech in reversed(view.public.speeches) if speech.kind is CommandKind.INTERROGATE
+            and ((speech.speaker == PLAYER_ID and speech.addressee in aliases)
+                 or (speech.addressee == PLAYER_ID and speech.speaker in aliases))), None)
         ctx = ParseContext(data.game_id, state.state_version, state.phase, copy.deepcopy(view.public), aliases,
-                           data.selected_npc, data.selected_cards, data.last_addressee)
+                           data.selected_npc, data.selected_cards, last_addressee)
         result = self.parser.parse(data.text, ctx)
         output = ParseUtteranceOutput(str(uuid.uuid4()), state.state_version, result.candidates,
                                       result.failure, True)
@@ -123,6 +129,9 @@ class InteractionService:
                    "versions": result.versions, "reaction": None, "final_command": None, "label_source": None}
         with self.store.edit(data.game_id) as records:
             records.attempts[output.attempt_id] = {"output": output, "payload": payload, "closed": False,
+                                                  "selection": {"selected_npc": data.selected_npc,
+                                                      "selected_cards": copy.deepcopy(data.selected_cards),
+                                                      "last_addressee": last_addressee},
                                                   "signature_salt": secrets.token_hex(32)}
             self._event(state, EventType.INTENT_ATTEMPT, payload, "intent:" + output.attempt_id)
         return output
@@ -135,6 +144,9 @@ class InteractionService:
             if attempt is None:
                 raise ResourceNotFound
             reaction = data.reaction
+            if not attempt["closed"] and reaction == UtteranceReaction.RETRY and not data.retry_text.strip():
+                # 빈 재입력은 화면을 유지하므로 현재 시도를 닫거나 새 시도를 만들지 않는다.
+                return ParseUtteranceOutput(data.attempt_id, state.state_version, [], ParseFailure.EMPTY_INPUT, True)
             saved = self.game.repository.find_command(data.game_id, data.command_id) if data.command_id and reaction in (
                 UtteranceReaction.CONFIRM, UtteranceReaction.EDIT) else None
             if attempt["closed"] and saved is not None:
@@ -163,7 +175,7 @@ class InteractionService:
                     if data.chosen_index >= len(original.cards):
                         raise ValueError("unknown_card")
                     candidate = original.cards[data.chosen_index]
-                    if candidate.missing_slots:
+                    if candidate.missing_slots or candidate.evidence_alternatives:
                         raise ValueError("missing_slots")
                     command = candidate.command
                 else:
@@ -173,7 +185,13 @@ class InteractionService:
                 if not response.accepted:
                     return response
             elif reaction == UtteranceReaction.RETRY:
-                response = self.parse(ParseUtteranceInput(data.game_id, state.state_version, data.retry_text), player)
+                selection = attempt.get("selection", {})
+                selected_npc = selection.get("selected_npc")
+                last_addressee = selection.get("last_addressee")
+                response = self.parse(ParseUtteranceInput(data.game_id, state.state_version, data.retry_text,
+                    selected_npc=selected_npc if selected_npc in state.active else None,
+                    selected_cards=copy.deepcopy(selection.get("selected_cards", [])),
+                    last_addressee=last_addressee if last_addressee in state.active else None), player)
                 if isinstance(response, CommandOutput):
                     # 재조회와 해석 사이의 추가 경합은 409로 돌려주고 원래 시도는 열어 둔다.
                     return response
@@ -277,11 +295,19 @@ class InteractionService:
             final = result.status not in (RenderStatus.QUEUED, RenderStatus.RUNNING)
             output = RenderOutput(job_id, req.speech_id, result.status,
                                   result.text if result.status == RenderStatus.DONE and result.text else req.fallback_text, final)
-            self._event(state, EventType.RENDER_JOB, {**to_jsonable(result), "fallback": result.status != RenderStatus.DONE},
+            self._event(state, EventType.RENDER_JOB, {**to_jsonable(result), "fallback": result.fallback or not result.text or result.status != RenderStatus.DONE},
                         f"render:{job_id}:{result.status.value}")
             if final:
                 record["final"] = output
             return output
+
+    def render_snapshot(self, game_id, player):
+        """화면에 붙일 공개 폴백/완료 문장만 읽는다. 외부 폴링은 실행하지 않는다."""
+        self.game.owned(game_id, player)
+        with self.store.edit(game_id) as records:
+            return {job_id: record["final"] or RenderOutput(job_id, record["request"].speech_id,
+                    RenderStatus.QUEUED, record["request"].fallback_text, False)
+                    for job_id, record in records.renders.items()}
 
     def cancel_previous(self, previous, current):
         """날짜·단계가 바뀌면 이전 단계의 미완료 렌더를 폴백으로 확정한다."""
