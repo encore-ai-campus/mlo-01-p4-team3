@@ -1,0 +1,24 @@
+{
+  "task": "A-07-02",
+  "commit": "bd469f1d3e6924d495817715fe7ae1607f79a8b1",
+  "generated_at": "2026-11-07T01:43:38Z",
+  "source": "python -m tools.perf.npc_rule_check --bench --preset duo11 --games 50 --seed 2",
+  "metrics": {
+    "decisions": {
+      "value": 4420,
+      "unit": "건"
+    },
+    "decision_p50": {
+      "value": 1.528,
+      "unit": "ms"
+    },
+    "decision_p95": {
+      "value": 3.278,
+      "unit": "ms"
+    },
+    "decision_max": {
+      "value": 6.847,
+      "unit": "ms"
+    }
+  }
+}
