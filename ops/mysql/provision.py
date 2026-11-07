@@ -53,7 +53,7 @@ def provision(directory,ads_host,auth_host,db_host,ca):
             if option.is_symlink() or option.stat().st_mode & 0o077:raise ValueError('private_profile_required')
             if option.read_text()!=value:option.write_text(value)
         else:protected_write(option,value)
-    return {'schemas_ready':2,'service_roles_ready':2,'credentials':'protected_files_only'}
+    return {'schemas_ready':2,'service_roles_ready':2,'profile_storage':'protected_files_only'}
 
 
 def main(argv=None):
