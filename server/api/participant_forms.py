@@ -20,7 +20,7 @@ def participant_context(service, view):
     """판 화면에 수첩·설문 상태를 더한다. 저장소 미연결 시 입력 폼을 숨긴다."""
     if service.interactions is None:
         return {"participant_forms_available": False}
-    with service.interactions.store.edit(view.game_id) as records:
+    with service.interactions.participant_records(view.game_id) as records:
         confidence = records.notebook.get("vote_confidence")
         submitted = records.survey is not None
     return {
@@ -28,6 +28,8 @@ def participant_context(service, view):
         "notebook_entries": [NotebookEntryVM(npc, name, view.player.notebook.get(npc, 50))
                              for npc, name in view.names.items() if npc != "mudang"],
         "vote_confidence": confidence,
+        "confidence_choices": [(0, "전혀 확신하지 않음"), (25, "조금 확신함"),
+                               (50, "보통"), (75, "많이 확신함"), (100, "매우 확신함")],
         "survey_submitted": submitted,
         "survey_questions": [("fun", "이번 판은 재미있었나요?"),
                              ("unfair", "이번 판의 결과가 억울하게 느껴졌나요?"),
