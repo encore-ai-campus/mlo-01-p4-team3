@@ -69,8 +69,21 @@ def load_manifest(repo: Path, spec: AssetSpec) -> list[AssetEntry]:
         out.append(AssetEntry(kind=d["kind"], id=d["id"], path=d["path"], url=d["url"],
                               width=w, height=h, size=size, placeholder=bool(d["placeholder"]),
                               derived_from=d.get("derived_from"), edited_from=d.get("edited_from"),
-                              edited_from_sha256=d.get("edited_from_sha256")))
+                              edited_from_sha256=d.get("edited_from_sha256"), regions=_regions(d.get("regions"))))
     return out
+
+
+def _regions(raw) -> Optional[tuple]:
+    """manifest `regions`({장소 id: [x, y, 가로, 세로]}) → 튜플. 없으면 None. 형식 판정은 `audit.check_map_regions`."""
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        return (("<형식 오류>", (0, 0, 0, 0)),)
+    out = []
+    for pid, box in raw.items():
+        ok = isinstance(box, list) and len(box) == 4 and all(isinstance(v, int) and not isinstance(v, bool) for v in box)
+        out.append((str(pid), tuple(box) if ok else (-1, -1, -1, -1)))
+    return tuple(out)
 
 
 def write_manifest(repo: Path, spec: AssetSpec, entries: Iterable[AssetEntry]) -> Path:

@@ -1,0 +1,56 @@
+{
+  "task": "E-08-07",
+  "commit": "edae77caaa794eb2009bd6d66e5d1d8eb432b0c6",
+  "generated_at": "2026-11-07T12:13:56Z",
+  "source": "python -m tools.assets.check_assets --placeholder --result",
+  "metrics": {
+    "expected_total": {
+      "value": 102,
+      "unit": "개"
+    },
+    "manifest_total": {
+      "value": 102,
+      "unit": "개"
+    },
+    "files_total": {
+      "value": 102,
+      "unit": "개"
+    },
+    "missing_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "extra_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "spec_violation_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "record_missing_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "policy_violation_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "map_region_error_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "real_count": {
+      "value": 0,
+      "unit": "개"
+    },
+    "placeholder_count": {
+      "value": 102,
+      "unit": "개"
+    },
+    "max_file_bytes": {
+      "value": 10519,
+      "unit": "바이트"
+    }
+  }
+}
