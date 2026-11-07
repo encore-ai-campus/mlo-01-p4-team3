@@ -1,0 +1,264 @@
+{
+  "task": "D-06-03",
+  "commit": "edae77caaa794eb2009bd6d66e5d1d8eb432b0c6",
+  "generated_at": "2026-11-07T12:32:16Z",
+  "source": "python -m tools.perf.ad_traffic_bench --requests 10000",
+  "metrics": {
+    "r0_requests": {
+      "value": 10000,
+      "unit": "건"
+    },
+    "r0_filled": {
+      "value": 1363,
+      "unit": "건"
+    },
+    "r0_valid_clicks": {
+      "value": 72,
+      "unit": "건"
+    },
+    "r0_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r0_implied_by_click": {
+      "value": 17,
+      "unit": "건"
+    },
+    "r0_fatigued_views": {
+      "value": 648,
+      "unit": "건"
+    },
+    "r0_nonviewable": {
+      "value": 265,
+      "unit": "건"
+    },
+    "r0_beacons": {
+      "value": 1031,
+      "unit": "건"
+    },
+    "r0_replay_new_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r0_replay_new_reservations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r0_replay_response_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r0_replayed_requests": {
+      "value": 11103,
+      "unit": "건"
+    },
+    "r0_no_serve_pending": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r0_cpc_charges": {
+      "value": 18,
+      "unit": "건"
+    },
+    "r0_cpm_charges": {
+      "value": 584,
+      "unit": "건"
+    },
+    "r0_suspect_valid_clicks": {
+      "value": 17,
+      "unit": "건"
+    },
+    "r0_actual_invalid_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "r0_duplicate": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r0_bad_signature": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r0_no_serve": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r0_expired": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r5_requests": {
+      "value": 10000,
+      "unit": "건"
+    },
+    "r5_filled": {
+      "value": 1358,
+      "unit": "건"
+    },
+    "r5_valid_clicks": {
+      "value": 70,
+      "unit": "건"
+    },
+    "r5_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r5_implied_by_click": {
+      "value": 14,
+      "unit": "건"
+    },
+    "r5_fatigued_views": {
+      "value": 640,
+      "unit": "건"
+    },
+    "r5_nonviewable": {
+      "value": 268,
+      "unit": "건"
+    },
+    "r5_beacons": {
+      "value": 1024,
+      "unit": "건"
+    },
+    "r5_replay_new_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r5_replay_new_reservations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r5_replay_response_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r5_replayed_requests": {
+      "value": 11099,
+      "unit": "건"
+    },
+    "r5_no_serve_pending": {
+      "value": 1,
+      "unit": "건"
+    },
+    "r5_cpc_charges": {
+      "value": 15,
+      "unit": "건"
+    },
+    "r5_cpm_charges": {
+      "value": 571,
+      "unit": "건"
+    },
+    "r5_suspect_valid_clicks": {
+      "value": 14,
+      "unit": "건"
+    },
+    "r5_actual_invalid_rate": {
+      "value": 0.05405405405405406,
+      "unit": ""
+    },
+    "r5_duplicate": {
+      "value": 1,
+      "unit": "건"
+    },
+    "r5_bad_signature": {
+      "value": 1,
+      "unit": "건"
+    },
+    "r5_no_serve": {
+      "value": 1,
+      "unit": "건"
+    },
+    "r5_expired": {
+      "value": 1,
+      "unit": "건"
+    },
+    "r20_requests": {
+      "value": 10000,
+      "unit": "건"
+    },
+    "r20_filled": {
+      "value": 1394,
+      "unit": "건"
+    },
+    "r20_valid_clicks": {
+      "value": 71,
+      "unit": "건"
+    },
+    "r20_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r20_implied_by_click": {
+      "value": 16,
+      "unit": "건"
+    },
+    "r20_fatigued_views": {
+      "value": 630,
+      "unit": "건"
+    },
+    "r20_nonviewable": {
+      "value": 303,
+      "unit": "건"
+    },
+    "r20_beacons": {
+      "value": 1013,
+      "unit": "건"
+    },
+    "r20_replay_new_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r20_replay_new_reservations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r20_replay_response_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "r20_replayed_requests": {
+      "value": 11106,
+      "unit": "건"
+    },
+    "r20_no_serve_pending": {
+      "value": 4,
+      "unit": "건"
+    },
+    "r20_cpc_charges": {
+      "value": 18,
+      "unit": "건"
+    },
+    "r20_cpm_charges": {
+      "value": 544,
+      "unit": "건"
+    },
+    "r20_suspect_valid_clicks": {
+      "value": 12,
+      "unit": "건"
+    },
+    "r20_actual_invalid_rate": {
+      "value": 0.20224719101123595,
+      "unit": ""
+    },
+    "r20_duplicate": {
+      "value": 5,
+      "unit": "건"
+    },
+    "r20_bad_signature": {
+      "value": 5,
+      "unit": "건"
+    },
+    "r20_no_serve": {
+      "value": 4,
+      "unit": "건"
+    },
+    "r20_expired": {
+      "value": 4,
+      "unit": "건"
+    },
+    "reproduction_mismatches": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
