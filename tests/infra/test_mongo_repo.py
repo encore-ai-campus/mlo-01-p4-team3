@@ -113,3 +113,60 @@ class MongoContractTests(unittest.TestCase):
                 self.content.insert(replace(first,content_version=version+'-removed',grudge_clues=first.grudge_clues[1:]))
             self.content.retire_clues([first.grudge_clues[0].clue_id])
             self.assertEqual(self.content.load(version),first)
+
+    def test_original_fake_repository_scenarios_with_mongo_implementations(self):
+        from unittest.mock import patch
+        from server.infra.mongo_repo import MongoGameRepository
+        from server.infra.progress_store import MongoProgressRepository
+        from tests.contract import test_fakes
+        def game_repository():
+            return MongoGameRepository(self.database[self.prefix+'reuse_'+uuid.uuid4().hex],self.histogram)
+        def progress_repository():
+            return MongoProgressRepository(self.database[self.prefix+'reuse_progress_'+uuid.uuid4().hex])
+        suite=unittest.TestSuite([
+            test_fakes.Repository('test_cas_and_outbox'),
+            test_fakes.CodexReviewRegressions('test_append_events_dedup_and_seq'),
+            test_fakes.CodexReviewRegressions('test_progress_atomic_idempotent')])
+        with patch.object(test_fakes,'InMemoryGameRepository',side_effect=game_repository), \
+             patch.object(test_fakes,'InMemoryProgressRepository',side_effect=progress_repository):
+            result=unittest.TestResult();suite.run(result)
+        self.assertEqual(result.testsRun,3)
+        self.assertEqual(result.errors+result.failures,[])
+
+    def test_content_version_is_pinned_for_running_game(self):
+        from engine.domain.engine import PaldoEngine
+        from engine.domain.model import DataSource, GameMeta, PRESETS
+        from engine.ports import EngineDeps
+        from engine.testing.fakes import FakeSuspicionModel
+        version=uuid.uuid4().hex
+        first=replace(FixtureContentSource().load('*'),content_version=version)
+        self.content.insert(first)
+        game='pin_'+uuid.uuid4().hex
+        meta=GameMeta(game,PRESETS['base6'],8,DataSource.SCRIPTED,'rule-0.1','test',version)
+        initial=PaldoEngine().new_game(meta,EngineDeps(self.content.load(version),FakeSuspicionModel()))
+        self.repo.create(initial.state,initial.truth,[])
+        self.content.insert(replace(first,content_version=version+'-next'))
+        saved=self.repo.load(game)[0]
+        self.assertEqual(self.content.load(saved.meta.content_version),first)
+        next_meta=replace(meta,game_id=game+'-next',content_version=version+'-next')
+        following=PaldoEngine().new_game(next_meta,EngineDeps(self.content.load(next_meta.content_version),FakeSuspicionModel()))
+        self.assertEqual(following.state.meta.content_version,version+'-next')
+
+    def test_content_loader_strict_schema_and_duplicate_refusal(self):
+        from unittest.mock import Mock,patch
+        from pathlib import Path
+        import tempfile
+        from tools.load_content import main
+        client=Mock()
+        client.get_default_database.return_value={'content_bundles':self.database[self.prefix+'cli_content']}
+        from tools.check_content import load_bundle
+        bundle=replace(load_bundle(Path(__file__).resolve().parents[2]/'content/bundle_v1.json'),content_version='cli-'+uuid.uuid4().hex)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'bundle.json';path.write_text(serde.dumps(bundle),encoding='utf-8')
+            with patch.dict(os.environ,{'PALDO_MONGO_URI':'mongodb://placeholder'}),patch('pymongo.MongoClient',return_value=client):
+                main([str(path)])
+                with self.assertRaises(SystemExit):main([str(path)])
+            invalid=serde.to_jsonable(bundle);invalid['unexpected']=True
+            import json
+            path.write_text(json.dumps(invalid),encoding='utf-8')
+            with self.assertRaises(SystemExit):main([str(path)])
