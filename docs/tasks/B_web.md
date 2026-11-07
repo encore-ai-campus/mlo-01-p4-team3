@@ -107,6 +107,7 @@
   5. 입력창 옆에 지원 예시·미지원 예시 표시(기획서 4.5).
   6. 해석 요청 지연 p95(`paldo_intent_parse_duration_seconds`) 노출.
   7. 추궁 답변 표시(api.md 5절, PRD `FR-WEB-006`): 폴백 문장을 먼저 보여 주고 `GET /games/{id}/renders/{job_id}`를 1초 간격으로 htmx 폴링, `final`이면 폴링 중지하고 문장 교체, 단계가 넘어가면 미완료 작업의 폴링 중지. 이 태스크는 가짜 렌더러(`LineRenderer` 계약의 폴백)로 완료한다. 실제 서비스(E-08-09)는 11/8 인계라, 설정만 바꿔 같은 테스트가 통과하는지는 INT-09 #5에서 확인한다(11/5 PM 결정, MVP 일정). 테스트: 폴백 먼저 표시, `final` 후 추가 요청 0건, 단계 전환 후 추가 요청 0건. `render_job` 기록(11/4 PM 결정 #18): 응용이 `poll` 결과의 상태 변화와, 단계가 넘어가 미완료 작업을 `cancel`할 때의 최종 상태를 `append_events`로 남긴다(`dedup_key = render:<job_id>:<status>`, `RenderResult.quantization`·`fallback` 포함). 테스트: 폴링이 멈춘 작업도 단계 전환 때 최종 상태가 1건 기록됨.
+  8. 추궁 답변 영역에 "Powered by Kanana"를 사용자가 쉽게 알아보게 고정 표기(작은 푸터만으로 대신하지 않음). Kanana 라이선스 3.1(v) 의무(11/7 PM 결정, `docs/reports/llm_bench.md` 1절). 테스트: 추궁 답변 조각에 문구가 있음.
 - 근거: 기획서 4.5, 9.1 실행 정책 / api.md 4·5, intent.md
 
 ### B-07-02 수첩·확신도·판 종료 설문
