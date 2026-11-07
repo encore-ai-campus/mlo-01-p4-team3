@@ -22,6 +22,7 @@
 
 | 하려는 일 | 볼 곳 |
 |---|---|
+| 광고·계정 MySQL 생성·권한 분리·복제 점검 | `ops/mysql/README.md`, `provision.py`, `verify.py`, `replication_check.py` |
 | 저장소나 Kafka 교체 | 인프라 `server/infra/`, `docs/contracts/ports.md` 2절 |
 | Mongo 계약·CAS·콘텐츠 적재 확인 | `tests/infra/test_mongo_repo.py`, `tools/perf/mongo_repo_bench.py`, `tools/load_content.py` |
 | 공식 게임 토픽 bronze 적재·재처리 | `pipeline/README.md`, `pipeline/spark/ingest_bronze.py`, 계약 단위 테스트 `tests/contract/test_pipeline_bronze.py` |
