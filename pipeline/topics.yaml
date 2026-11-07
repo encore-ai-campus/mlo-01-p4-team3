@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "defaults": {"partitions": 3, "replication_factor": 3, "retention_ms": 86400000, "min_insync_replicas": 2},
+  "topics": [
+    {"name": "paldo.game", "key": "game_id"},
+    {"name": "paldo.observations", "key": "game_id"},
+    {"name": "paldo.intent", "key": "game_id"},
+    {"name": "paldo.llm", "key": "game_id"},
+    {"name": "paldo.player", "key": "game_id"},
+    {"name": "paldo.truth", "key": "game_id"},
+    {"name": "ad.serve", "key": "serve_id"},
+    {"name": "ad.impression", "key": "serve_id"},
+    {"name": "ad.click", "key": "serve_id"},
+    {"name": "ad.rejudge", "key": "charge_id"}
+  ]
+}
