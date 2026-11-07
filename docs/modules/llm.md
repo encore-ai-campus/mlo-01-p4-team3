@@ -11,7 +11,7 @@ NPC 추궁 답변의 말투를 바꾸는 로컬 LLM(llama.cpp, CPU 전용)을 �
 - 평가 세트 생성 `llm/eval_set.py`(공용 픽스처로 추궁 요청 100건 `fixtures/llm/interrogation_eval.json`)와 지표 계산 `llm/mvp_metrics.py`(성공률·사유 분포·단계별 지연·일관성. 모델 호출은 바깥에서 주입).
 - 벤치마크 `llm/bench/run_bench.py`(E-06-07, E-07-07에서 실제 프롬프트·검증기와 `--eval` 평가 모드 연결). 벤치마크 모드는 추궁 요청 픽스처(`fixtures/llm/interrogation_requests.json`)로 후보 모델마다 지연·생성 토큰/초·메모리를 재고, 결과 JSON을 증빙(`docs/evidence/perf/E-06-07/`)에 쓴다. HTTP 서비스(`llm/service/`)와 LangGraph 흐름은 E-08-09에서 들어온다(지금은 빈 패키지).
 
-계층: `prompt.py`·`validator.py`·`mvp_metrics.py`·`eval_set.py`는 규칙(순수 함수, 표준 라이브러리만, 단독 테스트 `tests/llm/`)이고, llama.cpp를 부르는 쪽(지금은 벤치마크, 뒤에 서비스 E-08-09)이 인프라다. 의존 방향은 인프라 → 규칙이다. 벤치마크는 인프라(측정)이고, 파일 안에서는 위쪽 순수 함수(`percentile`·`build_messages`·`strip_think`·`validate_output`·`parse_buffer_sizes`·`summarize`, 단독 테스트) / 아래쪽 인프라(`BenchModel` llama.cpp 호출, `process_memory_mib`, `write_outputs`·`import_received` 결과 기록) / `main`(인자 파싱과 흐름 조립)으로 나눈다. `llama_cpp`·`jinja2`는 함수 안에서 늦게 import해, CI `core`는 이 패키지 없이 순수 함수 테스트(`tests/llm/test_run_bench.py`)를 돌린다.
+계층: `prompt.py`·`validator.py`·`mvp_metrics.py`·`eval_set.py`는 규칙(순수 함수, 표준 라이브러리만, 단독 테스트 `tests/llm/`)이고, llama.cpp를 부르는 쪽(지금은 벤치마크, 뒤에 오프라인 사전 생성 E-10-13. 서비스 E-08-09는 11/7 P-31 (나)로 취소)이 인프라다. 의존 방향은 인프라 → 규칙이다. 벤치마크는 인프라(측정)이고, 파일 안에서는 위쪽 순수 함수(`percentile`·`build_messages`·`strip_think`·`validate_output`·`parse_buffer_sizes`·`summarize`, 단독 테스트) / 아래쪽 인프라(`BenchModel` llama.cpp 호출, `process_memory_mib`, `write_outputs`·`import_received` 결과 기록) / `main`(인자 파싱과 흐름 조립)으로 나눈다. `llama_cpp`·`jinja2`는 함수 안에서 늦게 import해, CI `core`는 이 패키지 없이 순수 함수 테스트(`tests/llm/test_run_bench.py`)를 돌린다.
 
 ## 왜
 
