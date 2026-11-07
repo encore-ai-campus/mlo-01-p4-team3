@@ -12,8 +12,13 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
+
+# 판 메타·회차 등록에 들어가는 버전 문자 집합(B 회차 검증 `server/app/test_sessions.py`와 같음). `+`는 쓰지 않는다.
+VERSION_PATTERN = re.compile(r"[a-zA-Z0-9_.-]{1,80}")
+VERSION_JOIN = "."   # 규칙 버전 + 결정 파라미터 버전 연결 문자(11/7: `+`가 회차 등록 검증에 걸려 `.`으로 바꿈)
 
 RULE_BASE_VERSION = "rule-0.5"   # 0.2: 실행자 거짓 행적 공공장소 무작위. 0.3: TELL_PROB. 0.4: Q_MAX. 0.5: 결정 파라미터를 json으로 분리·동선 무작위성 추가(A-08-03)
 
@@ -45,6 +50,9 @@ class DecisionParams:
     def __post_init__(self):
         for f in fields(self):
             if f.name == "version":
+                if (not isinstance(self.version, str) or not VERSION_PATTERN.fullmatch(self.version)
+                        or not VERSION_PATTERN.fullmatch(f"{RULE_BASE_VERSION}{VERSION_JOIN}{self.version}")):
+                    raise ValueError(f"version은 영문·숫자·_ . -만 쓸 수 있음: {self.version!r}")
                 continue
             v = getattr(self, f.name)
             if not isinstance(v, (int, float)) or isinstance(v, bool) or not 0.0 <= v <= 1.0:
@@ -69,7 +77,7 @@ DEFAULT = load()
 _current = DEFAULT
 
 DECISION_PARAMS_VERSION = DEFAULT.version
-RULE_PARAMS_VERSION = f"{RULE_BASE_VERSION}+{DECISION_PARAMS_VERSION}"
+RULE_PARAMS_VERSION = f"{RULE_BASE_VERSION}{VERSION_JOIN}{DECISION_PARAMS_VERSION}"
 CONFORMITY_SCALE = DEFAULT.conformity_scale
 VOTE_NOISE = DEFAULT.vote_noise
 Q_MAX = DEFAULT.q_max
@@ -89,6 +97,6 @@ def apply(p: DecisionParams) -> None:
     global WITNESS_PROB, TELL_PROB, ROUTINE_RANDOMNESS
     _current = p
     DECISION_PARAMS_VERSION = p.version
-    RULE_PARAMS_VERSION = f"{RULE_BASE_VERSION}+{p.version}"
+    RULE_PARAMS_VERSION = f"{RULE_BASE_VERSION}{VERSION_JOIN}{p.version}"
     CONFORMITY_SCALE, VOTE_NOISE, Q_MAX = p.conformity_scale, p.vote_noise, p.q_max
     WITNESS_PROB, TELL_PROB, ROUTINE_RANDOMNESS = p.witness_prob, p.tell_prob, p.routine_randomness
