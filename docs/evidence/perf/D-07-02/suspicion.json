@@ -1,0 +1,184 @@
+{
+  "task": "D-07-02",
+  "commit": "9909842a7d166285a6ec8612f23781e6f8be9625",
+  "generated_at": "2026-11-07T13:16:58Z",
+  "source": "python -m ml.suspicion.train --rows 'out\\suspicion\\pm-data\\rows.jsonl' --manifest 'out\\suspicion\\pm-data\\manifest.json' --out 'out\\suspicion\\pm-run' --seed 7 --record D-07-02",
+  "metrics": {
+    "logistic_log_loss": {
+      "value": 0.778243866810306,
+      "unit": ""
+    },
+    "logistic_top1_accuracy": {
+      "value": 0.6649484536082474,
+      "unit": ""
+    },
+    "logistic_ece": {
+      "value": 0.022150268783898565,
+      "unit": ""
+    },
+    "lightgbm_log_loss": {
+      "value": 0.7182834395964046,
+      "unit": ""
+    },
+    "lightgbm_top1_accuracy": {
+      "value": 0.6821305841924399,
+      "unit": ""
+    },
+    "lightgbm_ece": {
+      "value": 0.052491729474432945,
+      "unit": ""
+    },
+    "rule_v0_log_loss": {
+      "value": 1.1177061305330696,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy": {
+      "value": 0.506872852233677,
+      "unit": ""
+    },
+    "rule_v0_ece": {
+      "value": 0.056540758285859485,
+      "unit": ""
+    },
+    "games": {
+      "value": 200,
+      "unit": "판"
+    },
+    "rows": {
+      "value": 12891,
+      "unit": "행"
+    },
+    "train_seconds": {
+      "value": 2.3880599001422524,
+      "unit": "s"
+    },
+    "train_games": {
+      "value": 140,
+      "unit": "판"
+    },
+    "dev_games": {
+      "value": 30,
+      "unit": "판"
+    },
+    "test_games": {
+      "value": 30,
+      "unit": "판"
+    },
+    "input_games": {
+      "value": 200,
+      "unit": "건"
+    },
+    "input_completed_games": {
+      "value": 200,
+      "unit": "건"
+    },
+    "input_excluded_incomplete_games": {
+      "value": 0,
+      "unit": "건"
+    },
+    "input_observations": {
+      "value": 5325,
+      "unit": "건"
+    },
+    "input_town_observations": {
+      "value": 3859,
+      "unit": "건"
+    },
+    "input_decisions_checked": {
+      "value": 5325,
+      "unit": "건"
+    },
+    "input_town_decisions_checked": {
+      "value": 3859,
+      "unit": "건"
+    },
+    "input_town_votes_checked": {
+      "value": 1293,
+      "unit": "건"
+    },
+    "input_legal_action_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "input_town_inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "input_knowledge_boundary_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "logistic_log_loss_ci_low": {
+      "value": 0.6426930237198879,
+      "unit": ""
+    },
+    "logistic_log_loss_ci_high": {
+      "value": 0.9733291356782059,
+      "unit": ""
+    },
+    "logistic_top1_accuracy_ci_low": {
+      "value": 0.5440140845070423,
+      "unit": ""
+    },
+    "logistic_top1_accuracy_ci_high": {
+      "value": 0.7706708268330733,
+      "unit": ""
+    },
+    "logistic_ece_ci_low": {
+      "value": 0.02323030275681468,
+      "unit": ""
+    },
+    "logistic_ece_ci_high": {
+      "value": 0.07448357992122906,
+      "unit": ""
+    },
+    "lightgbm_log_loss_ci_low": {
+      "value": 0.6007528514772741,
+      "unit": ""
+    },
+    "lightgbm_log_loss_ci_high": {
+      "value": 0.8592135121913879,
+      "unit": ""
+    },
+    "lightgbm_top1_accuracy_ci_low": {
+      "value": 0.5714285714285714,
+      "unit": ""
+    },
+    "lightgbm_top1_accuracy_ci_high": {
+      "value": 0.7884615384615384,
+      "unit": ""
+    },
+    "lightgbm_ece_ci_low": {
+      "value": 0.03263517656168761,
+      "unit": ""
+    },
+    "lightgbm_ece_ci_high": {
+      "value": 0.09843920995547298,
+      "unit": ""
+    },
+    "rule_v0_log_loss_ci_low": {
+      "value": 1.0379686150971328,
+      "unit": ""
+    },
+    "rule_v0_log_loss_ci_high": {
+      "value": 1.1972383376443507,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy_ci_low": {
+      "value": 0.42955326460481097,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy_ci_high": {
+      "value": 0.612012987012987,
+      "unit": ""
+    },
+    "rule_v0_ece_ci_low": {
+      "value": 0.03792305587541559,
+      "unit": ""
+    },
+    "rule_v0_ece_ci_high": {
+      "value": 0.11011830999116114,
+      "unit": ""
+    }
+  }
+}
