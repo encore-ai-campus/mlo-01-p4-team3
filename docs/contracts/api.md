@@ -81,6 +81,7 @@
 5. 시도가 해석한 시점의 `state_version`이 바뀌면, 그 시도로는 실행할 수 없다(409). 다시 입력해야 한다.
 
 ## 5. LLM 답변 폴링
+- 추궁 답변 영역에는 `Powered by Kanana`를 사용자가 쉽게 알아보게 고정 표시한다(11/7 PM 결정, B-07-01 조건 8). 최초 폴백·폴링 조각·완료 후 화면 재조회에 유지하며 작은 페이지 푸터만으로 대신하지 않는다.
 - 캐묻기가 수락되면, 응답 화면의 해당 발언 자리에 폴백 문장이 먼저 표시된다. 그 자리에 `hx-get="/games/{id}/renders/{job_id}" hx-trigger="every 1s"` 조각이 붙는다.
 - `RenderOutput.final`이 true이면(done, timeout, failed, cancelled, discarded) 폴링 속성이 없는 조각으로 바꿔 폴링을 멈춘다. done이 아니면 `text`는 폴백 문장이다.
 - 판이 다음 단계로 넘어가면 응용 계층이 미완료 작업을 취소한다. 그 뒤의 폴링 응답은 `final=true`(폴백)다.

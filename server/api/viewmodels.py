@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from engine.domain.model import ClaimType, CommandKind
+from engine.domain.model import ClaimType, CommandKind, PLAYER_ID
 from engine.ports import PlayerView
 
 PLACE_KO = {"well": "우물가", "shrine": "서낭당", "tavern": "주막", "gate": "마을 어귀", "home": "집"}
@@ -33,10 +33,13 @@ class ClaimCardVM:
 
 @dataclass
 class SpeechVM:
+    """공개 발언 문장과 폴링 작업·추궁 답변 표시 정보를 담는다."""
+
     speech_id: str
     speaker_name: str
     text: str
     pending_job_id: Optional[str] = None   # 있으면 htmx 폴링 조각을 붙인다
+    is_interrogation_answer: bool = False
 
 
 @dataclass
@@ -64,7 +67,13 @@ class MeetingVM:
     disappearances: list[DisappearanceVM] = field(default_factory=list)   # 피해 장소 공개(P-02)
 
 
+def is_interrogation_answer(speech):
+    """공개 발언의 종류와 화자로 주민의 추궁 답변을 식별한다."""
+    return speech.kind is CommandKind.INTERROGATE and speech.speaker != PLAYER_ID
+
+
 def build_meeting_vm(v: PlayerView) -> MeetingVM:
+    """플레이어에게 허용된 기록만 회의 표시 모델로 변환한다."""
     def status(n: str) -> str:
         return "locked" if n in v.locked else "missing" if n in v.missing else "active"
 
@@ -93,7 +102,8 @@ def build_meeting_vm(v: PlayerView) -> MeetingVM:
         disappearances.append(DisappearanceVM(
             d.night, name, f"{d.night + 1}일째 아침: {name}의 짚신이 {where}에서 발견됐다({SLOT_KO.get(d.slot.value, '')})"))
     speeches = [SpeechVM(s.speech_id, v.names.get(s.speaker, s.speaker), s.line_text or s.fact_sentence or "",
-                         s.render_job_id if s.render_job_id in v.pending_render_jobs else None)
+                         s.render_job_id if s.render_job_id in v.pending_render_jobs else None,
+                         is_interrogation_answer(s))
                 for s in v.public.speeches]
     return MeetingVM(
         game_id=v.game_id, state_version=v.state_version, day=v.day, phase=v.phase.value,

@@ -13,6 +13,7 @@ from .views import game_request, command_response, _body, _meeting_response, _co
 from .interaction_forms import utterance_form
 from .interaction_view import cards_context, line_context
 from .participant_forms import participant_input
+from .viewmodels import is_interrogation_answer
 
 
 def _service(request, game_id):
@@ -77,7 +78,10 @@ def poll_render(request, game_id, job_id):
     """공개 문장 JSON 또는 완료 시 폴링 속성이 없는 htmx 조각을 반환한다."""
     output = _service(request, game_id).poll(game_id, job_id, request.player_pseudonym)
     if request.headers.get("HX-Request") == "true":
-        return render(request, "speech_line.html", line_context(game_id, output))
+        view = get_game_service().detail(game_id, request.player_pseudonym).view
+        answer = any(s.speech_id == output.speech_id and s.render_job_id == output.job_id
+                     and is_interrogation_answer(s) for s in view.public.speeches)
+        return render(request, "speech_line.html", line_context(game_id, output, is_interrogation_answer=answer))
     return JsonResponse(to_jsonable(output))
 
 

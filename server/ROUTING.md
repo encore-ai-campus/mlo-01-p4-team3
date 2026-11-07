@@ -1,5 +1,7 @@
 # 서버 라우팅
 
+`GET /games/{id}/renders/{job_id}`의 htmx 응답은 공개 추궁 답변의 발언 ID·작업 ID를 대조해 `speech_line.html`에 Kanana 표기를 포함한다. 최초·재조회 화면은 `viewmodels.py`의 같은 공개 발언 판정으로 `meeting.html`에 표시한다. JSON 응답 DTO는 기존 형식을 유지한다.
+
 요청은 [paldo_web/urls.py](paldo_web/urls.py)에서 계정·관리자, 게임 API, 상태 확인과 정적 파일 경로로 나뉜다.
 
 | 요청 | 처리 경로 |
