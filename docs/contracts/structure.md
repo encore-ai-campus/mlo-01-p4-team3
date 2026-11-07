@@ -43,7 +43,7 @@ paldo/
 │  │  ├─ mongo_repo.py, content_store.py   [C-06-01]
 │  │  ├─ outbox_publisher.py       [C-06-02]
 │  │  ├─ llm_renderer.py           LineRenderer 구현 [E-08-09, 11/7 P-31 (나)로 취소]
-│  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03]
+│  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03, 11/7 취소]
 │  │  ├─ ad_client.py              AdProvider HTTP 구현(serve·비콘·클릭·랜딩 중계) [B-08-03] 결정 #2·#6
 │  │  └─ model_selector.py         ModelSelector 최소 구현 [D-08-04] → 카나리아·고정 [B-09-01], 레지스트리 [C-09-01] 결정 #5
 │  └─ tests/                       Django 테스트: test_api.py [B-05-02], test_idempotency.py [B-06-02], test_accounts.py [B-06-04], test_ws.py [B-07-05]
