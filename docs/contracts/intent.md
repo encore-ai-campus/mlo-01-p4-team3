@@ -11,7 +11,7 @@
 | point_contradiction | POINT_CONTRADICTION | evidence(모순 1개 또는 주장 2개) |
 | explain | EXPLAIN | - |
 | silence | SILENCE | - |
-| reveal_divination | REVEAL_DIVINATION | divination(target, night, result) |
+| reveal_divination | REVEAL_DIVINATION | divination(target, night, result). 예시 데이터의 슬롯은 target·result 두 개다. night는 문장에 시간 표현이 있으면 그 밤, 없으면 해석기가 공개 주장 중 가장 최근 밤으로 채운다(`intent/parser.py`, 11/7 PM 정리) |
 | interrogate_whereabouts | INTERROGATE/WHEREABOUTS | addressee, night, slot |
 | interrogate_contradiction | INTERROGATE/CONTRADICTION | addressee, evidence |
 | interrogate_suspicion_reason | INTERROGATE/SUSPICION_REASON | addressee |
@@ -54,5 +54,5 @@
 - **확인 생략 금지**: `source = "llm_assist"`인 후보가 섞인 시도는 확인 생략(기획서 8.1 실행 정책) 대상이 아니다. 항상 발언 카드로 확인받는다.
 - **시간 상한·취소**: `deadline_ms`(기본 5000)는 성능 예측이 아니라 포기 시한이다. 큐 대기·전송·생성·검증을 모두 포함한다. 넘으면 서비스에 취소를 보내고(`LineRenderer`와 같은 취소 경로, 생성 중단 로그 확인) 분류기 결과만으로 돌려준다. 보조 요청은 동시에 1건만 처리하고(넘치면 즉시 `timeout` 처리), 큐 우선순위는 캐묻기 대사(0)와 같은 0이되 먼저 들어온 대사 작업을 앞지르지 않는다.
 - **기록**: `ParseResult.assist`(새 필드)에 `called`, `reason`(조건 코드), `status`, `latency_ms`, `model_version`, `prompt_version`, `agreed`를 담고, 응용(B)이 그대로 `intent_attempt.payload.assist`에 넣는다. 후보별 `source`는 `candidates`에 함께 남는다.
-- **라벨 출처**: 플레이어가 LLM 후보를 그대로 확인하면 `label_source`는 기존 규칙대로 "그대로 확인(낮음)", 고쳤으면 "직접 수정(중간)"이다. LLM 해석은 사람 주석으로 쓰지 않는다. LLM은 문장을 만들지 않으므로 학습 세트에 LLM 생성 문장이 들어가지 않는다(플레이어 원문만 학습 대상).
+- **라벨 출처**: 플레이어가 LLM 후보를 그대로 확인하면 `label_source`는 기존 규칙대로 "그대로 확인(낮음)", 고쳤으면 "직접 수정(중간)"이다. LLM 해석은 사람 주석으로 쓰지 않는다. LLM은 문장을 만들지 않으므로 이 보조 경로로는 학습 세트에 LLM 생성 문장이 들어가지 않는다(플레이어 원문만 학습 대상). 이 규칙은 5절 해석 보조에만 해당한다. 예시 데이터를 늘리려고 로컬 LLM으로 만들고 사람이 검수한 변형 예시(E-06-02 2번, 검수 통과분만 `label_source: generated_reviewed`)는 별개다(11/7 PM 정리).
 - **버전**: 필드를 덧붙이는 변경이다(`ParseResult.diagnostics`·`assist`, `CommandCandidate.source`·`assist_agreed`, 모두 기본값 있음, `IntentAssistant` 포트). 코드 반영은 E-08-12가 하고 그때 `CONTRACT_VERSION`을 올리고 픽스처를 다시 만든다(parallel_dev.md 4절). 응용이 `attempt_id`를 해석 전에 발급하도록 바꾸는 것도 E-08-12에 포함한다(B 확인).
