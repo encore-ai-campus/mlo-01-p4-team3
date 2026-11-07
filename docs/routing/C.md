@@ -12,6 +12,7 @@
 |---|---|---|---|
 | `server/infra/` | 인프라 | C | Mongo 저장소, 아웃박스 발행기, 모델·LLM 어댑터(예정) |
 | `pipeline/`, `ops/` | 인프라 | C | Kafka → Spark → Delta, 배포·관측, HTTPS 프록시 `ops/proxy/`(예정) |
+| `pipeline/spark/` | 인프라(배치) | C | 공식 게임 봉투 검증(`bronze_contract.py`), Kafka → Delta bronze 멱등 적재(`ingest_bronze.py`). 사용법·미완 범위는 `pipeline/README.md` |
 | `ops/compose/` | 인프라 | C | 로컬 개발용 Compose(`dev.yml`), `.env` 생성·Garage 초기화·스모크(`run.py`), 패키지 확인(`pycheck.py`), 팀원 절차·점검표(`README.md`) |
 | `ops/` VM 점검 | 인프라(운영) | C | VM 점검표 `inventory_check.md`, 호스트 점검 `inventory_host.ps1`(노트북 Windows), VM 안 점검 `tools/perf/vm_probe.sh` |
 | `ops/runbook/` | 인프라(운영) | C | 실행 시간표 `schedule.md`, VM 역할·3차↔4차 이름·디스크 예산 `vm_roles.md` |
@@ -21,6 +22,7 @@
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 저장소나 Kafka 교체 | 인프라 `server/infra/`, `docs/contracts/ports.md` 2절 |
+| 공식 게임 토픽 bronze 적재·재처리 | `pipeline/README.md`, `pipeline/spark/ingest_bronze.py`, 계약 단위 테스트 `tests/contract/test_pipeline_bronze.py` |
 | 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |
 | VM 상태 점검(기동·자원·디스크·스냅샷) | `ops/inventory_check.md`(방법과 20대 표), `ops/inventory_host.ps1`, `tools/perf/vm_probe.sh` |
 | 시간대별 VM 사용(사용자 테스트·학습·LLM), VM 역할·디스크 예산 | `ops/runbook/schedule.md`, `ops/runbook/vm_roles.md` |
