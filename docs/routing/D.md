@@ -22,5 +22,6 @@
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 모델 교체·승격·롤백 | `docs/contracts/ml_lifecycle.md` |
+| 씐 자 모델 로컬 첫 학습·평가 | `ml/suspicion/features.py`(실제 엔진→TrainingRow), `train.py`(게임 분할·학습·MLflow), `evaluate.py`(softmax·지표), `tests/test_suspicion.py`, `docs/evidence/D-07-02.md` |
 | 플레이어 봇 실행·같은 시드 재현·지표 표·처리량 측정 | `engine/sim/`, CLI `tools/perf/sim_bench.py`, 테스트 `tests/sim/`, 증빙 `docs/evidence/D-06-01.md` |
 | 경매·과금·광고 판정 규칙 변경 | 광고 도메인 `ads/domain/`, `docs/contracts/ads.md` |

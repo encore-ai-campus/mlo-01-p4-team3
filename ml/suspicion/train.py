@@ -1,0 +1,183 @@
+"""D-07-02 로컬 첫 학습·평가. Delta export도 같은 TrainingRow+manifest 경계로 받는다.
+
+python -m ml.suspicion.train --rows out/suspicion/data/rows.jsonl --out out/suspicion/run1 --seed 7 --record D-07-02
+모델 승격·엔진 연결·VM 검증은 수행하지 않는다.
+"""
+from __future__ import annotations
+
+import argparse
+import importlib.metadata
+import json
+import math
+import os
+import pickle
+import re
+import shlex
+import sys
+import time
+from pathlib import Path
+
+from ml.suspicion.features import FEATURE_NAMES, FEATURE_VERSION, load_rows, sha256
+from ml.suspicion.evaluate import evaluate_scores, split_games
+from tools.evidence_result import write_result
+from tools.gitrepo import GitRepo
+from tools.jsonlog import log
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def load_dataset(rows_path: Path, manifest_path: Path) -> tuple[list, dict]:
+    """C 경계: 행 해시·버전·완료 마을 필터 선언이 없거나 다르면 거부한다."""
+    m = json.loads(manifest_path.read_text(encoding='utf-8'))
+    if (m.get('rows_sha256') != sha256(rows_path) or m.get('feature_version') != FEATURE_VERSION
+            or not isinstance(m.get('npc_policy_version'), str) or not m['npc_policy_version']
+            or not isinstance(m.get('data_version'), str)
+            or not m['data_version'].startswith(('engine-jsonl:', 'delta:'))
+            or not isinstance(m.get('input_sha256'), str)
+            or not re.fullmatch('[a-f0-9]{64}', m['input_sha256'])
+            or m.get('observer_filter') != 'completed_truth_villager'
+            or m.get('candidate_filter') != 'snapshot_excludes_mudang'
+            or not isinstance(m.get('seeds'), list) or not m['seeds']):
+        raise ValueError('manifest 해시/버전/필터/정책/seed 불일치')
+    return load_rows(rows_path), m
+
+
+def _matrix(rows):
+    import numpy as np
+    return np.asarray([[r.features[n] for n in FEATURE_NAMES] for r in rows], dtype=float)
+
+
+def fit_models(rows: list, split: dict, seed: int) -> dict:
+    """train 게임 행으로만 로지스틱 회귀와 LightGBM을 학습한다(CPU 1개)."""
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import StandardScaler
+    from lightgbm import LGBMClassifier
+    from threadpoolctl import threadpool_limits
+    train = [r for r in rows if split[r.game_id] == 'train']
+    if {r.label for r in train} != {0, 1}:
+        raise ValueError('train에 양쪽 라벨 필요')
+    x, y = _matrix(train), [r.label for r in train]
+    models = {
+        'logistic': make_pipeline(StandardScaler(), LogisticRegression(max_iter=500, random_state=seed)),
+        'lightgbm': LGBMClassifier(n_estimators=80, num_leaves=7, max_depth=3,
+                                  learning_rate=.05, min_child_samples=30, reg_lambda=1,
+                                  n_jobs=1, random_state=seed, deterministic=True,
+                                  force_col_wise=True, verbosity=-1),
+    }
+    with threadpool_limits(limits=1):
+        for model in models.values():
+            model.fit(x, y)
+    return models
+
+
+def model_scores(model, rows: list) -> list[float]:
+    """softmax 이전 원시 로짓을 반환한다. LGBM은 binary raw_score를 쓴다."""
+    from threadpoolctl import threadpool_limits
+    with threadpool_limits(limits=1):
+        x = _matrix(rows)
+        score = model.decision_function(x) if hasattr(model, 'decision_function') else model.booster_.predict(x, raw_score=True, num_threads=1)
+    return [float(v) for v in score]
+
+
+def run(rows_path: Path, manifest_path: Path, out: Path, seed: int, record: str | None = None) -> dict:
+    """학습→dev 보정→고정 test 비교, 모델·분할·메타데이터를 로컬 MLflow에 보관한다."""
+    for name in ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS'):
+        os.environ[name] = '1'
+    import mlflow
+    if out.exists():
+        raise ValueError('실행 산출물 보존을 위해 새 --out 경로를 사용하세요')
+    rows, manifest = load_dataset(rows_path, manifest_path)
+    split = split_games(rows, seed)
+    parts = {s: [r for r in rows if split[r.game_id] == s] for s in ('train', 'dev', 'test')}
+    commit = GitRepo(ROOT).head()
+    # mlruns 안에 SQLite 추적 DB와 아티팩트를 함께 둔다(외부 서버 불필요).
+    tracking = ROOT / 'mlruns'
+    tracking.mkdir(exist_ok=True)
+    mlflow.set_tracking_uri('sqlite:///' + (tracking / 'suspicion.db').as_posix())
+    client = mlflow.MlflowClient()
+    experiment_name = 'D-07-02-local-suspicion'
+    exp = client.get_experiment_by_name(experiment_name)
+    exp_id = exp.experiment_id if exp else client.create_experiment(experiment_name, artifact_location=(tracking / 'suspicion-artifacts').as_uri())
+    out.mkdir(parents=True)
+    command = 'python -m ml.suspicion.train --rows ' + shlex.quote(str(rows_path)) + ' --manifest ' + shlex.quote(str(manifest_path)) + ' --out ' + shlex.quote(str(out)) + f' --seed {seed}'
+    if record:
+        command += ' --record ' + record
+    tags = {k: str(manifest[k]) for k in ('data_version', 'input_sha256', 'rows_sha256', 'npc_policy_version')}
+    tags.update(feature_version=FEATURE_VERSION, code_commit=commit, seed=str(seed),
+                status='local_predevelopment', delta_final_evaluation='pending', vm_validation='pending')
+    log('suspicion_train', 'info', '학습 시작', games=len(split), rows=len(rows), **tags)
+    t0 = time.perf_counter()
+    with mlflow.start_run(experiment_id=exp_id, tags=tags) as active:
+        models = fit_models(rows, split, seed)
+        elapsed = time.perf_counter() - t0
+        reports = {}
+        temperatures = {}
+        from ml.suspicion.evaluate import grouped_predictions, metrics
+        for name, model in models.items():
+            dev_scores = model_scores(model, parts['dev'])
+            def dev_loss(t):
+                pairs = list(grouped_predictions(parts['dev'], [v/t for v in dev_scores]).values())
+                return metrics([p[0] for p in pairs], [p[1] for p in pairs])['log_loss']
+            temp = min((.5, 1., 2., 4.), key=dev_loss)
+            temperatures[name] = temp
+            reports[name] = evaluate_scores(parts['test'], [s/temp for s in model_scores(model, parts['test'])], seed)
+            reports[name]['dev_log_loss'] = dev_loss(temp)
+        reports['rule_v0'] = evaluate_scores(parts['test'], [r.features['rule_score'] for r in parts['test']], seed)
+        numeric = {f'{name}_{key}': dict(value=value, unit='')
+                   for name, report in reports.items() for key, value in report['metrics'].items()}
+        numeric.update(games=dict(value=len(split), unit='판'), rows=dict(value=len(rows), unit='행'),
+                       train_seconds=dict(value=elapsed, unit='s'))
+        for part, rs in parts.items():
+            numeric[part + '_games'] = dict(value=len({r.game_id for r in rs}), unit='판')
+        for key, value in manifest.get('audit', {}).items():
+            numeric['input_' + key] = dict(value=value, unit='건')
+        for name, report in reports.items():
+            for key, bounds in report.get('bootstrap_95', {}).items():
+                for suffix, value in zip(('ci_low', 'ci_high'), bounds):
+                    numeric[f'{name}_{key}_{suffix}'] = dict(value=value, unit='')
+        result = dict(status='local_predevelopment', run_id=active.info.run_id,
+                      command=command, code_commit=commit, feature_version=FEATURE_VERSION,
+                      manifest=manifest, split=split, temperatures=temperatures, reports=reports,
+                      train_seconds=elapsed, python=sys.version,
+                      versions={n: importlib.metadata.version(n) for n in ('numpy', 'scikit-learn', 'lightgbm', 'mlflow')},
+                      limitations=['C Delta 최종 평가 대기', 'VM Python 3.14 네 패키지 import 대기',
+                                   '미사용 씐 자 전략 평가 없음: 균등 혼합 정책 데이터',
+                                   '다른 프리셋/사람 데이터 검증 및 엔진 모델 행동 평가는 미실행'],
+                      improvement_claim=False)
+        (out / 'report.json').write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        with (out / 'models.pkl').open('wb') as f:
+            pickle.dump(dict(models=models, temperatures=temperatures, feature_version=FEATURE_VERSION,
+                             feature_names=FEATURE_NAMES, code_commit=commit), f)
+        mlflow.log_params(dict(seed=seed, cpu_threads=1, feature_version=FEATURE_VERSION,
+                              logistic_max_iter=500, lgbm_estimators=80, lgbm_leaves=7,
+                              temperature_grid='.5,1,2,4', **{k+'_temperature': v for k, v in temperatures.items()}))
+        mlflow.log_metrics({k: v['value'] for k, v in numeric.items()})
+        mlflow.log_artifacts(str(out), artifact_path='local_predevelopment')
+        if record:
+            path = write_result(record, 'suspicion', numeric, command)
+            mlflow.log_artifact(str(path))
+    log('suspicion_train', 'info', '학습 평가 완료', run_id=result['run_id'], duration_ms=round((time.perf_counter()-t0)*1000, 3),
+        train_seconds=elapsed, reports={k: v['metrics'] for k, v in reports.items()})
+    return result
+
+
+def main(argv=None) -> int:
+    """학습 CLI. 실패를 구조화 로그에 기록하고 예외를 보존한다."""
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument('--rows', type=Path, required=True)
+    ap.add_argument('--manifest', type=Path)
+    ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('--seed', type=int, default=7)
+    ap.add_argument('--record')
+    a = ap.parse_args(argv)
+    try:
+        run(a.rows, a.manifest or a.rows.parent / 'manifest.json', a.out, a.seed, a.record)
+    except Exception as exc:
+        log('suspicion_train', 'error', '학습 실패', error_type=type(exc).__name__, error=str(exc))
+        raise
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
