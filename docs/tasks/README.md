@@ -378,6 +378,11 @@
 - 마스코트도 비율 고정(틀은 자세로 맞춤, 사람 검수)과 발끝 기준(가로 가운데 256±16·아래 여백 16~48px, sprite와 같은 판정)을 따른다. 발끝·가운데는 `vn.check_mascot` 자동 검사다.
 - 마스코트 장신구: 족제비는 목의 붉은 끈에 작은 놋쇠 방울 1개만 허용(무당의 짝 표시, 묶음 방울·무늬·글자 금지), 까치는 장신구 없음. 상징 소품 금지의 유일한 예외로 스타일 가이드 4·8절에 적었다(사람 검수). 임시 그림은 그대로다.
 
+**확정된 결정 (11/6 PM 결정, B-07 계약 보완, P-29)** B 작업자 문의(B-07-02~05)에 따라 정했다.
+- 설문 전체 건너뛰기: `SubmitSurveyInput.skipped`(기본 false), 건너뛰면 점수 셋 `null`·의견 `""`. 판마다 한 번, 같은 내용 재전송 204, 다른 내용 409. 건너뛰어도 `survey_submitted` 1건. 점수 평균·보상·학습은 응답만, 응답률은 응답 수 ÷ 판 수(api.md 2-2절, events.md 2절). P-16의 "설문 건너뜀 처리"는 이 기준(보상에서 제외)을 따른다. DTO·검증 코드는 B-07-02에서 B가 고친다.
+- 버린 비콘: `hello`에 `dropped_by_reason`(`queue_full`·`page_exit`) 추가, `dropped`는 그 합. `rate_limited`는 서버가 거부할 때만 세고 브라우저는 보고하지 않는다. 지표는 `paldo_ad_beacon_dropped_total{reason}` 하나만(api.md 7절).
+- B-07-03은 로비·결과 화면 배치와 `review_side` 광고 조각 시험까지, 복기 화면 배치는 B-10-01. B-07-04는 계약 변경 없이 INT-07 일정대로 한다.
+
 ## 8. 기획서 → 태스크 추적표 (빠진 절 없음)
 
 기획서 v1.3 절 번호 기준이다(P-28 후속). 태스크·증빙의 "근거: 기획서 N" 줄은 v1.1 번호이며 `../design_notes.md` 4절 대응표로 찾는다. 기획서에서 옮긴 설계 결정 기록·미확정 사항·서버 배치는 `../design_notes.md` 1~3절이다.
@@ -623,7 +628,7 @@ python -m tools.tasks_to_issues --apply --repo OWNER/NAME --assign A=login1,B=lo
 - **커밋 메시지의 닫기 키워드 금지**(11/4 PM 결정): GitHub는 기본 브랜치에 들어온 커밋 메시지의 닫기 키워드로도 이슈를 닫는다. 그래서 증빙 검사(`precheck --pr-body`)는 PR base 이후 커밋 메시지(`git log <base>..HEAD`)에 닫기 키워드(`Closes` 포함)가 하나라도 있으면 실패한다. 이슈는 PR 본문의 `Closes #` 한 줄로만 닫힌다. 병합은 merge commit만 허용한다(squash·rebase 병합은 증빙의 커밋 SHA를 dev 이력에서 없앤다, 11/5 PM 결정).
 - 일부만 했거나 `상태: 실패` 증빙을 병합하는 PR은 `Refs #<번호>`를 쓰고 이슈에 `evidence-fail` 라벨을 붙인다. `Refs` PR은 바뀐 증빙에 `--format`만 돌린다.
 - `precheck`는 PR 본문을 환경 변수로 `check_evidence --pr-body-env`에 넘기고 셸 명령에 직접 넣지 않는다. 변경 파일 비교 기준은 `origin/dev`와 HEAD의 merge-base다(`--base`로 바꿀 수 있다. 못 구하면 문서·증빙 검사를 실패로 본다).
-- **push**: `git push` 때 `.githooks/pre-push`가 PR 본문 없이 `precheck`를 돌린다(바뀐 증빙은 `--format`만). 푸시하는 커밋이 지금 HEAD가 아니거나 커밋하지 않은 변경이 있으면 임시 worktree에 그 커밋을 꺼내 검사한다. 병합 뒤 `dev`·`main`에서는 자동 검사가 없다. PM이 매일 `dev`에서 `python -m tools.precheck`를 한 번 돌린다.
+- **push**: `git push` 때 `.githooks/pre-push`가 PR 본문 없이 `precheck`를 돌린다(바뀐 증빙은 `--format`만). 푸시하는 커밋이 지금 HEAD가 아니거나 커밋하지 않은 변경이 있으면 임시 worktree에 그 커밋을 꺼내 검사한다. 그 커밋이 깨끗한 작업 트리에서 같은 비교 기준(`origin/dev`와의 merge-base)으로 이미 `precheck`를 통과했으면 통과 기록(`<git 공용 폴더>/precheck-pass/<SHA>`)을 보고 검사를 생략한다(11/7 PM 결정, 끄기 `PALDO_PRECHECK_NO_CACHE=1`). 병합 뒤 `dev`·`main`에서는 자동 검사가 없다. PM이 매일 `dev`에서 `python -m tools.precheck`를 한 번 돌린다.
 - 병합에는 작성자가 아닌 1명의 승인이 필요하다(3절 ⑧).
 - **승격 PR**(`dev` → `main`, 3절 브랜치 모델): `Task:`·`Closes`/`Refs` 줄을 쓰지 않는다. 제목은 `승격: <날짜> <사유>`(예: `승격: 11/8 사용자 테스트 전`). `dev`를 체크아웃하고 `python -m tools.precheck --base origin/main`으로 돌려 `main` 이후 바뀐 증빙의 `--format`만 본다(기본 기준 `origin/dev`로 돌리면 바뀐 것이 없어 아무것도 검사하지 않는다).
 - 이슈를 손으로 닫지 않는다(예외: 저장소 배정 시 10-1절 전환 5단계). `check_evidence`는 GitHub를 조회하지 않으므로, 손으로 닫힌 태스크 이슈는 INT-11 #11에서 닫힌 태스크 이슈 목록(`gh issue list --state closed --label type:task`)과 `check_evidence --all --until` 통과 목록을 대조해 찾는다.
