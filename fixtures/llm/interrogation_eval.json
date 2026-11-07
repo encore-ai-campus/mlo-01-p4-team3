@@ -1,0 +1,3013 @@
+{
+  "bundle": "fixtures/content_min/bundle.json",
+  "cases": [
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_001",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "나무꾼",
+          "훈장",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 한밤엔 집에 있었소.",
+        "fallback_text": "2일째 밤 한밤엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_001",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_001",
+        "state_version": 1
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_002",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "과부",
+          "주모",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 우물가에 있었소.",
+        "fallback_text": "1일째 밤 초저녁엔 우물가에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_002",
+        "npc_id": "boy",
+        "persona": "아이. 말투: 어린아이 말투",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_002",
+        "state_version": 2
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_003",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "포수",
+          "머슴",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 우물가에 있었소.",
+        "fallback_text": "그날 초저녁엔 우물가에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_003",
+        "npc_id": "boy",
+        "persona": "아이. 말투: 어린아이 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_003",
+        "state_version": 3
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_004",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "과부",
+          "머슴",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 주막에 있었소.",
+        "fallback_text": "1일째 밤 초저녁엔 주막에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_004",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_004",
+        "state_version": 4
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_005",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "과부",
+          "주모",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 집에 있었소.",
+        "fallback_text": "그날 한밤엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_005",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_005",
+        "state_version": 5
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_006",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "포수",
+          "머슴",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+        "fallback_text": "그날 한밤엔 우물가에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_006",
+        "npc_id": "meosum",
+        "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_006",
+        "state_version": 6
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_007",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "포수",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 집에 있었소.",
+        "fallback_text": "그날 한밤엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_007",
+        "npc_id": "hunter",
+        "persona": "포수. 말투: 말수 적음",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_007",
+        "state_version": 7
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_008",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "훈장",
+          "주모",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_008",
+        "npc_id": "meosum",
+        "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_008",
+        "state_version": 8
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_009",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "훈장",
+          "머슴",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 서낭당에 있었소.",
+        "fallback_text": "그날 한밤엔 서낭당에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_009",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_009",
+        "state_version": 9
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_010",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "과부",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 주막에 있었소.",
+        "fallback_text": "그날 초저녁엔 주막에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_010",
+        "npc_id": "meosum",
+        "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_010",
+        "state_version": 10
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_011",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "과부",
+          "훈장",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 집에 있었소.",
+        "fallback_text": "1일째 밤 초저녁엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_011",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_011",
+        "state_version": 11
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_012",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "퇴기",
+          "과부",
+          "훈장",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 서낭당에 있었소.",
+        "fallback_text": "그날 한밤엔 서낭당에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_012",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_012",
+        "state_version": 12
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_013",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "훈장",
+          "포수",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_013",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_013",
+        "state_version": 13
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_014",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "나무꾼",
+          "과부",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_014",
+        "npc_id": "monk",
+        "persona": "탁발승. 말투: 합장하며 느린 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_014",
+        "state_version": 14
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_015",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "과부",
+          "훈장",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 주막에 있었소.",
+        "fallback_text": "1일째 밤 초저녁엔 주막에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_015",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_015",
+        "state_version": 15
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_016",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "과부",
+          "훈장",
+          "포수",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+        "fallback_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_016",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_016",
+        "state_version": 16
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_017",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "퇴기",
+          "과부",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 서낭당에 있었소.",
+        "fallback_text": "그날 한밤엔 서낭당에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_017",
+        "npc_id": "jumo",
+        "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_017",
+        "state_version": 17
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_018",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "과부",
+          "훈장",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 한밤엔 집에 있었소.",
+        "fallback_text": "2일째 밤 한밤엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_018",
+        "npc_id": "boy",
+        "persona": "아이. 말투: 어린아이 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_018",
+        "state_version": 18
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_019",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "훈장",
+          "주모",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 초저녁엔 주막에 있었소.",
+        "fallback_text": "3일째 밤 초저녁엔 주막에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_019",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_019",
+        "state_version": 19
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "마을 어귀"
+      ],
+      "case_id": "ev_020",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "훈장",
+          "포수",
+          "주모",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 마을 어귀에 있었소.",
+        "fallback_text": "그날 한밤엔 마을 어귀에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_020",
+        "npc_id": "hunter",
+        "persona": "포수. 말투: 말수 적음",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_020",
+        "state_version": 20
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_021",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "과부",
+          "훈장",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 우물가에 있었소.",
+        "fallback_text": "그날 초저녁엔 우물가에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_021",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_021",
+        "state_version": 21
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_022",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "과부",
+          "훈장",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 집에 있었소.",
+        "fallback_text": "그날 한밤엔 집에 있었소. 그러는 무당 양반은 어디 있었소?",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_022",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_022",
+        "state_version": 22
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_023",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "포수",
+          "머슴",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 한밤엔 집에 있었소.",
+        "fallback_text": "3일째 밤 한밤엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_023",
+        "npc_id": "monk",
+        "persona": "탁발승. 말투: 합장하며 느린 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_023",
+        "state_version": 23
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_024",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "퇴기",
+          "훈장",
+          "주모",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 서낭당에 있었소.",
+        "fallback_text": "그날 한밤엔 서낭당에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_024",
+        "npc_id": "monk",
+        "persona": "탁발승. 말투: 합장하며 느린 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_024",
+        "state_version": 24
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_025",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "과부",
+          "훈장",
+          "주모",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_025",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_025",
+        "state_version": 25
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_026",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "과부",
+          "포수",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 우물가에 있었소.",
+        "fallback_text": "그날 초저녁엔 우물가에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_026",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_026",
+        "state_version": 26
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "마을 어귀"
+      ],
+      "case_id": "ev_027",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "주모",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 마을 어귀에 있었소.",
+        "fallback_text": "1일째 밤 초저녁엔 마을 어귀에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_027",
+        "npc_id": "yakcho",
+        "persona": "약초꾼. 말투: 느릿한 노인 말투",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_027",
+        "state_version": 27
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_028",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "훈장",
+          "포수",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 한밤엔 주막에 있었소.",
+        "fallback_text": "1일째 밤 한밤엔 주막에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_028",
+        "npc_id": "gisaeng",
+        "persona": "퇴기. 말투: 능청스러운 말투",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_028",
+        "state_version": 28
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_029",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "주모",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 우물가에 있었소.",
+        "fallback_text": "1일째 밤 초저녁엔 우물가에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_029",
+        "npc_id": "jumo",
+        "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_029",
+        "state_version": 29
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_030",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "과부",
+          "훈장",
+          "주모",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_030",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_030",
+        "state_version": 30
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_031",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "퇴기",
+          "과부",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 집에 있었소.",
+        "fallback_text": "그날 한밤엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_031",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_031",
+        "state_version": 31
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_032",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "나무꾼",
+          "과부",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 초저녁엔 집에 있었소.",
+        "fallback_text": "3일째 밤 초저녁엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_032",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_032",
+        "state_version": 32
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_033",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "퇴기",
+          "포수",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_033",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_033",
+        "state_version": 33
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_034",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "과부",
+          "포수",
+          "주모",
+          "머슴",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 한밤엔 집에 있었소.",
+        "fallback_text": "1일째 밤 한밤엔 집에 있었소. 그러는 무당 양반은 어디 있었소?",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_034",
+        "npc_id": "hunter",
+        "persona": "포수. 말투: 말수 적음",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_034",
+        "state_version": 34
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_035",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "훈장",
+          "주모",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 한밤엔 서낭당에 있었소.",
+        "fallback_text": "2일째 밤 한밤엔 서낭당에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_035",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_035",
+        "state_version": 35
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_036",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "나무꾼",
+          "포수",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 집에 있었소.",
+        "fallback_text": "그날 한밤엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_036",
+        "npc_id": "boy",
+        "persona": "아이. 말투: 어린아이 말투",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_036",
+        "state_version": 36
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_037",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "과부",
+          "훈장",
+          "주모",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 초저녁엔 우물가에 있었소.",
+        "fallback_text": "2일째 밤 초저녁엔 우물가에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_037",
+        "npc_id": "jumo",
+        "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_037",
+        "state_version": 37
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_038",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "과부",
+          "포수",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 한밤엔 집에 있었소.",
+        "fallback_text": "2일째 밤 한밤엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_038",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_038",
+        "state_version": 38
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_039",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "과부",
+          "훈장",
+          "포수"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 집에 있었소.",
+        "fallback_text": "그날 한밤엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_039",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_039",
+        "state_version": 39
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_040",
+      "kind": "whereabouts",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "퇴기",
+          "머슴",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 초저녁엔 서낭당에 있었소.",
+        "fallback_text": "3일째 밤 초저녁엔 서낭당에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_040",
+        "npc_id": "monk",
+        "persona": "탁발승. 말투: 합장하며 느린 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_040",
+        "state_version": 40
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_041",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "훈장",
+          "주모",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+        "fallback_text": "그날 한밤엔 우물가에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_041",
+        "npc_id": "gisaeng",
+        "persona": "퇴기. 말투: 능청스러운 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_041",
+        "state_version": 41
+      },
+      "secret_id": "tryst"
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_042",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "훈장",
+          "포수",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_042",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_042",
+        "state_version": 42
+      },
+      "secret_id": "letter"
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_043",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "포수",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 한밤엔 집에 있었소.",
+        "fallback_text": "3일째 밤 한밤엔 집에 있었소. 그러는 무당 양반은 어디 있었소?",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_043",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_043",
+        "state_version": 43
+      },
+      "secret_id": "gambling"
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_044",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "퇴기",
+          "과부",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 초저녁엔 주막에 있었소.",
+        "fallback_text": "3일째 밤 초저녁엔 주막에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_044",
+        "npc_id": "boy",
+        "persona": "아이. 말투: 어린아이 말투",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_044",
+        "state_version": 44
+      },
+      "secret_id": "grain"
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_045",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "과부",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 서낭당에 있었소.",
+        "fallback_text": "그날 초저녁엔 서낭당에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_045",
+        "npc_id": "yakcho",
+        "persona": "약초꾼. 말투: 느릿한 노인 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_045",
+        "state_version": 45
+      },
+      "secret_id": "taboo_herb"
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_046",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "퇴기",
+          "과부",
+          "훈장",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+        "fallback_text": "그날 한밤엔 우물가에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_046",
+        "npc_id": "jumo",
+        "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_046",
+        "state_version": 46
+      },
+      "secret_id": "tryst"
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_047",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "주모",
+          "머슴",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 초저녁엔 서낭당에 있었소.",
+        "fallback_text": "2일째 밤 초저녁엔 서낭당에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_047",
+        "npc_id": "monk",
+        "persona": "탁발승. 말투: 합장하며 느린 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_047",
+        "state_version": 47
+      },
+      "secret_id": "taboo_herb"
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_048",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "나무꾼",
+          "주모",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 주막에 있었소.",
+        "fallback_text": "그날 초저녁엔 주막에 있었소. 그러는 무당 양반은 어디 있었소?",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_048",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_048",
+        "state_version": 48
+      },
+      "secret_id": "grain"
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_049",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "과부",
+          "훈장",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 집에 있었소.",
+        "fallback_text": "그날 한밤엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_049",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_049",
+        "state_version": 49
+      },
+      "secret_id": "gambling"
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_050",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "퇴기",
+          "포수",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 서낭당에 있었소.",
+        "fallback_text": "그날 초저녁엔 서낭당에 있었소. 그러는 무당 양반은 어디 있었소?",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_050",
+        "npc_id": "hunter",
+        "persona": "포수. 말투: 말수 적음",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_050",
+        "state_version": 50
+      },
+      "secret_id": "taboo_herb"
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_051",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "퇴기",
+          "과부",
+          "포수",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+        "fallback_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_051",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_051",
+        "state_version": 51
+      },
+      "secret_id": "tryst"
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_052",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "과부",
+          "훈장",
+          "포수",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 한밤엔 우물가에 있었소.",
+        "fallback_text": "1일째 밤 한밤엔 우물가에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_052",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_052",
+        "state_version": 52
+      },
+      "secret_id": "tryst"
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_053",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "과부",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 한밤엔 우물가에 있었소.",
+        "fallback_text": "2일째 밤 한밤엔 우물가에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_053",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_053",
+        "state_version": 53
+      },
+      "secret_id": "tryst"
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_054",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "훈장",
+          "머슴",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 주막에 있었소.",
+        "fallback_text": "그날 초저녁엔 주막에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_054",
+        "npc_id": "boy",
+        "persona": "아이. 말투: 어린아이 말투",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_054",
+        "state_version": 54
+      },
+      "secret_id": "grain"
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_055",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "과부",
+          "훈장",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_055",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_055",
+        "state_version": 55
+      },
+      "secret_id": "letter"
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_056",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "과부",
+          "훈장",
+          "포수",
+          "주모",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_056",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_056",
+        "state_version": 56
+      },
+      "secret_id": "drinking"
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_057",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "퇴기",
+          "훈장",
+          "포수",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 한밤엔 우물가에 있었소.",
+        "fallback_text": "3일째 밤 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_057",
+        "npc_id": "gisaeng",
+        "persona": "퇴기. 말투: 능청스러운 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_057",
+        "state_version": 57
+      },
+      "secret_id": "tryst"
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_058",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "과부",
+          "주모",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 집에 있었소.",
+        "fallback_text": "그날 한밤엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_058",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_058",
+        "state_version": 58
+      },
+      "secret_id": "gambling"
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_059",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "주모",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 한밤엔 집에 있었소.",
+        "fallback_text": "3일째 밤 한밤엔 집에 있었소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_059",
+        "npc_id": "meosum",
+        "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_059",
+        "state_version": 59
+      },
+      "secret_id": "gambling"
+    },
+    {
+      "allowed_places": [
+        "집"
+      ],
+      "case_id": "ev_060",
+      "kind": "false_alibi",
+      "request": {
+        "allowed_names": [
+          "퇴기",
+          "과부",
+          "훈장",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 집에 있었소.",
+        "fallback_text": "그날 초저녁엔 집에 있었소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_060",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_060",
+        "state_version": 60
+      },
+      "secret_id": "letter"
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_061",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "머슴",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 주막에서 머슴을 봤소.",
+        "fallback_text": "1일째 밤 초저녁엔 주막에서 머슴을 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_061",
+        "npc_id": "gisaeng",
+        "persona": "퇴기. 말투: 능청스러운 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_061",
+        "state_version": 61
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_062",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "과부",
+          "훈장",
+          "주모",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 주막에서 주모를 봤소.",
+        "fallback_text": "1일째 밤 초저녁엔 주막에서 주모를 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_062",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_062",
+        "state_version": 62
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "마을 어귀"
+      ],
+      "case_id": "ev_063",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "퇴기",
+          "과부",
+          "포수",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 마을 어귀에서 포수를 봤소.",
+        "fallback_text": "그날 초저녁엔 마을 어귀에서 포수를 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_063",
+        "npc_id": "monk",
+        "persona": "탁발승. 말투: 합장하며 느린 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_063",
+        "state_version": 63
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_064",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "과부",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 주막에서 약초꾼을 봤소.",
+        "fallback_text": "그날 한밤엔 주막에서 약초꾼을 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_064",
+        "npc_id": "meosum",
+        "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_064",
+        "state_version": 64
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_065",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "퇴기",
+          "훈장",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 주막에서 아이를 봤소.",
+        "fallback_text": "그날 한밤엔 주막에서 아이를 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_065",
+        "npc_id": "meosum",
+        "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_065",
+        "state_version": 65
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_066",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "훈장",
+          "주모",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 우물가에서 주모를 봤소.",
+        "fallback_text": "그날 한밤엔 우물가에서 주모를 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_066",
+        "npc_id": "yakcho",
+        "persona": "약초꾼. 말투: 느릿한 노인 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_066",
+        "state_version": 66
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_067",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "퇴기",
+          "주모",
+          "머슴",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 한밤엔 주막에서 머슴을 봤소.",
+        "fallback_text": "3일째 밤 한밤엔 주막에서 머슴을 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_067",
+        "npc_id": "yakcho",
+        "persona": "약초꾼. 말투: 느릿한 노인 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_067",
+        "state_version": 67
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_068",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "과부",
+          "훈장",
+          "주모",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 우물가에서 주모를 봤소.",
+        "fallback_text": "그날 한밤엔 우물가에서 주모를 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_068",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_068",
+        "state_version": 68
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_069",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "과부",
+          "주모",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 우물가에서 대장장이를 봤소.",
+        "fallback_text": "그날 초저녁엔 우물가에서 대장장이를 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_069",
+        "npc_id": "jumo",
+        "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_069",
+        "state_version": 69
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_070",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "과부",
+          "훈장",
+          "포수",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 한밤엔 주막에서 훈장을 봤소.",
+        "fallback_text": "2일째 밤 한밤엔 주막에서 훈장을 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_070",
+        "npc_id": "monk",
+        "persona": "탁발승. 말투: 합장하며 느린 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_070",
+        "state_version": 70
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_071",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "나무꾼",
+          "퇴기",
+          "머슴",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 초저녁엔 우물가에서 머슴을 봤소.",
+        "fallback_text": "3일째 밤 초저녁엔 우물가에서 머슴을 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_071",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_071",
+        "state_version": 71
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_072",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "포수",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 우물가에서 약초꾼을 봤소.",
+        "fallback_text": "그날 초저녁엔 우물가에서 약초꾼을 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_072",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_072",
+        "state_version": 72
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "마을 어귀"
+      ],
+      "case_id": "ev_073",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "훈장",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 초저녁엔 마을 어귀에서 훈장을 봤소.",
+        "fallback_text": "3일째 밤 초저녁엔 마을 어귀에서 훈장을 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_073",
+        "npc_id": "meosum",
+        "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_073",
+        "state_version": 73
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_074",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "훈장",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 초저녁엔 우물가에서 퇴기를 봤소.",
+        "fallback_text": "2일째 밤 초저녁엔 우물가에서 퇴기를 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_074",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_074",
+        "state_version": 74
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_075",
+      "kind": "sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "과부",
+          "훈장",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 주막에서 주모를 봤소.",
+        "fallback_text": "그날 한밤엔 주막에서 주모를 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_075",
+        "npc_id": "gisaeng",
+        "persona": "퇴기. 말투: 능청스러운 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_075",
+        "state_version": 75
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_076",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "퇴기",
+          "과부",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 서낭당에서 아무도 못 봤소.",
+        "fallback_text": "그날 한밤엔 서낭당에서 아무도 못 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_076",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_076",
+        "state_version": 76
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_077",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "포수",
+          "주모",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 초저녁엔 우물가에서 아무도 못 봤소.",
+        "fallback_text": "2일째 밤 초저녁엔 우물가에서 아무도 못 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_077",
+        "npc_id": "jumo",
+        "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_077",
+        "state_version": 77
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_078",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "나무꾼",
+          "과부",
+          "훈장"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 우물가에서 아무도 못 봤소.",
+        "fallback_text": "1일째 밤 초저녁엔 우물가에서 아무도 못 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_078",
+        "npc_id": "boy",
+        "persona": "아이. 말투: 어린아이 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_078",
+        "state_version": 78
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_079",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "과부",
+          "포수",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 우물가에서 아무도 못 봤소.",
+        "fallback_text": "그날 초저녁엔 우물가에서 아무도 못 봤소. 그러는 무당 양반은 어디 있었소?",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_079",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "counter",
+        "speech_id": "sp_ev_079",
+        "state_version": 79
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "마을 어귀"
+      ],
+      "case_id": "ev_080",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "과부",
+          "훈장",
+          "주모",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 마을 어귀에서 아무도 못 봤소.",
+        "fallback_text": "1일째 밤 초저녁엔 마을 어귀에서 아무도 못 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_080",
+        "npc_id": "monk",
+        "persona": "탁발승. 말투: 합장하며 느린 말투",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_080",
+        "state_version": 80
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_081",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "퇴기",
+          "포수",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 한밤엔 우물가에서 아무도 못 봤소.",
+        "fallback_text": "그날 한밤엔 우물가에서 아무도 못 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_081",
+        "npc_id": "jumo",
+        "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_081",
+        "state_version": 81
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_082",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "퇴기",
+          "과부",
+          "훈장",
+          "포수",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "그날 초저녁엔 서낭당에서 아무도 못 봤소.",
+        "fallback_text": "그날 초저녁엔 서낭당에서 아무도 못 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_082",
+        "npc_id": "gisaeng",
+        "persona": "퇴기. 말투: 능청스러운 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_082",
+        "state_version": 82
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_083",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "과부",
+          "포수",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "3일째 밤 한밤엔 서낭당에서 아무도 못 봤소.",
+        "fallback_text": "3일째 밤 한밤엔 서낭당에서 아무도 못 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_083",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_083",
+        "state_version": 83
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "우물가"
+      ],
+      "case_id": "ev_084",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "퇴기",
+          "포수",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "1일째 밤 초저녁엔 우물가에서 아무도 못 봤소.",
+        "fallback_text": "1일째 밤 초저녁엔 우물가에서 아무도 못 봤소. …더 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_084",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "evade",
+        "speech_id": "sp_ev_084",
+        "state_version": 84
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_085",
+      "kind": "non_sighting",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "과부",
+          "머슴",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "2일째 밤 초저녁엔 서낭당에서 아무도 못 봤소.",
+        "fallback_text": "2일째 밤 초저녁엔 서낭당에서 아무도 못 봤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_085",
+        "npc_id": "yakcho",
+        "persona": "약초꾼. 말투: 느릿한 노인 말투",
+        "priority": 0,
+        "reaction": "explain",
+        "speech_id": "sp_ev_085",
+        "state_version": 85
+      },
+      "secret_id": null
+    },
+    {
+      "allowed_places": [
+        "관아",
+        "우물가"
+      ],
+      "case_id": "ev_086",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "훈장",
+          "포수",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "우물가에서 관아로 보내는 편지를 몰래 전했소.",
+        "fallback_text": "우물가에서 관아로 보내는 편지를 몰래 전했소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_086",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_086",
+        "state_version": 86
+      },
+      "secret_id": "letter"
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_087",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "퇴기",
+          "과부",
+          "주모",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오.",
+        "fallback_text": "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_087",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_087",
+        "state_version": 87
+      },
+      "secret_id": "tryst"
+    },
+    {
+      "allowed_places": [
+        "곳간",
+        "마을 어귀"
+      ],
+      "case_id": "ev_088",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "과부",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…",
+        "fallback_text": "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_088",
+        "npc_id": "meosum",
+        "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_088",
+        "state_version": 88
+      },
+      "secret_id": "grain"
+    },
+    {
+      "allowed_places": [
+        "곳간",
+        "마을 어귀"
+      ],
+      "case_id": "ev_089",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "나무꾼",
+          "퇴기",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…",
+        "fallback_text": "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_089",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_089",
+        "state_version": 89
+      },
+      "secret_id": "grain"
+    },
+    {
+      "allowed_places": [
+        "골짜기"
+      ],
+      "case_id": "ev_090",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "훈장",
+          "포수",
+          "주모",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "산신이 금한 골짜기에서 약초를 캤소.",
+        "fallback_text": "산신이 금한 골짜기에서 약초를 캤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_090",
+        "npc_id": "hunter",
+        "persona": "포수. 말투: 말수 적음",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_090",
+        "state_version": 90
+      },
+      "secret_id": "taboo_herb"
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_091",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "나무꾼",
+          "과부",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오.",
+        "fallback_text": "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_091",
+        "npc_id": "jumo",
+        "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_091",
+        "state_version": 91
+      },
+      "secret_id": "tryst"
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_092",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "아이",
+          "포수",
+          "주모",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "제사 전날인데 주막에서 술을 마셨네.",
+        "fallback_text": "제사 전날인데 주막에서 술을 마셨네.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_092",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_092",
+        "state_version": 92
+      },
+      "secret_id": "drinking"
+    },
+    {
+      "allowed_places": [
+        "골짜기"
+      ],
+      "case_id": "ev_093",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "훈장",
+          "머슴",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "산신이 금한 골짜기에서 약초를 캤소.",
+        "fallback_text": "산신이 금한 골짜기에서 약초를 캤소.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_093",
+        "npc_id": "monk",
+        "persona": "탁발승. 말투: 합장하며 느린 말투",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_093",
+        "state_version": 93
+      },
+      "secret_id": "taboo_herb"
+    },
+    {
+      "allowed_places": [
+        "뒷방",
+        "주막"
+      ],
+      "case_id": "ev_094",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "퇴기",
+          "주모",
+          "머슴",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "…주막 뒷방에서 투전판에 끼었소. 식구들한테만은 말하지 마시오.",
+        "fallback_text": "…주막 뒷방에서 투전판에 끼었소. 식구들한테만은 말하지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_094",
+        "npc_id": "blacksmith",
+        "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_094",
+        "state_version": 94
+      },
+      "secret_id": "gambling"
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_095",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "나무꾼",
+          "과부",
+          "포수",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "제사 전날인데 주막에서 술을 마셨네.",
+        "fallback_text": "제사 전날인데 주막에서 술을 마셨네.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_095",
+        "npc_id": "hunter",
+        "persona": "포수. 말투: 말수 적음",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_095",
+        "state_version": 95
+      },
+      "secret_id": "drinking"
+    },
+    {
+      "allowed_places": [
+        "주막"
+      ],
+      "case_id": "ev_096",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "훈장",
+          "포수",
+          "주모",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "제사 전날인데 주막에서 술을 마셨네.",
+        "fallback_text": "제사 전날인데 주막에서 술을 마셨네.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_096",
+        "npc_id": "hunjang",
+        "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_096",
+        "state_version": 96
+      },
+      "secret_id": "drinking"
+    },
+    {
+      "allowed_places": [
+        "곳간",
+        "마을 어귀"
+      ],
+      "case_id": "ev_097",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "나무꾼",
+          "과부",
+          "포수",
+          "주모",
+          "머슴"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…",
+        "fallback_text": "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_097",
+        "npc_id": "meosum",
+        "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_097",
+        "state_version": 97
+      },
+      "secret_id": "grain"
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_098",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "아이",
+          "퇴기",
+          "과부",
+          "훈장",
+          "주모"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오.",
+        "fallback_text": "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_098",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_098",
+        "state_version": 98
+      },
+      "secret_id": "tryst"
+    },
+    {
+      "allowed_places": [
+        "곳간",
+        "마을 어귀"
+      ],
+      "case_id": "ev_099",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "나무꾼",
+          "주모",
+          "머슴",
+          "탁발승"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…",
+        "fallback_text": "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_099",
+        "npc_id": "ferryman",
+        "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_099",
+        "state_version": 99
+      },
+      "secret_id": "grain"
+    },
+    {
+      "allowed_places": [
+        "서낭당"
+      ],
+      "case_id": "ev_100",
+      "kind": "confession",
+      "request": {
+        "allowed_names": [
+          "대장장이",
+          "과부",
+          "주모",
+          "탁발승",
+          "약초꾼"
+        ],
+        "deadline_ms": 15000,
+        "fact_sentence": "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오.",
+        "fallback_text": "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오.",
+        "game_id": "g_eval_s1",
+        "job_id": "ev_100",
+        "npc_id": "gwabu",
+        "persona": "과부. 말투: 조용하고 단정한 말투",
+        "priority": 0,
+        "reaction": "confess",
+        "speech_id": "sp_ev_100",
+        "state_version": 100
+      },
+      "secret_id": "tryst"
+    }
+  ],
+  "content_version": "content-min-0.1",
+  "eval_version": "interrogation-eval-1",
+  "lexicon": {
+    "names": {
+      "과부": [
+        "과부",
+        "윗마을 과부",
+        "이씨 부인"
+      ],
+      "나무꾼": [
+        "나무꾼"
+      ],
+      "대장장이": [
+        "대장장이",
+        "대장간 최씨",
+        "최씨"
+      ],
+      "머슴": [
+        "머슴",
+        "돌쇠",
+        "머슴 돌쇠"
+      ],
+      "아이": [
+        "아이",
+        "막동이"
+      ],
+      "약초꾼": [
+        "약초꾼",
+        "약초꾼 영감",
+        "박 영감"
+      ],
+      "주모": [
+        "주모",
+        "주막댁",
+        "주모 아지매"
+      ],
+      "탁발승": [
+        "탁발승",
+        "스님"
+      ],
+      "퇴기": [
+        "퇴기",
+        "월향"
+      ],
+      "포수": [
+        "포수",
+        "사냥꾼"
+      ],
+      "훈장": [
+        "훈장",
+        "훈장님",
+        "훈장 어른",
+        "김 훈장"
+      ]
+    },
+    "places": {
+      "강가": [
+        "강가"
+      ],
+      "개울": [
+        "개울"
+      ],
+      "고갯길": [
+        "고갯길"
+      ],
+      "골짜기": [
+        "골짜기"
+      ],
+      "곳간": [
+        "곳간"
+      ],
+      "관아": [
+        "관아"
+      ],
+      "나루": [
+        "나루"
+      ],
+      "나루터": [
+        "나루터"
+      ],
+      "냇가": [
+        "냇가"
+      ],
+      "대장간": [
+        "대장간"
+      ],
+      "뒷방": [
+        "뒷방"
+      ],
+      "뒷산": [
+        "뒷산"
+      ],
+      "마을 어귀": [
+        "마을 어귀",
+        "어귀",
+        "동구 밖",
+        "동구"
+      ],
+      "방앗간": [
+        "방앗간"
+      ],
+      "산길": [
+        "산길"
+      ],
+      "서낭당": [
+        "서낭당",
+        "성황당"
+      ],
+      "우물가": [
+        "우물가",
+        "우물"
+      ],
+      "장터": [
+        "장터"
+      ],
+      "절간": [
+        "절간"
+      ],
+      "주막": [
+        "주막",
+        "주막집"
+      ],
+      "집": [
+        "집",
+        "제 집",
+        "우리 집",
+        "내 집"
+      ]
+    },
+    "roles": [
+      "창귀",
+      "씐 자",
+      "씐자",
+      "씌었",
+      "씐 놈",
+      "호랑이",
+      "범인",
+      "점괘",
+      "살인",
+      "죽였",
+      "죽인",
+      "죽이",
+      "홀렸",
+      "홀린",
+      "해쳤",
+      "해친",
+      "훔쳤",
+      "훔친",
+      "끌고 갔",
+      "데려갔"
+    ],
+    "times": {
+      "1일째": [
+        "1일째",
+        "첫날",
+        "첫째 날"
+      ],
+      "2일째": [
+        "2일째",
+        "이튿날",
+        "둘째 날"
+      ],
+      "3일째": [
+        "3일째",
+        "사흗날",
+        "셋째 날"
+      ],
+      "낮": [
+        "대낮",
+        "한낮",
+        "낮"
+      ],
+      "새벽": [
+        "새벽"
+      ],
+      "아침": [
+        "아침"
+      ],
+      "어제": [
+        "어제",
+        "어젯밤",
+        "간밤"
+      ],
+      "오늘": [
+        "오늘"
+      ],
+      "초저녁": [
+        "초저녁",
+        "해 질 녘",
+        "해질녘",
+        "땅거미"
+      ],
+      "한밤": [
+        "한밤",
+        "한밤중",
+        "야밤",
+        "깊은 밤",
+        "자정"
+      ]
+    }
+  },
+  "seed": 1
+}

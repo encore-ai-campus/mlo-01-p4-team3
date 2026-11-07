@@ -14,6 +14,7 @@
 | `content/intent/` | 데이터 | E | 의도 해석 학습 예시 `examples_v1.jsonl`(사람 작성 원본 + LLM 변형, 계보 `lineage_root`). 검사 규칙 `tools/intent_examples.py`, 테스트 `tests/intent/test_examples_v1.py`. 형식은 `docs/contracts/intent.md` |
 | `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E(규격·스타일 가이드·임시 파일·검사), D(실제 파일·생성 기록·`cutout.py`, A 흐름 `[에셋]` 태스크, 11/5 결정) | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
 | `llm/` | 인프라 | E | LLM 서비스, LangGraph(예정) |
+| `llm/prompt.py`, `validator.py`, `eval_set.py`, `mvp_metrics.py` | 도메인(규칙) | E | 추궁 프롬프트·생성 설정 `GEN_SETTINGS`, 검증기(사유 4종)와 폴백, 평가 세트 생성, `run_eval`과 MVP 지표. 표준 라이브러리와 `llm`만 import(`test_layers.py`). 서비스(E-08-09)·MVP 노트북(E-07-06)이 그대로 부른다 |
 | `llm/bench/` | 인프라(측정) | E | LLM 벤치마크 `run_bench.py`(llama.cpp, 모델 인스턴스 1개 + FIFO 큐로 지연·토큰/초·메모리 측정). 결과 `docs/reports/llm_bench.md` |
 | `tests/assets/` | 테스트 | E | 에셋 도구 테스트(규격표 해석, 임시 세트 생성·대조) |
 | `tests/llm/` | 테스트 | E | LLM 순수 함수 테스트(llama_cpp 없이 돈다) |
@@ -30,5 +31,6 @@
 | 콘텐츠 추가 | `docs/contracts/content.md` |
 | 의도 예시 추가·검사 | 데이터 `content/intent/examples_v1.jsonl`, 규칙 `tools/intent_examples.py`(집계 `python -m tools.intent_examples`), 형식 `docs/contracts/intent.md` |
 | LLM 모델·스레드·실행 방식 다시 재기 | 인프라 `llm/bench/run_bench.py`(`--help`), 결과·결정 `docs/reports/llm_bench.md` |
+| 추궁 답변 프롬프트·검증 규칙·지표 정의 바꾸기 | 도메인 `llm/prompt.py`·`llm/validator.py`·`llm/mvp_metrics.py`(테스트 `tests/llm/`). 평가 세트는 `python -m llm.eval_set --seed 1`로 다시 만들고, 측정은 `run_bench.py --eval`(검증 규칙만 바꿨으면 `--eval … --rejudge`로 저장된 기록 재판정) |
 | 사용자 테스트 일정·설문 문항·고정 시드 판 바꾸기 | `docs/user_test/plan.md`(동의 문구·수집 항목의 원본은 `docs/contracts/privacy.md`) |
 | 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/A_engine.md` `[에셋]`, 담당 D) |
