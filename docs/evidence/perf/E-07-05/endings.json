@@ -1,0 +1,36 @@
+{
+  "task": "E-07-05",
+  "commit": "71b7c1996c59be4e94c1aaf3ae00eca49ff8e3fb",
+  "generated_at": "2026-11-07T02:33:35Z",
+  "source": "python -m tools.check_endings --endings content/endings_v1.json --bundle content/bundle_v1.json --result",
+  "metrics": {
+    "clues_identity": {
+      "value": 2,
+      "unit": "개"
+    },
+    "clues_death": {
+      "value": 1,
+      "unit": "개"
+    },
+    "clues_target": {
+      "value": 1,
+      "unit": "개"
+    },
+    "endings": {
+      "value": 2,
+      "unit": "개"
+    },
+    "lines_exorcism": {
+      "value": 6,
+      "unit": "줄"
+    },
+    "lines_haewon_h1": {
+      "value": 8,
+      "unit": "줄"
+    },
+    "violations": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
