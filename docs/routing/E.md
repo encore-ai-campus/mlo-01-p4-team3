@@ -29,6 +29,7 @@
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 콘텐츠 추가 | `docs/contracts/content.md` |
+| 결말 문안 바꾸기 | 데이터 `content/endings_v1.json`, 검사 `python -m tools.check_endings`(규칙·조립 `tools/check_endings.py`), 형식 `docs/contracts/content.md` 1절 `Ending` |
 | 의도 예시 추가·검사 | 데이터 `content/intent/examples_v1.jsonl`, 규칙 `tools/intent_examples.py`(집계 `python -m tools.intent_examples`), 형식 `docs/contracts/intent.md` |
 | LLM 모델·스레드·실행 방식 다시 재기 | 인프라 `llm/bench/run_bench.py`(`--help`), 결과·결정 `docs/reports/llm_bench.md` |
 | 추궁 답변 프롬프트·검증 규칙·지표 정의 바꾸기 | 도메인 `llm/prompt.py`·`llm/validator.py`·`llm/mvp_metrics.py`(테스트 `tests/llm/`). 평가 세트는 `python -m llm.eval_set --seed 1`로 다시 만들고, 측정은 `run_bench.py --eval`(검증 규칙만 바꿨으면 `--eval … --rejudge`로 저장된 기록 재판정) |
