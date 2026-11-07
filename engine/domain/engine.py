@@ -30,6 +30,7 @@ from .observation import (   # candidate_pool·confessed_ids는 이전 위치(en
     snapshot_id_of,
 )
 from ..ports import EngineDeps, PlayerView, RenderRequest, TransitionResult
+from .npc.vote import FALLBACK_SUFFIX, VoteOutcome
 
 
 NIGHT0 = 0
@@ -463,12 +464,14 @@ def _policy_beliefs(policy, snap: ObservationSnapshot, beliefs):
 class _Tx:
     """명령 1개의 전이 작업 공간. 복사본(state, truth)만 고치고 이벤트·렌더 요청을 모은다."""
 
-    def __init__(self, state: GameState, truth: GameTruth, content: ContentBundle, policy: NpcPolicy):
+    def __init__(self, state: GameState, truth: GameTruth, content: ContentBundle, policy: NpcPolicy,
+                 suspicion=None):
         self.st = copy.deepcopy(state)
         self.tr = copy.deepcopy(truth)
         self.st.state_version = state.state_version + 1
         self.content = content
         self.policy = policy
+        self.suspicion = suspicion                      # 의심 모델 포트(EngineDeps.suspicion). 없으면 규칙 투표만
         self.events: list[DomainEvent] = []
         self.renders: list[RenderRequest] = []
         self.chars = {c.npc_id: c for c in content.characters}
@@ -526,7 +529,10 @@ class _Tx:
     # ---- NPC 결정 지점: 관측 투영 → 믿음 갱신 → 행동 선택(A-06-02)
     def decide(self, npc: str, legal_kinds: list[CommandKind], choose) -> Decision:
         """NPC 결정 1회. 스냅샷을 찍어 믿음을 갱신하고 `observation`을 낸 뒤, 정책(`choose(스냅샷)`)의 결정을
-        같은 snapshot_id로 `decision`에 남긴다. 정책은 스냅샷만 받는다(진실·다른 NPC 상태 없음)."""
+        같은 snapshot_id로 `decision`에 남긴다. 정책은 스냅샷만 받는다(진실·다른 NPC 상태 없음).
+
+        choose가 `VoteOutcome`(의심 모델 투표, A-07-02)을 내고 폴백이었으면 policy_version에 `-fallback`을 붙인다.
+        """
         st = self.st
         sid = snapshot_id_of(st.meta.game_id, st.state_version, self.n_obs, npc)
         self.n_obs += 1
@@ -535,10 +541,14 @@ class _Tx:
         st.npcs[npc].beliefs = beliefs
         self.emit(EventType.OBSERVATION, observation_payload(snap))
         d = choose(snap)
+        suffix = ""
+        if isinstance(d, VoteOutcome):
+            suffix = FALLBACK_SUFFIX if d.fallback is not None else ""
+            d = d.decision
         if not isinstance(d, Decision):
             raise ValueError(f"NPC 정책이 Decision이 아닌 값을 냄: {npc} {d!r}")
         kind, target = _kind_target(d.value)
-        version = st.meta.npc_policy_versions.get(npc) or getattr(self.policy, "version", "unknown")
+        version = (st.meta.npc_policy_versions.get(npc) or getattr(self.policy, "version", "unknown")) + suffix
         self.emit(EventType.DECISION, decision_payload(npc, sid, kind, target, d, version))
         return d
 
@@ -711,11 +721,18 @@ class _Tx:
             if npc == PLAYER_ID:
                 continue
             rng = self.rng(f"vote:{round_}:{npc}")
-            t = self.decide(npc, [CommandKind.VOTE], lambda o: self.policy.vote(o, list(candidates), rng)).value
+            t = self.decide(npc, [CommandKind.VOTE], lambda o: self.policy_vote(o, list(candidates), rng)).value
             if t == npc or t not in candidates:
                 raise ValueError(f"NPC 정책이 불법 표를 냄: {npc} -> {t}")
             out[npc] = t
         return out
+
+    def policy_vote(self, obs: ObservationSnapshot, candidates: list[str], rng: random.Random):
+        """정책에 `vote_with_model`이 있고 의심 모델이 주어졌으면 투표 3층(A-07-02), 아니면 `vote`."""
+        with_model = getattr(self.policy, "vote_with_model", None)
+        if with_model is None or self.suspicion is None:
+            return self.policy.vote(obs, candidates, rng)
+        return with_model(obs, candidates, rng, self.suspicion)
 
     def start_vote(self) -> None:
         st = self.st
@@ -1028,7 +1045,7 @@ class PaldoEngine:
         bad = validate_command(state, truth, env)
         if bad is not None:
             return TransitionResult(False, None, None, [], reject=bad[0], reject_detail=bad[1])
-        tx = _Tx(state, truth, deps.content, self.policy)
+        tx = _Tx(state, truth, deps.content, self.policy, getattr(deps, "suspicion", None))
         cmd = env.command
         k = cmd.kind
         if k is CommandKind.ADVANCE:
