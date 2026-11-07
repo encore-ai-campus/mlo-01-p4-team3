@@ -10,6 +10,7 @@ NPC 추궁 답변의 말투를 바꾸는 로컬 LLM(llama.cpp, CPU 전용)을 �
 - 검증기 `llm/validator.py`(E-07-07): 생성 대사를 받아들일지 판정한다. 거부 사유 4종(`format_length`, `forbidden_entity`, `added_assertion`, `fact_changed`)이고, 거부하면 엔진의 사실 문장을 그대로 쓴다(폴백).
 - 평가 세트 생성 `llm/eval_set.py`(공용 픽스처로 추궁 요청 100건 `fixtures/llm/interrogation_eval.json`)와 지표 계산 `llm/mvp_metrics.py`(성공률·사유 분포·단계별 지연·일관성. 모델 호출은 바깥에서 주입).
 - 벤치마크 `llm/bench/run_bench.py`(E-06-07, E-07-07에서 실제 프롬프트·검증기와 `--eval` 평가 모드 연결). 벤치마크 모드는 추궁 요청 픽스처(`fixtures/llm/interrogation_requests.json`)로 후보 모델마다 지연·생성 토큰/초·메모리를 재고, 결과 JSON을 증빙(`docs/evidence/perf/E-06-07/`)에 쓴다. HTTP 서비스(`llm/service/`)와 LangGraph 흐름은 E-08-09에서 들어온다(지금은 빈 패키지).
+- 의도 예시 변형(E-06-02 2단계): 규칙 `llm/intent_variants.py`(프롬프트·출력 파싱·보존 검사, 표준 라이브러리만)와 생성·반영 `llm/bench/gen_intent_variants.py`(llama.cpp 배치 → `out/intent_variants/`, 걸러서 `content/intent/examples_v1.jsonl`에 `generated`로 반영, D 검수 시트 `docs/evidence/perf/E-06-02/variants_review.csv`). 의도 해석기(D) 학습 데이터를 늘리는 오프라인 작업이고 게임 런타임과 관계없다.
 
 계층: `prompt.py`·`validator.py`·`mvp_metrics.py`·`eval_set.py`는 규칙(순수 함수, 표준 라이브러리만, 단독 테스트 `tests/llm/`)이고, llama.cpp를 부르는 쪽(지금은 벤치마크, 뒤에 오프라인 사전 생성 E-10-13. 서비스 E-08-09는 11/7 P-31 (나)로 취소)이 인프라다. 의존 방향은 인프라 → 규칙이다. 벤치마크는 인프라(측정)이고, 파일 안에서는 위쪽 순수 함수(`percentile`·`build_messages`·`strip_think`·`validate_output`·`parse_buffer_sizes`·`summarize`, 단독 테스트) / 아래쪽 인프라(`BenchModel` llama.cpp 호출, `process_memory_mib`, `write_outputs`·`import_received` 결과 기록) / `main`(인자 파싱과 흐름 조립)으로 나눈다. `llama_cpp`·`jinja2`는 함수 안에서 늦게 import해, CI `core`는 이 패키지 없이 순수 함수 테스트(`tests/llm/test_run_bench.py`)를 돌린다.
 
@@ -34,6 +35,8 @@ python -m llm.bench.run_bench --model <gguf> --label kanana2_3b --eval fixtures/
 python -m llm.bench.run_bench --model <gguf> --label kanana2_3b --eval fixtures/llm/interrogation_eval.json --rejudge   # 기록 재판정(검증 규칙만 바뀔 때)
 python -m llm.eval_set --seed 1                                                                              # 평가 세트 다시 만들기(같은 시드 = 같은 바이트)
 python -m unittest discover -s tests/llm -t .                                                               # 순수 함수 테스트(llama_cpp 없이)
+python -m llm.bench.gen_intent_variants generate --model <gguf> --threads 8 --seed 0                         # 의도 예시 변형 후보(E-06-02, 끊기면 이어서). 모델 경로는 PALDO_LLM_MODEL로도
+python -m llm.bench.gen_intent_variants apply                                                                # 후보를 걸러 examples_v1.jsonl에 generated로 반영 + D 검수 시트
 ```
 
 벤치마크 모드 결과 이름은 `<stage>_<label>_<mode>_t<threads>_c<concurrency>[_<tag>]`이고, 기본은 `docs/evidence/perf/E-06-07/<이름>.json`에 쓴다. 평가 모드는 `docs/evidence/perf/E-07-07/`, 요청별 기록은 `out/perf/E-07-07/`(커밋 제외)에 쓴다. 로그는 `out/logs/llm_bench.jsonl`(커밋 제외).
@@ -56,6 +59,7 @@ python -m unittest discover -s tests/llm -t .                                   
 | `--rejudge` | 꺼짐 | 모델 없이 요청 기록을 지금 검증기로 다시 판정 | 프롬프트가 바뀌었으면 쓰지 않고 다시 잰다 |
 | `PROMPT_VERSION`(`llm/prompt.py`) | `interrogate-v8` | 프롬프트 버전(요청 기록에 남는다) | 바꾸면 평가를 다시 잰다 |
 | `GEN_SETTINGS`(`llm/prompt.py`) | temperature 0.7, top_p 0.8, top_k 20, max_tokens 128, n_ctx 1024, n_threads 8 | 생성 설정(평가 모드 기본값) | - |
+| `PROMPT_VERSION` / `GEN_SETTINGS`(`llm/intent_variants.py`) | `intent-variants-v1` / temperature 0.9, top_p 0.9, top_k 40, max_tokens 160, n_ctx 1024 | 의도 예시 변형 생성(E-06-02). 다양성을 위해 추궁보다 온도가 높다 | 바꾸면 후보를 다시 만들고 D 검수도 다시 받는다 |
 | `MAX_CHARS` / `MAX_SENTENCES` / `MAX_ADDED_HANGUL`(`llm/validator.py`) | 120 / 4 / 25 | 생성 대사 길이·문장 수·사실 문장 대비 덧붙인 한글 수 상한 | 낮추면 폴백이 늘고, 높이면 덧붙임이 길어진다 |
 
 ## 한계
@@ -75,3 +79,4 @@ python -m unittest discover -s tests/llm -t .                                   
 | E-06-07 | 11/6 | 처음 작성: 벤치마크 `llm/bench/run_bench.py`(모델 1개 + FIFO 큐, 큐 대기·프롬프트 처리·생성·검증 분리 측정, 버퍼 메모리, 다른 기기 결과 받기)와 잠정 결정(Kanana-2-3B Q4_K_M, Windows 직접, 스레드 8, RAM 6 GB, 동시 4건 p95 14,419 ms) |
 | E-07-07 | 11/7 | 추궁 프롬프트 `llm/prompt.py`(interrogate-v8, 말투 계열별 예시·끝 어미), 검증기 `llm/validator.py`(거부 사유 4종, 폴백), 평가 세트 `llm/eval_set.py`(100건)·지표 `llm/mvp_metrics.py`, 벤치마크 `--eval`·`--rejudge`·일관성 모드. 평가 성공 86 %, 전체 p95 5,575 ms |
 | E-07-06 | 11/7 | MVP 제출 묶음 `tools/build_llm_bundle.py`(zip 4개 파일, 결정적)과 코랩 노트북 `llm/colab/paldo_llm_mvp.ipynb`(첫 셀 Powered by Kanana 표기, T4 GPU 경로) 추가. llm 규칙 코드는 바꾸지 않음. 코랩 T4 평가 성공 93 %, 전체 p95 478 ms |
+| E-06-02 | 11/7 | 의도 예시 변형 규칙 `llm/intent_variants.py`(프롬프트 `intent-variants-v1`, 보존 검사 사유 12종)와 생성·반영 `llm/bench/gen_intent_variants.py`(`generate`·`apply`), 테스트 `tests/llm/test_intent_variants.py`, 계층 검사 대상에 추가 |

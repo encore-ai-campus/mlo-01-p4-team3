@@ -1,0 +1,140 @@
+{
+  "task": "E-06-02",
+  "commit": "edae77caaa794eb2009bd6d66e5d1d8eb432b0c6",
+  "generated_at": "2026-11-07T12:47:42Z",
+  "source": "python -m llm.bench.gen_intent_variants apply",
+  "metrics": {
+    "roots": {
+      "value": 280,
+      "unit": "개"
+    },
+    "roots_generated": {
+      "value": 280,
+      "unit": "개"
+    },
+    "candidates": {
+      "value": 711,
+      "unit": "개"
+    },
+    "accepted": {
+      "value": 252,
+      "unit": "개"
+    },
+    "rejected": {
+      "value": 459,
+      "unit": "개"
+    },
+    "generation_total_s": {
+      "value": 2799,
+      "unit": "s"
+    },
+    "generation_p50_ms": {
+      "value": 9730,
+      "unit": "ms"
+    },
+    "rejected_empty": {
+      "value": 0,
+      "unit": "개"
+    },
+    "rejected_same_as_root": {
+      "value": 64,
+      "unit": "개"
+    },
+    "rejected_prompt_copy": {
+      "value": 15,
+      "unit": "개"
+    },
+    "rejected_too_long": {
+      "value": 1,
+      "unit": "개"
+    },
+    "rejected_placeholder": {
+      "value": 290,
+      "unit": "개"
+    },
+    "rejected_form": {
+      "value": 4,
+      "unit": "개"
+    },
+    "rejected_negation": {
+      "value": 31,
+      "unit": "개"
+    },
+    "rejected_foreign": {
+      "value": 0,
+      "unit": "개"
+    },
+    "rejected_register": {
+      "value": 0,
+      "unit": "개"
+    },
+    "rejected_new_entity": {
+      "value": 6,
+      "unit": "개"
+    },
+    "rejected_new_suspicion": {
+      "value": 5,
+      "unit": "개"
+    },
+    "rejected_divination": {
+      "value": 24,
+      "unit": "개"
+    },
+    "rejected_duplicate": {
+      "value": 19,
+      "unit": "개"
+    },
+    "rejected_masked": {
+      "value": 0,
+      "unit": "개"
+    },
+    "rejected_over_limit": {
+      "value": 0,
+      "unit": "개"
+    },
+    "accepted_suspect": {
+      "value": 48,
+      "unit": "개"
+    },
+    "accepted_defend": {
+      "value": 50,
+      "unit": "개"
+    },
+    "accepted_point_contradiction": {
+      "value": 17,
+      "unit": "개"
+    },
+    "accepted_explain": {
+      "value": 17,
+      "unit": "개"
+    },
+    "accepted_silence": {
+      "value": 11,
+      "unit": "개"
+    },
+    "accepted_reveal_divination": {
+      "value": 20,
+      "unit": "개"
+    },
+    "accepted_interrogate_whereabouts": {
+      "value": 24,
+      "unit": "개"
+    },
+    "accepted_interrogate_contradiction": {
+      "value": 23,
+      "unit": "개"
+    },
+    "accepted_interrogate_suspicion_reason": {
+      "value": 20,
+      "unit": "개"
+    },
+    "accepted_unsupported": {
+      "value": 22,
+      "unit": "개"
+    },
+    "min_accepted_per_label": {
+      "value": 11,
+      "unit": "개"
+    }
+  }
+}
