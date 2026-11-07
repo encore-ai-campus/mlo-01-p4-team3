@@ -41,7 +41,7 @@
   {% if vm.speeches %}
     <h2>발언</h2>
     {% for speech in vm.speeches %}<p>{{ speech.speaker_name|display_name }}:
-      <span id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
+      <span id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}{% if speech.is_interrogation_answer %}<span class="line-attribution">Powered by Kanana</span>{% endif %}</span>
     </p>{% endfor %}
   {% endif %}
   {% if published_votes %}

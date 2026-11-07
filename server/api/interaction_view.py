@@ -50,7 +50,8 @@ def cards_context(output, view):
             "needs_confirmation": output.needs_confirmation}
 
 
-def line_context(game_id, output, speaker=""):
-    """폴링 조각은 공개 문장·발언 ID·작업 ID·완료 여부만 받는다."""
+def line_context(game_id, output, speaker="", is_interrogation_answer=False):
+    """공개 문장과 식별자·완료 여부·추궁 답변 표시 여부만 전달한다."""
     return {"line": {"game_id": game_id, "speech_id": output.speech_id, "job_id": output.job_id,
-                     "text": output.text, "final": output.final, "speaker": speaker}}
+                     "text": output.text, "final": output.final, "speaker": speaker,
+                     "is_interrogation_answer": is_interrogation_answer}}
