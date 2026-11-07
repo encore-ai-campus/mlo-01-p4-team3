@@ -44,3 +44,5 @@ dev `f24f6a8`의 엔진·에셋 갱신을 반영한 재검증도 같은 경로�
 고정 회차의 시작·이어 하기 URL은 그대로다. B-06-03의 `paldo_web/mongo.py`가 설치한 실제 저장소를 사용하면 서버 재시작 후 홈 → 같은 `GET /games/{id}`로 복원한다. 검증 명령과 연결 조건은 [서버 시험 안내](../server/tests/README.md#b-06-03-실제-mongo-게임회차-통합-시험)에 둔다.
 
 B-06-03의 `POST /games/{id}/commands` 저장 응답 유실은 서버에서 동일 저장을 한 번 재시도하고, 저장된 응답이 있으면 기존 JSON·htmx 응답 경로로 돌려준다. 클라이언트 재전송은 같은 `command_id`를 유지한다.
+
+B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 하기 → `POST /games`·`GET /games/{id}` 경로는 그대로다. 최신 dev에서 회차·소유자 가명·동의·광고 대응표·재접속 보존을 재검증했다. [증빙](../docs/evidence/B-06-03.md).
