@@ -25,3 +25,9 @@
 - 원인: Delta 4.4.1의 기본 jar는 Spark 4.2.0을 대상으로 빌드됐다(pom의 `spark-sql_2.13` 4.2.0). Delta는 Spark 버전별 jar(`delta-spark_4.1_2.13`, `delta-spark_4.2_2.13`)를 따로 낸다.
 - 대응: 같은 Delta 4.4.1의 Spark 4.1용 jar `io.delta:delta-spark_4.1_2.13:4.4.1`로 바꿔 다시 시험했다. 계약(`tech_stack.md`)에 jar 좌표를 적는 것은 PM 승인 뒤에 한다.
 - 결과: 기본 jar는 쓰기 0회 성공(실패 1회), Spark 4.1용 jar는 쓰기 2회·읽기(현재 11행, 버전 0은 10행) 성공, 약 30초. 증빙 [`docs/evidence/C-05-03.md`](../evidence/C-05-03.md)
+
+### C-06-02 공식 토픽과 아웃박스
+- 문제: ack 직후 발행 표시 실패 시 같은 ID가 재발행된다. 초기 시연 source가 엄격 계약에서 거절됐다.
+- 원인: Mongo와 Kafka는 한 분산 트랜잭션이 아니며 load_test는 source 종류가 아닌 별도 태그다.
+- 대응: ack 뒤 표시·실패 재시도, 소비 ID/hash 중복 제거, source=scripted와 load_test=true, 실행별 검증 컬렉션.
+- 결과: 실제 전송 10건·고의 중복 포함 수신 11건·고유 10건·미발행 0건. 증빙 [C-06-02](../evidence/C-06-02.md).

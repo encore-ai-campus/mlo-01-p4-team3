@@ -21,6 +21,7 @@
 
 | 하려는 일 | 볼 곳 |
 |---|---|
+| 공식 토픽·게임 Outbox 발행 | `pipeline/topics.yaml`, `pipeline/apply_topics.py`, `server/infra/outbox_publisher.py`, `pipeline/consumers/dedup.py`, `tests/infra/` |
 | 저장소나 Kafka 교체 | 인프라 `server/infra/`, `docs/contracts/ports.md` 2절 |
 | 공식 게임 토픽 bronze 적재·재처리 | `pipeline/README.md`, `pipeline/spark/ingest_bronze.py`, 계약 단위 테스트 `tests/contract/test_pipeline_bronze.py` |
 | 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |
