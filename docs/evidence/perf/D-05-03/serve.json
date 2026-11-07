@@ -1,0 +1,24 @@
+{
+  "task": "D-05-03",
+  "commit": "1952f35a08e3a53806d40dadfbafd5f385fa4d08",
+  "generated_at": "2026-11-07T08:24:34Z",
+  "source": "python -m tools.perf.ads_bench --n 200 --warmup 20",
+  "metrics": {
+    "serve_p50": {
+      "value": 49.1471,
+      "unit": "ms"
+    },
+    "serve_p95": {
+      "value": 71.0815,
+      "unit": "ms"
+    },
+    "serve_calls": {
+      "value": 200,
+      "unit": "회"
+    },
+    "filled_calls": {
+      "value": 200,
+      "unit": "회"
+    }
+  }
+}
