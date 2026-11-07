@@ -3,6 +3,7 @@
 - `parse_spec_md`: `docs/assets/spec.md` 본문 → `AssetSpec`
 - `expected_entries`: 규격 + 콘텐츠 ID 목록 → manifest 기대 항목
 - `reconcile`: 기대 항목 ↔ manifest ↔ 디스크 파일 대조(유형별 수, 누락, 남는 것, 초상-sprite 쌍 상태)
+- `map_regions`: 임시 지도 위 장소 아이콘 안내 좌표(정보 없는 균등 배치, E-08-07 6번)
 
 초상(portrait)은 같은 id의 sprite에서 인물별 크롭 위 y(`vn.portrait_top`)부터 512×512를 잘라 만든다(`derived_from: "sprite:<id>"`, 11/5 크로스체크 17).
 표정 변형(11/5 PM 결정, 크로스체크 19)은 id 접미사 `<인물 id>__<표정 id>`인 sprite·초상 항목이다. 평상시는 접미사 없는
@@ -62,6 +63,7 @@ class AssetEntry:
     derived_from: Optional[str] = None
     edited_from: Optional[str] = None      # 표정 변형 sprite의 기본 sprite(`sprite:<인물 id>`). 얼굴만 편집해 만든다
     edited_from_sha256: Optional[str] = None  # 실제 표정 sprite를 만들 때 쓴 기본 sprite 파일의 SHA-256(기본 교체 감지)
+    regions: Optional[tuple[tuple[str, tuple[int, int, int, int]], ...]] = None  # 지도만. (장소 id, (x, y, 가로, 세로))
 
     @property
     def key(self) -> tuple[str, str, Optional[tuple[int, int]]]:
@@ -80,6 +82,8 @@ class AssetEntry:
             d["edited_from"] = self.edited_from
         if self.edited_from_sha256 is not None:
             d["edited_from_sha256"] = self.edited_from_sha256
+        if self.regions is not None:
+            d["regions"] = {pid: list(box) for pid, box in self.regions}
         return d
 
 
@@ -241,11 +245,29 @@ def ad_entries(spec: AssetSpec, campaigns: Iterable[dict],
     return list(out.values())
 
 
+def map_regions(place_ids: Iterable[str], map_size: tuple[int, int],
+                icon_size: tuple[int, int]) -> tuple[tuple[str, tuple[int, int, int, int]], ...]:
+    """임시 지도의 장소 아이콘 안내 좌표. 장소 순서대로 가로 한 줄 균등 칸의 가운데, 세로 가운데에 아이콘 크기 상자.
+
+    위치에 게임 정보가 없다(장소 사이 거리·방향을 뜻하지 않는다, spec.md 2절). B-10-02가 아이콘을 놓을 자리다.
+    """
+    ids = list(place_ids)
+    if not ids:
+        return ()
+    (mw, mh), (iw, ih) = map_size, icon_size
+    cell = mw // len(ids)
+    if cell < iw or mh < ih:
+        raise SpecError(f"지도 {mw}x{mh}에 장소 {len(ids)}개의 {iw}x{ih} 아이콘이 들어가지 않음")
+    y = (mh - ih) // 2
+    return tuple((pid, (i * cell + (cell - iw) // 2, y, iw, ih)) for i, pid in enumerate(ids))
+
+
 def expected_entries(spec: AssetSpec, npc_ids: Iterable[str], place_ids: Iterable[str],
                      campaigns: Iterable[dict], slot_sizes: dict[str, tuple[int, int]],
                      slot_image_path: Callable[[str, str], str]) -> list[AssetEntry]:
     """규격 + 콘텐츠 ID 목록 → 정렬된 기대 항목. 키·경로·url 충돌이 있으면 SpecError."""
     entries: list[AssetEntry] = []
+    place_ids = list(place_ids)
     people = list(npc_ids) + list(MUDANG_VARIANT_IDS)
     unknown = [t for t in spec.expression_targets if t not in people]
     if unknown:
@@ -262,7 +284,8 @@ def expected_entries(spec: AssetSpec, npc_ids: Iterable[str], place_ids: Iterabl
     entries += [_simple_entry(spec, "mascot", m) for m in MASCOT_IDS]
     entries += [_simple_entry(spec, "place", p) for p in place_ids]
     entries += [_simple_entry(spec, "ui", i) for i in spec.ui_icon_ids]
-    entries += [_simple_entry(spec, "map", m) for m in MAP_IDS]
+    regions = map_regions(place_ids, spec.sizes["map"], spec.sizes["place"])
+    entries += [replace(_simple_entry(spec, "map", m), regions=regions) for m in MAP_IDS]
     entries += ad_entries(spec, campaigns, slot_sizes, slot_image_path)
     for attr in ("key", "path", "url"):
         seen: set = set()

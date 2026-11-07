@@ -46,6 +46,28 @@ class SessionAPI(TestCase):
         self.client.force_login(self.staff)
         self.assertEqual(self.client.post("/admin/sessions", self.form).status_code, 302)
 
+    def test_combined_rule_version_survives_registration_and_start(self):
+        """엔진의 규칙·결정 버전을 원문 그대로 회차와 판 메타에 고정한다."""
+        from engine.domain import params
+        self.form["rule_version"] = params.RULE_PARAMS_VERSION
+        self.register()
+        self.client.force_login(self.users[0])
+        response = self.client.post("/games", self.body, content_type="application/json")
+        self.assertEqual(response.status_code, 200, response.content)
+        state, _ = self.game.repository.load(response.json()["view"]["game_id"])
+        self.assertEqual(state.meta.rule_version, params.RULE_PARAMS_VERSION)
+        self.assertEqual(self.sessions.store.get("nov06")["versions"]["rule_version"], params.RULE_PARAMS_VERSION)
+
+    def test_version_validation_keeps_existing_limits(self):
+        """합성 규칙 버전 허용 뒤에도 공백·경로·길이·다른 버전 필드 검증을 유지한다."""
+        self.client.force_login(self.staff)
+        for key, value in (("rule_version", "rule-0.5+decision-1"), ("rule_version", "rule 0.5"), ("rule_version", "../rule/0.5"),
+                           ("rule_version", "a" * 81), ("rule_version", ""),
+                           ("engine_version", "engine+extra"), ("content_version", "content+extra")):
+            with self.subTest(key=key, value=value):
+                self.assertEqual(self.client.post("/admin/sessions", dict(self.form, **{key: value})).status_code, 400)
+        self.assertEqual(self.sessions.store.list_sessions(), [])
+
     def test_staff_auth_csrf_validation_and_immutable_sessions(self):
         """일반 참가자는 관리 불가이며 등록한 구성을 덮어쓰지 못한다."""
         self.assertEqual(self.client.get("/admin/sessions").status_code, 302)

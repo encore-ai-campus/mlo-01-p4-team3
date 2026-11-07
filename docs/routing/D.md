@@ -14,10 +14,10 @@
 | `engine/sim/` | 도메인 사용 | D | 플레이어 봇 4종(`bots.py`), GameEngine 포트 실행기(`runner.py`), 결과 지표 표(`report.py`). 결정 층 최적화는 A가 `engine/domain`에서 맡는다 |
 | `intent/`, `ml/` | 인프라(모델) | D | 의도 해석기, 씐 자 확률 모델(예정) |
 | `ads/domain/` | 광고 도메인 | D | 경매, 2등 가격, 예산 예약·확정·해제, 페이싱, CTR, 유효 판정, 대사, 지면 규격(`SLOT_SIZES`)(표준 라이브러리만) |
-| `ads/app/`, `ads/infra/`, `ads/web/` | 광고 응용, 인프라, 표현 | D | 요청·비콘·클릭 흐름, Django 뷰·admin. MySQL 원장·아웃박스·Kafka는 D-06-02 예정 |
+| `ads/app/`, `ads/infra/`, `ads/web/` | 광고 응용, 인프라, 표현 | D | 요청·비콘·클릭, Django 뷰·admin, MySQL 원장·판정·아웃박스, 별도 만료·Kafka 작업자 |
 | `ads/project/`, `ads/manage.py` | 광고 서비스 설정·진입점 | D | 게임 웹과 독립된 Django 설정·URL·WSGI |
 | `tests/ads/` | 서비스 테스트 | D | MySQL 캠페인·admin과 광고 HTTP·예산·판정 검증 |
-| `ads/testing/` | 테스트 지원 | D | `FakeAdProvider` |
+| `ads/testing/` | 테스트 지원 | D | `FakeAdProvider`, 운영 API를 실행하는 격리 합성 HTTP 시험 호스트 `traffic_server.py` |
 
 ## 작업별 위치
 
@@ -25,6 +25,9 @@
 |---|---|
 | 모델 교체·승격·롤백 | `docs/contracts/ml_lifecycle.md` |
 | 씐 자 모델 로컬 첫 학습·평가 | `ml/suspicion/features.py`(실제 엔진→TrainingRow), `train.py`(게임 분할·학습·MLflow), `evaluate.py`(softmax·지표), `tests/test_suspicion.py`, `docs/evidence/D-07-02.md` |
+| 학습 미사용 씐 자 전략 평가 | `ml/suspicion/strategies.py`(거짓 행적 유형 고정), `train.py --heldout-rows`(판·seed 분리 및 별도 지표) |
 | 플레이어 봇 실행·같은 시드 재현·지표 표·처리량 측정 | `engine/sim/`, CLI `tools/perf/sim_bench.py`, 테스트 `tests/sim/`, 증빙 `docs/evidence/D-06-01.md` |
 | 경매·과금·광고 판정 규칙 변경 | 광고 도메인 `ads/domain/`, `docs/contracts/ads.md` |
 | 광고 서버 실행·admin·HTTP 검사·지연 측정 | 표현 `ads/manage.py`·`ads/web/`, 응용 `ads/app/`, 설명 `docs/modules/ads.md`, 측정 `tools/perf/ads_bench.py` |
+| 광고 원장·만료·발행·환입 검증 | `ads/infra/`, `ads/manage.py ad_worker`, `tests/ads/`, 증빙 `docs/evidence/D-06-02.md` |
+| 합성 광고 HTTP 트래픽·피로·무효 클릭·재처리 검증 | `tools/ad_traffic_sim.py`, `ads/testing/traffic_server.py`, `tools/perf/ad_traffic_bench.py`, `tests/tools/test_ad_traffic_sim.py`, 설명 `docs/modules/ads.md` |

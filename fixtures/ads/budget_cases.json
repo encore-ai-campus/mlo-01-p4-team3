@@ -65,12 +65,14 @@
   },
   {
     "case_id": "reconcile_itemized",
-    "note": "건별 대사: 합계가 같아도 건별 불일치를 찾는다. Delta에만 있는 중복도 중복으로 센다",
+    "note": "건별 대사: 합계가 같아도 건별 불일치를 찾는다. Delta에만 있는 중복도 중복으로 센다. 원장은 원래 charge_id로 묶은 순액(원과금+환입)으로 비교한다(f: 환입으로 상계, Delta에 없음 = 일치, ads-0.6)",
     "ledger": {
       "a:click": 50000,
       "b:click": 75000,
       "c:click": 30000,
-      "e:click": 40000
+      "e:click": 40000,
+      "f:click": 20000,
+      "f:click:refund": -20000
     },
     "delta": {
       "a:click": [
@@ -102,7 +104,8 @@
       ],
       "amount_mismatch": [
         "e:click"
-      ]
+      ],
+      "orphan_refund": []
     }
   }
 ]

@@ -161,6 +161,45 @@ class Evaluation(unittest.TestCase):
 
 
 class Training(unittest.TestCase):
+    def test_heldout_requires_unseen_strategy_and_disjoint_games(self):
+        from ml.suspicion.train import validate_heldout
+        sink = ListEventSink()
+        run_games('base6', 1, 708, 'rule-v0', sink)
+        rows, _ = ft.engine_rows([serde.to_jsonable(e) for e in sink.items])
+        base = dict(npc_policy_version='rule-v0', rule_versions=['same-rule'], seeds=[708000000],
+                    content_versions=['same-content'], strategy_lie_type='unrefuted',
+                    strategy_reason_counts={'lie_unrefuted': 10, 'lie_routine': 0})
+        other = dict(base, strategy_lie_type='routine', seeds=[709000000],
+                     strategy_reason_counts={'lie_unrefuted': 0, 'lie_routine': 10})
+        fresh = [replace(r, game_id='new-game') for r in rows]
+        validate_heldout(rows, base, fresh, other)
+        for wrong_rows, wrong_meta in ((rows, other), (fresh, base),
+                                      (fresh, dict(other, seeds=base['seeds'])),
+                                      (fresh, dict(other, rule_versions=['changed-rule'])),
+                                      (fresh, dict(other, strategy_reason_counts={'lie_routine': 0})),
+                                      (fresh, dict(base, strategy_lie_type='routine'))):
+            with self.assertRaises(ValueError):
+                validate_heldout(rows, base, wrong_rows, wrong_meta)
+
+    def test_strategy_generator_selects_only_requested_lie_type(self):
+        from ml.suspicion.strategies import FixedLieMix, generate
+        from engine.domain.npc.policy_possessed import weighted_pick
+        import random
+        for kind in ('unrefuted', 'routine'):
+            weights = FixedLieMix(kind).mix_for('game').lie_type
+            picks = {weighted_pick(weights, ['unrefuted', 'routine'], random.Random(s)) for s in range(40)}
+            self.assertEqual(picks, {kind})
+        with self.assertRaises(ValueError):
+            FixedLieMix('invalid')
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)/'data'
+            manifest = generate(out, 2, 710, 'unrefuted')
+            self.assertEqual(manifest['strategy_lie_type'], 'unrefuted')
+            self.assertEqual(manifest['strategy_reason_counts'].get('lie_routine', 0), 0)
+            self.assertEqual(len({r.game_id for r in ft.load_rows(out/'data/rows.jsonl')}), 2)
+            with self.assertRaises(ValueError):
+                generate(out, 2, 710, 'routine')
+
     def test_training_uses_only_train_partition_and_real_estimators(self):
         from ml.suspicion.train import fit_models, model_scores
         sink = ListEventSink()

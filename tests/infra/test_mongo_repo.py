@@ -158,7 +158,7 @@ class MongoContractTests(unittest.TestCase):
         import tempfile
         from server.infra.load_content import main
         client=Mock()
-        client.get_default_database.return_value={'content_bundles':self.database[self.prefix+'cli_content']}
+        client.get_default_database.return_value={'content':self.database[self.prefix+'cli_content']}
         from tools.check_content import load_bundle
         bundle=replace(load_bundle(Path(__file__).resolve().parents[2]/'content/bundle_v1.json'),content_version='cli-'+uuid.uuid4().hex)
         with tempfile.TemporaryDirectory() as directory:

@@ -87,3 +87,86 @@ class Creative(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class AdDailyBudget(models.Model):
+    """캠페인·귀속일별 예약 중 금액과 확정 순액의 합."""
+
+    campaign_id = models.CharField(max_length=100, db_collation="utf8mb4_0900_bin")
+    attribution_day = models.DateField()
+    committed_mw = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=["campaign_id", "attribution_day"], name="ad_budget_campaign_day")]
+
+
+class AdLedgerEntry(models.Model):
+    """광고 원장 행. 환입은 원래 과금 행과 같은 귀속일·지면에 추가한다."""
+
+    charge_id = models.CharField(max_length=160, primary_key=True, db_collation="utf8mb4_0900_bin")
+    budget = models.ForeignKey(AdDailyBudget, on_delete=models.PROTECT)
+    amount_mw = models.BigIntegerField()
+    state = models.CharField(max_length=10)
+    source_event_id = models.CharField(max_length=220, null=True, db_collation="utf8mb4_0900_bin")
+    source = models.CharField(max_length=10)
+    kind = models.CharField(max_length=6)
+    slot = models.CharField(max_length=20)
+    billing = models.CharField(max_length=3)
+    price_mw = models.PositiveBigIntegerField()
+    release_after_ms = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        indexes = [models.Index(fields=["state", "release_after_ms"], name="ad_ledger_expiry")]
+        constraints = [models.CheckConstraint(
+            condition=(models.Q(kind="charge", amount_mw__gt=0, state__in=["reserved", "confirmed", "released"])
+                       | models.Q(kind="refund", amount_mw__lt=0, state="confirmed")),
+            name="ad_ledger_signed_state")]
+
+
+class AdOutbox(models.Model):
+    """발행 대기 이벤트와 같은 트랜잭션의 원장 상태 변경 기록."""
+
+    event_id = models.CharField(max_length=240, unique=True, db_collation="utf8mb4_0900_bin")
+    topic = models.CharField(max_length=32, blank=True)
+    message_key = models.CharField(max_length=160, null=True, db_collation="utf8mb4_0900_bin")
+    payload = models.JSONField()
+    published_at = models.DateTimeField(null=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["published_at", "id"], name="ad_outbox_pending")]
+
+
+class AdSession(models.Model):
+    """같은 세션의 빈도·빠른 클릭 판정에 쓰는 잠금 행."""
+
+    session_id = models.CharField(max_length=128, primary_key=True, db_collation="utf8mb4_0900_bin")
+    last_click_ms = models.PositiveBigIntegerField(null=True)
+
+
+class AdStoredRequest(models.Model):
+    """요청 재생용 응답과 serve 당시의 과금·판정 상태."""
+
+    request_id = models.CharField(max_length=128, primary_key=True, db_collation="utf8mb4_0900_bin")
+    request = models.JSONField()
+    response = models.JSONField(null=True)
+    serve_id = models.CharField(max_length=128, unique=True, null=True, db_collation="utf8mb4_0900_bin")
+    serve_data = models.JSONField(null=True)
+    session_id = models.CharField(max_length=128, db_collation="utf8mb4_0900_bin")
+    creative_id = models.CharField(max_length=100, null=True, db_collation="utf8mb4_0900_bin")
+    candidates = models.JSONField(default=list)
+    impressed = models.BooleanField(default=False)
+    clicked = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [models.Index(fields=["session_id", "creative_id"], name="ad_serve_frequency")]
+
+
+class AdReceipt(models.Model):
+    """판정 재생용 키. 토큰은 해시로만 참조한다."""
+
+    digest = models.CharField(max_length=64, primary_key=True)
+    first_received_ms = models.PositiveBigIntegerField()
+    result = models.JSONField(null=True)
+    pending_input = models.JSONField(null=True)
+    pending_after_ms = models.PositiveBigIntegerField(default=0, db_index=True)

@@ -63,7 +63,7 @@
 | `ad.serve` | `AdServeEvent` | 경매 응답 시점. 노출이 아니다. 광고 없음도 기록한다 |
 | `ad.impression` | `AdImpressionEvent` | 비콘 도착 시점, 또는 클릭이 노출 증거가 된 시점(`implied_by_click`) |
 | `ad.click` | `AdClickEvent` | 클릭 리다이렉트를 지나는 시점 |
-| `ad.rejudge` | `AdRejudgeEvent`(`event_id`, 원본 `source_event_id`, `charge_id`, `invalid_reason`, `judge_version`, `occurred_at_ms`, `source`, `contract_version`). 키 `charge_id`. 광고 서버 아웃박스가 아니라 Spark 재판정 작업이 직접 발행하고, `event_id`는 `rj:<charge_id>:<judge_version>`으로 결정적이라 다시 실행해도 같은 이벤트다 | Spark silver 재판정이 확정 과금 건을 무효로 바꾼 시점(C-08-02). 소비자는 광고 서버 환입 소비자(D-06-02), 11/4 PM 결정 #11 |
+| `ad.rejudge` | `AdRejudgeEvent`(`event_id`, 원본 `source_event_id`, `charge_id`, `invalid_reason`, `judge_version`, `occurred_at_ms`, `source`, `contract_version`). 키 `charge_id`. 광고 서버 아웃박스가 아니라 Spark 재판정 작업이 직접 발행하고, `event_id`는 `rj:<charge_id>:<judge_version>`으로 결정적이라 다시 실행해도 같은 이벤트다 | Spark silver 재판정이 확정 과금 건을 무효로 바꾼 시점(C-08-02). 소비자는 광고 서버 환입 소비자(D-06-02), 11/4 PM 결정 #11. 환입 행 금액은 원래 금액의 부호 반전, 원과금당 1회(ads.md 5절, `ads-0.6`) |
 
 - **공통 필드**:
   - 식별: `event_id`(MERGE 키), `request_id`, `serve_id`
@@ -77,10 +77,11 @@
   - 맥락 값 검증: 광고 서버가 serve 시점에 `preset_id`는 프리셋 이름(`engine/domain/model.py` `PRESETS`), `outcome`은 열거값, `hour`는 0~23만 받고 그 밖은 비운다(자유 문자열로 식별 값이 들어오지 않게. 세션 가명 ID 말고 개인 식별 값은 넣지 않는다, privacy.md)
   - 후보 목록: 순위 CTR, 평균 CTR, eCPM, 탈락 사유
   - 경매 결과: `threshold_ecpm_mw`(T), `rank_ctr`, `capped`
-  - 예약: `reserved_charge_id`, `reserved_mw`
+  - 예약: `reserved_charge_id`, `reserved_mw`(1건 금액: CPC 청구 CPC, CPM `floor(청구 CPM/1000)`, ads.md 2절, `ads-0.6`)
 - **노출·클릭 이벤트**:
   - 판정: `status`(pending, valid, invalid), `invalid_reason`, `judge_version`
-  - 과금: `charge_id`, `charge_mw`(확정했을 때만)
+  - 같은 HTTP 이벤트가 `pending`에서 최종 판정으로 바뀌면 최종 행은 새 `event_id`를 쓰고 `source_event_id`로 pending 행을 가리킨다. 같은 행의 Kafka 재발행은 기존 `event_id`를 유지한다.
+  - 과금: `charge_id`, `charge_mw`(확정했을 때만. 같은 건의 `reserved_mw`와 같다. 11/7 PM 결정으로 나머지 이월을 폐지해 1건 금액이 그 건의 `billing`·`price_mw`만으로 정해진다, `ads-0.6`. `ads-0.5` 이하 이벤트의 CPM `charge_mw`는 나머지 이월이 반영된 값이라 새 식으로 다시 계산하지 않는다)
   - 재판정·환입: `source_event_id`(원본 이벤트 ID)
   - 클릭에만: `suspect`
 - `source=synthetic` 이벤트는 합성 전용 캠페인(`syn:`)만 가리킨다. 실제 집계와 학습 평가 보고에서는 분리한다.

@@ -5,6 +5,7 @@
 `features.py`는 실제 엔진 bot JSONL을 `TrainingRow` JSONL과 provenance manifest로 변환한다.
 `train.py`는 게임 분할·로지스틱 회귀·LightGBM·로컬 MLflow 추적을 수행한다.
 `evaluate.py`는 관측별 softmax, 다중분류 로그 손실·상위1 적중률·후보별 ECE를 계산한다.
+`strategies.py`는 기존 `RuleV0Policy`와 `MixSource`로 거짓 행적 유형을 고정한 실제 엔진 판을 만든다.
 의도 기준선은 [intent.md](intent.md), 광고 서버는 [ads.md](ads.md)를 따른다.
 
 ## 왜
@@ -23,6 +24,19 @@ python -m ml.suspicion.features --events out/handoff/a0701/events.jsonl --out ou
 python -m ml.suspicion.train --rows out/suspicion/pm-data/rows.jsonl --out out/suspicion/pm-run --seed 7 --record D-07-02
 python -m unittest tests.test_suspicion -q
 ```
+
+학습에 쓰지 않은 거짓말 전략의 별도 평가 명령이다. 판별 seed와 게임 ID도 분리한다.
+
+```powershell
+python -m ml.suspicion.strategies --out out/suspicion/1108/train --games 300 --seed 708 --lie-type unrefuted
+python -m ml.suspicion.strategies --out out/suspicion/1108/heldout --games 60 --seed 709 --lie-type routine
+python -m ml.suspicion.train --rows out/suspicion/1108/train/data/rows.jsonl --heldout-rows out/suspicion/1108/heldout/data/rows.jsonl --out out/suspicion/1108/strategy-run --seed 7 --record D-07-02 --result-name strategy
+```
+
+학습·dev 보정에는 첫 데이터만 사용한다. 별도 평가에서는 같은 규칙·콘텐츠·정책 버전, 겹치지 않는
+게임과 seed, 실제 결정의 서로 다른 `lie_*` 선택 횟수를 검사한다. `heldout_post_night_*`는 전략 밤을 지난
+2일째 이후 관측의 별도 지표다. 0일째 배정은 두 전략에서 공통이며, routine 선택 뒤 엔진이 실제 범행 장소와
+겹치는 알리바이를 unrefuted 방식으로 대신할 수 있다. 보고하는 holdout은 정책의 거짓말 유형 선택 축이다.
 
 특징 변환과 학습의 출력 경로는 새 경로여야 한다. 학습 모델·온도·보고서·게임 분할은 `out/suspicion/pm-run/`과
 `mlruns/suspicion-artifacts/`에 보존한다. 추적 DB는 `mlruns/suspicion.db`다.
@@ -50,7 +64,7 @@ manifest의 필수 키는 `data_version`(`delta:<table>@<version>`), `input_sha2
 
 ## 한계
 
-로컬 사전 개발이다. C Delta 최종 평가, 별도 씐 자 전략 평가, 다른 필수 프리셋의 최소 판 수,
+로컬 사전 개발이다. C Delta 최종 평가, 다른 필수 프리셋의 최소 판 수,
 VM Python 3.14에서 torch·transformers·lightgbm·pyspark import는 미완료다.
 형식용 synthetic/scripted와 사람 데이터는 현재 경계에서 거부한다. 현재 데이터는 실제 bot 판이다.
 규칙 기준값은 엔진에 주입된 `FakeSuspicionModel`과 같은 `beliefs.suspicion/25` softmax다.
@@ -65,3 +79,4 @@ VM Python 3.14에서 torch·transformers·lightgbm·pyspark import는 미완료�
 |---|---|---|
 | D-05-03 | 11/5 | 하루 일괄 문서화로 ML 패키지의 미구현 범위와 후속 작업 위치를 명시 |
 | D-07-02 | 11/7 | 로컬 TrainingRow 변환·게임 분할·두 추정기·규칙 비교·MLflow·경계 테스트 |
+| D-07-02 | 11/8 | 최신 dev 규칙 반영, 거짓말 전략 고정 생성·별도 평가·판/seed 중복 거부 |

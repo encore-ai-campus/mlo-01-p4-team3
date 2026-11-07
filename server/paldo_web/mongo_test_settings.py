@@ -18,5 +18,8 @@ if not MONGO_TEST_URI and _env_path.is_file():
     except ImportError as exc:
         raise ImproperlyConfigured("server/.env를 읽으려면 python-dotenv가 필요합니다.") from exc
     MONGO_TEST_URI = dotenv_values(_env_path, encoding="utf-8-sig", interpolate=False).get("PALDO_MONGO_URI")
+if not MONGO_TEST_URI and (_base_dir / '.env').is_file():
+    from ops.compose.devenv import parse_env
+    MONGO_TEST_URI = parse_env((_base_dir / '.env').read_text(encoding='utf-8-sig')).get('PALDO_MONGO_URI')
 if not MONGO_TEST_URI:
-    raise ImproperlyConfigured("환경 변수 또는 server/.env에 로컬 PALDO_MONGO_URI를 지정하세요.")
+    raise ImproperlyConfigured("환경 변수·server/.env·Compose 루트 .env에 PALDO_MONGO_URI를 지정하세요.")

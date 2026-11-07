@@ -7,6 +7,8 @@ from django.conf import settings
 
 from ads.app.serve import AdService
 from ads.domain.model import AdSlot, SlotPolicy
+from ads.infra.mysql_ledger import MySQLLedger
+from ads.infra.mysql_store import MySQLAdStore
 from ads.web.models import Campaign
 
 
@@ -22,7 +24,10 @@ def load_policies():
             for row in data["slot_policies"]}
 
 
-@lru_cache(maxsize=1)
+_policies = lru_cache(maxsize=1)(load_policies)
+
+
 def get_service():
-    """프로세스당 메모리 원장·판정 상태를 하나만 만든다."""
-    return AdService(load_campaigns, load_policies(), settings.ADS_TOKEN_KEY.encode())
+    """HTTP 요청의 임시 작업 상태를 만들고 공유 상태는 MySQL에서 읽는다."""
+    return AdService(load_campaigns, _policies().copy(), settings.ADS_TOKEN_KEY.encode(),
+                     book=MySQLLedger(), store=MySQLAdStore())
