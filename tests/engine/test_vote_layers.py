@@ -134,7 +134,20 @@ class EstimateLayer(unittest.TestCase):
 
 
 # ---------------------------------------------------------------- 조건 1·2: 결정 층과 무당 결합
+RULE_V0_DECISION = params.DecisionParams("decision-0", conformity_scale=0.2, vote_noise=0.02, q_max=0.5,
+                                         witness_prob=0.7, tell_prob=0.5, routine_randomness=0.0)
+
+
 class DecisionLayer(unittest.TestCase):
+    """층 단위 계산은 규칙 v0 기준값(decision-0)으로 고정해 확인한다(조정 값은 decision_params.json, A-08-03)."""
+
+    def setUp(self):
+        self._saved = params.current()
+        params.apply(RULE_V0_DECISION)
+
+    def tearDown(self):
+        params.apply(self._saved)
+
     def test_temperament_weights_shift_log_odds(self):
         e = est({"b": 0.4, "c": 0.4}, {"b": {EvidenceGroup.WITNESS: 1.0}, "c": {EvidenceGroup.SOCIAL: 1.0}})
         self.assertEqual(vt.weighted_probs(e, None), {"b": 0.4, "c": 0.4})                 # 성향 없음: 그대로
@@ -187,7 +200,7 @@ class DecisionLayer(unittest.TestCase):
         s2 = vt.decision_scores(susp, {}, 0.0, random.Random(7))
         self.assertEqual(s1, s2)
         for c in susp:
-            self.assertLessEqual(abs(s1[c] - susp[c]), vt.VOTE_NOISE_P)
+            self.assertLessEqual(abs(s1[c] - susp[c]), params.VOTE_NOISE)
 
     def test_mudang_chosen_when_trust_low(self):
         e = est({"b": 0.34, "c": 0.33, "d": 0.33})

@@ -1,0 +1,10 @@
+{
+  "version": "decision-1",
+  "note": "A-08-03 탐색 결과(목표 마을 승률 0.40~0.60, base6, player-logic-v0). 재현: python -m tools.optimize_decision --target 0.4 0.6 --preset base6 --bot logic --samples 40 --top 5 --screen-games 200 --confirm-games 1000 --final-games 1000 --seed 11 --workers 8 --out out/a0803 --write-params",
+  "conformity_scale": 0.1,
+  "vote_noise": 0.02,
+  "q_max": 0.7,
+  "witness_prob": 0.5,
+  "tell_prob": 0.4,
+  "routine_randomness": 0.0
+}
