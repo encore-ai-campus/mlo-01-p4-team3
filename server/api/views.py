@@ -94,7 +94,17 @@ def _wants_meeting(request):
 
 def _meeting_response(request, view, variant, status=200):
     template = "meeting.html" if request.headers.get("HX-Request") == "true" else "game.html"
-    return render(request, template, {**meeting_context(view), "rejected": status >= 400,
+    context = meeting_context(view)
+    service = get_game_service()
+    rendered = service.interactions.render_snapshot(view.game_id, request.player_pseudonym) if service.interactions else {}
+    jobs = {speech.speech_id: speech.render_job_id for speech in view.public.speeches}
+    # 저장된 작업의 발언 ID까지 일치할 때만 문장을 연결한다.
+    for speech in context["vm"].speeches:
+        result = rendered.get(jobs.get(speech.speech_id))
+        if result is not None and result.speech_id == speech.speech_id:
+            speech.text = result.text
+            speech.pending_job_id = None if result.final else result.job_id
+    return render(request, template, {**context, "rejected": status >= 400,
                                      "mudang_portrait_id": f"portrait:mudang_{variant or 'f'}"}, status=status)
 
 

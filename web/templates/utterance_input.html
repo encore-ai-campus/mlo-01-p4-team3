@@ -1,0 +1,17 @@
+{% load meeting %}
+<section aria-labelledby="utterance-title" id="utterance-input">
+  <h2 id="utterance-title">말로 행동하기</h2>
+  <p>지원 예시: “이방이 수상하다”, “이방은 어디 있었소?”, “지켜보겠소”.</p>
+  <p>미지원 예시: “물건을 사겠다”, “마을 밖으로 이동한다”. 해석 후 카드 하나를 확인해야 행동합니다.</p>
+  <form hx-post="/games/{{ vm.game_id }}/utterances" hx-target="#speech-cards" hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
+    {% csrf_token %}<input type="hidden" name="game_id" value="{{ vm.game_id }}">
+    <input type="hidden" name="state_version" value="{{ vm.state_version }}">
+    <label>할 말 <textarea name="text" maxlength="4000" aria-label="할 말"></textarea></label>
+    <label>대화 상대 <select name="selected_npc"><option value="">선택 안 함</option>
+      {% for person in active_targets %}<option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>{% endfor %}
+    </select></label>
+    {% for claim in claims %}<label><input type="checkbox" name="selected_cards" value="{{ claim.evidence_value }}">{{ claim.card.text }}</label>{% endfor %}
+    <button type="submit">뜻 확인하기</button>
+  </form>
+  <div id="speech-cards" aria-live="polite"></div>
+</section>

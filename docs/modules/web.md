@@ -54,6 +54,10 @@ python -B server/preview.py --port 8769
 
 ## 한계
 
+자유 입력 화면은 `utterance_input.html`·`speech_cards.html`, 추궁 답변은 `speech_line.html`에서 처리한다. JSON·htmx가 같은 수명주기를 사용한다. 게임 서비스 조립 때 해석기를 한 번 생성한다. Django 설정 `INTENT_PARSER_FACTORY = "intent.parser.BaselineIntentParser"`로 D-07-01 기준선으로 전환할 수 있다. 동일 화면 시험과 실제 후보·버전 기록을 [B-07-01 증빙](../evidence/B-07-01.md)에 기록했다. 해석 지연은 `/metrics`의 `paldo_intent_parse_duration_seconds{stage,status}` 히스토그램으로 노출하며 p95는 `histogram_quantile(0.95, sum by (le) (rate(paldo_intent_parse_duration_seconds_bucket[5m])))`로 조회한다.
+
+실제 기준선 수신 확인은 B-07-01에서 수행했다. 다중 카드의 확인 가능 여부는 카드별로 정하고, 직전 대화 상대는 공개 캐묻기 기록에서 보완한다. 재입력에도 선택 인물·근거·직전 상대를 전달한다. 실제 C 게임·보조 저장소와 LLM 서비스 연결은 별도다. 가짜 렌더러로 검증한 화면을 실제 렌더러로 전환하는 검증은 INT-09에서 한다.
+
 미리보기는 임시 SQLite와 녹화 엔진, 메모리 게임 저장소를 사용한다. 운영 게임 서비스는 C의 게임·진척 저장소를 조립하고, B의 기본 회차 정책을 사용할 때 `prepare_start`를 비워 둔다. 배포 계정 DB 권한, 운영 게임 저장소, 실제 광고 요청의 식별자는 통합 환경에서 확인한다.
 
 ## 변경 이력
@@ -68,3 +72,4 @@ python -B server/preview.py --port 8769
 | B-06-03 | 11/6 | 운영자 회차 관리, 참가자 고정 시드 배정, 광고 가명 대응표 |
 | B-06-04 | 11/6 | 가입·로그인·잠금·계정 저장소 검증. VM DB와 광고 요청 확인 대기 |
 | B-07-05 | 11/7 | ASGI·인증 웹소켓·광고 중계·재연결. P-29의 비콘 폐기 사유 검증·집계와 페이지 간 보고 반영. VM·성능 시험 대기 |
+| B-07-01 | 11/7 | 자유 입력 카드의 모든 반응·실패 화면, 해석기 선택·계측, 발언 폴링과 단계 취소 |
