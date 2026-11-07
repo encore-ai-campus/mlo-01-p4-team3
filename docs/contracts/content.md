@@ -12,6 +12,7 @@
 | 인물 `Character` | npc_id, name_ko, aliases, temperament_id, routine(시간대 → 장소 → 확률), speech_style | 별칭은 전체에서 고유해야 한다(의도 해석기의 인물 매칭에 쓴다) |
 | 비밀 `Secret` | secret_id, eligible_npcs, slot, actual_place, false_place, confession_line, confession_threshold, conflicts_with, grudge_clue_id | actual_place ≠ false_place |
 | 원한 단서 `GrudgeClue` | clue_id, text_ko, unlock, part(identity, death, target) | clue_id는 버전이 바뀌어도 유지한다 |
+| 결말 문안 `Ending` | ending_id, title_ko, requires, lines_ko | ending_id = domain.md 9절 값(`exorcism`, `haewon:<hypothesis_id>`). 엔진 미사용(게임 웹·복기). 파일 `content/endings_v1.json` |
 | 템플릿 `TemplateLine` | template_id, kind, temperament_id?, reaction?, variants | 자리표시자: {target} {place} {slot} {night} {addressee} {fact} {result} |
 
 ## 2. 프리셋별 필요 수
