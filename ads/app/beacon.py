@@ -41,7 +41,11 @@ def process_event(service, kind, token, *, visible_ratio=0., visible_ms=0):
                 or (record.billing is BillingType.CPM and (kind == "impression" or j.implied_impression))
             ):
                 cid = charge_id(record.serve_id, record.billing)
-                if service.book.confirm(cid, str(uuid.uuid4())):
+                event_id = str(uuid.uuid4())
+                if record.source == "synthetic":
+                    suffix = "click:implied" if record.billing is BillingType.CPM and j.implied_impression else kind
+                    event_id = f"{record.request_id}:{suffix}"
+                if service.book.confirm(cid, event_id):
                     result.charge_id = cid
                     result.charge_mw = service.book.rows[cid].amount_mw
         service.last_result = result

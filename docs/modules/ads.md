@@ -43,9 +43,31 @@ python -m tools.check_evidence D-05-03 --format
 
 벤치마크는 단일 Django 개발 WSGI 서버를 임시 loopback 포트에 띄우고 종료한다. 준비 20회 뒤 실제 HTTP 200회를 순차 호출하며 MySQL 조회·TCP·JSON을 포함한다. 캠페인이 모두 채워지는지 확인하고 결과는 `write_result`로 `docs/evidence/perf/D-05-03/serve.json`, 개별 표본·소스 해시는 `out/perf/ads_bench.json`에 쓴다.
 
+### 합성 HTTP 트래픽 (D-06-03)
+
+```powershell
+python -m tools.ad_traffic_sim --run-id d0603-r5 --seed 10 --requests 10000 --invalid-rate 0.05 --fatigue-decay 0.2 --replay
+python -m tools.perf.ad_traffic_bench --requests 10000
+python -m unittest tests.tools.test_ad_traffic_sim -v
+```
+
+- CLI는 표준 라이브러리만 사용한다. `ads/testing/traffic_server.py`를 자식 프로세스로 띄우므로 실행 환경에는 기존 `requirements/web.txt`의 Django·PyMySQL·Prometheus 패키지가 필요하다. 기존 서비스·DB·.env를 사용하거나 변경하지 않는다. 자식의 Django/HMAC 키는 임시 난수이며 저장하지 않는다.
+- 시험 서버는 기존 `ads.project.urls`와 Django WSGI 애플리케이션, `AdService`, `BudgetBook`을 그대로 사용한다. 캠페인 공급자만 기존 `synthetic_campaigns()`로 바꾸며 실제 캠페인·admin 데이터는 읽지 않는다. 광고 선택은 서버 경매가 한다.
+- 정답 모델은 기존 `tools/gen_synthetic_ads.py::hidden_ctrs`를 재사용한다. 정답 CTR은 `out/ad_truth/<run>.json`에만 쓰고, 이 파일에 피로 감소율과 무효 유형별 수도 함께 기록한다. 광고 서버·HTTP 요청·관측 이벤트에 정답 CTR을 싣지 않는다. 피로는 같은 세션·소재의 이전 가시 노출마다 `CTR × (1-decay)`를 적용한다.
+- 가시 기준(면적 50% 이상·1초 이상)을 만족한 경우만 비콘을 보낸다. 클릭 우선·비콘 손실이면 유효 클릭이 `implied_by_click` 노출을 만든다. 빠른 서로 다른 serve의 클릭은 suspect여도 유효다. 클릭 뒤 늦은 비콘을 일부러 추가하지 않아 0% 시나리오에 불필요한 중복을 만들지 않는다.
+- `duplicate`, `bad_signature`, `no_serve`, `expired` 공격을 순환 배분한다. `no_serve`는 정상 서명의 미만료 토큰을 serve 저장 없이 발급하는 **시험 프로세스 표준입력 제어**다. 실제 HTTP 클릭의 pending을 확인하고 서버 시간 2분 경과 뒤 같은 클릭을 재판정한다. 만료 공격은 실제 serve 토큰을 받은 뒤 서버 시간을 30분 이상 전진시켜 HTTP 클릭한다. 운영 시험 API는 추가하지 않는다.
+- 출력은 `out/ad_traffic/<run>/events.jsonl`·`summary.json`, 원본 서버 로그는 `out/logs/ad_traffic/<run>/ads.jsonl`이다. 이벤트는 시험 호스트가 실제 API 처리 결과에서 계약 dataclass로 기록한 로컬 관측물이다. 실제 아웃박스·Kafka 발행물이 아니다.
+- `--replay`는 같은 프로세스에 모든 serve·비콘·클릭을 재전송한다. serve 응답 캐시 일치와 추가 예약·과금 0건을 검사한다. 클릭 재전송은 현재 메모리 판정에서 duplicate/expired 등으로 거부될 수 있다. 관측 이벤트 파일은 event_id별 최초 확정 판정을 유지하고 pending만 최종 판정으로 갱신한다. 영속 판정 결과 재생은 D-06-02 범위다.
+- 수용 측정은 고정 시드 10의 원래 CTR로 0%·5%·20% 각각 실행하고 5%의 같은 시드·실행 ID를 새 프로세스에서 다시 실행해 이벤트 해시·요약 전체를 비교한다. 결과 JSON은 `docs/evidence/perf/D-06-03/traffic.json`이다. 기반 HEAD와 미커밋 소스 해시는 증빙에 남긴다.
+
 ## 설정값
 | 이름 | 값·의미 |
 |---|---|
+| `--run-id` | 필수, 안전한 ASCII 영숫자·밑줄·하이픈 1~48자. 새 실행은 새 ID, 재현·재처리는 같은 ID |
+| `--seed`, `--requests` | 기본 17, 10000. 요청 수는 최초 토큰의 유효 창을 넘기지 않도록 최대 180000. 같은 시드·실행 ID·설정·초기 상태에서 재현 |
+| `--invalid-rate` | 기본 0.05. 최종 클릭 중 공격 비율, 정수 반올림 차이는 요약에 기록 |
+| `--fatigue-decay` | 기본 0.2, 범위 0~1. 감소율이며 모델의 실측값이 아닌 시나리오 설정 |
+| `--replay` | 같은 HTTP 요청을 같은 시험 프로세스에 다시 보냄 |
 | DJANGO_SECRET_KEY | 필수. 광고 Django 서명용. 저장소에 기록하지 않는다 |
 | PALDO_ADS_TOKEN_KEY | 필수. 광고 HMAC 키. 저장소에 기록하지 않는다 |
 | PALDO_ADS_INTERNAL_URL | 내부 서비스 호스트. 로컬 기본 http://127.0.0.1:8001 |
@@ -65,7 +87,12 @@ python -m tools.check_evidence D-05-03 --format
 - 현재 p95는 개발 서버의 로컬 순차 호출 실측이다. B의 실제 게임 웹 중계·네트워크·장애 시험은 B-08-03에서 확인한다.
 - 이미지는 게임 웹이 제공한다. 광고 서버는 외부 공개용 CORS·정적 이미지 서비스를 제공하지 않는다.
 
+- 합성 HTTP 검증은 단일 프로세스 메모리 경로다. MySQL 캠페인/admin 회귀, 실제 원장·아웃박스·Kafka·silver 연결과 재시작 간 멱등성은 이 시험의 검증 범위가 아니다.
+- 같은 실행 ID의 파일은 재실행 시 덮어쓴다. 다른 실행을 보존하려면 새 ID를 쓴다. 같은 시드라도 다른 실행 ID는 경매 추출이 달라질 수 있다. 작은 요청 수에서는 무효 유형 네 가지가 모두 나오지 않을 수 있으며 수용 벤치마크가 이를 실패로 잡는다.
+
 ## 변경 이력
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | D-05-03 | 11/5 | 독립 Django API·admin, 메모리 예산·판정, 로그·지표·HTTP 테스트·지연 측정. 조건 2 미충족 범위 기록. 11/7 변경 기준 5·9: 등록 예산 검증·budget 후보 기록과 경계값 테스트 보강 |
+| D-06-01 | 11/6 | 게임 플레이어 봇의 실행·지표는 sim 모듈 문서로 연결하고 광고 HTTP 선택과 분리(일괄 문서화) |
+| D-06-03 | 11/6 | 실제 Django HTTP 합성 트래픽·정답 격리·피로·4종 무효 클릭·재전송·재현 검증. D-05-03 조건 2 보류 및 D-06-02 외부 저장 범위 유지 |

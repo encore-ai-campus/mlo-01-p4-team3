@@ -58,7 +58,8 @@ class AdService:
             self.book.release_expired(now)
             day = datetime.fromtimestamp(now / 1000, timezone.utc).date().isoformat()
             policy = self.policies[req.slot]
-            rng = random.Random(int.from_bytes(hashlib.sha256(req.request_id.encode()).digest(), "big"))
+            request_hash = hashlib.sha256(req.request_id.encode())
+            rng = random.Random(int.from_bytes(request_hash.digest(), "big"))
             campaigns, creatives, bidders = {}, {}, []
             candidates = []
             self.candidates[req.request_id] = candidates
@@ -95,7 +96,10 @@ class AdService:
             if auction.winner:
                 winner = auction.winner
                 c, cr = campaigns[winner.campaign_id], creatives[winner.creative_id]
-                record = ServeRecord(str(uuid.uuid4()), req.request_id, c.campaign_id, cr.creative_id,
+                # Synthetic callers must never choose an existing human serve UUID.
+                serve_id = (f"syn:{req.request_id.removeprefix('syn:')[:80]}:{request_hash.hexdigest()[:32]}"
+                            if req.source == "synthetic" else str(uuid.uuid4()))
+                record = ServeRecord(serve_id, req.request_id, c.campaign_id, cr.creative_id,
                     req.slot, c.billing, auction.price_mw, winner.rank_ctr, req.session_pseudonym, now, day,
                     req.source)
                 if self.book.reserve(c, record):

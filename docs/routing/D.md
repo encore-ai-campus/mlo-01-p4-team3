@@ -17,7 +17,7 @@
 | `ads/app/`, `ads/infra/`, `ads/web/` | 광고 응용, 인프라, 표현 | D | 요청·비콘·클릭 흐름, Django 뷰·admin. MySQL 원장·아웃박스·Kafka는 D-06-02 예정 |
 | `ads/project/`, `ads/manage.py` | 광고 서비스 설정·진입점 | D | 게임 웹과 독립된 Django 설정·URL·WSGI |
 | `tests/ads/` | 서비스 테스트 | D | MySQL 캠페인·admin과 광고 HTTP·예산·판정 검증 |
-| `ads/testing/` | 테스트 지원 | D | `FakeAdProvider` |
+| `ads/testing/` | 테스트 지원 | D | `FakeAdProvider`, 운영 API를 실행하는 격리 합성 HTTP 시험 호스트 `traffic_server.py` |
 
 ## 작업별 위치
 
@@ -27,3 +27,4 @@
 | 플레이어 봇 실행·같은 시드 재현·지표 표·처리량 측정 | `engine/sim/`, CLI `tools/perf/sim_bench.py`, 테스트 `tests/sim/`, 증빙 `docs/evidence/D-06-01.md` |
 | 경매·과금·광고 판정 규칙 변경 | 광고 도메인 `ads/domain/`, `docs/contracts/ads.md` |
 | 광고 서버 실행·admin·HTTP 검사·지연 측정 | 표현 `ads/manage.py`·`ads/web/`, 응용 `ads/app/`, 설명 `docs/modules/ads.md`, 측정 `tools/perf/ads_bench.py` |
+| 합성 광고 HTTP 트래픽·피로·무효 클릭·재처리 검증 | `tools/ad_traffic_sim.py`, `ads/testing/traffic_server.py`, `tools/perf/ad_traffic_bench.py`, `tests/tools/test_ad_traffic_sim.py`, 설명 `docs/modules/ads.md` |
