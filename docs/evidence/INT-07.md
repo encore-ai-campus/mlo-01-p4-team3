@@ -50,7 +50,7 @@ Ran 9 tests, OK (skipped=10, 테스트용 Mongo 주소 없음)
 11/8 자동 판정 출력:
 
 ```text
-python -m tools.perf.int07_web_run --record (빈 DB, 19.0초)
+python -m tools.perf.int07_web_run --record (빈 DB, 19.1초)
 content_version_inserted content-1.0
 #1 자동 확인 통과: 완주 3/3, 명령 [6, 6, 13], 500·503 0건, 판 오류 0건, 최종 화면 결과 일치 True, 진척 기록 True
 #3 자동 확인 완료, 사람 브라우저 확인 대기: 아침 화면 확인 4회, 최대 공개 밤 1, 빠진 문장 0
@@ -156,4 +156,4 @@ INT 항목은 아니지만 사전 테스트(E-08-10, 11/8)에 필요한 C-07-04(
 
 - `docs/evidence/INT-07.md`
 - `docs/troubles/E.md`
-- `tools/perf/int07_web_run.py`(11/8 웹 자동 재현 도구, 모듈 머리말에 사용법·계층)
+- `tools/perf/int07_web_run.py`(11/8 웹 자동 재현 도구, 모듈 머리말에 사용법·계층), 준비 코드 `server/tests/int07_setup.py`·`server/tests/int07_run_settings.py`(`server/tests/README.md`)

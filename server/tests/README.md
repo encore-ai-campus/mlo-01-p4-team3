@@ -50,3 +50,7 @@ python -B server/manage.py test server.tests.mongo_game_sessions --settings=serv
 로컬에서 기존 회차 전용 시험까지 함께 실행하려면 `server.tests.mongo_sessions`도 지정한다. 이 기존 시험은 루프백만 허용하고 별도 시험 DB를 사용한다. 게임 통합 시험은 실제 엔진·규칙 NPC와 모델 없는 규칙 투표 경로를 사용한다. 진척 포트 보존 검사는 해금 로직·Kafka 수신·성능 검사를 대신하지 않는다. 대상 VM·실제 부하는 별도로 측정한다.
 
 기존 서비스 팩토리 함수에서는 `runtime = open_mongo_runtime(engine=실제엔진, suspicion=선택한모델)` 뒤 `return runtime.factory_service()`를 사용한다. 연결 정보는 환경의 `PALDO_MONGO_URI`를 읽는다. 서버 기동 전에 직접 설치하는 경로는 `runtime.configure()`다. 실행 자원은 서버 수명 동안 보유하고 서버의 모든 요청 처리가 끝난 뒤 `runtime.close()`한다.
+
+## E-07-03 INT-07 웹 자동 재현 준비
+
+`int07_setup.py`(계정 DB 이주·참가자·로그인 세션·Mongo 회차 등록)와 `int07_run_settings.py`(실행용 SQLite 계정 DB + 실제 Mongo)는 `tools/perf/int07_web_run.py`가 하위 프로세스로 쓰는 준비 코드다. 시험 탐색(`test*.py`) 대상이 아니다. 사용법은 [성능 시험 모듈 문서](../../docs/modules/perf.md)에 있다.

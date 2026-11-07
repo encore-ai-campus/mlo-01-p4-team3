@@ -4,10 +4,10 @@
     PALDO_MONGO_URI=<레플리카셋 URI> python -m tools.perf.int07_web_run --out <임시 폴더> --record
 
 하는 일:
-1. 실행용 Django 설정(`<out>/int07_run_settings.py`)을 만든다. 계정 DB는 SQLite 파일(MySQL 아님), 게임·진척·콘텐츠·회차는
-   실제 Mongo(`PALDO_MONGO_URI`), 게임 서비스는 운영 조립 `server.infra.game_factory.build_game_service`.
-2. 하위 프로세스에서 계정 DB 이주, 동의한 참가자 1명과 로그인 세션, 콘텐츠 적재(`tools.load_content`), 고정 회차 등록
-   (규칙 버전 `params.RULE_PARAMS_VERSION`)을 한다.
+1. 실행용 Django 설정은 `server.tests.int07_run_settings`다. 계정 DB는 `<out>` 안의 SQLite 파일(MySQL 아님), 게임·진척·
+   콘텐츠·회차는 실제 Mongo(`PALDO_MONGO_URI`), 게임 서비스는 운영 조립 `server.infra.game_factory.build_game_service`.
+2. 하위 프로세스로 콘텐츠 적재(`tools.load_content`)와 준비(`server.tests.int07_setup`: 계정 DB 이주, 동의한 참가자 1명과
+   로그인 세션, 고정 회차 등록)를 한다. `tools/`는 제3자 라이브러리를 import하지 않으므로 Django·pymongo는 하위 프로세스에만 있다.
 3. daphne로 게임 웹을 띄우고 HTTP로만 3판을 진행한다(합법 명령 고르기는 `bench_player_command`, 규칙 판단은 엔진).
    - #1 판마다 결과가 날 때까지, 500·503 0건
    - #3 날이 바뀔 때마다 회의 화면 HTML에 지금까지 공개된 밤마다 "N일째 아침:"과 피해 장소 문장
@@ -15,8 +15,8 @@
    - #6 받은 모든 JSON 응답의 키와 HTML 본문에 비공개 키 이름 0
 4. 결과 JSON(`docs/evidence/perf/INT-07/web_run.json`, 판별 기록은 `web_run_detail.json`)을 쓰고, 합격선을 자동으로 확인한 항목과 사람 확인이 남은 항목을 나눠 적는다(최종 판정은 PM).
 
-계층: `json_keys`·`forbidden_hits`·`morning_missing`·`metrics_of`·`summarize`(도메인, 문자열·사전만) / `HttpClient`·`WebServer`·
-`setup_main`(인프라, HTTP·프로세스·Django) / `play_game`·`run`(응용) / `main`(표현).
+계층: `json_keys`·`forbidden_hits`·`morning_missing`·`metrics_of`·`summarize`(도메인, 문자열·사전만) / `HttpClient`·`WebServer`(인프라, HTTP·프로세스;
+준비는 `server/tests/int07_setup.py`) / `play_game`·`run`(응용) / `main`(표현).
 """
 from __future__ import annotations
 
@@ -38,7 +38,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 FORBIDDEN = ("claim_truths", "npc_states", "beliefs", "private", "night_plans")
-SESSION_ID = "int07run"
 SEEDS = (70301, 70302, 70303)  # A-07-03 서버 시험(`test_game_factory`)과 같은 고정 회차
 MAX_COMMANDS = 400
 RESTART_AFTER = 3          # 둘째 판에서 이 명령 수 뒤 서버 프로세스를 재시작한다
@@ -196,56 +195,6 @@ class WebServer:
                 self.proc.wait()
 
 
-SETTINGS_TEMPLATE = '''"""INT-07 웹 자동 재현 전용 설정(tools/perf/int07_web_run.py가 만든다). 계정 DB는 SQLite 파일."""
-import os
-from server.paldo_web.test_settings import *  # noqa: F403
-
-DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": os.environ["PALDO_INT07_SQLITE"]}}
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
-SESSION_MONGO_URI = os.environ["PALDO_MONGO_URI"]
-'''
-
-
-def setup_main(out_path: Path) -> None:
-    """(하위 프로세스) 계정 DB 이주, 참가자·로그인 세션, 회차 등록. 결과를 JSON으로 쓴다."""
-    import django
-    django.setup()
-    from django.conf import settings
-    from django.contrib.auth import BACKEND_SESSION_KEY, HASH_SESSION_KEY, SESSION_KEY
-    from django.contrib.auth.models import User
-    from django.contrib.sessions.backends.db import SessionStore
-    from django.core.management import call_command
-    from django.utils import timezone
-    from pymongo import MongoClient
-    from engine.domain import params
-    from server.accounts.models import AccountProfile
-    from server.app.test_sessions import TestSessionService
-    from server.infra.test_sessions import MongoSessionStore
-    from tools.check_content import load_bundle
-
-    call_command("migrate", verbosity=0)
-    user = User.objects.create_user(username=f"int07-{uuid.uuid4().hex[:8]}")
-    profile = AccountProfile.objects.create(user=user, consented_at=timezone.now())
-    session = SessionStore()
-    session[SESSION_KEY] = str(user.pk)
-    session[BACKEND_SESSION_KEY] = settings.AUTHENTICATION_BACKENDS[0]
-    session[HASH_SESSION_KEY] = user.get_session_auth_hash()
-    session.create()
-    bundle = load_bundle(ROOT / "content/bundle_v1.json")
-    client = MongoClient(os.environ["PALDO_MONGO_URI"], serverSelectionTimeoutMS=5000)
-    try:
-        sessions = TestSessionService(MongoSessionStore(client.get_default_database("paldo_web")))
-        session_id = f"{SESSION_ID}{uuid.uuid4().hex[:6]}"
-        sessions.create(session_id, [{"preset_id": "base6", "seed": s} for s in SEEDS], [str(profile.player_pseudonym)],
-                        {"rule_version": params.RULE_PARAMS_VERSION, "engine_version": "paldo-engine",
-                         "content_version": bundle.content_version})
-    finally:
-        client.close()
-    out_path.write_text(json.dumps({"cookie": [settings.SESSION_COOKIE_NAME, session.session_key],
-                                    "session_id": session_id, "rule_version": params.RULE_PARAMS_VERSION,
-                                    "content_version": bundle.content_version}), encoding="utf-8")
-
-
 # ---------------------------------------------------------------- 응용(흐름)
 class Run:
     """한 번의 실행 상태: 응답 검사 집계와 HTTP 클라이언트."""
@@ -360,10 +309,9 @@ def run(out: Path, record: bool) -> dict:
     if not os.environ.get("PALDO_MONGO_URI"):
         raise SystemExit("PALDO_MONGO_URI(레플리카셋, DB 이름 /paldo_web 포함)를 설정하세요")
     out.mkdir(parents=True, exist_ok=True)
-    (out / "int07_run_settings.py").write_text(SETTINGS_TEMPLATE, encoding="utf-8")
     port = free_port()
-    env = dict(os.environ, PYTHONIOENCODING="utf-8", DJANGO_SETTINGS_MODULE="int07_run_settings",
-               PYTHONPATH=os.pathsep.join([str(out.resolve()), str(ROOT)]),
+    env = dict(os.environ, PYTHONIOENCODING="utf-8", DJANGO_SETTINGS_MODULE="server.tests.int07_run_settings",
+               PYTHONPATH=str(ROOT),
                PALDO_INT07_SQLITE=str((out / "accounts.sqlite3").resolve()),
                PALDO_PUBLIC_ORIGIN=f"http://127.0.0.1:{port}",
                DJANGO_SECRET_KEY=os.environ.get("DJANGO_SECRET_KEY") or secrets.token_urlsafe(48),
@@ -377,8 +325,8 @@ def run(out: Path, record: bool) -> dict:
     if loaded.returncode:
         raise SystemExit("콘텐츠 적재 실패: 이 콘텐츠 버전이 없는 빈 DB에서 다시 돌리세요(적재 도구 로그 참고)")
     setup_out = out / "setup.json"
-    subprocess.run([sys.executable, "-m", "tools.perf.int07_web_run", "--setup", str(setup_out)], cwd=ROOT, env=env,
-                   stdin=subprocess.DEVNULL, check=True)
+    subprocess.run([sys.executable, "-m", "server.tests.int07_setup", str(setup_out), *map(str, SEEDS)], cwd=ROOT,
+                   env=env, stdin=subprocess.DEVNULL, check=True)
     setup = json.loads(setup_out.read_text(encoding="utf-8"))
     server = WebServer(port, env, out / "web.log")
     state = Run()
@@ -419,11 +367,7 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default="out/int07", help="실행 설정·계정 DB·서버 로그를 둘 폴더(저장소 밖 또는 out/)")
     ap.add_argument("--record", action="store_true",
                     help="결과를 docs/evidence/perf/INT-07/web_run.json(수치)·web_run_detail.json(판별 기록)에 쓴다")
-    ap.add_argument("--setup", help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
-    if a.setup:
-        setup_main(Path(a.setup))
-        return 0
     result = run(Path(a.out), a.record)
     for item, v in result["verdicts"].items():
         print(f"#{item} {v['result']}: {v['detail']}")

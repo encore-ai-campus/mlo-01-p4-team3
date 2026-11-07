@@ -1,6 +1,6 @@
 {
   "task": "INT-07",
-  "commit": "a69b75abbde75337b47c793f06603a51725d8daf",
+  "commit": "57135cec21b59ae3be93a463f375d21fc5f13d5c",
   "source": "python -m tools.perf.int07_web_run --out <임시 폴더> --record",
   "rule_version": "rule-0.5.decision-1",
   "content_version": "content-1.0",
@@ -35,7 +35,7 @@
       ],
       "morning_missing": [],
       "errors": [],
-      "game_id": "a28679bf-ac24-5aba-8fc9-ac7d92411e31",
+      "game_id": "3bf46f1e-f3b0-5174-9e29-9979d69c64a6",
       "view_result_matches": true
     },
     {
@@ -49,7 +49,7 @@
       ],
       "morning_missing": [],
       "errors": [],
-      "game_id": "530c7283-067e-5835-9ffe-daecafd4db99",
+      "game_id": "d569d957-7a0a-5144-9ab4-0964d58ba81e",
       "view_result_matches": true
     },
     {
@@ -64,7 +64,7 @@
       ],
       "morning_missing": [],
       "errors": [],
-      "game_id": "beaee3f9-c0ee-5c2f-8be1-2e9500bd5a4a",
+      "game_id": "f6f22288-dd93-51ab-8373-5315853a2c9a",
       "view_result_matches": true
     }
   ],
@@ -74,7 +74,7 @@
   "html_checked": 28,
   "http_5xx": 0,
   "forbidden_hits": [],
-  "elapsed_s": 19.0,
+  "elapsed_s": 19.1,
   "verdicts": {
     "1": {
       "result": "자동 확인 통과",

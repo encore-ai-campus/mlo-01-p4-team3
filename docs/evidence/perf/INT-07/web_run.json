@@ -1,7 +1,7 @@
 {
   "task": "INT-07",
-  "commit": "a69b75abbde75337b47c793f06603a51725d8daf",
-  "generated_at": "2026-11-07T15:16:29Z",
+  "commit": "57135cec21b59ae3be93a463f375d21fc5f13d5c",
+  "generated_at": "2026-11-07T15:22:00Z",
   "source": "python -m tools.perf.int07_web_run --out <임시 폴더> --record",
   "metrics": {
     "games_finished": {
@@ -49,7 +49,7 @@
       "unit": "건"
     },
     "elapsed": {
-      "value": 19.0,
+      "value": 19.1,
       "unit": "s"
     }
   }

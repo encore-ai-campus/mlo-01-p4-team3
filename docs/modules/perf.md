@@ -22,7 +22,7 @@ python -B server/manage.py test server.tests.mongo_commands.MongoCommands --sett
 
 실제 Mongo 명령은 환경 → `server/.env` → Compose 루트 `.env` 순으로 `PALDO_MONGO_URI`를 읽는다. Replica Set이 필요하다. 시험은 임시 SQLite 계정·Django 세션/CSRF와 고유 `b0602_<UUID>_` Mongo 컬렉션 5개를 사용하고 종료 시 자기 자료만 정리한다. URI·쿠키·로그인 ID는 결과에 넣지 않는다. Compose Mongo의 준비·실행 순서는 [서버 시험 안내](../../server/tests/README.md)에 둔다.
 
-INT-07 웹 자동 재현(실제 HTTP 게임 웹 + Mongo 레플리카셋 + 운영 조립, 버튼 명령만으로 3판·아침 화면·재생·409·서버 재시작 뒤 이어 하기·금지 키)은 `tools/perf/int07_web_run.py`다. 연결 문자열에 DB 이름을 넣고, 결과는 `--record`로 `docs/evidence/perf/INT-07/`에 쓴다. 계정 DB는 실행용 SQLite 파일이다. [INT-07 증빙](../evidence/INT-07.md)
+INT-07 웹 자동 재현(실제 HTTP 게임 웹 + Mongo 레플리카셋 + 운영 조립, 버튼 명령만으로 3판·아침 화면·재생·409·서버 재시작 뒤 이어 하기·금지 키)은 `tools/perf/int07_web_run.py`다. 연결 문자열에 DB 이름을 넣고, 결과는 `--record`로 `docs/evidence/perf/INT-07/`에 쓴다. 계정 DB는 실행용 SQLite 파일이다. Django·pymongo가 필요한 준비(계정·세션·회차 등록)와 실행 설정은 `server/tests/int07_setup.py`·`int07_run_settings.py`에 두고 하위 프로세스로 부른다(`tools/`는 제3자 라이브러리 import 금지). 콘텐츠 버전이 이미 있는 DB에서는 적재가 실패해 멈추므로 빈 DB에서 돌린다. [INT-07 증빙](../evidence/INT-07.md)
 
 ```bash
 PALDO_MONGO_URI=<레플리카셋 URI, /paldo_web 포함> python -m tools.perf.int07_web_run --out <임시 폴더> --record < /dev/null
