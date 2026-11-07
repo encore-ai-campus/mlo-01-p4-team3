@@ -29,5 +29,6 @@
 | 공식 게임 토픽 bronze 적재·재처리 | `pipeline/README.md`, `pipeline/spark/ingest_bronze.py`, 계약 단위 테스트 `tests/contract/test_pipeline_bronze.py` |
 | 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |
 | VM 상태 점검(기동·자원·디스크·스냅샷) | `ops/inventory_check.md`(방법과 20대 표), `ops/inventory_host.ps1`, `tools/perf/vm_probe.sh` |
+| RunPod GPU 실험·자원 확정 조건 | `ops/runbook/runpod.md`, `vm_roles.md`, `schedule.md` |
 | 시간대별 VM 사용(사용자 테스트·학습·LLM), VM 역할·디스크 예산 | `ops/runbook/schedule.md`, `ops/runbook/vm_roles.md` |
 | HTTPS·인증서 경고 안내 | `ops/proxy/`(C-07-04), `docs/contracts/integration.md` 5절 |
