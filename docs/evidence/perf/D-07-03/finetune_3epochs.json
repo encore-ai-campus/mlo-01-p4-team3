@@ -1,0 +1,104 @@
+{
+  "task": "D-07-03",
+  "commit": "6f5026c56add84f9b881f1a91312882d40e58ad2",
+  "generated_at": "2026-11-07T14:14:29Z",
+  "source": "python -m tools.perf.intent_finetune --data content/intent/examples_v1.jsonl --cache C:/mlo-01-p4-team3/out/hf_cache --epochs 3 --batch 4 --length 64 --threads 4 --seed 7",
+  "metrics": {
+    "baseline_macro_f1": {
+      "value": 0.7150229741019215,
+      "unit": ""
+    },
+    "baseline_command_exact_match": {
+      "value": 0.6582278481012658,
+      "unit": ""
+    },
+    "baseline_unsupported_recall": {
+      "value": 0.75,
+      "unit": ""
+    },
+    "baseline_evaluation_rows": {
+      "value": 79,
+      "unit": "문장"
+    },
+    "baseline_unsupported_rows": {
+      "value": 8,
+      "unit": "문장"
+    },
+    "bert_macro_f1": {
+      "value": 0.18494152046783624,
+      "unit": ""
+    },
+    "bert_command_exact_match": {
+      "value": 0.22784810126582278,
+      "unit": ""
+    },
+    "bert_unsupported_recall": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "bert_evaluation_rows": {
+      "value": 79,
+      "unit": "문장"
+    },
+    "bert_unsupported_rows": {
+      "value": 8,
+      "unit": "문장"
+    },
+    "train_rows": {
+      "value": 201,
+      "unit": "문장"
+    },
+    "dev_rows": {
+      "value": 79,
+      "unit": "문장"
+    },
+    "unreviewed_excluded": {
+      "value": 252,
+      "unit": "문장"
+    },
+    "training_epochs": {
+      "value": 3,
+      "unit": "회"
+    },
+    "training_steps": {
+      "value": 153,
+      "unit": "회"
+    },
+    "training_wall": {
+      "value": 243.8811131999828,
+      "unit": "s"
+    },
+    "training_cpu": {
+      "value": 945.25,
+      "unit": "CPU s"
+    },
+    "process_cpu_percent": {
+      "value": 387.5863889570218,
+      "unit": "%"
+    },
+    "machine_cpu_percent": {
+      "value": 24.224149309813864,
+      "unit": "%"
+    },
+    "logical_cpus": {
+      "value": 16,
+      "unit": "개"
+    },
+    "training_loss": {
+      "value": 2.067281289480219,
+      "unit": ""
+    },
+    "lineage_overlap": {
+      "value": 0,
+      "unit": "건"
+    },
+    "contrast_overlap": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reload_mismatches": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

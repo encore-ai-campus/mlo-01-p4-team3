@@ -13,6 +13,8 @@
 - 씐 자 특징·학습·평가의 착수 기준: D-07-02.
 - 모델 v0 어댑터: D-08-01. 관문·밴딧: D-09-02. 광고 CTR LightGBM: D-10-02.
 
+- D-07-03 의도 미세조정은 `python -m tools.perf.intent_finetune --epochs 5 --include-generated`로 실행한다. 증빙은 `docs/evidence/D-07-03.md`, 모델·실행 계보는 `mlruns/intent_bert/`에 보관한다.
+
 ## 설정값
 현재 이 패키지에 구현된 모델 설정값은 없다. 공유 데이터 계약은 `contracts/datasets.py`, 버전·승격 계약은 `docs/contracts/ml_lifecycle.md`, 패키지 목록은 `requirements/ml.txt`다.
 
@@ -23,3 +25,4 @@ D-05-01의 의도 파서 및 D-05-03의 광고 API가 구현되어도 씐 자 �
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | D-05-03 | 11/5 | 하루 일괄 문서화로 ML 패키지의 미구현 범위와 후속 작업 위치를 명시 |
+| D-07-03 | 11/7 | intent/의 CPU 미세조정·동일 기준선 평가와 모델·계보 저장 경로를 연결 |
