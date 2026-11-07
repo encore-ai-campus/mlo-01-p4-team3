@@ -104,10 +104,11 @@ def impression(request):
         if type(ratio) not in (int, float) or not math.isfinite(ratio) or not 0 <= ratio <= 1:
             raise ValueError("visible_ratio")
         visible_ms = _integer(d["visible_ms"])
-        _integer(d["occurred_at_ms"])
+        occurred_at_ms = _integer(d["occurred_at_ms"])
     except (ValueError, TypeError, UnicodeDecodeError):
         return JsonResponse({"error": "invalid_request"}, status=400)
-    result = handle_impression(get_service(), token, ratio, visible_ms)
+    result = handle_impression(get_service(), token, ratio, visible_ms,
+                               occurred_at_ms=occurred_at_ms, request_id=request.request_id)
     request.ad_fields = _event_fields(result)
     IMPRESSION.labels(result.judgement.status.value).inc()
     return HttpResponse(status=204)
@@ -120,7 +121,7 @@ def click(request):
     token = request.GET.get("t", "")
     if len(token) > 4096:
         token = ""
-    result = handle_click(get_service(), token)
+    result = handle_click(get_service(), token, request_id=request.request_id)
     request.ad_fields = _event_fields(result)
     CLICK.labels(result.judgement.status.value).inc()
     return HttpResponseRedirect(result.redirect_path)

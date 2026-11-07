@@ -122,6 +122,20 @@ def charge_id(serve_id: str, billing: BillingType) -> str:
     return f"{serve_id}:{'click' if billing is BillingType.CPC else 'impression'}"
 
 
+def reservation_amount(c: Campaign, serve: ServeRecord) -> int:
+    """serve의 청구 단가와 캠페인을 검증하고 예약·확정 공통 금액을 반환한다."""
+    if serve.campaign_id != c.campaign_id or serve.billing is not c.billing:
+        raise ValueError("serve와 캠페인 불일치")
+    if not (0 <= serve.price_mw <= c.max_bid_mw):
+        raise ValueError("청구 단가는 0 이상, 최대 입찰가 이하")
+    if serve.billing is BillingType.CPM and serve.price_mw < MIN_RESERVE_ECPM_MW:
+        raise ValueError(f"CPM 청구 단가는 {MIN_RESERVE_ECPM_MW}밀리원(지면 최저 eCPM 하한) 이상")
+    amount = charge_amount_mw(serve.billing, serve.price_mw)
+    if amount <= 0:
+        raise ValueError("1건 금액은 0보다 커야 한다(0원 과금 금지)")
+    return amount
+
+
 # ---------------------------------------------------------------- 예산: 예약 → 확정 → 해제
 @dataclass
 class BudgetBook:
@@ -151,15 +165,7 @@ class BudgetBook:
         """1건 금액을 원자적으로 예약한다. 불변조건 위반은 ValueError, 중복·예산 초과는 False.
 
         불변조건: 청구 단가 0 이상·최대 입찰가 이하, CPM 단가 ≥ 최저 eCPM 하한, 1건 금액 > 0, 캠페인·과금 방식 일치."""
-        if serve.campaign_id != c.campaign_id or serve.billing is not c.billing:
-            raise ValueError("serve와 캠페인 불일치")
-        if not (0 <= serve.price_mw <= c.max_bid_mw):
-            raise ValueError("청구 단가는 0 이상, 최대 입찰가 이하")
-        if serve.billing is BillingType.CPM and serve.price_mw < MIN_RESERVE_ECPM_MW:
-            raise ValueError(f"CPM 청구 단가는 {MIN_RESERVE_ECPM_MW}밀리원(지면 최저 eCPM 하한) 이상")
-        amt = charge_amount_mw(serve.billing, serve.price_mw)
-        if amt <= 0:
-            raise ValueError("1건 금액은 0보다 커야 한다(0원 과금 금지)")
+        amt = reservation_amount(c, serve)
         cid = charge_id(serve.serve_id, serve.billing)
         with self._lock:
             if cid in self.rows or not self.can_reserve(c, serve.attribution_day, amt):
@@ -306,13 +312,14 @@ def judge_impression(st: ValidityState, claims, token_reason, visible_ratio: flo
 
 def judge_click(st: ValidityState, claims, token_reason, first_received_ms: int, now_ms: int,
                 load_test: bool = False) -> Judgement:
+    """클릭을 판정하고 처리 순서가 달라도 세션의 마지막 수신 시각은 후퇴시키지 않는다."""
     j = _common(st, claims, token_reason, first_received_ms, now_ms, load_test)
     if j:
         return j
     sess = claims.session_pseudonym
     prev = st.last_click_ms.get(sess)
-    st.last_click_ms[sess] = first_received_ms
-    suspect = prev is not None and first_received_ms - prev < SUSPECT_CLICK_MS
+    st.last_click_ms[sess] = max(first_received_ms, prev if prev is not None else first_received_ms)
+    suspect = prev is not None and 0 <= first_received_ms - prev < SUSPECT_CLICK_MS
     if claims.serve_id in st.clicked:
         return Judgement(JudgeStatus.INVALID, InvalidReason.DUPLICATE, suspect)
     st.clicked.add(claims.serve_id)
