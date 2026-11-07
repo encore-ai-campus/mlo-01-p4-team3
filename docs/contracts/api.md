@@ -39,6 +39,18 @@
 
 - `StartGameInput.player_pseudonym`은 클라이언트가 보내지 않는다. 표현 계층이 로그인 계정의 가명 ID로 채운다. 요청 본문에 이 필드가 있으면 400이다. `GET /players/me/progress`의 `me`도 로그인 계정의 가명 ID다.
 
+### 2-2. 판 종료 설문 (11/6 PM 결정, P-29, B-07-02)
+- `SubmitSurveyInput`은 응답과 전체 건너뛰기를 같은 `POST /games/{id}/survey`로 받는다. 문항은 [user_test/plan.md](../user_test/plan.md) 7절.
+
+| 경우 | `skipped` | `fun`·`unfair`·`npc_plausible` | `comment` |
+|---|---|---|---|
+| 응답 | `false`(생략하면 `false`) | 셋 다 1~5 정수 | 선택, 4,000자 이하 |
+| 전체 건너뛰기 | `true` | 셋 다 `null` | `""` |
+
+- 위 두 경우가 아닌 조합(점수 일부만, `skipped=true`인데 점수나 의견이 있음, `skipped=false`인데 점수가 `null`)은 400이다. `skipped`가 없는 기존 응답 요청은 그대로 통과한다.
+- 설문은 판마다 한 번이다. 같은 내용을 다시 보내면 204이고 이벤트를 더 만들지 않는다. 처음과 다른 내용(건너뛴 뒤 응답으로 바꾸기 포함)은 409다.
+- 건너뛰어도 `survey_submitted` 이벤트를 1건 낸다(INT-09 7번: 판 수 = 설문 이벤트 수). 이벤트 본문은 [events.md](events.md) 2절.
+
 ## 3. 명령과 충돌
 - 모든 명령에는 클라이언트가 만든 `command_id`(UUID)와 `expected_state_version`이 있다. 화면의 각 폼은 현재 `state_version`을 hidden 필드로 갖는다.
 - HTTP 상태 코드는 다음과 같다.
@@ -93,12 +105,21 @@
 
 | 방향 | 형식 | 뜻 |
 |---|---|---|
-| 브라우저 → 게임 웹 | `{"type": "hello", "dropped": 0}` | 연결·재연결 직후 1회. `dropped`는 직전에 보내지 못하고 버린 비콘 수(0 이상 정수) |
+| 브라우저 → 게임 웹 | `{"type": "hello", "dropped": 3, "dropped_by_reason": {"queue_full": 2, "page_exit": 1}}` | 연결·재연결 직후 1회. 직전 연결 이후 브라우저가 버리고 아직 보고하지 않은 비콘 수. 값은 모두 0 이상 정수이고 `dropped = queue_full + page_exit`. 버린 것이 없으면 `{"type": "hello", "dropped": 0, "dropped_by_reason": {"queue_full": 0, "page_exit": 0}}`(P-29) |
 | 브라우저 → 게임 웹 | `{"type": "ad.impression", "msg_id": "<UUID>", "token": "<serve 토큰>", "visible_ratio": 0.0~1.0, "visible_ms": 정수, "occurred_at_ms": 정수}` | 노출 비콘(면적 50% 이상 1초 이상, serve마다 1회). `msg_id` 외의 필드는 ads.md 3절 비콘 본문과 같다 |
 | 게임 웹 → 브라우저 | `{"type": "ack", "msg_id": "<UUID>", "relayed": true}` | 받음. `relayed`는 광고 서버 중계 성공 여부. 실패해도 다시 보내지 않는다(비콘 손실, ads.md 8절) |
 | 게임 웹 → 브라우저 | `{"type": "error", "msg_id": "<UUID 또는 null>", "code": "bad_message"}` | 거부. `code`는 `bad_message`·`unknown_type`·`rate_limited` 중 하나. 연결은 유지 |
 
-- **끊김 처리**: 브라우저가 자동으로 다시 연결한다(1·2·4·8·16·30초 간격, 이후 페이지가 열려 있는 동안 30초마다). 끊긴 동안의 비콘은 대기열(최대 20개, 넘으면 가장 오래된 것을 버림)에 두었다가 다시 연결되면 초당 4개 이하로 보낸다(연결당 상한 5개 아래). `ack`를 받기 전에 끊긴 비콘은 대기열 앞에 다시 넣어 다시 보낸다(광고 서버가 같은 serve의 두 번째 비콘을 `duplicate`로 판정하므로 중복 집계가 없다, ads.md 6절). `rate_limited`로 거부된 비콘은 다시 보내지 않고 버린 수에 넣는다. 닫힘 코드 4401이면 다시 연결하지 않는다(다음 페이지 이동 때 로그인 화면으로 간다). serve 토큰 만료(30분)는 광고 서버가 판정한다. 페이지 이동·닫기 때 남은 대기열은 버리고, 버린 수는 `sessionStorage`에 두었다가 다음 연결의 `hello.dropped`로 보낸다(지표 `paldo_ad_beacon_dropped_total{reason}`, reason은 `queue_full`·`page_exit`·`rate_limited`). 탭을 닫으면 `sessionStorage`도 사라져 보고하지 못하므로 이 지표는 손실의 **하한**이다. 실제 손실 판단은 광고 서버의 serve 대비 노출 비율로 한다.
+- **끊김 처리**: 브라우저가 자동으로 다시 연결한다(1·2·4·8·16·30초 간격, 이후 페이지가 열려 있는 동안 30초마다). 끊긴 동안의 비콘은 대기열(최대 20개, 넘으면 가장 오래된 것을 버림)에 두었다가 다시 연결되면 초당 4개 이하로 보낸다(연결당 상한 5개 아래). `ack`를 받기 전에 끊긴 비콘은 대기열 앞에 다시 넣어 다시 보낸다(광고 서버가 같은 serve의 두 번째 비콘을 `duplicate`로 판정하므로 중복 집계가 없다, ads.md 6절). `rate_limited`로 거부된 비콘은 다시 보내지 않고 버리되 브라우저 보고에는 넣지 않는다(서버가 거부할 때 센다). 닫힘 코드 4401이면 다시 연결하지 않는다(다음 페이지 이동 때 로그인 화면으로 간다). serve 토큰 만료(30분)는 광고 서버가 판정한다. 대기열이 넘쳐 버린 수(`queue_full`)와 페이지 이동·닫기 때 남은 대기열을 버린 수(`page_exit`)는 `sessionStorage`에 사유별로 쌓았다가 다음 연결의 `hello`로 보내고, `hello`를 보낸 뒤 0으로 되돌린다. 탭을 닫으면 `sessionStorage`도 사라져 보고하지 못하므로 이 지표는 손실의 **하한**이다. 실제 손실 판단은 광고 서버의 serve 대비 노출 비율로 한다.
+- **버린 비콘 지표**(P-29): `paldo_ad_beacon_dropped_total{reason}` 하나만 둔다. 총수 지표는 따로 두지 않고, 총수가 필요하면 이 지표를 reason 전체로 더한다.
+
+| reason | 세는 쪽 | 시점 |
+|---|---|---|
+| `queue_full` | 게임 웹이 `hello.dropped_by_reason`을 받아 더함 | 다음 연결의 `hello` |
+| `page_exit` | 같음 | 같음 |
+| `rate_limited` | 게임 웹이 `ad.impression`을 거부할 때 직접 더함(`hello`로는 받지 않음) | 거부 즉시 |
+
+- `hello`의 형식 위반(음수·정수 아님, `dropped`와 사유 합계 불일치, `dropped_by_reason` 없음, 알 수 없는 사유)은 지표에 더하지 않고 `error`(`bad_message`)로 답한다. 연결은 유지한다.
 - **HTTP 중계 경로**(로그인 필수):
 
 | 메서드·경로 | 처리 |

@@ -1,0 +1,24 @@
+{
+  "task": "A-07-01",
+  "commit": "05ebcdf48867d601e231c7bc7dfbe5b8d0cef289",
+  "generated_at": "2026-11-06T09:23:11Z",
+  "source": "python -m tools.perf.npc_rule_check --bench --preset base6 --games 200 --seed 2",
+  "metrics": {
+    "decisions": {
+      "value": 5187,
+      "unit": "건"
+    },
+    "decision_p50": {
+      "value": 1.03,
+      "unit": "ms"
+    },
+    "decision_p95": {
+      "value": 1.646,
+      "unit": "ms"
+    },
+    "decision_max": {
+      "value": 4.573,
+      "unit": "ms"
+    }
+  }
+}

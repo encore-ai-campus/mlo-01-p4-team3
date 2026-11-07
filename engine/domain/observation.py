@@ -38,6 +38,27 @@ class ReasonCode(str, enum.Enum):
     SCRIPTED = "scripted"                          # 테스트·재현용으로 정해 준 결정
     WITNESS_OTHERS_CLAIM = "witness_others_claim"  # 근거: 타인의 공개 목격 주장(알리바이 근거, 확정 아님)
     WITNESS_MUTUAL_VOUCH = "witness_mutual_vouch"  # 근거: 서로 본 두 사람의 상호 보증(담합일 수 있음)
+    # 규칙 v0(A-07-01) — 마을 주민
+    RULE_POINT_CONTRADICTION = "rule_point_contradiction"  # 아직 지적되지 않은 공개 모순을 지적
+    RULE_SUSPECT = "rule_suspect"                  # 의심도가 문턱 이상인 후보를 근거와 함께 의심
+    RULE_DEFEND = "rule_defend"                    # 직접 목격으로 알리바이를 아는 사람이 의심받아 감쌈
+    RULE_EXPLAIN = "rule_explain"                  # 나에 대한 새 의심이 있어 해명
+    RULE_SILENCE = "rule_silence"                  # 할 말 없음
+    EXCLUDE_PROPOSITION = "exclude_proposition"    # 투표 안전 층: 확정 명제(씐 자 아님)로 후보에서 뺌
+    PRESSURE_CONFESS = "pressure_confess"          # 압박이 고백 문턱값을 넘어 고백
+    REACT_EXPLAIN = "react_explain"                # 캐묻기 답: 해명
+    REACT_EVADE = "react_evade"                    # 캐묻기 답: 회피
+    REACT_COUNTER = "react_counter"                # 캐묻기 답: 역공
+    # 규칙 v0(A-07-01) — 씐 자 전략(혼합 비율은 판 시작 때 주입, 판 동안 고정)
+    FRAME_CONTRADICTED = "frame_contradicted"      # 누명: 공개 모순이 드러난 주민
+    FRAME_SUSPECTED = "frame_suspected"            # 누명: 의심도가 높아 보이는 주민
+    FRAME_MUDANG = "frame_mudang"                  # 무당 의심 유도
+    LIE_UNREFUTED = "lie_unrefuted"                # 거짓 행적: 자기 목격으로 반박되지 않는 공공장소(엔진이 밤 뒤 고름)
+    LIE_ROUTINE = "lie_routine"                    # 거짓 행적: 평소 한밤 동선의 공공장소
+    NIGHT_ACCUSER = "night_accuser"                # 밤 대상: 나·짝을 지목한 사람
+    NIGHT_WITNESS = "night_witness"                # 밤 대상: 내 거짓을 목격했을 수 있는 사람
+    NIGHT_TRUSTS_MUDANG = "night_trusts_mudang"    # 밤 대상: 무당을 따르는 사람
+    NIGHT_ANY = "night_any"                        # 밤 대상: 고른 묶음이 비어 전체에서
 
 
 # 근거 기록이 없어도 되는 이유 코드(조건 4 "근거 ID"는 근거가 있을 때만 요구, 11/6 PM 결정).
@@ -46,6 +67,10 @@ NO_EVIDENCE_CODES: frozenset[ReasonCode] = frozenset({
     ReasonCode.BASELINE_SILENCE, ReasonCode.BASELINE_EXPLAIN, ReasonCode.MAX_SUSPICION, ReasonCode.TIE_SEEDED,
     ReasonCode.SKIP_CONFESSED, ReasonCode.AVOID_PARTNER, ReasonCode.FALLBACK_ALL_LEGAL,
     ReasonCode.SEEDED_EXECUTOR, ReasonCode.SEEDED_VICTIM, ReasonCode.SCRIPTED,
+    ReasonCode.RULE_EXPLAIN, ReasonCode.RULE_SILENCE, ReasonCode.EXCLUDE_PROPOSITION, ReasonCode.PRESSURE_CONFESS,
+    ReasonCode.REACT_EXPLAIN, ReasonCode.REACT_EVADE, ReasonCode.REACT_COUNTER,
+    ReasonCode.LIE_UNREFUTED, ReasonCode.LIE_ROUTINE, ReasonCode.NIGHT_ACCUSER, ReasonCode.NIGHT_WITNESS,
+    ReasonCode.NIGHT_TRUSTS_MUDANG, ReasonCode.NIGHT_ANY,
 })
 SOURCE_CODE: dict[EvidenceSource, ReasonCode] = {
     EvidenceSource.OTHERS_CLAIM: ReasonCode.WITNESS_OTHERS_CLAIM,

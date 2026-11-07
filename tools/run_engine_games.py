@@ -9,7 +9,8 @@
 
 판 i(0부터)의 시드는 `seed * 1000000 + i`, 판 ID는 `eng_<preset>_<seed>_<i:05d>`다. 무당(플레이어) 명령은
 판 시드로 고정한 단순 선택(`tools.perf.engine_bench.bench_player_command`)이고, NPC는 `--policy`로 고른 규칙이다.
-`--policy min-legal`은 엔진 기본 `BaselinePolicy`(정책 버전 `baseline-0`)다(11/6 PM 결정). 판 메타·봉투의
+`--policy min-legal`은 엔진 기본 `BaselinePolicy`(정책 버전 `baseline-0`)다(11/6 PM 결정).
+`--policy rule-v0`은 NPC 규칙 v0(`engine.domain.npc.RuleV0Policy`, 정책 버전 `rule-v0`, A-07-01)다. 판 메타·봉투의
 `npc_policy_versions`는 판 생성 직후 주민 전원(실종자 포함)을 그 버전으로 채운다.
 `occurred_at`은 고정 기준 시각 + (판 순번 분, 이벤트 순번 밀리초)라 같은 명령이면 같은 바이트가 나온다.
 처리량(판/초)과 판당 이벤트 수는 로그로 남기고, `--record <태스크 ID>`면 결과 JSON에도 쓴다.
@@ -33,6 +34,7 @@ from engine.domain import params, serde
 from engine.domain.content import ContentBundle
 from engine.domain.engine import BaselinePolicy, NpcPolicy, PaldoEngine
 from engine.domain.events import DomainEvent, EventEnvelope, topic_of
+from engine.domain.npc import RuleV0Policy
 from engine.domain.model import CONTRACT_VERSION, PRESETS, CommandEnvelope, DataSource, GameMeta, GameState
 from engine.ports import EngineDeps, EventSink
 from engine.testing.fakes import FakeSuspicionModel, FixtureContentSource
@@ -48,9 +50,10 @@ SEED_STRIDE = 1_000_000                            # 판 시드 = seed * SEED_ST
 BASE_TIME = datetime(2026, 11, 6, tzinfo=timezone.utc)
 MAX_STEPS = 500                                    # 판 하나의 플레이어 명령 상한(끝나지 않는 판 방지)
 
-# 정책 선택지. 다음 태스크(A-07-01)가 "rule-v0"를 추가한다.
+# 정책 선택지. rule-v0은 NPC 규칙 v0(A-07-01, 정책 버전 rule-v0). 성향·동선은 판과 같은 콘텐츠(fixtures/content_min)에서 찾는다.
 POLICIES: dict[str, Callable[[], NpcPolicy]] = {
     "min-legal": BaselinePolicy,
+    "rule-v0": lambda: RuleV0Policy(FixtureContentSource().load("*")),
 }
 
 
