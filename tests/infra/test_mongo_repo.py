@@ -156,7 +156,7 @@ class MongoContractTests(unittest.TestCase):
         from unittest.mock import Mock,patch
         from pathlib import Path
         import tempfile
-        from tools.load_content import main
+        from server.infra.load_content import main
         client=Mock()
         client.get_default_database.return_value={'content_bundles':self.database[self.prefix+'cli_content']}
         from tools.check_content import load_bundle
