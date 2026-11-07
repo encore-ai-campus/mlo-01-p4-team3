@@ -40,10 +40,11 @@
   2. `fixtures/ads/auction_cases.json`·`validity_cases.json`·`budget_cases.json`을 HTTP 경유로 재생해 기대값과 같음.
   3. 구조화 로그(`serve_id`, `charge_id`)와 `/metrics`(`paldo_ad_serve_total{filled}`, `paldo_ad_serve_duration_seconds`, 클릭·노출 유효/무효 카운터).
   4. 광고 요청 처리 지연 p95 기록(목표: B의 전체 시간 제한 300ms 안).
-  5. 캠페인·소재·예산을 Django admin에서 관리: admin으로 캠페인을 만들면 다음 serve부터 후보가 되고, 중지하면 빠짐(테스트). admin은 로그인 필수.
+  5. 캠페인·소재·예산을 Django admin에서 관리: admin으로 캠페인을 만들면 다음 serve부터 후보가 되고, 중지하면 빠짐(테스트). admin은 로그인 필수. 일 예산이 1건 최대 청구액(CPC `max_bid_mw`, CPM `ceil(max_bid_mw/1000)`)보다 작으면 저장 거부(ads.md 2절 등록 검증, 11/7 PM 결정, 테스트: CPC 입찰가 300원·예산 100원 거부, 같은 값 CPM 허용).
   6. 클릭 리다이렉트의 도착지는 사이트 안 가상 랜딩(`/ads/landing/<creative_id>`). 외부 URL로 나가지 않음(테스트).
   7. 소재 이미지는 캠페인 데이터의 `image_path`(E 임시 소재와 같은 경로·이름·규격, E-05-05)로만 가리킨다. 광고 서버 코드에 이미지 파일명 없음, 실제 소재로 덮어써도 테스트가 코드 수정 없이 통과(E-11-10 5번이 검사).
   8. 게임 웹 중계(11/4 PM 결정 #2 변경, #14): 브라우저는 광고 서버에 직접 접속하지 않는다. 비콘·클릭·랜딩은 게임 웹 서버가 내부 주소(`PALDO_ADS_INTERNAL_URL`)로 부른다. 비콘 본문은 ads.md 3절의 JSON이고 `Content-Type`과 무관하게 파싱한다(게임 웹은 `application/json`으로 보냄). 비콘·클릭 엔드포인트는 serve 토큰으로 검증하므로 Django CSRF 검사에서 제외한다(테스트: CSRF 토큰 없는 JSON 비콘이 204). 클릭 응답의 `Location`은 상대 경로 `/ads/landing/<creative_id>`다(게임 웹이 같은 경로로 중계). 게임 웹이 넘긴 `X-Request-ID`를 로그 `request_id`로 남긴다([integration.md](../contracts/integration.md) 4.2절).
+  9. 경매 후보 필터 `budget`(ads.md 4절): 예약+확정 합계 + 1건 최대 청구액 > 일 예산이면 `filtered="budget"`(테스트: 남은 예산이 최대 입찰가보다 작고 실제 낙찰가보다 크면 걸러짐).
 - 근거: 기획서 14.3, 14.4 / ads.md
 
 ## 11/6(금)
@@ -95,6 +96,7 @@
 
 ### D-07-02 씐 자 확률 모델 첫 학습·평가
 - 3h · 선행: A-06-03(실제 엔진 판), C-07-01(14:00 인계). 그 전에는 A-06-03 jsonl을 `contracts/datasets.py`로 직접 학습 행으로 바꿔 개발하고, 최종 수치는 C-07-01의 Delta 학습 행으로 낸다
+- 학습 데이터 정책(11/7 PM 결정): A-06-03 데이터는 `baseline-0` 정책이라 회의 발언이 0건이어서 학습 코드 확인용으로만 쓴다. 수치는 A-07-01(`rule-v0`) 병합 뒤 `python -m tools.run_engine_games --preset base6 --games 200 --seed 2 --policy rule-v0 --out out/handoff/a0701`로 다시 만든 데이터로 낸다. rule-v0 base6 500판의 마을 승률이 약 83%(목표 40~60%)라 씐 자가 일찍 잡히는 판이 많을 수 있다. 가중치 조정은 A-08-03에서 한다.
 - 문서화(+0.25h, 공통 ⑦): [트러블 D](../troubles/D.md)에 `### D-07-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ml`](../modules/ml.md)는 그날 일괄 갱신(D-07-04)
 - 산출물: `ml/suspicion/features.py`, `train.py`, `evaluate.py`
 - 완료 조건:
