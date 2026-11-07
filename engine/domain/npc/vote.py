@@ -38,8 +38,8 @@ from ..observation import Decision, ReasonCode
 from . import beliefs as bl
 
 SUSPICION_TIMEOUT_S = 0.1     # 엔진 측 시간 초과(ports.md 3, 100ms)
-CONFORMITY_SCALE = 0.2        # 동조 항 크기: conformity 1.0·예상 득표 100%일 때 확률 0.2만큼(잠정, A-08-03 조정)
-VOTE_NOISE_P = 0.02           # 결정 층 잡음 폭(확률 단위 ±, 잠정)
+# 동조 항 크기(params.CONFORMITY_SCALE)·결정 층 잡음 폭(params.VOTE_NOISE)·q_max(params.Q_MAX)는
+# `decision_params.json`(A-08-03)에서 읽고, 호출할 때마다 params 모듈 값을 쓴다(탐색 도구가 바꿀 수 있게).
 PROB_EPS = 1e-6               # 로그 오즈 계산에서 0·1을 피하는 경계
 PROB_SUM_TOL = 1e-3           # 확률 합(= 남은 창귀 수) 검사 허용 오차
 FALLBACK_SUFFIX = "-fallback"
@@ -116,8 +116,10 @@ def valid_estimate(est: SuspicionEstimate, obs: ObservationSnapshot) -> bool:
     return all(isinstance(g, dict) and all(_finite(v) for v in g.values()) for g in contrib.values())
 
 
-def mudang_q(trust_in_mudang: float, q_max: float = params.Q_MAX) -> float:
-    """무당 의심도 q = q_max × (100 − trust)/100(ports.md 3). trust는 0~100으로 자른다."""
+def mudang_q(trust_in_mudang: float, q_max: Optional[float] = None) -> float:
+    """무당 의심도 q = q_max × (100 − trust)/100(ports.md 3). trust는 0~100으로 자른다. q_max 생략 시 params.Q_MAX."""
+    if q_max is None:
+        q_max = params.Q_MAX
     t = min(100.0, max(0.0, trust_in_mudang))
     return q_max * (100.0 - t) / 100.0
 
@@ -146,7 +148,7 @@ def weighted_probs(est: SuspicionEstimate, temp: Optional[Temperament]) -> dict[
 
 
 def combined_suspicion(probs: dict[str, float], trust_in_mudang: float,
-                       q_max: float = params.Q_MAX) -> dict[str, float]:
+                       q_max: Optional[float] = None) -> dict[str, float]:
     """무당 결합: 주민 후보 (1 − q) × p, 무당(`PLAYER_ID`) q."""
     q = mudang_q(trust_in_mudang, q_max)
     out = {c: (1.0 - q) * p for c, p in probs.items()}
@@ -170,9 +172,15 @@ def expected_votes(obs: ObservationSnapshot) -> dict[str, float]:
 
 
 def decision_scores(susp: dict[str, float], expected: dict[str, float], conformity: float,
-                    rng: random.Random, noise: float = VOTE_NOISE_P) -> dict[str, float]:
-    """결정 점수 = 의심도 + CONFORMITY_SCALE × conformity × 예상 득표 + 잡음(±noise). 후보 ID 순으로 잡음을 뽑는다."""
-    return {c: susp[c] + CONFORMITY_SCALE * conformity * expected.get(c, 0.0) + rng.uniform(-noise, noise)
+                    rng: random.Random, noise: Optional[float] = None) -> dict[str, float]:
+    """결정 점수 = 의심도 + params.CONFORMITY_SCALE × conformity × 예상 득표 + 잡음(±noise, 생략 시 params.VOTE_NOISE).
+
+    후보 ID 순으로 잡음을 뽑는다.
+    """
+    if noise is None:
+        noise = params.VOTE_NOISE
+    scale = params.CONFORMITY_SCALE
+    return {c: susp[c] + scale * conformity * expected.get(c, 0.0) + rng.uniform(-noise, noise)
             for c in sorted(susp)}
 
 

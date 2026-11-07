@@ -64,7 +64,21 @@ P-29에 따라 `hello`를 연결당 한 번 받는다. `dropped_by_reason`의 `q
 
 - 메모리 아웃박스로 건너뜀의 점수 세 개가 `null`이고 이벤트가 한 건임을 확인했다. C-06-01 게임 저장소·보조 `InteractionStore`와 C-06-02 발행기를 인수한 뒤 실제 Mongo 재조회·재시작, 저장 응답 유실 시 중복 방지, Kafka `paldo.player`의 `null` 보존을 확인한다. [이벤트 계약](../docs/contracts/events.md)
 
-계정 기능은 격리 MySQL에서 검증했다. 고정 판 배정은 실제 엔진과 녹화 엔진으로 시험하고, B 회차 저장·광고 가명 대응표는 [로컬 Mongo 시험](tests/README.md)으로 확인한다. C의 게임·진척 저장소를 연결한 운영 판, VM 계정 DB, 실제 광고 요청은 통합 환경에서 확인한다.
+계정 기능은 격리 MySQL에서 검증했다. 고정 판 배정은 실제 엔진과 녹화 엔진으로 시험하고, B 회차 저장·광고 가명 대응표는 [로컬 Mongo 시험](tests/README.md)으로 확인한다. B-06-03의 게임·진척·콘텐츠·회차 연결은 임시 Replica Set과 실제 엔진·HTTP·Daphne 재기동으로 확인했다. VM 계정 DB와 실제 광고 요청은 별도 통합 환경에서 확인한다.
 
 - [서버 라우팅](ROUTING.md) · [계정 운영 절차](../docs/modules/web.md#사용법)
 - [개인정보 계약](../docs/contracts/privacy.md) · [통합 계약](../docs/contracts/integration.md)
+
+## B-06-03 Mongo 실행 자원 조립
+
+`WebMongoGameRepository`는 C 저장소의 commit에서 나온 PyMongo `ConnectionFailure` 계열만 기본 `ConnectionError`로 변환한다. `AutoReconnect`·`NetworkTimeout`도 포함한다. B 응용의 기존 계약대로 같은 인자로 한 번만 재시도하며 엔진을 다시 실행하지 않는다. 첫 저장이 성공했다면 두 번째 CAS의 `VersionConflict` 뒤 저장 응답을 `200·replayed=true`로 돌려준다. 권한·입력·실행 제한 오류는 변환하지 않는다. 드라이버 내부의 자동 재시도와 B 응용의 1회 재시도는 별개다.
+
+`paldo_web/mongo.py`의 `open_mongo_runtime(engine=..., suspicion=..., uri=None)`이 C의 게임·진척·콘텐츠 저장소와 B의 회차 정책을 연결한다. URI를 생략하면 기존 `PALDO_MONGO_URI` 설정을 읽고 DB 경로가 없으면 `paldo_web`을 사용한다. 기본 컬렉션은 `games`, `progress`, `content`, `b_test_sessions`, `b_ad_identities`다. 같은 클라이언트를 공유하며 majority read/write concern을 사용한다. 기존 B 회차·광고 컬렉션 이름과 스키마는 바꾸지 않는다. 기존 데이터의 재생성·마이그레이션은 없다.
+
+엔진·의심 모델은 호스트 조립에서 명시적으로 주입한다. `engine.testing`·메모리 게임 저장소를 자동 대체로 연결하지 않는다. 모델을 `None`으로 명시하면 실제 엔진의 규칙 투표 경로를 사용한다. 시작 시 Replica Set을 확인하며 미설정·Standalone·접속 실패는 조립을 거부한다. 예외 메시지에 URI·인증 값을 넣지 않는다. 콘텐츠는 미리 적재한 정확한 `meta.content_version`으로 읽고 최신 버전으로 바꾸지 않는다. 미적재 버전으로 시작하면 내부 KeyError를 노출하지 않고 503 서비스 오류로 반환한다.
+
+반환 자원의 `configure()`는 HTTP 처리 전에 게임·회차 서비스를 함께 설치한다. `prepare_start`는 이 자원의 회차 저장소와 게임 조회 함수에 고정해 전역 서비스 교체로 다른 연결이 섞이지 않게 한다. 요청 처리가 끝난 뒤 `close()`로 클라이언트를 닫는다. 기존 `PALDO_GAME_SERVICE_FACTORY`의 함수에서는 `runtime.factory_service()`를 반환한다. 이 경로는 게임 전역 잠금을 다시 잡지 않고 같은 회차 서비스를 등록한다. `configure()`는 요청 처리 전 명시적 설치 경로에 사용한다.
+
+B-06-03은 고정 회차·가명·게임 저장 연결 범위다. 이 조립은 `InteractionStore`·해석기·렌더러를 임의로 주입하지 않는다. 자유 입력·수첩·설문 등의 영속 보조 저장과 Kafka 발행은 각 인수·후속 통합 범위로 남는다. 테스트의 단서 추가는 진척 포트의 보존 확인이며 E-09-08의 자동 해금 로직 검증이 아니다.
+
+실제 시험은 고유 `collection_prefix`를 사용해 5개 컬렉션을 분리하고 그 접두어의 컬렉션만 삭제한다. 운영은 기본 접두어를 사용한다. 로컬 MongoDB 8.3.7 단일 노드 Replica Set에서 확인했으며, C의 MongoDB 9.0.4 VM 저장소 시험과 B의 로컬 통합 시험을 구분한다. 대상 VM 접속·부하·전체 판 완주는 B-06-02·B-07-04·B-07-05에서 이어 간다.

@@ -345,7 +345,7 @@ class Tells(unittest.TestCase):
                 self.assertIsNone(judge_tell(rng, c, ClaimTruth("x", True, False)))
                 got = judge_tell(rng, c, ClaimTruth("x", False, True))
                 self.assertIs(got is None, ct not in FACT_CLAIMS)
-        self.assertEqual(params.TELL_PROB, 0.5)
+        self.assertEqual(params.TELL_PROB, params.DEFAULT.tell_prob)   # decision_params.json에서 읽음(A-08-03)
 
     def test_tells_only_on_false_fact_claims(self):
         """시드 60개 판(1일째 아침 진술 + 2일째 아침 진술)에서 공개 기색은 모두 거짓 사실 주장에만, 판정은 1회."""

@@ -43,7 +43,7 @@ paldo/
 │  │  ├─ mongo_repo.py, content_store.py   [C-06-01]
 │  │  ├─ outbox_publisher.py       [C-06-02]
 │  │  ├─ llm_renderer.py           LineRenderer 구현 [E-08-09, 11/7 P-31 (나)로 취소]
-│  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03]
+│  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03, 11/7 취소]
 │  │  ├─ ad_client.py              AdProvider HTTP 구현(serve·비콘·클릭·랜딩 중계) [B-08-03] 결정 #2·#6
 │  │  └─ model_selector.py         ModelSelector 최소 구현 [D-08-04] → 카나리아·고정 [B-09-01], 레지스트리 [C-09-01] 결정 #5
 │  └─ tests/                       Django 테스트: test_api.py [B-05-02], test_idempotency.py [B-06-02], test_accounts.py [B-06-04], test_ws.py [B-07-05]
@@ -60,7 +60,7 @@ paldo/
 │  │                               bid_update.py [D-10-02]
 │  ├─ infra/                       mysql_ledger.py, outbox.py, schema.sql [D-06-02]
 │  ├─ web/                         Django 앱(내부 API, 비콘, 클릭, 가상 랜딩, admin) [D-05-03]
-│  └─ testing/fakes.py             FakeAdProvider (있음)
+│  └─ testing/                     fakes.py(FakeAdProvider), traffic_server.py(D-06-03 격리 HTTP 시험 호스트)
 │
 ├─ intent/                         의도 해석기 · D
 │  ├─ baseline.py, matcher.py, parser.py   [D-05-01]
@@ -122,7 +122,7 @@ paldo/
 │  └─ fixtures/secrets/            탐지 시험용 가짜 값(검사 제외 경로). 개별 예외는 tools/secrets_allowlist.txt [E-05-02]
 │
 ├─ docs/                           문서 (3절)
-└─ out/                            실행 산출물(커밋 제외): logs/, perf/, handoff/a06/, ad_scenarios/, ad_truth/(합성 광고 정답, 평가 전용 [D-06-03])
+└─ out/                            실행 산출물(커밋 제외): logs/, perf/, handoff/a06/, ad_scenarios/, ad_truth/(합성 광고 정답, 평가 전용 [D-06-03]), ad_traffic/(HTTP 관측 이벤트·요약 [D-06-03])
 ```
 
 ## 2. 폴더별 계층·담당 요약

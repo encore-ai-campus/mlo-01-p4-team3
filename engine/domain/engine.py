@@ -145,11 +145,15 @@ def _draw_secrets(rng: random.Random, holders_pool: list[str], secrets: list[Sec
 
 
 def _routine_place(rng: random.Random, ch: Character, slot: Slot, exclude: Optional[Place] = None) -> Place:
-    """인물 동선 가중치로 장소를 뽑는다. 후보가 없으면 집."""
+    """인물 동선 가중치로 장소를 뽑는다(동선 무작위성 `params.ROUTINE_RANDOMNESS`만큼 균등 분포와 섞음). 후보가 없으면 집."""
     prefs = [(p, w) for p, w in ch.routine.get(slot, {}).items() if p is not exclude and w > 0]
     if not prefs:
         return Place.HOME
     places, weights = zip(*prefs)
+    r = params.ROUTINE_RANDOMNESS          # 동선 무작위성(A-08-03): 같은 후보 장소 안에서 균등 분포와 섞는다
+    if r > 0:
+        total = sum(weights)
+        weights = tuple((1.0 - r) * w / total + r / len(weights) for w in weights)
     return rng.choices(places, weights=weights)[0]
 
 

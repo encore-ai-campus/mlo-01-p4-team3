@@ -48,8 +48,9 @@ class Layers(unittest.TestCase):
         self.check("tools", {"engine", "contracts", "tools", "ads"})
 
     def test_llm_rules_stdlib_only(self):
-        # E-07-07: 서비스(E-08-09)와 MVP 노트북(E-07-06)이 그대로 쓰는 순수 규칙 4개. llm/bench·llm/service는 대상 아님
-        for name in ("prompt.py", "validator.py", "eval_set.py", "mvp_metrics.py"):
+        # E-07-07: 서비스(E-08-09)와 MVP 노트북(E-07-06)이 그대로 쓰는 순수 규칙 4개 + E-06-02 변형 규칙.
+        # llm/bench·llm/service는 대상 아님
+        for name in ("prompt.py", "validator.py", "eval_set.py", "mvp_metrics.py", "intent_variants.py"):
             f = ROOT / "llm" / name
             self.assertTrue(f.exists(), str(f))
             for mod, level in imports(f):

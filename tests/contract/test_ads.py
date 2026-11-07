@@ -103,21 +103,21 @@ def _camp(budget_mw: int, billing: BillingType) -> Campaign:
                     "2026-11-01", "2026-11-30", CampaignStatus.ACTIVE, [])
 
 
-def _serve(sid: str, billing: BillingType, price_mw: int, at_ms: int = 0, session: str = "s") -> ServeRecord:
-    return ServeRecord(sid, "req_" + sid, "cp", "cr", AdSlot.LOBBY_BANNER, billing, price_mw, 0.02, session, at_ms,
-                       "2026-11-06")
+def _serve(sid: str, billing: BillingType, price_mw: int, at_ms: int = 0, session: str = "s",
+           day: str = "2026-11-06", slot: AdSlot = AdSlot.LOBBY_BANNER) -> ServeRecord:
+    return ServeRecord(sid, "req_" + sid, "cp", "cr", slot, billing, price_mw, 0.02, session, at_ms, day)
 
 
 class CampaignBudgetRegistration(unittest.TestCase):
-    """등록 검증은 최대 입찰가를 쓰며 CPM은 밀리원 단위로 올림한다."""
+    """등록 검증은 최대 입찰가를 쓰며 CPM은 밀리원 단위로 내림한다(11/7 PM 결정, 나머지 이월 폐지)."""
 
     def test_maximum_charge_boundary_for_cpc_and_cpm(self):
         for billing, bid, budget, accepted in (
                 (BillingType.CPC, 300000, 100000, False),
                 (BillingType.CPC, 300000, 300000, True),
                 (BillingType.CPM, 300000, 100000, True),
-                (BillingType.CPM, 300001, 300, False),
-                (BillingType.CPM, 300001, 301, True)):
+                (BillingType.CPM, 300999, 299, False),
+                (BillingType.CPM, 300999, 300, True)):
             with self.subTest(billing=billing, bid=bid, budget=budget):
                 if accepted:
                     rules.validate_campaign_budget(billing, bid, budget)
@@ -162,27 +162,89 @@ class Budget(unittest.TestCase):
 class AdsReviewRegressions(unittest.TestCase):
     """광고 설계 크로스체크 지적 회귀."""
 
-    def test_cpm_remainder_carried(self):
+    def test_cpm_floor_per_impression_bounded_loss(self):
+        """11/7 PM 결정: 1건 금액 = floor(청구 CPM/1000). 비정수 CPM 1000건의 누적 손실은 1000밀리원 미만."""
         camp = _camp(won(1_000_000), BillingType.CPM)
         camp.max_bid_mw = won(5000)
         book = rules.BudgetBook()
         for i in range(1000):
-            rec = _serve(f"s{i}", BillingType.CPM, 1501)
+            rec = _serve(f"s{i}", BillingType.CPM, 100_999)
             self.assertTrue(book.reserve(camp, rec))
+            self.assertEqual(book.rows[f"s{i}:impression"].amount_mw, 100)   # 예약액 = 확정액
             self.assertTrue(book.confirm(rules.charge_id(rec.serve_id, BillingType.CPM), f"e{i}"))
-        self.assertEqual(book.committed_mw("cp", "2026-11-06"), 1501)   # 1000회 노출 = 청구 CPM 그대로
+            self.assertEqual(book.rows[f"s{i}:impression"].amount_mw, 100)
+        committed = book.committed_mw("cp", "2026-11-06")
+        self.assertEqual(committed, 100_000)
+        self.assertLess(100_999 - committed, 1000)                          # 정확값 100,999 대비 손실
 
-    def test_cpm_refund_restores_carry(self):
+    def test_cpm_refund_across_days_never_negative(self):
+        """D-06-02 보고 재현: 11/6 노출 확정 → 11/7 같은 가격 확정 → 11/6 건 환입. 어느 날도 음수가 아니다."""
+        camp = _camp(won(1_000_000), BillingType.CPM)
+        camp.max_bid_mw = won(5000)
+        book = rules.BudgetBook()
+        a = _serve("a", BillingType.CPM, 100_500, day="2026-11-06")
+        b = _serve("b", BillingType.CPM, 100_500, day="2026-11-07")
+        for rec in (a, b):
+            self.assertTrue(book.reserve(camp, rec))
+            self.assertTrue(book.confirm(f"{rec.serve_id}:impression", "e" + rec.serve_id))
+        self.assertEqual((book.committed_mw("cp", "2026-11-06"), book.committed_mw("cp", "2026-11-07")), (100, 100))
+        row = book.refund("a:impression", "ea_rejudged")
+        self.assertEqual((row.amount_mw, row.attribution_day), (-100, "2026-11-06"))   # 원래 금액의 부호 반전, 원래 귀속일
+        self.assertEqual((book.committed_mw("cp", "2026-11-06"), book.committed_mw("cp", "2026-11-07")), (0, 100))
+
+    def test_refund_per_slot_sum_never_negative(self):
+        """같은 날 다른 지면 두 건 중 하나를 환입해도 지면별 합이 음수가 아니다(1건 금액이 순서와 무관)."""
+        camp = _camp(won(1_000_000), BillingType.CPM)
+        camp.max_bid_mw = won(5000)
+        camp.slots = [AdSlot.LOBBY_BANNER, AdSlot.RESULT_BANNER]
+        book = rules.BudgetBook()
+        recs = [_serve("a", BillingType.CPM, 100_500, slot=AdSlot.LOBBY_BANNER),
+                _serve("b", BillingType.CPM, 100_500, slot=AdSlot.RESULT_BANNER)]
+        for rec in recs:
+            book.reserve(camp, rec)
+            book.confirm(f"{rec.serve_id}:impression", "e" + rec.serve_id)
+        book.refund("a:impression", "ea_rejudged")
+        slot_of = {f"{r.serve_id}:impression": r.slot for r in recs}
+        per_slot: dict[AdSlot, int] = {}
+        for cid, row in book.rows.items():
+            slot = slot_of[cid.removesuffix(rules.REFUND_SUFFIX)]
+            per_slot[slot] = per_slot.get(slot, 0) + row.amount_mw
+        self.assertEqual(per_slot, {AdSlot.LOBBY_BANNER: 0, AdSlot.RESULT_BANNER: 100})
+
+    def test_refund_only_once_and_only_original_charge(self):
+        camp = _camp(won(1_000), BillingType.CPC)
+        book = rules.BudgetBook()
+        book.reserve(camp, _serve("a", BillingType.CPC, won(50)))
+        book.confirm("a:click", "ea")
+        self.assertEqual(book.refund("a:click", "r1").amount_mw, -won(50))
+        self.assertIsNone(book.refund("a:click", "r2"))              # 중복 환입 거부
+        self.assertIsNone(book.refund("a:click:refund", "r3"))       # 환입 행 재환입 거부
+        self.assertEqual(book.committed_mw("cp", "2026-11-06"), 0)
+
+    def test_cpm_below_floor_and_zero_charge_rejected(self):
         camp = _camp(won(1_000_000), BillingType.CPM)
         book = rules.BudgetBook()
-        a, b = _serve("a", BillingType.CPM, 500), _serve("b", BillingType.CPM, 500)
-        book.reserve(camp, a)
-        book.confirm("a:impression", "ea")
-        book.refund("a:impression", "ea_rejudged")
-        book.reserve(camp, b)
-        book.confirm("b:impression", "eb")
-        self.assertEqual(book.rows["b:impression"].amount_mw, 0)      # 환입한 노출의 나머지가 남지 않음
-        self.assertEqual(book.cpm_carry["cp"], 500)
+        with self.assertRaises(ValueError):
+            book.reserve(camp, _serve("low", BillingType.CPM, 99_999))      # 하한(100원 CPM) 미만
+        self.assertTrue(book.reserve(camp, _serve("ok", BillingType.CPM, 100_000)))
+        cpc = _camp(won(1_000_000), BillingType.CPC)
+        with self.assertRaises(ValueError):
+            book.reserve(cpc, _serve("zero", BillingType.CPC, 0))           # 0원 과금 금지
+
+    def test_slot_policy_reserve_floor(self):
+        with self.assertRaises(ValueError):
+            SlotPolicy(AdSlot.LOBBY_BANNER, 99_999, 0.02)
+        self.assertEqual(SlotPolicy(AdSlot.LOBBY_BANNER, 100_000, 0.02).reserve_ecpm_mw, 100_000)
+
+    def test_reconcile_net_of_refunds(self):
+        ledger = {"a:click": 50, "a:click:refund": -50,               # 환입으로 상계, Delta에 없음 → 일치
+                  "b:impression": 100, "b:impression:refund": -100,   # 상계됐는데 Delta에 남음 → 금액 불일치
+                  "c:click": 30,                                      # Delta와 같음 → 일치
+                  "z:click:refund": -40}                              # 원과금 없는 환입
+        delta = {"b:impression": [100], "c:click": [30]}
+        self.assertEqual(rules.reconcile(ledger, delta),
+                         {"ledger_only": [], "delta_only": [], "duplicate": [], "amount_mismatch": ["b:impression"],
+                          "orphan_refund": ["z:click:refund"]})
 
     def test_reserve_invariants(self):
         camp = _camp(won(100), BillingType.CPC)
@@ -319,7 +381,8 @@ class SyntheticAds(unittest.TestCase):
             if e.charge_id:
                 delta.setdefault(e.charge_id, []).append(e.charge_mw)
         self.assertEqual(rules.reconcile(ledger, delta),
-                         {"ledger_only": [], "delta_only": [], "duplicate": [], "amount_mismatch": []})
+                         {"ledger_only": [], "delta_only": [], "duplicate": [], "amount_mismatch": [],
+                          "orphan_refund": []})
 
 
 if __name__ == "__main__":

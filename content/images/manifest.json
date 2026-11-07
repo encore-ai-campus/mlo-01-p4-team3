@@ -716,7 +716,39 @@
     "id": "village",
     "path": "content/images/map/village.png",
     "url": "/static/assets/map/village.png",
-    "placeholder": true
+    "placeholder": true,
+    "regions": {
+      "well": [
+        64,
+        296,
+        128,
+        128
+      ],
+      "shrine": [
+        320,
+        296,
+        128,
+        128
+      ],
+      "tavern": [
+        576,
+        296,
+        128,
+        128
+      ],
+      "gate": [
+        832,
+        296,
+        128,
+        128
+      ],
+      "home": [
+        1088,
+        296,
+        128,
+        128
+      ]
+    }
   },
   {
     "kind": "ad",

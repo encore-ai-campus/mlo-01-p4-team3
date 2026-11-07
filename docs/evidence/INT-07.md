@@ -1,0 +1,81 @@
+# INT-07 통합 1 (11/7)
+- 상태: 부분 판정, 미통과 항목 담당 배정. 9개 항목 중 통과 0, 엔진 몫·자동 테스트 몫만 확인했다. #5·#7·#8은 선행 작업 미완으로 미통과로 기록하고 담당·기한을 붙였다(11/7 사용자 결정). #1·#3·#4·#6의 실제 웹·Mongo 경로는 운영 게임 서비스 조립이 없어 재현하지 못했다. 공통 완료 정의의 완료를 뜻하지 않는다.
+- 커밋: edae77caaa794eb2009bd6d66e5d1d8eb432b0c6
+- 작성자(흐름): E
+- 환경: 로컬(노트북 Windows 11, Python 3.14.6). 통합 환경(Compose의 웹·Mongo·Kafka·광고 서버 동시 기동)은 아직 구성되지 않았다. Mongo 실제 저장소 시험은 C-06-01 증빙의 VM 레플리카셋 결과를 근거로 삼는다(접속 정보는 저장소 밖).
+- 판정 주관: E-07-03(PM). 판정 기준은 `docs/tasks/E_pm.md`의 INT-07 표다.
+- 작성일: 2026-11-07
+
+## 명령
+
+```powershell
+# 엔진 몫 시나리오 테스트: dev(edae77c) 코드에 미병합 브랜치 task/A-07-03(f741d36)의 tests/engine/test_int07.py만 얹어 저장소 밖 임시 폴더에서 실행
+git archive origin/dev | tar -x -C <임시 폴더>
+git show task/A-07-03:tests/engine/test_int07.py > <임시 폴더>/tests/engine/test_int07.py
+python -B -m unittest tests.engine.test_int07 tests.engine.test_projection
+
+# Mongo·발행기 테스트(로컬에는 테스트용 Mongo 주소가 없어 건너뜀, 실제 결과는 C-06-01·C-06-02 증빙)
+python -B -m unittest tests.infra.test_mongo_repo tests.infra.test_outbox_publisher
+
+# 선행 태스크 PR 확인
+gh pr list --state merged --search "[<ID>] in:title"
+```
+
+## 출력
+
+```text
+tests.engine.test_int07 + tests.engine.test_projection (dev edae77c + A-07-03 테스트 파일)
+Ran 29 tests in 87.230s
+OK
+[A-06-02] games=200 observations=9276 decisions=9276 truth_reads_during_decide=0 truth_reads_outside=18001
+
+tests.infra.test_mongo_repo + tests.infra.test_outbox_publisher (로컬)
+Ran 9 tests, OK (skipped=10, 테스트용 Mongo 주소 없음)
+```
+
+선행 태스크 PR 확인 결과(11/7 기준, 병합): C-06-01 #225(Mongo 저장소·실제 레플리카셋 검증), C-06-02 #226(토픽 10개·아웃박스 발행·소비 중복 제거), C-06-03 #228(광고·계정 DB 분리, 부분 완료), C-06-04 #229, C-07-01 #223(Kafka→Delta bronze, 부분 구현), D-05-03 #222(광고 서버 API, 부분 구현), D-06-01 #206, A-07-01 #210, A-07-02 #212, B-07-01 #217·#220, B-07-02 #218, B-07-03 #221, B-07-05 #216. PR 없음: C-07-02, C-07-03, C-07-04, D-07-02, A-07-03(엔진 몫 테스트는 브랜치에만 있음).
+
+C 흐름 보고(11/7): Mongo·아웃박스는 구현과 실제 검증을 마치고 병합했다. 광고 토픽·DB·계정은 만들었고 광고 서버 연결과 DB 복제가 남았다. Spark 전체 적재·학습 연결, Kafka 장애 무손실 시험, HTTPS는 완료되지 않았다.
+
+게임 웹의 운영 게임 서비스는 `PALDO_GAME_SERVICE_FACTORY`로 조립한다(`server/paldo_web/composition.py`, 기본값 비어 있음). C-06-01 증빙은 "B 조립에서 `MongoGameRepository`·`MongoProgressRepository`·`MongoContentSource`를 주입"한다고 적었지만, 이 값을 채우는 조립 함수는 dev에 아직 없다. 그래서 실제 엔진·웹·Mongo로 판을 진행하는 웹 재현(#1·#3·#4·#6의 웹 부분)은 여전히 할 수 없다.
+
+## 수치
+
+| 조건 | 기준 | 측정값 | 측정 방법(지표 이름 또는 스크립트) | 결과 파일 | 통과 |
+|---|---|---|---|---|---|
+| 1 | 3판 완주, 오류 0 | 엔진 몫 통과(버튼 명령만으로 6인·창귀 1 3판 완주, `test_three_games_finish`, dev 코드 기준). Mongo 저장소는 C-06-01(#225)에서 실제 레플리카셋 검증 완료. 실제 웹 3판 완주는 운영 게임 서비스 조립(`PALDO_GAME_SERVICE_FACTORY`) 대기, 사람 확인 필요. 담당 A·B·C, 기한 통합 2(11/9) 전 | `tests.engine.test_int07` | - | 아니오 |
+| 2 | 시나리오 테스트 + 웹 1회씩 재현 | 시나리오 테스트 통과(결선 재동점 무감금, 무당 감금, 점괘·고백 전환, 마지막 씐 자 감금, 거짓 점괘 공개). 테스트 파일은 A-07-03 브랜치에만 있음(PR 대기). 웹 1회씩 재현은 조립 대기, 사람 확인 필요. 담당 A, 기한 통합 2(11/9) 전 | `tests.engine.test_int07` | - | 아니오 |
+| 3 | 0일째·1일째 모두 | 엔진 몫 통과(0일째·1일째 `morning_announced`의 피해 장소 = 플레이어 화면 실종 기록 장소). 아침 화면 표시는 조립 뒤 사람 확인 필요. 담당 A·B, 기한 통합 2(11/9) 전 | `tests.engine.test_int07` | - | 아니오 |
+| 4 | 테스트 + 웹에서 재현 | 테스트 몫: 중복 명령·버전 충돌·동시 요청은 B-06-02(#202)·B-07-01(#217) 증빙, 저장소 CAS·원자 쓰기·동시 commit 20개 성공 1건은 C-06-01(#225) 증빙. 저장 후 재개의 웹 재현은 조립 대기, 사람 확인 필요. 담당 B·C, 기한 통합 2(11/9) 전 | B-06-02·B-07-01·C-06-01 증빙 | - | 아니오 |
+| 5 | `reconcile_game_events.py` 불일치 0 | 미통과: Kafka 장애 무손실 시험과 대조 스크립트 미완(C-07-02, PR 없음). 발행기·소비자 중복 제거는 C-06-02(#226)에 있음. 담당 C, 기한 11/8 | - | - | 아니오 |
+| 6 | 판 3개 전체 HTML·JSON 금지 키 0 | 엔진 투영 검사 통과(`test_projection` 24개, 결정 중 진실 읽기 0). 웹 응답 금지 키 검사는 `server/tests`(가짜·녹화 엔진 기준)에 있고 B-07-01 증빙의 회귀에 포함. 실제 판 3개 전체 응답 검사는 조립 대기. 담당 B, 기한 통합 2(11/9) 전 | `tests.engine.test_projection` | - | 아니오 |
+| 7 | D-07-02 수치 존재 | 미통과: Delta 전체 적재·silver·라벨 조인·학습 연결 미완(C-07-01 나머지, #223은 bronze 부분 구현), 씐 자 모델 첫 학습 미완(D-07-02, PR 없음). 담당 C·D, 기한 통합 2(11/9) 전 | - | - | 아니오 |
+| 8 | 테스트 + 토픽 오프셋 증가 | 미통과: 광고 서버 API는 D-05-03(#222, 부분 구현), 광고 토픽·DB·계정은 C-06-03(#228, 부분 완료). 광고 서버 연결과 DB 복제가 남아 `ad.*` Kafka 도달 미확인. 담당 C·D, 기한 11/8 | - | - | 아니오 |
+| 9 | 구성요소 누락 0, 3.14 아닌 프로세스 0 | 구성요소별 증빙: 웹 `/metrics`·Python 3.14.6(B-05-01, B-07-05), Mongo 저장소 `paldo_repo_commit_duration_seconds`·Python 3.14.4(C-06-01), 발행기 `paldo_outbox_publish_lag_seconds`(C-06-02), 광고 서버 `/metrics`·Python 3.14.6(D-05-03). 구성요소가 통합 환경에 함께 떠 있지 않아 동시 기동 기준의 누락 0·프로세스별 버전 확인은 하지 못함. 런타임 LLM은 P-31 (나)로 구성요소에서 빠짐. 담당 전원, 기한 통합 2(11/9) 전 | 각 증빙 | - | 아니오 |
+
+## 미통과 항목 담당·기한 (11/7 사용자 결정)
+
+| 항목 | 막는 작업 | 담당 | 기한 |
+|---|---|---|---|
+| #5 | C-07-02 Kafka 중지·재개 무손실 시험과 대조 스크립트 | C | 11/8 |
+| #8 | C-06-03 나머지(광고 서버 연결·DB 복제), D-05-03 후속 연동 | C·D | 11/8 |
+| #7 | C-07-01 나머지(전체 적재·silver·라벨 조인·학습 연결), D-07-02 | C·D | 통합 2(11/9) 전 |
+| #1·#3·#4·#6 웹 부분, #2 웹 재현 | 운영 게임 서비스 조립(`PALDO_GAME_SERVICE_FACTORY` 구현, 담당 태스크 미지정), A-07-03 PR | A·B·C | 통합 2(11/9) 전 |
+| #9 | 통합 환경 동시 기동 | 전원 | 통합 2(11/9) 전 |
+
+INT 항목은 아니지만 사전 테스트(E-08-10, 11/8)에 필요한 C-07-04(HTTPS 프록시, 참가자 안내 문구 → E)는 11/8 사전 테스트 전까지다.
+
+## 로그
+
+- 엔진 몫 테스트는 unittest 출력만 있다(위 "출력"). 별도 로그 파일은 없다.
+- 로컬 Django 회귀(`server.tests`)는 돌리지 않았다. B-07-01 증빙의 회귀 결과를 근거로 삼았다.
+- 통합 환경 로그는 운영 게임 서비스 조립과 동시 기동 뒤 이 절에 붙인다.
+
+## 트러블
+
+- [트러블 E](../troubles/E.md#e-07-03-통합-1-주관)
+
+## 문서
+
+- `docs/evidence/INT-07.md`
+- `docs/troubles/E.md`

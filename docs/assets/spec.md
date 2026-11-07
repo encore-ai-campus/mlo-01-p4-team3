@@ -42,7 +42,7 @@
 - **초상은 sprite에서 파생**한다: sprite에서 인물별 크롭 위 y(6절)부터 512×512를 잘라 먹남(`#2E344A`) 위에 알파 합성한다(6절). 한 인물은 sprite 1장만 만들고, 초상은 `make_placeholders`가 만든다. manifest의 초상 항목에 `"derived_from": "sprite:<id>"`가 붙고, 쌍의 `placeholder`는 같아야 한다(4절).
 - **장면 배경**: 회의 `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), 밤 `night`(밤 마을 공통 1장). 장소별 배경은 만들지 않는다(7절).
 - **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
-- **지도**: ID는 `village`다. 11/5 PM 결정으로 지도는 **시연까지 임시 에셋**이다. 장소 5곳의 영역 좌표는 E-08-07이 임시 지도용 안내 고정값(정보가 없는 균등 배치)으로 manifest에 넣는다(B-10-02 아이콘 배치용). 현재 임시 지도에는 좌표가 없다.
+- **지도**: ID는 `village`다. 11/5 PM 결정으로 지도는 **시연까지 임시 에셋**이다. 장소 5곳의 영역 좌표는 E-08-07이 임시 지도용 안내 고정값(정보가 없는 균등 배치)으로 manifest 지도 항목의 `regions`에 넣었다(B-10-02 아이콘 배치용). 계약 `Place` 순서대로 지도 가로를 장소 수로 나눈 칸의 가운데, 세로 가운데에 장소 아이콘 크기(128×128) 상자다(`spec.map_regions`). 위치는 장소 사이 거리·방향을 뜻하지 않는다.
 - **정적 파일 연결**(B-05-03 5번): `/static/assets/<kind>/…` → `content/images/<kind>/…`, `/static/ads/…` → `content/images/ad/…`.
 
 ## 3. UI 아이콘 목록
@@ -87,6 +87,7 @@
 | `placeholder` | 임시 파일이면 `true`. 실제 파일로 덮어쓰면 `false` |
 | `derived_from` | 초상만. 원본 sprite 키(`sprite:<id>`). 쌍의 `placeholder`가 다르면 대조가 `pair_mismatch`로 실패한다 |
 | `edited_from` | 표정 변형 sprite만. 편집 입력으로 쓴 기본 sprite 키(`sprite:<인물 id>`). 둘 다 실제면(또는 표정만 실제면) 얼굴 영역 밖이 같아야 한다(6절). 기본이 실제이고 표정이 임시인 것은 표정 작업 전 정상 상태다 |
+| `regions` | 지도만. `{장소 id: [x, y, 가로, 세로]}`(지도 픽셀). 장소 id 전부를 한 번씩, 지도 안의 겹치지 않는 상자로 둔다(`check_assets.py`가 검사, E-08-07 6번) |
 
 - B는 `asset_url(content_id)`처럼 manifest를 조회해서만 이미지를 넣는다(B-05-03 4번). D는 캠페인의 `image_path`와 `slot_image_path`로만 소재를 가리킨다(D-05-03 7번). 경로 문자열을 코드에 쓰지 않는다.
 
@@ -190,6 +191,7 @@
 | place, ui, map, ad | 임시 허용(`placeholder: true`) | `check_assets.py --allow-placeholder place,ui,map,ad`(E-08-07 7번). 실제 필수 유형의 검사는 생략하지 않는다 |
 
 - 임시 아이콘은 도형뿐이므로 화면이 기능·장소 이름 텍스트를 함께 쓴다(B-10-02).
+- 실제 세트 검사 명령: 임시 세트 `python -m tools.assets.check_assets --placeholder`, 시연 기준 `python -m tools.assets.check_assets --allow-placeholder place,ui,map,ad`, 모든 유형 실제 `python -m tools.assets.check_assets`. 어느 모드든 실제 파일(`placeholder: false`)은 에셋2(`SOURCES.md` 기록 행)~4를 모두 본다.
 - 광고 소재가 임시라 사람 클릭률은 소재 효과로 해석하지 않는다. 합성 CTR 검증(D)은 그림과 무관하다.
 
 ## 8. 표정 목록

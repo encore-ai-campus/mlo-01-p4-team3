@@ -1,0 +1,56 @@
+{
+  "task": "A-08-03",
+  "commit": "edae77caaa794eb2009bd6d66e5d1d8eb432b0c6",
+  "generated_at": "2026-11-07T12:48:47Z",
+  "source": "python -m tools.optimize_decision --target 0.4 0.6 --preset base6 --bot logic --samples 40 --top 5 --screen-games 200 --confirm-games 1000 --final-games 1000 --seed 11 --workers 8 --out out/a0803 --write-params",
+  "metrics": {
+    "final_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "final_village_win_rate": {
+      "value": 49.6,
+      "unit": "%"
+    },
+    "final_ci95_low": {
+      "value": 46.51,
+      "unit": "%"
+    },
+    "final_ci95_high": {
+      "value": 52.69,
+      "unit": "%"
+    },
+    "final_inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "final_villager_votes": {
+      "value": 5029,
+      "unit": "표"
+    },
+    "final_fallback_votes": {
+      "value": 0,
+      "unit": "표"
+    },
+    "final_days_mean": {
+      "value": 1.289,
+      "unit": "낮"
+    },
+    "screen_candidates": {
+      "value": 41,
+      "unit": "개"
+    },
+    "confirm_candidates": {
+      "value": 5,
+      "unit": "개"
+    },
+    "search_elapsed": {
+      "value": 232.4,
+      "unit": "s"
+    },
+    "workers": {
+      "value": 8,
+      "unit": "개"
+    }
+  }
+}

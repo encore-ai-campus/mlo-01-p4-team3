@@ -36,6 +36,18 @@ def synthetic_campaigns():
     return out
 
 
+def hidden_ctrs(camps, rng):
+    """기존 생성기의 소재 × 지면 × 승패 정답 모델. 서버 입력으로 쓰지 않는다."""
+    hidden = {}
+    for c in camps:
+        for cr in c.creatives:
+            for sl in c.slots:
+                base = rng.uniform(0.005, 0.08)
+                for oc, lift in OUTCOME_LIFT.items():
+                    hidden[(cr.creative_id, sl, oc)] = min(base * lift, 0.5)
+    return hidden
+
+
 class _Sim:
     def __init__(self, seed: int, invalid_rate: float):
         self.seed = seed
@@ -43,13 +55,7 @@ class _Sim:
         self.invalid_rate = invalid_rate
         self.camps = synthetic_campaigns()
         self.policies = {p.slot: p for p in slot_policies()}
-        self.hidden = {}
-        for c in self.camps:
-            for cr in c.creatives:
-                for sl in c.slots:
-                    base = self.rng.uniform(0.005, 0.08)
-                    for oc, lift in OUTCOME_LIFT.items():
-                        self.hidden[(cr.creative_id, sl, oc)] = min(base * lift, 0.5)
+        self.hidden = hidden_ctrs(self.camps, self.rng)
         self.counts: dict[tuple, list[int]] = {}        # (creative, slot) -> [유효 노출, 클릭된 노출]
         self.pacing = {c.campaign_id: 1.0 for c in self.camps}
         self.freq: dict[tuple, int] = {}

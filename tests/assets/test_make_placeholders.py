@@ -229,7 +229,8 @@ class GenerateTest(unittest.TestCase):
         for d in items:
             want = ({"kind", "id", "path", "url", "placeholder"} | ({"size"} if d["kind"] == "ad" else set())
                     | ({"derived_from"} if d["kind"] == "portrait" else set())
-                    | ({"edited_from"} if d["kind"] == "sprite" and "__" in d["id"] else set()))
+                    | ({"edited_from"} if d["kind"] == "sprite" and "__" in d["id"] else set())
+                    | ({"regions"} if d["kind"] == "map" else set()))
             self.assertEqual(set(d), want)
             self.assertIs(d["placeholder"], True)
             keys.add((d["kind"], d["id"], tuple(d.get("size") or ())))

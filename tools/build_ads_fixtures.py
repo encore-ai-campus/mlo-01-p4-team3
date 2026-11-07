@@ -135,6 +135,7 @@ def validity_cases() -> list[dict]:
 
 
 def budget_cases() -> list[dict]:
+    """예산 예약·확정·해제·환입 시나리오와 순액 건별 대사 예시(fixtures/ads/budget_cases.json)."""
     return [
         {"case_id": "reserve_blocks_overspend", "note": "예산 120원, CPC 50원: 예약 2건(100원) 뒤 세 번째 예약 거부 → 1건 확정·1건 해제 시각(serve+30분+유예 2분) 경과로 해제 → 다시 예약 가능",
          "daily_budget_mw": won(120), "billing": "cpc", "price_mw": won(50),
@@ -150,12 +151,14 @@ def budget_cases() -> list[dict]:
              {"op": "refund", "serve": "s1", "event": "e1_rejudged", "expect_amount_mw": -won(50)},
          ],
          "expect_committed_mw": won(50) + won(50) - won(50)},
-        {"case_id": "reconcile_itemized", "note": "건별 대사: 합계가 같아도 건별 불일치를 찾는다. Delta에만 있는 중복도 중복으로 센다",
-         "ledger": {"a:click": won(50), "b:click": won(75), "c:click": won(30), "e:click": won(40)},
+        {"case_id": "reconcile_itemized", "note": "건별 대사: 합계가 같아도 건별 불일치를 찾는다. Delta에만 있는 중복도 중복으로 센다. "
+                 "원장은 원래 charge_id로 묶은 순액(원과금+환입)으로 비교한다(f: 환입으로 상계, Delta에 없음 = 일치, ads-0.6)",
+         "ledger": {"a:click": won(50), "b:click": won(75), "c:click": won(30), "e:click": won(40),
+                    "f:click": won(20), "f:click:refund": -won(20)},
          "delta": {"a:click": [won(50)], "b:click": [won(75), won(75)], "d:click": [won(30), won(30)],
                    "c:click": [], "e:click": [won(45)]},
          "expect": {"ledger_only": ["c:click"], "delta_only": ["d:click"], "duplicate": ["b:click", "d:click"],
-                    "amount_mismatch": ["e:click"]}},
+                    "amount_mismatch": ["e:click"], "orphan_refund": []}},
     ]
 
 
