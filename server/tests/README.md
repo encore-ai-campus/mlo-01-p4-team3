@@ -1,5 +1,7 @@
 # 게임 명령 시험
 
+B-10-02의 test_village_assets는 전체/htmx의 지도·초상·하단 출처, manifest 좌표 변경·출처 갱신/이스케이프, 읽기 전용 상태 보존, 밤의 추가 패널 비표시를 검사한다. 기존 test_assets의 이미지 교체와 test_preset_screens의 8인 회귀를 함께 실행한다. 로컬 Chrome 미리보기·첫 로딩 측정은 [증빙](../../docs/evidence/B-10-02.md)을 따른다.
+
 ## B-08-01 결과·진척·결말 선택
 
 `python -B server/manage.py test server.tests.test_story_ui server.tests.test_open_start server.tests.test_preset_screens --settings=server.paldo_web.test_settings --noinput`으로 결과·수집 단서·일반 판/고정 회차 결말·초상·시작 UUID 재생을 확인한다. 진척·해금 입력은 시험 전용 대역이며 E-09-08의 실제 해금·재처리를 검증하지 않는다. 도전 필드는 인수 전까지 임의로 추가하지 않는다. [증빙](../../docs/evidence/B-08-01.md)

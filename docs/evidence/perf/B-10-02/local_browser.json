@@ -1,0 +1,36 @@
+{
+  "task": "B-10-02",
+  "commit": "3bb1e6cb66209334c6e2aeec8a95e8b81577b05b",
+  "generated_at": "2026-11-08T17:49:16Z",
+  "source": "Playwright Chrome headless: node out/handoff/village-browser.cjs (Daphne, temporary SQLite, recorded base6, 10 fresh browser contexts)",
+  "metrics": {
+    "image_total_bytes": {
+      "value": 538705,
+      "unit": "bytes"
+    },
+    "screen_image_bytes": {
+      "value": 55607,
+      "unit": "bytes"
+    },
+    "image_count": {
+      "value": 102,
+      "unit": "count"
+    },
+    "screen_image_count": {
+      "value": 19,
+      "unit": "count"
+    },
+    "first_load_p50_ms": {
+      "value": 263.95,
+      "unit": "ms"
+    },
+    "first_load_p95_ms": {
+      "value": 348.8,
+      "unit": "ms"
+    },
+    "first_load_samples": {
+      "value": 10,
+      "unit": "count"
+    }
+  }
+}
