@@ -219,14 +219,38 @@ def endpoint_ports(env: dict) -> dict[str, int | None]:
             "mysql": int(env["PALDO_ADS_DB_PORT"]) if env.get("PALDO_ADS_DB_PORT", "").isdigit() else None}
 
 
-def published_port(project: str, service: str) -> int | None:
+def published_port(project: str, service: str, container_port: int | None = None) -> int | None:
     """그 Compose 프로젝트에서 서비스의 컨테이너 포트가 열린 호스트 포트."""
     out = subprocess.run([docker_cli(), "compose", "-p", project, "-f", "ops/compose/dev.yml", "port", service,
-                          str(CONTAINER_PORTS[service])], capture_output=True, text=True, cwd=ROOT)
+                          str(container_port or CONTAINER_PORTS[service])], capture_output=True, text=True, cwd=ROOT)
     try:
         return int(out.stdout.strip().splitlines()[0].rsplit(":", 1)[1]) if out.returncode == 0 else None
     except (IndexError, ValueError):
         return None
+
+
+def port_mismatches(env: dict, kafka_config: dict, published: dict[str, int | None]) -> list[str]:
+    """구성요소가 붙을 포트 중 선택한 Compose 프로젝트가 연 포트와 다른 것(도메인 규칙, 비교만).
+
+    `published`: mongo·kafka(평문)·kafka_tls·mysql의 호스트 포트. 계정 DB와 광고 DB는 같은 MySQL을 쓴다.
+    """
+    def port_of(hostport: str):
+        try:
+            return int(hostport.split(",")[0].rsplit(":", 1)[1])
+        except (IndexError, ValueError):
+            return None
+    want = {"PALDO_MONGO_URI": (urlsplit(env.get("PALDO_MONGO_URI", "")).port, "mongo"),
+            "PALDO_KAFKA_BOOTSTRAP": (port_of(env.get("PALDO_KAFKA_BOOTSTRAP", "")), "kafka"),
+            "kafka-config bootstrap.servers": (port_of(str(kafka_config.get("bootstrap.servers", ""))), "kafka_tls"),
+            "PALDO_ADS_DB_PORT": (int(env["PALDO_ADS_DB_PORT"]) if env.get("PALDO_ADS_DB_PORT", "").isdigit() else None, "mysql"),
+            "PALDO_AUTH_DB_PORT": (int(env["PALDO_AUTH_DB_PORT"]) if env.get("PALDO_AUTH_DB_PORT", "").isdigit() else None, "mysql")}
+    return [name for name, (port, svc) in want.items() if port is None or port != published.get(svc)]
+
+
+def project_ports(project: str) -> dict[str, int | None]:
+    """선택한 Compose 프로젝트가 연 호스트 포트(Kafka TLS 리스너 9094 포함)."""
+    return {"mongo": published_port(project, "mongo"), "kafka": published_port(project, "kafka"),
+            "kafka_tls": published_port(project, "kafka", 9094), "mysql": published_port(project, "mysql")}
 
 
 def containers(project: str, env: dict | None = None) -> list[dict]:
@@ -346,6 +370,9 @@ def run(scenarios: Path, kafka_config: Path, out: Path, record: bool, project: s
     bad = non_local_endpoints(env, json.loads(kafka_config.read_text(encoding="utf-8")))
     if bad:   # 원격 서비스에 판·토픽·광고 데이터를 쓰지 않도록 시작 전에 멈춘다
         raise SystemExit(f"로컬 Compose가 아닌 연결 대상: {bad}")
+    wrong = port_mismatches(env, json.loads(kafka_config.read_text(encoding="utf-8")), project_ports(project))
+    if wrong:   # 다른 로컬 프로젝트·인스턴스에 쓰지 않도록 이주·적재 전에 멈춘다
+        raise SystemExit(f"Compose 프로젝트 {project}가 연 포트와 다른 연결 대상: {wrong}")
     base = {**env, "PYTHONIOENCODING": "utf-8", "PYTHONPATH": str(ROOT), "PALDO_LOG_DIR": str(out / "logs")}
     web = {**base, "DJANGO_SETTINGS_MODULE": "server.paldo_web.settings", "PALDO_PUBLIC_ORIGIN": f"http://localhost:{WEB_PORT}",
            "PALDO_GAME_SERVICE_FACTORY": "server.infra.game_factory.build_game_service", "PALDO_CONTENT_VERSION": "content-1.0"}

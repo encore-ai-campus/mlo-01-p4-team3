@@ -1,7 +1,7 @@
 """`server.tests.int07_stack` 판정 규칙: 필수 컨테이너·지표·화면 상태가 빠지면 확인 완료로 적지 않는다."""
 import unittest
 
-from server.tests.int07_stack import GOALS, non_local_endpoints, python_info, required_present, scenario_holds, summarize
+from server.tests.int07_stack import GOALS, non_local_endpoints, port_mismatches, python_info, required_present, scenario_holds, summarize
 
 
 def result(**over):
@@ -48,6 +48,16 @@ class Verdicts(unittest.TestCase):
                          ["PALDO_MONGO_URI"])
         self.assertEqual(non_local_endpoints(env, {"bootstrap.servers": "broker.example:9094"}), ["kafka-config bootstrap.servers"])
         self.assertEqual(non_local_endpoints(dict(env, PALDO_ADS_DB_HOST=""), kc), ["PALDO_ADS_DB_HOST"])
+
+    def test_port_mismatch_before_writes(self):
+        env = {"PALDO_MONGO_URI": "mongodb://u:p@localhost:27117/paldo_web", "PALDO_KAFKA_BOOTSTRAP": "localhost:9092",
+               "PALDO_ADS_DB_PORT": "3316", "PALDO_AUTH_DB_PORT": "3316"}
+        kc = {"bootstrap.servers": "localhost:9094"}
+        pub = {"mongo": 27117, "kafka": 9092, "kafka_tls": 9094, "mysql": 3316}
+        self.assertEqual(port_mismatches(env, kc, pub), [])
+        self.assertEqual(port_mismatches(dict(env, PALDO_AUTH_DB_PORT="3306"), kc, pub), ["PALDO_AUTH_DB_PORT"])
+        self.assertEqual(port_mismatches(env, {"bootstrap.servers": "localhost:9095"}, pub), ["kafka-config bootstrap.servers"])
+        self.assertEqual(port_mismatches(env, kc, dict(pub, kafka_tls=None)), ["kafka-config bootstrap.servers"])
 
     def test_metric_text_parsing(self):
         text = 'python_info{implementation="CPython",major="3",minor="14",patchlevel="6"} 1.0\npaldo_x_total{a="b"} 2.0\n'
