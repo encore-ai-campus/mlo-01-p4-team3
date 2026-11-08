@@ -1,0 +1,56 @@
+{
+  "task": "INT-07",
+  "commit": "57135cec21b59ae3be93a463f375d21fc5f13d5c",
+  "generated_at": "2026-11-07T15:22:00Z",
+  "source": "python -m tools.perf.int07_web_run --out <임시 폴더> --record",
+  "metrics": {
+    "games_finished": {
+      "value": 3,
+      "unit": "판"
+    },
+    "commands_total": {
+      "value": 25,
+      "unit": "개"
+    },
+    "renders_total": {
+      "value": 23,
+      "unit": "개"
+    },
+    "http_5xx": {
+      "value": 0,
+      "unit": "건"
+    },
+    "mornings_checked": {
+      "value": 4,
+      "unit": "회"
+    },
+    "max_night_seen": {
+      "value": 1,
+      "unit": ""
+    },
+    "morning_missing": {
+      "value": 0,
+      "unit": "건"
+    },
+    "stale_status": {
+      "value": 409,
+      "unit": ""
+    },
+    "restart_same_view": {
+      "value": 1,
+      "unit": ""
+    },
+    "responses_checked": {
+      "value": 86,
+      "unit": "개"
+    },
+    "forbidden_hits": {
+      "value": 0,
+      "unit": "건"
+    },
+    "elapsed": {
+      "value": 19.1,
+      "unit": "s"
+    }
+  }
+}

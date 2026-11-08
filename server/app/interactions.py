@@ -6,6 +6,7 @@ import re
 import secrets
 import uuid
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from typing import ContextManager, Protocol
 
@@ -69,6 +70,33 @@ class InteractionService:
     def _event(self, state, kind, payload, key):
         event = DomainEvent(kind, state.day, state.phase, payload)
         self.game.repository.append_events(state.meta.game_id, self.game._events(state, [event]), key)
+
+    def _restore_participant(self, game_id, name, records):
+        with self.store.edit_effects(game_id) as effects:
+            plan = copy.deepcopy(effects.get('participant:' + name))
+        if plan is None or getattr(records, name) == plan['value']:
+            return
+        try:
+            self.game.repository.append_events(game_id, plan['events'], plan['key'])
+        except (ConnectionError, TimeoutError):
+            raise InteractionUnavailable('participant_append_unavailable') from None
+        setattr(records, name, copy.deepcopy(plan['value']))
+
+    @contextmanager
+    def participant_records(self, game_id):
+        """판별 잠금 안에서 수첩·설문의 미완료 저장을 동일 이벤트 키로 복구한다."""
+        with self.store.edit(game_id) as records:
+            for name in ('notebook', 'survey'):
+                self._restore_participant(game_id, name, records)
+            yield records
+
+    def _save_participant(self, state, name, kind, payload, value, records):
+        # 보조 상태의 롤백과 독립된 계획을 먼저 저장한다. 성공한 계획도 마지막 값 복구용으로 유지한다.
+        event = DomainEvent(kind, state.day, state.phase, payload)
+        with self.store.edit_effects(state.meta.game_id) as effects:
+            effects['participant:' + name] = dict(value=copy.deepcopy(value),
+                events=self.game._events(state, [event]), key=name + ':' + str(uuid.uuid4()))
+        self._restore_participant(state.meta.game_id, name, records)
 
     def prepare_command_effects(self, command_id, response_json, previous, current, requests):
         """게임 commit 전에 복구 재료만 보존한다. 렌더 실행은 저장 확인 뒤다."""
@@ -226,13 +254,12 @@ class InteractionService:
         if set(data.entries) - set(view.names) or "mudang" in data.entries:
             raise ValueError("unknown_npc")
         payload = {"entries": dict(data.entries), "vote_confidence": data.vote_confidence}
-        with self.store.edit(data.game_id) as records:
+        with self.participant_records(data.game_id) as records:
             state, _ = self.game.owned(data.game_id, player)
             stored = {**payload, "_saved_context": {"day": state.day, "phase": state.phase.value}}
             if records.notebook == stored:
                 return
-            self._event(state, EventType.NOTEBOOK_UPDATED, payload, "notebook:" + str(uuid.uuid4()))
-            records.notebook = stored
+            self._save_participant(state, 'notebook', EventType.NOTEBOOK_UPDATED, payload, stored, records)
 
     def survey(self, data, player, comment_digest):
         """종료된 판의 설문을 한 번 저장하고 최초 저장 여부를 반환한다."""
@@ -242,7 +269,7 @@ class InteractionService:
         payload = {"skipped": data.skipped, "fun": data.fun, "unfair": data.unfair,
                    "npc_plausible": data.npc_plausible,
                    "comment": mask_text(data.comment), "mask_version": "b-mask-1"}
-        with self.store.edit(data.game_id) as records:
+        with self.participant_records(data.game_id) as records:
             if records.survey is not None:
                 previous = dict(records.survey)
                 previous.setdefault("skipped", False)
@@ -250,8 +277,8 @@ class InteractionService:
                 if previous != payload or not secrets.compare_digest(previous_digest, comment_digest):
                     raise InteractionConflict
                 return False
-            self._event(state, EventType.SURVEY_SUBMITTED, payload, "survey:submitted")
-            records.survey = {**payload, "comment_digest": comment_digest}
+            self._save_participant(state, 'survey', EventType.SURVEY_SUBMITTED, payload,
+                                   {**payload, 'comment_digest': comment_digest}, records)
             return True
 
     def register_renders(self, state, requests):

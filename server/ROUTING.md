@@ -1,5 +1,7 @@
 # 서버 라우팅
 
+B-06-04 비노출 검증: 가입·로그인 → 기존 `/games`·명령 → `GET /ads/slot/{slot}` → `api/ad_slots.py` → `ensure_ad_identity` → `AdGateway.fetch`. `server/tests/test_accounts.py`가 인증 실패 경로까지 로그·이벤트·지표·광고 DTO를 대조한다. HTTP 광고 서버 연결은 B-08-03에서 이어 검증한다. URL 변경은 없다.
+
 B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_bench.py` → 기존 `/games`·`/games/{id}/commands` → 실제 Mongo 조립이다. URL·운영 핸들러는 바꾸지 않는다. `server/tests/mongo_commands.py`는 같은 API의 실제 저장·20개 경합을 검사한다.
 
 운영 팩토리는 `server.infra.game_factory.build_game_service` → `paldo_web/mongo.py` 실행 자원 → `infra/interaction_store.py` 보조 저장을 연결한다. B-06-02 시험 조립과 분리되며 설정·실행 순서는 [웹 모듈](../docs/modules/web.md#사용법)에 있다.
@@ -14,11 +16,11 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 
 | 요청 | 처리 경로 |
 |---|---|
-| `GET /` | [accounts/views.py](accounts/views.py)의 계정 메뉴. 자기 가명 ID와 동의한 참가자의 다음 고정 시드 판을 표시한다. |
+| `GET /` | [accounts/views.py](accounts/views.py)의 계정 메뉴. 자기 가명 ID, 동의한 사용자의 "새 게임"(일반 판 시작 폼, 폼마다 새 `start_token`)과 진행 중인 일반 판 이어 하기, 배정된 회차의 다음 고정 시드 판을 표시한다. |
 | `GET·POST /accounts/signup`, `GET·POST /accounts/login`, `POST /accounts/logout` | [accounts/urls.py](accounts/urls.py) → [accounts/views.py](accounts/views.py). 가입은 가명과 동의를 저장하고, 로그인과 로그아웃은 Django 세션을 관리한다. |
 | `GET·POST /admin/login/`, `/admin/` | 로그인은 일반 계정과 같은 [잠금 규칙](accounts/lockout.py)을 통과한다. 관리자 화면은 Django admin이 제공한다. |
 | `GET·POST /admin/sessions` | [api/sessions.py](api/sessions.py) → [app/test_sessions.py](app/test_sessions.py) → [infra/test_sessions.py](infra/test_sessions.py). 운영자가 고정 회차를 조회하고 등록한다. |
-| `POST /games` | [api/views.py](api/views.py) → [api/consent.py](api/consent.py)에서 읽은 가명·동의로 [판 시작](app/usecases.py)을 요청한다. 운영 조립은 회차 배정 정책을 연결한다. htmx는 입력 형식에 관계없이 200 회의 조각을 받고, 일반 HTML 폼은 302로 이동한다. |
+| `POST /games` | [api/views.py](api/views.py) → [api/consent.py](api/consent.py)에서 읽은 가명·동의로 [판 시작](app/usecases.py)을 요청한다. 시작 정책 [app/open_start.py](app/open_start.py)가 `session_id`가 없으면 일반 판(공개 프리셋·서버 랜덤 시드·배포 버전), 있으면 회차 배정 정책([app/test_sessions.py](app/test_sessions.py))으로 나눈다(E-08-14). 기본 조립(`paldo_web/composition.py`)과 운영 Mongo 조립(`paldo_web/mongo.py`)이 같은 정책을 끼운다. `tests/test_open_start.py`가 확인한다. htmx는 입력 형식에 관계없이 200 회의 조각을 받고, 일반 HTML 폼은 302로 이동한다. |
 | `/games/{id}/…`, `/players/me/progress` | [api/urls.py](api/urls.py) → [api/views.py](api/views.py)·[api/interactions.py](api/interactions.py) → [app/](app/). |
 | `POST /games/{id}/utterances`, `POST /games/{id}/utterances/{attempt_id}` | [api/interaction_forms.py](api/interaction_forms.py)가 폼을 공통 DTO로 변환한다. [api/interactions.py](api/interactions.py) → [app/interactions.py](app/interactions.py). [paldo_web/composition.py](paldo_web/composition.py)가 선택한 해석기를 조립할 때 주입한다. JSON은 DTO, htmx는 카드 또는 현재 회의 조각이다. |
 | `GET /games/{id}/renders/{job_id}` | [app/interactions.py](app/interactions.py)의 소유권·완료 상태 검사 뒤 JSON 또는 `speech_line.html`을 반환한다. `speech_line.html`은 발언만 갱신하고 완료하면 폴링을 멈춘다. 회의 진술표는 [api/meeting_view.py](api/meeting_view.py)가 공개 주장으로 만든다. |
@@ -30,6 +32,10 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 | `GET /ads/click?t=…`, `GET /ads/landing/{creative_id}` | [api/ad_relay.py](api/ad_relay.py) → [app/ad_events.py](app/ad_events.py) → [app/ads_port.py](app/ads_port.py). 실패 시 홈 이동 또는 돌아가기 링크를 제공한다. |
 | `GET /ads/slot/{slot}` | [api/ad_slots.py](api/ad_slots.py) → B-07-05의 광고 게이트웨이 조립 → `AdGateway.fetch`. 게임 명령과 분리해 광고 HTML 조각만 반환한다. 미제공·실패는 200 빈 조각이다. |
 
+B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은 `InteractionService.participant_records`를 거친다. 저장 계획은 보조 저장의 `effects`, 공개 표시 값은 `state`에 보존하고 C 게임 아웃박스의 동일 키 재생으로 복구한다. C의 별도 `outbox_publisher`가 `paldo.player`로 발행한다. API·이벤트 형식은 그대로다.
+
+실제 검증은 `tests/mongo_participant.py` → 기존 HTTP → B 응용·실제 Mongo → C 발행기 → TLS Kafka 수신이다. `tests/participant_worker.py`는 새 프로세스 재시작·경합, `tests/kafka_local.py`는 로컬 격리 TLS 브로커 준비 전용이다. 운영 진입점은 이 시험 모듈을 사용하지 않는다.
+
 - [전체 API 계약](../docs/contracts/api.md)
 
 자유 입력의 직전 상대는 응용이 공개 캐묻기 발언에서 보완한다. 재입력 경로도 시도에 보존된 선택 인물·근거·직전 상대를 전달하며, 확인 요청은 선택한 카드의 누락 슬롯과 근거 모호성만 검사한다.
@@ -40,3 +46,5 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 명령 저장은 `GameService.command` → B의 `WebMongoGameRepository.commit` → C의 `MongoGameRepository.commit` 순서다. Mongo 연결 오류를 B에서 정규화한 뒤 응용이 같은 commit을 한 번 재시도하고, 이미 저장됐다면 CAS 충돌 → 명령 조회 → 저장 응답 재생으로 끝난다.
 
 호스트 시작 조립 → `paldo_web/mongo.py` → C의 `infra/mongo_repo.py`·`progress_store.py`·`content_store.py`와 B의 `infra/test_sessions.py`. `configure()` 뒤 기존 `/admin/sessions`·`POST /games`·`GET /games/{id}`·명령·진척 경로가 같은 실행 자원을 쓴다. URL·요청/응답 DTO는 바꾸지 않는다. 고정 회차 메타와 콘텐츠 버전을 재조회하며 Django 계정·세션은 기존 default DB를 유지한다.
+
+B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 하기 → `POST /games`·`GET /games/{id}` 경로는 그대로다. 최신 dev에서 회차·소유자 가명·동의·광고 대응표·재접속 보존을 재검증했다. [증빙](../docs/evidence/B-06-03.md).

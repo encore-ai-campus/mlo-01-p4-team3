@@ -1,0 +1,28 @@
+{
+  "task": "B-07-02",
+  "commit": "47319005d00458d231dac2ee8ae96a785d4a0685",
+  "generated_at": "2026-11-07T17:42:44Z",
+  "source": "python -B server/manage.py test server.tests.mongo_participant.KafkaParticipants --settings=server.paldo_web.mongo_test_settings --noinput --verbosity=2; isolated MySQL: python -B -m out.handoff.run_pr_mysql",
+  "metrics": {
+    "acceptance_tests": {
+      "value": 12,
+      "unit": "개"
+    },
+    "server_regressions": {
+      "value": 156,
+      "unit": "개"
+    },
+    "answered_player_events": {
+      "value": 3,
+      "unit": "건"
+    },
+    "skipped_unique_events": {
+      "value": 3,
+      "unit": "건"
+    },
+    "pending_events": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "task": "B-07-02",
+  "commit": "efdc0453382cb660a4f21a5392cdefbb9e696795",
+  "generated_at": "2026-11-07T15:50:59Z",
+  "source": "python -B server/manage.py test server.tests.mongo_participant.KafkaParticipants --settings=server.paldo_web.mongo_test_settings --noinput --verbosity=2",
+  "metrics": {
+    "acceptance_tests": {
+      "value": 12,
+      "unit": "개"
+    },
+    "server_regressions": {
+      "value": 155,
+      "unit": "개"
+    },
+    "answered_player_events": {
+      "value": 3,
+      "unit": "건"
+    },
+    "skipped_raw_events": {
+      "value": 4,
+      "unit": "건"
+    },
+    "skipped_unique_events": {
+      "value": 3,
+      "unit": "건"
+    },
+    "pending_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "logical_replay_additions": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

@@ -1,5 +1,19 @@
 # 게임 명령 시험
 
+## B-07-02 실제 Mongo·Kafka 시험
+
+`requirements/web.txt`의 패키지와 Docker Desktop Linux 엔진을 준비한다. Mongo는 위에서 쓰는 Compose Replica Set을 실행하고, 환경·`server/.env`·Compose 루트 `.env` 중 하나에 `PALDO_MONGO_URI`를 지정한다. 실제 Kafka는 CA·클라이언트 인증서·키와 hostname 검증을 켠 SSL JSON을 Git 제외 경로에 두고 `PALDO_TEST_KAFKA_CONFIG`에 그 파일 경로만 지정한다. 운영 C 발행기의 TLS 검증을 완화하지 않는다.
+
+로컬 TLS 브로커가 없으면 `python -B -m server.tests.kafka_local`을 실행한다. 저장소와 같은 Kafka 4.3.2 이미지에 고유 컨테이너·루프백 포트·2일 만료 시험 인증서를 만들고 연결 JSON 경로와 컨테이너 이름을 출력한다. 비밀·로그·설정은 `out/handoff/kafka-b0702-<실행ID>/`에만 남는다. PowerShell에서 `$env:PALDO_TEST_KAFKA_CONFIG='<출력된 client.json 경로>'`를 지정한다. C가 제공한 실제 TLS 설정을 사용할 수도 있다.
+
+```powershell
+python -B server/manage.py test server.tests.mongo_participant.KafkaParticipants --settings=server.paldo_web.mongo_test_settings --noinput --verbosity=2
+```
+
+`MongoParticipants`만 지정하면 Kafka 없이 Mongo 시험을 실행한다. `KafkaParticipants`는 Mongo 시험도 상속하며 브로커 설정 누락을 건너뛰지 않고 실패로 처리한다. 각 실행은 `b0702_<UUID>_` 접두어의 정확한 6개 Mongo 컬렉션만 정리한다. 재시작 시험은 같은 가명과 서버 비밀을 새 Python 프로세스에 전달해 메모리 없이 HTTP를 재실행하며 계정·세션은 자식의 임시 SQLite다. Kafka 시험은 `load_test=true`, 고유 판 ID·소비자 그룹을 사용한다. 실제 C 발행기와 소비자 중복 제거를 호출하지만 VM 복제·장애·Spark 적재는 포함하지 않는다.
+
+시험 종료 후 이 도구가 출력한 고유 컨테이너 이름으로 `docker stop <이름>`·`docker rm <이름>`을 실행한다. 다른 컨테이너·공용 토픽·볼륨을 삭제하지 않는다. 기존 Compose Mongo도 이번 실행에서 기동했으면 `docker compose -p paldo-dev -f ops/compose/dev.yml stop mongo`로 정지한다. 인증서·설정은 Git에 포함하지 않는다.
+
 ## B-06-02 로컬 시험
 
 Compose를 준비하려면 저장소 루트에서 `python -B -m ops.compose.run make-env` 뒤 `docker compose -p paldo-dev -f ops/compose/dev.yml up -d --wait mongo`를 실행한다. Docker Desktop은 Linux 엔진이어야 한다. Mongo만 실행하며 다른 Compose 서비스를 띄울 필요는 없다. 컨테이너가 healthy이면 `python -B tools/perf/api_bench.py --users 10 --minutes 3 --result-name compose_10x3`을 실행한다. 부하 CLI와 Mongo 전용 시험 설정은 환경 → `server/.env` → Compose 루트 `.env` 순으로 URI를 읽는다. 생성된 `.env`는 Git에서 제외하고 기존 볼륨을 삭제하지 않는다.
@@ -18,6 +32,10 @@ python -B server/tests/bench.py --memory --users 10 --minutes 3
 동시 명령 시험은 실제 Django 세션·CSRF 검사와 시험용 가명 프로필을 사용한다. 20개 요청을 같은 버전에서 멈춘 뒤 저장을 경합시킨다. 서로 다른 ID는 1건 수락·19건 충돌, 같은 ID는 1건 수락·19건 재생을 기대한다.
 
 메모리 부하 시험은 임시 SQLite 세션과 녹화 엔진·원자 저장 대역으로 사용자마다 독립 판을 진행한다. 응답 p50·p95와 오류 건수를 출력한다.
+
+## B-06-04 계정과 광고 포트 비노출
+
+B-06-04의 `test_accounts.Accounts.test_credentials_absent_from_logs_outbox_and_metrics`는 가입·로그인·실패·잠금·녹화 판 완주를 거쳐 파일 로그·아웃박스·지표와 광고 포트 DTO의 인증 입력 비노출을 함께 검사한다. 광고 요청은 세 지면과 판 종료를 포함한 4건이다. 계정 가명·로그인 세션 키·판 ID·쿼리 위조값도 전달하지 않는다. 이 시험의 `FakeAdProvider`·메모리 회차 조립은 테스트 전용이며 실제 HTTP 광고 서버 수신 검증은 B-08-03 연결 뒤 별도로 한다.
 
 ## B-06-03 고정 회차와 광고 가명
 
@@ -50,3 +68,7 @@ python -B server/manage.py test server.tests.mongo_game_sessions --settings=serv
 로컬에서 기존 회차 전용 시험까지 함께 실행하려면 `server.tests.mongo_sessions`도 지정한다. 이 기존 시험은 루프백만 허용하고 별도 시험 DB를 사용한다. 게임 통합 시험은 실제 엔진·규칙 NPC와 모델 없는 규칙 투표 경로를 사용한다. 진척 포트 보존 검사는 해금 로직·Kafka 수신·성능 검사를 대신하지 않는다. 대상 VM·실제 부하는 별도로 측정한다.
 
 기존 서비스 팩토리 함수에서는 `runtime = open_mongo_runtime(engine=실제엔진, suspicion=선택한모델)` 뒤 `return runtime.factory_service()`를 사용한다. 연결 정보는 환경의 `PALDO_MONGO_URI`를 읽는다. 서버 기동 전에 직접 설치하는 경로는 `runtime.configure()`다. 실행 자원은 서버 수명 동안 보유하고 서버의 모든 요청 처리가 끝난 뒤 `runtime.close()`한다.
+
+## E-07-03 INT-07 웹 자동 재현 준비
+
+`int07_setup.py`(계정 DB 이주·참가자·로그인 세션·Mongo 회차 등록)와 `int07_run_settings.py`(실행용 SQLite 계정 DB + 실제 Mongo)는 `tools/perf/int07_web_run.py`가 하위 프로세스로 쓰는 준비 코드다. 시험 탐색(`test*.py`) 대상이 아니다. 사용법은 [성능 시험 모듈 문서](../../docs/modules/perf.md)에 있다.

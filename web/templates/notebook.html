@@ -16,11 +16,19 @@
       </label>
     {% endfor %}
     {% if vm.phase == 'vote' or vm.phase == 'runoff' %}
-      <label x-data="{ value: {{ vote_confidence|default_if_none:50 }} }">투표 직전 확신도
-        <input type="range" name="vote_confidence" min="0" max="100" value="{{ vote_confidence|default_if_none:50 }}" x-model="value">
-        <output x-text="value">{{ vote_confidence|default_if_none:50 }}</output>
-      </label>
-      <p>0은 전혀 확신하지 않음, 100은 매우 확신함입니다. 투표 전에 저장해 주세요.</p>
+      <fieldset aria-describedby="confidence-help">
+        <legend>투표 직전 확신도</legend>
+        <div class="confidence-choices">
+          {% for value, label in confidence_choices %}
+          <label class="confidence-choice">
+            <input type="radio" name="vote_confidence" value="{{ value }}" required{% if vote_confidence == value %} checked{% endif %}>
+            <span>{{ value }} · {{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <p id="confidence-help">5단계 중 하나를 선택하고 투표 전에 저장해 주세요.</p>
+        {% if vote_confidence != None %}<p>최근 저장한 확신도: {{ vote_confidence }}</p>{% endif %}
+      </fieldset>
     {% else %}
       <input type="hidden" name="vote_confidence" value="{{ vote_confidence|default_if_none:'' }}">
     {% endif %}

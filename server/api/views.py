@@ -140,9 +140,9 @@ def start_game(request):
     from_form = request.content_type == "application/x-www-form-urlencoded"
     if from_form:
         form = request.POST
-        if set(form) - {"csrfmiddlewaretoken", "preset_id", "session_id", "mudang_variant", "seed"}:
+        if set(form) - {"csrfmiddlewaretoken", "preset_id", "session_id", "mudang_variant", "seed", "start_token"}:
             raise ValueError("unknown_field")
-        body = {key: form.get(key) for key in ("preset_id", "session_id", "mudang_variant")}
+        body = {key: form.get(key) for key in ("preset_id", "session_id", "mudang_variant", "start_token")}
         if "seed" in form:
             body["seed"] = int(form["seed"])
     else:
@@ -150,6 +150,8 @@ def start_game(request):
     if "player_pseudonym" in body:
         raise ValueError("server_field")
     body["player_pseudonym"] = request.player_pseudonym
+    if body.get("session_id") in (None, ""):
+        body["session_id"] = None   # 생략·null·빈 문자열 = 회차 없는 일반 판(E-08-14)
     data = parse_game_input(StartGameInput, body)
     output = get_game_service().start(data, request.player_pseudonym, request.consented)
     request.game_id = output.view.game_id

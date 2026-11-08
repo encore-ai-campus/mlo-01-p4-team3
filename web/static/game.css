@@ -20,3 +20,10 @@ fieldset { min-width: 0; }
 [role=alert] { color: #9b3024; }
 .line-attribution { display: block; margin-top: .25rem; font-size: 1rem; font-weight: 600; }
 @media (max-width: 480px) { body { padding: .75rem; } label { display: block; } }
+.confidence-choices { display: flex; flex-wrap: wrap; gap: .5rem; }
+.confidence-choice { position: relative; cursor: pointer; }
+.confidence-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.confidence-choice span { display: block; padding: .65rem .8rem; border: 2px solid #718096; border-radius: .4rem; }
+.confidence-choice input:checked + span { background: #23344a; color: #fff; border-color: #23344a; }
+.confidence-choice input:focus-visible + span { outline: 3px solid #b45309; outline-offset: 2px; }
+.confidence-choice input:disabled + span { opacity: .5; cursor: wait; }

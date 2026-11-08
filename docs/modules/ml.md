@@ -53,6 +53,8 @@ manifest의 필수 키는 `data_version`(`delta:<table>@<version>`), `input_sha2
 
 11/8 C-07-01 공식 silver v1과 export를 읽기 전용으로 확인했다. 200판의 정책은 `baseline-0`, 특징은 `public-snapshot-v1`이다. D 공식 수치에는 PM 지정 `rule-v0` 200판을 처리한 Delta 버전을 사용한다. 해당 silver의 `snapshot_json`에서 `suspicion-1` 특징을 추출하고 Delta 행과 라벨의 계보를 보존한다. VM import 조건은 사용자 직접 실행(11/8 20:38:12 KST)의 Python 3.14.4 및 지정 네 패키지 성공으로 충족했다.
 
+- D-07-03 의도 미세조정은 `python -m tools.perf.intent_finetune --epochs 5 --include-generated`로 실행한다. 증빙은 `docs/evidence/D-07-03.md`, 모델·실행 계보는 `mlruns/intent_bert/`에 보관한다.
+
 ## 설정값
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
@@ -83,3 +85,4 @@ VM Python 3.14에서 torch·transformers·lightgbm·pyspark import는 미완료�
 | D-05-03 | 11/5 | 하루 일괄 문서화로 ML 패키지의 미구현 범위와 후속 작업 위치를 명시 |
 | D-07-02 | 11/7 | 로컬 TrainingRow 변환·게임 분할·두 추정기·규칙 비교·MLflow·경계 테스트 |
 | D-07-02 | 11/8 | 최신 dev 규칙 반영, 거짓말 전략 고정 생성·별도 평가·판/seed 중복 거부·실제 선택 이후 관측 분리 |
+| D-07-03 | 11/7 | intent/의 CPU 미세조정·동일 기준선 평가와 모델·계보 저장 경로를 연결 |
