@@ -1,15 +1,15 @@
 {
   "task": "D-05-03",
-  "commit": "1952f35a08e3a53806d40dadfbafd5f385fa4d08",
-  "generated_at": "2026-11-07T08:24:34Z",
+  "commit": "1bb7405a84e050de8d78b96a010a68331eb594c2",
+  "generated_at": "2026-11-08T12:12:22Z",
   "source": "python -m tools.perf.ads_bench --n 200 --warmup 20",
   "metrics": {
     "serve_p50": {
-      "value": 49.1471,
+      "value": 85.1477,
       "unit": "ms"
     },
     "serve_p95": {
-      "value": 71.0815,
+      "value": 109.6953,
       "unit": "ms"
     },
     "serve_calls": {
