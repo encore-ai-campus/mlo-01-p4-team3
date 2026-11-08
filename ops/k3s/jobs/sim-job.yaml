@@ -24,7 +24,7 @@ spec:
         - name: simulation
           image: "${SIM_IMAGE}"
           imagePullPolicy: Never
-          args: ["--kafka-config", "/run/kafka/client.json", "--run-id", "c08_r1", "--preset", "base6", "--games", "50", "--seed", "801"]
+          args: ["--kafka-config", "/run/kafka/client.json", "--run-id", "c08_r1", "--preset", "base6", "--games", "50", "--seed", "801", "--bundle", "fixtures/content_min/bundle.json"]
           resources:
             requests:
               cpu: 100m
