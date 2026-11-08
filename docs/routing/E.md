@@ -39,4 +39,5 @@
 | GPU 시연 자유 질문 답변 검사 규칙·평가 세트 바꾸기 | 도메인 `llm/free_answer.py`·`llm/free_answer_eval.py`(테스트 `tests/llm/test_free_answer.py`의 반례 표를 함께 고침, 평가 세트는 `python -m llm.free_answer_eval --seed 1`). 부하·Pod 스크립트는 인프라 `llm/bench/free_answer_load.py`·`watch_pods.py`·`run_pod.sh`, 실행 절차 `ops/runbook/gpu_demo.md` |
 | LLM MVP 제출 묶음·코랩 노트북 고치기 | 표현·응용 `tools/build_llm_bundle.py`(zip, `python -m tools.build_llm_bundle --out out/llm_mvp/`), 표현 `llm/colab/paldo_llm_mvp.ipynb`, 테스트 `tests/tools/test_build_llm_bundle.py`. zip·실행한 사본은 `out/`에만 |
 | 사용자 테스트 일정·설문 문항·고정 시드 판 바꾸기 | `docs/user_test/plan.md`(동의 문구·수집 항목의 원본은 `docs/contracts/privacy.md`) |
+| 사용자 테스트 중 웹 장애 대처 | `ops/runbook/user_test_incident.md`(회차 등록·버전 값·동결은 `docs/user_test/plan.md` 4절) |
 | 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/A_engine.md` `[에셋]`, 담당 D) |

@@ -1,10 +1,10 @@
 # 트러블 기록 — C 인프라·데이터
 
-### C-06-01 Mongo 원자 저장·실제 Replica Set 검증
-- 문제: 기존 서비스 계정은 제한된 검증 DB 권한만 있고 새 운영 DB/계정 생성 권한은 없었다. VM에는 ensurepip가 없어 기본 venv 생성도 완료되지 않았다.
-- 원인: 기존 인프라 계정 권한과 VM Python 패키지 구성이 개발 PC와 달랐다. 최소 콘텐츠 fixture는 도메인 단위 시험용이라 실제 콘텐츠 적재의 참조 검증을 모두 만족하지 않았다.
-- 대응: 기존 허용 계정의 고유 검증 컬렉션에서만 실제 majority/CAS 시험을 수행했다. 공식 PyPI 해시를 검증한 pip 휠과 별도 테스트 venv를 사용해 OS 환경을 보존했다. 콘텐츠 CLI 검증에는 PM의 실제 bundle을 사용했다.
-- 결과: VM 통합 시험과 측정 결과는 `docs/evidence/C-06-01.md` 및 `docs/evidence/perf/C-06-01/mongo_vm.json`에 기록했다. 새 운영 DB·계정은 관리자 인증 확인 전까지 생성하지 않았다.
+### C-06-01 Mongo 원자 저장·전용 운영 DB 전환
+- 문제: 서비스 계정으로는 전용 DB/사용자를 만들 수 없고 현재 Vault에 관리자 참조가 없었다. 초기 VM에는 ensurepip도 없었다.
+- 원인: OS SSH 계정과 Mongo 관리자 계정이 별개이며 최초 설치 보호 파일이 배포 인벤토리 밖 폴더에 남아 있었다.
+- 대응: 기존 허용 고유 컬렉션에서 저장소 시험 후, 최초 설치 폴더의 0600 관리자 JSON을 찾아 정상 root 인증 검증. 입력/발행 중지·root 전용 백업·빈 대상 복사·canonical hash 대조·대상 DB readWrite 앱 계정과 TLS로 전환. 기존 DB/인증은 유지하고 롤백·자동 재개를 준비했다.
+- 결과: 원래 majority/CAS 벤치마크와 별도로 6개 컬렉션 24문서 hash 불일치 0, 다른 DB 읽기 ERROR 13. 새 HTTPS 게임 52건이 Mongo/Kafka/Delta ID·seq·hash 일치, 유실/중복/API 오류 0. wss 재연결과 기존 회차 유지, 임시 검증 프로세스 종료. 증빙 C-06-01 및 ops/mongo.md.
 
 ### C-06-04 LLM 최종 자원 미확정·Garage 역할 정정
 - 문제: E CPU 잠정값과 Colab MVP를 게임 운영 확정으로 볼 수 없고, 초기 media-storage 끄기 계획은 현재 Garage 두 노드 쓰기와 충돌했다.

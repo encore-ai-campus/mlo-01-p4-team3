@@ -31,7 +31,7 @@ python -m unittest tests.infra.test_outbox_publisher -v
 
 ## 한계
 
-운영 전용 Mongo DB·계정 생성은 관리자 인증 위치 확인이 남았다. 기존 권한의 고유 검증 컬렉션 시험과 구분한다. 한 문서 Outbox는 Mongo 용량 한도를 가지며 보관 정책이 필요하다. 발행은 at-least-once이며 프로세스 정지·lease 경계의 중복은 소비자가 제거한다. 광고 DB 발행은 D 담당이다. P-31로 상시 LLM 배정은 없고 RunPod는 E-11-12 GPU 서비스 시연(게임 미연결) 범위다. [런북](../../ops/runbook/runpod.md)을 따른다.
+11/8 정상 관리자 보호 파일 인증으로 전용 paldo_web DB·대상 DB readWrite 계정을 만들고 6개 컬렉션 24문서를 백업·hash 대조 후 전환했다. 기존 검증 컬렉션 벤치마크와 구분하며 상세는 ops/mongo.md다. 한 문서 Outbox는 Mongo 용량 한도를 가지며 보관 정책이 필요하다. 발행은 at-least-once이며 프로세스 정지·lease 경계의 중복은 소비자가 제거한다. 광고 DB 발행은 D 담당이다. P-31로 상시 LLM 배정은 없고 RunPod는 E-11-12 GPU 서비스 시연(게임 미연결) 범위다. [런북](../../ops/runbook/runpod.md)을 따른다.
 
 ## 변경 이력
 
