@@ -1,6 +1,6 @@
 {
   "task": "INT-07",
-  "commit": "8b40f71203e04fd4f64c6b6574acc2c069849451",
+  "commit": "56a53eabda4621763d79f04c2f42f790e412a9e5",
   "source": "python -m server.tests.int07_stack --scenarios <int07_scenarios 결과> --kafka-config <발행기 TLS JSON> --out <폴더> --record",
   "compose_project": "paldo-int07",
   "topics_created_rf1": 0,
@@ -8,15 +8,15 @@
     "ad.click": 0,
     "ad.impression": 0,
     "ad.rejudge": 0,
-    "ad.serve": 3,
-    "paldo.game": 318,
+    "ad.serve": 4,
+    "paldo.game": 414,
     "paldo.intent": 0,
-    "paldo.llm": 9,
-    "paldo.observations": 530,
+    "paldo.llm": 12,
+    "paldo.observations": 692,
     "paldo.player": 0,
-    "paldo.truth": 8
+    "paldo.truth": 10
   },
-  "started_at": "2026-11-08T15:02:33+00:00",
+  "started_at": "2026-11-08T15:06:04+00:00",
   "ad_serve_status": 200,
   "components": {
     "web": {
@@ -78,19 +78,19 @@
     {
       "service": "kafka",
       "image": "apache/kafka:4.3.2",
-      "status": "Up 29 minutes (healthy)",
+      "status": "Up 33 minutes (healthy)",
       "port_matches": true
     },
     {
       "service": "mongo",
       "image": "mongo:8.0.34",
-      "status": "Up 33 minutes (healthy)",
+      "status": "Up 37 minutes (healthy)",
       "port_matches": true
     },
     {
       "service": "mysql",
       "image": "mysql:8.4.11",
-      "status": "Up 33 minutes (healthy)",
+      "status": "Up 37 minutes (healthy)",
       "port_matches": true
     }
   ],
@@ -98,13 +98,13 @@
     "ad.click": 0,
     "ad.impression": 0,
     "ad.rejudge": 0,
-    "ad.serve": 4,
-    "paldo.game": 414,
+    "ad.serve": 5,
+    "paldo.game": 510,
     "paldo.intent": 0,
-    "paldo.llm": 12,
-    "paldo.observations": 692,
+    "paldo.llm": 15,
+    "paldo.observations": 854,
     "paldo.player": 0,
-    "paldo.truth": 10
+    "paldo.truth": 12
   },
   "http_5xx": 0,
   "forbidden_hits": [],
@@ -295,7 +295,7 @@
       "errors": []
     }
   },
-  "collected_at": "2026-11-08T15:04:18+00:00",
+  "collected_at": "2026-11-08T15:07:49+00:00",
   "verdicts": {
     "9": {
       "result": "확인 완료, PM 판정 대기",

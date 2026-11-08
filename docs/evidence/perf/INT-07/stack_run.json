@@ -1,7 +1,7 @@
 {
   "task": "INT-07",
-  "commit": "8b40f71203e04fd4f64c6b6574acc2c069849451",
-  "generated_at": "2026-11-08T15:04:18Z",
+  "commit": "56a53eabda4621763d79f04c2f42f790e412a9e5",
+  "generated_at": "2026-11-08T15:07:49Z",
   "source": "python -m server.tests.int07_stack --scenarios <int07_scenarios 결과> --kafka-config <발행기 TLS JSON> --out <폴더> --record",
   "metrics": {
     "components_up": {
