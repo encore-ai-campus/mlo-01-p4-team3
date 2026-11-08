@@ -39,7 +39,9 @@
 | 가입·로그인·로그아웃과 계정 복구 | `server/accounts/urls.py`, `server/accounts/views.py`, `web/templates/accounts/`, [웹 모듈 사용법](../modules/web.md#사용법) |
 | Mongo 게임·진척·콘텐츠·회차 조립 | `server/paldo_web/mongo.py` → C 저장소 3종·B 회차 저장소. B의 `WebMongoGameRepository`가 commit 연결 오류를 정규화해 응용의 1회 재시도·CAS 재생으로 연결. 실제 시험은 `server/tests/mongo_game_sessions.py` |
 | 테스트 회차 등록과 고정 판 배정 | `server/api/sessions.py`, `server/app/test_sessions.py`, `server/infra/test_sessions.py`, [서버 라우팅](../../server/ROUTING.md) |
-| 광고 비콘·클릭·랜딩 중계 | ASGI `server/paldo_web/asgi.py` → 표현 `server/api/consumers.py`·`ad_relay.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py`. 실제 HTTP 인프라 `server/infra/ad_client.py`는 B-08-03 예정 |
+| 광고 비콘·클릭·랜딩 중계 | ASGI `server/paldo_web/asgi.py` → 표현 `server/api/consumers.py`·`ad_relay.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py`. 실제 HTTP 인프라 `server/infra/ad_client.py`는 PALDO_ADS_INTERNAL_URL로 연결(B-08-03, D 인수·실제 배치 검증 대기) |
 | 웹소켓 재연결·비콘 폐기 사유 | `web/static/js/paldo_ws.js` → `server/api/consumers.py` → `server/api/ad_metrics.py`. 클라이언트·Consumer·실제 Daphne 검증은 [B-07-05 증빙](../evidence/B-07-05.md) |
 | 광고 지면을 게임 화면에 붙이기 | `server/api/ad_slots.py`·`ad_slot_tags.py`, `web/templates/ad_slot.html·ad_placeholder.html`, `web/static/js/ad_slots.js` → `server/app/ads_port.py`. 웹소켓 중계는 병합된 B-07-05 조립 사용 |
 | 결과·진척·결말 선택 화면 | `server/api/story_view.py` → 버전별 공개 문안 `server/story_catalog.json`, `server/api/views.py`, `web/templates/game_result.html`·`progress.html`·`ending_choice.html`. 도전 계약 인수 항목은 [서버 설계](../../server/DESIGN.md) |
+
+B-08-03 시험: tools/perf/ad_fault_test.py → server/tests/ad_fault_bench.py → 기존 실제 Daphne·api_bench 게임 명령 부하. 로컬 대역과 D 인수 서버 결과를 구분하며 실제 배치 조건은 보류한다.

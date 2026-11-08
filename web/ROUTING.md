@@ -68,3 +68,7 @@ B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 �
 - 홈·결과의 단서 링크는 `GET /players/me/progress` → `progress.html`로 이동한다. 일반 API 요청은 기존 `ProgressOutput` JSON이다.
 
 B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
+
+## B-08-03 광고 내부 HTTP
+
+브라우저 경로는 기존 /ads/slot/{slot}·/ws/game/·/ads/click·/ads/landing/{creative_id}를 유지한다. 게임 서버 내부에서만 AdGateway → server/infra/ad_client.py가 광고 서버로 중계한다. 세 지면과 실패 화면을 로컬 HTTP 대역으로 검사하며 실제 배치에서 직접 광고 출처 요청 0건을 확인하는 것은 D 인수 후 범위다.

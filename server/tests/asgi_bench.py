@@ -77,7 +77,7 @@ def measure_game(origin, cookie, steps, minutes, barrier):
             "by_route": by_route, 'request_timings': request_timings}
 
 
-def beacon_load(origin, cookie, stop, ready):
+def beacon_load(origin, cookie, stop, ready, token=None):
     """사용자별 인증 소켓에서 초당 비콘 한 개를 보내 ack를 확인한다."""
     host = origin.removeprefix("http://")
     port = int(host.split(":")[1])
@@ -98,7 +98,7 @@ def beacon_load(origin, cookie, stop, ready):
             while not stop.is_set():
                 started = time.monotonic()
                 msg_id = str(uuid.uuid4())
-                _send(sock, {"type": "ad.impression", "msg_id": msg_id, "token": msg_id,
+                _send(sock, {"type": "ad.impression", "msg_id": msg_id, "token": token or msg_id,
                              "visible_ratio": .5, "visible_ms": 1000, "occurred_at_ms": int(time.time() * 1000)})
                 opcode, payload = _receive(sock)
                 while opcode == 9:
@@ -151,7 +151,8 @@ def assess(rows):
             and all(row["beacon_failed"] > 0 for row in rows if row["case"] in {"daphne_delay", "daphne_failure"}))
 
 
-def run_case(args, name, transport, scenario, mixed, uri, users, steps, folder):
+def run_case(args, name, transport, scenario, mixed, uri, users, steps, folder,
+             *, extra_env=None, ad_worker=None, beacon_worker=None):
     """시나리오별 서버·부하·Mongo 감사를 실행하고 자기 자원만 정리한다."""
     from engine.testing.fakes import ScriptedGameEngine, FixtureContentSource
     from server.paldo_web.mongo import open_mongo_runtime
@@ -166,6 +167,7 @@ def run_case(args, name, transport, scenario, mixed, uri, users, steps, folder):
         runtime.content.insert(FixtureContentSource().load("*"))
         env = dict(os.environ, PALDO_MONGO_URI=uri, PALDO_PUBLIC_ORIGIN=origin,
                    PALDO_BENCH_PREFIX=prefix, PALDO_BENCH_PORT=str(port), PALDO_BENCH_SCENARIO=scenario)
+        env.update(extra_env or {})
         command = ([sys.executable, "-B", "-m", "server.tests.asgi_bench_app"] if transport == "wsgi" else
                    [sys.executable, "-B", "-m", "daphne", "-b", "127.0.0.1", "-p", str(port),
                     "server.tests.asgi_bench_app:application"])
@@ -198,10 +200,10 @@ def run_case(args, name, transport, scenario, mixed, uri, users, steps, folder):
                     if mixed:
                         for cookie in users:
                             ready = Event()
-                            beacons.append(pool.submit(beacon_load, origin, cookie, stop, ready))
+                            beacons.append(pool.submit(beacon_worker or beacon_load, origin, cookie, stop, ready))
                             if not ready.wait(10):
                                 raise RuntimeError("beacon_start_timeout")
-                            ads.append(pool.submit(ad_load, origin, cookie, stop))
+                            ads.append(pool.submit(ad_worker or ad_load, origin, cookie, stop))
                     barrier = Barrier(args.users)
                     futures = [pool.submit(measure_game, origin, cookie, steps, args.minutes, barrier) for cookie in users]
                     results = [future.result() for future in futures]
@@ -228,6 +230,9 @@ def run_case(args, name, transport, scenario, mixed, uri, users, steps, folder):
                        ad_requests=sum(r["requests"] for r in ad_rows), ad_errors=sum(r["errors"] for r in ad_rows),
                        load_test_events=len(events), mongo_version=runtime.client.server_info()["version"],
                        relay_metrics=[line for line in metrics.splitlines() if line.startswith("paldo_ad_relay_total{")])
+            if ad_worker:
+                row['click_requests'] = sum(r['clicks'] for r in ad_rows)
+                row['click_errors'] = sum(r['click_errors'] for r in ad_rows)
             row['started_at'] = started_at
             row['ended_at'] = datetime.now(timezone.utc).isoformat()
             row['stage_metrics'] = [line for line in metrics.splitlines() if line.startswith('paldo_bench_stage_seconds_') and not line.startswith('paldo_bench_stage_seconds_created')]

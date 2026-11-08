@@ -27,15 +27,15 @@ def home(request):
     player = player_context(request.user)
     context = {"player_id": player[0] if player else None, "assignments": None}
     if player and player[1]:
-        context.update(_open_game_context(player[0]))
-        try:
-            from server.api.story_view import ending_options
-            context["ending_options"] = ending_options(get_game_service().player_progress(player[0]).progress)
-        except GameServiceUnavailable:
-            pass
+        loaded = {}
+        def load_game(game_id):
+            if game_id not in loaded:
+                loaded[game_id] = get_game_service().repository.load(game_id)
+            return loaded[game_id]
+        context.update(_open_game_context(player[0], load_game))
         try:
             service = get_session_service()
-            context["assignments"] = service.assigned(player[0], get_game_service().repository.load)
+            context["assignments"] = service.assigned(player[0], load_game)
         except StartUnavailable:
             context["assignments"] = []   # 회차 저장소가 없어도 일반 판은 시작할 수 있다(E-08-14)
         except GameServiceUnavailable:
@@ -45,7 +45,7 @@ def home(request):
     return response
 
 
-def _open_game_context(player):
+def _open_game_context(player, load_game=None):
     """일반 판 시작 폼(요청마다 새 시작 UUID)과 진행 중인 일반 판 목록(E-08-14).
 
     시작 정책이 일반 판을 지원하지 않는 조립(미리보기의 녹화 판 회차 정책 등)에서는 시작 폼만 숨기고,
@@ -56,10 +56,12 @@ def _open_game_context(player):
     try:
         context['open_presets'] = open_preset_ids()
         service = get_game_service()
+        progress = service.progress.load(player)
+        from server.api.story_view import ending_options
+        context['ending_options'] = ending_options(progress)
         if not isinstance(service.prepare_start, StartPolicy):
             context["open_presets"] = []
-        context["open_games"] = unfinished_open_games(service.progress.load(player).game_ids,
-                                                      service.repository.load)
+        context["open_games"] = unfinished_open_games(progress.game_ids, load_game or service.repository.load)
     except (GameServiceUnavailable, StartUnavailable):
         context["open_unavailable"] = True
     return context
