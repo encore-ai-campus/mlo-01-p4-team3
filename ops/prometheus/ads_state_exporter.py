@@ -39,6 +39,9 @@ def main(argv=None):
             if self.path!='/metrics':self.send_error(404);return
             try:body=collect()+'paldo_ads_state_collection_success 1\n'
             except Exception:body='paldo_ads_state_collection_success 0\n'
+            finally:
+                from django.db import connections
+                connections.close_all()
             self.send_response(200);self.end_headers();self.wfile.write(body.encode())
         def log_message(self,*args):
             """인증정보가 없는 수집 요청의 반복 로그를 생략한다."""
