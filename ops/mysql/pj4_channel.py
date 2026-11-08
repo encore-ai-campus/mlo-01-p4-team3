@@ -103,7 +103,7 @@ def start_channel(directory):
     previous=json.loads((directory/'existing-channel-private.json').read_text())
     statement=("CHANGE REPLICATION SOURCE TO SOURCE_HOST="+quote(previous['Host'])+
         ',SOURCE_PORT='+str(int(previous['Port']))+',SOURCE_USER='+quote(previous['User_name'])+
-        ',SOURCE_PASSWORD='+quote(previous['User_password'])+',SOURCE_AUTO_POSITION=0,SOURCE_LOG_FILE='+quote(manifest['file'])+
+        f",SOURCE_PASSWORD={quote(previous['User_password'])}"+',SOURCE_AUTO_POSITION=0,SOURCE_LOG_FILE='+quote(manifest['file'])+
         ',SOURCE_LOG_POS='+str(int(manifest['position']))+',SOURCE_SSL=1,SOURCE_SSL_CA='+quote(previous['Ssl_ca'])+
         ",SOURCE_SSL_VERIFY_SERVER_CERT=1,SOURCE_CONNECT_RETRY=10,SOURCE_RETRY_COUNT=86400 FOR CHANNEL 'pj4'")
     sql(statement)
