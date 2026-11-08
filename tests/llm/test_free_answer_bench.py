@@ -34,6 +34,9 @@ class FakeHandler(BaseHTTPRequestHandler):
         self.rfile.read(int(self.headers.get("Content-Length", 0)))
         self.server.auth.append(self.headers.get("Authorization"))
         kind, payload = self.server.script.pop(0) if self.server.script else self.server.default
+        if kind == "slowhead":   # 응답 머리를 늦게 보냄
+            time.sleep(0.4)
+            kind = "ok"
         if kind == "http500":
             self.send_response(500)
             self.end_headers()
@@ -153,6 +156,11 @@ class LoadClientTest(unittest.TestCase):
         t0 = time.monotonic()
         self.assertEqual(self.run1(timeout=0.5).outcome, "timeout")
         self.assertLess(time.monotonic() - t0, 1.5)
+        # 머리를 0.4초 늦게 보내도 마감은 연결 전부터 센다(남은 0.1초만 더 기다림, Codex 재검토 11/8)
+        self.srv.push(("slowhead", drip))
+        t0 = time.monotonic()
+        self.assertEqual(self.run1(timeout=0.5).outcome, "timeout")
+        self.assertLess(time.monotonic() - t0, 0.85)
 
     def test_closed_loop_and_summary(self):
         self.srv.httpd.default = ("ok", chunks(GOOD, 8))   # 대본이 비면 늘 정상 답

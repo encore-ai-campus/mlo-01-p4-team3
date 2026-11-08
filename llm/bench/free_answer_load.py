@@ -125,9 +125,11 @@ class OpenAIStream:
         """조각 반복자. 끝 표시 없이 연결이 끊기면 `StreamError`.
 
         timeout(남은 요청 시간, 초)을 주면 연결·읽기 제한을 그 값으로 줄이고, 그 시각에 응답을 닫는 감시 타이머를 건다
-        (소켓 제한은 무응답 시간만 재므로 조각이 천천히 계속 오는 경우를 막는다).
+        (소켓 제한은 무응답 시간만 재므로 조각이 천천히 계속 오는 경우를 막는다). 마감 시각은 연결 전에 정하고, 응답 머리를
+        받은 뒤에는 남은 시간만 감시 타이머에 건다. 머리를 받는 동안(`urlopen`)은 소켓 무응답 제한만 걸린다(한계).
         """
         limit = self.timeout if timeout is None else max(0.001, min(self.timeout, timeout))
+        deadline = time.monotonic() + limit
         body = {"model": self.model, "messages": messages, "stream": True, "max_tokens": MAX_TOKENS,
                 "temperature": 0.3, **self.extra}
         headers = {"Content-Type": "application/json"}
@@ -153,7 +155,11 @@ class OpenAIStream:
                     resp.close()
             except OSError:
                 pass
-        watchdog = threading.Timer(limit, cut)
+        left = deadline - time.monotonic()
+        if left <= 0:
+            resp.close()
+            raise StreamError("deadline")
+        watchdog = threading.Timer(left, cut)
         watchdog.daemon = True
         watchdog.start()
         try:
