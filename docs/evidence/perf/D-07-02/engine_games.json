@@ -1,27 +1,27 @@
 {
   "task": "D-07-02",
-  "commit": "9909842a7d166285a6ec8612f23781e6f8be9625",
-  "generated_at": "2026-11-07T13:14:45Z",
-  "source": "python -m tools.run_engine_games --preset base6 --games 200 --seed 2 --out out/handoff/a0701 --policy rule-v0",
+  "commit": "87aa515e0c06f33ab454daca6a63408cf72a8cd6",
+  "generated_at": "2026-11-07T17:03:58Z",
+  "source": "python -m tools.run_engine_games --preset base6 --games 200 --seed 2 --out 'out\\suspicion\\1108\\pm-engine' --policy rule-v0",
   "metrics": {
     "games": {
       "value": 200,
       "unit": "판"
     },
     "events": {
-      "value": 17027,
+      "value": 14808,
       "unit": "개"
     },
     "elapsed": {
-      "value": 14.528,
+      "value": 14.795,
       "unit": "s"
     },
     "games_per_sec": {
-      "value": 13.766,
+      "value": 13.518,
       "unit": "판/초"
     },
     "events_per_game_mean": {
-      "value": 85.135,
+      "value": 74.04,
       "unit": "개"
     },
     "events_per_game_min": {
@@ -29,7 +29,7 @@
       "unit": "개"
     },
     "events_per_game_max": {
-      "value": 134,
+      "value": 143,
       "unit": "개"
     }
   }

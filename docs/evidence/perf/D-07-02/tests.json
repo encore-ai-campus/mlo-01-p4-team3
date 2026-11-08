@@ -1,15 +1,15 @@
 {
   "task": "D-07-02",
-  "commit": "9909842a7d166285a6ec8612f23781e6f8be9625",
-  "generated_at": "2026-11-07T13:25:25Z",
+  "commit": "3c2841163688ac529238451445108eceea1f7c51",
+  "generated_at": "2026-11-08T02:29:01Z",
   "source": "python -m unittest discover -s tests -t .",
   "metrics": {
     "tests": {
-      "value": 853,
+      "value": 927,
       "unit": "개"
     },
     "passed": {
-      "value": 846,
+      "value": 920,
       "unit": "개"
     },
     "skipped": {
