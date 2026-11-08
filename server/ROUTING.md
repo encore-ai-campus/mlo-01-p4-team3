@@ -1,5 +1,11 @@
 # 서버 라우팅
 
+B-08-02: 홈 `accounts/views.py`와 일반 판 시작 `app/open_start.py`의 `open_preset_ids()`가 `app/presets_enabled.json`을 매번 읽는다. 초기 공개는 `base6`만이며, 파일에서 허용한 프리셋만 새 일반 판을 시작한다. 회차 판 배정과 이미 시작한 판의 재전송은 기존 정책을 유지한다. `POST /games`의 `mudang_variant` → 판 메타 → `GameOutput.mudang_variant` → `meeting.html` 초상으로 이어진다.
+
+공동 확인은 현재 dev 빌드의 기존 홈·시작·명령·판 조회 경로로 6인 1판을 완주하고 E가 재확인한다. 후보 태그가 없어도 진행 가능한 B-08-02 조건이며, 11/10 테스트 서버 태그 리허설은 B-09-03에서 확인한다(PR #272 일정 변경).
+
+명령 거절은 `api/views.py` → `RequestTelemetryMiddleware`의 HTTP 접근 로그 `reject` 필드에 `RejectCode.value`만 추가한다(422). 수락·동일 수락 요청 재생에는 없으며 요청 본문은 기록하지 않는다. `api/meeting_view.py` → `meeting_actions.html` → `game.js`가 지난 밤·진술 두 개 선택을 안내·제한하며 최종 판정은 기존 엔진이다. 시험 경로는 `tests/record_large8.py` → 공개 8인 녹화 → `test_preset_screens.py`·`preset_render_bench.py`다. [B-08-02 증빙](../docs/evidence/B-08-02.md)
+
 판 시작의 저장 후 재조회는 유지하고 같은 요청의 같은 버전 콘텐츠만 재사용한다. 시험 경로는 `asgi_bench.py` → `asgi_bench_app.py` → 시험 전용 `asgi_bench_metrics.py`·`asgi_bench_settings.py`이며 숫자 헤더로 요청별 시간만 연결한다. 계측의 요청 격리·SQL 원문 비노출 시험은 `server/tests/test_bench_metrics.py`다. 운영 URL·DTO·화면 흐름·계약 조건은 유지한다.
 
 최신 dev의 성능 CLI는 `--proxy-profile`이 있으면 C의 `server/tests/proxy_bench.py`로 보내고, 나머지는 기존 `server/tests/api_bench.py`로 보낸다. B의 `--compare-asgi` 분기는 그대로 유지한다. C의 완료된 판 단일 GET·프록시 비교는 B의 동시 시작·명령·광고 장애 시험과 별개다.
@@ -18,7 +24,7 @@ B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_benc
 
 dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결과는 [B-06-02 증빙](../docs/evidence/B-06-02.md)에 둔다.
 
-`GET /games/{id}/renders/{job_id}`의 htmx 응답은 공개 추궁 답변의 발언 ID·작업 ID를 대조해 `speech_line.html`에 Kanana 표기를 포함한다. 최초·재조회 화면은 `viewmodels.py`의 같은 공개 발언 판정으로 `meeting.html`에 표시한다. JSON 응답 DTO는 기존 형식을 유지한다.
+`GET /games/{id}/renders/{job_id}`의 htmx 응답은 공개 추궁 답변의 발언 ID·작업 ID를 대조해 `speech_line.html`로 렌더한다. 11/8 PM 결정에 따라 최초·폴링·완료·취소 재조회에 Kanana 표기를 붙이지 않는다. JSON 응답 DTO와 폴링 종료 조건은 유지한다.
 
 요청은 [paldo_web/urls.py](paldo_web/urls.py)에서 계정·관리자, 게임 API, 상태 확인과 정적 파일 경로로 나뉜다.
 

@@ -28,3 +28,31 @@ function showCommandRetry(event) {
 }
 document.addEventListener("htmx:sendError", showCommandRetry);
 document.addEventListener("htmx:timeout", showCommandRetry);
+
+/* 심문은 공개된 진술 선택과 지난 밤만 사용한다. 최종 판정은 기존 엔진이 맡는다. */
+function validateInterrogation(form) {
+  if (!form?.elements.interrogation_kind) return true;
+  const question = form.elements.interrogation_kind;
+  const whereabouts = question.value === "whereabouts";
+  form.elements.night.disabled = !whereabouts;
+  form.elements.slot.disabled = !whereabouts;
+  const selected = [...form.querySelectorAll('input[name="evidence"]:checked')]
+    .filter(input => input.value.startsWith("claim:"));
+  const missingPair = question.value === "contradiction" && selected.length < 2;
+  question.setCustomValidity(missingPair ? "관련 진술 두 개를 선택해 주세요." : "");
+  form.querySelector('button[type="submit"]').disabled = missingPair || (whereabouts && !form.elements.night.validity.valid);
+  return !missingPair;
+}
+function refreshInterrogations() {
+  document.querySelectorAll(".command-form").forEach(validateInterrogation);
+}
+document.addEventListener("change", event => validateInterrogation(event.target.closest(".command-form")));
+document.addEventListener("submit", event => {
+  const form = event.target.closest(".command-form");
+  if (form?.elements.interrogation_kind) {
+    validateInterrogation(form);
+    if (!form.reportValidity()) { event.preventDefault(); event.stopImmediatePropagation(); }
+  }
+}, true);
+document.addEventListener("DOMContentLoaded", refreshInterrogations);
+document.addEventListener("htmx:afterSwap", refreshInterrogations);
