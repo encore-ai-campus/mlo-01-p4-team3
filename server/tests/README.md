@@ -1,5 +1,9 @@
 # 게임 명령 시험
 
+## B-08-01 결과·진척·결말 선택
+
+`python -B server/manage.py test server.tests.test_story_ui server.tests.test_open_start server.tests.test_preset_screens --settings=server.paldo_web.test_settings --noinput`으로 결과·수집 단서·일반 판/고정 회차 결말·초상·시작 UUID 재생을 확인한다. 진척·해금 입력은 시험 전용 대역이며 E-09-08의 실제 해금·재처리를 검증하지 않는다. 도전 필드는 인수 전까지 임의로 추가하지 않는다. [증빙](../../docs/evidence/B-08-01.md)
+
 ## B-08-02 프리셋·8인 화면
 
 외형 선택·기본값, 공개 설정 파일의 홈/일반 판 반영, 8인 15화면 HTTP·HTML, 거절 코드 로그, 심문 양식과 실제 엔진 정상·거절 조합을 검사한다.
@@ -101,3 +105,5 @@ python -B tools/perf/api_bench.py --compare-asgi --users 10 --minutes 3 --result
 모든 시나리오의 게임 오류 0건·p95 1초 이하·판 완주, 혼합 부하의 비콘 ack·연결 오류 0건, 장애 중 실제 실패 ack를 검사한다. 장애 p95는 정상 광고·비콘 혼합 부하 대비 50ms 이하여야 한다. 게임 API 지연에는 광고 조각·비콘 지연을 섞지 않는다. 오류 표본은 제외하지 않는다. 공식 결과 저장은 10명 이상·각 3분 이상에서만 허용한다. 짧은 사전 시험은 `--result-name` 없이 실행한다.
 
 표준 결과는 `docs/evidence/perf/B-07-05/<이름>.json`, 상태 코드·중계 지표를 포함한 상세 결과는 무시되는 `out/handoff/b0705-network-report.json`에 쓴다. 측정값·오류 또는 기준 초과는 종료 코드 1이며 실행 실패는 2다. VM·실제 광고 서버·HTTPS·Kafka 성능을 증명하는 시험은 아니다.
+
+B-08-01 버전 회귀는 현재 E 원문과 B 보관본의 일치, 새 버전 배포 후 기존 판의 두 결말·수집 단서가 전체/htmx/반복 조회에서 유지되는지 검사한다. 새 버전은 파일 읽기 대역이며 실제 콘텐츠 파일·DB는 수정하지 않는다. 기존 버전 보관본의 삭제·덮어쓰기는 금지한다.

@@ -60,3 +60,11 @@ B-08-02 공동 확인은 현재 dev 빌드의 홈 → 6인 게임 시작 → 진
 B-06-03의 `POST /games/{id}/commands` 저장 응답 유실은 서버에서 동일 저장을 한 번 재시도하고, 저장된 응답이 있으면 기존 JSON·htmx 응답 경로로 돌려준다. 클라이언트 재전송은 같은 `command_id`를 유지한다.
 
 B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 하기 → `POST /games`·`GET /games/{id}` 경로는 그대로다. 최신 dev에서 회차·소유자 가명·동의·광고 대응표·재접속 보존을 재검증했다. [증빙](../docs/evidence/B-06-03.md).
+
+## B-08-01 결과·진척·결말
+
+- 홈의 일반 판·고정 회차 시작 폼은 `ending_choice.html`을 포함한다. 열린 결말만 선택할 수 있고 준비 중인 도전은 비활성이다. 초상 선택과 일반 판 시작 UUID는 기존 필드로 함께 전달한다.
+- 기존 `GET /games/{id}`의 전체 화면·회의 조각은 종료 시 `game_result.html`에 공개 승패·종료 사유와 선택 결말을 표시한다. 감금 기록·광고·설문 경로는 유지한다.
+- 홈·결과의 단서 링크는 `GET /players/me/progress` → `progress.html`로 이동한다. 일반 API 요청은 기존 `ProgressOutput` JSON이다.
+
+B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.

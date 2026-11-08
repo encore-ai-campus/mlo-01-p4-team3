@@ -74,6 +74,8 @@ python -B server/preview.py --port 8769
 | `server/app/presets_enabled.json` | `["base6"]` | 새 일반 판에 공개할 프리셋 ID 목록 | 파일만 바꾸면 홈과 일반 판 시작 허용 목록이 함께 바뀜. 추가 공개는 PM 승인 이후. 회차 판·기존 판 재개는 유지 |
 | 미리보기 `--port` | 8766 | 로컬 HTTP 포트 | 루프백 미리보기 접속 주소가 바뀜 |
 
+홈·종료 화면의 단서 링크로 본인 진척을 확인하고 다음 고정 판 시작 폼에서 열린 결말을 선택한다. API는 기존 `ending_choice`를 사용한다. 선택형 도전은 전송·메타 계약 및 공개 판정 인수 전 비활성이며 세부 인수 항목은 서버 설계에 있다.
+
 ## 한계
 
 자유 입력 화면은 `utterance_input.html`·`speech_cards.html`, 추궁 답변은 `speech_line.html`에서 처리한다. JSON·htmx가 같은 수명주기를 사용한다. 게임 서비스 조립 때 해석기를 한 번 생성한다. Django 설정 `INTENT_PARSER_FACTORY = "intent.parser.BaselineIntentParser"`로 D-07-01 기준선으로 전환할 수 있다. 동일 화면 시험과 실제 후보·버전 기록을 [B-07-01 증빙](../evidence/B-07-01.md)에 기록했다. 해석 지연은 `/metrics`의 `paldo_intent_parse_duration_seconds{stage,status}` 히스토그램으로 노출하며 p95는 `histogram_quantile(0.95, sum by (le) (rate(paldo_intent_parse_duration_seconds_bucket[5m])))`로 조회한다.
@@ -101,5 +103,8 @@ B-07-02의 설문은 같은 API에서 응답과 전체 건너뛰기를 받는다
 | B-07-03 | 11/7 | 로비·결과 광고 지연 로드, 3지면 조각·가명 분리·serve별 노출 비콘·동일 출처 클릭 검증. 미제공·실패의 200 빈 조각 검증. 복기 배치는 B-10-01 범위 |
 | E-08-14 | 11/8 | 회차 없는 일반 판 시작(서버 랜덤 시드, 공개 프리셋, 배포 버전, 시작 UUID 중복 방지), 홈 새 게임·이어 하기, 기본·Mongo 조립 모두 시작 정책 연결. 회차 판 경로 유지 |
 | B-08-02 | 11/8 | 공개 프리셋 파일과 일반 판 연동, 무당 초상 선택·기본값, 공개 8인 녹화 15화면·렌더 측정, 거절 코드 로그·심문 양식 제한·PM 결정의 Kanana 표기 제거. 현재 dev의 6인 공동 완주·E 재확인은 대기이며 태그는 선행 조건이 아님. 11/10 태그 리허설은 B-09-03 |
+| B-08-01 | 11/8 | 공개 결과·수집 단서·결말 선택 화면. 11/9 최신 dev에서 일반 판·고정 회차에 연결하고 시작 UUID·초상·첫 결말 보존을 재검증. 선택형 도전의 필드·공개 판정 인수 대기 콘텐츠 버전별 문안 보관·갱신 후 기존 결말/단서 유지 회귀 |
 
 B-06-03의 실제 Mongo 조립은 `server/paldo_web/mongo.py`를 사용한다. 엔진·모델을 명시적으로 넘겨 `open_mongo_runtime`을 호출하고 HTTP 처리 전 `configure()`로 연결한다. 기존 `PALDO_GAME_SERVICE_FACTORY` 함수 안에서는 `factory_service()`를 반환한다. 고정된 콘텐츠 버전·같은 고정 판을 복원한다. 접속 정보는 기존 `PALDO_MONGO_URI` 하나를 사용한다. 고유 컬렉션의 실제 시험은 `server/tests/mongo_game_sessions.py`이며 B-06-03의 회차·가명·동의 재검증은 완료했고 운영 조립·PM 브라우저 재개 판정도 병합됐다. VM·ASGI 성능은 B-07-05, 실제 광고 요청은 B-08-03에서 관리한다. 보조 저장의 실제 검증은 B-07-02 증빙에 있다.
+
+B-08-01 콘텐츠 문안은 `server/story_catalog.json`에 버전별로 보관한다. E 콘텐츠 갱신 시 새 버전 공개 문안을 추가하고 기존 버전은 유지한다. 게임은 메타 버전, 진척은 진척 버전으로 조회해 콘텐츠 갱신 후에도 원문을 보존한다. 현재 원문과 보관본의 일치·버전 갱신 전후 화면 보존은 `server/tests/test_story_ui.py`에서 검사한다.

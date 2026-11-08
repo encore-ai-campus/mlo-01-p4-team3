@@ -91,7 +91,8 @@ class GameService:
                 self.progress.add_game(player_pseudonym, fixed_id)
                 return output
         meta = replace(meta, game_id=fixed_id or str(uuid.uuid4()), source=DataSource.HUMAN,
-                       player_pseudonym=player_pseudonym, mudang_variant=data.mudang_variant)
+                       player_pseudonym=player_pseudonym, mudang_variant=data.mudang_variant,
+                       ending_choice=data.ending_choice)
         deps = self.dependencies(meta)
         result = self.engine.new_game(meta, deps)
         if not result.accepted or result.state is None or result.truth is None:

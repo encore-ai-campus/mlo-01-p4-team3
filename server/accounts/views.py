@@ -29,6 +29,11 @@ def home(request):
     if player and player[1]:
         context.update(_open_game_context(player[0]))
         try:
+            from server.api.story_view import ending_options
+            context["ending_options"] = ending_options(get_game_service().player_progress(player[0]).progress)
+        except GameServiceUnavailable:
+            pass
+        try:
             service = get_session_service()
             context["assignments"] = service.assigned(player[0], get_game_service().repository.load)
         except StartUnavailable:
