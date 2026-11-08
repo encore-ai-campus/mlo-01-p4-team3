@@ -57,7 +57,8 @@ def update_ledger(ledger: dict, pods: list[dict], now: float) -> list[str]:
     """목록 관측 한 번을 장부에 반영한다. pods는 {id, name, cost_per_hr}. 돌려주는 값은 접두어 없는 Pod 이름(경고용).
 
     접두어 Pod마다 첫·마지막 관측 시각과 시간당 요금을 남기고, 목록에서 사라진 Pod는 `gone`으로 표시한다(삭제 포함).
-    비용 누계는 (마지막 관측 − 첫 관측) × 시간당 요금이다. 관측 간격만큼 덜 셀 수 있어 `cost`에 한 간격을 더한 값으로 판단한다.
+    비용 누계는 (마지막 관측 − 첫 관측) × 시간당 요금이다. 살아 있는 Pod는 판단할 때 한 간격을 더하고(`pod_cost`),
+    사라진 Pod는 사라진 것을 본 시각까지 살아 있었다고 보고 마지막 관측 시각을 그 시각으로 올린다(보수적으로 더 센다).
     """
     seen, others = set(), []
     for p in pods:
@@ -69,8 +70,8 @@ def update_ledger(ledger: dict, pods: list[dict], now: float) -> list[str]:
         e.update(last_seen=now, cost_per_hr=max(e["cost_per_hr"], p["cost_per_hr"]), gone=False)
         seen.add(p["id"])
     for pid, e in ledger.items():
-        if pid not in seen:
-            e["gone"] = True
+        if pid not in seen and not e["gone"]:
+            e["gone"], e["last_seen"] = True, now
     return others
 
 
@@ -126,9 +127,12 @@ class RunpodCtl:
     def delete_pod(self, pod_id: str, retries: int = DELETE_RETRIES, sleep: Callable[[float], None] = time.sleep) -> bool:
         """`pod delete <id>`(정지가 아니라 삭제)를 최대 retries번. 성공하면 True."""
         for i in range(retries):
-            r = subprocess.run([*self.bin, "pod", "delete", pod_id], capture_output=True, text=True, timeout=60)
-            if r.returncode == 0:
-                return True
+            try:
+                r = subprocess.run([*self.bin, "pod", "delete", pod_id], capture_output=True, text=True, timeout=60)
+                if r.returncode == 0:
+                    return True
+            except (subprocess.TimeoutExpired, OSError):
+                pass   # 멈추거나 못 띄우면 실패한 시도로 센다(감시는 계속)
             if i < retries - 1:
                 sleep(5)
         return False

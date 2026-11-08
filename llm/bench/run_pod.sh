@@ -53,7 +53,7 @@ wait "$JOB" 2>/dev/null
 say "작업 끝(경과 ${ELAPSED}초)"
 
 if [ -n "${EXPORT_CMD:-}" ]; then
-  if timeout 60 bash -c "$EXPORT_CMD" 2>&1 | redact; then say "반출 완료"; else say "반출 실패(삭제는 진행)"; fi
+  if (set -o pipefail; timeout 60 bash -c "$EXPORT_CMD" 2>&1 | redact); then say "반출 완료"; else say "반출 실패(삭제는 진행)"; fi
 else
   say "EXPORT_CMD 없음: 반출 건너뜀"
 fi

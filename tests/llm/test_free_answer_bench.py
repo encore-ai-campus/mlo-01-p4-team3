@@ -41,16 +41,19 @@ class FakeHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.end_headers()
-        for piece in payload:
-            if isinstance(piece, float):
-                time.sleep(piece)
-                continue
-            data = {"choices": [{"delta": {"content": piece}}]}
-            self.wfile.write(f"data: {json.dumps(data, ensure_ascii=False)}\n\n".encode("utf-8"))
-            self.wfile.flush()
-        if kind == "ok":
-            self.wfile.write(b"data: [DONE]\n\n")
-        # "disconnect"는 끝 표시 없이 닫는다
+        try:
+            for piece in payload:
+                if isinstance(piece, float):
+                    time.sleep(piece)
+                    continue
+                data = {"choices": [{"delta": {"content": piece}}]}
+                self.wfile.write(f"data: {json.dumps(data, ensure_ascii=False)}\n\n".encode("utf-8"))
+                self.wfile.flush()
+            if kind == "ok":
+                self.wfile.write(b"data: [DONE]\n\n")
+            # "disconnect"는 끝 표시 없이 닫는다
+        except OSError:
+            pass   # 클라이언트가 먼저 끊음(부분 답·시간 초과 경로)
 
 
 class FakeServer:
@@ -128,6 +131,7 @@ class LoadClientTest(unittest.TestCase):
         self.assertEqual(r.outcome, "error")
         self.assertTrue(math.isinf(r.complete))
         self.assertTrue(math.isfinite(r.first_display))   # 끊기기 전에 첫 문장은 공개됨
+        self.assertEqual(r.published, ["초저녁엔 주막에 있었소."])   # 공개한 문장은 기록에 남는다(Codex 11/8)
 
     def test_http_error_and_timeout(self):
         self.srv.push(("http500", None))
@@ -136,6 +140,19 @@ class LoadClientTest(unittest.TestCase):
         self.assertTrue(math.isinf(r.first_display) and math.isinf(r.complete))
         self.srv.push(("ok", ["근거: f3\n", 0.3, "초저녁엔 주막에 있었소."]))
         self.assertEqual(self.run1(timeout=0.2).outcome, "timeout")
+
+    def test_deadline_cuts_stalled_and_dripping_streams(self):
+        # 서버가 멈춤(2초 무응답) / 조각을 0.1초마다 조금씩 계속 보냄: 둘 다 남은 시간(0.5초) 근처에서 끊는다(Codex 11/8)
+        self.srv.push(("ok", ["근거: f3\n", 2.0, "초저녁엔 주막에 있었소."]))
+        t0 = time.monotonic()
+        r = self.run1(timeout=0.5)
+        self.assertEqual(r.outcome, "timeout")
+        self.assertLess(time.monotonic() - t0, 1.5)
+        drip = ["근거: f3\n"] + [p for _ in range(30) for p in (0.1, "가")]
+        self.srv.push(("ok", drip))
+        t0 = time.monotonic()
+        self.assertEqual(self.run1(timeout=0.5).outcome, "timeout")
+        self.assertLess(time.monotonic() - t0, 1.5)
 
     def test_closed_loop_and_summary(self):
         self.srv.httpd.default = ("ok", chunks(GOOD, 8))   # 대본이 비면 늘 정상 답
@@ -249,7 +266,27 @@ class WatchPodsTest(unittest.TestCase):
         wp.update_ledger(led, [{"id": "a", "name": "paldo-e1112-s1-e-1", "cost_per_hr": 1.0}], 1800)
         wp.update_ledger(led, [], 3600)
         self.assertTrue(led["a"]["gone"])
-        self.assertAlmostEqual(wp.total_cost(led, 60), 0.5)
+        self.assertAlmostEqual(wp.total_cost(led, 60), 1.0)   # 사라진 것을 본 3600초까지 센다(Codex 11/8)
+        led2 = {}
+        wp.update_ledger(led2, [{"id": "b", "name": "paldo-e1112-s1-e-1", "cost_per_hr": 1.0}], 0)
+        wp.update_ledger(led2, [], 60)   # 한 번 보이고 다음 관측 전에 사라진 Pod도 0원이 아니다
+        self.assertAlmostEqual(wp.total_cost(led2), 60 / 3600)
+
+    def test_delete_timeout_does_not_stop_watch(self):
+        from unittest import mock
+
+        def hang(cmd, **kw):
+            if "delete" in cmd:
+                raise subprocess.TimeoutExpired(cmd, 60)
+            return subprocess.CompletedProcess(cmd, 0, json.dumps(
+                [{"id": "a", "name": "paldo-e1112-s0-e-1", "costPerHr": 0.89}]), "")
+        t = [0.0]
+        with mock.patch.object(wp.subprocess, "run", side_effect=hang):
+            self.assertFalse(self.ctl.delete_pod("a", sleep=lambda s: None))
+            wp.watch(self.ctl, self.ledger, "E", once=True, clock=lambda: t[0], sleep=lambda s: None)
+            t[0] = 31 * 60
+            led = wp.watch(self.ctl, self.ledger, "E", max_loops=2, clock=lambda: t[0], sleep=lambda s: None)
+        self.assertTrue(led["a"]["delete_requested"])
 
     def test_confirm_required(self):
         self.set_pods([])
@@ -310,6 +347,12 @@ class RunPodShTest(unittest.TestCase):
             r = self.run_sh({"STAGE": stage, "MAX_MINUTES": m}, "true")
             self.assertEqual(r.returncode, 2, (stage, m))
         self.assertEqual(self.calls(), [])
+
+    def test_export_failure_is_reported_and_delete_still_runs(self):
+        r = self.run_sh({"STAGE": "s0", "MAX_MINUTES": "20", "EXPORT_CMD": "exit 7"}, "true")
+        self.assertIn("반출 실패", r.stdout)   # 파이프 뒤 redact의 성공에 가려지지 않는다(Codex 11/8)
+        self.assertNotIn("반출 완료", r.stdout)
+        self.assertEqual((r.returncode, self.calls()), (0, ["pod delete pod-test"]))
 
     def test_job_done_then_export_and_delete(self):
         out = self.d / "exported"

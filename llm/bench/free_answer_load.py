@@ -25,6 +25,7 @@ import json
 import math
 import os
 import random
+import socket
 import sys
 import threading
 import time
@@ -120,8 +121,13 @@ class OpenAIStream:
         self.url = base_url.rstrip("/") + "/v1/chat/completions"
         self.model, self.key, self.timeout, self.extra = model, key, timeout, extra or {}
 
-    def stream(self, messages: list[dict]) -> Iterator[str]:
-        """조각 반복자. 끝 표시 없이 연결이 끊기면 `StreamError`."""
+    def stream(self, messages: list[dict], timeout: float | None = None) -> Iterator[str]:
+        """조각 반복자. 끝 표시 없이 연결이 끊기면 `StreamError`.
+
+        timeout(남은 요청 시간, 초)을 주면 연결·읽기 제한을 그 값으로 줄이고, 그 시각에 응답을 닫는 감시 타이머를 건다
+        (소켓 제한은 무응답 시간만 재므로 조각이 천천히 계속 오는 경우를 막는다).
+        """
+        limit = self.timeout if timeout is None else max(0.001, min(self.timeout, timeout))
         body = {"model": self.model, "messages": messages, "stream": True, "max_tokens": MAX_TOKENS,
                 "temperature": 0.3, **self.extra}
         headers = {"Content-Type": "application/json"}
@@ -129,15 +135,32 @@ class OpenAIStream:
             headers["Authorization"] = f"Bearer {self.key}"
         req = urllib.request.Request(self.url, data=json.dumps(body).encode("utf-8"), headers=headers)
         try:
-            resp = urllib.request.urlopen(req, timeout=self.timeout)
+            resp = urllib.request.urlopen(req, timeout=limit)
         except Exception as exc:   # noqa: BLE001 — 연결·HTTP 오류는 모두 실패로 센다
             if hasattr(exc, "close"):
                 exc.close()   # HTTPError는 응답 본문을 들고 있다
             raise StreamError(type(exc).__name__) from None
         done = False
+        fired = threading.Event()
+
+        def cut() -> None:   # 남은 시간이 다 되면 소켓을 끊어 막힌 읽기를 깨운다
+            fired.set()
+            sock = getattr(getattr(getattr(resp, "fp", None), "raw", None), "_sock", None)
+            try:
+                if sock is not None:
+                    sock.shutdown(socket.SHUT_RDWR)
+                else:
+                    resp.close()
+            except OSError:
+                pass
+        watchdog = threading.Timer(limit, cut)
+        watchdog.daemon = True
+        watchdog.start()
         try:
             with resp:
                 for raw in resp:
+                    if fired.is_set():
+                        raise StreamError("deadline")
                     try:
                         piece = parse_sse_line(raw.decode("utf-8"))
                     except ValueError:
@@ -150,9 +173,11 @@ class OpenAIStream:
         except StreamError:
             raise
         except Exception as exc:   # noqa: BLE001
-            raise StreamError(type(exc).__name__) from None
+            raise StreamError("deadline" if fired.is_set() else type(exc).__name__) from None
+        finally:
+            watchdog.cancel()
         if not done:
-            raise StreamError("disconnected")
+            raise StreamError("deadline" if fired.is_set() else "disconnected")
 
 
 # --- 응용: 요청 한 건 ---
@@ -167,11 +192,11 @@ def run_request(client, item: FreeQuestion, lexicon: Lexicon, session: int = 0, 
         gate, parser = SentenceGate(item, lexicon), AnswerStream()
         try:
             result = _one_attempt(client, messages, gate, parser, rec, t0, clock, timeout)
-        except StreamError as exc:
-            rec.outcome, rec.error, rec.complete = "error", str(exc), INF
-            return rec
-        except TimeoutError:
-            rec.outcome, rec.error, rec.complete = "timeout", "timeout", INF
+        except (StreamError, TimeoutError) as exc:
+            late = isinstance(exc, TimeoutError) or clock() - t0 >= timeout or str(exc) == "deadline"
+            rec.outcome, rec.error = ("timeout", "timeout") if late else ("error", str(exc))
+            rec.complete, rec.published = INF, list(gate.published)   # 끊기기 전에 공개한 문장은 남긴다
+            rec.reasons += gate.reasons
             return rec
         rec.reasons += gate.reasons
         if result != "fail":
@@ -187,7 +212,10 @@ def run_request(client, item: FreeQuestion, lexicon: Lexicon, session: int = 0, 
 
 def _one_attempt(client, messages, gate: SentenceGate, parser: AnswerStream, rec: Record, t0: float,
                  clock, timeout: float) -> str:
-    for piece in client.stream(messages):
+    remaining = timeout - (clock() - t0)
+    if remaining <= 0:
+        raise TimeoutError
+    for piece in client.stream(messages, remaining):
         now = clock() - t0
         if now > timeout:
             raise TimeoutError
