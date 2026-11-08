@@ -12,6 +12,7 @@ from typing import Optional
 
 PLAYER_ID = "mudang"  # 플레이어(무당)의 참가자 ID. 주민 NPC ID와 겹치지 않는다.
 CONTRACT_VERSION = "contract-0.3"
+ENGINE_VERSION = "paldo-engine"   # 판 메타·봉투 engine_version의 단일 출처(E-08-14). 규칙 재현은 rule_version으로 한다
 
 
 # ---------------------------------------------------------------- 열거형

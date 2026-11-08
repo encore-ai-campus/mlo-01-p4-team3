@@ -1,5 +1,9 @@
 # 게임 명령 시험
 
+판 시작의 저장 후 재조회는 유지하고 같은 요청의 같은 버전 콘텐츠만 재사용한다. 시험 경로는 `asgi_bench.py` → `asgi_bench_app.py` → 시험 전용 `asgi_bench_metrics.py`·`asgi_bench_settings.py`이며 숫자 헤더로 요청별 시간만 연결한다. 계측의 요청 격리·SQL 원문 비노출 시험은 `server/tests/test_bench_metrics.py`다. 운영 URL·DTO·화면 흐름·계약 조건은 유지한다.
+
+일반 명령은 소유권을 확인한 요청 내 상태·콘텐츠를 재사용하고, 광고 가명은 기존 값을 조회한 뒤 최초 생성만 upsert한다. 소유권·멱등·CAS·세션 폐기·majority 조건을 유지한다. 시험 전용 단계별 계측과 상세 결과는 `server/tests/asgi_bench_app.py`·`asgi_bench.py`, 동작 회귀는 `test_api.py`·`test_ad_identity_reads.py`·`mongo_game_sessions.py`에 있다.
+
 ## B-07-02 실제 Mongo·Kafka 시험
 
 `requirements/web.txt`의 패키지와 Docker Desktop Linux 엔진을 준비한다. Mongo는 위에서 쓰는 Compose Replica Set을 실행하고, 환경·`server/.env`·Compose 루트 `.env` 중 하나에 `PALDO_MONGO_URI`를 지정한다. 실제 Kafka는 CA·클라이언트 인증서·키와 hostname 검증을 켠 SSL JSON을 Git 제외 경로에 두고 `PALDO_TEST_KAFKA_CONFIG`에 그 파일 경로만 지정한다. 운영 C 발행기의 TLS 검증을 완화하지 않는다.
@@ -72,3 +76,16 @@ python -B server/manage.py test server.tests.mongo_game_sessions --settings=serv
 ## E-07-03 INT-07 웹 자동 재현 준비
 
 `int07_setup.py`(계정 DB 이주·참가자·로그인 세션·Mongo 회차 등록)와 `int07_run_settings.py`(실행용 SQLite 계정 DB + 실제 Mongo)는 `tools/perf/int07_web_run.py`가 하위 프로세스로 쓰는 준비 코드다. 시험 탐색(`test*.py`) 대상이 아니다. 사용법은 [성능 시험 모듈 문서](../../docs/modules/perf.md)에 있다.
+## B-07-05 실제 HTTP·웹소켓 성능 비교
+
+```powershell
+python -B tools/perf/api_bench.py --compare-asgi --users 10 --minutes 3 --result-name compose_10x3
+```
+
+기존 CLI의 `--compare-asgi`는 시험 전용 `asgi_bench.py`를 호출한다. WSGI, Daphne, 정상 광고·비콘, 3초 광고 지연, 광고 실패를 순차로 각 3분 측정한다(기본 약 15분과 준비 시간). 먼저 기존 Compose Mongo의 Replica Set을 준비하고 `PALDO_MONGO_URI`를 환경 또는 기존 `.env`로 전달한다. 게임·진척·콘텐츠는 실제 저장소, 엔진은 B-06-02와 같은 녹화 엔진, 계정은 임시 SQLite다.
+
+`asgi_bench_app.py`·`asgi_bench_settings.py`는 이 도구의 하위 프로세스 전용이며 운영 실행에 지정하지 않는다. 임시 계정·루프백 서버·고유 `b0705_<UUID>_` 컬렉션을 만들고 종료 시 자기 자료만 지운다. 운영 계정·컬렉션·설정은 바꾸지 않는다. 이벤트의 `load_test=true`를 검사한다. 비콘은 사용자별 초당 한 건이며 ping에 pong으로 응답한다.
+
+모든 시나리오의 게임 오류 0건·p95 1초 이하·판 완주, 혼합 부하의 비콘 ack·연결 오류 0건, 장애 중 실제 실패 ack를 검사한다. 장애 p95는 정상 광고·비콘 혼합 부하 대비 50ms 이하여야 한다. 게임 API 지연에는 광고 조각·비콘 지연을 섞지 않는다. 오류 표본은 제외하지 않는다. 공식 결과 저장은 10명 이상·각 3분 이상에서만 허용한다. 짧은 사전 시험은 `--result-name` 없이 실행한다.
+
+표준 결과는 `docs/evidence/perf/B-07-05/<이름>.json`, 상태 코드·중계 지표를 포함한 상세 결과는 무시되는 `out/handoff/b0705-network-report.json`에 쓴다. 측정값·오류 또는 기준 초과는 종료 코드 1이며 실행 실패는 2다. VM·실제 광고 서버·HTTPS·Kafka 성능을 증명하는 시험은 아니다.

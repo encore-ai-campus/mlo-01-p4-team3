@@ -140,9 +140,9 @@ def start_game(request):
     from_form = request.content_type == "application/x-www-form-urlencoded"
     if from_form:
         form = request.POST
-        if set(form) - {"csrfmiddlewaretoken", "preset_id", "session_id", "mudang_variant", "seed"}:
+        if set(form) - {"csrfmiddlewaretoken", "preset_id", "session_id", "mudang_variant", "seed", "start_token"}:
             raise ValueError("unknown_field")
-        body = {key: form.get(key) for key in ("preset_id", "session_id", "mudang_variant")}
+        body = {key: form.get(key) for key in ("preset_id", "session_id", "mudang_variant", "start_token")}
         if "seed" in form:
             body["seed"] = int(form["seed"])
     else:
@@ -150,6 +150,8 @@ def start_game(request):
     if "player_pseudonym" in body:
         raise ValueError("server_field")
     body["player_pseudonym"] = request.player_pseudonym
+    if body.get("session_id") in (None, ""):
+        body["session_id"] = None   # 생략·null·빈 문자열 = 회차 없는 일반 판(E-08-14)
     data = parse_game_input(StartGameInput, body)
     output = get_game_service().start(data, request.player_pseudonym, request.consented)
     request.game_id = output.view.game_id
@@ -176,7 +178,7 @@ def game_detail(request, game_id):
 def submit_command(request, game_id):
     """소유권 확인 뒤 URL·본문의 판 ID와 명령 DTO를 검증한다."""
     service = get_game_service()
-    state, _ = service.owned(game_id, request.player_pseudonym)
+    state, truth = service.owned(game_id, request.player_pseudonym)
     request.game_id = state.meta.game_id
     wants_meeting = _wants_meeting(request)
     if wants_meeting and request.content_type == "application/x-www-form-urlencoded":
@@ -188,7 +190,7 @@ def submit_command(request, game_id):
         raise ValueError("invalid_command")
     UUID(data.command_id)
     if data.intent_attempt_id is None:
-        output = service.command(data, request.player_pseudonym)
+        output = service.command_from_owned(data, request.player_pseudonym, state, truth)
     else:
         if service.interactions is None:
             raise InteractionUnavailable
