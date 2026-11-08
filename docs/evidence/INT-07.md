@@ -153,7 +153,7 @@ PM 판정용 자동 확인이다(E-07-03, 11/8 사용자 지시 "INT-07은 할 �
 - 토픽: 로컬 단일 브로커라 토픽 계획(`pipeline/topics.yaml`) 10개를 복제 1로 만들었다(운영 브로커는 복제 3으로 미리 생성).
 - 판: 판마다 참가자 1명과 고정 회차(시드 하나)를 `server.tests.int07_setup`으로 만들고 게임 웹 HTTP로만 진행했다. 로컬 Compose라 공식 데이터(Garage `pj4/official/...`)와 섞이지 않는다.
 
-결과(dev 42ff402, `docs/evidence/perf/INT-07/stack_run.json`·`stack_run_detail.json`, 수집 시각 2026-11-08 14:51 UTC):
+결과(브랜치 커밋 aa7e1a3, `docs/evidence/perf/INT-07/stack_run.json`·`stack_run_detail.json`, 수집 시각 2026-11-08 15:00 UTC):
 
 | 구성요소 | `/metrics` 필수 지표 | 프로세스 Python |
 |---|---|---|
