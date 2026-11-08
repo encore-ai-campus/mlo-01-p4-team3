@@ -22,7 +22,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: simulation
-          image: paldo-sim:c08-r1
+          image: "${SIM_IMAGE}"
           imagePullPolicy: Never
           args: ["--kafka-config", "/run/kafka/client.json", "--run-id", "c08_r1", "--preset", "base6", "--games", "50", "--seed", "801"]
           resources:
