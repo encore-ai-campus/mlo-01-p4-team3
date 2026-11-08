@@ -62,3 +62,9 @@ B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은
 호스트 시작 조립 → `paldo_web/mongo.py` → C의 `infra/mongo_repo.py`·`progress_store.py`·`content_store.py`와 B의 `infra/test_sessions.py`. `configure()` 뒤 기존 `/admin/sessions`·`POST /games`·`GET /games/{id}`·명령·진척 경로가 같은 실행 자원을 쓴다. URL·요청/응답 DTO는 바꾸지 않는다. 고정 회차 메타와 콘텐츠 버전을 재조회하며 Django 계정·세션은 기존 default DB를 유지한다.
 
 B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 하기 → `POST /games`·`GET /games/{id}` 경로는 그대로다. 최신 dev에서 회차·소유자 가명·동의·광고 대응표·재접속 보존을 재검증했다. [증빙](../docs/evidence/B-06-03.md).
+
+## B-08-01 결과·진척·결말 선택
+
+`GET /players/me/progress`는 기존 JSON DTO를 유지하고 HTML·htmx 요청에는 `progress.html`을 반환한다. `story_view.py`는 본인 진척의 수집 단서만 문안과 연결한다. 홈의 일반 판·고정 회차 폼은 `ending_choice.html`에서 열린 결말을 고르고 `POST /games`의 폼·JSON을 같은 `StartGameInput`으로 처리한다. 일반 판의 `start_token`·초상·공개 프리셋 경로는 유지한다. 종료된 `GET /games/{id}`·명령 응답은 기존 회의 조각에 `game_result.html`을 포함한다. 공개 결과는 `PlayerView`, 선택 결말·콘텐츠 버전은 소유권 확인한 메타에서 읽는다.
+
+B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.

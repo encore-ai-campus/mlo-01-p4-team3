@@ -80,6 +80,7 @@
     </section>
   {% endif %}
   {% if vm.ended %}
+    {% include "game_result.html" %}
     {% load ad_slots %}{% ad_slot 'result_banner' %}
     <p class="round-result">판이 종료됐습니다.</p>
     {% if participant_forms_available %}{% include "survey.html" %}{% endif %}
