@@ -28,6 +28,7 @@
 
 | 하려는 일 | 볼 곳 |
 |---|---|
+| 공개 프리셋·무당 초상·8인 화면 | `server/app/presets_enabled.json` → `open_start.py`·`server/accounts/views.py` → `web/templates/accounts/portrait_choice.html`·`meeting.html`. 공개 녹화 생성 `server/tests/record_large8.py`, HTTP 화면 회귀 `test_preset_screens.py`, 렌더 측정 `preset_render_bench.py` |
 | 화면이나 API 추가 | 표현 `server/api/`, 응용 `server/app/dto.py`, `docs/contracts/api.md` |
 | 게임 JSON API 경로와 실행 흐름 | `server/api/urls.py`, `server/api/views.py`, `server/api/interactions.py` → `server/app/usecases.py`, `server/app/interactions.py` |
 | 회의 화면과 에셋 연결 | `server/api/views.py`, `server/api/meeting_view.py`, `server/api/assets.py`, [화면 라우팅](../../web/ROUTING.md) |

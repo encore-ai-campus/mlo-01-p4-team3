@@ -1,5 +1,17 @@
 # 게임 명령 시험
 
+## B-08-02 프리셋·8인 화면
+
+외형 선택·기본값, 공개 설정 파일의 홈/일반 판 반영, 8인 15화면 HTTP·HTML, 거절 코드 로그, 심문 양식과 실제 엔진 정상·거절 조합을 검사한다.
+
+```powershell
+python -B -m server.tests.record_large8
+python -B server/manage.py test server.tests.test_preset_screens server.tests.test_utterance_ui --settings=server.paldo_web.test_settings --noinput
+python -B -m server.tests.preset_render_bench
+```
+
+첫 명령은 `tools.run_engine_games --preset large8 --games 1 --seed 1` 경로를 실행해 공개 PlayerView·명령만 `recorded_large8.json`으로 기록한다. 녹화 재생은 시험 전용이며 운영 엔진을 대체하지 않는다. 렌더 측정은 임시 SQLite·메모리 녹화에서 15화면을 각 10회 HTTP 전체 HTML로 렌더하고 표준 JSON에 기록한다. 브라우저 표시·실제 Mongo·동시 부하 성능으로 해석하지 않는다. 시험에서만 임시 파일/패치로 `large8`을 공개하며 운영 설정 초기값은 `base6`다. 현재 dev 빌드의 6인 공동 완주·E 재확인은 [별도 대기](../../docs/evidence/B-08-02.md)다. 태그 생성은 그 확인의 선행 조건이 아니며 11/10 태그 리허설은 B-09-03이다.
+
 판 시작의 저장 후 재조회는 유지하고 같은 요청의 같은 버전 콘텐츠만 재사용한다. 시험 경로는 `asgi_bench.py` → `asgi_bench_app.py` → 시험 전용 `asgi_bench_metrics.py`·`asgi_bench_settings.py`이며 숫자 헤더로 요청별 시간만 연결한다. 계측의 요청 격리·SQL 원문 비노출 시험은 `server/tests/test_bench_metrics.py`다. 운영 URL·DTO·화면 흐름·계약 조건은 유지한다.
 
 일반 명령은 소유권을 확인한 요청 내 상태·콘텐츠를 재사용하고, 광고 가명은 기존 값을 조회한 뒤 최초 생성만 upsert한다. 소유권·멱등·CAS·세션 폐기·majority 조건을 유지한다. 시험 전용 단계별 계측과 상세 결과는 `server/tests/asgi_bench_app.py`·`asgi_bench.py`, 동작 회귀는 `test_api.py`·`test_ad_identity_reads.py`·`mongo_game_sessions.py`에 있다.

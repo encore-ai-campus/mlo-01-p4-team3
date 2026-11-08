@@ -195,6 +195,8 @@ def submit_command(request, game_id):
         if service.interactions is None:
             raise InteractionUnavailable
         output = service.interactions.submit_linked(data, request.player_pseudonym)
+    if not output.accepted and not output.replayed:
+        request.command_reject = output.reject
     if not wants_meeting:
         return command_response(output)
     if output.replayed:
