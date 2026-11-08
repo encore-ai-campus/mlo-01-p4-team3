@@ -68,8 +68,11 @@ class MongoSessionStore:
 
     @_store_operation
     def ad_identity(self, player, session_key):
-        """동시 요청도 같은 UUID를 읽도록 upsert의 고유 키를 사용한다."""
+        """기존 UUID는 조회하고 최초 동시 생성만 고유 키 upsert로 보호한다."""
         key = player + ":" + session_key
+        existing = self.identities.find_one({"_id": key}, {"session_pseudonym": 1})
+        if existing is not None:
+            return existing["session_pseudonym"]
         value = {"player_pseudonym": player, "session_pseudonym": str(uuid.uuid4())}
         try:
             result = self.identities.find_one_and_update({"_id": key}, {"$setOnInsert": value}, upsert=True,

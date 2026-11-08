@@ -51,12 +51,18 @@ class GameService:
 
     def detail(self, game_id, player_pseudonym):
         """엔진이 허용한 PlayerView만 응답으로 만든다."""
+        return self._detail(game_id, player_pseudonym)
+
+    def _detail(self, game_id, player_pseudonym, deps=None):
+        """저장된 최신 판을 읽고 같은 콘텐츠 버전의 요청 내 의존성만 재사용한다."""
         state, _ = self.owned(game_id, player_pseudonym)
-        view = self._player_view(state)
+        if deps is not None and deps.content.content_version != state.meta.content_version:
+            deps = None
+        view = self._player_view(state, deps)
         return GameOutput(view, list(view.pending_render_jobs), state.meta.mudang_variant)
 
-    def _player_view(self, state):
-        view = self.engine.player_view(state, self.dependencies(state.meta).content)
+    def _player_view(self, state, deps=None):
+        view = self.engine.player_view(state, (deps if deps is not None else self.dependencies(state.meta)).content)
         if self.interactions is not None:
             with self.interactions.participant_records(state.meta.game_id) as records:
                 if records.notebook:
@@ -86,7 +92,8 @@ class GameService:
                 return output
         meta = replace(meta, game_id=fixed_id or str(uuid.uuid4()), source=DataSource.HUMAN,
                        player_pseudonym=player_pseudonym, mudang_variant=data.mudang_variant)
-        result = self.engine.new_game(meta, self.dependencies(meta))
+        deps = self.dependencies(meta)
+        result = self.engine.new_game(meta, deps)
         if not result.accepted or result.state is None or result.truth is None:
             raise ValueError("start_rejected")
         try:
@@ -97,7 +104,7 @@ class GameService:
             # 같은 순번의 동시 시작에서 먼저 저장된 판만 반환한다.
             self.owned(fixed_id, player_pseudonym)
         self.progress.add_game(meta.player_pseudonym, meta.game_id)
-        return self.detail(meta.game_id, player_pseudonym)
+        return self._detail(meta.game_id, player_pseudonym, deps)
 
     def player_progress(self, player_pseudonym):
         """로그인 계정 자신의 진척만 조회한다."""
@@ -121,6 +128,13 @@ class GameService:
     def command(self, data, player_pseudonym):
         """중복 → 버전 → 엔진 → 원자 저장 → 경합 처리 순서를 지킨다."""
         state, truth = self.owned(data.game_id, player_pseudonym)
+        return self.command_from_owned(data, player_pseudonym, state, truth)
+
+    def command_from_owned(self, data, player_pseudonym, state, truth):
+        """서버가 읽은 요청 범위 스냅샷을 재사용한다. 소유자·판과 저장 CAS는 재검사한다."""
+        if (state.meta.game_id != data.game_id or truth.game_id != data.game_id
+                or state.meta.player_pseudonym != player_pseudonym):
+            raise ResourceNotFound
         saved = self.repository.find_command(data.game_id, data.command_id)
         if saved:
             return self.replay_command(data.game_id, saved, player_pseudonym)
@@ -133,9 +147,10 @@ class GameService:
         deps = self.dependencies(state.meta)
         result = self.engine.apply(state, truth, env, deps)
         if not result.accepted:
-            return CommandOutput(False, state.state_version, self._player_view(state),
+            return CommandOutput(False, state.state_version, self._player_view(state, deps),
                                  result.reject, result.reject_detail)
-        view = self._player_view(result.state)
+        # 엔진이 콘텐츠 버전을 바꿨다면 이전 의존성을 재사용하지 않는다.
+        view = self._player_view(result.state, deps if result.state.meta.content_version == state.meta.content_version else None)
         output = CommandOutput(True, result.state.state_version, view,
                                pending_render_jobs=list(view.pending_render_jobs))
         args = (data.game_id, data.expected_state_version, result.state, result.truth,
