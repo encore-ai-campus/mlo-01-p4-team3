@@ -7,7 +7,8 @@ from server.tests.int07_stack import GOALS, python_info, required_present, scena
 def result(**over):
     comp = {"metrics_status": 200, "required": {"m": True}, "python_info": "3.14.6", "process_python": "3.14.6", "alive": True}
     base = {"components": {"web": dict(comp), "ads_web": dict(comp)},
-            "containers": [{"service": s, "image": "i", "status": "Up 1 minute (healthy)"} for s in ("mongo", "kafka", "mysql")],
+            "containers": [{"service": s, "image": "i", "status": "Up 1 minute (healthy)", "port_matches": True}
+                           for s in ("mongo", "kafka", "mysql")],
             "kafka_offsets_before": {"t": 0}, "kafka_offsets_after": {"t": 3}, "http_5xx": 0,
             "games": {**{g: {"reproduced": True} for g in GOALS}, "int1": {"commands": 6, "winner": "village", "errors": []}}}
     base.update(over)
@@ -24,6 +25,11 @@ class Verdicts(unittest.TestCase):
         r = result(containers=[{"service": "mongo", "image": "i", "status": "Up (healthy)"}])
         self.assertEqual(summarize(r)["9"][0], "실패")
         self.assertEqual(summarize(result(containers=[]))["9"][0], "실패")
+
+    def test_other_project_port_mismatch_fails(self):
+        r = result()
+        r["containers"][0]["port_matches"] = False
+        self.assertEqual(summarize(r)["9"][0], "실패")
 
     def test_unhealthy_or_wrong_python_fails(self):
         r = result()

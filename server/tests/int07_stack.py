@@ -43,6 +43,7 @@ WEB_PORT = 8010
 INT1_SEED = 70301
 GOALS = ("false_reveal", "last_possessed", "confession_switch")
 SERVICES = ("mongo", "kafka", "mysql")   # 이 확인에 필요한 Compose 서비스
+CONTAINER_PORTS = {"mongo": 27117, "kafka": 9092, "mysql": 3306}   # dev.yml의 컨테이너 쪽 포트
 COMPONENTS = {   # 이름: (지표 주소, 필수 지표)
     "web": (f"http://localhost:{WEB_PORT}/metrics", ["paldo_repo_commit_duration_seconds"]),
     "outbox_publisher": ("http://localhost:9108/metrics", ["paldo_outbox_publish_lag_seconds"]),
@@ -95,12 +96,14 @@ def summarize(result: dict) -> dict:
     missing = [n for n, c in comps.items() if not (c["alive"] and c["metrics_status"] == 200 and all(c["required"].values()))]
     not314 = [n for n, c in comps.items() if not c["process_python"].startswith("3.14.")]
     status = {c["service"]: c["status"] for c in result["containers"]}
-    unhealthy = [s for s in SERVICES if "(healthy)" not in status.get(s, "")]   # 없거나 healthy가 아니면 실패
+    ports = {c["service"]: c.get("port_matches") for c in result["containers"]}
+    # 없거나 healthy가 아니거나, 그 프로젝트의 호스트 포트가 구성요소가 붙은 주소와 다르면 실패
+    unhealthy = [s for s in SERVICES if "(healthy)" not in status.get(s, "") or ports.get(s) is not True]
     grew = {t: result["kafka_offsets_after"].get(t, 0) - result["kafka_offsets_before"].get(t, 0)
             for t in result["kafka_offsets_after"]}
     out = {"9": ("확인 완료, PM 판정 대기" if not missing and not not314 and not unhealthy else "실패",
                  f"Python 구성요소 {len(comps)}개 지표 누락 {len(missing)}{missing or ''}, 3.14 아닌 프로세스 {len(not314)}, "
-                 f"필수 컨테이너 {len(SERVICES)}개 중 없음·비정상 {len(unhealthy)}{unhealthy or ''}, 토픽 증가 "
+                 f"필수 컨테이너 {len(SERVICES)}개 중 없음·비정상·주소 불일치 {len(unhealthy)}{unhealthy or ''}, 토픽 증가 "
                  f"{ {t: n for t, n in grew.items() if n} }")}
     i1 = result["games"]["int1"]
     out["1"] = ("확인 완료" if i1["winner"] and not i1["errors"] and result["http_5xx"] == 0 else "실패",
@@ -166,9 +169,8 @@ class Stack:
         raise SystemExit(f"{name} 준비 시간 초과")
 
     def python_of(self, name: str) -> str:
-        """프로세스 실행 파일에 직접 물은 Python 버전."""
-        import psutil
-        exe = psutil.Process(self.procs[name].pid).exe()
+        """그 프로세스를 띄운 Python 실행 파일(`Popen` 인자 첫 칸)에 직접 물은 버전."""
+        exe = self.procs[name].args[0]
         return subprocess.run([exe, "-c", "import sys;print(sys.version.split()[0])"], capture_output=True,
                               text=True).stdout.strip()
 
@@ -188,13 +190,40 @@ def docker_cli() -> str:
     return shutil.which("docker") or os.path.expandvars(r"%LOCALAPPDATA%\Programs\DockerDesktop\resources\bin\docker.exe")
 
 
-def containers(project: str) -> list[dict]:
-    """Compose 서비스 상태(서비스·이미지·상태)."""
+def endpoint_ports(env: dict) -> dict[str, int | None]:
+    """구성요소가 실제로 붙는 호스트 포트(Mongo URI·Kafka 부트스트랩·광고 DB)."""
+    def port_of(hostport: str):
+        try:
+            return int(hostport.rsplit(":", 1)[1])
+        except (IndexError, ValueError):
+            return None
+    return {"mongo": urlsplit(env["PALDO_MONGO_URI"]).port, "kafka": port_of(env.get("PALDO_KAFKA_BOOTSTRAP", "")),
+            "mysql": int(env["PALDO_ADS_DB_PORT"]) if env.get("PALDO_ADS_DB_PORT", "").isdigit() else None}
+
+
+def published_port(project: str, service: str) -> int | None:
+    """그 Compose 프로젝트에서 서비스의 컨테이너 포트가 열린 호스트 포트."""
+    out = subprocess.run([docker_cli(), "compose", "-p", project, "-f", "ops/compose/dev.yml", "port", service,
+                          str(CONTAINER_PORTS[service])], capture_output=True, text=True, cwd=ROOT)
+    try:
+        return int(out.stdout.strip().splitlines()[0].rsplit(":", 1)[1]) if out.returncode == 0 else None
+    except (IndexError, ValueError):
+        return None
+
+
+def containers(project: str, env: dict | None = None) -> list[dict]:
+    """Compose 서비스 상태(서비스·이미지·상태). `env`가 있으면 호스트 포트가 구성요소 연결 주소와 같은지도 적는다."""
     out = subprocess.run([docker_cli(), "compose", "-p", project, "-f", "ops/compose/dev.yml", "ps", "--format",
                           "{{.Service}}|{{.Image}}|{{.Status}}"], capture_output=True, text=True, cwd=ROOT)
     if out.returncode:
         return []   # 명령 실패는 빈 목록 → `summarize`가 필수 서비스 없음으로 실패 처리
-    return [dict(zip(("service", "image", "status"), line.split("|"))) for line in out.stdout.splitlines() if line]
+    rows = [dict(zip(("service", "image", "status"), line.split("|"))) for line in out.stdout.splitlines() if line]
+    if env is not None:
+        want = endpoint_ports(env)
+        for row in rows:
+            if row["service"] in CONTAINER_PORTS:
+                row["port_matches"] = want.get(row["service"]) is not None and                     published_port(project, row["service"]) == want[row["service"]]
+    return rows
 
 
 def kafka_conf(env: dict) -> dict:
@@ -338,7 +367,7 @@ def run(scenarios: Path, kafka_config: Path, out: Path, record: bool, project: s
             s, text = http_get(url)
             comps[name] = {"metrics_status": s, "required": required_present(text, need), "python_info": python_info(text),
                            "process_python": stack.python_of(name), "alive": stack.procs[name].poll() is None}
-        result.update(components=comps, containers=containers(project), kafka_offsets_after=kafka_offsets(env),
+        result.update(components=comps, containers=containers(project, env), kafka_offsets_after=kafka_offsets(env),
                       http_5xx=state.http_5xx, forbidden_hits=state.hits, responses_checked=state.responses, games=games,
                       collected_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
     finally:

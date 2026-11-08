@@ -209,6 +209,7 @@ def main(argv=None) -> int:
         res = search(lab, goal)
         out[goal] = res
         print(goal, None if res is None else (res["seed"], len(res["commands"]), replay(lab, res)))
+    Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     return 0 if all(out[g] for g in GOALS) else 1
 
