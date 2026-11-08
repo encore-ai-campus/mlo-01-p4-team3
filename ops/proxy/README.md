@@ -57,4 +57,4 @@ api_bench의 proxy 모드는 **Django TestClient가 아닌 실제 HTTP 요청**�
 
 ## 운영 인계 범위
 
-웹·광고·Outbox·광고 publish/expire/refund·공식 bronze를 동시에 실행했고 앱 6개 Python 프로세스는 모두 3.14.4, HTTP 지표 6개 엔드포인트는 모두 200이었다. Spark driver/executor 3.14.4도 별도 작업에서 확인했다. Mongo 콘텐츠는 `content` 컬렉션의 `content-1.0`을 실제 읽었다. 관리자 보관 위치가 없어 Mongo 전용 DB 분리는 아직 pilot 범위다. B의 실제 HTTP 광고 어댑터, C-08-01 중앙 Prometheus 대시보드·경보 및 C-08-02 광고 silver/rejudge/gold는 후속 태스크이며 이 프록시 검증으로 완료 처리하지 않는다. E의 INT 통합 판정도 E가 수행한다.
+웹·광고·Outbox·광고 publish/expire/refund·공식 bronze를 동시에 실행했고 앱 6개 Python 프로세스는 모두 3.14.4, HTTP 지표 6개 엔드포인트는 모두 200이었다. Spark driver/executor 3.14.4도 별도 작업에서 확인했다. Mongo 콘텐츠는 `content` 컬렉션의 `content-1.0`을 실제 읽었다. 이후 C-06-01 후속 작업에서 기존 관리자 보호 파일로 정상 인증해 Mongo 전용 DB·계정으로 전환했고, 전환 후 wss와 새 게임 52건 Kafka/Delta 일치도 확인했다(ops/mongo.md). B의 실제 HTTP 광고 어댑터, C-08-01 중앙 Prometheus 대시보드·경보 및 C-08-02 광고 silver/rejudge/gold는 후속 태스크이며 이 프록시 검증으로 완료 처리하지 않는다. E의 INT 통합 판정도 E가 수행한다.

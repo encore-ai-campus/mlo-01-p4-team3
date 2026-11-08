@@ -1,0 +1,44 @@
+{
+  "task": "C-06-01",
+  "commit": "3d1cd04d813896b7dd1c4af0523300f0c507227c",
+  "generated_at": "2026-11-08T10:34:36Z",
+  "source": "python -m ops.provision_mongo plan/apply; actual web account verification; real HTTPS game; Kafka consumption and Delta ID/seq/hash reconciliation",
+  "metrics": {
+    "copied_collections": {
+      "value": 6,
+      "unit": "건"
+    },
+    "copied_documents": {
+      "value": 24,
+      "unit": "건"
+    },
+    "copy_hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "cross_database_error": {
+      "value": 13,
+      "unit": ""
+    },
+    "flow_events": {
+      "value": 52,
+      "unit": "건"
+    },
+    "flow_missing": {
+      "value": 0,
+      "unit": "건"
+    },
+    "flow_duplicates": {
+      "value": 0,
+      "unit": "건"
+    },
+    "flow_hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "api_errors": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
