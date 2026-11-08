@@ -1,6 +1,6 @@
 {
   "task": "B-10-02",
-  "commit": "3bb1e6cb66209334c6e2aeec8a95e8b81577b05b",
+  "commit": "edbb8a88ad50ffbea5a83c98e1a16cb34e3de5f8",
   "generated_at": "2026-11-08T17:49:16Z",
   "source": "Playwright Chrome headless: node out/handoff/village-browser.cjs (Daphne, temporary SQLite, recorded base6, 10 fresh browser contexts)",
   "metrics": {
