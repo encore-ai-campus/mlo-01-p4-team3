@@ -75,6 +75,7 @@ server/infra (인프라) → engine (포트 구현)
 | 저장소 배정 전 제출·병합(NAS 번들, 로컬 CI, 원장, 진행표) | 표현·응용 `tools/interim.py`, 규칙(도메인) `tools/interim_rules.py`, 기록 `docs/ops/interim_ledger.md`, 절차 `docs/tasks/README.md` 10-1절 |
 | 태스크 조건 바꾸기 | `docs/tasks/<흐름>.md`를 고치는 PR(이슈 본문은 직접 고치지 않음) |
 | 로그·지표 이름 정하기 | `docs/tasks/README.md` 5절 |
+| 사용자 테스트 지표·회차 등록 가명 ID·`test_human` 동결 | 인프라(읽기 전용 내보내기) `server/infra/ut_export.py` → 도메인·CLI `tools/ut_metrics.py`·`tools/ut_freeze.py`, 지표 정의 변경은 `tools/ut_metrics.py` `DEFINITIONS`, 설명 `docs/modules/user_test.md` |
 
 ## 명령
 
