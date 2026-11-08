@@ -126,8 +126,15 @@ def attempt_chains(events):
 
 
 def _command_first_seen(game):
-    """명령 ID → 그 명령 이벤트의 가장 이른 occurred_at."""
+    """명령 ID → 그 명령 이벤트의 가장 이른 occurred_at.
+
+    내보내기가 본문을 뺀 이벤트(observation·decision)의 시각은 명령 요지의 `first_event_at`으로 받는다.
+    """
     first_seen = {}
+    for c in game.get("commands", []):
+        cid, moment = c.get("command_id"), parse_time(c.get("first_event_at"))
+        if cid and moment and (cid not in first_seen or moment < first_seen[cid]):
+            first_seen[cid] = moment
     for e in game.get("events", []):
         cid = e.get("command_id")
         moment = parse_time(e.get("occurred_at"))

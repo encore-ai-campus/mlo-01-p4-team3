@@ -65,7 +65,7 @@ python -m tools.ut_freeze --games games.json --pretest-games pretest.json --pm-p
 | 설문 | `fun`·`unfair`·`npc_plausible` 각 1~5, `comment` 선택. 전체 건너뛰기는 `skipped=true`·점수 `null`(P-29) | `unfair`는 높을수록 더 억울함. 건너뜀은 평균에서 빼고 응답률 분모에만 넣음 | 보상·평균에서 방향 처리는 E-10-03·D-09-02가 정한다 |
 | 지표 정의 버전 | `ut-metrics-1.0`(`tools/ut_metrics.py` `DEFINITIONS`, 11/8 사용자 확정) | 결과 JSON에 버전·정의 문장을 함께 쓴다 | 정의를 바꾸면 버전을 올린다 |
 | 동결 규칙 버전 | `ut-freeze-1.0`, 정규화 `norm-1`(NFC·앞뒤 공백 제거·연속 공백 1칸) | 홀수 인원이면 평가 = floor(n/2)(11/8 확정) | 바꾸면 같은 시드로도 분할이 달라진다 |
-| 내보내기 형식 | `ut-export-1` | 진실(`truth`)·`observation`·`decision`·`truth_revealed`·화면 본문은 내보내지 않는다 | - |
+| 내보내기 형식 | `ut-export-1` | 진실(`truth`)·`observation`·`decision`·`truth_revealed`·화면 본문은 내보내지 않는다. 명령 요지에는 그 명령이 낸 이벤트(내보내지 않는 종류 포함)의 가장 이른 시각 `first_event_at`만 남겨 추궁 국면 체류 시간을 계산한다 | - |
 | 보존 기한 | 2026-12-12 | 가명 ID가 붙은 모든 사용자 테스트 데이터 삭제(C-09-02) | privacy.md 2절 |
 
 ## 한계

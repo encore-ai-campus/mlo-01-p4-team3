@@ -122,6 +122,15 @@ class BuildFreezeTests(unittest.TestCase):
         self.assertEqual(out["report"]["user_overlap"], 1)
         self.assertFalse(out["report"]["ok"])
 
+    def test_external_overlap_checked_for_eval_user_without_kept_sentences(self):
+        """검수로 문장이 모두 빠진 평가 사용자도 외부 세트 사용자와 겹치면 실패(Codex P2)."""
+        evals = f.split_users([r["player_pseudonym"] for r in self.usertest], 7)[0]
+        dropped = {r["attempt_id"]: "name" for r in self.usertest if r["player_pseudonym"] == evals[0]}
+        out = f.build_freeze(self.usertest, [], 7, [{"text": "무관", "user": evals[0]}], dropped)
+        self.assertNotIn(evals[0], {r["player_pseudonym"] for r in out["test_human"]})
+        self.assertEqual(out["report"]["user_overlap"], 1)
+        self.assertFalse(out["report"]["ok"])
+
 
 class CliTests(unittest.TestCase):
     def test_writes_package(self):

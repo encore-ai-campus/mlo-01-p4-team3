@@ -42,8 +42,22 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(rec["preset_id"], "base6")
         self.assertNotIn("truth", json.dumps(rec))
         self.assertEqual(rec["commands"][0], {"command_id": "c0", "accepted": True, "replayed": False,
-                                              "state_version": 1, "day": 1, "phase": "morning", "reject": None})
+                                              "state_version": 1, "day": 1, "phase": "morning", "reject": None,
+                                              "first_event_at": "2026-11-09T04:00:00+00:00"})
         self.assertFalse(rec["commands"][1]["accepted"])
+        self.assertIsNone(rec["commands"][1]["first_event_at"])
+
+    def test_command_time_kept_when_its_events_are_skipped(self):
+        """추궁 → 투표 전환처럼 observation·decision만 낸 명령도 시각은 남고 본문은 빠진다(Codex P1)."""
+        d = doc("g1", "s1", "2026-11-09T04:00:00+00:00")
+        d["outbox"].append({"envelope": {"event_id": "g1-9", "seq": 9, "event_type": "decision",
+                                         "occurred_at": "2026-11-09T04:05:00+00:00", "command_id": "c5",
+                                         "payload": {"secret_reason": 1}}, "committed_at": None})
+        d["commands"].append({"command_id": "c5", "response_json": json.dumps(
+            {"accepted": True, "view": {"phase": "vote", "day": 1, "state_version": 2}})})
+        rec = x.game_record(d)
+        self.assertEqual(rec["commands"][2]["first_event_at"], "2026-11-09T04:05:00+00:00")
+        self.assertNotIn("secret_reason", json.dumps(rec))
 
     def test_export_uses_find_with_projection_and_session_filter(self):
         coll = FakeCollection([doc("g2", "s2", "2026-11-09T05:00:00+00:00"),

@@ -37,8 +37,12 @@ def _iso(value):
     return value
 
 
-def _command_summary(row):
-    """명령 응답 JSON에서 시각 계산에 필요한 요지만 남긴다(화면 본문은 버림)."""
+def _command_summary(row, first_event_at=None):
+    """명령 응답 JSON에서 시각 계산에 필요한 요지만 남긴다(화면 본문은 버림).
+
+    `first_event_at`: 그 명령이 낸 아웃박스 이벤트(내보내지 않는 종류 포함)의 가장 이른 `occurred_at`.
+    추궁 → 투표 전환처럼 `observation`·`decision`만 내는 명령도 국면 체류 시간 계산에 시각이 필요하다.
+    """
     try:
         response = json.loads(row.get("response_json") or "{}")
     except ValueError:
@@ -46,7 +50,8 @@ def _command_summary(row):
     view = response.get("view") or {}
     return {"command_id": row.get("command_id"), "accepted": bool(response.get("accepted")),
             "replayed": bool(response.get("replayed")), "state_version": view.get("state_version"),
-            "day": view.get("day"), "phase": view.get("phase"), "reject": response.get("reject")}
+            "day": view.get("day"), "phase": view.get("phase"), "reject": response.get("reject"),
+            "first_event_at": first_event_at}
 
 
 def game_record(document):
@@ -54,8 +59,12 @@ def game_record(document):
     state = document.get("state") or {}
     meta = state.get("meta") or {}
     events = []
+    first_seen = {}
     for row in document.get("outbox") or []:
         envelope = row.get("envelope") or {}
+        cid, moment = envelope.get("command_id"), _iso(envelope.get("occurred_at"))
+        if cid and moment and (cid not in first_seen or moment < first_seen[cid]):
+            first_seen[cid] = moment  # 시각만(본문 없음). 같은 형식의 UTC ISO 문자열이라 문자열 비교로 충분
         if envelope.get("event_type") in SKIP_EVENT_TYPES:
             continue
         item = {name: envelope.get(name) for name in ENVELOPE_FIELDS}
@@ -69,7 +78,8 @@ def game_record(document):
             "seed": meta.get("seed"), "created_at": meta.get("created_at"),
             "rule_version": meta.get("rule_version"), "content_version": meta.get("content_version"),
             "phase": state.get("phase"), "day": state.get("day"), "result": state.get("result"),
-            "commands": [_command_summary(c) for c in document.get("commands") or []], "events": events}
+            "commands": [_command_summary(c, first_seen.get(c.get("command_id")))
+                         for c in document.get("commands") or []], "events": events}
 
 
 def export_games(collection, session_ids=None):

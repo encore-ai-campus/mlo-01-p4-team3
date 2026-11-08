@@ -100,6 +100,18 @@ class GameSummaryTests(unittest.TestCase):
         self.assertIsNotNone(s["survey"])
 
 
+class CommandTimeTests(unittest.TestCase):
+    def test_first_event_at_marks_command_whose_events_were_not_exported(self):
+        """추궁 → 투표 전환 명령이 observation·decision만 내 이벤트가 안 보여도 명령 요지 시각으로 끊는다(Codex P1)."""
+        events = [ev("game_started", 0, 0, command_id="c1"), ev("game_ended", 30, 9, command_id="c3")]
+        to_vote = dict(cmd("c2", "vote"), first_event_at=at(10))
+        g = game("g1", "p1", events, [cmd("c1", "interrogation"), to_vote, cmd("c3", "ended")],
+                 result={"completed": True})
+        self.assertEqual(m.phase_dwell(g, "interrogation", T0 + timedelta(minutes=30)), 600.0)
+        without = game("g1", "p1", events, [cmd("c1", "interrogation"), cmd("c2", "vote"), cmd("c3", "ended")])
+        self.assertEqual(m.phase_dwell(without, "interrogation", T0 + timedelta(minutes=30)), 1800.0)
+
+
 class AggregateTests(unittest.TestCase):
     def setUp(self):
         survey_yes = {"skipped": False, "fun": 4}

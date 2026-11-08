@@ -106,7 +106,8 @@ def build_freeze(usertest, pretest, seed, external=(), privacy_excluded=(), drop
         test_rows = [r for r in test_rows if r["attempt_id"] not in drop]
     external_users = {r.get("user") or r.get("player_pseudonym") for r in external} - {None}
     test_users = {r["player_pseudonym"] for r in test_rows}
-    user_overlap = sorted((test_users & set(train_users)) | (test_users & external_users))
+    assigned_eval = set(eval_users) | test_users  # 문장이 없거나 검수로 빠진 평가 사용자도 검사한다
+    user_overlap = sorted((assigned_eval & set(train_users)) | (assigned_eval & external_users))
     remaining_conflicts = [] if drop_conflicts else conflicts
     report = {
         "freeze_version": FREEZE_VERSION, "normalize_version": NORMALIZE_VERSION, "seed": seed,
