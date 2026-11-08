@@ -39,7 +39,7 @@ python -m llm.eval_set --seed 1                                                 
 python -m unittest discover -s tests/llm -t .                                                               # 순수 함수 테스트(llama_cpp 없이)
 python -m llm.bench.gen_intent_variants generate --model <gguf> --threads 8 --seed 0                         # 의도 예시 변형 후보(E-06-02, 끊기면 이어서). 모델 경로는 PALDO_LLM_MODEL로도
 python -m llm.bench.gen_intent_variants apply                                                                # 후보를 걸러 examples_v1.jsonl에 generated로 반영 + D 검수 시트
-python -m llm.free_answer_eval --seed 1                                                                     # 자유 질문 평가 세트(75건, 사용자 확인 전)
+python -m llm.free_answer_eval --seed 1                                                                     # 자유 질문 평가 세트(75건, 11/8 사용자 확인 완료)
 python -m llm.bench.free_answer_load --base-url <사설망 주소> --model <이름> --sessions 30 --think 5 15 --warmup 120 --duration 600 --label s2_normal   # 부하(E-11-12)
 python -m llm.bench.watch_pods --account E                                                                   # 노트북 감시(확인 질문에 yes)
 STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <작업 명령>                          # Pod 안
@@ -90,7 +90,7 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
   - 절 경계는 쉼표와 연결 어미(`고`·`며`·`는데`·`지만`·`다가`·`면서`)뿐이다. "초저녁과 한밤에 주막과 집에 있었소"처럼 한 절에 시간 둘·장소 둘을 묶으면 뜻이 맞아도 거부한다.
   - 사실 문장은 NPC 본인 시점이라고 본다(모든 절에 본인을 더함). 남의 행적을 전해 들은 형식의 사실은 다루지 않는다.
   - 어휘에 없는 시간 표현("그날", "그때")은 시간으로 세지 않는다. "어젯밤"처럼 어휘에 있는 다른 시간은 인용 사실에 없으면 거부한다.
-- 평가 세트(`free_answer_eval.json`)는 **사용자 확인 전**이다. 새로 쓴 문장 12개(`new_sentences`)를 확인받기 전에는 세트를 확정하지 않고 E-08-13도 완료로 표시하지 않는다. 행적은 콘텐츠 묶음 일과 확률로 뽑은 것이라 실제 엔진 판 기록과 같지 않다(사실 문장 형식만 엔진과 같다).
+- 평가 세트(`free_answer_eval.json`)의 새로 쓴 문장 12개(`new_sentences`)는 11/8 사용자가 전부 승인했다. 문장을 바꾸면 다시 확인받는다. 행적은 콘텐츠 묶음 일과 확률로 뽑은 것이라 실제 엔진 판 기록과 같지 않다(사실 문장 형식만 엔진과 같다).
 - 부하 클라이언트·Pod 스크립트는 가짜 스트리밍 서버·가짜 `runpodctl`로만 시험했다. 실제 서버의 스트리밍 조각 모양, `runpodctl` 목록 출력 형식, Pod 범위 키의 자기 삭제 권한은 E-11-12 0단계에서 확인한다(런북 "미확인"). 요청 마감(30초)은 연결 전에 정하고 스트림 읽기는 감시 타이머로 끊지만, 응답 머리를 받는 동안은 소켓 무응답 제한만 걸린다(머리를 아주 천천히 보내는 서버는 마감을 넘길 수 있음).
 
 ## 변경 이력
@@ -100,5 +100,5 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | E-06-07 | 11/6 | 처음 작성: 벤치마크 `llm/bench/run_bench.py`(모델 1개 + FIFO 큐, 큐 대기·프롬프트 처리·생성·검증 분리 측정, 버퍼 메모리, 다른 기기 결과 받기)와 잠정 결정(Kanana-2-3B Q4_K_M, Windows 직접, 스레드 8, RAM 6 GB, 동시 4건 p95 14,419 ms) |
 | E-07-07 | 11/7 | 추궁 프롬프트 `llm/prompt.py`(interrogate-v8, 말투 계열별 예시·끝 어미), 검증기 `llm/validator.py`(거부 사유 4종, 폴백), 평가 세트 `llm/eval_set.py`(100건)·지표 `llm/mvp_metrics.py`, 벤치마크 `--eval`·`--rejudge`·일관성 모드. 평가 성공 86 %, 전체 p95 5,575 ms |
 | E-07-06 | 11/7 | MVP 제출 묶음 `tools/build_llm_bundle.py`(zip 4개 파일, 결정적)과 코랩 노트북 `llm/colab/paldo_llm_mvp.ipynb`(첫 셀 Powered by Kanana 표기, T4 GPU 경로) 추가. llm 규칙 코드는 바꾸지 않음. 코랩 T4 평가 성공 93 %, 전체 p95 478 ms |
-| E-08-13 | 11/8 | 자유 질문 답변 규칙 `llm/free_answer.py`(검사 6종, 문장 단위 판정, 폴백)·평가 세트 생성 `llm/free_answer_eval.py`(75건, 사용자 확인 전)·부하 클라이언트 `llm/bench/free_answer_load.py`·Pod 감시 `watch_pods.py`·Pod 스크립트 `run_pod.sh`, 테스트 2개 파일(반례 22개 전부 거부), 계층 검사 대상에 2개 추가 |
+| E-08-13 | 11/8 | 자유 질문 답변 규칙 `llm/free_answer.py`(검사 6종, 문장 단위 판정, 폴백)·평가 세트 생성 `llm/free_answer_eval.py`(75건, 11/8 새 문장 12개 사용자 승인)·부하 클라이언트 `llm/bench/free_answer_load.py`·Pod 감시 `watch_pods.py`·Pod 스크립트 `run_pod.sh`, 테스트 2개 파일(반례 22개 전부 거부), 계층 검사 대상에 2개 추가 |
 | E-06-02 | 11/7 | 의도 예시 변형 규칙 `llm/intent_variants.py`(프롬프트 `intent-variants-v1`, 보존 검사 사유 12종)와 생성·반영 `llm/bench/gen_intent_variants.py`(`generate`·`apply`), 테스트 `tests/llm/test_intent_variants.py`, 계층 검사 대상에 추가 |

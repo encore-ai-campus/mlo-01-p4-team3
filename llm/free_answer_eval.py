@@ -1,4 +1,4 @@
-"""도메인 규칙: 자유 질문 답변 평가 세트 생성(E-08-13 4번). 상태: 사용자 확인 전.
+"""도메인 규칙: 자유 질문 답변 평가 세트 생성(E-08-13 4번). 상태: 사용자 확인 완료(11/8, 새 문장 12개 전부 승인).
 
 `content_min` 콘텐츠 묶음으로 판 하나의 행적(인물별 시간대 장소, 비밀)을 시드로 정하고, 말하는 NPC 시점의 허용 사실
 (엔진 투영과 같은 형식: 행적, 목격, 못 봄)과 비공개 사실(비밀의 실제 장소·고백·그 장소의 목격)을 만든다. 비밀을 가진
@@ -9,7 +9,7 @@ NPC의 비밀 시간대 행적은 거짓 장소(엔진이 대는 알리바이)�
 항목 구성: 질문 유형 3종(`whereabouts` 행적 확인, `contradiction` 모순 추궁, `suspicion` 의심 이유) × 대화 길이 3종
 (0·2·4턴) × `PER_CELL`건 + 반례 `false_premise`(거짓 전제) 6건·`wrong_history`(오류 섞인 이전 답) 6건.
 질문 문장은 E-06-02 의도 예시(`content/intent/examples_v1.jsonl`, 사람 작성 질문형)에서 고른다(`question_source`에 예시 ID).
-새로 쓴 문장(거짓 전제 질문, 오류 섞인 이전 답)은 `new_sentences`에 모아 두고 사용자 확인 전까지 세트를 확정하지 않는다.
+새로 쓴 문장(거짓 전제 질문, 오류 섞인 이전 답)은 `new_sentences`에 모아 두고 사용자 확인을 받는다(11/8 12개 전부 승인). 문장을 바꾸면 다시 확인받는다.
 
 항목 필드: `item_id`, `qtype`, `kind`(normal|false_premise|wrong_history), `turns`, `npc_id`, `npc_name`, `persona`,
 `facts`([{fact_id, sentence}]), `history`([{question, answer}]), `question`, `question_source`, `relevant_fact_ids`
@@ -32,7 +32,7 @@ BUNDLE = ROOT / "fixtures" / "content_min" / "bundle.json"
 EXAMPLES = ROOT / "content" / "intent" / "examples_v1.jsonl"
 OUT = ROOT / "fixtures" / "llm" / "free_answer_eval.json"
 EVAL_VERSION = "free-answer-eval-1"
-STATUS = "사용자 확인 전(E-08-13 4번: new_sentences의 새 질문·반례 문장 확인 뒤 확정)"
+STATUS = "사용자 확인 완료(11/8, new_sentences 12개 전부 승인)"
 GAME_SIZE = 5
 MAX_FACTS = 5
 PER_CELL = 7                         # 3 유형 × 3 길이 × 7 = 63건
@@ -254,7 +254,7 @@ def build_eval(bundle: dict, questions: dict, seed: int) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     """인자를 읽어 평가 세트를 파일로 쓰고 요약 한 줄을 출력한다."""
-    p = argparse.ArgumentParser(description="E-08-13 자유 질문 답변 평가 세트 생성(사용자 확인 전)")
+    p = argparse.ArgumentParser(description="E-08-13 자유 질문 답변 평가 세트 생성")
     p.add_argument("--seed", type=int, required=True)
     p.add_argument("--out", default=str(OUT))
     a = p.parse_args(argv)

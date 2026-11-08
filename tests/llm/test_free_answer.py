@@ -222,7 +222,7 @@ class FallbackTest(unittest.TestCase):
 
 
 class EvalSetTest(unittest.TestCase):
-    """평가 세트 생성기(사용자 확인 전 상태). 픽스처는 같은 시드면 같은 바이트."""
+    """평가 세트 생성기(11/8 사용자 확인 완료). 픽스처는 같은 시드면 같은 바이트."""
 
     @classmethod
     def setUpClass(cls):
@@ -238,7 +238,7 @@ class EvalSetTest(unittest.TestCase):
 
     def test_counts_and_status(self):
         items = self.data["items"]
-        self.assertIn("사용자 확인 전", self.data["status"])
+        self.assertIn("사용자 확인 완료", self.data["status"])
         normal = [i for i in items if i["kind"] == "normal"]
         self.assertGreaterEqual(len(normal), 60)
         self.assertEqual({(i["qtype"], i["turns"]) for i in normal},
