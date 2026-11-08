@@ -39,6 +39,7 @@ class PassiveBot:
     version = "player-passive-v0"
 
     def choose(self, view, rng: random.Random):
+        """합법 명령 중 침묵·넘기기를 먼저, 없으면 투표·밤 점 대상을 무작위로 고른다."""
         choices = legal_commands(view)
         if not choices:
             raise ValueError("no legal player command")
@@ -136,6 +137,7 @@ def run(games: int, seed: int, bots: list[str]) -> dict:
 
 # ---------------------------------------------------------------- 표현
 def main(argv=None) -> int:
+    """인자를 읽어 측정하고 결과를 출력한다. `--record`면 증빙 결과 JSON도 쓴다."""
     p = argparse.ArgumentParser(description="투표 균형 측정(A-09-06)")
     p.add_argument("--games", type=int, default=200)
     p.add_argument("--seed", type=int, default=7)
