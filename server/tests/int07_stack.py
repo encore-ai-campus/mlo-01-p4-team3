@@ -42,6 +42,7 @@ SOURCE = ("python -m server.tests.int07_stack --scenarios <int07_scenarios 결�
 WEB_PORT = 8010
 INT1_SEED = 70301
 GOALS = ("false_reveal", "last_possessed", "confession_switch")
+SERVICES = ("mongo", "kafka", "mysql")   # 이 확인에 필요한 Compose 서비스
 COMPONENTS = {   # 이름: (지표 주소, 필수 지표)
     "web": (f"http://localhost:{WEB_PORT}/metrics", ["paldo_repo_commit_duration_seconds"]),
     "outbox_publisher": ("http://localhost:9108/metrics", ["paldo_outbox_publish_lag_seconds"]),
@@ -93,12 +94,13 @@ def summarize(result: dict) -> dict:
     comps = result["components"]
     missing = [n for n, c in comps.items() if not (c["alive"] and c["metrics_status"] == 200 and all(c["required"].values()))]
     not314 = [n for n, c in comps.items() if not c["process_python"].startswith("3.14.")]
-    unhealthy = [c["service"] for c in result["containers"] if "healthy" not in c["status"] or "unhealthy" in c["status"]]
+    status = {c["service"]: c["status"] for c in result["containers"]}
+    unhealthy = [s for s in SERVICES if "(healthy)" not in status.get(s, "")]   # 없거나 healthy가 아니면 실패
     grew = {t: result["kafka_offsets_after"].get(t, 0) - result["kafka_offsets_before"].get(t, 0)
             for t in result["kafka_offsets_after"]}
     out = {"9": ("확인 완료, PM 판정 대기" if not missing and not not314 and not unhealthy else "실패",
                  f"Python 구성요소 {len(comps)}개 지표 누락 {len(missing)}{missing or ''}, 3.14 아닌 프로세스 {len(not314)}, "
-                 f"컨테이너 {len(result['containers'])}개 비정상 {len(unhealthy)}, 토픽 증가 "
+                 f"필수 컨테이너 {len(SERVICES)}개 중 없음·비정상 {len(unhealthy)}{unhealthy or ''}, 토픽 증가 "
                  f"{ {t: n for t, n in grew.items() if n} }")}
     i1 = result["games"]["int1"]
     out["1"] = ("확인 완료" if i1["winner"] and not i1["errors"] and result["http_5xx"] == 0 else "실패",
@@ -190,6 +192,8 @@ def containers(project: str) -> list[dict]:
     """Compose 서비스 상태(서비스·이미지·상태)."""
     out = subprocess.run([docker_cli(), "compose", "-p", project, "-f", "ops/compose/dev.yml", "ps", "--format",
                           "{{.Service}}|{{.Image}}|{{.Status}}"], capture_output=True, text=True, cwd=ROOT)
+    if out.returncode:
+        return []   # 명령 실패는 빈 목록 → `summarize`가 필수 서비스 없음으로 실패 처리
     return [dict(zip(("service", "image", "status"), line.split("|"))) for line in out.stdout.splitlines() if line]
 
 
@@ -271,7 +275,7 @@ def play_scenario(http, setup: dict, found: dict) -> dict:
     hs, _ = http.request("GET", f"/games/{view['game_id']}", accept="text/html")
     accepted = len(steps) == len(found["commands"]) and all(x["accepted"] for x in steps)
     return {"seed": found["seed"], "target": found["target"], "commands": len(steps), "all_accepted": accepted,
-            "html_status": hs, "reproduced": accepted and scenario_holds(found["goal"], view, found["target"]),
+            "html_status": hs, "reproduced": accepted and hs == 200 and scenario_holds(found["goal"], view, found["target"]),
             "result": view.get("result"), "steps": steps}
 
 
@@ -307,14 +311,15 @@ def run(scenarios: Path, kafka_config: Path, out: Path, record: bool, project: s
     setups = {g: participant(stack, web, g, found[g]["seed"]) for g in GOALS}
     setups["int1"] = participant(stack, web, "int1", INT1_SEED)
     result = {"compose_project": project, "topics_created_rf1": ensure_topics(env), "kafka_offsets_before": kafka_offsets(env)}
-    stack.start("web", ["-m", "daphne", "-b", "127.0.0.1", "-p", str(WEB_PORT), "server.paldo_web.asgi:application"], web)
-    stack.start("outbox_publisher", ["-m", "server.infra.outbox_publisher", "--kafka-config", str(kafka_config),
-                                     "--metrics-port", "9108"], pub)
-    stack.start("ads_web", ["-X", "utf8", "ads/manage.py", "runserver", "127.0.0.1:8001", "--noreload"], ads)
-    for i, role in enumerate(("expire", "publish", "refund")):
-        stack.start(f"ad_worker_{role}", ["-X", "utf8", "ads/manage.py", "ad_worker", role, "--metrics-port", str(9101 + i)], ads)
     state = Run()
-    try:
+    try:   # 띄우기도 정리 범위 안에 둔다(중간에 실패해도 먼저 띄운 프로세스를 끈다)
+        stack.start("web", ["-m", "daphne", "-b", "127.0.0.1", "-p", str(WEB_PORT), "server.paldo_web.asgi:application"], web)
+        stack.start("outbox_publisher", ["-m", "server.infra.outbox_publisher", "--kafka-config", str(kafka_config),
+                                         "--metrics-port", "9108"], pub)
+        stack.start("ads_web", ["-X", "utf8", "ads/manage.py", "runserver", "127.0.0.1:8001", "--noreload"], ads)
+        for i, role in enumerate(("expire", "publish", "refund")):
+            stack.start(f"ad_worker_{role}", ["-X", "utf8", "ads/manage.py", "ad_worker", role, "--metrics-port",
+                                              str(9101 + i)], ads)
         for name, (url, _) in COMPONENTS.items():
             stack.wait(name, url)
         result["started_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -353,7 +358,7 @@ def write_evidence(result: dict) -> None:
         "components_up": (sum(c["alive"] and c["metrics_status"] == 200 and all(c["required"].values()) for c in comps.values()), "개"),
         "components_total": (len(comps), "개"),
         "non_314_processes": (sum(not c["process_python"].startswith("3.14.") for c in comps.values()), "개"),
-        "containers_healthy": (sum("(healthy)" in c["status"] for c in result["containers"]), "개"),
+        "containers_healthy": (sum("(healthy)" in c["status"] for c in result["containers"] if c["service"] in SERVICES), "개"),
         "kafka_events_published": (sum(result["kafka_offsets_after"].values()) - sum(result["kafka_offsets_before"].values()), "건"),
         "scenarios_reproduced": (sum(result["games"][g]["reproduced"] for g in GOALS), "개"),
         "int1_commands": (result["games"]["int1"]["commands"], "개"),
