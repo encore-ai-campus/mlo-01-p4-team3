@@ -178,7 +178,7 @@ def game_detail(request, game_id):
 def submit_command(request, game_id):
     """소유권 확인 뒤 URL·본문의 판 ID와 명령 DTO를 검증한다."""
     service = get_game_service()
-    state, _ = service.owned(game_id, request.player_pseudonym)
+    state, truth = service.owned(game_id, request.player_pseudonym)
     request.game_id = state.meta.game_id
     wants_meeting = _wants_meeting(request)
     if wants_meeting and request.content_type == "application/x-www-form-urlencoded":
@@ -190,7 +190,7 @@ def submit_command(request, game_id):
         raise ValueError("invalid_command")
     UUID(data.command_id)
     if data.intent_attempt_id is None:
-        output = service.command(data, request.player_pseudonym)
+        output = service.command_from_owned(data, request.player_pseudonym, state, truth)
     else:
         if service.interactions is None:
             raise InteractionUnavailable

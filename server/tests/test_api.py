@@ -97,6 +97,57 @@ class GameAPI(TestCase):
             self.assertEqual(self.client.get(path, HTTP_ACCEPT="application/json").status_code, 401)
             self.assertEqual(self.client.get(path).status_code, 302)
 
+    def test_command_reuses_owned_state_and_content(self):
+        """일반 명령의 상태·콘텐츠는 한 번 읽으며 경합 저장 보호는 그대로 둔다."""
+        gid = self.start_game()
+        # 보조 기록의 별도 소유권 재확인은 유지한다. 성능 시험과 같은 일반 경로를 검사한다.
+        self.service.interactions = None
+        payload = {"game_id": gid, "command_id": str(uuid.uuid4()), "expected_state_version": 0,
+                   "command": {"kind": "advance", "actor": "mudang"}}
+        with patch.object(self.service, 'owned', wraps=self.service.owned) as reads, patch.object(
+                self.service, 'dependencies', wraps=self.service.dependencies) as content:
+            self.assertEqual(self.post_json(f'/games/{gid}/commands', payload).status_code, 200)
+            self.assertEqual(reads.call_count, 1)
+            self.assertEqual(content.call_count, 1)
+
+    def test_start_reuses_content_only_inside_each_request_and_keeps_readback(self):
+        """신규 시작마다 콘텐츠를 한 번 읽으며 저장된 판 재조회는 생략하지 않는다."""
+        with patch.object(self.service, 'dependencies', wraps=self.service.dependencies) as content, patch.object(
+                self.service.repository, 'load', wraps=self.service.repository.load) as readback:
+            first = self.start_game()
+            second = self.start_game()
+            self.assertNotEqual(first, second)
+            self.assertEqual(content.call_count, 2)
+            self.assertEqual(readback.call_count, 2)
+
+    def test_start_readback_different_content_version_is_loaded_again(self):
+        """재조회 버전이 다르면 이전 콘텐츠를 재사용하거나 미적재 오류를 숨기지 않는다."""
+        from server.paldo_web.composition import GameServiceUnavailable
+        gid = self.start_game()
+        state, truth = self.service.repository.load(gid)
+        deps = self.service.dependencies(state.meta)
+        changed = replace(state, meta=replace(state.meta, content_version='unavailable-version'))
+        with patch.object(self.service, 'owned', return_value=(changed, truth)), patch.object(
+                self.service, 'dependencies', side_effect=GameServiceUnavailable) as load:
+            with self.assertRaises(GameServiceUnavailable):
+                self.service._detail(gid, state.meta.player_pseudonym, deps)
+            load.assert_called_once_with(changed.meta)
+
+    def test_reused_snapshot_rejects_wrong_game_and_owner(self):
+        """재사용 경계도 판·소유자가 다르면 멱등 저장을 조회하지 않는다."""
+        from server.app.dto import SubmitCommandInput
+        from server.api.input_validation import parse_game_input
+        from server.app.usecases import ResourceNotFound
+        gid = self.start_game()
+        state, truth = self.service.repository.load(gid)
+        body = {"game_id": gid, "command_id": str(uuid.uuid4()), "expected_state_version": 0,
+                "command": {"kind": "advance", "actor": "mudang"}}
+        for game_id, player in ((gid, 'other'), (str(uuid.uuid4()), state.meta.player_pseudonym)):
+            data = parse_game_input(SubmitCommandInput, dict(body, game_id=game_id))
+            with patch.object(self.service.repository, 'find_command', side_effect=AssertionError('ownership first')):
+                with self.assertRaises(ResourceNotFound):
+                    self.service.command_from_owned(data, player, state, truth)
+
     def test_replay_conflict_rejection_and_csrf(self):
         """엔진 거절, 저장·중복 재생, 오래된 버전과 CSRF를 검증한다."""
         gid = self.start_game()
