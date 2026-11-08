@@ -189,9 +189,8 @@ def watch(ctl: RunpodCtl, ledger_path: Path, account: str, once: bool = False, i
     limit = LIMITS[account]
     ledger = json.loads(ledger_path.read_text(encoding="utf-8")) if ledger_path.exists() else {}
     foreign_old = [e["name"] for e in ledger.values() if account_of(e["name"]) != account.upper()]
-    if foreign_old:   # 다른 계정 장부를 잘못 넘겼거나 계정 격리 전 장부: 이 계정 누계에서 뺀다
-        log("장부에 계정 칸이 다른 항목이 있어 뺌(이 계정 누계에 넣지 않음)", level="error", account=account, names=foreign_old)
-        ledger = {k: v for k, v in ledger.items() if account_of(v["name"]) == account.upper()}
+    if foreign_old:   # 다른 계정 장부를 잘못 넘김: 그 계정 기록을 지우거나 덮어쓰지 않도록 시작을 거부한다
+        raise ValueError(f"장부 {ledger_path}에 계정 {account}가 아닌 항목이 있음: {foreign_old}")
     first, loops = True, 0
     while True:
         loops += 1
@@ -244,7 +243,11 @@ def main(argv: list[str] | None = None, input_fn: Callable[[str], str] = input) 
         log("확인 질문에 yes가 아니어서 시작하지 않음", level="error")
         return 2
     ledger = Path(a.ledger or f"out/runpod/ledger_{a.account}.json")
-    watch(RunpodCtl(a.runpodctl, a.list_cmd, tuple(a.fields), env), ledger, a.account, a.once, a.interval)
+    try:
+        watch(RunpodCtl(a.runpodctl, a.list_cmd, tuple(a.fields), env), ledger, a.account, a.once, a.interval)
+    except ValueError as exc:   # 장부 계정 불일치: 파일을 건드리지 않고 멈춤
+        log(str(exc), level="error")
+        return 2
     return 0
 
 
