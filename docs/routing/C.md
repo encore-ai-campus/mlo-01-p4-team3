@@ -33,4 +33,4 @@
 | VM 상태 점검(기동·자원·디스크·스냅샷) | `ops/inventory_check.md`(방법과 20대 표), `ops/inventory_host.ps1`, `tools/perf/vm_probe.sh` |
 | RunPod GPU 실험·자원 확정 조건 | `ops/runbook/runpod.md`, `vm_roles.md`, `schedule.md` |
 | 시간대별 VM 사용(사용자 테스트·학습·LLM), VM 역할·디스크 예산 | `ops/runbook/schedule.md`, `ops/runbook/vm_roles.md` |
-| HTTPS·인증서 경고 안내 | `ops/proxy/`(C-07-04), `docs/contracts/integration.md` 5절 |
+| HTTPS·인증서 경고·브라우저·프록시 지연 확인 | `ops/proxy/{README.md,Caddyfile,browser_check.py,header_probe.py}`, `tools/perf/api_bench.py --proxy-profile`, `server/tests/proxy_bench.py` |
