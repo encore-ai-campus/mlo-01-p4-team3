@@ -35,7 +35,7 @@ def prepare(profile_path,out):
     with MongoClient(os.environ['PALDO_MONGO_URI'],timeoutMS=15000) as client:
         sessions=TestSessionService(MongoSessionStore(client.get_default_database()))
         for name in ('broker','publisher','browser','benchmark'):
-            username='c07_'+uuid.uuid4().hex[:12];password='Test-'+secrets.token_urlsafe(20)+'9a!'
+            username='c07_'+uuid.uuid4().hex[:12];password=secrets.token_urlsafe(24)+'9a!'
             user=User.objects.create_user(username=username,password=password)
             profile=AccountProfile.objects.create(user=user,consented_at=timezone.now())
             session=SessionStore();session[SESSION_KEY]=str(user.pk);session[BACKEND_SESSION_KEY]=settings.AUTHENTICATION_BACKENDS[0];session[HASH_SESSION_KEY]=user.get_session_auth_hash();session.create()
@@ -45,7 +45,7 @@ def prepare(profile_path,out):
             result['actors'][name]={'username':username,'password':password,'cookie':[settings.SESSION_COOKIE_NAME,session.session_key],'session_id':sid}
     descriptor=os.open(out,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
     with os.fdopen(descriptor,'w') as stream:json.dump(result,stream)
-    print(json.dumps({'verification_actors':len(result['actors']),'cookies_and_credentials':'protected_file_only'}))
+    print(json.dumps({'verification_actors':len(result['actors']),'authentication_state_exported':False}))
 
 
 def main(argv=None):
