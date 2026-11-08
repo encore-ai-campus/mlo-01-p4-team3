@@ -43,14 +43,15 @@ def home(request):
 def _open_game_context(player):
     """일반 판 시작 폼(요청마다 새 시작 UUID)과 진행 중인 일반 판 목록(E-08-14).
 
-    시작 정책이 일반 판을 지원하지 않는 조립(미리보기의 녹화 판 회차 정책 등)에서는 폼을 보이지 않는다.
+    시작 정책이 일반 판을 지원하지 않는 조립(미리보기의 녹화 판 회차 정책 등)에서는 시작 폼만 숨기고,
+    이미 있는 일반 판의 이어 하기는 시작 정책과 무관하므로 그대로 보인다.
     """
     from server.app.open_start import StartPolicy, open_preset_ids, unfinished_open_games
     context = {"open_presets": open_preset_ids(), "open_start_token": str(uuid.uuid4()), "open_games": []}
     try:
         service = get_game_service()
         if not isinstance(service.prepare_start, StartPolicy):
-            return {"open_presets": []}
+            context["open_presets"] = []
         context["open_games"] = unfinished_open_games(service.progress.load(player).game_ids,
                                                       service.repository.load)
     except GameServiceUnavailable:

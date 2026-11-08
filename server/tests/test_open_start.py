@@ -216,9 +216,12 @@ class OpenStartAPI(TestCase):
         self.assertNotContains(self.client.get("/"), f"/games/{game_id}")
 
     def test_form_hidden_when_policy_lacks_open_games(self):
-        """일반 판을 지원하지 않는 시작 정책(미리보기 녹화 판)에서는 새 게임 폼을 보이지 않는다."""
-        configure_game_service(make_service())
-        self.assertNotContains(self.client.get("/"), "새 게임 시작")
+        """일반 판을 지원하지 않는 시작 정책(미리보기 녹화 판)에서는 새 게임 폼만 숨기고 이어 하기는 남긴다."""
+        game_id = self.start().json()["view"]["game_id"]
+        self.service.prepare_start = make_service().prepare_start
+        home = self.client.get("/")
+        self.assertNotContains(home, "새 게임 시작")
+        self.assertContains(home, f"/games/{game_id}")
 
     def test_unfinished_open_games_skip_sessions_finished_and_missing(self):
         """이어 하기 목록은 회차 판·끝난 판·없는 판을 뺀다."""
