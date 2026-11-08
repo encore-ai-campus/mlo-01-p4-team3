@@ -1,5 +1,15 @@
 # 서버 라우팅
 
+B-10-02: 기존 GET /games/{game_id} 전체/htmx 화면 → meeting.html → village_guide → api/village_assets.py → manifest 지도·regions·초상. 하단 asset_attribution → SOURCES.md 첫 출처 줄. 이미지는 기존 api/assets.py가 제공한다. 새 URL·명령·DB는 없다.
+
+B-09-06은 [VN 표시 규칙](../docs/contracts/vn.md)을 정의하며 URL·HTTP 메서드·서버 호출 경로를 추가하지 않는다. 회의·밤의 기존 화면 및 render 폴링을 B-10-07에서 연결한다. E 검토 전 초안이다.
+
+B-08-02: 홈 `accounts/views.py`와 일반 판 시작 `app/open_start.py`의 `open_preset_ids()`가 `app/presets_enabled.json`을 매번 읽는다. 초기 공개는 `base6`만이며, 파일에서 허용한 프리셋만 새 일반 판을 시작한다. 회차 판 배정과 이미 시작한 판의 재전송은 기존 정책을 유지한다. `POST /games`의 `mudang_variant` → 판 메타 → `GameOutput.mudang_variant` → `meeting.html` 초상으로 이어진다.
+
+공동 확인은 현재 dev 빌드의 기존 홈·시작·명령·판 조회 경로로 6인 1판을 완주하고 E가 재확인한다. 후보 태그가 없어도 진행 가능한 B-08-02 조건이며, 11/10 테스트 서버 태그 리허설은 B-09-03에서 확인한다(PR #272 일정 변경).
+
+명령 거절은 `api/views.py` → `RequestTelemetryMiddleware`의 HTTP 접근 로그 `reject` 필드에 `RejectCode.value`만 추가한다(422). 수락·동일 수락 요청 재생에는 없으며 요청 본문은 기록하지 않는다. `api/meeting_view.py` → `meeting_actions.html` → `game.js`가 지난 밤·진술 두 개 선택을 안내·제한하며 최종 판정은 기존 엔진이다. 시험 경로는 `tests/record_large8.py` → 공개 8인 녹화 → `test_preset_screens.py`·`preset_render_bench.py`다. [B-08-02 증빙](../docs/evidence/B-08-02.md)
+
 판 시작의 저장 후 재조회는 유지하고 같은 요청의 같은 버전 콘텐츠만 재사용한다. 시험 경로는 `asgi_bench.py` → `asgi_bench_app.py` → 시험 전용 `asgi_bench_metrics.py`·`asgi_bench_settings.py`이며 숫자 헤더로 요청별 시간만 연결한다. 계측의 요청 격리·SQL 원문 비노출 시험은 `server/tests/test_bench_metrics.py`다. 운영 URL·DTO·화면 흐름·계약 조건은 유지한다.
 
 최신 dev의 성능 CLI는 `--proxy-profile`이 있으면 C의 `server/tests/proxy_bench.py`로 보내고, 나머지는 기존 `server/tests/api_bench.py`로 보낸다. B의 `--compare-asgi` 분기는 그대로 유지한다. C의 완료된 판 단일 GET·프록시 비교는 B의 동시 시작·명령·광고 장애 시험과 별개다.
@@ -18,7 +28,7 @@ B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_benc
 
 dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결과는 [B-06-02 증빙](../docs/evidence/B-06-02.md)에 둔다.
 
-`GET /games/{id}/renders/{job_id}`의 htmx 응답은 공개 추궁 답변의 발언 ID·작업 ID를 대조해 `speech_line.html`에 Kanana 표기를 포함한다. 최초·재조회 화면은 `viewmodels.py`의 같은 공개 발언 판정으로 `meeting.html`에 표시한다. JSON 응답 DTO는 기존 형식을 유지한다.
+`GET /games/{id}/renders/{job_id}`의 htmx 응답은 공개 추궁 답변의 발언 ID·작업 ID를 대조해 `speech_line.html`로 렌더한다. 11/8 PM 결정에 따라 최초·폴링·완료·취소 재조회에 Kanana 표기를 붙이지 않는다. JSON 응답 DTO와 폴링 종료 조건은 유지한다.
 
 요청은 [paldo_web/urls.py](paldo_web/urls.py)에서 계정·관리자, 게임 API, 상태 확인과 정적 파일 경로로 나뉜다.
 
@@ -56,3 +66,17 @@ B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은
 호스트 시작 조립 → `paldo_web/mongo.py` → C의 `infra/mongo_repo.py`·`progress_store.py`·`content_store.py`와 B의 `infra/test_sessions.py`. `configure()` 뒤 기존 `/admin/sessions`·`POST /games`·`GET /games/{id}`·명령·진척 경로가 같은 실행 자원을 쓴다. URL·요청/응답 DTO는 바꾸지 않는다. 고정 회차 메타와 콘텐츠 버전을 재조회하며 Django 계정·세션은 기존 default DB를 유지한다.
 
 B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 하기 → `POST /games`·`GET /games/{id}` 경로는 그대로다. 최신 dev에서 회차·소유자 가명·동의·광고 대응표·재접속 보존을 재검증했다. [증빙](../docs/evidence/B-06-03.md).
+
+## B-08-01 결과·진척·결말 선택
+
+`GET /players/me/progress`는 기존 JSON DTO를 유지하고 HTML·htmx 요청에는 `progress.html`을 반환한다. `story_view.py`는 본인 진척의 수집 단서만 문안과 연결한다. 홈의 일반 판·고정 회차 폼은 `ending_choice.html`에서 열린 결말을 고르고 `POST /games`의 폼·JSON을 같은 `StartGameInput`으로 처리한다. 일반 판의 `start_token`·초상·공개 프리셋 경로는 유지한다. 종료된 `GET /games/{id}`·명령 응답은 기존 회의 조각에 `game_result.html`을 포함한다. 공개 결과는 `PlayerView`, 선택 결말·콘텐츠 버전은 소유권 확인한 메타에서 읽는다.
+
+B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
+
+## B-08-03 HTTP 광고 제공자
+
+기존 GET /ads/slot/{slot}·웹소켓 ad.impression·GET /ads/click·GET /ads/landing/{creative_id} → 기존 광고 응용/AdGateway → paldo_web/composition.py의 환경 기반 조립 → infra/ad_client.py → 내부 광고 HTTP 4경로다. URL·DTO·지면의 빈 응답 규칙은 바꾸지 않는다. 클릭 중계의 Location은 가상 랜딩 상대 경로이며 내부 광고 출처를 브라우저에 내보내지 않는다.
+
+시험 진입점은 tools/perf/ad_fault_test.py → tests/ad_fault_bench.py → tests/asgi_bench.py·asgi_bench_app.py다. HTTP 대역은 tests/ad_http_host.py이며 운영 요청과 분리한다. [증빙](../docs/evidence/B-08-03.md).
+
+광고 클릭 실패 → 홈의 accounts/views.py는 진척 1회·판별 최대 1회 조회를 요청 안에서 재사용한다. 다음 요청은 다시 조회하며 홈의 기존 회차·일반 판·결말 선택 표시를 유지한다.
