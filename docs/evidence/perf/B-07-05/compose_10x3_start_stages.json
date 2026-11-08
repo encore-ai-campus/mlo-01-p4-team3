@@ -1,0 +1,1028 @@
+{
+  "task": "B-07-05",
+  "commit": "a86722fb2fc7c2a6c23d23bfad9d8281c3c72268",
+  "generated_at": "2026-11-08T07:54:49Z",
+  "source": "Aggregate paired request numeric timings from compose_10x3_start; out/handoff/b0705-start-network-report.json; source sha256 2e21d6ae1ab15f8d31753640164ebc464add7bd9a31da524fcde0392abcae45f",
+  "metrics": {
+    "wsgi_server_overall_p95_ms": {
+      "value": 217.875,
+      "unit": "ms"
+    },
+    "wsgi_client_over_300": {
+      "value": 92,
+      "unit": "count"
+    },
+    "wsgi_client_over_300_server_under_300": {
+      "value": 92,
+      "unit": "count"
+    },
+    "wsgi_start_account_sql_mean_ms": {
+      "value": 12.999,
+      "unit": "ms"
+    },
+    "wsgi_start_account_sql_p95_ms": {
+      "value": 27.97,
+      "unit": "ms"
+    },
+    "wsgi_start_content_mean_ms": {
+      "value": 20.307,
+      "unit": "ms"
+    },
+    "wsgi_start_content_p95_ms": {
+      "value": 39.394,
+      "unit": "ms"
+    },
+    "wsgi_start_create_mean_ms": {
+      "value": 19.644,
+      "unit": "ms"
+    },
+    "wsgi_start_create_p95_ms": {
+      "value": 38.567,
+      "unit": "ms"
+    },
+    "wsgi_start_engine_new_game_mean_ms": {
+      "value": 0.148,
+      "unit": "ms"
+    },
+    "wsgi_start_engine_new_game_p95_ms": {
+      "value": 0.215,
+      "unit": "ms"
+    },
+    "wsgi_start_engine_player_view_mean_ms": {
+      "value": 0.143,
+      "unit": "ms"
+    },
+    "wsgi_start_engine_player_view_p95_ms": {
+      "value": 0.247,
+      "unit": "ms"
+    },
+    "wsgi_start_json_response_mean_ms": {
+      "value": 0.079,
+      "unit": "ms"
+    },
+    "wsgi_start_json_response_p95_ms": {
+      "value": 0.118,
+      "unit": "ms"
+    },
+    "wsgi_start_load_mean_ms": {
+      "value": 13.461,
+      "unit": "ms"
+    },
+    "wsgi_start_load_p95_ms": {
+      "value": 26.365,
+      "unit": "ms"
+    },
+    "wsgi_start_progress_add_game_mean_ms": {
+      "value": 34.73,
+      "unit": "ms"
+    },
+    "wsgi_start_progress_add_game_p95_ms": {
+      "value": 67.586,
+      "unit": "ms"
+    },
+    "wsgi_start_progress_load_mean_ms": {
+      "value": 15.836,
+      "unit": "ms"
+    },
+    "wsgi_start_progress_load_p95_ms": {
+      "value": 34.823,
+      "unit": "ms"
+    },
+    "wsgi_start_response_conversion_mean_ms": {
+      "value": 0.083,
+      "unit": "ms"
+    },
+    "wsgi_start_response_conversion_p95_ms": {
+      "value": 0.124,
+      "unit": "ms"
+    },
+    "wsgi_start_server_total_mean_ms": {
+      "value": 142.656,
+      "unit": "ms"
+    },
+    "wsgi_start_server_total_p95_ms": {
+      "value": 222.96,
+      "unit": "ms"
+    },
+    "wsgi_start_client_server_gap_mean_ms": {
+      "value": 36.017,
+      "unit": "ms"
+    },
+    "wsgi_start_client_server_gap_p95_ms": {
+      "value": 42.047,
+      "unit": "ms"
+    },
+    "wsgi_command_account_sql_mean_ms": {
+      "value": 15.985,
+      "unit": "ms"
+    },
+    "wsgi_command_account_sql_p95_ms": {
+      "value": 39.016,
+      "unit": "ms"
+    },
+    "wsgi_command_commit_mean_ms": {
+      "value": 21.432,
+      "unit": "ms"
+    },
+    "wsgi_command_commit_p95_ms": {
+      "value": 45.176,
+      "unit": "ms"
+    },
+    "wsgi_command_content_mean_ms": {
+      "value": 23.856,
+      "unit": "ms"
+    },
+    "wsgi_command_content_p95_ms": {
+      "value": 46.642,
+      "unit": "ms"
+    },
+    "wsgi_command_engine_apply_mean_ms": {
+      "value": 0.257,
+      "unit": "ms"
+    },
+    "wsgi_command_engine_apply_p95_ms": {
+      "value": 0.441,
+      "unit": "ms"
+    },
+    "wsgi_command_engine_player_view_mean_ms": {
+      "value": 0.201,
+      "unit": "ms"
+    },
+    "wsgi_command_engine_player_view_p95_ms": {
+      "value": 0.369,
+      "unit": "ms"
+    },
+    "wsgi_command_find_command_mean_ms": {
+      "value": 19.012,
+      "unit": "ms"
+    },
+    "wsgi_command_find_command_p95_ms": {
+      "value": 40.264,
+      "unit": "ms"
+    },
+    "wsgi_command_json_response_mean_ms": {
+      "value": 0.13,
+      "unit": "ms"
+    },
+    "wsgi_command_json_response_p95_ms": {
+      "value": 0.234,
+      "unit": "ms"
+    },
+    "wsgi_command_load_mean_ms": {
+      "value": 24.757,
+      "unit": "ms"
+    },
+    "wsgi_command_load_p95_ms": {
+      "value": 49.38,
+      "unit": "ms"
+    },
+    "wsgi_command_response_conversion_mean_ms": {
+      "value": 0.224,
+      "unit": "ms"
+    },
+    "wsgi_command_response_conversion_p95_ms": {
+      "value": 0.429,
+      "unit": "ms"
+    },
+    "wsgi_command_server_total_mean_ms": {
+      "value": 138.369,
+      "unit": "ms"
+    },
+    "wsgi_command_server_total_p95_ms": {
+      "value": 217.102,
+      "unit": "ms"
+    },
+    "wsgi_command_stored_response_conversion_mean_ms": {
+      "value": 0.251,
+      "unit": "ms"
+    },
+    "wsgi_command_stored_response_conversion_p95_ms": {
+      "value": 0.423,
+      "unit": "ms"
+    },
+    "wsgi_command_client_server_gap_mean_ms": {
+      "value": 43.461,
+      "unit": "ms"
+    },
+    "wsgi_command_client_server_gap_p95_ms": {
+      "value": 81.504,
+      "unit": "ms"
+    },
+    "daphne_server_overall_p95_ms": {
+      "value": 284.675,
+      "unit": "ms"
+    },
+    "daphne_client_over_300": {
+      "value": 105,
+      "unit": "count"
+    },
+    "daphne_client_over_300_server_under_300": {
+      "value": 45,
+      "unit": "count"
+    },
+    "daphne_start_account_sql_mean_ms": {
+      "value": 11.359,
+      "unit": "ms"
+    },
+    "daphne_start_account_sql_p95_ms": {
+      "value": 27.455,
+      "unit": "ms"
+    },
+    "daphne_start_content_mean_ms": {
+      "value": 23.617,
+      "unit": "ms"
+    },
+    "daphne_start_content_p95_ms": {
+      "value": 46.118,
+      "unit": "ms"
+    },
+    "daphne_start_create_mean_ms": {
+      "value": 21.621,
+      "unit": "ms"
+    },
+    "daphne_start_create_p95_ms": {
+      "value": 43.572,
+      "unit": "ms"
+    },
+    "daphne_start_engine_new_game_mean_ms": {
+      "value": 0.127,
+      "unit": "ms"
+    },
+    "daphne_start_engine_new_game_p95_ms": {
+      "value": 0.194,
+      "unit": "ms"
+    },
+    "daphne_start_engine_player_view_mean_ms": {
+      "value": 0.155,
+      "unit": "ms"
+    },
+    "daphne_start_engine_player_view_p95_ms": {
+      "value": 0.246,
+      "unit": "ms"
+    },
+    "daphne_start_json_response_mean_ms": {
+      "value": 0.089,
+      "unit": "ms"
+    },
+    "daphne_start_json_response_p95_ms": {
+      "value": 0.137,
+      "unit": "ms"
+    },
+    "daphne_start_load_mean_ms": {
+      "value": 16.843,
+      "unit": "ms"
+    },
+    "daphne_start_load_p95_ms": {
+      "value": 30.913,
+      "unit": "ms"
+    },
+    "daphne_start_progress_add_game_mean_ms": {
+      "value": 35.971,
+      "unit": "ms"
+    },
+    "daphne_start_progress_add_game_p95_ms": {
+      "value": 61.035,
+      "unit": "ms"
+    },
+    "daphne_start_progress_load_mean_ms": {
+      "value": 18.99,
+      "unit": "ms"
+    },
+    "daphne_start_progress_load_p95_ms": {
+      "value": 44.604,
+      "unit": "ms"
+    },
+    "daphne_start_response_conversion_mean_ms": {
+      "value": 0.093,
+      "unit": "ms"
+    },
+    "daphne_start_response_conversion_p95_ms": {
+      "value": 0.144,
+      "unit": "ms"
+    },
+    "daphne_start_server_total_mean_ms": {
+      "value": 212.779,
+      "unit": "ms"
+    },
+    "daphne_start_server_total_p95_ms": {
+      "value": 299.941,
+      "unit": "ms"
+    },
+    "daphne_start_client_server_gap_mean_ms": {
+      "value": 15.849,
+      "unit": "ms"
+    },
+    "daphne_start_client_server_gap_p95_ms": {
+      "value": 35.023,
+      "unit": "ms"
+    },
+    "daphne_command_account_sql_mean_ms": {
+      "value": 13.97,
+      "unit": "ms"
+    },
+    "daphne_command_account_sql_p95_ms": {
+      "value": 36.435,
+      "unit": "ms"
+    },
+    "daphne_command_commit_mean_ms": {
+      "value": 24.12,
+      "unit": "ms"
+    },
+    "daphne_command_commit_p95_ms": {
+      "value": 50.022,
+      "unit": "ms"
+    },
+    "daphne_command_content_mean_ms": {
+      "value": 28.453,
+      "unit": "ms"
+    },
+    "daphne_command_content_p95_ms": {
+      "value": 56.773,
+      "unit": "ms"
+    },
+    "daphne_command_engine_apply_mean_ms": {
+      "value": 0.261,
+      "unit": "ms"
+    },
+    "daphne_command_engine_apply_p95_ms": {
+      "value": 0.417,
+      "unit": "ms"
+    },
+    "daphne_command_engine_player_view_mean_ms": {
+      "value": 0.209,
+      "unit": "ms"
+    },
+    "daphne_command_engine_player_view_p95_ms": {
+      "value": 0.354,
+      "unit": "ms"
+    },
+    "daphne_command_find_command_mean_ms": {
+      "value": 23.161,
+      "unit": "ms"
+    },
+    "daphne_command_find_command_p95_ms": {
+      "value": 48.028,
+      "unit": "ms"
+    },
+    "daphne_command_json_response_mean_ms": {
+      "value": 0.131,
+      "unit": "ms"
+    },
+    "daphne_command_json_response_p95_ms": {
+      "value": 0.242,
+      "unit": "ms"
+    },
+    "daphne_command_load_mean_ms": {
+      "value": 26.419,
+      "unit": "ms"
+    },
+    "daphne_command_load_p95_ms": {
+      "value": 51.208,
+      "unit": "ms"
+    },
+    "daphne_command_response_conversion_mean_ms": {
+      "value": 0.222,
+      "unit": "ms"
+    },
+    "daphne_command_response_conversion_p95_ms": {
+      "value": 0.422,
+      "unit": "ms"
+    },
+    "daphne_command_server_total_mean_ms": {
+      "value": 206.171,
+      "unit": "ms"
+    },
+    "daphne_command_server_total_p95_ms": {
+      "value": 277.35,
+      "unit": "ms"
+    },
+    "daphne_command_stored_response_conversion_mean_ms": {
+      "value": 0.252,
+      "unit": "ms"
+    },
+    "daphne_command_stored_response_conversion_p95_ms": {
+      "value": 0.432,
+      "unit": "ms"
+    },
+    "daphne_command_client_server_gap_mean_ms": {
+      "value": 15.758,
+      "unit": "ms"
+    },
+    "daphne_command_client_server_gap_p95_ms": {
+      "value": 38.309,
+      "unit": "ms"
+    },
+    "daphne_ads_server_overall_p95_ms": {
+      "value": 314.571,
+      "unit": "ms"
+    },
+    "daphne_ads_client_over_300": {
+      "value": 235,
+      "unit": "count"
+    },
+    "daphne_ads_client_over_300_server_under_300": {
+      "value": 101,
+      "unit": "count"
+    },
+    "daphne_ads_start_account_sql_mean_ms": {
+      "value": 12.752,
+      "unit": "ms"
+    },
+    "daphne_ads_start_account_sql_p95_ms": {
+      "value": 28.191,
+      "unit": "ms"
+    },
+    "daphne_ads_start_content_mean_ms": {
+      "value": 26.218,
+      "unit": "ms"
+    },
+    "daphne_ads_start_content_p95_ms": {
+      "value": 55.487,
+      "unit": "ms"
+    },
+    "daphne_ads_start_create_mean_ms": {
+      "value": 24.875,
+      "unit": "ms"
+    },
+    "daphne_ads_start_create_p95_ms": {
+      "value": 66.572,
+      "unit": "ms"
+    },
+    "daphne_ads_start_engine_new_game_mean_ms": {
+      "value": 0.13,
+      "unit": "ms"
+    },
+    "daphne_ads_start_engine_new_game_p95_ms": {
+      "value": 0.202,
+      "unit": "ms"
+    },
+    "daphne_ads_start_engine_player_view_mean_ms": {
+      "value": 0.135,
+      "unit": "ms"
+    },
+    "daphne_ads_start_engine_player_view_p95_ms": {
+      "value": 0.197,
+      "unit": "ms"
+    },
+    "daphne_ads_start_json_response_mean_ms": {
+      "value": 0.08,
+      "unit": "ms"
+    },
+    "daphne_ads_start_json_response_p95_ms": {
+      "value": 0.121,
+      "unit": "ms"
+    },
+    "daphne_ads_start_load_mean_ms": {
+      "value": 14.811,
+      "unit": "ms"
+    },
+    "daphne_ads_start_load_p95_ms": {
+      "value": 27.495,
+      "unit": "ms"
+    },
+    "daphne_ads_start_progress_add_game_mean_ms": {
+      "value": 33.83,
+      "unit": "ms"
+    },
+    "daphne_ads_start_progress_add_game_p95_ms": {
+      "value": 83.667,
+      "unit": "ms"
+    },
+    "daphne_ads_start_progress_load_mean_ms": {
+      "value": 20.305,
+      "unit": "ms"
+    },
+    "daphne_ads_start_progress_load_p95_ms": {
+      "value": 54.712,
+      "unit": "ms"
+    },
+    "daphne_ads_start_response_conversion_mean_ms": {
+      "value": 0.084,
+      "unit": "ms"
+    },
+    "daphne_ads_start_response_conversion_p95_ms": {
+      "value": 0.126,
+      "unit": "ms"
+    },
+    "daphne_ads_start_server_total_mean_ms": {
+      "value": 232.531,
+      "unit": "ms"
+    },
+    "daphne_ads_start_server_total_p95_ms": {
+      "value": 347.396,
+      "unit": "ms"
+    },
+    "daphne_ads_start_client_server_gap_mean_ms": {
+      "value": 20.413,
+      "unit": "ms"
+    },
+    "daphne_ads_start_client_server_gap_p95_ms": {
+      "value": 45.196,
+      "unit": "ms"
+    },
+    "daphne_ads_command_account_sql_mean_ms": {
+      "value": 14.054,
+      "unit": "ms"
+    },
+    "daphne_ads_command_account_sql_p95_ms": {
+      "value": 35.317,
+      "unit": "ms"
+    },
+    "daphne_ads_command_commit_mean_ms": {
+      "value": 23.428,
+      "unit": "ms"
+    },
+    "daphne_ads_command_commit_p95_ms": {
+      "value": 48.344,
+      "unit": "ms"
+    },
+    "daphne_ads_command_content_mean_ms": {
+      "value": 26.771,
+      "unit": "ms"
+    },
+    "daphne_ads_command_content_p95_ms": {
+      "value": 52.34,
+      "unit": "ms"
+    },
+    "daphne_ads_command_engine_apply_mean_ms": {
+      "value": 0.249,
+      "unit": "ms"
+    },
+    "daphne_ads_command_engine_apply_p95_ms": {
+      "value": 0.401,
+      "unit": "ms"
+    },
+    "daphne_ads_command_engine_player_view_mean_ms": {
+      "value": 0.2,
+      "unit": "ms"
+    },
+    "daphne_ads_command_engine_player_view_p95_ms": {
+      "value": 0.328,
+      "unit": "ms"
+    },
+    "daphne_ads_command_find_command_mean_ms": {
+      "value": 21.96,
+      "unit": "ms"
+    },
+    "daphne_ads_command_find_command_p95_ms": {
+      "value": 46.713,
+      "unit": "ms"
+    },
+    "daphne_ads_command_json_response_mean_ms": {
+      "value": 0.127,
+      "unit": "ms"
+    },
+    "daphne_ads_command_json_response_p95_ms": {
+      "value": 0.229,
+      "unit": "ms"
+    },
+    "daphne_ads_command_load_mean_ms": {
+      "value": 25.666,
+      "unit": "ms"
+    },
+    "daphne_ads_command_load_p95_ms": {
+      "value": 50.385,
+      "unit": "ms"
+    },
+    "daphne_ads_command_response_conversion_mean_ms": {
+      "value": 0.217,
+      "unit": "ms"
+    },
+    "daphne_ads_command_response_conversion_p95_ms": {
+      "value": 0.405,
+      "unit": "ms"
+    },
+    "daphne_ads_command_server_total_mean_ms": {
+      "value": 216.898,
+      "unit": "ms"
+    },
+    "daphne_ads_command_server_total_p95_ms": {
+      "value": 308.379,
+      "unit": "ms"
+    },
+    "daphne_ads_command_stored_response_conversion_mean_ms": {
+      "value": 0.259,
+      "unit": "ms"
+    },
+    "daphne_ads_command_stored_response_conversion_p95_ms": {
+      "value": 0.399,
+      "unit": "ms"
+    },
+    "daphne_ads_command_client_server_gap_mean_ms": {
+      "value": 19.616,
+      "unit": "ms"
+    },
+    "daphne_ads_command_client_server_gap_p95_ms": {
+      "value": 45.845,
+      "unit": "ms"
+    },
+    "daphne_delay_server_overall_p95_ms": {
+      "value": 313.896,
+      "unit": "ms"
+    },
+    "daphne_delay_client_over_300": {
+      "value": 213,
+      "unit": "count"
+    },
+    "daphne_delay_client_over_300_server_under_300": {
+      "value": 78,
+      "unit": "count"
+    },
+    "daphne_delay_start_account_sql_mean_ms": {
+      "value": 11.148,
+      "unit": "ms"
+    },
+    "daphne_delay_start_account_sql_p95_ms": {
+      "value": 24.665,
+      "unit": "ms"
+    },
+    "daphne_delay_start_content_mean_ms": {
+      "value": 21.453,
+      "unit": "ms"
+    },
+    "daphne_delay_start_content_p95_ms": {
+      "value": 44.75,
+      "unit": "ms"
+    },
+    "daphne_delay_start_create_mean_ms": {
+      "value": 21.265,
+      "unit": "ms"
+    },
+    "daphne_delay_start_create_p95_ms": {
+      "value": 51.092,
+      "unit": "ms"
+    },
+    "daphne_delay_start_engine_new_game_mean_ms": {
+      "value": 0.126,
+      "unit": "ms"
+    },
+    "daphne_delay_start_engine_new_game_p95_ms": {
+      "value": 0.204,
+      "unit": "ms"
+    },
+    "daphne_delay_start_engine_player_view_mean_ms": {
+      "value": 0.146,
+      "unit": "ms"
+    },
+    "daphne_delay_start_engine_player_view_p95_ms": {
+      "value": 0.229,
+      "unit": "ms"
+    },
+    "daphne_delay_start_json_response_mean_ms": {
+      "value": 0.084,
+      "unit": "ms"
+    },
+    "daphne_delay_start_json_response_p95_ms": {
+      "value": 0.127,
+      "unit": "ms"
+    },
+    "daphne_delay_start_load_mean_ms": {
+      "value": 15.317,
+      "unit": "ms"
+    },
+    "daphne_delay_start_load_p95_ms": {
+      "value": 30.082,
+      "unit": "ms"
+    },
+    "daphne_delay_start_progress_add_game_mean_ms": {
+      "value": 33.351,
+      "unit": "ms"
+    },
+    "daphne_delay_start_progress_add_game_p95_ms": {
+      "value": 57.731,
+      "unit": "ms"
+    },
+    "daphne_delay_start_progress_load_mean_ms": {
+      "value": 16.926,
+      "unit": "ms"
+    },
+    "daphne_delay_start_progress_load_p95_ms": {
+      "value": 42.66,
+      "unit": "ms"
+    },
+    "daphne_delay_start_response_conversion_mean_ms": {
+      "value": 0.086,
+      "unit": "ms"
+    },
+    "daphne_delay_start_response_conversion_p95_ms": {
+      "value": 0.143,
+      "unit": "ms"
+    },
+    "daphne_delay_start_server_total_mean_ms": {
+      "value": 220.343,
+      "unit": "ms"
+    },
+    "daphne_delay_start_server_total_p95_ms": {
+      "value": 333.84,
+      "unit": "ms"
+    },
+    "daphne_delay_start_client_server_gap_mean_ms": {
+      "value": 19.158,
+      "unit": "ms"
+    },
+    "daphne_delay_start_client_server_gap_p95_ms": {
+      "value": 47.816,
+      "unit": "ms"
+    },
+    "daphne_delay_command_account_sql_mean_ms": {
+      "value": 13.395,
+      "unit": "ms"
+    },
+    "daphne_delay_command_account_sql_p95_ms": {
+      "value": 34.338,
+      "unit": "ms"
+    },
+    "daphne_delay_command_commit_mean_ms": {
+      "value": 23.137,
+      "unit": "ms"
+    },
+    "daphne_delay_command_commit_p95_ms": {
+      "value": 46.769,
+      "unit": "ms"
+    },
+    "daphne_delay_command_content_mean_ms": {
+      "value": 26.523,
+      "unit": "ms"
+    },
+    "daphne_delay_command_content_p95_ms": {
+      "value": 51.914,
+      "unit": "ms"
+    },
+    "daphne_delay_command_engine_apply_mean_ms": {
+      "value": 0.244,
+      "unit": "ms"
+    },
+    "daphne_delay_command_engine_apply_p95_ms": {
+      "value": 0.398,
+      "unit": "ms"
+    },
+    "daphne_delay_command_engine_player_view_mean_ms": {
+      "value": 0.193,
+      "unit": "ms"
+    },
+    "daphne_delay_command_engine_player_view_p95_ms": {
+      "value": 0.336,
+      "unit": "ms"
+    },
+    "daphne_delay_command_find_command_mean_ms": {
+      "value": 21.926,
+      "unit": "ms"
+    },
+    "daphne_delay_command_find_command_p95_ms": {
+      "value": 47.399,
+      "unit": "ms"
+    },
+    "daphne_delay_command_json_response_mean_ms": {
+      "value": 0.13,
+      "unit": "ms"
+    },
+    "daphne_delay_command_json_response_p95_ms": {
+      "value": 0.256,
+      "unit": "ms"
+    },
+    "daphne_delay_command_load_mean_ms": {
+      "value": 25.866,
+      "unit": "ms"
+    },
+    "daphne_delay_command_load_p95_ms": {
+      "value": 52.777,
+      "unit": "ms"
+    },
+    "daphne_delay_command_response_conversion_mean_ms": {
+      "value": 0.222,
+      "unit": "ms"
+    },
+    "daphne_delay_command_response_conversion_p95_ms": {
+      "value": 0.45,
+      "unit": "ms"
+    },
+    "daphne_delay_command_server_total_mean_ms": {
+      "value": 214.881,
+      "unit": "ms"
+    },
+    "daphne_delay_command_server_total_p95_ms": {
+      "value": 312.535,
+      "unit": "ms"
+    },
+    "daphne_delay_command_stored_response_conversion_mean_ms": {
+      "value": 0.257,
+      "unit": "ms"
+    },
+    "daphne_delay_command_stored_response_conversion_p95_ms": {
+      "value": 0.398,
+      "unit": "ms"
+    },
+    "daphne_delay_command_client_server_gap_mean_ms": {
+      "value": 19.425,
+      "unit": "ms"
+    },
+    "daphne_delay_command_client_server_gap_p95_ms": {
+      "value": 43.313,
+      "unit": "ms"
+    },
+    "daphne_failure_server_overall_p95_ms": {
+      "value": 339.603,
+      "unit": "ms"
+    },
+    "daphne_failure_client_over_300": {
+      "value": 291,
+      "unit": "count"
+    },
+    "daphne_failure_client_over_300_server_under_300": {
+      "value": 86,
+      "unit": "count"
+    },
+    "daphne_failure_start_account_sql_mean_ms": {
+      "value": 11.247,
+      "unit": "ms"
+    },
+    "daphne_failure_start_account_sql_p95_ms": {
+      "value": 29.748,
+      "unit": "ms"
+    },
+    "daphne_failure_start_content_mean_ms": {
+      "value": 23.177,
+      "unit": "ms"
+    },
+    "daphne_failure_start_content_p95_ms": {
+      "value": 52.107,
+      "unit": "ms"
+    },
+    "daphne_failure_start_create_mean_ms": {
+      "value": 23.239,
+      "unit": "ms"
+    },
+    "daphne_failure_start_create_p95_ms": {
+      "value": 50.337,
+      "unit": "ms"
+    },
+    "daphne_failure_start_engine_new_game_mean_ms": {
+      "value": 0.13,
+      "unit": "ms"
+    },
+    "daphne_failure_start_engine_new_game_p95_ms": {
+      "value": 0.213,
+      "unit": "ms"
+    },
+    "daphne_failure_start_engine_player_view_mean_ms": {
+      "value": 0.146,
+      "unit": "ms"
+    },
+    "daphne_failure_start_engine_player_view_p95_ms": {
+      "value": 0.226,
+      "unit": "ms"
+    },
+    "daphne_failure_start_json_response_mean_ms": {
+      "value": 0.084,
+      "unit": "ms"
+    },
+    "daphne_failure_start_json_response_p95_ms": {
+      "value": 0.125,
+      "unit": "ms"
+    },
+    "daphne_failure_start_load_mean_ms": {
+      "value": 16.399,
+      "unit": "ms"
+    },
+    "daphne_failure_start_load_p95_ms": {
+      "value": 31.712,
+      "unit": "ms"
+    },
+    "daphne_failure_start_progress_add_game_mean_ms": {
+      "value": 32.903,
+      "unit": "ms"
+    },
+    "daphne_failure_start_progress_add_game_p95_ms": {
+      "value": 74.029,
+      "unit": "ms"
+    },
+    "daphne_failure_start_progress_load_mean_ms": {
+      "value": 17.65,
+      "unit": "ms"
+    },
+    "daphne_failure_start_progress_load_p95_ms": {
+      "value": 40.829,
+      "unit": "ms"
+    },
+    "daphne_failure_start_response_conversion_mean_ms": {
+      "value": 0.087,
+      "unit": "ms"
+    },
+    "daphne_failure_start_response_conversion_p95_ms": {
+      "value": 0.144,
+      "unit": "ms"
+    },
+    "daphne_failure_start_server_total_mean_ms": {
+      "value": 219.574,
+      "unit": "ms"
+    },
+    "daphne_failure_start_server_total_p95_ms": {
+      "value": 374.493,
+      "unit": "ms"
+    },
+    "daphne_failure_start_client_server_gap_mean_ms": {
+      "value": 15.89,
+      "unit": "ms"
+    },
+    "daphne_failure_start_client_server_gap_p95_ms": {
+      "value": 39.185,
+      "unit": "ms"
+    },
+    "daphne_failure_command_account_sql_mean_ms": {
+      "value": 13.544,
+      "unit": "ms"
+    },
+    "daphne_failure_command_account_sql_p95_ms": {
+      "value": 35.908,
+      "unit": "ms"
+    },
+    "daphne_failure_command_commit_mean_ms": {
+      "value": 24.773,
+      "unit": "ms"
+    },
+    "daphne_failure_command_commit_p95_ms": {
+      "value": 52.463,
+      "unit": "ms"
+    },
+    "daphne_failure_command_content_mean_ms": {
+      "value": 28.84,
+      "unit": "ms"
+    },
+    "daphne_failure_command_content_p95_ms": {
+      "value": 58.543,
+      "unit": "ms"
+    },
+    "daphne_failure_command_engine_apply_mean_ms": {
+      "value": 0.271,
+      "unit": "ms"
+    },
+    "daphne_failure_command_engine_apply_p95_ms": {
+      "value": 0.448,
+      "unit": "ms"
+    },
+    "daphne_failure_command_engine_player_view_mean_ms": {
+      "value": 0.218,
+      "unit": "ms"
+    },
+    "daphne_failure_command_engine_player_view_p95_ms": {
+      "value": 0.373,
+      "unit": "ms"
+    },
+    "daphne_failure_command_find_command_mean_ms": {
+      "value": 23.238,
+      "unit": "ms"
+    },
+    "daphne_failure_command_find_command_p95_ms": {
+      "value": 51.979,
+      "unit": "ms"
+    },
+    "daphne_failure_command_json_response_mean_ms": {
+      "value": 0.135,
+      "unit": "ms"
+    },
+    "daphne_failure_command_json_response_p95_ms": {
+      "value": 0.258,
+      "unit": "ms"
+    },
+    "daphne_failure_command_load_mean_ms": {
+      "value": 26.701,
+      "unit": "ms"
+    },
+    "daphne_failure_command_load_p95_ms": {
+      "value": 58.569,
+      "unit": "ms"
+    },
+    "daphne_failure_command_response_conversion_mean_ms": {
+      "value": 0.225,
+      "unit": "ms"
+    },
+    "daphne_failure_command_response_conversion_p95_ms": {
+      "value": 0.453,
+      "unit": "ms"
+    },
+    "daphne_failure_command_server_total_mean_ms": {
+      "value": 219.268,
+      "unit": "ms"
+    },
+    "daphne_failure_command_server_total_p95_ms": {
+      "value": 331.106,
+      "unit": "ms"
+    },
+    "daphne_failure_command_stored_response_conversion_mean_ms": {
+      "value": 0.254,
+      "unit": "ms"
+    },
+    "daphne_failure_command_stored_response_conversion_p95_ms": {
+      "value": 0.432,
+      "unit": "ms"
+    },
+    "daphne_failure_command_client_server_gap_mean_ms": {
+      "value": 18.066,
+      "unit": "ms"
+    },
+    "daphne_failure_command_client_server_gap_p95_ms": {
+      "value": 41.18,
+      "unit": "ms"
+    }
+  }
+}

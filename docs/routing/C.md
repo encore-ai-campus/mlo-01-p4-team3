@@ -31,6 +31,12 @@
 | 공식 게임·광고 bronze·silver·학습 export·재처리 | `pipeline/README.md`, `pipeline/spark/{ingest_bronze,build_silver,join_labels,verify_run}.py`, `pipeline/install_bronze_service.py`, 계약 테스트 `test_pipeline_bronze.py`·`test_pipeline_silver.py` |
 | 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |
 | VM 상태 점검(기동·자원·디스크·스냅샷) | `ops/inventory_check.md`(방법과 20대 표), `ops/inventory_host.ps1`, `tools/perf/vm_probe.sh` |
-| RunPod GPU 실험·자원 확정 조건 | `ops/runbook/runpod.md`, `vm_roles.md`, `schedule.md`. E-11-12 계정별 Pod 실행(E가 네 계정 운영, C는 자기 계정 결제 설정·API 키 전달만, C-11-02 완료 조건)·사용량 제한 체크리스트는 `ops/runbook/gpu_demo.md`, 감시·Pod 스크립트는 `llm/bench/watch_pods.py`·`run_pod.sh` |
+| RunPod GPU 실험·자원 확정 조건 | `ops/runbook/runpod.md`, `vm_roles.md`, `schedule.md`. E-11-12 계정별 Pod 실행(E가 네 계정 운영, C는 자기 계정 결제 설정·API 키 전달만, C-11-01 완료 조건)·사용량 제한 체크리스트는 `ops/runbook/gpu_demo.md`, 감시·Pod 스크립트는 `llm/bench/watch_pods.py`·`run_pod.sh` |
 | 시간대별 VM 사용(사용자 테스트·학습·LLM), VM 역할·디스크 예산 | `ops/runbook/schedule.md`, `ops/runbook/vm_roles.md` |
 | HTTPS·인증서 경고·브라우저·프록시 지연 확인 | `ops/proxy/{README.md,Caddyfile,browser_check.py,header_probe.py}`, `tools/perf/api_bench.py --proxy-profile`, `server/tests/proxy_bench.py` |
+
+## C-08-02 작업 위치
+
+| 작업 | 위치 |
+|---|---|
+| C-08-02 작업 | 광고 집계·대사: pipeline/spark/ads_{silver,gold,reconcile}.py, ads_contract.py, ops/ad_probe.py. |

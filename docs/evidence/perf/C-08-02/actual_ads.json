@@ -1,0 +1,100 @@
+{
+  "task": "C-08-02",
+  "commit": "a0b677a6d3c3f77ded798894409411a73e46cbb8",
+  "generated_at": "2026-11-08T14:29:46Z",
+  "source": "C 자체 syn:c08_20261108_r1 실제 HTTP/MySQL → Kafka → 공식 bronze → 격리 silver/gold; ads_probe_snapshot, ads_silver/gold/reconcile, 실제 refund consumer",
+  "metrics": {
+    "http_requests": {
+      "value": 96,
+      "unit": "건"
+    },
+    "http_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "source_events": {
+      "value": 104,
+      "unit": "건"
+    },
+    "official_bronze_unique": {
+      "value": 104,
+      "unit": "건"
+    },
+    "replay_acked": {
+      "value": 104,
+      "unit": "건"
+    },
+    "source_hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "silver_rows": {
+      "value": 64,
+      "unit": "행"
+    },
+    "valid_events": {
+      "value": 38,
+      "unit": "건"
+    },
+    "invalid_events": {
+      "value": 26,
+      "unit": "건"
+    },
+    "pending_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "gold_rows": {
+      "value": 6,
+      "unit": "행"
+    },
+    "training_rows": {
+      "value": 3,
+      "unit": "행"
+    },
+    "valid_impressions": {
+      "value": 23,
+      "unit": "건"
+    },
+    "valid_clicks": {
+      "value": 15,
+      "unit": "건"
+    },
+    "original_net_mw": {
+      "value": 1345740,
+      "unit": "밀리원"
+    },
+    "refund_rows": {
+      "value": 1,
+      "unit": "건"
+    },
+    "refund_mw": {
+      "value": -137284,
+      "unit": "밀리원"
+    },
+    "ledger_net_mw": {
+      "value": 1208456,
+      "unit": "밀리원"
+    },
+    "delta_net_mw": {
+      "value": 1208456,
+      "unit": "밀리원"
+    },
+    "mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "provisional_cutoff_ms": {
+      "value": 1794150000000,
+      "unit": "ms"
+    },
+    "final_cutoff_ms": {
+      "value": 1794151920000,
+      "unit": "ms"
+    },
+    "contract_tests": {
+      "value": 17,
+      "unit": "개"
+    }
+  }
+}

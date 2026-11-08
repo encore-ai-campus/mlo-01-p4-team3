@@ -5,6 +5,20 @@ from .assets import asset_url
 register = template.Library()
 register.simple_tag(asset_url)
 
+
+@register.inclusion_tag('village_assets.html')
+def village_guide():
+    """manifest의 고정 지도와 공개 인물 목록만 표시한다."""
+    from .village_assets import village_assets
+    return village_assets()
+
+
+@register.inclusion_tag('asset_credits.html')
+def asset_attribution():
+    """게임 화면 하단에 출처 파일의 공개 요약을 표시한다."""
+    from .village_assets import image_source
+    return {'asset_source': image_source()}
+
 ACTION_LABELS = {"advance": "다음으로", "suspect": "의심 제기", "defend": "변호", "silence": "지켜보기",
                  "interrogate": "캐묻기", "point_contradiction": "모순 지적", "reveal_divination": "점괘 공개",
                  "vote": "투표", "divine": "점치기", "explain": "설명하기"}

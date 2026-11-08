@@ -15,7 +15,18 @@ _ad_lock = Lock()
 
 
 def get_ad_gateway():
-    """명시적으로 조립한 광고 게이트웨이만 반환한다."""
+    """명시적 주입을 우선하고 내부 광고 출처 설정이 있으면 HTTP 게이트웨이를 조립한다."""
+    global _ad_gateway
+    if _ad_gateway is None and settings.ADS_INTERNAL_URL:
+        with _ad_lock:
+            if _ad_gateway is None:
+                from server.app.ads_port import AdGateway
+                from server.infra.ad_client import HTTPAdProvider
+                try:
+                    provider = HTTPAdProvider(settings.ADS_INTERNAL_URL)
+                except ValueError:
+                    raise GameServiceUnavailable('invalid_ads_origin') from None
+                _ad_gateway = AdGateway(provider)
     if _ad_gateway is None:
         raise GameServiceUnavailable("ad_gateway_not_configured")
     return _ad_gateway

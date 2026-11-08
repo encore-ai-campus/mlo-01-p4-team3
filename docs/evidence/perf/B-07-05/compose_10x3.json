@@ -1,0 +1,248 @@
+{
+  "task": "B-07-05",
+  "commit": "63468ce750e8cbe864c5104e738fa38d37802a74",
+  "generated_at": "2026-11-07T19:25:24Z",
+  "source": "python -B tools/perf/api_bench.py --compare-asgi --users 10 --minutes 3.0 --result-name compose_10x3",
+  "metrics": {
+    "wsgi_requests": {
+      "value": 1600,
+      "unit": "count"
+    },
+    "wsgi_errors": {
+      "value": 49,
+      "unit": "count"
+    },
+    "wsgi_finished_games": {
+      "value": 110,
+      "unit": "count"
+    },
+    "wsgi_p50_ms": {
+      "value": 259.108,
+      "unit": "ms"
+    },
+    "wsgi_p95_ms": {
+      "value": 599.707,
+      "unit": "ms"
+    },
+    "wsgi_p95_increase_ms": {
+      "value": 209.22,
+      "unit": "ms"
+    },
+    "wsgi_beacon_acks": {
+      "value": 0,
+      "unit": "count"
+    },
+    "wsgi_beacon_relayed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "wsgi_beacon_failed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "wsgi_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "wsgi_ad_requests": {
+      "value": 0,
+      "unit": "count"
+    },
+    "wsgi_ad_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_requests": {
+      "value": 1800,
+      "unit": "count"
+    },
+    "daphne_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_finished_games": {
+      "value": 130,
+      "unit": "count"
+    },
+    "daphne_p50_ms": {
+      "value": 290.281,
+      "unit": "ms"
+    },
+    "daphne_p95_ms": {
+      "value": 449.565,
+      "unit": "ms"
+    },
+    "daphne_p95_increase_ms": {
+      "value": 59.078,
+      "unit": "ms"
+    },
+    "daphne_beacon_acks": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_beacon_relayed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_beacon_failed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_ad_requests": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_ad_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_ads_requests": {
+      "value": 1800,
+      "unit": "count"
+    },
+    "daphne_ads_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_ads_finished_games": {
+      "value": 130,
+      "unit": "count"
+    },
+    "daphne_ads_p50_ms": {
+      "value": 289.212,
+      "unit": "ms"
+    },
+    "daphne_ads_p95_ms": {
+      "value": 390.487,
+      "unit": "ms"
+    },
+    "daphne_ads_p95_increase_ms": {
+      "value": 0.0,
+      "unit": "ms"
+    },
+    "daphne_ads_beacon_acks": {
+      "value": 1790,
+      "unit": "count"
+    },
+    "daphne_ads_beacon_relayed": {
+      "value": 1790,
+      "unit": "count"
+    },
+    "daphne_ads_beacon_failed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_ads_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_ads_ad_requests": {
+      "value": 1790,
+      "unit": "count"
+    },
+    "daphne_ads_ad_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_delay_requests": {
+      "value": 1800,
+      "unit": "count"
+    },
+    "daphne_delay_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_delay_finished_games": {
+      "value": 130,
+      "unit": "count"
+    },
+    "daphne_delay_p50_ms": {
+      "value": 288.358,
+      "unit": "ms"
+    },
+    "daphne_delay_p95_ms": {
+      "value": 382.183,
+      "unit": "ms"
+    },
+    "daphne_delay_p95_increase_ms": {
+      "value": -8.304,
+      "unit": "ms"
+    },
+    "daphne_delay_beacon_acks": {
+      "value": 1790,
+      "unit": "count"
+    },
+    "daphne_delay_beacon_relayed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_delay_beacon_failed": {
+      "value": 1790,
+      "unit": "count"
+    },
+    "daphne_delay_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_delay_ad_requests": {
+      "value": 1790,
+      "unit": "count"
+    },
+    "daphne_delay_ad_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_failure_requests": {
+      "value": 1800,
+      "unit": "count"
+    },
+    "daphne_failure_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_failure_finished_games": {
+      "value": 130,
+      "unit": "count"
+    },
+    "daphne_failure_p50_ms": {
+      "value": 280.421,
+      "unit": "ms"
+    },
+    "daphne_failure_p95_ms": {
+      "value": 382.824,
+      "unit": "ms"
+    },
+    "daphne_failure_p95_increase_ms": {
+      "value": -7.663,
+      "unit": "ms"
+    },
+    "daphne_failure_beacon_acks": {
+      "value": 1790,
+      "unit": "count"
+    },
+    "daphne_failure_beacon_relayed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_failure_beacon_failed": {
+      "value": 1790,
+      "unit": "count"
+    },
+    "daphne_failure_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "daphne_failure_ad_requests": {
+      "value": 1790,
+      "unit": "count"
+    },
+    "daphne_failure_ad_errors": {
+      "value": 0,
+      "unit": "count"
+    }
+  }
+}

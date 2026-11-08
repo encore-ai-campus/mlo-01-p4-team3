@@ -1,12 +1,28 @@
 # 웹 화면 라우팅
 
+B-10-02: 기존 게임 전체/htmx 응답의 meeting.html → village_assets.html(고정 지도·전체 초상 펼치기)·asset_credits.html(하단 출처). 좌표·URL은 manifest, 출처는 SOURCES.md에서 읽는다. 펼치기는 HTML details로 처리하며 서버 명령을 보내지 않는다. 새 URL·API는 없다.
+
+B-09-06의 [VN 규칙](../docs/contracts/vn.md)은 기존 회의·밤 경로의 후속 표시 설계다. 새 URL·명령·서버 읽기 저장 경로를 추가하지 않는다. 실제 화면 연결은 B-10-07에서 진행하며 현재는 E 검토 대기다.
+
+판 시작의 저장 후 재조회는 유지하고 같은 요청의 같은 버전 콘텐츠만 재사용한다. 시험 경로는 `asgi_bench.py` → `asgi_bench_app.py` → 시험 전용 `asgi_bench_metrics.py`·`asgi_bench_settings.py`이며 숫자 헤더로 요청별 시간만 연결한다. 운영 URL·DTO·화면 흐름·계약 조건은 유지한다.
+
+일반 명령은 소유권을 확인한 요청 내 상태·콘텐츠를 재사용하고, 광고 가명은 기존 값을 조회한 뒤 최초 생성만 upsert한다. 소유권·멱등·CAS·세션 폐기·majority 조건을 유지한다. 시험 전용 단계별 계측과 상세 결과는 `server/tests/asgi_bench_app.py`·`asgi_bench.py`, 동작 회귀는 `test_api.py`·`test_ad_identity_reads.py`·`mongo_game_sessions.py`에 있다.
+
+B-07-05 네트워크 부하는 화면 조작 대신 실제 HTTP 게임 API·로비 광고 조각·인증 광고 웹소켓을 호출한다. 광고 지면·비콘의 기존 경로와 응답을 유지하며 UI 템플릿·브라우저 스크립트는 변경하지 않는다. 실행 경로와 조건은 [서버 시험 안내](../server/tests/README.md#b-07-05-실제-http웹소켓-성능-비교)를 참조한다.
+
 B-06-04의 가입·로그인·로비·판 종료 URL은 유지한다. 광고 지면 GET은 서버에서 광고용 UUID를 붙이며 로그인 ID·계정 가명·판 ID를 광고 포트로 옮기지 않는지 계정 시나리오 시험으로 확인한다. 실제 HTTP 광고 서버 연결은 B-08-03 검증 범위다.
 
 B-06-02의 실제 Mongo 검증은 기존 `POST /games`·`POST /games/{id}/commands`를 사용한다. 새 화면·URL은 추가하지 않는다. 측정 도구와 범위는 [서버 시험 안내](../server/tests/README.md#b-06-02-로컬-시험)와 [성능 모듈](../docs/modules/perf.md)에 둔다.
 
 dev `f24f6a8`의 엔진·에셋 갱신을 반영한 재검증도 같은 경로를 사용한다. 브라우저 화면 성능은 이 JSON API 측정에 포함하지 않는다.
 
-회의 최초·재조회 화면(`meeting.html`)과 추궁 답변 폴링 조각(`speech_line.html`)은 답변 아래 `Powered by Kanana`를 표시한다. 폴링의 `outerHTML` 교체와 완료 후 재조회에도 유지되며, `game.css`의 `.line-attribution`으로 가독성을 맞춘다.
+11/8 PM 결정(B-08-02)에 따라 회의 최초·재조회 화면(`meeting.html`)과 추궁 답변 폴링 조각(`speech_line.html`)에서 Kanana 표기를 제거했다. 완료·실패·취소 뒤 재조회에도 표기가 없고, 폴링의 `outerHTML` 교체·종료 조건은 유지한다.
+
+홈 시작 폼 → `accounts/portrait_choice.html`은 여성·남성 무당 초상을 라디오 버튼으로 선택한다. `mudang_variant`를 기존 시작 API로 보내며 `meeting.html`은 응답 값으로 무당 초상을 표시한다. 오래된 녹화 판의 값 없음은 여성 기본 초상이다. 선택지는 서버의 `presets_enabled.json`을 따르며 초기에는 `base6`만 보인다. 8인 녹화 화면은 시험에서만 임시 설정으로 공개한다.
+
+B-08-02 공동 확인은 현재 dev 빌드의 홈 → 6인 게임 시작 → 진행 → 종료를 함께 확인하고 E가 재확인한다. 후보 태그를 선행 조건으로 두지 않으며, 11/10 테스트 서버 리허설 화면 확인은 B-09-03이다.
+
+`meeting_actions.html`의 밤 선택은 0~오늘−1이며, `game.js`는 모순 질문에 관련 진술 두 개를 고르기 전 제출을 막는다. 두 개 미만의 선택 가능한 진술만 있으면 해당 질문 선택지도 비활성화한다. 정상 질문은 같은 명령 경로와 `#meeting` 교체를 사용한다.
 
 자유 입력에서 인물을 생략하면 서버가 공개 기록의 직전 캐묻기 상대를 전달한다. 재입력은 기존 선택 문맥을 유지한다. 다중 카드의 확인 버튼은 카드마다 활성 여부를 판단한다.
 
@@ -48,3 +64,15 @@ dev `f24f6a8`의 엔진·에셋 갱신을 반영한 재검증도 같은 경로�
 B-06-03의 `POST /games/{id}/commands` 저장 응답 유실은 서버에서 동일 저장을 한 번 재시도하고, 저장된 응답이 있으면 기존 JSON·htmx 응답 경로로 돌려준다. 클라이언트 재전송은 같은 `command_id`를 유지한다.
 
 B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 하기 → `POST /games`·`GET /games/{id}` 경로는 그대로다. 최신 dev에서 회차·소유자 가명·동의·광고 대응표·재접속 보존을 재검증했다. [증빙](../docs/evidence/B-06-03.md).
+
+## B-08-01 결과·진척·결말
+
+- 홈의 일반 판·고정 회차 시작 폼은 `ending_choice.html`을 포함한다. 열린 결말만 선택할 수 있고 준비 중인 도전은 비활성이다. 초상 선택과 일반 판 시작 UUID는 기존 필드로 함께 전달한다.
+- 기존 `GET /games/{id}`의 전체 화면·회의 조각은 종료 시 `game_result.html`에 공개 승패·종료 사유와 선택 결말을 표시한다. 감금 기록·광고·설문 경로는 유지한다.
+- 홈·결과의 단서 링크는 `GET /players/me/progress` → `progress.html`로 이동한다. 일반 API 요청은 기존 `ProgressOutput` JSON이다.
+
+B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
+
+## B-08-03 광고 내부 HTTP
+
+브라우저 경로는 기존 /ads/slot/{slot}·/ws/game/·/ads/click·/ads/landing/{creative_id}를 유지한다. 게임 서버 내부에서만 AdGateway → server/infra/ad_client.py가 광고 서버로 중계한다. 세 지면과 실패 화면을 로컬 HTTP 대역으로 검사하며 실제 배치에서 직접 광고 출처 요청 0건을 확인하는 것은 D 인수 후 범위다.
