@@ -107,3 +107,12 @@ python -B tools/perf/api_bench.py --compare-asgi --users 10 --minutes 3 --result
 표준 결과는 `docs/evidence/perf/B-07-05/<이름>.json`, 상태 코드·중계 지표를 포함한 상세 결과는 무시되는 `out/handoff/b0705-network-report.json`에 쓴다. 측정값·오류 또는 기준 초과는 종료 코드 1이며 실행 실패는 2다. VM·실제 광고 서버·HTTPS·Kafka 성능을 증명하는 시험은 아니다.
 
 B-08-01 버전 회귀는 현재 E 원문과 B 보관본의 일치, 새 버전 배포 후 기존 판의 두 결말·수집 단서가 전체/htmx/반복 조회에서 유지되는지 검사한다. 새 버전은 파일 읽기 대역이며 실제 콘텐츠 파일·DB는 수정하지 않는다. 기존 버전 보관본의 삭제·덮어쓰기는 금지한다.
+
+## B-08-03 HTTP·장애 검증
+
+- 관련 회귀: python -B server/manage.py test server.tests.test_ad_client server.tests.test_ad_slots server.tests.test_ws server.tests.test_asgi_bench --settings=server.paldo_web.test_settings --noinput
+- 짧은 사전 측정: python -B tools/perf/ad_fault_test.py --local-fixture --users 3 --minutes 0.5
+- D 인수 후 정상 측정: PALDO_ADS_INTERNAL_URL을 환경에 주입하고 python -B tools/perf/ad_fault_test.py --scenario normal --users 10 --minutes 5 --output out/handoff/ad-normal.json
+- D가 장애를 주입한 뒤 같은 조건으로 --scenario stopped|unresponsive|delay|error --baseline out/handoff/ad-normal.json을 각각 실행한다. 장애 종류는 외부 운영자가 제어하고 CLI가 별도 제어 API를 호출하지 않는다.
+
+게임 부하는 기존 asgi_bench의 api_bench 명령 경로를 재사용하며 세 지면·웹소켓 비콘·클릭을 동시에 요청한다. 테스트 계정은 임시 SQLite, 게임은 녹화 엔진·실제 격리 Mongo다. 부하 요청에는 load_test가 붙는다. 결과에는 토큰·쿠키·주소·계정 ID를 기록하지 않는다. local-http-fixture 결과나 5분 미만 실행은 공식 D/VM 합격 증빙이 아니다. [인수 항목·수치](../../docs/evidence/B-08-03.md).

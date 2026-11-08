@@ -1,0 +1,232 @@
+{
+  "task": "B-08-03",
+  "commit": "6fb8bf90aa7b9d95e7f9410f6ecfe885c76e5ea0",
+  "generated_at": "2026-11-08T16:30:43Z",
+  "source": "python -B tools/perf/ad_fault_test.py --local-fixture --users 3 --minutes 0.5",
+  "metrics": {
+    "normal_requests": {
+      "value": 90,
+      "unit": "count"
+    },
+    "normal_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "normal_finished_games": {
+      "value": 6,
+      "unit": "count"
+    },
+    "normal_p95_ms": {
+      "value": 160.569,
+      "unit": "ms"
+    },
+    "normal_beacon_acks": {
+      "value": 90,
+      "unit": "count"
+    },
+    "normal_beacon_relayed": {
+      "value": 90,
+      "unit": "count"
+    },
+    "normal_beacon_failed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "normal_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "normal_click_requests": {
+      "value": 90,
+      "unit": "count"
+    },
+    "normal_click_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "stopped_requests": {
+      "value": 90,
+      "unit": "count"
+    },
+    "stopped_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "stopped_finished_games": {
+      "value": 6,
+      "unit": "count"
+    },
+    "stopped_p95_ms": {
+      "value": 176.675,
+      "unit": "ms"
+    },
+    "stopped_beacon_acks": {
+      "value": 91,
+      "unit": "count"
+    },
+    "stopped_beacon_relayed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "stopped_beacon_failed": {
+      "value": 91,
+      "unit": "count"
+    },
+    "stopped_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "stopped_click_requests": {
+      "value": 91,
+      "unit": "count"
+    },
+    "stopped_click_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "stopped_p95_increase_ms": {
+      "value": 16.106,
+      "unit": "ms"
+    },
+    "unresponsive_requests": {
+      "value": 90,
+      "unit": "count"
+    },
+    "unresponsive_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "unresponsive_finished_games": {
+      "value": 6,
+      "unit": "count"
+    },
+    "unresponsive_p95_ms": {
+      "value": 116.995,
+      "unit": "ms"
+    },
+    "unresponsive_beacon_acks": {
+      "value": 92,
+      "unit": "count"
+    },
+    "unresponsive_beacon_relayed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "unresponsive_beacon_failed": {
+      "value": 92,
+      "unit": "count"
+    },
+    "unresponsive_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "unresponsive_click_requests": {
+      "value": 92,
+      "unit": "count"
+    },
+    "unresponsive_click_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "unresponsive_p95_increase_ms": {
+      "value": -43.574,
+      "unit": "ms"
+    },
+    "delay_requests": {
+      "value": 90,
+      "unit": "count"
+    },
+    "delay_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "delay_finished_games": {
+      "value": 6,
+      "unit": "count"
+    },
+    "delay_p95_ms": {
+      "value": 141.718,
+      "unit": "ms"
+    },
+    "delay_beacon_acks": {
+      "value": 92,
+      "unit": "count"
+    },
+    "delay_beacon_relayed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "delay_beacon_failed": {
+      "value": 92,
+      "unit": "count"
+    },
+    "delay_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "delay_click_requests": {
+      "value": 92,
+      "unit": "count"
+    },
+    "delay_click_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "delay_p95_increase_ms": {
+      "value": -18.851,
+      "unit": "ms"
+    },
+    "error_requests": {
+      "value": 90,
+      "unit": "count"
+    },
+    "error_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "error_finished_games": {
+      "value": 6,
+      "unit": "count"
+    },
+    "error_p95_ms": {
+      "value": 169.918,
+      "unit": "ms"
+    },
+    "error_beacon_acks": {
+      "value": 90,
+      "unit": "count"
+    },
+    "error_beacon_relayed": {
+      "value": 0,
+      "unit": "count"
+    },
+    "error_beacon_failed": {
+      "value": 90,
+      "unit": "count"
+    },
+    "error_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "error_click_requests": {
+      "value": 90,
+      "unit": "count"
+    },
+    "error_click_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "error_p95_increase_ms": {
+      "value": 9.349,
+      "unit": "ms"
+    },
+    "users": {
+      "value": 3,
+      "unit": "count"
+    },
+    "minutes": {
+      "value": 0.5,
+      "unit": "min"
+    }
+  }
+}
