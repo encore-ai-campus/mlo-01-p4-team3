@@ -95,9 +95,9 @@
 - 완료 조건: 11시 전에 `intent/parser.py`를 병합. `tests/contract/test_fakes.py::Intent`가 실제 기준선으로 통과, 설정 한 줄 전환 방법을 `intent/README.md`에. (B 쪽 수신 확인은 B-07-01의 조건이며 이 태스크의 조건이 아니다.)
 
 ### D-07-02 씐 자 확률 모델 첫 학습·평가
-- 3h · 선행: A-06-03(실제 엔진 판), A-07-01(`rule-v0`), C-07-01(14:00 인계, Delta 학습 행), C-08-04 4번(Delta 읽기 방법 전달, 11/8). 학습 코드와 모델 수치는 아래 학습 데이터 정책대로 로컬 `rule-v0` 데이터(`contracts/datasets.py`로 학습 행 변환)로 먼저 끝낸다. C-07-01의 Delta 학습 행은 Delta → 학습 코드 연결 확인용으로 같은 코드를 돌려 수치를 증빙에 따로 남긴다(11/8 PM 결정)
+- 3h · 선행: A-06-03(실제 엔진 판), A-07-01(`rule-v0`), C-07-01(14:00 인계, Delta 학습 행). 학습 코드와 모델 수치는 아래 학습 데이터 정책대로 로컬 `rule-v0` 데이터(`contracts/datasets.py`로 학습 행 변환)로 먼저 끝낸다. C-07-01의 Delta 학습 행은 Delta → 학습 코드 연결 확인용으로 같은 코드를 돌려 수치를 증빙에 따로 남긴다(11/8 PM 결정)
 - 학습 데이터 정책(11/7 PM 결정): A-06-03 데이터는 `baseline-0` 정책이라 회의 발언이 0건이어서 학습 코드 확인용으로만 쓴다. 수치는 A-07-01(`rule-v0`) 병합 뒤 `python -m tools.run_engine_games --preset base6 --games 200 --seed 2 --policy rule-v0 --out out/handoff/a0701`로 다시 만든 데이터로 낸다. rule-v0 base6 500판의 마을 승률이 약 83%(목표 40~60%)라 씐 자가 일찍 잡히는 판이 많을 수 있다. 가중치 조정은 A-08-03에서 한다.
-- Delta 학습 행과 판 수(11/8 PM 결정): C-07-01 Delta 학습 행은 `baseline-0` 200판 입력이라(export 14,460행, 같은 입력·같은 변환 함수로 재현해 행 수 일치 확인) 모델 수치가 아니라 연결 확인용이다. INT-07 #7 "D-07-02 수치 존재"는 이 연결 확인 수치(Delta 버전·행 수·지표)로 판정한다. Delta는 C-08-04 4번 전달을 받은 뒤 직접 읽는다. 판 수는 이 첫 학습만 위 200판을 허용하고, 계약 [`ml_lifecycle.md`](../contracts/ml_lifecycle.md) 1절의 종료 판 300개 이상·프리셋마다 50판 이상은 D-08-01부터 적용한다.
+- Delta 학습 행과 판 수(11/8 PM 결정): C-07-01 Delta 학습 행은 `baseline-0` 200판 입력이라(export 14,460행, 같은 입력·같은 변환 함수로 재현해 행 수 일치 확인) 모델 수치가 아니라 연결 확인용이다. INT-07 #7 "D-07-02 수치 존재"는 이 연결 확인 수치(Delta 버전·행 수·지표)로 판정한다. Delta 학습 행(`pj4/official/training_rows/`)은 공통 VM 계정으로 3차 인계 문서의 Garage Spark 클라이언트 설정(저장소 밖)을 써서 지금 읽을 수 있다(11/8 PM 확인: 버킷 조회, `pj4/official/bronze/`·`silver/`·`training_rows/` 확인). 이 키는 3차 공용 키라 읽기만 하고 쓰지 않는다. 설정 파일 위치·주소·키 값은 저장소에 쓰지 않는다. 판 수는 이 첫 학습만 위 200판을 허용하고, 계약 [`ml_lifecycle.md`](../contracts/ml_lifecycle.md) 1절의 종료 판 300개 이상·프리셋마다 50판 이상은 D-08-01부터 적용한다.
 - 문서화(+0.25h, 공통 ⑦): [트러블 D](../troubles/D.md)에 `### D-07-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ml`](../modules/ml.md)는 그날 일괄 갱신(D-07-03)
 - 산출물: `ml/suspicion/features.py`, `train.py`, `evaluate.py`
 - 완료 조건:
