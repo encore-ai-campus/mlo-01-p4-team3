@@ -40,8 +40,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(paldo_ad_impression_total{status=\"valid\"})",
-          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+          "expr": "paldo_ads_gold_impressions{phase=\"final\"}",
+          "legendFormat": "{{source}} {{run}} {{phase}}"
         }
       ],
       "gridPos": {
@@ -70,8 +70,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(paldo_ad_click_total{status=\"valid\"})",
-          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+          "expr": "paldo_ads_gold_clicks{phase=\"final\"}",
+          "legendFormat": "{{source}} {{run}} {{phase}}"
         }
       ],
       "gridPos": {
@@ -100,8 +100,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "paldo_ads_gold_clicks / paldo_ads_gold_impressions",
-          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+          "expr": "paldo_ads_gold_clicks{phase=\"final\"} / paldo_ads_gold_impressions{phase=\"final\"}",
+          "legendFormat": "{{source}} {{run}} {{phase}}"
         }
       ],
       "gridPos": {
@@ -130,8 +130,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "paldo_ads_gold_cost_mw * 1000 / paldo_ads_gold_impressions",
-          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+          "expr": "paldo_ads_gold_cost_mw{phase=\"final\"} * 1000 / paldo_ads_gold_impressions{phase=\"final\"}",
+          "legendFormat": "{{source}} {{run}} {{phase}}"
         }
       ],
       "gridPos": {
@@ -301,7 +301,7 @@
     },
     {
       "id": 10,
-      "type": "timeseries",
+      "type": "stat",
       "title": "Ledger reconciliation mismatches",
       "datasource": {
         "type": "prometheus",
@@ -327,6 +327,15 @@
           }
         },
         "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value_and_name"
       }
     }
   ],
