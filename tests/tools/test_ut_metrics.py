@@ -250,7 +250,7 @@ class MetricsCliTests(unittest.TestCase):
             path.write_text(json.dumps({"export_version": "ut-export-1", "games": [g]}), encoding="utf-8")
             out = io.StringIO()
             with redirect_stdout(out):
-                m.main(["metrics", "--games", str(path), "--cutoff", "2026-11-09T14:00"])
+                m.main(["metrics", "--games", str(path), "--cutoff", "2026-11-09T14:00", "--since", "none"])
         doc = json.loads(out.getvalue())
         self.assertEqual(doc["definition_version"], m.DEFINITION_VERSION)
         self.assertEqual(doc["metrics"]["games_completed"], 0)  # 13:00 시작, 14:10 종료 > 14:00 마감
@@ -266,8 +266,28 @@ class MetricsCliTests(unittest.TestCase):
             path.write_text(json.dumps({"games": [early, late]}), encoding="utf-8")
             out = io.StringIO()
             with redirect_stdout(out):
-                m.main(["metrics", "--games", str(path), "--cutoff", "2026-11-09T14:00"])
+                m.main(["metrics", "--games", str(path), "--cutoff", "2026-11-09T14:00", "--since", "none"])
         self.assertEqual(json.loads(out.getvalue())["metrics"]["games_started"], 1)
+
+    def test_default_since_is_usertest_open(self):
+        """기본 하한 = 11/10 13:00 KST 오픈. 리허설(11:00) 판은 빠지고, --since none이면 들어간다."""
+        def g(gid, hour_utc):
+            return {"game_id": gid, "player_pseudonym": gid, "source": "human", "commands": [], "result": {},
+                    "events": [{"event_id": gid, "event_type": "game_started",
+                                "occurred_at": datetime(2026, 11, 10, hour_utc, 0, tzinfo=timezone.utc).isoformat()}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "games.json"
+            path.write_text(json.dumps({"games": [g("r", 2), g("f", 5)]}), encoding="utf-8")
+            docs = {}
+            for name, extra in (("default", []), ("none", ["--since", "none"])):
+                out = io.StringIO()
+                with redirect_stdout(out):
+                    m.main(["metrics", "--games", str(path)] + extra)
+                docs[name] = json.loads(out.getvalue())
+        self.assertEqual(docs["default"]["metrics"]["games_started"], 1)
+        self.assertEqual(docs["default"]["since"], "2026-11-10T13:00:00+09:00")
+        self.assertEqual(docs["none"]["metrics"]["games_started"], 2)
+        self.assertIsNone(docs["none"]["since"])
 
     def test_default_cutoff_is_usertest_close_and_preset_flag(self):
         """기본 마감 = 11/10 18:00 KST(스냅숏). none이면 자르지 않는다. --preset은 그 프리셋 판만."""

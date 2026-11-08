@@ -44,9 +44,9 @@ PALDO_MONGO_URI=<읽기 전용 URI> python -m server.infra.ut_export games --out
 DJANGO_SETTINGS_MODULE=<운영 설정> python -m server.infra.ut_export accounts --out accounts.json
 # 2) (실험 회차를 열 때만) 회차 등록용 가명 ID: 가입 시각 [시작, 끝] 경계 포함, 동의·활성·비운영자만
 python -m tools.ut_metrics participants --accounts accounts.json --from <시작> --to <끝>
-# 3) 지표(18:00 스냅숏): 마감 뒤 시작한 판·종료·입력·명령·설문은 세지 않고, 그때 진행 중이던 판은 games_unfinished. PM 가명은 빼서 한 번, 넣어서 한 번
+# 3) 지표(18:00 스냅숏): 13:00 오픈 전에 시작한 판(리허설 등)과 마감 뒤 시작한 판·종료·입력·명령·설문은 세지 않고, 그때 진행 중이던 판은 games_unfinished. PM 가명은 빼서 한 번, 넣어서 한 번
 python -m tools.ut_metrics metrics --games games.json [--preset base6] --exclude-pseudonym <PM 가명> --out metrics.json
-# 4) test_human 동결(18:00~19:30): 같은 스냅숏으로 자른 뒤 분할. 검수 결과·학습·개발 세트는 필수(없으면 {"exclude": []}·빈 파일). 실패면 종료 코드 1, 묶음은 쓰지 않고 report_failed.json만
+# 4) test_human 동결(18:00~19:30): 같은 스냅숏(13:00~18:00)으로 자른 뒤 분할. 검수 결과·학습·개발 세트는 필수(없으면 {"exclude": []}·빈 파일). 실패면 종료 코드 1, 묶음은 쓰지 않고 report_failed.json만
 python -m tools.ut_freeze --games games.json --pretest-games pretest.json --pm-pseudonym <PM 가명> --seed <분할 시드> \
     --exclude-set <학습 세트.jsonl> --exclude-set <개발 세트.jsonl> --privacy-review review.json --out-dir <동결 폴더>
 ```
@@ -58,7 +58,7 @@ python -m tools.ut_freeze --games games.json --pretest-games pretest.json --pm-p
 | 이름 | 값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
 | 정식 테스트 시간 | 11/10 13:00~18:00, 강의실(11/8 일정 변경) | 참가자 동시 진행. 18:00 클로즈 = 스냅숏 | 18:00에 진행 중인 판은 "미종료"로 따로 기록. 클로즈는 미루지 않는다 |
-| 서버 SHA 유지 | 11/10 리허설(10:30)~18:00 | `blocker` 수정 배포만 예외(승인 E, 시각 기록) | 바뀌면 판 메타 버전 조합(`versions`)으로 앞뒤 판을 나눠 본다 |
+| 서버 SHA 유지 | 11/10 리허설(10:30)~18:00 | `blocker` 수정 배포만 예외(승인 E, 배포 시각 기록) | 판 메타에는 배포 커밋이 없고 `ENGINE_VERSION`은 고정 문자열이라 `versions`로는 같은 버전 문자열의 두 배포를 못 나눈다. 앞뒤 비교는 기록한 배포 시각으로 `--until`·`--since`를 나눠 두 번 집계한다 |
 | 목표 인원 | 30명 | 기획서 7.5 | - |
 | 1인 판 수 | 기본 3판, 시간이 남으면 4판 | 11/8 사전 테스트의 한 판 시간 실측으로 확정 | 4판째는 비교 표본이 적다 |
 | 판 시작 | 일반 판, 공개 프리셋(`base6`), 시드는 판마다 서버 랜덤(E-08-14) | 회차·명단 없음 | - |
@@ -67,6 +67,7 @@ python -m tools.ut_freeze --games games.json --pretest-games pretest.json --pm-p
 | 설문 | `fun`·`unfair`·`npc_plausible` 각 1~5, `comment` 선택. 전체 건너뛰기는 `skipped=true`·점수 `null`(P-29) | `unfair`는 높을수록 더 억울함. 건너뜀은 평균에서 빼고 응답률 분모에만 넣음 | 보상·평균에서 방향 처리는 E-10-03·D-09-02가 정한다 |
 | 지표 정의 버전 | `ut-metrics-1.1`(`tools/ut_metrics.py` `DEFINITIONS`. 1.0은 11/8 사용자 확정, 1.1은 같은 날 18:00 스냅숏으로 마감 처리만 바꿈) | 결과 JSON에 버전·정의 문장을 함께 쓴다 | 정의를 바꾸면 버전을 올린다 |
 | 마감 시각 기본값 | `2026-11-10T18:00:00+09:00`(`DEFAULT_CUTOFF`, 지표·동결 도구 공통, 테스트로 대조) | 정식 테스트 클로즈 = 스냅숏 | 바꾸면 두 도구를 함께 바꾼다 |
+| 시작 시각 하한 기본값 | `2026-11-10T13:00:00+09:00`(`DEFAULT_OPEN`, `--since`, 지표·동결 도구 공통) | 오픈 전 판(10:30~12:00 리허설 등)이 지표·`test_human` 분할에 섞이지 않게 한다. 사전 테스트 등 다른 날 집계는 `--since none --cutoff none` 또는 그날 시각을 준다 | 바꾸면 두 도구를 함께 바꾼다 |
 | 동결 규칙 버전 | `ut-freeze-1.1`, 정규화 `norm-1`(NFC·앞뒤 공백 제거·연속 공백 1칸) | 홀수 인원이면 평가 = floor(n/2)(11/8 확정). 1.1은 스냅숏 자르기 추가 | 바꾸면 같은 시드로도 분할이 달라진다 |
 | 내보내기 형식 | `ut-export-2`(2: 판별 `engine_version`, 내보낸 코드의 `ENGINE_VERSION`) | 진실(`truth`)·`observation`·`decision`·`truth_revealed`·화면 본문은 내보내지 않는다. 명령 요지에는 그 명령이 낸 이벤트(내보내지 않는 종류 포함)의 가장 이른 시각 `first_event_at`만 남겨 추궁 국면 체류 시간을 계산한다 | - |
 | 보존 기한 | 2026-12-12 | 가명 ID가 붙은 모든 사용자 테스트 데이터 삭제(C-09-02) | privacy.md 2절 |
@@ -89,4 +90,4 @@ python -m tools.ut_freeze --games games.json --pretest-games pretest.json --pm-p
 | E-06-04 | 11/6 | 처음 작성: 사용자 테스트 계획 `docs/user_test/plan.md`(일정·인원·판 수, 참가자 순서, 운영자 준비물, 동의 문구 인용, 수집 항목, `test_human` 14:30 동결·사용자 단위 분할, 판 종료 설문 확정본, 고정 시드 판 `base6` 910001~910004) |
 | P-29 | 11/6 | 설문 전체 건너뛰기 형식(`skipped=true`·점수 `null`)과 응답률·평균 집계 규칙 추가 |
 | E-08-10 | 11/8 | 집계 도구 추가: 읽기 전용 내보내기 `server/infra/ut_export.py`, 지표·회차 등록 가명 ID `tools/ut_metrics.py`, `test_human` 분할·동결 `tools/ut_freeze.py`, 계획서 10절 지표 산출 방법. 같은 날 사용자 확정: 정의 버전 `ut-metrics-1.0`(설문 분모 끝난 판 전부, `give_up_rate`), 동결 `ut-freeze-1.0`(Delta 버전 대신 `manifest.json`) |
-| E-08-10 | 11/8 | (일정 변경 반영) 정식 테스트 11/10 13:00~18:00·18:00 스냅숏·일반 판 진행. 집계 도구 `ut-metrics-1.1`(마감 기본값 11/10 18:00, 마감 뒤 종료·설문 제외, 미종료 판, `--preset`, 버전 조합별 판 수), `ut-freeze-1.1`(같은 스냅숏으로 자른 뒤 분할), `ut-export-2`(`engine_version`). 고정 시드 회차는 실험 회차(선택)로 |
+| E-08-10 | 11/8 | (일정 변경 반영) 정식 테스트 11/10 13:00~18:00·18:00 스냅숏·일반 판 진행. 집계 도구 `ut-metrics-1.1`(마감 기본값 11/10 18:00, 시작 하한 기본값 13:00, 마감 뒤 종료·설문 제외, 미종료 판, `--preset`, 버전 조합별 판 수), `ut-freeze-1.1`(같은 스냅숏으로 자른 뒤 분할), `ut-export-2`(`engine_version`). 고정 시드 회차는 실험 회차(선택)로 |

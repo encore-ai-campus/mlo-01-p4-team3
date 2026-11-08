@@ -146,7 +146,7 @@ class CliTests(unittest.TestCase):
             with redirect_stdout(io.StringIO()):
                 f.main(["--games", str(tmp / "ut.json"), "--pretest-games", str(tmp / "pre.json"),
                         "--pm-pseudonym", "pm", "--seed", "3", "--exclude-set", str(tmp / "train.jsonl"),
-                        "--privacy-review", str(tmp / "review.json"), "--out-dir", str(tmp / "freeze")])
+                        "--privacy-review", str(tmp / "review.json"), "--out-dir", str(tmp / "freeze"), "--since", "none"])
             names = sorted(p.name for p in (tmp / "freeze").iterdir())
             report = json.loads((tmp / "freeze" / "report.json").read_text(encoding="utf-8"))
             lines = (tmp / "freeze" / "test_human.jsonl").read_text(encoding="utf-8").splitlines()
@@ -202,6 +202,19 @@ class CliTests(unittest.TestCase):
     def test_default_cutoff_matches_metrics(self):
         from tools import ut_metrics
         self.assertEqual(f.DEFAULT_CUTOFF, ut_metrics.DEFAULT_CUTOFF)
+        self.assertEqual(f.DEFAULT_OPEN, ut_metrics.DEFAULT_OPEN)
+
+    def test_snapshot_drops_games_started_before_open(self):
+        """리허설 등 오픈(13:00) 전에 시작한 판은 분할에 들어가지 않는다."""
+        from datetime import datetime, timezone
+        since = datetime(2026, 11, 10, 4, 0, tzinfo=timezone.utc)  # 13:00 KST
+        cutoff = datetime(2026, 11, 10, 9, 0, tzinfo=timezone.utc)
+        rehearsal = {"game_id": "r", "player_pseudonym": "u0", "source": "human", "events": [
+            {"event_id": "a", "event_type": "game_started", "occurred_at": "2026-11-10T02:00:00+00:00"}]}
+        formal = {"game_id": "g", "player_pseudonym": "u1", "source": "human", "events": [
+            {"event_id": "b", "event_type": "game_started", "occurred_at": "2026-11-10T04:10:00+00:00"}]}
+        self.assertEqual([g["game_id"] for g in f.snapshot([rehearsal, formal], cutoff, since)], ["g"])
+        self.assertEqual([g["game_id"] for g in f.snapshot([rehearsal, formal], None, since)], ["g"])
 
     def test_review_and_exclude_set_are_required(self):
         for argv in (["--games", "g.json", "--seed", "1", "--exclude-set", "t.jsonl", "--out-dir", "o"],

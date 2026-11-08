@@ -27,6 +27,7 @@ from pathlib import Path
 DEFINITION_VERSION = "ut-metrics-1.1"
 KST = timezone(timedelta(hours=9))
 DEFAULT_CUTOFF = "2026-11-10T18:00:00+09:00"  # 정식 사용자 테스트 클로즈 = 스냅숏(11/8 사용자 결정)
+DEFAULT_OPEN = "2026-11-10T13:00:00+09:00"  # 정식 사용자 테스트 오픈. 그 전 판(리허설 등)은 기본으로 뺀다(Codex 지적 반영)
 EXECUTED = {"confirm", "edit"}
 DEFINITIONS = {
     "participants": {"text": "범위 안 판의 서로 다른 player_pseudonym 수"},
@@ -340,7 +341,8 @@ def main(argv=None):
     m.add_argument("--cutoff", default=DEFAULT_CUTOFF,
                    help="마감 시각 = 스냅숏(시간대 없으면 KST, 기본 11/10 18:00 KST, none이면 자르지 않음)")
     m.add_argument("--preset", action="append", default=[], help="이 프리셋 판만(예: base6)")
-    m.add_argument("--since")
+    m.add_argument("--since", default=DEFAULT_OPEN,
+                   help="판 시작 시각 하한(시간대 없으면 KST, 기본 11/10 13:00 KST 오픈, none이면 하한 없음)")
     m.add_argument("--until", help="판 시작 시각 상한(기본: --cutoff)")
     m.add_argument("--session-id", action="append", default=[])
     m.add_argument("--pseudonym", action="append", default=[], help="이 가명만")
@@ -361,10 +363,12 @@ def main(argv=None):
         until = _kst(args.until) if args.until else cutoff  # 마감 뒤 시작한 판은 기본으로 뺀다
         games = scope_games(doc.get("games", []), set(args.session_id), set(args.pseudonym),
                             set(args.exclude_pseudonym), args.include_load_test,
-                            _kst(args.since) if args.since else None, until, set(args.preset))
+                            _kst(args.since) if args.since and args.since.lower() != "none" else None, until,
+                            set(args.preset))
         summaries = [game_summary(g, cutoff) for g in games]
         result = {"definition_version": DEFINITION_VERSION, "export_version": doc.get("export_version"),
                   "exported_at": doc.get("exported_at"), "cutoff": cutoff.isoformat() if cutoff else None,
+                  "since": _kst(args.since).isoformat() if args.since and args.since.lower() != "none" else None,
                   "export_engine_version": doc.get("engine_version"),
                   "filters": {"session_ids": sorted(args.session_id), "presets": sorted(args.preset),
                               "excluded": len(args.exclude_pseudonym), "include_load_test": args.include_load_test},

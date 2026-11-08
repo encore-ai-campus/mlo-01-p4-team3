@@ -32,6 +32,7 @@ from pathlib import Path
 
 FREEZE_VERSION = "ut-freeze-1.1"
 DEFAULT_CUTOFF = "2026-11-10T18:00:00+09:00"  # tools/ut_metrics.py DEFAULT_CUTOFF와 같다(테스트로 대조)
+DEFAULT_OPEN = "2026-11-10T13:00:00+09:00"  # 정식 사용자 테스트 오픈. 그 전 판(리허설 등)은 기본으로 뺀다(Codex 지적 반영)
 KST = timezone(timedelta(hours=9))
 NORMALIZE_VERSION = "norm-1"
 
@@ -49,15 +50,20 @@ def _moment(value):
     return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
 
 
-def snapshot(games, cutoff):
+def snapshot(games, cutoff, since=None):
     """마감 시각의 스냅숏: 그 뒤에 시작한 판을 빼고, 남은 판에서 그 뒤 이벤트를 버린다. 시각 없는 이벤트는 남긴다."""
-    if cutoff is None:
+    if cutoff is None and since is None:
         return list(games)
     kept = []
     for game in games:
         events = game.get("events", [])
         start = next((_moment(e.get("occurred_at")) for e in events if e.get("event_type") == "game_started"), None)
         start = start or _moment(game.get("created_at"))
+        if since is not None and (start is None or start < since):
+            continue
+        if cutoff is None:
+            kept.append(game)
+            continue
         if start is not None and start > cutoff:
             continue
         cut = [e for e in events if (_moment(e.get("occurred_at")) or cutoff) <= cutoff]
@@ -197,6 +203,8 @@ def main(argv=None):
     parser.add_argument("--drop-conflicts", action="store_true")
     parser.add_argument("--cutoff", default=DEFAULT_CUTOFF,
                         help="정식 테스트 스냅숏 시각(시간대 없으면 KST, 기본 11/10 18:00 KST, none이면 자르지 않음)")
+    parser.add_argument("--since", default=DEFAULT_OPEN,
+                        help="정식 테스트 판 시작 시각 하한(시간대 없으면 KST, 기본 11/10 13:00 KST 오픈, none이면 하한 없음)")
     parser.add_argument("--out-dir", required=True)
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
@@ -206,7 +214,11 @@ def main(argv=None):
     if args.cutoff and args.cutoff.lower() != "none":
         cutoff = datetime.fromisoformat(args.cutoff.replace("Z", "+00:00"))
         cutoff = cutoff if cutoff.tzinfo else cutoff.replace(tzinfo=KST)
-    games = snapshot(_load_games(args.games), cutoff)
+    since = None
+    if args.since and args.since.lower() != "none":
+        since = datetime.fromisoformat(args.since.replace("Z", "+00:00"))
+        since = since if since.tzinfo else since.replace(tzinfo=KST)
+    games = snapshot(_load_games(args.games), cutoff, since)
     usertest = sentences_of(games, pm, set(args.session_id))
     pretest = [r for r in sentences_of(_load_games(args.pretest_games), pm) if r["pm"]]
     external = [row for path in args.exclude_set for row in _load_rows(path)]
@@ -217,6 +229,7 @@ def main(argv=None):
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     result["report"]["cutoff"] = cutoff.isoformat() if cutoff else None
+    result["report"]["since"] = since.isoformat() if since else None
     detail = {**result["report"], "conflicts": result["conflicts"], "user_overlap_ids": result["user_overlap"]}
     print(json.dumps(result["report"], ensure_ascii=False, indent=2))
     if not result["report"]["ok"]:
