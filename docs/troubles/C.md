@@ -38,11 +38,11 @@
 - 대응: 같은 Delta 4.4.1의 Spark 4.1용 jar `io.delta:delta-spark_4.1_2.13:4.4.1`로 바꿔 다시 시험했다. 계약(`tech_stack.md`)에 jar 좌표를 적는 것은 PM 승인 뒤에 한다.
 - 결과: 기본 jar는 쓰기 0회 성공(실패 1회), Spark 4.1용 jar는 쓰기 2회·읽기(현재 11행, 버전 0은 10행) 성공, 약 30초. 증빙 [`docs/evidence/C-05-03.md`](../evidence/C-05-03.md)
 
-### C-06-03 MySQL 분리·복제 중단
-- 문제: Replica IO가 멈췄고 재개 후에도 probe가 도착하지 않았다.
-- 원인: 연결 실패 중 필요한 Primary binlog가 만료되어 GTID 자동 재개가 실패했다.
-- 대응: 기존 복제 설정 유지, 새 광고·계정 스키마와 TLS 전용 계정 분리, 상호 접근 거부 확인, 백업 후 재구성 범위 문서화. 기존 Replica 데이터 대체는 미실행.
-- 결과: 두 스키마 자기 접속 성공·상호 ERROR 1044. Replica probe 불일치·지연 NULL로 미완료 기록. 증빙 [C-06-03](../evidence/C-06-03.md).
+### C-06-03 만료 GTID와 PJ4 범위 복구
+- 문제: 기존 기본 채널의 Primary binlog가 만료되어 새 probe도 복제되지 않았다.
+- 원인: PJ3 오래된 GTID 범위와 Replica 자체 거래를 새 PJ4 데이터와 함께 재구성하면 기존 데이터가 위험하다.
+- 대응: PJ4 두 스키마만 일관 dump·SHA-256/좌표 검증·빈 대상 복원. 기존 GTID와 데이터는 유지하고 TLS 파일/위치 named channel pj4 및 영속 필터 적용. 앱 호스트에 역할별 설정 주입.
+- 결과: Replica 재시작 후 IO/SQL 정상·지연 0s·새 Primary marker 일치, 앱 TLS 연결 및 상호 1044. 기존 PJ3 기본 채널은 미복구로 별도 기록.
 
 ### C-06-02 공식 토픽과 아웃박스
 - 문제: ack 직후 발행 표시 실패 시 같은 ID가 재발행된다. 초기 시연 source가 엄격 계약에서 거절됐다.
