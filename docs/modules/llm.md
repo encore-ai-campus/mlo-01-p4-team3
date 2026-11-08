@@ -41,7 +41,7 @@ python -m llm.bench.gen_intent_variants generate --model <gguf> --threads 8 --se
 python -m llm.bench.gen_intent_variants apply                                                                # 후보를 걸러 examples_v1.jsonl에 generated로 반영 + D 검수 시트
 python -m llm.free_answer_eval --seed 1                                                                     # 자유 질문 평가 세트(75건, 11/8 사용자 확인 완료)
 python -m llm.bench.free_answer_load --base-url <사설망 주소> --model <이름> --sessions 30 --think 5 15 --warmup 120 --duration 600 --label s2_normal   # 부하(E-11-12)
-python -m llm.bench.watch_pods --account E                                                                   # 노트북 감시(확인 질문에 yes)
+python -m llm.bench.watch_pods --account B --key-env PALDO_RUNPOD_KEY_B --ledger out/runpod/ledger_B.json   # E 노트북에서 계정마다 하나씩(그 계정 키만 runpodctl에, 확인 질문에 yes)
 STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <작업 명령>                          # Pod 안
 ```
 
@@ -73,6 +73,7 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | `EVENT_WORDS`(`llm/free_answer.py`) | 독살·죽었·피해자 등 31개 | 인용 사실에 없으면 거부하는 사건 단정 어휘 | 늘리면 정상 답이 걸릴 수 있어 반례 표 테스트를 같이 고친다 |
 | `TIMEOUT_S`(`llm/bench/free_answer_load.py`) | 30 | 요청 한 건(재생성 포함) 시간 제한. 넘으면 무한대로 센다 | E-11-12 3번과 같이 바꾼다 |
 | `LIMITS` / `DELETE_RATIO` / `MAX_MINUTES` / `GRACE_MINUTES`(`llm/bench/watch_pods.py`) | E $5·B $5·C $4.5·D $4.5 / 0.8 / s0 20·s1 90·s2 90 / 10 | 계정 한도(11/8 사용자 결정), 삭제선 비율, 단계별 Pod 상한(`run_pod.sh`와 같음), 시간 초과 삭제 여유 | 바꾸면 `run_pod.sh`·E-11-12 7번·런북을 같이 고친다 |
+| `KEY_ENV_PREFIX`(`llm/bench/watch_pods.py`) | `PALDO_RUNPOD_KEY_` | 계정별 API 키 환경 변수 이름 접두어. `--key-env`로 고른 변수 값만 자식 `runpodctl`에 `RUNPOD_API_KEY`로 넘기고 이 접두어의 다른 변수는 뺀다(11/8 사용자 결정으로 E가 네 계정 운영) | 값은 저장소 밖(`4th_private`), 출력하지 않음 |
 
 ## 한계
 
@@ -91,7 +92,7 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
   - 사실 문장은 NPC 본인 시점이라고 본다(모든 절에 본인을 더함). 남의 행적을 전해 들은 형식의 사실은 다루지 않는다.
   - 어휘에 없는 시간 표현("그날", "그때")은 시간으로 세지 않는다. "어젯밤"처럼 어휘에 있는 다른 시간은 인용 사실에 없으면 거부한다.
 - 평가 세트(`free_answer_eval.json`)의 새로 쓴 문장 12개(`new_sentences`)는 11/8 사용자가 전부 승인했다. 생성기는 `new_sentences`가 승인본 지문(`APPROVED_NEW_SENTENCES_SHA256`)과 같을 때만 `status`를 확인 완료로 쓰고, 다른 시드·콘텐츠·문장 틀로 문장이 바뀌면 확인 전으로 남긴다. 행적은 콘텐츠 묶음 일과 확률로 뽑은 것이라 실제 엔진 판 기록과 같지 않다(사실 문장 형식만 엔진과 같다).
-- 부하 클라이언트·Pod 스크립트는 가짜 스트리밍 서버·가짜 `runpodctl`로만 시험했다. 실제 서버의 스트리밍 조각 모양, `runpodctl` 목록 출력 형식, Pod 범위 키의 자기 삭제 권한은 E-11-12 0단계에서 확인한다(런북 "미확인"). 요청 마감(30초)은 연결 전에 정하고 스트림 읽기는 감시 타이머로 끊지만, 응답 머리를 받는 동안은 소켓 무응답 제한만 걸린다(머리를 아주 천천히 보내는 서버는 마감을 넘길 수 있음).
+- 부하 클라이언트·Pod 스크립트는 가짜 스트리밍 서버·가짜 `runpodctl`로만 시험했다. 실제 서버의 스트리밍 조각 모양, `runpodctl` 목록 출력 형식, Pod 범위 키의 자기 삭제 권한, `runpodctl`이 `RUNPOD_API_KEY` 환경 변수를 설정 파일보다 먼저 쓰는지(`--key-env` 계정 격리의 전제)는 E-11-12 0단계에서 확인한다(런북 "미확인"). 키 격리가 실패해도 이름의 계정 칸이 다른 Pod는 세지도 지우지도 않지만, 그 계정의 비용은 그 계정 감시가 못 보게 되므로 0단계에서 격리를 확인하기 전에는 시작하지 않는다. 요청 마감(30초)은 연결 전에 정하고 스트림 읽기는 감시 타이머로 끊지만, 응답 머리를 받는 동안은 소켓 무응답 제한만 걸린다(머리를 아주 천천히 보내는 서버는 마감을 넘길 수 있음).
 
 ## 변경 이력
 
@@ -101,4 +102,5 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | E-07-07 | 11/7 | 추궁 프롬프트 `llm/prompt.py`(interrogate-v8, 말투 계열별 예시·끝 어미), 검증기 `llm/validator.py`(거부 사유 4종, 폴백), 평가 세트 `llm/eval_set.py`(100건)·지표 `llm/mvp_metrics.py`, 벤치마크 `--eval`·`--rejudge`·일관성 모드. 평가 성공 86 %, 전체 p95 5,575 ms |
 | E-07-06 | 11/7 | MVP 제출 묶음 `tools/build_llm_bundle.py`(zip 4개 파일, 결정적)과 코랩 노트북 `llm/colab/paldo_llm_mvp.ipynb`(첫 셀 Powered by Kanana 표기, T4 GPU 경로) 추가. llm 규칙 코드는 바꾸지 않음. 코랩 T4 평가 성공 93 %, 전체 p95 478 ms |
 | E-08-13 | 11/8 | 자유 질문 답변 규칙 `llm/free_answer.py`(검사 6종, 문장 단위 판정, 폴백)·평가 세트 생성 `llm/free_answer_eval.py`(75건, 11/8 새 문장 12개 사용자 승인)·부하 클라이언트 `llm/bench/free_answer_load.py`·Pod 감시 `watch_pods.py`·Pod 스크립트 `run_pod.sh`, 테스트 2개 파일(반례 22개 전부 거부), 계층 검사 대상에 2개 추가 |
+| E-11-12 | 11/8 | 계획 변경(사용자 결정): `watch_pods.py`에 계정 격리 추가. 이름의 계정 칸이 `--account`와 같은 Pod만 세고 지우며(다른 계정·못 읽는 이름은 매 주기 오류), `--key-env`로 계정 키를 자식 `runpodctl`에만 넘긴다. E가 네 계정 Pod를 한 노트북에서 운영 |
 | E-06-02 | 11/7 | 의도 예시 변형 규칙 `llm/intent_variants.py`(프롬프트 `intent-variants-v1`, 보존 검사 사유 12종)와 생성·반영 `llm/bench/gen_intent_variants.py`(`generate`·`apply`), 테스트 `tests/llm/test_intent_variants.py`, 계층 검사 대상에 추가 |

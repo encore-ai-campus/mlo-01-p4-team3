@@ -4,6 +4,8 @@
 """
 from __future__ import annotations
 
+import io
+import contextlib
 import json
 import math
 import os
@@ -214,6 +216,15 @@ else:
 '''
 
 
+FAKE_ENV_CTL = r'''
+import json, os
+with open(ENV_LOG, "a", encoding="utf-8") as f:
+    f.write(json.dumps([os.environ.get("RUNPOD_API_KEY"),
+                        sorted(k for k in os.environ if k.startswith("PALDO_RUNPOD_KEY_"))]) + "\n")
+print("[]")
+'''
+
+
 class WatchPodsTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -304,6 +315,48 @@ class WatchPodsTest(unittest.TestCase):
         self.assertFalse(self.ledger.exists())
         self.assertEqual(wp.main(args, input_fn=lambda _: "yes"), 0)
         self.assertTrue(self.ledger.exists())
+
+    def test_account_guard_counts_and_deletes_own_account_only(self):
+        # 11/8 사용자 결정: E가 네 계정을 한 노트북에서 감시한다. 키 격리가 틀려 다른 계정 Pod가 보여도 세지도 지우지도 않는다.
+        self.set_pods([{"id": "b1", "name": "paldo-e1112-s1-b-1", "costPerHr": 0.89},
+                       {"id": "c1", "name": "paldo-e1112-s1-c-1", "costPerHr": 1.09},
+                       {"id": "x1", "name": "paldo-e1112-s1-1", "costPerHr": 0.89}])
+        t = [0.0]
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            wp.watch(self.ctl, self.ledger, "B", once=True, clock=lambda: t[0], sleep=lambda s: None)
+            t[0] = 4.6 * 3600   # b1만: 0.89 × 4.6h = 4.09 ≥ 4.0(c1·x1을 셌다면 더 일찍 닿음)
+            led = wp.watch(self.ctl, self.ledger, "B", once=True, clock=lambda: t[0], sleep=lambda s: None)
+        self.assertEqual(set(led), {"b1"})
+        self.assertIn("pod delete b1", self.calls())
+        self.assertNotIn("pod delete c1", self.calls())
+        self.assertNotIn("pod delete x1", self.calls())
+        self.assertIn("paldo-e1112-s1-c-1", out.getvalue())   # 매 주기 오류로 알림
+        self.assertEqual(wp.account_of("paldo-e1112-s2-d-1"), "D")
+        self.assertIsNone(wp.account_of("paldo-e1112-s2-z-1"))
+        led2 = {}
+        _, foreign = wp.update_ledger(led2, [{"id": "c1", "name": "paldo-e1112-s1-c-1", "cost_per_hr": 1.0}], 0, "B")
+        self.assertEqual((led2, foreign), ({}, ["paldo-e1112-s1-c-1"]))
+
+    def test_key_env_isolated_and_not_printed(self):
+        env_log = Path(self.tmp.name) / "env.log"
+        fake = Path(self.tmp.name) / "fake_env_ctl.py"
+        fake.write_text(FAKE_ENV_CTL.replace("ENV_LOG", repr(str(env_log))), encoding="utf-8")
+        environ = {"PATH": os.environ.get("PATH", ""), "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
+                   "PALDO_RUNPOD_KEY_B": "fake-key-b", "PALDO_RUNPOD_KEY_C": "fake-key-c", "RUNPOD_API_KEY": "stale"}
+        env = wp.ctl_env("PALDO_RUNPOD_KEY_B", environ)
+        ctl = wp.RunpodCtl(shlex.join([sys.executable, str(fake)]), env=env)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            wp.watch(ctl, self.ledger, "B", once=True, clock=lambda: 0.0, sleep=lambda s: None)
+        self.assertEqual(json.loads(env_log.read_text(encoding="utf-8").splitlines()[0]), ["fake-key-b", []])
+        self.assertNotIn("fake-key", out.getvalue())
+        self.assertIsNone(wp.ctl_env(None, environ))
+        with self.assertRaises(ValueError):
+            wp.ctl_env("PALDO_RUNPOD_KEY_D", environ)
+        args = ["--account", "D", "--once", "--key-env", "PALDO_RUNPOD_KEY_D_MISSING", "--ledger", str(self.ledger)]
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(wp.main(args, input_fn=lambda _: "yes"), 2)
 
     def test_limits_and_stage(self):
         self.assertEqual(wp.LIMITS, {"E": 5.0, "B": 5.0, "C": 4.5, "D": 4.5})
