@@ -32,4 +32,4 @@ Primary 관리자 소켓에서 `python -m ops.mysql.pj4_channel snapshot --direc
 
 웹 `PALDO_AUTH_DB_SSL_CA`, 광고 `PALDO_ADS_DB_SSL_CA`는 각각 인증서·호스트 검증을 강제한다. CA는 공개 파일이지만 DB 계정 프로필은 자기 서비스만 읽는다. 양쪽 실제 호스트의 migration·자기 스키마 TLS·상대 스키마 1044와 실제 브라우저 가입/로그인을 확인했다. 광고 직접 HTTP 제공·노출·클릭도 MySQL Outbox·Kafka·bronze까지 확인했다. 실제 파일 경로·서비스명·기동/종료 명령은 비공개 운영 인계 기록을 따른다.
 
-Mongo 웹은 현재 기존 허용 DB의 빈 PJ4 컬렉션을 쓰는 pilot이다. 전용 Mongo DB·계정 생성은 관리자 인증정보 보관 위치 확인이 필요하다. DB 승격 자동화·PJ3 기본 채널 복구·B의 실제 광고 HTTP 어댑터는 이 작업에서 완료로 주장하지 않는다.
+MySQL 실측 당시 Mongo는 허용 DB의 pilot이었으며, 이후 C-06-01 후속 작업에서 정상 관리자 인증으로 전용 DB·계정 분리를 완료했다(ops/mongo.md). DB 승격 자동화·PJ3 기본 채널 복구·B의 실제 광고 HTTP 어댑터는 이 작업에서 완료로 주장하지 않는다.

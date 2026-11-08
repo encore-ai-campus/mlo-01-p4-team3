@@ -54,13 +54,13 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 | Mongo `--wiredTigerCacheSizeGB` | 0.25 | WiredTiger 캐시 | 메모리 사용량 |
 | 버킷 | `paldo-lake`, `paldo-mlflow` | Delta·MLflow 아티팩트 | `run.py` `BUCKETS` |
 
-MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/README.md`, HTTPS 기동/종료·Chrome/Edge 경고·CA 지문·실제 브라우저/지연 검증은 `ops/proxy/README.md`를 따른다. Kafka 발행기는 dev에 병합됐다. 11/8 PJ4 두 스키마만 복구해 Replica 재시작 뒤 새 marker를 읽었고, 기존 PJ3 기본 GTID 채널은 별도 미복구로 보존했다. P-31로 상시 LLM은 없고 RunPod는 E-10-12 지연 측정만 계획한다.
+MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/README.md`, HTTPS 기동/종료·Chrome/Edge 경고·CA 지문·실제 브라우저/지연 검증은 `ops/proxy/README.md`를 따른다. Kafka 발행기는 dev에 병합됐다. 11/8 PJ4 두 스키마만 복구해 Replica 재시작 뒤 새 marker를 읽었고, 기존 PJ3 기본 GTID 채널은 별도 미복구로 보존했다. P-31로 상시 LLM은 없고 RunPod는 E-11-12 GPU 서비스 시연(게임 미연결)만 계획한다.
 
 ## 한계
 
 - 11/8 웹·광고·Outbox·광고 publish/expire/refund와 공식 bronze를 동시 가동했다. 앱 6개 Python 프로세스는 모두 3.14.4이며 web/ads/outbox/광고 작업자 3개 지표 엔드포인트는 모두 HTTP 200이었다. Spark driver/executor 3.14.4도 C-07-01에서 실측했다. 아래 로컬 PC/컨테이너 기록과 VM 실측 범위는 구분한다.
 - 다른 물리 노트북 Chrome에서 실제 인증서 경고 UI Advanced/Proceed → wss 101을 확인했다. 자동 테스트 컨텍스트만 사용했고 OS 신뢰는 바꾸지 않았다. Edge는 안내를 제공하며 직접 실측은 하지 않았다.
-- Mongo의 전용 DB·계정 생성은 관리자 보관 위치 확인 대기다. 현재 허용된 pilot DB에서 content 컬렉션의 content-1.0을 실제 읽는다. B 실제 HTTP 광고 어댑터, C-08-02 광고 대사와 E INT 판정은 별도다.
+- Mongo는 C-06-01 후속 작업으로 기존 관리자 보호 파일을 찾아 정상 인증 후 전용 DB·계정으로 전환했다. 원본 24문서 hash 일치·content-1.0 읽기·다른 DB 거부·새 게임 52건 Kafka/Delta 대조를 확인했다. 운영/롤백은 ops/mongo.md다. B 실제 HTTP 광고 어댑터, C-08-02 광고 대사와 E INT 판정은 별도다.
 
 - 이 결과는 **기준 PC 한 대(11/4)**의 것이다. 다른 노트북은 `ops/compose/README.md` 5절 점검표로 각자 확인해야 한다.
 - 이미지 `mongo:8.0.34`·`mysql:8.4.11`은 11/4 PM 결정(MySQL은 11/5 VM 설치 버전에 맞춰 8.4.13 → 8.4.11)(CI 서비스 컨테이너와 같은 태그)이다. `apache/kafka:4.3.2`는 VM 실측(C-05-01) 전의 잠정값이다.
