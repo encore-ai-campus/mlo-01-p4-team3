@@ -3,15 +3,17 @@
 입력은 `server/infra/ut_export.py`가 만든 비밀 없는 JSON(판·계정)이다. 운영 DB에 직접 붙지 않는다.
 
 계층: 도메인 `parse_time`·`scope_games`·`attempt_chains`·`phase_dwell`·`game_summary`·`aggregate`·
-`select_participants`(순수 함수) / 응용·표현 `main`(하위 명령 metrics·participants, 파일 읽기·JSON 출력).
+`version_counts`·`select_participants`(순수 함수) / 응용·표현 `main`(하위 명령 metrics·participants, 파일 읽기·JSON 출력).
 
-    python -m tools.ut_metrics metrics --games games.json --cutoff 2026-11-09T14:00:00+09:00 [--session-id S]
-        [--exclude-pseudonym <PM 가명>] [--include-load-test] [--out result.json]
-    python -m tools.ut_metrics participants --accounts accounts.json --from 2026-11-09T12:00:00+09:00
-        --to 2026-11-09T12:50:00+09:00 [--exclude-pseudonym ...]
+    python -m tools.ut_metrics metrics --games games.json [--cutoff 2026-11-10T18:00:00+09:00] [--preset base6]
+        [--session-id S] [--exclude-pseudonym <PM 가명>] [--include-load-test] [--out result.json]
+    python -m tools.ut_metrics participants --accounts accounts.json --from <가입 구간 시작> --to <끝>
+        [--exclude-pseudonym ...]   # 실험 회차(선택)를 열 때만
 
 지표 정의는 `DEFINITIONS`에 버전과 함께 둔다. 문서에 없던 정의(설문 응답률 분모, 자유 입력 묶음 지표, 추궁 국면 체류 시간)는
-11/8 사용자가 확정했다(`ut-metrics-1.0`).
+11/8 사용자가 확정했다(`ut-metrics-1.0`). 같은 날 사용자 테스트를 11/10 13:00~18:00으로 옮기면서 18:00 클로즈를 스냅숏으로
+정해(`ut-metrics-1.1`) 마감 시각 기본값을 11/10 18:00 KST로 두고, 종료·입력·설문을 모두 그 시각에서 자르며, 그때까지 끝나지
+않은 판은 "미종료"로 따로 센다.
 """
 from __future__ import annotations
 
@@ -22,15 +24,17 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-DEFINITION_VERSION = "ut-metrics-1.0"
+DEFINITION_VERSION = "ut-metrics-1.1"
 KST = timezone(timedelta(hours=9))
+DEFAULT_CUTOFF = "2026-11-10T18:00:00+09:00"  # 정식 사용자 테스트 클로즈 = 스냅숏(11/8 사용자 결정)
 EXECUTED = {"confirm", "edit"}
 DEFINITIONS = {
     "participants": {"text": "범위 안 판의 서로 다른 player_pseudonym 수"},
-    "games_started": {"text": "범위 안 판 수(사람 판, load_test 제외, 제외 가명 제외)"},
+    "games_started": {"text": "범위 안 판 수(사람 판, load_test 제외, 제외 가명 제외, 시작 시각이 마감 시각 이하, --preset을 주면 그 프리셋만)"},
     "completion_rate": {"text": "game_ended 시각이 마감 시각 이하이고 result.completed가 거짓이 아닌 판 ÷ 시작한 판"},
+    "games_unfinished": {"text": "마감 시각까지 game_ended가 없는 판(진행 중이던 판. 마감 뒤에 끝난 판도 여기에 든다). 미완주와 따로 보고"},
     "game_minutes": {"text": "완주 판의 game_ended − game_started 시각(분). 중앙값·p90"},
-    "survey_response_rate": {"text": "skipped=false 설문 수 ÷ 끝난 판 수(game_ended가 있는 판, 마감 시각 전후 무관. 설문은 판이 끝나면 뜬다. 계획서 7절 \"응답 수 ÷ 판 수\", 건너뜀은 분모에만). 시작한 판 기준 값(response_rate_of_started)·설문 이벤트 수·건너뜀 수·설문 없는 끝난 판 수를 함께 보고"},
+    "survey_response_rate": {"text": "마감 시각 이하에 제출된 skipped=false 설문 수 ÷ 마감 시각까지 끝난 판 수(계획서 7절 \"응답 수 ÷ 판 수\", 건너뜀은 분모에만. 11/8 사용자 결정으로 마감 뒤 종료·설문은 세지 않는다). 시작한 판 기준 값(response_rate_of_started)·설문 이벤트 수·건너뜀 수·설문 없는 끝난 판 수를 함께 보고"},
     "input_sentences": {"text": "intent_attempt 최초 이벤트(attempt_id별 1건, 재입력은 새 시도) 중 마스킹 후 문장이 비지 않은 수"},
     "desired_action_rate": {"text": "자유 입력 묶음(최초 시도 + superseded_by로 이어진 재입력) 중 마지막 반응이 confirm·edit(명령 수락 뒤에만 기록됨)인 묶음 ÷ 전체 묶음. 반응 없이 남은 묶음은 분모에 넣음"},
     "extra_selections": {"text": "묶음별 (재입력 수 + 마지막 반응이 edit이면 1)의 합과 실행된 묶음당 평균"},
@@ -59,13 +63,16 @@ def is_load_test(game):
     return any(e.get("load_test") for e in game.get("events", []))
 
 
-def scope_games(games, session_ids=(), pseudonyms=(), exclude=(), include_load_test=False, since=None, until=None):
-    """집계 범위의 판만 남긴다. 사람 판(source=human)만, 시작 시각은 [since, until]."""
+def scope_games(games, session_ids=(), pseudonyms=(), exclude=(), include_load_test=False, since=None, until=None,
+                preset_ids=()):
+    """집계 범위의 판만 남긴다. 사람 판(source=human)만, 시작 시각은 [since, until], `preset_ids`를 주면 그 프리셋만."""
     chosen = []
     for game in games:
         if game.get("source") not in ("human", None):
             continue
         if session_ids and game.get("session_id") not in session_ids:
+            continue
+        if preset_ids and game.get("preset_id") not in preset_ids:
             continue
         who = game.get("player_pseudonym")
         if pseudonyms and who not in pseudonyms:
@@ -173,18 +180,19 @@ def phase_dwell(game, phase, end):
 
 
 def game_summary(game, cutoff=None):
-    """판 하나의 집계 재료. 마감 시각 뒤에 끝난 판은 완주로 세지 않는다.
+    """판 하나의 집계 재료. 마감 시각을 주면 그 시각의 스냅숏으로 본다(ut-metrics-1.1).
 
-    마감 시각을 주면 그 뒤의 입력·반응·추궁·명령은 세지 않는다. 설문은 판이 끝나면 뜨므로 시각과 관계없이 둔다.
+    마감 시각 뒤의 종료·입력·반응·추궁·명령·설문은 세지 않는다. 마감 시각까지 끝나지 않은 판(마감 뒤에 끝난 판 포함)은
+    `unfinished`이고 완주가 아니다. 시각이 없는 이벤트는 마감 전으로 본다.
     """
     all_events = game.get("events", [])
-    events = [e for e in all_events if cutoff is None or e.get("event_type") == "survey_submitted"
-              or (parse_time(e.get("occurred_at")) or cutoff) <= cutoff]
+    events = [e for e in all_events if cutoff is None or (parse_time(e.get("occurred_at")) or cutoff) <= cutoff]
     start = started_at(game)
-    ended_event = _first(all_events, "game_ended")  # 종료 시각은 마감 뒤여도 읽고 완주 판정에서 거른다
-    end = parse_time(ended_event["occurred_at"]) if ended_event else None
+    ended_event = _first(all_events, "game_ended")
+    ended_raw = parse_time(ended_event["occurred_at"]) if ended_event else None
+    end = ended_raw if ended_raw is not None and (cutoff is None or ended_raw <= cutoff) else None
     result = game.get("result") or {}
-    completed = end is not None and result.get("completed", True) is not False and (cutoff is None or end <= cutoff)
+    completed = end is not None and result.get("completed", True) is not False
     surveys = [e for e in events if e.get("event_type") == "survey_submitted"]
     survey = (surveys[-1].get("payload") or {}) if surveys else None
     chains, attempts = attempt_chains(events)
@@ -196,7 +204,8 @@ def game_summary(game, cutoff=None):
         play_end = min(play_end, last_event)  # 끝나지 않은 판은 마지막 기록까지만
     return {
         "game_id": game.get("game_id"), "player_pseudonym": game.get("player_pseudonym"),
-        "started_at": start, "ended_at": end, "completed": completed,
+        "started_at": start, "ended_at": end, "completed": completed, "unfinished": end is None,
+        "ended_after_cutoff": ended_raw is not None and end is None,
         "minutes": (end - start).total_seconds() / 60 if completed and start else None,
         "play_seconds": (play_end - start).total_seconds() if play_end and start and play_end > start else 0.0,
         "survey": survey, "chains": chains,
@@ -224,7 +233,7 @@ def aggregate(summaries):
     started = len(summaries)
     done = [s for s in summaries if s["completed"]]
     minutes = [s["minutes"] for s in done if s["minutes"] is not None]
-    ended = [s for s in summaries if s["ended_at"] is not None]  # 마감 뒤에 끝난 판도 설문이 뜬다
+    ended = [s for s in summaries if s["ended_at"] is not None]  # 마감 시각까지 끝난 판(game_summary가 자름)
     surveys = [s["survey"] for s in ended if s["survey"] is not None]
     answered = sum(1 for p in surveys if p.get("skipped") is False)
     chains = [c for s in summaries for c in s["chains"]]
@@ -250,6 +259,8 @@ def aggregate(summaries):
         "games_started": started,
         "games_completed": len(done),
         "completion_rate": _rate(len(done), started),
+        "games_unfinished": sum(1 for s in summaries if s["unfinished"]),
+        "games_ended_after_cutoff": sum(1 for s in summaries if s["ended_after_cutoff"]),
         "game_minutes": {"median": round(statistics.median(minutes), 2) if minutes else None,
                          "p90": round(_pct(minutes, 0.9), 2) if minutes else None, "n": len(minutes)},
         "person_total_minutes": {"median": round(statistics.median(person_minutes), 2) if person_minutes else None,
@@ -276,6 +287,16 @@ def aggregate(summaries):
                            "lambda_30_phase": round(30 * per_phase / 60, 4) if per_phase is not None else None,
                            "lambda_30_play": round(30 * per_play / 60, 4) if per_play is not None else None},
     }
+
+
+def version_counts(games):
+    """범위 안 판의 (rule_version, engine_version, content_version) 조합별 판 수. 테스트 중 버전이 바뀌었는지 본다."""
+    counts = {}
+    for game in games:
+        key = (game.get("rule_version"), game.get("engine_version"), game.get("content_version"))
+        counts[key] = counts.get(key, 0) + 1
+    return [{"rule_version": k[0], "engine_version": k[1], "content_version": k[2], "games": n}
+            for k, n in sorted(counts.items(), key=lambda kv: tuple(str(x) for x in kv[0]))]
 
 
 def select_participants(accounts, start, end, exclude=()):
@@ -316,7 +337,9 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="cmd", required=True)
     m = sub.add_parser("metrics")
     m.add_argument("--games", required=True)
-    m.add_argument("--cutoff", help="마감 시각(시간대 없으면 KST). 뒤에 끝난 판은 미완주")
+    m.add_argument("--cutoff", default=DEFAULT_CUTOFF,
+                   help="마감 시각 = 스냅숏(시간대 없으면 KST, 기본 11/10 18:00 KST, none이면 자르지 않음)")
+    m.add_argument("--preset", action="append", default=[], help="이 프리셋 판만(예: base6)")
     m.add_argument("--since")
     m.add_argument("--until", help="판 시작 시각 상한(기본: --cutoff)")
     m.add_argument("--session-id", action="append", default=[])
@@ -334,16 +357,18 @@ def main(argv=None):
     _utf8_stdout()
     if args.cmd == "metrics":
         doc = _load(args.games)
-        cutoff = _kst(args.cutoff) if args.cutoff else None
+        cutoff = _kst(args.cutoff) if args.cutoff and args.cutoff.lower() != "none" else None
         until = _kst(args.until) if args.until else cutoff  # 마감 뒤 시작한 판은 기본으로 뺀다
         games = scope_games(doc.get("games", []), set(args.session_id), set(args.pseudonym),
                             set(args.exclude_pseudonym), args.include_load_test,
-                            _kst(args.since) if args.since else None, until)
+                            _kst(args.since) if args.since else None, until, set(args.preset))
         summaries = [game_summary(g, cutoff) for g in games]
         result = {"definition_version": DEFINITION_VERSION, "export_version": doc.get("export_version"),
                   "exported_at": doc.get("exported_at"), "cutoff": cutoff.isoformat() if cutoff else None,
-                  "filters": {"session_ids": sorted(args.session_id), "excluded": len(args.exclude_pseudonym),
-                              "include_load_test": args.include_load_test},
+                  "export_engine_version": doc.get("engine_version"),
+                  "filters": {"session_ids": sorted(args.session_id), "presets": sorted(args.preset),
+                              "excluded": len(args.exclude_pseudonym), "include_load_test": args.include_load_test},
+                  "versions": version_counts(games),
                   "metrics": aggregate(summaries),
                   "definitions": DEFINITIONS}
         if args.per_game:

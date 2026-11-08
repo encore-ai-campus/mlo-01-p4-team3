@@ -18,7 +18,9 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-EXPORT_VERSION = "ut-export-1"
+from engine.domain.model import ENGINE_VERSION
+
+EXPORT_VERSION = "ut-export-2"  # 2: 판별 engine_version과 내보낸 코드의 ENGINE_VERSION 추가(11/8)
 # 판 문서에서 읽는 필드만. 진실(`truth`)과 NPC 내부 상태는 읽지 않는다.
 GAME_PROJECTION = {"state.meta": 1, "state.result": 1, "state.phase": 1, "state.day": 1,
                    "state.state_version": 1, "outbox.envelope": 1, "outbox.committed_at": 1,
@@ -76,7 +78,8 @@ def game_record(document):
             "session_id": meta.get("session_id"), "source": meta.get("source"),
             "preset_id": preset.get("preset_id") if isinstance(preset, dict) else preset,
             "seed": meta.get("seed"), "created_at": meta.get("created_at"),
-            "rule_version": meta.get("rule_version"), "content_version": meta.get("content_version"),
+            "rule_version": meta.get("rule_version"), "engine_version": meta.get("engine_version"),
+            "content_version": meta.get("content_version"),
             "phase": state.get("phase"), "day": state.get("day"), "result": state.get("result"),
             "commands": [_command_summary(c, first_seen.get(c.get("command_id")))
                          for c in document.get("commands") or []], "events": events}
@@ -88,7 +91,7 @@ def export_games(collection, session_ids=None):
     rows = [game_record(d) for d in collection.find(query, GAME_PROJECTION)]
     rows.sort(key=lambda r: (r["created_at"] or "", r["game_id"] or ""))
     return {"export_version": EXPORT_VERSION, "kind": "games", "exported_at": _iso(datetime.now(timezone.utc)),
-            "session_ids": sorted(session_ids or []), "games": rows}
+            "engine_version": ENGINE_VERSION, "session_ids": sorted(session_ids or []), "games": rows}
 
 
 def account_record(pseudonym, date_joined, consented_at, is_staff, is_active):

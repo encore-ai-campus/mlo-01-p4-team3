@@ -3,6 +3,7 @@ import json
 import unittest
 from datetime import datetime, timezone
 
+from engine.domain.model import ENGINE_VERSION
 from server.infra import ut_export as x
 
 
@@ -25,7 +26,8 @@ def doc(gid, session, created):
     return {"_id": gid,
             "state": {"meta": {"player_pseudonym": "p-" + gid, "session_id": session, "source": "human",
                                "created_at": created, "seed": 910001, "preset": {"preset_id": "base6"},
-                               "rule_version": "rule-0.5.decision-1"},
+                               "rule_version": "rule-0.5.decision-1", "engine_version": "paldo-engine",
+                               "content_version": "content-1.0"},
                       "result": {"completed": True}, "phase": "ended", "day": 2, "truth": {"secret": 1}},
             "outbox": [envelope(2, "game_ended"), envelope(1, "truth_revealed"), envelope(0, "game_started",
                                                                                             command_id="c0")],
@@ -67,6 +69,15 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(coll.calls, [({"state.meta.session_id": {"$in": ["s1"]}}, x.GAME_PROJECTION)])
         self.assertNotIn("state.truth", x.GAME_PROJECTION)
         self.assertEqual([g["game_id"] for g in x.export_games(coll)["games"]], ["g1", "g2"])
+
+    def test_versions_exported_per_game_and_exporter_engine_version(self):
+        """판별 버전 3개와 내보낸 코드의 ENGINE_VERSION을 남긴다(11/8, Codex 지적: engine_version 누락)."""
+        rec = x.game_record(doc("g1", "s1", "2026-11-09T04:00:00+00:00"))
+        self.assertEqual((rec["rule_version"], rec["engine_version"], rec["content_version"]),
+                         ("rule-0.5.decision-1", "paldo-engine", "content-1.0"))
+        out = x.export_games(FakeCollection([doc("g1", None, "2026-11-10T04:00:00+00:00")]))
+        self.assertEqual(out["engine_version"], ENGINE_VERSION)
+        self.assertEqual(out["export_version"], "ut-export-2")
 
     def test_accounts_have_no_login_fields(self):
         out = x.export_accounts([("u-1", datetime(2026, 11, 9, 3, 0, tzinfo=timezone.utc), None, False, True)])

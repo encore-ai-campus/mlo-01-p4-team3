@@ -26,8 +26,8 @@ def attempt(minute, seq, aid, text="수상한 사람을 추궁해", reaction=Non
                                                      "superseded_by": superseded_by})
 
 
-def game(gid, who, events, commands=(), result=None, source="human", session="s1"):
-    return {"game_id": gid, "player_pseudonym": who, "session_id": session, "source": source,
+def game(gid, who, events, commands=(), result=None, source="human", session="s1", preset="base6"):
+    return {"game_id": gid, "player_pseudonym": who, "session_id": session, "source": source, "preset_id": preset,
             "created_at": at(0), "result": result, "events": list(events), "commands": list(commands)}
 
 
@@ -91,13 +91,23 @@ class GameSummaryTests(unittest.TestCase):
         out = m.aggregate([m.game_summary(g, cutoff) for g in (g1, g2)])
         self.assertEqual(out["person_total_minutes"]["median"], 10.0)
 
-    def test_cutoff_drops_later_attempts_but_keeps_survey(self):
+    def test_cutoff_drops_later_attempts_and_survey(self):
+        """ut-metrics-1.1(11/8 사용자 결정): 18:00 클로즈가 스냅숏이라 마감 뒤 설문도 세지 않는다."""
         events = [ev("game_started", 0, 0), attempt(1, 1, "a1"), ev("game_ended", 5, 2),
                   attempt(7, 3, "late"), ev("survey_submitted", 9, 4, payload={"skipped": False})]
         s = m.game_summary(game("g1", "p1", events, result={"completed": True}), T0 + timedelta(minutes=6))
         self.assertEqual(s["input_sentences"], 1)
         self.assertEqual(len(s["chains"]), 1)
-        self.assertIsNotNone(s["survey"])
+        self.assertIsNone(s["survey"])
+        self.assertTrue(s["completed"])
+        kept = m.game_summary(game("g1", "p1", events, result={"completed": True}), T0 + timedelta(minutes=9))
+        self.assertIsNotNone(kept["survey"])  # 경계 포함
+
+    def test_game_ended_after_cutoff_is_unfinished(self):
+        g = game("g1", "p1", [ev("game_started", 0, 0), ev("game_ended", 70, 9)], result={"completed": True})
+        s = m.game_summary(g, T0 + timedelta(minutes=60))
+        self.assertEqual((s["unfinished"], s["ended_after_cutoff"], s["ended_at"]), (True, True, None))
+        self.assertFalse(m.game_summary(g)["unfinished"])
 
 
 class CommandTimeTests(unittest.TestCase):
@@ -162,8 +172,8 @@ class AggregateTests(unittest.TestCase):
         fi = m.aggregate([m.game_summary(g)])["free_input"]
         self.assertEqual((fi["none_of_these"], fi["give_up_rate"], fi["cancel_rate"]), (1, 0.5, 0.0))
 
-    def test_survey_denominator_counts_games_ended_after_cutoff(self):
-        """11/8 사용자 결정: 설문 응답률 분모는 끝난 판 전부(마감 뒤에 끝난 판도 설문이 뜬다)."""
+    def test_snapshot_cuts_endings_and_surveys_and_counts_unfinished(self):
+        """ut-metrics-1.1(11/8 사용자 결정): 마감 뒤 종료·설문은 세지 않고, 그때 진행 중이던 판은 미종료로 따로 센다."""
         on_time = game("g1", "p1", [ev("game_started", 0, 0), ev("game_ended", 50, 1),
                                     ev("survey_submitted", 51, 2, payload={"skipped": False})],
                        result={"completed": True})
@@ -174,10 +184,26 @@ class AggregateTests(unittest.TestCase):
         cutoff = T0 + timedelta(minutes=60)
         out = m.aggregate([m.game_summary(g, cutoff) for g in (on_time, late, open_game)])
         self.assertEqual(out["games_completed"], 1)  # 마감 뒤 종료는 미완주
-        self.assertEqual(out["survey"]["games_ended"], 2)
-        self.assertEqual(out["survey"]["answered"], 2)
+        self.assertEqual(out["games_unfinished"], 2)  # late(마감 뒤 종료) + open_game
+        self.assertEqual(out["games_ended_after_cutoff"], 1)
+        self.assertEqual(out["survey"]["games_ended"], 1)
+        self.assertEqual(out["survey"]["answered"], 1)
         self.assertEqual(out["survey"]["response_rate"], 1.0)
-        self.assertEqual(out["survey"]["response_rate_of_started"], round(2 / 3, 4))
+        self.assertEqual(out["survey"]["response_rate_of_started"], round(1 / 3, 4))
+
+    def test_preset_filter(self):
+        games = [game("g1", "p1", [ev("game_started", 0, 0)]),
+                 game("g2", "p2", [ev("game_started", 0, 0)], preset="base7")]
+        self.assertEqual([g["game_id"] for g in m.scope_games(games, preset_ids={"base6"})], ["g1"])
+        self.assertEqual(len(m.scope_games(games)), 2)
+
+    def test_version_counts(self):
+        rows = [dict(game("g1", "p1", []), rule_version="r1", engine_version="e", content_version="c1"),
+                dict(game("g2", "p2", []), rule_version="r1", engine_version="e", content_version="c1"),
+                dict(game("g3", "p3", []), rule_version="r1", engine_version="e", content_version="c2")]
+        self.assertEqual(m.version_counts(rows),
+                         [{"rule_version": "r1", "engine_version": "e", "content_version": "c1", "games": 2},
+                          {"rule_version": "r1", "engine_version": "e", "content_version": "c2", "games": 1}])
 
     def test_empty_scope_has_no_division_error(self):
         out = m.aggregate([])
@@ -228,7 +254,7 @@ class MetricsCliTests(unittest.TestCase):
         doc = json.loads(out.getvalue())
         self.assertEqual(doc["definition_version"], m.DEFINITION_VERSION)
         self.assertEqual(doc["metrics"]["games_completed"], 0)  # 13:00 시작, 14:10 종료 > 14:00 마감
-        self.assertEqual(doc["definition_version"], "ut-metrics-1.0")
+        self.assertEqual(doc["definition_version"], "ut-metrics-1.1")
         self.assertNotIn("needs_confirmation", doc)
         self.assertIn("give_up_rate", doc["definitions"])
 
@@ -242,6 +268,34 @@ class MetricsCliTests(unittest.TestCase):
             with redirect_stdout(out):
                 m.main(["metrics", "--games", str(path), "--cutoff", "2026-11-09T14:00"])
         self.assertEqual(json.loads(out.getvalue())["metrics"]["games_started"], 1)
+
+    def test_default_cutoff_is_usertest_close_and_preset_flag(self):
+        """기본 마감 = 11/10 18:00 KST(스냅숏). none이면 자르지 않는다. --preset은 그 프리셋 판만."""
+        close = datetime(2026, 11, 10, 9, 0, tzinfo=timezone.utc)  # 18:00 KST
+        started = (close - timedelta(minutes=20)).isoformat()
+        ended = (close + timedelta(minutes=5)).isoformat()
+        before = {"game_id": "g1", "player_pseudonym": "p1", "source": "human", "preset_id": "base6",
+                  "events": [{"event_id": "a", "event_type": "game_started", "occurred_at": started},
+                             {"event_id": "b", "event_type": "game_ended", "occurred_at": ended}],
+                  "commands": [], "result": {"completed": True}}
+        other = dict(before, game_id="g2", player_pseudonym="p2", preset_id="base7")
+        runs = {}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "games.json"
+            path.write_text(json.dumps({"engine_version": "paldo-engine", "games": [before, other]}), encoding="utf-8")
+            for name, extra in (("default", []), ("none", ["--cutoff", "none"]), ("preset", ["--preset", "base6"])):
+                out = io.StringIO()
+                with redirect_stdout(out):
+                    m.main(["metrics", "--games", str(path)] + extra)
+                runs[name] = json.loads(out.getvalue())
+        self.assertEqual(runs["default"]["cutoff"], "2026-11-10T18:00:00+09:00")
+        self.assertEqual(runs["default"]["metrics"]["games_unfinished"], 2)
+        self.assertEqual(runs["default"]["metrics"]["games_completed"], 0)
+        self.assertIsNone(runs["none"]["cutoff"])
+        self.assertEqual(runs["none"]["metrics"]["games_completed"], 2)
+        self.assertEqual(runs["preset"]["metrics"]["games_started"], 1)
+        self.assertEqual(runs["preset"]["filters"]["presets"], ["base6"])
+        self.assertEqual(runs["default"]["export_engine_version"], "paldo-engine")
 
 
 if __name__ == "__main__":

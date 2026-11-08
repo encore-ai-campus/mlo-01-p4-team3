@@ -2,11 +2,11 @@
 
 입력은 `server/infra/ut_export.py games`의 JSON(정식 테스트, 사전 테스트)과 학습·개발 세트 파일, 개인정보 검수 결과다.
 
-계층: 도메인 `normalize`·`sentences_of`·`split_users`·`build_freeze`(순수 함수) / 응용·표현 `main`(파일 읽기·쓰기).
+계층: 도메인 `normalize`·`snapshot`·`sentences_of`·`split_users`·`build_freeze`(순수 함수) / 응용·표현 `main`(파일 읽기·쓰기).
 
     python -m tools.ut_freeze --games usertest.json --pretest-games pretest.json --pm-pseudonym <PM 가명>
-        --seed 20261109 --exclude-set train.jsonl --exclude-set dev.jsonl --privacy-review review.json
-        [--session-id S] --out-dir <동결 폴더>
+        --seed 20261110 --exclude-set train.jsonl --exclude-set dev.jsonl --privacy-review review.json
+        [--cutoff 2026-11-10T18:00:00+09:00] [--session-id S] --out-dir <동결 폴더>
 
 규칙(정의 버전 `FREEZE_VERSION`):
 - 문장 = `intent_attempt` 최초 이벤트의 마스킹된 문장(시도별 1건, 빈 문장 제외). 정규화 `normalize`(NFC, 앞뒤 공백 제거, 연속 공백 1칸).
@@ -15,6 +15,8 @@
 - test_human = 사전 테스트 PM 문장(`pm: true`) + 평가 사용자 문장 − 개인정보 검수 제외.
 - 검사: 평가·학습 사용자 교집합 0, 평가 문장과 학습 후보·외부 세트 문장의 정규화 교집합 0. 충돌이 있으면 실패(`--drop-conflicts`면 평가에서 빼고 수를 보고).
 - 동결 기록: Delta 버전 대신 동결 폴더의 `manifest.json`(파일별 바이트 수·sha256)을 쓴다(11/8 사용자 결정, 집계는 Mongo·계정 DB 직접).
+- 스냅숏(`ut-freeze-1.1`, 11/8 사용자 결정): 정식 테스트 18:00 클로즈가 스냅숏이다. 정식 테스트 판은 `--cutoff`(기본 11/10 18:00 KST,
+  `tools/ut_metrics.py`와 같은 값) 뒤에 시작한 판을 빼고, 남은 판도 그 시각 뒤 이벤트를 버린 뒤 분할한다. 지표 집계와 같은 범위다.
 """
 from __future__ import annotations
 
@@ -25,15 +27,42 @@ import random
 import re
 import sys
 import unicodedata
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-FREEZE_VERSION = "ut-freeze-1.0"
+FREEZE_VERSION = "ut-freeze-1.1"
+DEFAULT_CUTOFF = "2026-11-10T18:00:00+09:00"  # tools/ut_metrics.py DEFAULT_CUTOFF와 같다(테스트로 대조)
+KST = timezone(timedelta(hours=9))
 NORMALIZE_VERSION = "norm-1"
 
 
 def normalize(text):
     """비교용 정규화: NFC, 앞뒤 공백 제거, 연속 공백 1칸. 대소문자·문장부호는 바꾸지 않는다."""
     return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text or "")).strip()
+
+
+def _moment(value):
+    """ISO 8601 → 시간대 있는 시각. 시간대가 없으면 UTC(판 기록은 UTC로 저장된다)."""
+    if not value:
+        return None
+    moment = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
+def snapshot(games, cutoff):
+    """마감 시각의 스냅숏: 그 뒤에 시작한 판을 빼고, 남은 판에서 그 뒤 이벤트를 버린다. 시각 없는 이벤트는 남긴다."""
+    if cutoff is None:
+        return list(games)
+    kept = []
+    for game in games:
+        events = game.get("events", [])
+        start = next((_moment(e.get("occurred_at")) for e in events if e.get("event_type") == "game_started"), None)
+        start = start or _moment(game.get("created_at"))
+        if start is not None and start > cutoff:
+            continue
+        cut = [e for e in events if (_moment(e.get("occurred_at")) or cutoff) <= cutoff]
+        kept.append({**game, "events": cut})
+    return kept
 
 
 def sentences_of(games, pm_pseudonyms=(), session_ids=()):
@@ -166,12 +195,18 @@ def main(argv=None):
     parser.add_argument("--privacy-review", required=True, help="필수, 제외가 없으면 {\"exclude\": []}. 형식 "
                         '{"exclude": [{"attempt_id": ..., "reason": ...}]}')
     parser.add_argument("--drop-conflicts", action="store_true")
+    parser.add_argument("--cutoff", default=DEFAULT_CUTOFF,
+                        help="정식 테스트 스냅숏 시각(시간대 없으면 KST, 기본 11/10 18:00 KST, none이면 자르지 않음)")
     parser.add_argument("--out-dir", required=True)
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     pm = set(args.pm_pseudonym)
-    games = _load_games(args.games)
+    cutoff = None
+    if args.cutoff and args.cutoff.lower() != "none":
+        cutoff = datetime.fromisoformat(args.cutoff.replace("Z", "+00:00"))
+        cutoff = cutoff if cutoff.tzinfo else cutoff.replace(tzinfo=KST)
+    games = snapshot(_load_games(args.games), cutoff)
     usertest = sentences_of(games, pm, set(args.session_id))
     pretest = [r for r in sentences_of(_load_games(args.pretest_games), pm) if r["pm"]]
     external = [row for path in args.exclude_set for row in _load_rows(path)]
@@ -181,6 +216,7 @@ def main(argv=None):
                           players_of(games, pm, set(args.session_id)))
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    result["report"]["cutoff"] = cutoff.isoformat() if cutoff else None
     detail = {**result["report"], "conflicts": result["conflicts"], "user_overlap_ids": result["user_overlap"]}
     print(json.dumps(result["report"], ensure_ascii=False, indent=2))
     if not result["report"]["ok"]:

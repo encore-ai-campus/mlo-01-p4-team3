@@ -181,6 +181,28 @@ class CliTests(unittest.TestCase):
         self.assertEqual(names, ["report_failed.json", "test_human.jsonl"])
         self.assertEqual(kept, "previous\n")
 
+    def test_snapshot_drops_games_and_events_after_cutoff(self):
+        """ut-freeze-1.1: 18:00 클로즈 스냅숏. 뒤에 시작한 판은 빠지고, 남은 판의 뒤 이벤트(문장)도 빠진다."""
+        from datetime import datetime, timezone
+        cutoff = datetime(2026, 11, 10, 9, 0, tzinfo=timezone.utc)
+        early = {"game_id": "g1", "player_pseudonym": "u1", "source": "human", "events": [
+            {"event_id": "a", "event_type": "game_started", "occurred_at": "2026-11-10T08:50:00+00:00"},
+            {"event_id": "b", "event_type": "intent_attempt", "occurred_at": "2026-11-10T08:55:00+00:00",
+             "payload": {"attempt_id": "t1", "text": "안"}},
+            {"event_id": "c", "event_type": "intent_attempt", "occurred_at": "2026-11-10T09:05:00+00:00",
+             "payload": {"attempt_id": "t2", "text": "밖"}}]}
+        late = {"game_id": "g2", "player_pseudonym": "u2", "source": "human", "events": [
+            {"event_id": "d", "event_type": "game_started", "occurred_at": "2026-11-10T09:01:00+00:00"}]}
+        snap = f.snapshot([early, late], cutoff)
+        self.assertEqual([g["game_id"] for g in snap], ["g1"])
+        self.assertEqual([r["text"] for r in f.sentences_of(snap)], ["안"])
+        self.assertEqual(f.players_of(snap), ["u1"])
+        self.assertEqual(len(f.snapshot([early, late], None)), 2)
+
+    def test_default_cutoff_matches_metrics(self):
+        from tools import ut_metrics
+        self.assertEqual(f.DEFAULT_CUTOFF, ut_metrics.DEFAULT_CUTOFF)
+
     def test_review_and_exclude_set_are_required(self):
         for argv in (["--games", "g.json", "--seed", "1", "--exclude-set", "t.jsonl", "--out-dir", "o"],
                      ["--games", "g.json", "--seed", "1", "--privacy-review", "r.json", "--out-dir", "o"]):
