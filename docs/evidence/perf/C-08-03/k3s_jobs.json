@@ -1,0 +1,64 @@
+{
+  "task": "C-08-03",
+  "commit": "6960f28ab4dd639c998a521e1a1852f794abe6ad",
+  "generated_at": "2026-11-08T14:29:47Z",
+  "source": "k3s Ready·노드별 실제 Job 완료 CRI 로그, verify_simulation.py 공식 bronze 전체 seq/hash 대사",
+  "metrics": {
+    "ready_nodes": {
+      "value": 2,
+      "unit": "노드"
+    },
+    "first_games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "first_events": {
+      "value": 4637,
+      "unit": "건"
+    },
+    "final_games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "final_events": {
+      "value": 9536,
+      "unit": "건"
+    },
+    "total_games": {
+      "value": 100,
+      "unit": "판"
+    },
+    "total_events": {
+      "value": 14173,
+      "unit": "건"
+    },
+    "hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "lost": {
+      "value": 0,
+      "unit": "건"
+    },
+    "duplicates": {
+      "value": 0,
+      "unit": "건"
+    },
+    "illegal_commands": {
+      "value": 0,
+      "unit": "건"
+    },
+    "measured_notebooks": {
+      "value": 5,
+      "unit": "대"
+    },
+    "project_vms_up": {
+      "value": 19,
+      "unit": "대"
+    },
+    "project_vms_total": {
+      "value": 20,
+      "unit": "대"
+    }
+  }
+}
