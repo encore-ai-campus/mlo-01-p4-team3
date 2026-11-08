@@ -20,7 +20,7 @@ def check(origin,directory,phase,certificate_interstitial=False):
     actor_path=directory/'actor-private.json';state_path=directory/'state-private.json'
     if phase=='register':
         if actor_path.exists():raise ValueError('actor_already_exists')
-        actor={'username':'c07_ui_'+uuid.uuid4().hex[:10],'password':'Test-'+secrets.token_urlsafe(20)+'9a!'}
+        actor={'username':'c07_ui_'+uuid.uuid4().hex[:10],'password':secrets.token_urlsafe(24)+'9a!'}
         write_private(actor_path,actor)
     else:actor=json.loads(actor_path.read_text())
     with sync_playwright() as p:
