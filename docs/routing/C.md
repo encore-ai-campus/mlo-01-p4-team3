@@ -28,7 +28,7 @@
 | 저장소나 Kafka 교체 | 인프라 `server/infra/`, `docs/contracts/ports.md` 2절 |
 | 웹 운영 조립(엔진·의심 모델·해석기·렌더러·보조 기록 연결) 바꾸기 | 인프라 `server/infra/game_factory.py`. Mongo 연결·컬렉션은 B 실행 자원 `server/paldo_web/mongo.py`, 웹 조립 경계 `server/paldo_web/composition.py`, 로컬 실행 순서 [`docs/modules/web.md`](../modules/web.md) 사용법 |
 | Mongo 계약·CAS·콘텐츠 적재 확인 | `tests/infra/test_mongo_repo.py`, `tools/perf/mongo_repo_bench.py`, `tools/load_content.py` |
-| 공식 게임 토픽 bronze 적재·재처리 | `pipeline/README.md`, `pipeline/spark/ingest_bronze.py`, 계약 단위 테스트 `tests/contract/test_pipeline_bronze.py` |
+| 공식 게임·광고 bronze·silver·학습 export·재처리 | `pipeline/README.md`, `pipeline/spark/{ingest_bronze,build_silver,join_labels,verify_run}.py`, `pipeline/install_bronze_service.py`, 계약 테스트 `test_pipeline_bronze.py`·`test_pipeline_silver.py` |
 | 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |
 | VM 상태 점검(기동·자원·디스크·스냅샷) | `ops/inventory_check.md`(방법과 20대 표), `ops/inventory_host.ps1`, `tools/perf/vm_probe.sh` |
 | RunPod GPU 실험·자원 확정 조건 | `ops/runbook/runpod.md`, `vm_roles.md`, `schedule.md` |
