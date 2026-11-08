@@ -17,7 +17,7 @@
 | `pipeline/spark/` | 인프라(배치) | C | 공식 게임 봉투 검증(`bronze_contract.py`), Kafka → Delta bronze 멱등 적재(`ingest_bronze.py`). 사용법·미완 범위는 `pipeline/README.md` |
 | `ops/compose/` | 인프라 | C | 로컬 개발용 Compose(`dev.yml`), `.env` 생성·Garage 초기화·스모크(`run.py`), 패키지 확인(`pycheck.py`), 팀원 절차·점검표(`README.md`) |
 | `ops/` VM 점검 | 인프라(운영) | C | VM 점검표 `inventory_check.md`, 호스트 점검 `inventory_host.ps1`(노트북 Windows), VM 안 점검 `tools/perf/vm_probe.sh` |
-| `ops/runbook/` | 인프라(운영) | C | 실행 시간표 `schedule.md`, VM 역할·3차↔4차 이름·디스크 예산 `vm_roles.md` |
+| `ops/runbook/` | 인프라(운영) | C | 실행 시간표 `schedule.md`, VM 역할·3차↔4차 이름·디스크 예산 `vm_roles.md`, 사용자 테스트 웹 장애 대처 `user_test_incident.md`(현장 진행 E, 서버 조치 C) |
 
 ## 작업별 위치
 
