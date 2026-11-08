@@ -50,6 +50,18 @@ class MongoGameSessions(TestCase):
         runtime.configure()
         return runtime
 
+    def test_ad_identity_concurrent_first_create_and_read_only_reuse(self):
+        """실제 Mongo의 동시 최초 생성은 UUID 하나이며 재조회는 갱신하지 않는다."""
+        store = self.runtime.sessions.store
+        key = str(uuid.uuid4())
+        with ThreadPoolExecutor(max_workers=10) as pool:
+            ids = list(pool.map(lambda _: store.ad_identity(self.players[0], key), range(20)))
+        self.assertEqual(len(set(ids)), 1)
+        with patch.object(store.identities, 'find_one_and_update', side_effect=AssertionError('read only')):
+            self.assertEqual(store.ad_identity(self.players[0], key), ids[0])
+        store.delete_player(self.players[0])
+        self.assertNotEqual(store.ad_identity(self.players[0], key), ids[0])
+
     def cleanup_mongo(self):
         """이 시험의 정확한 접두어가 붙은 5개 컬렉션만 삭제한다."""
         configure_game_service(None)
