@@ -2,38 +2,44 @@
 
 ## 무엇을
 
-인프라 배치 계층이다. `pipeline/spark/bronze_contract.py`가 공식 EventEnvelope·토픽·순번·UTC·진실 공개 경계를 검증한다. `ingest_bronze.py`는 Kafka 게임 토픽 6개를 읽어 Delta bronze에 event_id MERGE하고 입력 offset 범위·Delta 버전을 남긴다. 계약 검증은 표준 라이브러리만 쓰고 Spark/Delta import는 실행 시점에 한다.
+인프라 배치 계층이다. 공식 게임 6개·광고 4개 토픽을 Kafka에서 읽어 Delta bronze에 ID/hash 기반 MERGE한다. `pipeline/spark/bronze_contract.py`는 기존 게임 EventEnvelope·광고 serde를 검증한다. `build_silver.py`는 관찰별 후보 TrainingRow를 만들고 `join_labels.py`는 정상 종료 뒤 truth만 라벨로 붙인다. 학습 export는 마을 관찰자·라벨 있음·부하 아님 조건이며 source를 유지한다. `tools/reconcile_game_events.py`와 `pipeline/spark/export_faults.py`는 실제 장애 후 Mongo/Kafka/bronze ID·seq·hash를 대조한다.
 
 ## 왜
 
-[이벤트 계약](../contracts/events.md)과 C-07-01은 bronze부터 event_id 중복 제거를 요구한다. 전송 offset별 저장만으로는 같은 이벤트의 재발행이 여러 행이 된다. 기존 EventEnvelope·serde를 재사용해 별도 이벤트 형식이 생기지 않도록 했다. 내용이 다른 ID 충돌과 잘못된 봉투는 조용히 건너뛰지 않는다.
+전송 offset만 저장하면 동일 이벤트 재발행이 중복 학습으로 이어진다. event_id와 내용 hash를 함께 검사해 충돌은 실패시키고 정상 재전송은 삽입하지 않는다. 진실은 특징이 아니라 정상 종료 뒤 정답으로만 사용한다. 발행 지연 중 게임 저장은 계속되어야 하므로 실제 브로커/발행기 정지와 재개 결과를 판별로 대조한다.
 
 ## 사용법
 
 ```sh
-python -m unittest tests.contract.test_pipeline_bronze -v
+python -m unittest tests.contract.test_pipeline_bronze tests.contract.test_pipeline_silver -v
+python -m unittest tests.contract.test_reconcile_events -v
+python -m tools.reconcile_game_events --mongo "$PRIVATE_MONGO_METADATA" --published "$PRIVATE_KAFKA_METADATA" --bronze "$PRIVATE_BRONZE_METADATA" --out "$PRIVATE_RESULT"
 ```
 
-실제 Spark 제출은 [pipeline/README.md](../../pipeline/README.md)의 외부 설정·의존성 조건을 따른다. 저장소 루트를 PYTHONPATH에 두고 `spark-submit`으로 `pipeline/spark/ingest_bronze.py`를 실행한다.
+Spark 실행·JAR·TLS·지속 서비스와 갱신 순서는 [pipeline/README.md](../../pipeline/README.md)를 따른다. 공식 런처의 bronze 서비스는 `pipeline/install_bronze_service.py`로 등록한다. 지속 bronze를 중지한 뒤 available-now → silver → labels → verify를 실행하고 재시작한다. writer lock·checkpoint는 삭제하지 않는다. C-07-04 HTTPS 안내·측정은 [ops/proxy/README.md](../../ops/proxy/README.md)를 따른다.
 
 ## 설정값
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
-| PALDO_PIPELINE_CONFIG | 없음, 필수 | 저장소 밖 설정 JSON | 주소·인증·저장 경로를 환경별로 선택 |
-| max_offsets | 100 | microbatch 수신 상한 | 드라이버 검증 메모리·지연 변화 |
-| bronze_path | 없음, 필수 | Delta 데이터 경로 | 다른 테이블로 저장 |
-| checkpoint_path | 없음, 필수 | Kafka offset/checkpoint 영속 경로 | 삭제·변경하면 재처리 범위 변화 |
-| lock_path | 없음, 필수 | 단일 호스트 writer lock | 같은 lake에 동일 경로 사용 필요 |
-| audit_dir | 없음, 필수 | 배치별 offset·Delta 버전 JSON | 데이터 경로 밖 영속 위치 권장 |
-| PALDO_LOG_DIR | out/logs | 구조화 로그 위치 | 서비스 계정 쓰기 가능 경로 필요 |
+| PALDO_PIPELINE_CONFIG | 없음 | 저장소 밖 보호 JSON | 주소·TLS·S3·인증 선택 |
+| bronze_path / silver_path / training_export_path | 없음 | 분리된 Delta·TrainingRow JSON 경로 | 대상 데이터·D 인계 위치 변경 |
+| checkpoint_path / lock_path | 없음 | 영속 offset·동일 호스트 단일 writer | 임의 삭제·변경 시 재처리·경합 |
+| audit_dir | 없음 | offset 범위·Delta version·배치 수치 | 감사 기록 위치 변경 |
+| max_offsets | 100 (실측 5000) | 배치 상한 1..10000 | 드라이버 메모리·처리 시간 |
+| PALDO_LOG_DIR | out/logs | JSON 로그 디렉터리 | 서비스 계정 쓰기 가능해야 함 |
+| features_version | public-snapshot-v1 | 관찰 기반 특징 버전 | 다른 D 특징 버전과 명시 변환 필요 |
 
 ## 한계
 
-C-07-01 부분 작업이다. 실제 공식 토픽 Kafka→Delta, 200판 대조와 실행기 Python 확인은 미검증이다. 광고 봉투·silver TrainingRow·truth 조인은 미구현이다. malformed 입력은 스트림을 멈추며 별도 검토·수정 발행이 필요하다. 원문 텍스트 마스킹은 upstream 계약 책임이며 이 작업이 마스킹·삭제 체계를 대신하지 않는다. 단일 호스트 lock이 다른 호스트의 동시 S3 쓰기를 막지는 않는다. 로그는 기존 tools.jsonlog를 재사용하므로 service 필드는 ci이며 운영 서비스 로그 분류 정비는 후속 과제다.
+11/8 실제 엔진 200판의 17,823건을 Kafka/Garage Delta에 쓰고 전량 재발행해 행 수 불변·ID/hash 일치·유실/중복 0을 확인했다. 완료 200판에 라벨, silver 19,191행·export 14,460행이었다. driver와 두 executor 모두 Python 3.14.4, Spark 4.1.3·Delta 4.4.1 Spark 4.1용 JAR·Java 21을 썼다. 장애 두 판 각 52건도 실제 스택에서 일치했다. 해당 값은 검증 스냅샷이며 이후 입력으로 전체 bronze 행 수는 증가한다.
+
+malformed 입력은 스트림을 멈춘다. 조용히 skip하거나 정답을 가공하지 않는다. 마스킹은 upstream 계약 책임이다. 보존 snapshot_json을 모델 특징으로 그대로 사용하면 안 된다. 파일 lock은 다른 호스트의 S3 쓰기를 막지 않는다. export는 overwrite이므로 완료된 실행의 버전으로 D에게 인계한다. 운영 스트림은 bronze이고 silver/labels는 명시 배치다. D 모델 학습·배포, 광고 silver/rejudge/gold(C-08-02), 중앙 관측(C-08-01)은 후속 범위다. 공용 도구 로그의 service 필드는 현재 ci이며 component로 작업을 구분한다.
 
 ## 변경 이력
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
-| C-07-01 | 11/7 | 공식 봉투 기반 bronze 검증·멱등 MERGE·offset/Delta 버전 감사 기록과 계약 테스트를 부분 구현 |
+| C-07-01 | 11/7 | 공식 게임·광고 bronze, 관찰 기반 silver·종료 후 라벨·마을 관찰자 export, 실제 200판 전량 재처리·버전 검증과 지속 서비스. 실측 11/8 |
+| C-07-02 | 11/7 | 실스택 브로커/발행기 정지·재개와 Mongo/Kafka/Delta ID·seq·hash 대조. 실측 11/8 |
+| C-07-04 | 11/7 | pipeline/ops 모듈 일괄 갱신, HTTPS 브라우저·실제 프록시 지연·운영 인계 연결. 실측 11/8 |

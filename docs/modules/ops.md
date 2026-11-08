@@ -4,14 +4,14 @@
 
 ## 무엇을
 
-인프라 계층의 운영 구성이다. 지금 들어 있는 것은 **로컬 개발용 Compose**(`ops/compose/`)뿐이다.
+인프라 계층의 운영 구성이다. 로컬 개발용 Compose(`ops/compose/`), MySQL TLS/분리·PJ4 복제와 앱 런처(`ops/mysql/`), 내부 HTTPS(`ops/proxy/`)를 제공한다.
 
 - `dev.yml`: Mongo(레플리카셋 1노드), Kafka(KRaft 1노드), MySQL, Garage(S3 호환), Prometheus, Grafana를 한 번에 띄운다. 입력은 저장소 루트의 `.env`(비밀값), 출력은 `127.0.0.1`의 서비스 포트다.
 - `run.py`(CLI·흐름·docker/HTTP 호출)와 `devenv.py`(규칙: `.env` 생성 규칙, 점검 판정, S3 서명, 로그 레코드): `.env` 만들기, Garage 초기화, 6개 서비스 기능 확인(스모크).
 - `pycheck.py`: 필수 Python 패키지 5개의 import·간단한 동작 확인. `spark/delta_rw.py`: Spark 컨테이너 안에서 Delta 쓰기·읽기 확인.
 - 영역별 Python 의존성은 저장소 루트 `requirements/`(web·ml·llm·pipeline)에 둔다.
 
-VM 배포(Ansible), Prometheus 수집 대상·경보·대시보드(C-08-01), k3s(C-08-03)는 아직 없다.
+실제 VM 배포는 기존 보호 Ansible 인벤토리를 저장소 밖에서 사용했다. 공개 코드에는 주소·자격정보가 없다. 중앙 Prometheus 수집 대상·경보·대시보드(C-08-01), k3s(C-08-03)는 후속 작업이다.
 
 ## 왜
 
@@ -54,13 +54,17 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 | Mongo `--wiredTigerCacheSizeGB` | 0.25 | WiredTiger 캐시 | 메모리 사용량 |
 | 버킷 | `paldo-lake`, `paldo-mlflow` | Delta·MLflow 아티팩트 | `run.py` `BUCKETS` |
 
-C-06-03 MySQL 생성·분리·복제 검증은 `ops/mysql/README.md`, C-06-04 GPU 실험 인계는 `ops/runbook/runpod.md`를 따른다. MySQL 코드는 dev에 병합됐으며 Kafka 발행기 PR #226은 병합 대기다. 실제 MySQL 복제는 binlog 만료로 중단되어 재구성이 남았다. P-31로 상시 LLM 배정은 없으며 RunPod는 E-10-12 지연 측정만 계획한다.
+MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/README.md`, HTTPS 기동/종료·Chrome/Edge 경고·CA 지문·실제 브라우저/지연 검증은 `ops/proxy/README.md`를 따른다. Kafka 발행기는 dev에 병합됐다. 11/8 PJ4 두 스키마만 복구해 Replica 재시작 뒤 새 marker를 읽었고, 기존 PJ3 기본 GTID 채널은 별도 미복구로 보존했다. P-31로 상시 LLM은 없고 RunPod는 E-10-12 지연 측정만 계획한다.
 
 ## 한계
 
+- 11/8 웹·광고·Outbox·광고 publish/expire/refund와 공식 bronze를 동시 가동했다. 앱 6개 Python 프로세스는 모두 3.14.4이며 web/ads/outbox/광고 작업자 3개 지표 엔드포인트는 모두 HTTP 200이었다. Spark driver/executor 3.14.4도 C-07-01에서 실측했다. 아래 로컬 PC/컨테이너 기록과 VM 실측 범위는 구분한다.
+- 다른 물리 노트북 Chrome에서 실제 인증서 경고 UI Advanced/Proceed → wss 101을 확인했다. 자동 테스트 컨텍스트만 사용했고 OS 신뢰는 바꾸지 않았다. Edge는 안내를 제공하며 직접 실측은 하지 않았다.
+- Mongo의 전용 DB·계정 생성은 관리자 보관 위치 확인 대기다. 현재 허용된 pilot DB에서 content 컬렉션의 content-1.0을 실제 읽는다. B 실제 HTTP 광고 어댑터, C-08-02 광고 대사와 E INT 판정은 별도다.
+
 - 이 결과는 **기준 PC 한 대(11/4)**의 것이다. 다른 노트북은 `ops/compose/README.md` 5절 점검표로 각자 확인해야 한다.
 - 이미지 `mongo:8.0.34`·`mysql:8.4.11`은 11/4 PM 결정(MySQL은 11/5 VM 설치 버전에 맞춰 8.4.13 → 8.4.11)(CI 서비스 컨테이너와 같은 태그)이다. `apache/kafka:4.3.2`는 VM 실측(C-05-01) 전의 잠정값이다.
-- Spark 4.1.3에는 Delta 기본 jar(`delta-spark_2.13:4.4.1`, Spark 4.2.0용)가 맞지 않는다. Spark 4.1용 jar(`delta-spark_4.1_2.13:4.4.1`)로만 확인했다(Spark 공식 컨테이너, Java 17, 로컬 저장). 11/5 PM 승인으로 계약(`tech_stack.md`)에 반영됐다. OpenJDK 21·Garage 조합은 아직 확인하지 않았다.
+- Spark 4.1.3에는 Delta 기본 jar(`delta-spark_2.13:4.4.1`, Spark 4.2.0용)가 맞지 않는다. Spark 4.1용 jar(`delta-spark_4.1_2.13:4.4.1`)로만 확인했다(Spark 공식 컨테이너, Java 17, 로컬 저장). 11/5 PM 승인으로 계약(`tech_stack.md`)에 반영됐다. 11/8 공식 VM 작업에서는 OpenJDK 21·Garage·Spark 4.1용 Delta JAR 조합으로 200판 쓰기/읽기·라벨·재처리를 확인했다(C-07-01).
 - Python은 3.14를 먼저 실측했다(C-05-03 조건 2, 11/4 PM 결정). 필수 5개가 모두 성공해 3.12 재시도는 하지 않았다. 11/5 PM이 ML·LLM Python을 3.14 단일로 확정해 `tech_stack.md`에 반영했다. 같은 날 CI를 포함한 프로젝트 전체를 3.14 단일로 정했다.
 - Python 3.14 필수 5개는 Windows 네이티브와 Linux 컨테이너(`python:3.14`, Debian 13, glibc 2.41)에서 확인했다. Ubuntu VM(nifi-01, llm-01) 자체에서는 확인하지 않았다(manylinux 휠이라 glibc 2.28 이상이면 같을 것으로 보지만 실측 전이다). VM 확인은 D-07-02 6번(학습 VM)과 E-06-07 3번 ②(llm-01)의 완료 조건이다(11/5 PM 결정).
 - `requirements/`의 조사 항목(scikit-learn, shap, mlflow, langgraph, Django, pymongo, PyMySQL, confluent-kafka, prometheus-client, delta-spark)은 3.14 휠이 있는지만 확인했고(`pip --dry-run`), import는 하지 않았다.
@@ -78,3 +82,7 @@ C-06-03 MySQL 생성·분리·복제 검증은 `ops/mysql/README.md`, C-06-04 GP
 | C-06-02 | 11/6 | 공식 Kafka 10종 토픽 RF3·ISR2·보존1일 실적용, 발행·소비 시험 인계 |
 | C-06-03 | 11/6 | MySQL 두 스키마·TLS 계정 분리, 실제 상호 거부·복제 probe 실패와 복구 계획 |
 | C-06-04 | 11/6 | P-31 반영·RunPod 측정 전용와 CPU 잠정값 비교, 자원·시간표·Garage 두 노드 유지 정정 |
+
+| C-07-01 | 11/7 | 공식 Spark/Delta·Garage·실제 Python 버전과 지속 bronze 서비스 인계, 실측 11/8 |
+| C-07-02 | 11/7 | 합성 HTTPS 실스택 장애 검증·인증 상태 호스트 내 유지·임시 프로세스 종료, 실측 11/8 |
+| C-07-04 | 11/7 | Caddy internal TLS·308·헤더·wss·Secure 쿠키·인증서 경고·실제 GET 지연과 참가자 안내, 실측 11/8 |

@@ -1,0 +1,56 @@
+{
+  "task": "C-07-04",
+  "commit": "000ef0b62c93e5cca3f2fe8227b5e8615673ba95",
+  "generated_at": "2026-11-08T06:34:26Z",
+  "source": "python -m tools.perf.api_bench --proxy-profile <same-host protected synthetic actor file> --seconds 60; Chrome 157 actual signup/login/game plus Advanced/Proceed interstitial on different physical laptop",
+  "metrics": {
+    "direct_requests": {
+      "value": 60,
+      "unit": "건"
+    },
+    "direct_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "direct_p50_ms": {
+      "value": 68.669,
+      "unit": "ms"
+    },
+    "direct_p95_ms": {
+      "value": 77.156,
+      "unit": "ms"
+    },
+    "proxy_requests": {
+      "value": 60,
+      "unit": "건"
+    },
+    "proxy_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "proxy_p50_ms": {
+      "value": 68.909,
+      "unit": "ms"
+    },
+    "proxy_p95_ms": {
+      "value": 76.316,
+      "unit": "ms"
+    },
+    "mixed_content": {
+      "value": 0,
+      "unit": "건"
+    },
+    "external_ad_requests": {
+      "value": 0,
+      "unit": "건"
+    },
+    "page_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "wss_status": {
+      "value": 101,
+      "unit": ""
+    }
+  }
+}
