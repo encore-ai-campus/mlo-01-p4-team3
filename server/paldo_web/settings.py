@@ -56,6 +56,9 @@ DATABASES = {"default": {
     "PORT": os.environ.get("PALDO_AUTH_DB_PORT") or "3306",
     "OPTIONS": {"charset": "utf8mb4", "isolation_level": "read committed"},
 }}
+if _db_ca := os.environ.get("PALDO_AUTH_DB_SSL_CA"):
+    DATABASES["default"]["OPTIONS"].update(
+        ssl_ca=_db_ca, ssl_verify_cert=True, ssl_verify_identity=True)
 import pymysql
 pymysql.install_as_MySQLdb()
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
