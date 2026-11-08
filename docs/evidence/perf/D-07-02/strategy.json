@@ -1,0 +1,372 @@
+{
+  "task": "D-07-02",
+  "commit": "3c2841163688ac529238451445108eceea1f7c51",
+  "generated_at": "2026-11-08T02:18:01Z",
+  "source": "python -m ml.suspicion.train --rows 'out\\suspicion\\1108\\train-v2\\data\\rows.jsonl' --manifest 'out\\suspicion\\1108\\train-v2\\data\\manifest.json' --out 'out\\suspicion\\1108\\strategy-run' --seed 7 --record D-07-02 --heldout-rows 'out\\suspicion\\1108\\heldout-v2\\data\\rows.jsonl' --heldout-manifest 'out\\suspicion\\1108\\heldout-v2\\data\\manifest.json' --result-name strategy",
+  "metrics": {
+    "logistic_log_loss": {
+      "value": 1.0093181462516494,
+      "unit": ""
+    },
+    "logistic_top1_accuracy": {
+      "value": 0.4868421052631579,
+      "unit": ""
+    },
+    "logistic_ece": {
+      "value": 0.023725062178298728,
+      "unit": ""
+    },
+    "heldout_logistic_log_loss": {
+      "value": 1.1263528774880074,
+      "unit": ""
+    },
+    "heldout_logistic_top1_accuracy": {
+      "value": 0.4661885245901639,
+      "unit": ""
+    },
+    "heldout_logistic_ece": {
+      "value": 0.0494353075305388,
+      "unit": ""
+    },
+    "heldout_post_night_logistic_log_loss": {
+      "value": 0.5402153888784393,
+      "unit": ""
+    },
+    "heldout_post_night_logistic_top1_accuracy": {
+      "value": 0.7142857142857143,
+      "unit": ""
+    },
+    "heldout_post_night_logistic_ece": {
+      "value": 0.04901767548903902,
+      "unit": ""
+    },
+    "lightgbm_log_loss": {
+      "value": 1.0040093655712632,
+      "unit": ""
+    },
+    "lightgbm_top1_accuracy": {
+      "value": 0.49473684210526314,
+      "unit": ""
+    },
+    "lightgbm_ece": {
+      "value": 0.03131043967117242,
+      "unit": ""
+    },
+    "heldout_lightgbm_log_loss": {
+      "value": 1.0530696063671596,
+      "unit": ""
+    },
+    "heldout_lightgbm_top1_accuracy": {
+      "value": 0.4979508196721312,
+      "unit": ""
+    },
+    "heldout_lightgbm_ece": {
+      "value": 0.027694876182474824,
+      "unit": ""
+    },
+    "heldout_post_night_lightgbm_log_loss": {
+      "value": 0.4366574343670698,
+      "unit": ""
+    },
+    "heldout_post_night_lightgbm_top1_accuracy": {
+      "value": 0.7639751552795031,
+      "unit": ""
+    },
+    "heldout_post_night_lightgbm_ece": {
+      "value": 0.12758952242974061,
+      "unit": ""
+    },
+    "rule_v0_log_loss": {
+      "value": 1.2181022207164525,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy": {
+      "value": 0.3960526315789474,
+      "unit": ""
+    },
+    "rule_v0_ece": {
+      "value": 0.04105389038054428,
+      "unit": ""
+    },
+    "heldout_rule_v0_log_loss": {
+      "value": 1.2215834216748238,
+      "unit": ""
+    },
+    "heldout_rule_v0_top1_accuracy": {
+      "value": 0.3760245901639344,
+      "unit": ""
+    },
+    "heldout_rule_v0_ece": {
+      "value": 0.046546102474137145,
+      "unit": ""
+    },
+    "heldout_post_night_rule_v0_log_loss": {
+      "value": 0.5514398882539431,
+      "unit": ""
+    },
+    "heldout_post_night_rule_v0_top1_accuracy": {
+      "value": 0.7763975155279503,
+      "unit": ""
+    },
+    "heldout_post_night_rule_v0_ece": {
+      "value": 0.16008146600601558,
+      "unit": ""
+    },
+    "games": {
+      "value": 300,
+      "unit": "판"
+    },
+    "rows": {
+      "value": 18058,
+      "unit": "행"
+    },
+    "train_seconds": {
+      "value": 3.998866000212729,
+      "unit": "s"
+    },
+    "train_games": {
+      "value": 210,
+      "unit": "판"
+    },
+    "dev_games": {
+      "value": 45,
+      "unit": "판"
+    },
+    "test_games": {
+      "value": 45,
+      "unit": "판"
+    },
+    "input_games": {
+      "value": 300,
+      "unit": "건"
+    },
+    "input_completed_games": {
+      "value": 300,
+      "unit": "건"
+    },
+    "input_excluded_incomplete_games": {
+      "value": 0,
+      "unit": "건"
+    },
+    "input_observations": {
+      "value": 6724,
+      "unit": "건"
+    },
+    "input_town_observations": {
+      "value": 5036,
+      "unit": "건"
+    },
+    "input_decisions_checked": {
+      "value": 6724,
+      "unit": "건"
+    },
+    "input_town_decisions_checked": {
+      "value": 5036,
+      "unit": "건"
+    },
+    "input_town_votes_checked": {
+      "value": 1724,
+      "unit": "건"
+    },
+    "input_legal_action_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "input_town_inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "input_knowledge_boundary_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "heldout_input_games": {
+      "value": 60,
+      "unit": "건"
+    },
+    "heldout_input_completed_games": {
+      "value": 60,
+      "unit": "건"
+    },
+    "heldout_input_excluded_incomplete_games": {
+      "value": 0,
+      "unit": "건"
+    },
+    "heldout_input_observations": {
+      "value": 1291,
+      "unit": "건"
+    },
+    "heldout_input_town_observations": {
+      "value": 976,
+      "unit": "건"
+    },
+    "heldout_input_decisions_checked": {
+      "value": 1291,
+      "unit": "건"
+    },
+    "heldout_input_town_decisions_checked": {
+      "value": 976,
+      "unit": "건"
+    },
+    "heldout_input_town_votes_checked": {
+      "value": 329,
+      "unit": "건"
+    },
+    "heldout_input_legal_action_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "heldout_input_town_inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "heldout_input_knowledge_boundary_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "logistic_log_loss_ci_low": {
+      "value": 0.9014205675763118,
+      "unit": ""
+    },
+    "logistic_log_loss_ci_high": {
+      "value": 1.13855287765796,
+      "unit": ""
+    },
+    "logistic_top1_accuracy_ci_low": {
+      "value": 0.38227146814404434,
+      "unit": ""
+    },
+    "logistic_top1_accuracy_ci_high": {
+      "value": 0.5787451984635084,
+      "unit": ""
+    },
+    "logistic_ece_ci_low": {
+      "value": 0.01982727057530673,
+      "unit": ""
+    },
+    "logistic_ece_ci_high": {
+      "value": 0.05694908042563468,
+      "unit": ""
+    },
+    "heldout_post_night_logistic_log_loss_ci_low": {
+      "value": 0.3656484050479846,
+      "unit": ""
+    },
+    "heldout_post_night_logistic_log_loss_ci_high": {
+      "value": 0.7113237116350458,
+      "unit": ""
+    },
+    "heldout_post_night_logistic_top1_accuracy_ci_low": {
+      "value": 0.5705128205128205,
+      "unit": ""
+    },
+    "heldout_post_night_logistic_top1_accuracy_ci_high": {
+      "value": 0.8625,
+      "unit": ""
+    },
+    "heldout_post_night_logistic_ece_ci_low": {
+      "value": 0.04633123716723128,
+      "unit": ""
+    },
+    "heldout_post_night_logistic_ece_ci_high": {
+      "value": 0.16695488421603155,
+      "unit": ""
+    },
+    "lightgbm_log_loss_ci_low": {
+      "value": 0.8824719883535638,
+      "unit": ""
+    },
+    "lightgbm_log_loss_ci_high": {
+      "value": 1.1275036642592975,
+      "unit": ""
+    },
+    "lightgbm_top1_accuracy_ci_low": {
+      "value": 0.38603988603988604,
+      "unit": ""
+    },
+    "lightgbm_top1_accuracy_ci_high": {
+      "value": 0.6007237635705669,
+      "unit": ""
+    },
+    "lightgbm_ece_ci_low": {
+      "value": 0.018725133740224394,
+      "unit": ""
+    },
+    "lightgbm_ece_ci_high": {
+      "value": 0.07459217462370835,
+      "unit": ""
+    },
+    "heldout_post_night_lightgbm_log_loss_ci_low": {
+      "value": 0.29334095368409135,
+      "unit": ""
+    },
+    "heldout_post_night_lightgbm_log_loss_ci_high": {
+      "value": 0.5960264406273036,
+      "unit": ""
+    },
+    "heldout_post_night_lightgbm_top1_accuracy_ci_low": {
+      "value": 0.6181818181818182,
+      "unit": ""
+    },
+    "heldout_post_night_lightgbm_top1_accuracy_ci_high": {
+      "value": 0.8795811518324608,
+      "unit": ""
+    },
+    "heldout_post_night_lightgbm_ece_ci_low": {
+      "value": 0.08588741550052825,
+      "unit": ""
+    },
+    "heldout_post_night_lightgbm_ece_ci_high": {
+      "value": 0.18400083369851575,
+      "unit": ""
+    },
+    "rule_v0_log_loss_ci_low": {
+      "value": 1.1247469192268351,
+      "unit": ""
+    },
+    "rule_v0_log_loss_ci_high": {
+      "value": 1.3101454977559184,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy_ci_low": {
+      "value": 0.30248618784530384,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy_ci_high": {
+      "value": 0.4943253467843632,
+      "unit": ""
+    },
+    "rule_v0_ece_ci_low": {
+      "value": 0.018825680040575197,
+      "unit": ""
+    },
+    "rule_v0_ece_ci_high": {
+      "value": 0.08973517279482227,
+      "unit": ""
+    },
+    "heldout_post_night_rule_v0_log_loss_ci_low": {
+      "value": 0.4291987730970604,
+      "unit": ""
+    },
+    "heldout_post_night_rule_v0_log_loss_ci_high": {
+      "value": 0.6590507025066313,
+      "unit": ""
+    },
+    "heldout_post_night_rule_v0_top1_accuracy_ci_low": {
+      "value": 0.6538461538461539,
+      "unit": ""
+    },
+    "heldout_post_night_rule_v0_top1_accuracy_ci_high": {
+      "value": 0.9044585987261147,
+      "unit": ""
+    },
+    "heldout_post_night_rule_v0_ece_ci_low": {
+      "value": 0.07758546364347331,
+      "unit": ""
+    },
+    "heldout_post_night_rule_v0_ece_ci_high": {
+      "value": 0.26427948618585007,
+      "unit": ""
+    }
+  }
+}
