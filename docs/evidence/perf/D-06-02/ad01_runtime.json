@@ -1,0 +1,36 @@
+{
+  "task": "D-06-02",
+  "commit": "64b88d8ee58c3fcba565f0120522900ec1071fa6",
+  "generated_at": "2026-11-08T12:51:53Z",
+  "source": "read-only SSH systemd/proc/journal/loopback Prometheus audit; deployed D sources compared by SHA-256",
+  "metrics": {
+    "verified_worker_roles": {
+      "value": 3,
+      "unit": "건"
+    },
+    "distinct_service_processes": {
+      "value": 4,
+      "unit": "건"
+    },
+    "matching_source_files": {
+      "value": 6,
+      "unit": "건"
+    },
+    "publish_processed": {
+      "value": 4.0,
+      "unit": "건"
+    },
+    "expire_processed": {
+      "value": 1.0,
+      "unit": "건"
+    },
+    "refund_processed": {
+      "value": 0.0,
+      "unit": "건"
+    },
+    "historical_peer_disconnects": {
+      "value": 2,
+      "unit": "건"
+    }
+  }
+}
