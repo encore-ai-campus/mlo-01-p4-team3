@@ -1,5 +1,11 @@
 # 서버 설계
 
+## B-10-02 지도·공개 주민 초상
+
+village_guide 태그 → api/village_assets.py → village_assets.html로 연결한다. manifest map:village의 regions와 PNG 원본 크기로 장소 상자의 백분율 위치를 계산하고 place 이미지·이름을 함께 표시한다. 판 상태·역할·행적을 입력받지 않는 고정 안내다. 주민 풀은 manifest 기본 portrait 전부(표정 제외), 이름은 에셋 규격의 공개 주민 풀 fixtures/content_min/bundle.json에 현재 content/bundle_v1.json의 이름을 우선 적용한다. 무당 두 모습도 포함하며 현재 판 참가자 목록과 구분한다.
+
+asset_attribution은 SOURCES.md 첫 공개 출처 줄만 HTML 이스케이프해 화면 하단에 표시한다. 생성 프롬프트 전체는 전달하지 않는다. 파일은 요청마다 읽어 좌표·출처 수정이 다음 조회에 반영된다. JSON API·상태·이벤트·DB는 바꾸지 않는다. 밤에는 이번 지도·전체 초상 패널을 추가하지 않으며 기존 밤 화면의 VN 개편은 B-10-07 범위다.
+
 ## B-09-06 VN 표시 경계
 
 [VN 규칙](../docs/contracts/vn.md)은 E 검토 대기인 후속 화면 설계다. PlayerView·명령·이벤트·저장소를 변경하지 않는다. 읽기 상태는 브라우저에만 두고, 추궁 답변은 기존 render 폴링의 game_id·speech_id·job_id·final 처리를 유지한다. 실제 연결·회귀는 B-10-07에서 수행하며 문서 작성만으로 구현 완료를 주장하지 않는다.
