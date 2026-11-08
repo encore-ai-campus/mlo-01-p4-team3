@@ -31,6 +31,8 @@ SIGNUP_INVITE_CODE = os.environ.get("PALDO_SIGNUP_INVITE_CODE", "")
 GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
 INTENT_PARSER_FACTORY = ""  # 기준선 사용 시 "intent.parser.BaselineIntentParser"를 지정한다.
 SESSION_MONGO_URI = os.environ.get("PALDO_MONGO_URI", "")
+# 회차 없는 일반 판의 content_version(운영 Mongo에 적재된 활성 버전, E-08-14). 비어 있으면 일반 판 시작은 503
+ACTIVE_CONTENT_VERSION = os.environ.get("PALDO_CONTENT_VERSION", "")
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",

@@ -16,11 +16,11 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 
 | 요청 | 처리 경로 |
 |---|---|
-| `GET /` | [accounts/views.py](accounts/views.py)의 계정 메뉴. 자기 가명 ID와 동의한 참가자의 다음 고정 시드 판을 표시한다. |
+| `GET /` | [accounts/views.py](accounts/views.py)의 계정 메뉴. 자기 가명 ID, 동의한 사용자의 "새 게임"(일반 판 시작 폼, 폼마다 새 `start_token`)과 진행 중인 일반 판 이어 하기, 배정된 회차의 다음 고정 시드 판을 표시한다. |
 | `GET·POST /accounts/signup`, `GET·POST /accounts/login`, `POST /accounts/logout` | [accounts/urls.py](accounts/urls.py) → [accounts/views.py](accounts/views.py). 가입은 가명과 동의를 저장하고, 로그인과 로그아웃은 Django 세션을 관리한다. |
 | `GET·POST /admin/login/`, `/admin/` | 로그인은 일반 계정과 같은 [잠금 규칙](accounts/lockout.py)을 통과한다. 관리자 화면은 Django admin이 제공한다. |
 | `GET·POST /admin/sessions` | [api/sessions.py](api/sessions.py) → [app/test_sessions.py](app/test_sessions.py) → [infra/test_sessions.py](infra/test_sessions.py). 운영자가 고정 회차를 조회하고 등록한다. |
-| `POST /games` | [api/views.py](api/views.py) → [api/consent.py](api/consent.py)에서 읽은 가명·동의로 [판 시작](app/usecases.py)을 요청한다. 운영 조립은 회차 배정 정책을 연결한다. htmx는 입력 형식에 관계없이 200 회의 조각을 받고, 일반 HTML 폼은 302로 이동한다. |
+| `POST /games` | [api/views.py](api/views.py) → [api/consent.py](api/consent.py)에서 읽은 가명·동의로 [판 시작](app/usecases.py)을 요청한다. 시작 정책 [app/open_start.py](app/open_start.py)가 `session_id`가 없으면 일반 판(공개 프리셋·서버 랜덤 시드·배포 버전), 있으면 회차 배정 정책([app/test_sessions.py](app/test_sessions.py))으로 나눈다(E-08-14). 기본 조립(`paldo_web/composition.py`)과 운영 Mongo 조립(`paldo_web/mongo.py`)이 같은 정책을 끼운다. `tests/test_open_start.py`가 확인한다. htmx는 입력 형식에 관계없이 200 회의 조각을 받고, 일반 HTML 폼은 302로 이동한다. |
 | `/games/{id}/…`, `/players/me/progress` | [api/urls.py](api/urls.py) → [api/views.py](api/views.py)·[api/interactions.py](api/interactions.py) → [app/](app/). |
 | `POST /games/{id}/utterances`, `POST /games/{id}/utterances/{attempt_id}` | [api/interaction_forms.py](api/interaction_forms.py)가 폼을 공통 DTO로 변환한다. [api/interactions.py](api/interactions.py) → [app/interactions.py](app/interactions.py). [paldo_web/composition.py](paldo_web/composition.py)가 선택한 해석기를 조립할 때 주입한다. JSON은 DTO, htmx는 카드 또는 현재 회의 조각이다. |
 | `GET /games/{id}/renders/{job_id}` | [app/interactions.py](app/interactions.py)의 소유권·완료 상태 검사 뒤 JSON 또는 `speech_line.html`을 반환한다. `speech_line.html`은 발언만 갱신하고 완료하면 폴링을 멈춘다. 회의 진술표는 [api/meeting_view.py](api/meeting_view.py)가 공개 주장으로 만든다. |

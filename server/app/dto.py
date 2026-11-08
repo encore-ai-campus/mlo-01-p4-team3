@@ -21,10 +21,11 @@ from engine.ports import CommandCandidate, ParseFailure, PlayerView, RenderStatu
 class StartGameInput:
     player_pseudonym: str  # 서버가 로그인 계정의 가명 ID로 채운다. 요청 본문에 있으면 400(api.md 2-1절)
     preset_id: str
-    session_id: str
+    session_id: Optional[str]           # 테스트 회차 ID. 생략·null·빈 문자열은 회차 없는 일반 판(E-08-14, 표현 계층이 None으로 맞춘다)
     mudang_variant: str                 # 주인공 초상 "f"(여) | "m"(남). 표시 전용, 규칙과 NPC 대사에 영향 없음(11/4 PM 결정)
-    seed: Optional[int] = None          # None이면 서버가 정한다(기록됨)
+    seed: Optional[int] = None          # 회차 판만. None이면 배정된 고정 시드. 일반 판은 서버가 랜덤으로 정하고 이 값을 받지 않는다
     ending_choice: str = "exorcism"     # 열린 결말 중 선택(PlayerProgress.endings_unlocked)
+    start_token: Optional[str] = None   # 일반 판 시작 요청 UUID. 같은 값을 다시 보내면 같은 판을 돌려준다(중복 시작 방지, E-08-14)
 
 
 @dataclass

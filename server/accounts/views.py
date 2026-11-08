@@ -1,5 +1,6 @@
 """계정 폼과 Django 세션 인증. 인증 입력은 응답·로그에 되비추지 않는다."""
 import secrets
+import uuid
 from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.password_validation import validate_password
@@ -22,18 +23,34 @@ CONSENT_TEXT = "플레이 기록(선택, 입력한 문장, 수첩 값, 설문)�
 
 @require_GET
 def home(request):
-    """계정의 가명 ID와 동의한 참가자의 다음 고정 판을 표시한다."""
+    """계정의 가명 ID, 동의한 사용자의 새 게임(일반 판)·이어 하기와 배정된 고정 판을 표시한다."""
     player = player_context(request.user)
     context = {"player_id": player[0] if player else None, "assignments": None}
     if player and player[1]:
+        context.update(_open_game_context(player[0]))
         try:
             service = get_session_service()
             context["assignments"] = service.assigned(player[0], get_game_service().repository.load)
-        except (StartUnavailable, GameServiceUnavailable):
+        except StartUnavailable:
+            context["assignments"] = []   # 회차 저장소가 없어도 일반 판은 시작할 수 있다(E-08-14)
+        except GameServiceUnavailable:
             context["assignments_unavailable"] = True
     response = render(request, "accounts/home.html", context)
     response["Cache-Control"] = "private, no-store"
     return response
+
+
+def _open_game_context(player):
+    """일반 판 시작 폼(요청마다 새 시작 UUID)과 진행 중인 일반 판 목록(E-08-14)."""
+    from server.app.open_start import open_preset_ids, unfinished_open_games
+    context = {"open_presets": open_preset_ids(), "open_start_token": str(uuid.uuid4()), "open_games": []}
+    try:
+        service = get_game_service()
+        context["open_games"] = unfinished_open_games(service.progress.load(player).game_ids,
+                                                      service.repository.load)
+    except GameServiceUnavailable:
+        context["open_unavailable"] = True
+    return context
 
 
 @sensitive_post_parameters()

@@ -54,7 +54,8 @@ class MongoRuntime:
         self.game = GameService(engine, WebMongoGameRepository(database[self.collection_names[0]]),
                                 MongoProgressRepository(database[self.collection_names[1]]),
                                 dependencies)
-        self.game.prepare_start = partial(self.sessions.prepare, load_game=self.game.repository.load)
+        from .composition import start_policy
+        self.game.prepare_start = start_policy(partial(self.sessions.prepare, load_game=self.game.repository.load))
 
     def configure(self):
         """HTTP 처리 전 이 실행 자원을 B의 전역 서비스 조립에 연결한다."""

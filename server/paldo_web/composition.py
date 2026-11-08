@@ -45,12 +45,25 @@ def get_game_service():
         raise GameServiceUnavailable("game_service_not_configured")
     service = _game_service
     if service.prepare_start is None:
-        service.prepare_start = partial(_prepare_fixed_start, load_game=service.repository.load)
+        service.prepare_start = start_policy(partial(_prepare_fixed_start, load_game=service.repository.load))
     return service
 
 
 def _prepare_fixed_start(data, player, load_game):
     return get_session_service().prepare(data, player, load_game)
+
+
+def open_start_versions():
+    """일반 판 버전: 배포 코드의 규칙·엔진 버전과 설정의 운영 활성 콘텐츠 버전(E-08-14)."""
+    from engine.domain import params
+    from server.app.open_start import deployed_versions
+    return deployed_versions(lambda: params.RULE_PARAMS_VERSION, settings.ACTIVE_CONTENT_VERSION)
+
+
+def start_policy(session_prepare):
+    """회차 판은 회차 정책, 회차 없는 판은 랜덤 시드 일반 판으로 시작하는 정책을 만든다."""
+    from server.app.open_start import StartPolicy
+    return StartPolicy(session_prepare, open_start_versions)
 
 
 def configure_game_service(service):
