@@ -151,9 +151,9 @@ PM 판정용 자동 확인이다(E-07-03, 11/8 사용자 지시 "INT-07은 할 �
 - Python 3.14 프로세스 6개(노트북 Python 3.14.6): 게임 웹 daphne(운영 조립 `build_game_service`, 계정 DB = Compose MySQL), 게임 아웃박스 발행기(`server.infra.outbox_publisher`), 광고 서버(`ads/manage.py runserver`), 광고 작업자 expire·publish·refund.
 - Kafka TLS: 게임 아웃박스 발행기는 검증된 TLS만 허용한다(`verified_tls_required`). 그래서 실행 때만 Compose 덮어쓰기 파일로 Kafka에 TLS 리스너(`localhost:9094`)를 더했다. 저장소 밖 임시 폴더에서 `openssl`로 1회용 CA와 브로커 인증서(SAN `localhost`·`kafka`)를 만들고, 덮어쓰기 파일에 `KAFKA_LISTENERS`·`KAFKA_ADVERTISED_LISTENERS`·`KAFKA_LISTENER_SECURITY_PROTOCOL_MAP`에 `TLS` 리스너를 더한 뒤 `KAFKA_SSL_KEYSTORE_TYPE=PEM`·`KAFKA_SSL_KEYSTORE_LOCATION`(키+인증서 PEM)·`KAFKA_SSL_CLIENT_AUTH=none`을 두었다. 발행기 TLS JSON은 `security.protocol=SSL`·`ssl.ca.location`(그 CA)·`broker.address.family=v4`다. 저장소의 `dev.yml`은 바꾸지 않았다. 광고 작업자는 평문 리스너(`PALDO_KAFKA_BOOTSTRAP`)를 쓴다.
 - 토픽: 로컬 단일 브로커라 토픽 계획(`pipeline/topics.yaml`) 10개를 복제 1로 만들었다(운영 브로커는 복제 3으로 미리 생성).
-- 판: 판마다 참가자 1명과 고정 회차(시드 하나)를 `server.tests.int07_setup`으로 만들고 게임 웹 HTTP로만 진행했다. 로컬 Compose라 공식 데이터(Garage `pj4/official/...`)와 섞이지 않는다. 도구는 Mongo·Kafka·광고 DB·계정 DB·발행기 TLS 주소가 하나라도 이 노트북(`localhost`·`127.0.0.1`)이 아니면 아무것도 쓰기 전에 멈추고, 확인한 Compose 프로젝트의 호스트 포트가 그 주소와 같은지도 본다.
+- 판: 판마다 참가자 1명과 고정 회차(시드 하나)를 `server.tests.int07_setup`으로 만들고 게임 웹 HTTP로만 진행했다. 로컬 Compose라 공식 데이터(Garage `pj4/official/...`)와 섞이지 않는다. 도구는 Mongo·Kafka·광고 DB·계정 DB·발행기 TLS 주소가 하나라도 이 노트북(`localhost`·`127.0.0.1`)이 아니면 아무것도 쓰기 전에 멈추고, 선택한 Compose 프로젝트가 연 포트와 그 주소(계정 DB·발행기 TLS 포함)가 다르면 이주·적재 전에 멈춘다.
 
-결과(브랜치 커밋 56a53ea, `docs/evidence/perf/INT-07/stack_run.json`·`stack_run_detail.json`, 수집 시각 2026-11-08 15:07 UTC):
+결과(브랜치 커밋 539d17a, `docs/evidence/perf/INT-07/stack_run.json`·`stack_run_detail.json`, 수집 시각 2026-11-08 15:11 UTC):
 
 | 구성요소 | `/metrics` 필수 지표 | 프로세스 Python |
 |---|---|---|
