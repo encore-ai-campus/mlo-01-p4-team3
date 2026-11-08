@@ -9,6 +9,7 @@
 | [domain.md](domain.md) | 게임 규칙, 상태, 주장, 관측 | `fixtures/scenarios/`, `fixtures/assignment/` |
 | [ports.md](ports.md) | 엔진과 바깥의 인터페이스(저장소·발행·의도 해석 등 포트) | — |
 | [api.md](api.md) | 화면 API, 플레이어 뷰 | `fixtures/api/` |
+| [vn.md](vn.md) | 회의·밤 VN 표시 규칙과 UI 적용 범위(B-09-06 초안, E 검토 대기) | B-10-07에서 후속 검증 |
 | [events.md](events.md) | 이벤트 봉투, Kafka 토픽, 학습 행 | `fixtures/events/` |
 | [content.md](content.md) | 콘텐츠 묶음(인물, 비밀, 대사) | `fixtures/content_min/` |
 | [intent.md](intent.md) | 의도 해석 입출력 | `fixtures/intent/` |
