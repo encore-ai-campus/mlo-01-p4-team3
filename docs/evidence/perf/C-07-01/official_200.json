@@ -1,0 +1,64 @@
+{
+  "task": "C-07-01",
+  "commit": "28077a1f8cab5bd2446eff45b5600ca699690cbe",
+  "generated_at": "2026-11-08T06:34:25Z",
+  "source": "python -m tools.run_engine_games --preset base6 --games 200 --seed 1; publish_jsonl; ingest_bronze; build_silver; join_labels; verify_run before/after full replay; actual ad HTTP→bronze verification",
+  "metrics": {
+    "input_games": {
+      "value": 200,
+      "unit": "건"
+    },
+    "input_events": {
+      "value": 17823,
+      "unit": "건"
+    },
+    "bronze_events": {
+      "value": 17823,
+      "unit": "건"
+    },
+    "lost": {
+      "value": 0,
+      "unit": "건"
+    },
+    "duplicate": {
+      "value": 0,
+      "unit": "건"
+    },
+    "completed_games": {
+      "value": 200,
+      "unit": "건"
+    },
+    "labeled_games": {
+      "value": 200,
+      "unit": "건"
+    },
+    "silver_rows": {
+      "value": 19191,
+      "unit": "건"
+    },
+    "training_rows": {
+      "value": 14460,
+      "unit": "건"
+    },
+    "bronze_total": {
+      "value": 17843,
+      "unit": "건"
+    },
+    "replay_delta": {
+      "value": 0,
+      "unit": "건"
+    },
+    "driver_python_minor": {
+      "value": 14,
+      "unit": ""
+    },
+    "executor_python_minor": {
+      "value": 14,
+      "unit": ""
+    },
+    "ad_bronze_rows": {
+      "value": 3,
+      "unit": "건"
+    }
+  }
+}

@@ -6,8 +6,10 @@ from pathlib import Path
 
 def main(argv=None):
     """저장소 루트에서 같은 Python으로 실제 Mongo 시험을 실행한다."""
-    return subprocess.call([sys.executable, '-B', '-m', 'server.tests.api_bench',
-                            *(sys.argv[1:] if argv is None else argv)], cwd=Path(__file__).resolve().parents[2])
+    arguments=sys.argv[1:] if argv is None else argv
+    module='server.tests.proxy_bench' if '--proxy-profile' in arguments else 'server.tests.api_bench'
+    return subprocess.call([sys.executable, '-B', '-m', module,
+                            *arguments], cwd=Path(__file__).resolve().parents[2])
 
 
 if __name__ == '__main__':

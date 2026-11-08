@@ -1,0 +1,48 @@
+{
+  "task": "C-07-02",
+  "commit": "0800b502b0bd8af7e41d0e22882ef25eb03aa3ee",
+  "generated_at": "2026-11-08T06:34:25Z",
+  "source": "real HTTPS games: stop/resume one Kafka broker; stop/resume paldo-outbox; Mongo/Kafka/Delta event_id+seq+hash reconciliation",
+  "metrics": {
+    "mongo_expected": {
+      "value": 104,
+      "unit": "건"
+    },
+    "kafka_unique": {
+      "value": 104,
+      "unit": "건"
+    },
+    "bronze_rows": {
+      "value": 104,
+      "unit": "건"
+    },
+    "lost": {
+      "value": 0,
+      "unit": "건"
+    },
+    "duplicate": {
+      "value": 0,
+      "unit": "건"
+    },
+    "hash_mismatch": {
+      "value": 0,
+      "unit": "건"
+    },
+    "api_requests": {
+      "value": 14,
+      "unit": "건"
+    },
+    "api_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "pending_during_pause": {
+      "value": 50,
+      "unit": "건"
+    },
+    "pending_after_resume": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

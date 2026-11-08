@@ -1,0 +1,28 @@
+{
+    admin 127.0.0.1:2019
+    auto_https disable_redirects
+    skip_install_trust
+}
+
+http://{$PALDO_PROXY_HOST} {
+    bind {$PALDO_PROXY_HOST}
+    redir https://{host}{uri} 308
+}
+
+https://{$PALDO_PROXY_HOST} {
+    bind {$PALDO_PROXY_HOST}
+    tls internal
+    header -Strict-Transport-Security
+
+    handle_path /static/* {
+        root * {$PALDO_STATIC_ROOT}
+        file_server
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:8000 {
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto https
+        }
+    }
+}

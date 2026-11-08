@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 import time
 
-from pipeline.spark.bronze_contract import GAME_TOPICS, normalize, unique_rows
+from pipeline.spark.bronze_contract import ALL_TOPICS, normalize, unique_rows
 from tools.jsonlog import log
 
 SCHEMA = ('event_id string, game_id string, seq long, event_type string, topic string, '
@@ -126,8 +126,8 @@ def main(argv=None):
             for key, value in config['spark'].items():
                 builder = builder.config(key, value)
             spark = builder.getOrCreate()
-            log('ingest_bronze', 'info', 'stream_started', topic_count=len(GAME_TOPICS))
-            source = spark.readStream.format('kafka').option('subscribe', ','.join(GAME_TOPICS))
+            log('ingest_bronze', 'info', 'stream_started', topic_count=len(ALL_TOPICS))
+            source = spark.readStream.format('kafka').option('subscribe', ','.join(ALL_TOPICS))
             for key, value in config['kafka'].items():
                 source = source.option('kafka.' + key, value)
             source = source.option('groupIdPrefix', 'paldo-bronze').option('startingOffsets', 'earliest')
