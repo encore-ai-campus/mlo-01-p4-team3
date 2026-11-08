@@ -3,6 +3,8 @@ from dataclasses import replace
 from functools import partial
 from pathlib import Path
 import tempfile
+import io
+from contextlib import redirect_stdout
 import time
 import unittest
 
@@ -123,6 +125,24 @@ class ModelGames(unittest.TestCase):
                  'base6', 1, 0, 'rule-v0', sink, model_version='test-pinned')
         self.assertTrue(sink.items)
         self.assertEqual({e.model_versions['suspicion'] for e in sink.items}, {'test-pinned'})
+
+    def test_adapter_load_failure_keeps_game_running_and_marks_fallback(self):
+        from engine.domain.engine import PaldoEngine
+        from engine.domain.npc import RuleV0Policy
+        from engine.ports import EngineDeps
+        from engine.testing.fakes import FixtureContentSource, ListEventSink
+        from ml.adapters.suspicion_model import SuspicionModelAdapter
+        from tools.run_engine_games import run_game
+        content = FixtureContentSource().load('*')
+        sink = ListEventSink()
+        model = SuspicionModelAdapter(broken_loader, 'fake-1')
+        self.addCleanup(model.close)
+        with redirect_stdout(io.StringIO()):
+            run = run_game(PaldoEngine(RuleV0Policy(content)), EngineDeps(content, model),
+                           'base6', 1, 0, 'rule-v0', sink)
+        self.assertIsNotNone(run.winner)
+        self.assertTrue(any(e.payload.get('policy_version', '').endswith('-fallback')
+                            for e in sink.items if e.event_type == 'decision'))
 
     def test_missing_model_cli_fails_without_claiming_success(self):
         from ml.adapters.run_model_games import main

@@ -1,0 +1,20 @@
+{
+  "task": "D-08-01",
+  "commit": "4af37d544fd4940065a97027bd63c21e164c0198",
+  "generated_at": "2026-11-08T02:32:56Z",
+  "source": "python bench_model.py (D-07-02 committed feature source + D-08-01 adapter integration copy)",
+  "metrics": {
+    "first_inference_ms": {
+      "value": 280.94170009717345,
+      "unit": "ms"
+    },
+    "warm_p95_ms": {
+      "value": 5.4341997019946575,
+      "unit": "ms"
+    },
+    "calls": {
+      "value": 100,
+      "unit": "건"
+    }
+  }
+}

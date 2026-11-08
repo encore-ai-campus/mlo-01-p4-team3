@@ -22,7 +22,7 @@ python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --model
 - D-07-03 의도 미세조정은 `python -m tools.perf.intent_finetune --epochs 5 --include-generated`로 실행한다. 증빙은 `docs/evidence/D-07-03.md`, 모델·실행 계보는 `mlruns/intent_bert/`에 보관한다.
 
 ## 설정값
-어댑터 추론 마감은 IPC를 포함해 90ms, 로드 마감은 30초다. 특징 버전·열 순서·보정 온도는 D-07-02 산출물과 기존 특징 모듈로 검증한다. 공유 데이터 계약은 `contracts/datasets.py`, 버전·승격 계약은 `docs/contracts/ml_lifecycle.md`, 패키지 목록은 `requirements/ml.txt`다.
+어댑터의 추론 응답 대기 마감은 90ms, native 초기화·워밍업을 포함한 로드 마감은 30초다. 고정 주민 수의 로컬 순차 IPC에서 검증했으며 웹 동시성·큰 메시지의 절대 wall-clock 상한은 별도 검증이 필요하다. 특징 버전·열 순서·보정 온도는 D-07-02 산출물과 기존 특징 모듈로 검증한다. 공유 데이터 계약은 `contracts/datasets.py`, 버전·승격 계약은 `docs/contracts/ml_lifecycle.md`, 패키지 목록은 `requirements/ml.txt`다.
 
 ## 한계
 D-05-01의 의도 파서 및 D-05-03의 광고 API가 구현되어도 씐 자 모델·광고 CTR 모델 학습·승격이 완료되는 것은 아니다. 현재 그 성능이나 운영 준비를 주장하지 않는다.
