@@ -145,9 +145,11 @@ def run(rows_path: Path, manifest_path: Path, out: Path, seed: int, record: str 
         command += ' --heldout-rows ' + shlex.quote(str(heldout_path)) + ' --heldout-manifest ' + shlex.quote(str(heldout_manifest_path))
     if result_name != 'suspicion':
         command += ' --result-name ' + result_name
+    delta_check = manifest['data_version'].startswith('delta:')
+    status = 'delta_connectivity_check' if delta_check else 'local_predevelopment'
     tags = {k: str(manifest[k]) for k in ('data_version', 'input_sha256', 'rows_sha256', 'npc_policy_version')}
     tags.update(feature_version=FEATURE_VERSION, code_commit=commit, seed=str(seed),
-                status='local_predevelopment', delta_final_evaluation='pending', vm_validation='pending')
+                status=status)
     if heldout_manifest is not None:
         tags.update(heldout_strategy=heldout_manifest['strategy_lie_type'],
                     training_strategy=manifest['strategy_lie_type'],
@@ -188,6 +190,8 @@ def run(rows_path: Path, manifest_path: Path, out: Path, seed: int, record: str 
                    for name, report in reports.items() for key, value in report['metrics'].items()}
         numeric.update(games=dict(value=len(split), unit='판'), rows=dict(value=len(rows), unit='행'),
                        train_seconds=dict(value=elapsed, unit='s'))
+        if delta_check and 'delta_version' in manifest:
+            numeric['delta_version'] = dict(value=manifest['delta_version'], unit='')
         for part, rs in parts.items():
             numeric[part + '_games'] = dict(value=len({r.game_id for r in rs}), unit='판')
         for key, value in manifest.get('audit', {}).items():
@@ -199,16 +203,17 @@ def run(rows_path: Path, manifest_path: Path, out: Path, seed: int, record: str 
             for key, bounds in report.get('bootstrap_95', {}).items():
                 for suffix, value in zip(('ci_low', 'ci_high'), bounds):
                     numeric[f'{name}_{key}_{suffix}'] = dict(value=value, unit='')
-        result = dict(status='local_predevelopment', run_id=active.info.run_id,
+        result = dict(status=status, run_id=active.info.run_id,
                       command=command, code_commit=commit, feature_version=FEATURE_VERSION,
                       manifest=manifest, heldout_manifest=heldout_manifest,
                       strategy_evaluation_verified=bool(heldout_rows),
                       split=split, temperatures=temperatures, reports=reports,
                       train_seconds=elapsed, python=sys.version,
                       versions={n: importlib.metadata.version(n) for n in ('numpy', 'scikit-learn', 'lightgbm', 'mlflow')},
-                      limitations=['C Delta 최종 평가 대기', 'VM Python 3.14 네 패키지 import 대기',
-                                   '다른 프리셋/사람 데이터 검증 및 엔진 모델 행동 평가는 미실행'],
+                      limitations=['다른 프리셋/사람 데이터 검증 및 엔진 모델 행동 평가는 미실행'],
                       improvement_claim=False)
+        if delta_check:
+            result['limitations'].append('Delta → 학습 코드 연결 확인용. 모델 성능 수치는 rule-v0 데이터로 별도 보고')
         if not heldout_rows:
             result['limitations'].append('미사용 씐 자 전략 평가 없음')
         (out / 'report.json').write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
@@ -219,7 +224,7 @@ def run(rows_path: Path, manifest_path: Path, out: Path, seed: int, record: str 
                               logistic_max_iter=500, lgbm_estimators=80, lgbm_leaves=7,
                               temperature_grid='.5,1,2,4', **{k+'_temperature': v for k, v in temperatures.items()}))
         mlflow.log_metrics({k: v['value'] for k, v in numeric.items()})
-        mlflow.log_artifacts(str(out), artifact_path='local_predevelopment')
+        mlflow.log_artifacts(str(out), artifact_path=status)
         if record:
             path = write_result(record, result_name, numeric, command)
             mlflow.log_artifact(str(path))

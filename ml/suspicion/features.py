@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 from collections import defaultdict
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
@@ -199,25 +200,66 @@ def load_rows(path: Path) -> list[TrainingRow]:
     return rows
 
 
+def delta_rows(observed: list[TrainingRow], exported: list[dict]) -> list[TrainingRow]:
+    """C export의 후보·라벨을 원본 이벤트와 대조하고 D 특징만 다시 계산한다."""
+    by_id = {row.row_id: row for row in observed}
+    rows = []
+    for raw in exported:
+        raw = {**raw, 'split_key': {'user': None, **raw['split_key']}}
+        row = serde.from_jsonable(TrainingRow, raw)
+        expected = by_id.pop(row.row_id, None)
+        if expected is None or row.feature_version != 'public-snapshot-v1':
+            raise ValueError('Delta 행 ID 중복·불일치 또는 특징 버전 불일치')
+        aligned = replace(row, feature_version=FEATURE_VERSION, features=expected.features)
+        if aligned != replace(expected, n_active=row.n_active):
+            raise ValueError('Delta 행의 원본 관측·라벨 불일치')
+        rows.append(aligned)
+    if by_id:
+        raise ValueError('Delta export 행 누락')
+    validate_rows(rows)
+    return rows
+
+
 def main(argv=None) -> int:
-    """실제 엔진 JSONL을 TrainingRow와 provenance manifest로 내보낸다."""
+    """실제 엔진 JSONL 또는 원본과 대조한 Delta 행을 학습 입력으로 내보낸다."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--events', type=Path, required=True)
     ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('--delta-export', type=Path)
+    ap.add_argument('--delta-version', type=int)
     a = ap.parse_args(argv)
+    if (a.delta_export is None) != (a.delta_version is None) or (a.delta_version is not None and a.delta_version < 0):
+        ap.error('--delta-export와 0 이상의 --delta-version을 함께 지정하세요')
     if a.out.exists():
         raise ValueError('새 출력 경로를 사용하세요')
     log('suspicion_features', 'info', '변환 시작', input=str(a.events))
     with a.events.open(encoding='utf-8') as f:
         events = [json.loads(line) for line in f if line.strip()]
     rows, audit = engine_rows(events)
+    input_hash = sha256(a.events)
+    provenance = {}
+    if a.delta_export is not None:
+        parts = sorted(a.delta_export.glob('part-*.json'))
+        if not parts or not (a.delta_export / '_SUCCESS').is_file():
+            raise ValueError('완료된 Spark JSON export가 필요합니다')
+        exported = []
+        hashes = {}
+        for part in parts:
+            data = part.read_bytes()
+            hashes[part.name] = hashlib.sha256(data).hexdigest()
+            exported.extend(json.loads(line) for line in data.splitlines() if line.strip())
+        rows = delta_rows(rows, exported)
+        provenance = dict(delta_version=a.delta_version, delta_export_hashes=hashes,
+                          source_feature_version='public-snapshot-v1')
     validate_rows(rows)
     a.out.mkdir(parents=True)
     path = a.out / 'rows.jsonl'
     with path.open('w', encoding='utf-8', newline='\n') as f:
         for row in rows:
             f.write(serde.dumps(row) + '\n')
-    manifest = dict(data_version='engine-jsonl:' + sha256(a.events), input_sha256=sha256(a.events),
+    data_version = ('engine-jsonl:' + input_hash if a.delta_version is None
+                    else f'delta:c07-01-silver@{a.delta_version}')
+    manifest = dict(data_version=data_version, input_sha256=input_hash,
                     rows_sha256=sha256(path), feature_version=FEATURE_VERSION,
                     code_commit=GitRepo(Path(__file__).resolve().parents[2]).head(),
                     npc_policy_version=policy_signature(events[0]),
@@ -225,7 +267,7 @@ def main(argv=None) -> int:
                     rule_versions=sorted({e['rule_version'] for e in events}),
                     content_versions=sorted({e['content_version'] for e in events}),
                     observer_filter='completed_truth_villager', candidate_filter='snapshot_excludes_mudang',
-                    heldout_strategy=False, status='local_predevelopment', audit=audit)
+                    heldout_strategy=False, audit=audit, **provenance)
     (a.out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     log('suspicion_features', 'info', '변환 완료', rows=len(rows), **audit)
     return 0

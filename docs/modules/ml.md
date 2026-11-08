@@ -44,14 +44,14 @@ python -m ml.suspicion.train --rows out/suspicion/1108/train/data/rows.jsonl --h
 `models.pkl`은 이 실행이 만든 로컬 모델이며 신뢰하는 산출물만 불러온다.
 의존성은 `requirements/ml.txt`의 scikit-learn 1.9.1·LightGBM 4.7.0·MLflow 3.18.0을 사용한다.
 
-C 인계 뒤 `TrainingRow` 형식의 Delta export를 `--rows`로 넣고 `--manifest`로 인계 메타데이터를 지정한다.
-manifest의 필수 키는 `data_version`(`delta:<table>@<version>`), `input_sha256`, `rows_sha256`,
-`feature_version=suspicion-1`, 단일 `npc_policy_version`, `seeds` 목록,
-`observer_filter=completed_truth_villager`, `candidate_filter=snapshot_excludes_mudang`다.
-원본 진실·역할·정책은 TrainingRow에 없으므로 필터·정책 선언은 C export의 검증 책임이다.
-수치 특징의 버전/열이 다르면 거부하며 C와 먼저 특징 추출을 맞춘다. 계약 자체는 바꾸지 않는다.
+11/8 PM 결정에 따라 모델 비교에는 로컬 `rule-v0` 200판을 쓴다. C-07-01 공식 silver v1의 `baseline-0` 200판은 별도 연결 검증에 쓴다. C의 원본 이벤트와 완료된 Spark export 디렉터리를 확보한 뒤 실행한다.
 
-11/8 C-07-01 공식 silver v1과 export를 읽기 전용으로 확인했다. 200판의 정책은 `baseline-0`, 특징은 `public-snapshot-v1`이다. D 공식 수치에는 PM 지정 `rule-v0` 200판을 처리한 Delta 버전을 사용한다. 해당 silver의 `snapshot_json`에서 `suspicion-1` 특징을 추출하고 Delta 행과 라벨의 계보를 보존한다. VM import 조건은 사용자 직접 실행(11/8 20:38:12 KST)의 Python 3.14.4 및 지정 네 패키지 성공으로 충족했다.
+```powershell
+python -m ml.suspicion.features --events out/suspicion/delta1108/source/events200.jsonl --delta-export out/suspicion/delta1108/source/training_export --delta-version 1 --out out/suspicion/delta1108/aligned
+python -m ml.suspicion.train --rows out/suspicion/delta1108/aligned/rows.jsonl --out out/suspicion/delta1108/run --seed 7 --record D-07-02 --result-name delta_connectivity
+```
+
+원본의 마을 관측에서 `suspicion-1` 특징을 계산하고, `public-snapshot-v1` export의 행 ID·라벨·조인 시각 등을 대조해 특징을 교체한다. 대조에서는 C가 기록한 활동 인원 수를 보존한다. manifest에는 Delta 버전과 export part별 해시, 원본과 변환 행의 해시, 정책과 seed를 기록한다. 접속 위치와 키는 외부 보호 설정으로 관리한다.
 
 - D-07-03 의도 미세조정은 `python -m tools.perf.intent_finetune --epochs 5 --include-generated`로 실행한다. 증빙은 `docs/evidence/D-07-03.md`, 모델·실행 계보는 `mlruns/intent_bert/`에 보관한다.
 
@@ -69,8 +69,7 @@ manifest의 필수 키는 `data_version`(`delta:<table>@<version>`), `input_sha2
 
 ## 한계
 
-로컬 사전 개발이다. C Delta 최종 평가, 다른 필수 프리셋의 최소 판 수,
-VM Python 3.14에서 torch·transformers·lightgbm·pyspark import는 미완료다.
+모델 비교와 Delta 연결 검증은 별도 실행이다. 다른 프리셋의 최소 판 수와 모델 합격선은 D-08-01부터 적용한다.
 형식용 synthetic/scripted와 사람 데이터는 현재 경계에서 거부한다. 현재 데이터는 실제 bot 판이다.
 규칙 기준값은 엔진에 주입된 `FakeSuspicionModel`과 같은 `beliefs.suspicion/25` softmax다.
 행동 감사는 입력 엔진 판의 `legal_problem`과 대상 존재·`vote_conflicts` 집계이며,
@@ -85,4 +84,5 @@ VM Python 3.14에서 torch·transformers·lightgbm·pyspark import는 미완료�
 | D-05-03 | 11/5 | 하루 일괄 문서화로 ML 패키지의 미구현 범위와 후속 작업 위치를 명시 |
 | D-07-02 | 11/7 | 로컬 TrainingRow 변환·게임 분할·두 추정기·규칙 비교·MLflow·경계 테스트 |
 | D-07-02 | 11/8 | 최신 dev 규칙 반영, 거짓말 전략 고정 생성·별도 평가·판/seed 중복 거부·실제 선택 이후 관측 분리 |
+| D-07-02 | 11/8 | C Delta 행의 원본 관측 대조와 학습 코드 연결 실행 추가 |
 | D-07-03 | 11/7 | intent/의 CPU 미세조정·동일 기준선 평가와 모델·계보 저장 경로를 연결 |

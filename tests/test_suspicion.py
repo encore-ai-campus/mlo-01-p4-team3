@@ -161,6 +161,25 @@ class Evaluation(unittest.TestCase):
 
 
 class Training(unittest.TestCase):
+    def test_delta_export_keeps_labels_and_rejects_changed_rows(self):
+        from dataclasses import asdict
+
+        sink = ListEventSink()
+        run_games('base6', 1, 1, 'min-legal', sink)
+        rows, _ = ft.engine_rows([serde.to_jsonable(e) for e in sink.items])
+        export = []
+        for row in rows:
+            raw = asdict(row)
+            raw.update(feature_version='public-snapshot-v1', features={'prior_suspicion': 5.0}, n_active=3)
+            raw['split_key'].pop('user')  # Spark JSON omits null fields.
+            export.append(raw)
+        actual = ft.delta_rows(rows, export)
+        self.assertEqual(actual, [replace(row, n_active=3) for row in rows])
+        with self.assertRaises(ValueError):
+            ft.delta_rows(rows, export[1:])
+        with self.assertRaises(ValueError):
+            ft.delta_rows(rows, [dict(export[0], label=1 - rows[0].label), *export[1:]])
+
     def test_heldout_requires_unseen_strategy_and_disjoint_games(self):
         from ml.suspicion.train import validate_heldout
         sink = ListEventSink()
