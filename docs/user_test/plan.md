@@ -74,7 +74,7 @@
   - 그래서 **태그를 만들기 전에** 후보 커밋에서 대조한다. 운영 DB 읽기 권한이 있는 환경에서 `MongoContentSource(<content 컬렉션>).load("content-1.0")`의 결과와, 후보 커밋의 `tools.check_content.load_bundle(Path("content/bundle_v1.json"))` 결과(`pathlib.Path`로 넘긴다)가 같은지 본다.
   - 다르면 `bundle_v1.json`의 `content_version`을 올린 커밋을 `dev`에 병합하고 그 커밋으로 적재한다(`python -m tools.load_content content/bundle_v1.json`). 태그 `v-usertest-1`은 그 커밋에 만들고, 리허설과 버전 값 읽기를 그 태그에서 한다. 배포 태그와 회차의 콘텐츠 버전이 어긋나지 않게 하려는 것이다.
   - 태그를 만든 뒤에 차이를 찾으면 먼저 위와 같이 `content_version`을 올린 커밋을 병합하고 그 커밋으로 적재한 뒤, 아래 "리허설 뒤 dev 병합"의 막는 문제 수정과 같은 순서(그 커밋에 `v-usertest-2` 태그, 리허설·버전 값 다시 확인, 테스트 서버를 새 태그로)를 밟는다.
-  - 대조와 적재를 누가 실행할지는 정해지지 않았다(운영 DB 권한 보유자 확인 필요).
+  - 대조·적재와 태그 커밋 배포는 C가 한다([C-08-04](../tasks/C_infra.md), 11/8 PM 결정).
 
 ### 리허설 뒤 dev 병합
 

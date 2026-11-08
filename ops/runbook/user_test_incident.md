@@ -9,7 +9,7 @@
 | 역할 | 담당 | 근거 |
 |---|---|---|
 | 현장 진행·참가자 안내·장애 판정·중단 결정 | E | E-09-01(정식 테스트 운영) |
-| 서버 상태 확인·재시작(Caddy·`paldo-web` systemd unit, Mongo·계정 MySQL) | C | C-07-04 운영 인계(`ops/proxy/README.md`). 11/9 13:00~14:00 현장·원격 대기 여부는 미정 |
+| 서버 상태 확인·재시작(Caddy·`paldo-web` systemd unit, Mongo·계정 MySQL) | C | C-07-04 운영 인계(`ops/proxy/README.md`). 11/9 13:00~14:00 대기는 [C-09-05](../../docs/tasks/C_infra.md)(11/8 PM 결정) |
 | 테스트 중 버그 분류·재현·수정 | B | B-09-03 |
 
 ## 2. 장애 판정
