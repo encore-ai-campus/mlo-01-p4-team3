@@ -1,0 +1,60 @@
+{
+  "task": "D-07-02",
+  "commit": "87aa515e0c06f33ab454daca6a63408cf72a8cd6",
+  "generated_at": "2026-11-07T17:04:51Z",
+  "source": "python -m tools.check_handoff_a06 --dir out\\suspicion\\1108\\pm-engine",
+  "metrics": {
+    "games": {
+      "value": 200,
+      "unit": "판"
+    },
+    "events": {
+      "value": 14808,
+      "unit": "개"
+    },
+    "observations": {
+      "value": 4671,
+      "unit": "개"
+    },
+    "decisions": {
+      "value": 4671,
+      "unit": "개"
+    },
+    "truths": {
+      "value": 200,
+      "unit": "개"
+    },
+    "violations_c1_schema": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_c1_seq": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_c1_ended_once": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_c1_game_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_h1_base6_completed": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_h2_observation_before_decision": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_h3_truth_after_end": {
+      "value": 0,
+      "unit": "건"
+    },
+    "violations_h4_reason_codes": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

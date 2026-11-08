@@ -205,10 +205,15 @@ class SessionAPI(TestCase):
             session_factory.assert_called_once_with(settings.SESSION_MONGO_URI)
 
     def test_unconfigured_store_leaves_account_home_available(self):
-        """회차 미연결은 계정 화면을 막지 않고 관리와 판 시작에서 503으로 드러난다."""
+        """회차 미연결은 계정 화면을 막지 않고 관리와 회차 판 시작에서 503으로 드러난다.
+
+        E-08-14부터 회차 저장소가 없어도 일반 판(새 게임)은 시작할 수 있으므로 홈에 회차 조회 오류를 띄우지 않는다.
+        """
         configure_session_service(None)
         self.client.force_login(self.staff)
         self.assertEqual(self.client.get("/admin/sessions").status_code, 503)
         self.client.force_login(self.users[0])
-        self.assertContains(self.client.get("/"), "지금은 테스트 회차를 조회할 수 없습니다.")
+        home = self.client.get("/")
+        self.assertContains(home, "새 게임 시작")
+        self.assertNotContains(home, "지금은 테스트 회차를 조회할 수 없습니다.")
         self.assertEqual(self.client.post("/games", self.body, content_type="application/json").status_code, 503)

@@ -37,7 +37,7 @@
 - 산출물: `ads/project/`(광고 서버 전용 Django 설정·URL), `ads/manage.py`, `ads/web/`(Django 앱), `ads/app/serve.py`, `beacon.py`, `click.py`, `tests/ads/`. 광고 서버는 게임 웹 `server/paldo_web`과 설정을 공유하지 않는 독립 Django 프로젝트다(11/4 PM 결정 #1)
 - 완료 조건:
   1. 광고 요청(serve), 노출 비콘, 클릭 리다이렉트 엔드포인트가 ads.md 3절 형식으로 동작(메모리 예산부 `BudgetBook`).
-  2. `fixtures/ads/auction_cases.json`·`validity_cases.json`·`budget_cases.json`을 HTTP 경유로 재생해 기대값과 같음.
+  2. `fixtures/ads/auction_cases.json`·`validity_cases.json`과 `budget_cases.json`의 예약·확정·해제 단계를 HTTP 경유로 재생해 기대값과 같음(해제는 주입한 시계로 시간을 넘겨 확인). `budget_cases.json`의 환입 단계와 대사 사례는 HTTP로 만든 원장에 도메인 연산(`BudgetBook.refund`, `reconcile`)을 적용해 같은 기대값을 확인한다. 계약상 환입은 `ad.rejudge` 소비자(D-06-02 7번), 대사는 원장·Delta 비교(C-08-02, ads.md 5·7절)라 HTTP 엔드포인트가 없고, 만들지 않는다(11/8 PM 결정).
   3. 구조화 로그(`serve_id`, `charge_id`)와 `/metrics`(`paldo_ad_serve_total{filled}`, `paldo_ad_serve_duration_seconds`, 클릭·노출 유효/무효 카운터).
   4. 광고 요청 처리 지연 p95 기록(목표: B의 전체 시간 제한 300ms 안).
   5. 캠페인·소재·예산을 Django admin에서 관리: admin으로 캠페인을 만들면 다음 serve부터 후보가 되고, 중지하면 빠짐(테스트). admin은 로그인 필수. 일 예산이 1건 최대 청구액(CPC `max_bid_mw`, CPM `floor(max_bid_mw/1000)`, 11/7 PM 결정으로 올림 → 내림)보다 작으면 저장 거부(ads.md 2절 등록 검증, 11/7 PM 결정, 테스트: CPC 입찰가 300원·예산 100원 거부, 같은 값 CPM 허용).
@@ -71,7 +71,7 @@
   4. 아웃박스 → `ad.serve`/`ad.impression`/`ad.click` 발행, 재발행 시 소비자가 `event_id`로 중복 제거.
   5. 예약 만료 해제 작업 `ads/app/expire_reservations.py`가 주기 실행 프로세스로 돌고(로그·지표), 실제 MySQL에서 만료 시각이 지난 예약이 해제됨. 작업을 죽였다 다시 띄워도 밀린 만료가 해제됨(테스트).
   6. 지연 이벤트: 유효 시간 창이 지난 클릭·노출은 과금하지 않고 무효 사유를 남김(ads.md 규칙, 테스트).
-  7. 환입 소비자 `ads/app/refund_consumer.py`: silver 재판정(C-08-02)이 낸 무효 판정 이벤트를 받아 원장에 환입 행(원래 금액의 부호 반전, 원과금의 귀속일)을 쓰고, 같은 `charge_id` 환입은 1회만(환입 행 `<charge_id>:refund` 유일 제약 + 원과금 예산 행 잠금과 같은 트랜잭션, 동시 중복 환입 테스트). 원과금(`kind=charge`)만 환입한다(ads.md 5절). C-08-02의 재판정 시험에서 실제로 동작.
+  7. 환입 소비자 `ads/app/refund_consumer.py`: silver 재판정(C-08-02)이 낸 무효 판정 이벤트를 받아 원장에 환입 행(원래 금액의 부호 반전, 원과금의 귀속일)을 쓰고, 같은 `charge_id` 환입은 1회만(환입 행 `<charge_id>:refund` 유일 제약 + 원과금 예산 행 잠금과 같은 트랜잭션, 동시 중복 환입 테스트). 원과금(`kind=charge`)만 환입한다(ads.md 5절). C-08-02의 재판정 시험에서 실제로 동작. 진행 순서(11/8 PM 결정): 이 7번의 실제 동작은 C-08-02 5번(재판정 → 환입 → 재대사 불일치 0건)과 서로 상대가 있어야 확인된다. 그래서 D-06-02는 7번을 뺀 나머지 조건을 먼저 `Refs #<이슈>` PR로 병합하고(README 11절 "PR과 이슈 잇기"의 부분 병합), C-08-02 5번 재대사를 C·D가 함께 실제 Kafka·MySQL·Delta로 확인한 뒤 7번 증빙을 더해 `Closes` PR을 낸다.
   8. 실행 형태(11/4 PM 결정 #11·#15): 예약 만료 해제 작업, 환입 소비자, 광고 아웃박스 발행기는 웹 서버와 별도 프로세스로 ad-01에서 돈다. 환입 소비자는 `ad.rejudge` 토픽(events.md 5절)을 읽는다.
 - 근거: 기획서 14.3, 14.4 / ads.md 5·7
 
@@ -95,8 +95,9 @@
 - 완료 조건: 11시 전에 `intent/parser.py`를 병합. `tests/contract/test_fakes.py::Intent`가 실제 기준선으로 통과, 설정 한 줄 전환 방법을 `intent/README.md`에. (B 쪽 수신 확인은 B-07-01의 조건이며 이 태스크의 조건이 아니다.)
 
 ### D-07-02 씐 자 확률 모델 첫 학습·평가
-- 3h · 선행: A-06-03(실제 엔진 판), C-07-01(14:00 인계). 그 전에는 A-06-03 jsonl을 `contracts/datasets.py`로 직접 학습 행으로 바꿔 개발하고, 최종 수치는 C-07-01의 Delta 학습 행으로 낸다
+- 3h · 선행: A-06-03(실제 엔진 판), A-07-01(`rule-v0`), C-07-01(14:00 인계, Delta 학습 행). 학습 코드와 모델 수치는 아래 학습 데이터 정책대로 로컬 `rule-v0` 데이터(`contracts/datasets.py`로 학습 행 변환)로 먼저 끝낸다. C-07-01의 Delta 학습 행은 Delta → 학습 코드 연결 확인용으로 같은 코드를 돌려 수치를 증빙에 따로 남긴다(11/8 PM 결정)
 - 학습 데이터 정책(11/7 PM 결정): A-06-03 데이터는 `baseline-0` 정책이라 회의 발언이 0건이어서 학습 코드 확인용으로만 쓴다. 수치는 A-07-01(`rule-v0`) 병합 뒤 `python -m tools.run_engine_games --preset base6 --games 200 --seed 2 --policy rule-v0 --out out/handoff/a0701`로 다시 만든 데이터로 낸다. rule-v0 base6 500판의 마을 승률이 약 83%(목표 40~60%)라 씐 자가 일찍 잡히는 판이 많을 수 있다. 가중치 조정은 A-08-03에서 한다.
+- Delta 학습 행과 판 수(11/8 PM 결정): C-07-01 Delta 학습 행은 `baseline-0` 200판 입력이라(export 14,460행, 같은 입력·같은 변환 함수로 재현해 행 수 일치 확인) 모델 수치가 아니라 연결 확인용이다. INT-07 #7 "D-07-02 수치 존재"는 이 연결 확인 수치(Delta 버전·행 수·지표)로 판정한다. Delta 학습 행(`pj4/official/training_rows/`)은 공통 VM 계정으로 3차 인계 문서의 Garage Spark 클라이언트 설정(저장소 밖)을 써서 지금 읽을 수 있다(11/8 PM 확인: 버킷 조회, `pj4/official/bronze/`·`silver/`·`training_rows/` 확인). 이 키는 3차 공용 키라 읽기만 하고 쓰지 않는다. 설정 파일 위치·주소·키 값은 저장소에 쓰지 않는다. 판 수는 이 첫 학습만 위 200판을 허용하고, 계약 [`ml_lifecycle.md`](../contracts/ml_lifecycle.md) 1절의 종료 판 300개 이상·프리셋마다 50판 이상은 D-08-01부터 적용한다.
 - 문서화(+0.25h, 공통 ⑦): [트러블 D](../troubles/D.md)에 `### D-07-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ml`](../modules/ml.md)는 그날 일괄 갱신(D-07-03)
 - 산출물: `ml/suspicion/features.py`, `train.py`, `evaluate.py`
 - 완료 조건:
@@ -118,7 +119,7 @@
 ## 11/8(일)
 
 ### D-08-01 시뮬레이션 대량 실행과 모델 v0 엔진 연결
-- 3h(11/5 PM 결정으로 모델 v0 판 실행 진입점 +0.5h) · 선행: C-08-03(12:00 인계, k3s Job과 시뮬레이터 이미지는 C가 `engine/sim/runner.py`로 빌드), A-07-01(NPC 규칙 v0)
+- 3h(11/5 PM 결정으로 모델 v0 판 실행 진입점 +0.5h) · 선행: C-08-03(12:00 인계, k3s Job과 시뮬레이터 이미지는 C가 `engine/sim/runner.py`로 빌드), A-07-01(NPC 규칙 v0), D-07-02(특징·학습·평가 코드 `ml/suspicion/`, 11/8 PM 결정: 2번 비교에 필요)
 - 문서화(+0.25h, 공통 ⑦): [트러블 D](../troubles/D.md)에 `### D-08-01` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ml`](../modules/ml.md)는 그날 일괄 갱신(D-08-04)
 - 산출물: `ml/adapters/suspicion_model.py`(`SuspicionModel` 포트 구현), `ml/adapters/run_model_games.py`(모델 v0 판 실행 진입점: 엔진과 모델 v0 어댑터를 조립하고 `tools/run_engine_games`와 같은 인자를 받는다. `tools/`는 `ml/`을 import할 수 없어 A-09-03·A-10-01이 이것을 쓴다, 11/5 PM 결정)
 - 완료 조건:
@@ -130,7 +131,7 @@
 - 근거: 기획서 9.2, 9.3 / ml_lifecycle.md 1·2
 
 ### D-08-02 CTR 갱신·톰슨 샘플링·페이싱 연결과 시나리오 1~5 ("주사위" 5~6단계)
-- 4h(11/5 PM 결정으로 광고 서버 B 인계 1h를 합침, 6번) · 인계: **11:00 → B-08-03**(6번) · 선행: C-08-02(13:00 인계, 광고 gold), D-06-03. 오전에는 CTR·페이싱 갱신 알고리즘과 평가용 생성기(4번)를 로컬 집계로 먼저 끝내고, 인계 뒤에는 실제 파이프라인 연결·측정만 한다
+- 4.5h(11/5 PM 결정으로 광고 서버 B 인계 1h를 합침, 6번. 11/8 PM 결정으로 합성 트래픽 실제 서버 모드 +0.5h, 7번) · 인계: **11:00 → B-08-03**(6번), **12:00 → C-08-02**(7번, 합성 트래픽 실행 ID) · 선행: C-08-02(13:00 인계, 광고 gold), D-06-03. 오전에는 CTR·페이싱 갱신 알고리즘과 평가용 생성기(4번)를 로컬 집계로 먼저 끝내고, 인계 뒤에는 실제 파이프라인 연결·측정만 한다
 - 문서화(+0.25h, 공통 ⑦): [트러블 D](../troubles/D.md)에 `### D-08-02` 항목(문제 → 원인 → 대응 → 결과 수치, 없으면 "없음") · 새로 만들거나 바꾼 공개 함수·클래스 docstring · 새 폴더를 만들면 `paldo/README.md` 폴더 안내·작업별 위치 표 갱신 · 모듈 문서 [`ads`](../modules/ads.md)는 그날 일괄 갱신(D-08-04)
 - 산출물: `ads/app/ctr_update.py`, `ads/app/pacing_update.py`, `tools/ad_scenarios.py`, `out/ad_scenarios/`(커밋 제외, 리포트만 증빙)
 - 완료 조건:
@@ -145,6 +146,7 @@
   4. 평가용 생성기는 학습용과 분리(시간에 따른 CTR 변화, 사용자 이질성, 피로, 지연 클릭, 비콘 손실 포함), 시드 3개 이상.
   5. 결론은 "알고리즘·회계·제어 루프 동작 검증"으로 한정한다는 문구를 리포트에.
   6. **11:00 광고 서버 인계(→ B-08-03)**: 오전 11시 전에 개발 환경(ad-01 또는 Compose)에서 광고 서버 기동, B-08-03의 1번 조건이 통과하도록 지원.
+  7. **12:00 합성 트래픽 실제 서버 실행(→ C-08-02 3번, 11/8 PM 결정)**: 지금 `tools/ad_traffic_sim.py`는 매번 자체 시험용 광고 서버를 띄우고 서버 주소 인자가 없다. 실제 광고 서버 주소로 보내는 모드(예: `--base-url`, 없으면 지금처럼 자체 서버)를 추가하고, ad-01의 실제 광고 서버로 1회 실행해 실행 ID·요청 수·정답 파일 위치를 12:00까지 C에 전달한다(C-08-02 3번 대사 입력, 1번 실제 파이프라인 경유의 입력). 자체 서버 모드의 기존 시험은 그대로 통과. 실행 명령과 실행 ID를 증빙에.
 - 근거: 기획서 14.5, 14.6
 
 ### D-08-04 씐 자 모델 v0 인계

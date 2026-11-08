@@ -1,0 +1,20 @@
+{
+  "task": "B-07-05",
+  "commit": "63468ce750e8cbe864c5104e738fa38d37802a74",
+  "generated_at": "2026-11-07T19:43:50Z",
+  "source": "docker logs --since 15m paldo-dev-mongo-1; select Slow query with durationMillis>1000 and ns matching .b0705_; aggregate out/handoff/b0705-mongo-slow-summary.json",
+  "metrics": {
+    "slow_operations": {
+      "value": 17,
+      "unit": "count"
+    },
+    "max_duration_ms": {
+      "value": 18284,
+      "unit": "ms"
+    },
+    "max_majority_wait_ms": {
+      "value": 18211,
+      "unit": "ms"
+    }
+  }
+}
