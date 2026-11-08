@@ -57,8 +57,8 @@ def stage_of(name: str) -> str | None:
 
 
 def account_of(name: str) -> str | None:
-    """Pod 이름에서 계정 글자(대문자 E|B|C|D). 규칙에 안 맞으면 None."""
-    m = re.match(re.escape(PREFIX) + r"s[012]-([a-zA-Z])-", name)
+    """Pod 이름에서 계정 글자(대문자 E|B|C|D). 단계 칸과 따로 읽는다(단계를 못 읽어도 계정은 읽음). 못 읽으면 None."""
+    m = re.match(re.escape(PREFIX) + r"[^-]+-([a-zA-Z])-", name)
     return m.group(1).upper() if m and m.group(1).upper() in LIMITS else None
 
 
@@ -188,6 +188,10 @@ def watch(ctl: RunpodCtl, ledger_path: Path, account: str, once: bool = False, i
     """감시 루프. 장부를 매번 파일에 쓴다. 돌려주는 값은 마지막 장부."""
     limit = LIMITS[account]
     ledger = json.loads(ledger_path.read_text(encoding="utf-8")) if ledger_path.exists() else {}
+    foreign_old = [e["name"] for e in ledger.values() if account_of(e["name"]) != account.upper()]
+    if foreign_old:   # 다른 계정 장부를 잘못 넘겼거나 계정 격리 전 장부: 이 계정 누계에서 뺀다
+        log("장부에 계정 칸이 다른 항목이 있어 뺌(이 계정 누계에 넣지 않음)", level="error", account=account, names=foreign_old)
+        ledger = {k: v for k, v in ledger.items() if account_of(v["name"]) == account.upper()}
     first, loops = True, 0
     while True:
         loops += 1

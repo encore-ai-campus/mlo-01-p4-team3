@@ -334,6 +334,17 @@ class WatchPodsTest(unittest.TestCase):
         self.assertIn("paldo-e1112-s1-c-1", out.getvalue())   # 매 주기 오류로 알림
         self.assertEqual(wp.account_of("paldo-e1112-s2-d-1"), "D")
         self.assertIsNone(wp.account_of("paldo-e1112-s2-z-1"))
+        self.assertEqual(wp.account_of("paldo-e1112-s3-b-1"), "B")   # 단계를 못 읽어도 계정은 읽고 가장 긴 상한(Codex 11/8)
+        self.assertEqual(wp.max_minutes("paldo-e1112-s3-b-1"), 90)
+        # 다른 계정 항목이 든 장부를 넘겨도 이 계정 누계에 넣지 않는다(Codex 11/8)
+        self.ledger.write_text(json.dumps({"old_c": {"name": "paldo-e1112-s1-c-9", "first_seen": 0, "last_seen": 36000,
+                                                     "cost_per_hr": 1.09, "gone": True, "delete_requested": False}}),
+                               encoding="utf-8")
+        self.set_pods([{"id": "b2", "name": "paldo-e1112-s1-b-2", "costPerHr": 0.89}])
+        with contextlib.redirect_stdout(io.StringIO()):
+            led3 = wp.watch(self.ctl, self.ledger, "B", once=True, clock=lambda: 0.0, sleep=lambda s: None)
+        self.assertEqual(set(led3), {"b2"})
+        self.assertNotIn("pod delete b2", self.calls())
         led2 = {}
         _, foreign = wp.update_ledger(led2, [{"id": "c1", "name": "paldo-e1112-s1-c-1", "cost_per_hr": 1.0}], 0, "B")
         self.assertEqual((led2, foreign), ({}, ["paldo-e1112-s1-c-1"]))
