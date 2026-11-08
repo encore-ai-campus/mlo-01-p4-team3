@@ -49,15 +49,19 @@ def generate(out: Path, games: int, seed: int, lie_type: str) -> dict:
         sink.close()
     features.main(['--events', str(events_path), '--out', str(out / 'data')])
     counts = Counter()
+    first_day = {}
     with events_path.open(encoding='utf-8') as f:
         for line in f:
             event = json.loads(line)
             if event['event_type'] == 'decision':
                 counts.update(event['payload']['reason_codes'])
+                if 'lie_' + lie_type in event['payload']['reason_codes']:
+                    first_day.setdefault(event['game_id'], event['day'])
     manifest_path = out / 'data' / 'manifest.json'
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     manifest.update(strategy_lie_type=lie_type, strategy_mix=asdict(mix.mix_for('')),
-                    strategy_reason_counts=dict(sorted(counts.items())))
+                    strategy_reason_counts=dict(sorted(counts.items())),
+                    strategy_first_day_by_game=first_day)
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     log('suspicion_strategies', 'info', '전략 고정 판 생성 완료', games=games, seed=seed,
         strategy=lie_type, lie_unrefuted=counts['lie_unrefuted'], lie_routine=counts['lie_routine'])

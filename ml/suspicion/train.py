@@ -62,11 +62,20 @@ def validate_heldout(rows: list, manifest: dict, heldout_rows: list, heldout_man
     test_strategy = heldout_manifest.get('strategy_lie_type')
     if {train_strategy, test_strategy} != {'unrefuted', 'routine'}:
         raise ValueError('학습에 쓰지 않은 거짓말 전략 필요')
-    for metadata, strategy in ((manifest, train_strategy), (heldout_manifest, test_strategy)):
-        counts = metadata.get('strategy_reason_counts', {})
-        other = 'routine' if strategy == 'unrefuted' else 'unrefuted'
-        if counts.get('lie_' + strategy, 0) <= 0 or counts.get('lie_' + other, 0) != 0:
-            raise ValueError('고정 전략의 실제 선택 증거가 없거나 다른 전략이 섞임')
+    training_counts = manifest.get('strategy_reason_counts', {})
+    evaluation_counts = heldout_manifest.get('strategy_reason_counts', {})
+    if (training_counts.get('lie_' + train_strategy, 0) <= 0
+            or training_counts.get('lie_' + test_strategy, 0) != 0
+            or evaluation_counts.get('lie_' + test_strategy, 0) <= 0):
+        raise ValueError('실제 선택 증거가 없거나 평가 전략이 학습에 포함됨')
+    if not strategy_observations(heldout_rows, heldout_manifest):
+        raise ValueError('실제 미사용 전략 선택 이후 관측이 없음')
+
+
+def strategy_observations(rows: list, manifest: dict) -> list:
+    """요청한 거짓말 유형을 실제 선택한 밤 이후의 관측만 고른다."""
+    first_days = manifest.get('strategy_first_day_by_game', {})
+    return [row for row in rows if row.game_id in first_days and row.day > first_days[row.game_id]]
 
 
 def fit_models(rows: list, split: dict, seed: int) -> dict:
@@ -164,14 +173,14 @@ def run(rows_path: Path, manifest_path: Path, out: Path, seed: int, record: str 
             if heldout_rows:
                 reports['heldout_' + name] = evaluate_scores(heldout_rows,
                     [s/temp for s in model_scores(model, heldout_rows)], seed)
-                after_night = [row for row in heldout_rows if row.day > 1]
+                after_night = strategy_observations(heldout_rows, heldout_manifest)
                 if after_night:
                     reports['heldout_post_night_' + name] = evaluate_scores(after_night,
                         [s/temp for s in model_scores(model, after_night)], seed)
         reports['rule_v0'] = evaluate_scores(parts['test'], [r.features['rule_score'] for r in parts['test']], seed)
         if heldout_rows:
             reports['heldout_rule_v0'] = evaluate_scores(heldout_rows, [r.features['rule_score'] for r in heldout_rows], seed)
-            after_night = [row for row in heldout_rows if row.day > 1]
+            after_night = strategy_observations(heldout_rows, heldout_manifest)
             if after_night:
                 reports['heldout_post_night_rule_v0'] = evaluate_scores(after_night,
                     [r.features['rule_score'] for r in after_night], seed)

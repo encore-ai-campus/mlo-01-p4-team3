@@ -170,16 +170,28 @@ class Training(unittest.TestCase):
                     content_versions=['same-content'], strategy_lie_type='unrefuted',
                     strategy_reason_counts={'lie_unrefuted': 10, 'lie_routine': 0})
         other = dict(base, strategy_lie_type='routine', seeds=[709000000],
-                     strategy_reason_counts={'lie_unrefuted': 0, 'lie_routine': 10})
-        fresh = [replace(r, game_id='new-game') for r in rows]
+                     strategy_reason_counts={'lie_unrefuted': 3, 'lie_routine': 10},
+                     strategy_first_day_by_game={'new-game': 1})
+        fresh = [replace(r, game_id='new-game', day=2) for r in rows]
         validate_heldout(rows, base, fresh, other)
         for wrong_rows, wrong_meta in ((rows, other), (fresh, base),
                                       (fresh, dict(other, seeds=base['seeds'])),
                                       (fresh, dict(other, rule_versions=['changed-rule'])),
                                       (fresh, dict(other, strategy_reason_counts={'lie_routine': 0})),
+                                      (fresh, dict(other, strategy_first_day_by_game={})),
+                                      (fresh, dict(other, strategy_first_day_by_game={'new-game': 2})),
                                       (fresh, dict(base, strategy_lie_type='routine'))):
             with self.assertRaises(ValueError):
                 validate_heldout(rows, base, wrong_rows, wrong_meta)
+
+    def test_strategy_observations_follow_actual_unseen_choice(self):
+        from ml.suspicion.train import strategy_observations
+        from types import SimpleNamespace
+        before = SimpleNamespace(game_id='chosen', day=1)
+        after = SimpleNamespace(game_id='chosen', day=2)
+        fallback_only = SimpleNamespace(game_id='fallback-only', day=4)
+        manifest = {'strategy_first_day_by_game': {'chosen': 1}}
+        self.assertEqual(strategy_observations([before, after, fallback_only], manifest), [after])
 
     def test_strategy_generator_selects_only_requested_lie_type(self):
         from ml.suspicion.strategies import FixedLieMix, generate
