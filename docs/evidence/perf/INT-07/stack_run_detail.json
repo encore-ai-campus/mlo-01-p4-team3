@@ -1,6 +1,6 @@
 {
   "task": "INT-07",
-  "commit": "aa7e1a371e28b03fb638e1e46184867383eee7fd",
+  "commit": "8b40f71203e04fd4f64c6b6574acc2c069849451",
   "source": "python -m server.tests.int07_stack --scenarios <int07_scenarios 결과> --kafka-config <발행기 TLS JSON> --out <폴더> --record",
   "compose_project": "paldo-int07",
   "topics_created_rf1": 0,
@@ -8,15 +8,15 @@
     "ad.click": 0,
     "ad.impression": 0,
     "ad.rejudge": 0,
-    "ad.serve": 2,
-    "paldo.game": 222,
+    "ad.serve": 3,
+    "paldo.game": 318,
     "paldo.intent": 0,
-    "paldo.llm": 6,
-    "paldo.observations": 368,
+    "paldo.llm": 9,
+    "paldo.observations": 530,
     "paldo.player": 0,
-    "paldo.truth": 6
+    "paldo.truth": 8
   },
-  "started_at": "2026-11-08T14:58:48+00:00",
+  "started_at": "2026-11-08T15:02:33+00:00",
   "ad_serve_status": 200,
   "components": {
     "web": {
@@ -78,30 +78,33 @@
     {
       "service": "kafka",
       "image": "apache/kafka:4.3.2",
-      "status": "Up 25 minutes (healthy)"
+      "status": "Up 29 minutes (healthy)",
+      "port_matches": true
     },
     {
       "service": "mongo",
       "image": "mongo:8.0.34",
-      "status": "Up 30 minutes (healthy)"
+      "status": "Up 33 minutes (healthy)",
+      "port_matches": true
     },
     {
       "service": "mysql",
       "image": "mysql:8.4.11",
-      "status": "Up 30 minutes (healthy)"
+      "status": "Up 33 minutes (healthy)",
+      "port_matches": true
     }
   ],
   "kafka_offsets_after": {
     "ad.click": 0,
     "ad.impression": 0,
     "ad.rejudge": 0,
-    "ad.serve": 3,
-    "paldo.game": 318,
+    "ad.serve": 4,
+    "paldo.game": 414,
     "paldo.intent": 0,
-    "paldo.llm": 9,
-    "paldo.observations": 530,
+    "paldo.llm": 12,
+    "paldo.observations": 692,
     "paldo.player": 0,
-    "paldo.truth": 8
+    "paldo.truth": 10
   },
   "http_5xx": 0,
   "forbidden_hits": [],
@@ -292,11 +295,11 @@
       "errors": []
     }
   },
-  "collected_at": "2026-11-08T15:00:32+00:00",
+  "collected_at": "2026-11-08T15:04:18+00:00",
   "verdicts": {
     "9": {
       "result": "확인 완료, PM 판정 대기",
-      "detail": "Python 구성요소 6개 지표 누락 0, 3.14 아닌 프로세스 0, 필수 컨테이너 3개 중 없음·비정상 0, 토픽 증가 {'ad.serve': 1, 'paldo.game': 96, 'paldo.llm': 3, 'paldo.observations': 162, 'paldo.truth': 2}"
+      "detail": "Python 구성요소 6개 지표 누락 0, 3.14 아닌 프로세스 0, 필수 컨테이너 3개 중 없음·비정상·주소 불일치 0, 토픽 증가 {'ad.serve': 1, 'paldo.game': 96, 'paldo.llm': 3, 'paldo.observations': 162, 'paldo.truth': 2}"
     },
     "1": {
       "result": "확인 완료",

@@ -153,7 +153,7 @@ PM 판정용 자동 확인이다(E-07-03, 11/8 사용자 지시 "INT-07은 할 �
 - 토픽: 로컬 단일 브로커라 토픽 계획(`pipeline/topics.yaml`) 10개를 복제 1로 만들었다(운영 브로커는 복제 3으로 미리 생성).
 - 판: 판마다 참가자 1명과 고정 회차(시드 하나)를 `server.tests.int07_setup`으로 만들고 게임 웹 HTTP로만 진행했다. 로컬 Compose라 공식 데이터(Garage `pj4/official/...`)와 섞이지 않는다.
 
-결과(브랜치 커밋 aa7e1a3, `docs/evidence/perf/INT-07/stack_run.json`·`stack_run_detail.json`, 수집 시각 2026-11-08 15:00 UTC):
+결과(브랜치 커밋 8b40f71, `docs/evidence/perf/INT-07/stack_run.json`·`stack_run_detail.json`, 수집 시각 2026-11-08 15:04 UTC):
 
 | 구성요소 | `/metrics` 필수 지표 | 프로세스 Python |
 |---|---|---|
@@ -161,7 +161,7 @@ PM 판정용 자동 확인이다(E-07-03, 11/8 사용자 지시 "INT-07은 할 �
 | 게임 아웃박스 발행기 | `paldo_outbox_publish_lag_seconds` 있음 | 3.14.6 |
 | 광고 서버 | `paldo_ad_serve_total` 있음(serve 1건 뒤) | 3.14.6 |
 | 광고 작업자 expire·publish·refund | `paldo_ad_worker_processed_total` 각각 있음 | 3.14.6 ×3 |
-| 컨테이너 mongo·kafka·mysql | healthy 3/3 | (Python 아님) |
+| 컨테이너 mongo·kafka·mysql | healthy 3/3, 호스트 포트 = 구성요소 연결 주소 | (Python 아님) |
 
 - 같은 실행 동안 Kafka 끝 오프셋이 264건 늘었다(`paldo.game` 96, `paldo.observations` 162, `paldo.truth` 2, `paldo.llm` 3, `ad.serve` 1). 게임 웹 → Mongo 아웃박스 → 발행기(TLS) → Kafka, 광고 serve → MySQL Outbox → 광고 publish 작업자 → Kafka가 동시에 돈 것이다.
 - #1(통합 환경에서 같은 명령 1회): 계정 DB를 Compose MySQL로 바꾼 운영 조립에서 버튼 명령 1판(시드 70301, `int07_web_run`과 같은 명령 선택)을 명령 6개로 결과(창귀 승리)까지 진행했다. 500·503 0건, 받은 응답 전체 금지 키 0건.
