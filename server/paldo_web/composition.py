@@ -45,7 +45,8 @@ def get_game_service():
         raise GameServiceUnavailable("game_service_not_configured")
     service = _game_service
     if service.prepare_start is None:
-        service.prepare_start = start_policy(partial(_prepare_fixed_start, load_game=service.repository.load))
+        service.prepare_start = start_policy(partial(_prepare_fixed_start, load_game=service.repository.load),
+                                             service.repository.load)
     return service
 
 
@@ -60,10 +61,10 @@ def open_start_versions():
     return deployed_versions(lambda: params.RULE_PARAMS_VERSION, settings.ACTIVE_CONTENT_VERSION)
 
 
-def start_policy(session_prepare):
+def start_policy(session_prepare, load_game):
     """회차 판은 회차 정책, 회차 없는 판은 랜덤 시드 일반 판으로 시작하는 정책을 만든다."""
     from server.app.open_start import StartPolicy
-    return StartPolicy(session_prepare, open_start_versions)
+    return StartPolicy(session_prepare, open_start_versions, load_game)
 
 
 def configure_game_service(service):

@@ -36,8 +36,12 @@ class OpenStartPolicy(SimpleTestCase):
         def randbelow(limit):
             self.draws.append(limit)
             return 424242
+        self.games = {}
+
+        def load_game(game_id):
+            return self.games[game_id]
         self.policy = StartPolicy(lambda data, player: self.session_calls.append((data, player)) or "session-meta",
-                                  lambda: VERSIONS, randbelow)
+                                  lambda: VERSIONS, load_game, randbelow)
 
     def test_open_meta_uses_server_seed_versions_and_pseudonym(self):
         """시드는 서버 난수(회차 등록과 같은 범위), 버전 3개는 배포 값, 회차 ID는 없다."""
@@ -67,6 +71,17 @@ class OpenStartPolicy(SimpleTestCase):
                 self.policy(data, self.player)
         with self.assertRaises(ValueError):
             self.policy(start_input(self.player, start_token="not-a-uuid"), self.player)
+        self.assertEqual(self.draws, [])
+
+    def test_existing_game_meta_returned_before_new_game_checks(self):
+        """같은 시작 UUID의 판이 있으면 프리셋·버전 검사와 난수 없이 그 판 메타를 돌려준다."""
+        data = start_input(self.player)
+        existing = MagicMock()
+        self.games[open_game_id(self.player, data.start_token)] = (existing, None)
+        self.policy.versions = lambda: self.fail("버전을 읽으면 안 된다")
+        closed = next(pid for pid in PRESETS if pid not in open_preset_ids())
+        self.assertIs(self.policy(start_input(self.player, preset_id=closed, start_token=data.start_token),
+                                  self.player), existing.meta)
         self.assertEqual(self.draws, [])
 
     def test_open_presets_default_to_test_default(self):
@@ -162,6 +177,15 @@ class OpenStartAPI(TestCase):
         first, second = self.start(start_token=token), self.start(start_token=token)
         self.assertEqual(first.json()["view"]["game_id"], second.json()["view"]["game_id"])
         self.assertEqual(self.service.progress.load(self.player).game_ids, [first.json()["view"]["game_id"]])
+
+    def test_retry_returns_existing_game_after_config_change(self):
+        """응답을 잃은 재전송은 그사이 콘텐츠 버전 설정이 빠져도 이미 만든 판을 돌려준다."""
+        token = str(uuid.uuid4())
+        game_id = self.start(start_token=token).json()["view"]["game_id"]
+        with override_settings(ACTIVE_CONTENT_VERSION=""):
+            retry = self.start(start_token=token)
+        self.assertEqual(retry.status_code, 200, retry.content)
+        self.assertEqual(retry.json()["view"]["game_id"], game_id)
 
     def test_missing_content_version_returns_503(self):
         """운영 콘텐츠 버전이 설정되지 않으면 일반 판 시작은 503으로 거부한다."""

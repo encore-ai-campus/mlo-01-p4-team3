@@ -44,9 +44,10 @@ class StartPolicy:
     """`GameService.prepare_start`로 쓰는 판 시작 정책."""
 
     def __init__(self, session_prepare: Callable, versions: Callable[[], StartVersions],
-                 randbelow: Callable[[int], int] = secrets.randbelow):
+                 load_game: Callable, randbelow: Callable[[int], int] = secrets.randbelow):
         self.session_prepare = session_prepare
         self.versions = versions
+        self.load_game = load_game
         self.randbelow = randbelow
 
     def __call__(self, data, player):
@@ -57,14 +58,24 @@ class StartPolicy:
         return self.open_meta(data, player)
 
     def open_meta(self, data, player):
-        """공개 프리셋·서버 랜덤 시드·배포 버전으로 일반 판 메타를 만든다."""
+        """공개 프리셋·서버 랜덤 시드·배포 버전으로 일반 판 메타를 만든다.
+
+        같은 시작 UUID로 이미 만든 판이 있으면 그 판 메타를 돌려준다. 응답을 잃은 재전송이 그사이 바뀐
+        공개 프리셋·콘텐츠 버전 설정 때문에 거부되지 않게, 새 판에만 필요한 검사보다 먼저 찾는다.
+        """
         if data.seed is not None:
             raise ValueError("seed_not_allowed")
-        if data.preset_id not in open_preset_ids():
-            raise ValueError("preset_not_open")
         if not data.start_token:
             raise ValueError("start_token_required")
         game_id = open_game_id(player, data.start_token)
+        try:
+            state, _ = self.load_game(game_id)
+        except KeyError:
+            pass
+        else:
+            return state.meta
+        if data.preset_id not in open_preset_ids():
+            raise ValueError("preset_not_open")
         versions = self.versions()
         return GameMeta(game_id, PRESETS[data.preset_id], self.randbelow(SEED_LIMIT), DataSource.HUMAN,
                         versions.rule_version, versions.engine_version, versions.content_version,
