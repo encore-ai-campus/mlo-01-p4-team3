@@ -34,3 +34,9 @@
 | RunPod GPU 실험·자원 확정 조건 | `ops/runbook/runpod.md`, `vm_roles.md`, `schedule.md`. E-11-12 계정별 Pod 실행(E가 네 계정 운영, C는 자기 계정 결제 설정·API 키 전달만, C-11-02 완료 조건)·사용량 제한 체크리스트는 `ops/runbook/gpu_demo.md`, 감시·Pod 스크립트는 `llm/bench/watch_pods.py`·`run_pod.sh` |
 | 시간대별 VM 사용(사용자 테스트·학습·LLM), VM 역할·디스크 예산 | `ops/runbook/schedule.md`, `ops/runbook/vm_roles.md` |
 | HTTPS·인증서 경고·브라우저·프록시 지연 확인 | `ops/proxy/{README.md,Caddyfile,browser_check.py,header_probe.py}`, `tools/perf/api_bench.py --proxy-profile`, `server/tests/proxy_bench.py` |
+
+## C-08-01 작업 위치
+
+| 작업 | 위치 |
+|---|---|
+| C-08-01 작업 | ops/prometheus 지표 중계·읽기 수집기, ops/grafana/dashboards 6종과 alerts.yml. 검증 부하는 tools/perf/web_concurrency.py. |
