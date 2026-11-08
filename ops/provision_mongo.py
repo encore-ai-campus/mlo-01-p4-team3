@@ -50,7 +50,7 @@ def validate(args):
     """명시 스키마·안전한 호스트·관리자 파일 권한을 mutation 전에 확인한다."""
     for value in (args.source,args.target,args.app_user,args.replica_set):
         if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_-]{0,62}',value):raise ValueError('invalid_identifier')
-    if args.source==args.target or args.target in ('admin','local','config'):raise ValueError('dedicated_target_required')
+    if args.source==args.target or args.source in ('admin','local','config') or args.target in ('admin','local','config'):raise ValueError('dedicated_target_required')
     if not re.fullmatch(r'[A-Za-z0-9._-]+',args.seed):raise ValueError('single_seed_host_required')
     if args.admin_profile.is_symlink() or args.admin_profile.stat().st_mode & 0o077:raise ValueError('private_admin_file_required')
     if args.apply:
