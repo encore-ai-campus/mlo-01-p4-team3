@@ -73,6 +73,9 @@ class SuspicionModelAdapter:
                 raise FeatureVersionMismatch('selected feature_version mismatch')
         except FeatureVersionMismatch:
             self.close()
+            log('suspicion_model', 'warning', '특징 버전 불일치; 모델 사용 거부',
+                error_type='FeatureVersionMismatch', model_version=self.model_version,
+                feature_version=self.feature_version)
             raise
         except Exception as exc:
             self.close()
@@ -111,6 +114,9 @@ class SuspicionModelAdapter:
             return result
         except FeatureVersionMismatch:
             self.close()
+            log('suspicion_model', 'warning', '특징 버전 불일치; 모델 사용 거부',
+                error_type='FeatureVersionMismatch', model_version=self.model_version,
+                feature_version=self.feature_version)
             raise
         except Exception as exc:
             self.close()

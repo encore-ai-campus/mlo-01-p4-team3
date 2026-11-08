@@ -4,6 +4,7 @@ from functools import partial
 from pathlib import Path
 import tempfile
 import io
+import json
 from contextlib import redirect_stdout
 import time
 import unittest
@@ -66,12 +67,19 @@ class AdapterContract(unittest.TestCase):
 
     def test_declared_version_mismatch_rejected(self):
         from ml.adapters.suspicion_model import SuspicionModelAdapter
-        with self.assertRaises(FeatureVersionMismatch):
+        output = io.StringIO()
+        with redirect_stdout(output), self.assertRaises(FeatureVersionMismatch):
             SuspicionModelAdapter(Backend, 'different')
+        self.assertTrue(output.getvalue(), '특징 불일치 경보 로그 없음')
+        self.assertEqual(json.loads(output.getvalue())['error_type'], 'FeatureVersionMismatch')
 
     def test_output_version_mismatch_becomes_engine_fallback(self):
         model = self.adapter(partial(Backend, 'version'))
-        self.assertEqual(estimate(model, obs(['a', 'b'], 1))[1], FallbackReason.VERSION)
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(estimate(model, obs(['a', 'b'], 1))[1], FallbackReason.VERSION)
+        self.assertTrue(output.getvalue(), '특징 불일치 경보 로그 없음')
+        self.assertEqual(json.loads(output.getvalue())['error_type'], 'FeatureVersionMismatch')
 
     def test_hanging_inference_is_killed_and_no_late_result_is_reused(self):
         model = self.adapter(partial(Backend, 'hang'), timeout_s=.03)
@@ -108,9 +116,6 @@ class AdapterContract(unittest.TestCase):
             with self.assertRaises(ModelUnavailable):
                 model.estimate(obs(['a', 'b'], 1))
 
-
-if __name__ == '__main__':
-    unittest.main()
 
 class ModelGames(unittest.TestCase):
     def test_runner_pins_actual_model_version(self):
