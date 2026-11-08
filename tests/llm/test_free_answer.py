@@ -236,6 +236,16 @@ class EvalSetTest(unittest.TestCase):
         fixture = (ROOT / "fixtures" / "llm" / "free_answer_eval.json").read_text(encoding="utf-8")
         self.assertEqual(fixture, self.text)
 
+    def test_status_pending_when_sentences_differ(self):
+        from llm import free_answer_eval as fe
+        bundle = json.loads(fe.BUNDLE.read_text(encoding="utf-8"))
+        other = fe.build_eval(bundle, fe.load_questions(fe.EXAMPLES), 2)
+        self.assertNotEqual(other["new_sentences"], self.data["new_sentences"])
+        self.assertIn("사용자 확인 전", other["status"])
+        changed = [dict(x) for x in self.data["new_sentences"]]
+        changed[0]["text"] += " 바뀜"
+        self.assertEqual(fe.status_for(changed), fe.STATUS_PENDING)
+
     def test_counts_and_status(self):
         items = self.data["items"]
         self.assertIn("사용자 확인 완료", self.data["status"])

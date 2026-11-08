@@ -9,7 +9,8 @@ NPC의 비밀 시간대 행적은 거짓 장소(엔진이 대는 알리바이)�
 항목 구성: 질문 유형 3종(`whereabouts` 행적 확인, `contradiction` 모순 추궁, `suspicion` 의심 이유) × 대화 길이 3종
 (0·2·4턴) × `PER_CELL`건 + 반례 `false_premise`(거짓 전제) 6건·`wrong_history`(오류 섞인 이전 답) 6건.
 질문 문장은 E-06-02 의도 예시(`content/intent/examples_v1.jsonl`, 사람 작성 질문형)에서 고른다(`question_source`에 예시 ID).
-새로 쓴 문장(거짓 전제 질문, 오류 섞인 이전 답)은 `new_sentences`에 모아 두고 사용자 확인을 받는다(11/8 12개 전부 승인). 문장을 바꾸면 다시 확인받는다.
+새로 쓴 문장(거짓 전제 질문, 오류 섞인 이전 답)은 `new_sentences`에 모아 두고 사용자 확인을 받는다(11/8 12개 전부 승인). 생성 결과가 승인본 지문(`APPROVED_NEW_SENTENCES_SHA256`)과 다르면
+`status`는 확인 전으로 남고, 새 문장을 다시 확인받은 뒤 지문을 바꾼다.
 
 항목 필드: `item_id`, `qtype`, `kind`(normal|false_premise|wrong_history), `turns`, `npc_id`, `npc_name`, `persona`,
 `facts`([{fact_id, sentence}]), `history`([{question, answer}]), `question`, `question_source`, `relevant_fact_ids`
@@ -18,6 +19,7 @@ NPC의 비밀 시간대 행적은 거짓 장소(엔진이 대는 알리바이)�
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import re
@@ -32,7 +34,10 @@ BUNDLE = ROOT / "fixtures" / "content_min" / "bundle.json"
 EXAMPLES = ROOT / "content" / "intent" / "examples_v1.jsonl"
 OUT = ROOT / "fixtures" / "llm" / "free_answer_eval.json"
 EVAL_VERSION = "free-answer-eval-1"
+# 사용자가 확인한 new_sentences(시드 1, 12개)의 지문. 생성 결과가 이와 같을 때만 확인 완료로 표시한다.
+APPROVED_NEW_SENTENCES_SHA256 = "a1d969e8dbc8c1cb840532306416f095725284bac793334a1d9119b42c75a5ab"
 STATUS = "사용자 확인 완료(11/8, new_sentences 12개 전부 승인)"
+STATUS_PENDING = "사용자 확인 전(new_sentences가 11/8 승인본과 다름: 새 문장 확인 뒤 확정)"
 GAME_SIZE = 5
 MAX_FACTS = 5
 PER_CELL = 7                         # 3 유형 × 3 길이 × 7 = 63건
@@ -244,10 +249,21 @@ def build_items(bundle: dict, questions: dict, seed: int) -> tuple[list[dict], l
     return items, new_sentences
 
 
+def sentences_fingerprint(new_sentences: list[dict]) -> str:
+    """new_sentences의 sha256(키 정렬·공백 없는 JSON). 승인본과 대조하는 데 쓴다."""
+    text = json.dumps(new_sentences, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def status_for(new_sentences: list[dict]) -> str:
+    """승인본과 같은 문장이면 확인 완료, 다르면(다른 시드·콘텐츠·틀 변경) 확인 전."""
+    return STATUS if sentences_fingerprint(new_sentences) == APPROVED_NEW_SENTENCES_SHA256 else STATUS_PENDING
+
+
 def build_eval(bundle: dict, questions: dict, seed: int) -> dict:
     """평가 세트 전체(dict). 생성 시각은 넣지 않는다."""
     items, new_sentences = build_items(bundle, questions, seed)
-    return {"eval_version": EVAL_VERSION, "status": STATUS, "seed": seed, "content_version": bundle["content_version"],
+    return {"eval_version": EVAL_VERSION, "status": status_for(new_sentences), "seed": seed, "content_version": bundle["content_version"],
             "bundle": "fixtures/content_min/bundle.json", "intent_examples": "content/intent/examples_v1.jsonl",
             "lexicon": lexicon_from_bundle(bundle).to_json(), "items": items, "new_sentences": new_sentences}
 
