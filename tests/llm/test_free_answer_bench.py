@@ -359,13 +359,13 @@ class WatchPodsTest(unittest.TestCase):
         fake = Path(self.tmp.name) / "fake_env_ctl.py"
         fake.write_text(FAKE_ENV_CTL.replace("ENV_LOG", repr(str(env_log))), encoding="utf-8")
         environ = {"PATH": os.environ.get("PATH", ""), "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
-                   "PALDO_RUNPOD_KEY_B": "fake-key-b", "PALDO_RUNPOD_KEY_C": "fake-key-c", "RUNPOD_API_KEY": "stale"}
+                   "PALDO_RUNPOD_KEY_B": "<fake-key-b>", "PALDO_RUNPOD_KEY_C": "<fake-key-c>", "RUNPOD_API_KEY": "<stale>"}
         env = wp.ctl_env("PALDO_RUNPOD_KEY_B", environ)
         ctl = wp.RunpodCtl(shlex.join([sys.executable, str(fake)]), env=env)
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             wp.watch(ctl, self.ledger, "B", once=True, clock=lambda: 0.0, sleep=lambda s: None)
-        self.assertEqual(json.loads(env_log.read_text(encoding="utf-8").splitlines()[0]), ["fake-key-b", []])
+        self.assertEqual(json.loads(env_log.read_text(encoding="utf-8").splitlines()[0]), ["<fake-key-b>", []])
         self.assertNotIn("fake-key", out.getvalue())
         self.assertIsNone(wp.ctl_env(None, environ))
         with self.assertRaises(ValueError):
