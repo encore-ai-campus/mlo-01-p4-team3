@@ -37,7 +37,7 @@
 - 산출물: `ads/project/`(광고 서버 전용 Django 설정·URL), `ads/manage.py`, `ads/web/`(Django 앱), `ads/app/serve.py`, `beacon.py`, `click.py`, `tests/ads/`. 광고 서버는 게임 웹 `server/paldo_web`과 설정을 공유하지 않는 독립 Django 프로젝트다(11/4 PM 결정 #1)
 - 완료 조건:
   1. 광고 요청(serve), 노출 비콘, 클릭 리다이렉트 엔드포인트가 ads.md 3절 형식으로 동작(메모리 예산부 `BudgetBook`).
-  2. `fixtures/ads/auction_cases.json`·`validity_cases.json`·`budget_cases.json`을 HTTP 경유로 재생해 기대값과 같음.
+  2. `fixtures/ads/auction_cases.json`·`validity_cases.json`과 `budget_cases.json`의 예약·확정·해제 단계를 HTTP 경유로 재생해 기대값과 같음(해제는 주입한 시계로 시간을 넘겨 확인). `budget_cases.json`의 환입 단계와 대사 사례는 HTTP로 만든 원장에 도메인 연산(`BudgetBook.refund`, `reconcile`)을 적용해 같은 기대값을 확인한다. 계약상 환입은 `ad.rejudge` 소비자(D-06-02 7번), 대사는 원장·Delta 비교(C-08-02, ads.md 5·7절)라 HTTP 엔드포인트가 없고, 만들지 않는다(11/8 PM 결정).
   3. 구조화 로그(`serve_id`, `charge_id`)와 `/metrics`(`paldo_ad_serve_total{filled}`, `paldo_ad_serve_duration_seconds`, 클릭·노출 유효/무효 카운터).
   4. 광고 요청 처리 지연 p95 기록(목표: B의 전체 시간 제한 300ms 안).
   5. 캠페인·소재·예산을 Django admin에서 관리: admin으로 캠페인을 만들면 다음 serve부터 후보가 되고, 중지하면 빠짐(테스트). admin은 로그인 필수. 일 예산이 1건 최대 청구액(CPC `max_bid_mw`, CPM `floor(max_bid_mw/1000)`, 11/7 PM 결정으로 올림 → 내림)보다 작으면 저장 거부(ads.md 2절 등록 검증, 11/7 PM 결정, 테스트: CPC 입찰가 300원·예산 100원 거부, 같은 값 CPM 허용).
