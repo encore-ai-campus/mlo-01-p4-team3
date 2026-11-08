@@ -19,6 +19,8 @@ from engine.ports import CommandCandidate, ParseFailure, PlayerView, RenderStatu
 # ---------------------------------------------------------------- 판 시작·조회
 @dataclass
 class StartGameInput:
+    """판 시작 입력. `session_id`가 없으면 일반 판, 있으면 테스트 회차 판(api.md 2-3절)."""
+
     player_pseudonym: str  # 서버가 로그인 계정의 가명 ID로 채운다. 요청 본문에 있으면 400(api.md 2-1절)
     preset_id: str
     session_id: Optional[str]           # 테스트 회차 ID. 생략·null·빈 문자열은 회차 없는 일반 판(E-08-14, 표현 계층이 None으로 맞춘다)

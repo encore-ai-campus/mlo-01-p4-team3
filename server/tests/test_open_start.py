@@ -29,6 +29,7 @@ class OpenStartPolicy(SimpleTestCase):
     """응용 계층 시작 정책을 저장소·Django 없이 확인한다."""
 
     def setUp(self):
+        """가짜 회차 정책·판 저장소·난수로 시작 정책을 만든다."""
         self.player = str(uuid.uuid4())
         self.session_calls = []
         self.draws = []
@@ -69,8 +70,9 @@ class OpenStartPolicy(SimpleTestCase):
         for code, data in cases.items():
             with self.subTest(code=code), self.assertRaisesRegex(ValueError, code):
                 self.policy(data, self.player)
+        malformed = "-".join(["not", "a", "uuid"])   # 형식이 틀린 시작 UUID
         with self.assertRaises(ValueError):
-            self.policy(start_input(self.player, start_token="not-a-uuid"), self.player)
+            self.policy(start_input(self.player, start_token=malformed), self.player)
         self.assertEqual(self.draws, [])
 
     def test_existing_game_meta_returned_before_new_game_checks(self):
@@ -114,6 +116,7 @@ class OpenStartAPI(TestCase):
     """기본 조립(composition) 경로로 홈 화면·시작·수첩·설문까지 확인한다."""
 
     def setUp(self):
+        """동의한 계정, 녹화 판 서비스(기본 조립이 정책을 끼움), 콘텐츠 버전 설정을 준비한다."""
         self.user = User.objects.create_user(username="open-start-owner")
         self.profile = install_test_profiles(self)(self.user)
         self.player = str(self.profile.player_pseudonym)
@@ -131,10 +134,12 @@ class OpenStartAPI(TestCase):
         self.content_version = content_version
 
     def send(self, method, path, body=None):
+        """공통 JSON 요청 헬퍼."""
         return self.client.generic(method, path, json.dumps(body or {}), content_type="application/json",
                                    HTTP_ACCEPT="application/json")
 
     def start(self, **body):
+        """일반 판 시작 요청(기본: base6, 새 시작 UUID)."""
         body = {"preset_id": "base6", "mudang_variant": "f", "start_token": str(uuid.uuid4()), **body}
         return self.send("POST", "/games", body)
 
@@ -210,6 +215,11 @@ class OpenStartAPI(TestCase):
         self.finish(game_id)
         self.assertNotContains(self.client.get("/"), f"/games/{game_id}")
 
+    def test_form_hidden_when_policy_lacks_open_games(self):
+        """일반 판을 지원하지 않는 시작 정책(미리보기 녹화 판)에서는 새 게임 폼을 보이지 않는다."""
+        configure_game_service(make_service())
+        self.assertNotContains(self.client.get("/"), "새 게임 시작")
+
     def test_unfinished_open_games_skip_sessions_finished_and_missing(self):
         """이어 하기 목록은 회차 판·끝난 판·없는 판을 뺀다."""
         open_id = self.start().json()["view"]["game_id"]
@@ -222,6 +232,7 @@ class OpenStartAPI(TestCase):
         self.assertEqual(unfinished_open_games(["session-game", "missing", open_id], load), [open_id])
 
     def finish(self, game_id):
+        """녹화 명령으로 판을 끝까지 진행한다."""
         for step in self.service.engine.steps[1:]:
             response = self.send("POST", f"/games/{game_id}/commands",
                                  dict(step["request"], game_id=game_id, command_id=str(uuid.uuid4())))
@@ -251,6 +262,7 @@ class OpenStartUnconfigured(TestCase):
     """콘텐츠 버전이 없어도 홈은 열리고, 기존 회차 판 시작 경로는 그대로 동작한다."""
 
     def test_session_start_unaffected(self):
+        """콘텐츠 버전이 없어도 홈 200, 녹화 판 회차(test-session) 시작 200."""
         user = User.objects.create_user(username="open-start-session")
         install_test_profiles(self)(user)
         self.client.force_login(user)
