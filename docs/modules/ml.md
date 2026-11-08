@@ -51,6 +51,8 @@ manifest의 필수 키는 `data_version`(`delta:<table>@<version>`), `input_sha2
 원본 진실·역할·정책은 TrainingRow에 없으므로 필터·정책 선언은 C export의 검증 책임이다.
 수치 특징의 버전/열이 다르면 거부하며 C와 먼저 특징 추출을 맞춘다. 계약 자체는 바꾸지 않는다.
 
+11/8 C-07-01 공식 silver v1과 export를 읽기 전용으로 확인했다. 200판의 정책은 `baseline-0`, 특징은 `public-snapshot-v1`이다. D 공식 수치에는 PM 지정 `rule-v0` 200판을 처리한 Delta 버전을 사용한다. 해당 silver의 `snapshot_json`에서 `suspicion-1` 특징을 추출하고 Delta 행과 라벨의 계보를 보존한다. VM import 조건은 사용자 직접 실행(11/8 20:38:12 KST)의 Python 3.14.4 및 지정 네 패키지 성공으로 충족했다.
+
 ## 설정값
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
