@@ -94,4 +94,4 @@
 - 문제: 홈 화면 폼 시작 시험이 400(`invalid_input`)으로 실패했다. 기존 시험 `test_unconfigured_store_leaves_account_home_available`은 회차 저장소가 없을 때 홈에 "지금은 테스트 회차를 조회할 수 없습니다."가 보이기를 기대했다.
 - 원인: Django 시험 클라이언트의 `post(dict)`는 multipart로 보내는데 시작 경로는 urlencoded 폼과 JSON만 받는다(브라우저 폼은 urlencoded). 회차 저장소가 없는 것은 이제 일반 판 시작을 막는 상태가 아니다.
 - 대응: 시험은 브라우저와 같은 urlencoded 본문으로 보낸다. 회차 저장소 미연결은 홈에 오류를 띄우지 않고 새 게임 폼을 보이며, 회차 판 시작은 그대로 503인지 확인하도록 기존 시험을 고쳤다.
-- 결과: `server.tests` 174개 통과(4개 건너뜀, Mongo 필요). 증빙 [`docs/evidence/E-08-14.md`](../evidence/E-08-14.md)
+- 결과: `server.tests` 176개 통과(4개 건너뜀, Mongo 필요). 증빙 [`docs/evidence/E-08-14.md`](../evidence/E-08-14.md)
