@@ -37,7 +37,8 @@ def main(argv=None):
             session=SessionStore();session[SESSION_KEY]=str(user.pk);session[BACKEND_SESSION_KEY]=settings.AUTHENTICATION_BACKENDS[0];session[HASH_SESSION_KEY]=user.get_session_auth_hash();session.create()
             sid=name+'_session';sessions.create(sid,[{'preset_id':'base6','seed':80800+index}],[str(account.player_pseudonym)],
                 {'rule_version':params.RULE_PARAMS_VERSION,'engine_version':ENGINE_VERSION,'content_version':'content-1.0'})
-            actors.append({'cookie':settings.SESSION_COOKIE_NAME+'='+session.session_key+'; csrftoken='+'a'*32,'session_id':sid})
+            csrf=secrets.token_hex(16)
+            actors.append({'cookie':settings.SESSION_COOKIE_NAME+'='+session.session_key+'; csrftoken='+csrf,'csrf':csrf,'session_id':sid})
     barrier=threading.Barrier(args.concurrency,timeout=90);latencies=[];lock=threading.Lock();active=0;peak=0
     slots=threading.BoundedSemaphore(12)
     def play(pair):
@@ -47,7 +48,7 @@ def main(argv=None):
         def request(path,body):
             """실제 HTTPS 지연을 재고 실패 응답은 판 완료로 세지 않는다."""
             nonlocal calls
-            started=time.perf_counter();request=urllib.request.Request(origin+path,data=json.dumps(body).encode(),headers={'Cookie':actor['cookie'],'X-CSRFToken':'a'*32,'Content-Type':'application/json','Origin':origin,'Referer':origin+'/'})
+            started=time.perf_counter();request=urllib.request.Request(origin+path,data=json.dumps(body).encode(),headers={'Cookie':actor['cookie'],'X-CSRFToken':actor['csrf'],'Content-Type':'application/json','Origin':origin,'Referer':origin+'/'})
             with slots, urllib.request.urlopen(request,context=context,timeout=60) as response:
                 if response.status!=200:raise RuntimeError('unexpected_http_status')
                 result=json.load(response)
