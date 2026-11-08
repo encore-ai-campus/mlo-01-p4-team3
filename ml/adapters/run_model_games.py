@@ -45,6 +45,9 @@ def main(argv=None) -> int:
                           '--policy', args.policy, '--model', args.model])
     model = None
     try:
+        out = Path(args.out)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / runner.MANIFEST_FILE).unlink(missing_ok=True)
         model = load_model(Path(args.model))
         if model.model_version == 'unavailable':
             raise ModelUnavailable('모델/특징 코드/패키지 인계 필요; 모델 실행을 시작하지 않음')
@@ -52,9 +55,6 @@ def main(argv=None) -> int:
         deps = EngineDeps(content, model)
         policy = runner.POLICIES[args.policy]()
         engine = PaldoEngine(policy)
-        out = Path(args.out)
-        out.mkdir(parents=True, exist_ok=True)
-        (out / runner.MANIFEST_FILE).unlink(missing_ok=True)
         sink = runner.JsonlEventSink(out / runner.EVENTS_FILE)
         log('run_model_games', 'info', '모델 판 실행 시작', model_version=model.model_version,
             feature_version=model.feature_version, games=args.games, preset=args.preset)
@@ -74,7 +74,8 @@ def main(argv=None) -> int:
         metrics['inference_p95'] = {'value': percentile(model.latencies_ms, 95) if model.calls else 0,
                                     'unit': 'ms'}
         passed = (model.successes > 0 and model.successes == model.calls
-                  and not checks['legal_violations'] and not checks['suspicion_fallbacks']
+                  and not checks['legal_violations'] and not checks['inference_violations']
+                  and not checks['suspicion_fallbacks']
                   and metrics['inference_p95']['value'] <= 100)
         manifest = dict(command=command, status='passed' if passed else 'failed', games=len(runs),
                         preset_id=args.preset, seed=args.seed, policy=args.policy,

@@ -115,7 +115,7 @@ class SuspicionModelAdapter:
         except Exception as exc:
             self.close()
             log('suspicion_model', 'warning', '추론 실패; 엔진 규칙 v0 폴백',
-                error_type=type(exc).__name__, model_version=self.model_version,
+                error_type=type(exc).__name__, reason=str(exc), model_version=self.model_version,
                 game_id=obs.game_id, duration_ms=round((time.monotonic() - started) * 1000, 3))
             raise ModelUnavailable('suspicion inference unavailable') from exc
         finally:
@@ -148,17 +148,19 @@ class _ArtifactModel:
         self._temperature = artifact['temperatures']['logistic']
         if not math.isfinite(self._temperature) or self._temperature <= 0:
             raise ValueError('invalid temperature')
+        from threadpoolctl import threadpool_limits
+        # 첫 native 라이브러리 탐색·초기화는 판 추론 마감이 아닌 로드 마감에 포함한다.
+        self._thread_limits = threadpool_limits(limits=1)
+        self._model.decision_function([[0.0] * len(self._names)])
 
     def estimate(self, obs):
         if obs.n_possessed_remaining != 1 or not obs.candidates:
             raise ModelUnavailable('D-07-02 supports one possessed candidate only')
-        from threadpoolctl import threadpool_limits
         matrix = []
         for candidate in obs.candidates:
             features = self._features(obs, candidate)
             matrix.append([features[name] for name in self._names])
-        with threadpool_limits(limits=1):
-            scores = self._model.decision_function(matrix)
+        scores = self._model.decision_function(matrix)
         probabilities = self._softmax([float(score) / self._temperature for score in scores])
         # shortcut: 학습 산출물에 근거별 기여가 없음, 설명 계약을 인계받으면 채운다.
         return SuspicionEstimate(obs.observer, list(obs.candidates), dict(zip(obs.candidates, probabilities)),

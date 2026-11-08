@@ -131,3 +131,15 @@ class ModelGames(unittest.TestCase):
             self.assertEqual(main(['--model', str(Path(directory) / 'missing.pkl'),
                                    '--games', '1', '--out', str(out)]), 1)
             self.assertFalse((out / 'manifest.json').exists())
+
+    def test_failed_rerun_removes_previous_success_manifest(self):
+        from ml.adapters.run_model_games import main
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            (out / 'manifest.json').write_text('{"status":"passed"}', encoding='utf8')
+            self.assertEqual(main(['--model', str(out / 'missing.pkl'), '--out', str(out)]), 1)
+            self.assertFalse((out / 'manifest.json').exists())
+
+
+if __name__ == '__main__':
+    unittest.main()
