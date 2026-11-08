@@ -31,7 +31,7 @@ python -m unittest tests.infra.test_outbox_publisher -v
 
 ## 한계
 
-운영 전용 Mongo DB·계정 생성은 관리자 인증 위치 확인이 남았다. 기존 권한의 고유 검증 컬렉션 시험과 구분한다. 한 문서 Outbox는 Mongo 용량 한도를 가지며 보관 정책이 필요하다. 발행은 at-least-once이며 프로세스 정지·lease 경계의 중복은 소비자가 제거한다. 광고 DB 발행은 D 담당이다. P-31로 상시 LLM 배정은 없고 RunPod는 E-10-12 지연 측정 범위다. [런북](../../ops/runbook/runpod.md)을 따른다.
+운영 전용 Mongo DB·계정 생성은 관리자 인증 위치 확인이 남았다. 기존 권한의 고유 검증 컬렉션 시험과 구분한다. 한 문서 Outbox는 Mongo 용량 한도를 가지며 보관 정책이 필요하다. 발행은 at-least-once이며 프로세스 정지·lease 경계의 중복은 소비자가 제거한다. 광고 DB 발행은 D 담당이다. P-31로 상시 LLM 배정은 없고 RunPod는 E-11-12 GPU 서비스 시연(게임 미연결) 범위다. [런북](../../ops/runbook/runpod.md)을 따른다.
 
 ## 변경 이력
 

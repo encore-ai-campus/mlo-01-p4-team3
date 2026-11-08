@@ -54,7 +54,7 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 | Mongo `--wiredTigerCacheSizeGB` | 0.25 | WiredTiger 캐시 | 메모리 사용량 |
 | 버킷 | `paldo-lake`, `paldo-mlflow` | Delta·MLflow 아티팩트 | `run.py` `BUCKETS` |
 
-MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/README.md`, HTTPS 기동/종료·Chrome/Edge 경고·CA 지문·실제 브라우저/지연 검증은 `ops/proxy/README.md`를 따른다. Kafka 발행기는 dev에 병합됐다. 11/8 PJ4 두 스키마만 복구해 Replica 재시작 뒤 새 marker를 읽었고, 기존 PJ3 기본 GTID 채널은 별도 미복구로 보존했다. P-31로 상시 LLM은 없고 RunPod는 E-10-12 지연 측정만 계획한다.
+MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/README.md`, HTTPS 기동/종료·Chrome/Edge 경고·CA 지문·실제 브라우저/지연 검증은 `ops/proxy/README.md`를 따른다. Kafka 발행기는 dev에 병합됐다. 11/8 PJ4 두 스키마만 복구해 Replica 재시작 뒤 새 marker를 읽었고, 기존 PJ3 기본 GTID 채널은 별도 미복구로 보존했다. P-31로 상시 LLM은 없고 RunPod는 E-11-12 GPU 서비스 시연(게임 미연결)만 계획한다.
 
 ## 한계
 
