@@ -58,6 +58,9 @@ MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/READM
 
 ## 한계
 
+11/8 일괄 갱신: C-08-01 관측은 `ops/prometheus/README.md`, C-08-02 광고 집계는 `pipeline/README.md`, C-08-03 Job은 `ops/k3s/README.md`, C-08-04 태그·조회 계정은 `ops/runbook/user_test_release.md`(각 태스크 PR의 파일)에서 사용법·설정·한계를 확인한다. P-31 runtime LLM 없음, 기준선 모델 표기, 합성/부하 분리, 20번째 VM 비실행과 E/D 인계 대기를 반영했다. 각 PR 병합 완료를 뜻하지 않는다.
+
+
 - 11/8 웹·광고·Outbox·광고 publish/expire/refund와 공식 bronze를 동시 가동했다. 앱 6개 Python 프로세스는 모두 3.14.4이며 web/ads/outbox/광고 작업자 3개 지표 엔드포인트는 모두 HTTP 200이었다. Spark driver/executor 3.14.4도 C-07-01에서 실측했다. 아래 로컬 PC/컨테이너 기록과 VM 실측 범위는 구분한다.
 - 다른 물리 노트북 Chrome에서 실제 인증서 경고 UI Advanced/Proceed → wss 101을 확인했다. 자동 테스트 컨텍스트만 사용했고 OS 신뢰는 바꾸지 않았다. Edge는 안내를 제공하며 직접 실측은 하지 않았다.
 - Mongo는 C-06-01 후속 작업으로 기존 관리자 보호 파일을 찾아 정상 인증 후 전용 DB·계정으로 전환했다. 원본 24문서 hash 일치·content-1.0 읽기·다른 DB 거부·새 게임 52건 Kafka/Delta 대조를 확인했다. 운영/롤백은 ops/mongo.md다. B 실제 HTTP 광고 어댑터, C-08-02 광고 대사와 E INT 판정은 별도다.
@@ -86,3 +89,7 @@ MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/READM
 | C-07-01 | 11/7 | 공식 Spark/Delta·Garage·실제 Python 버전과 지속 bronze 서비스 인계, 실측 11/8 |
 | C-07-02 | 11/7 | 합성 HTTPS 실스택 장애 검증·인증 상태 호스트 내 유지·임시 프로세스 종료, 실측 11/8 |
 | C-07-04 | 11/7 | Caddy internal TLS·308·헤더·wss·Secure 쿠키·인증서 경고·실제 GET 지연과 참가자 안내, 실측 11/8 |
+| C-08-01 | 11/8 | 지표 중계·읽기 수집·6대시보드·6경보·부하 실측 |
+| C-08-02 | 11/8 | 광고 귀속·마감·멱등 집계·실제 환입 재대사 |
+| C-08-03 | 11/8 | k3s Job·Kafka sink·5호스트 자원 재측정 |
+| C-08-04 | 11/8 | E 태그 archive·4th_private 전용 조회 계정 guard |
