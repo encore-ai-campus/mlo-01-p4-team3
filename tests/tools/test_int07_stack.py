@@ -1,7 +1,7 @@
 """`server.tests.int07_stack` 판정 규칙: 필수 컨테이너·지표·화면 상태가 빠지면 확인 완료로 적지 않는다."""
 import unittest
 
-from server.tests.int07_stack import GOALS, python_info, required_present, scenario_holds, summarize
+from server.tests.int07_stack import GOALS, non_local_endpoints, python_info, required_present, scenario_holds, summarize
 
 
 def result(**over):
@@ -38,6 +38,16 @@ class Verdicts(unittest.TestCase):
         r = result()
         r["components"]["web"]["process_python"] = "3.12.1"
         self.assertEqual(summarize(r)["9"][0], "실패")
+
+    def test_remote_endpoint_is_refused(self):
+        env = {"PALDO_MONGO_URI": "mongodb://u:p@localhost:27117/paldo_web?replicaSet=rs0", "PALDO_KAFKA_BOOTSTRAP": "localhost:9092",
+               "PALDO_ADS_DB_HOST": "127.0.0.1", "PALDO_AUTH_DB_HOST": "127.0.0.1"}
+        kc = {"bootstrap.servers": "localhost:9094"}
+        self.assertEqual(non_local_endpoints(env, kc), [])
+        self.assertEqual(non_local_endpoints(dict(env, PALDO_MONGO_URI="mongodb://u:p@localhost:27117,db.example:27117/x"), kc),
+                         ["PALDO_MONGO_URI"])
+        self.assertEqual(non_local_endpoints(env, {"bootstrap.servers": "broker.example:9094"}), ["kafka-config bootstrap.servers"])
+        self.assertEqual(non_local_endpoints(dict(env, PALDO_ADS_DB_HOST=""), kc), ["PALDO_ADS_DB_HOST"])
 
     def test_metric_text_parsing(self):
         text = 'python_info{implementation="CPython",major="3",minor="14",patchlevel="6"} 1.0\npaldo_x_total{a="b"} 2.0\n'

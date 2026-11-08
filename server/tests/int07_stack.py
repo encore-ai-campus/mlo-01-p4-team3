@@ -90,6 +90,24 @@ def scenario_holds(goal: str, view: dict, target: str) -> bool:
     return any(r == "murky" and n < day for n, r in mine.items()) and any(r == "clear" and n >= day for n, r in mine.items())
 
 
+LOCAL_HOSTS = {"localhost", "127.0.0.1"}
+
+
+def hosts_of(value: str) -> list[str]:
+    """연결 문자열·`host:port[,host:port]`에서 호스트 이름 목록(Mongo URI는 `@` 뒤 여러 호스트)."""
+    netloc = urlsplit(value).netloc if "://" in value else value
+    netloc = netloc.rsplit("@", 1)[-1]
+    return [h.rsplit(":", 1)[0].strip("[]") for h in netloc.split(",") if h]
+
+
+def non_local_endpoints(env: dict, kafka_config: dict) -> list[str]:
+    """이 노트북(로컬 Compose)이 아닌 연결 대상. 하나라도 있으면 아무것도 쓰기 전에 멈춘다."""
+    targets = {"PALDO_MONGO_URI": env.get("PALDO_MONGO_URI", ""), "PALDO_KAFKA_BOOTSTRAP": env.get("PALDO_KAFKA_BOOTSTRAP", ""),
+               "PALDO_ADS_DB_HOST": env.get("PALDO_ADS_DB_HOST", ""), "PALDO_AUTH_DB_HOST": env.get("PALDO_AUTH_DB_HOST", ""),
+               "kafka-config bootstrap.servers": str(kafka_config.get("bootstrap.servers", ""))}
+    return [name for name, value in targets.items() if not value or any(h not in LOCAL_HOSTS for h in hosts_of(value))]
+
+
 def summarize(result: dict) -> dict:
     """측정값에서 항목별 확인 결과. 최종 통과는 PM 판정이라 '확인 완료'까지만 적는다."""
     comps = result["components"]
@@ -325,6 +343,9 @@ def run(scenarios: Path, kafka_config: Path, out: Path, record: bool, project: s
     """준비 → 동시 기동 → 판 진행 → 같은 시간대 수집 → 정리."""
     from tools.perf.int07_web_run import HttpClient, Run
     env = load_env()
+    bad = non_local_endpoints(env, json.loads(kafka_config.read_text(encoding="utf-8")))
+    if bad:   # 원격 서비스에 판·토픽·광고 데이터를 쓰지 않도록 시작 전에 멈춘다
+        raise SystemExit(f"로컬 Compose가 아닌 연결 대상: {bad}")
     base = {**env, "PYTHONIOENCODING": "utf-8", "PYTHONPATH": str(ROOT), "PALDO_LOG_DIR": str(out / "logs")}
     web = {**base, "DJANGO_SETTINGS_MODULE": "server.paldo_web.settings", "PALDO_PUBLIC_ORIGIN": f"http://localhost:{WEB_PORT}",
            "PALDO_GAME_SERVICE_FACTORY": "server.infra.game_factory.build_game_service", "PALDO_CONTENT_VERSION": "content-1.0"}
