@@ -46,3 +46,9 @@
 | 작업 | 위치 |
 |---|---|
 | C-08-03 작업 | ops/k3s/ 설치·Job·이미지와 pipeline/simulation.py → pipeline/sinks/kafka_sink.py. 이미지 빌드는 images/sim/Dockerfile. |
+
+## C-08-04 작업 위치
+
+| 작업 | 위치 |
+|---|---|
+| C-08-04 작업 | 태그 묶음·집계 계정: ops/user_test_ops.py, ops/runbook/user_test_release.md. |

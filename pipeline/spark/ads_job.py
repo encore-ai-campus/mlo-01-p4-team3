@@ -8,8 +8,12 @@ import time
 from pipeline.spark.ingest_bronze import load_config,writer_lock,write_audit
 
 SILVER_SCHEMA='event_id string, request_id string, serve_id string, source string, campaign_id string, creative_id string, slot string, billing string, price_mw long, received_at_ms long, occurred_at_ms long, contract_version string, topic string, load_test boolean, online_status string, online_charge_id string, online_charge_mw long, status string, invalid_reason string, expected_charge_id string, expected_charge_mw long, serve_time_ms long, attribution_day string, hour int, preset_id string, outcome string, returning boolean, context_missing boolean, implied_by_click boolean, observation_cutoff_ms long, judge_version string'
-MEASURES='impressions long, clicks long, ctr double, cost_mw long, ecpm_mw double, cpc_mw double, invalid_events long, pending_events long, invalid_ratio double, context_missing_events long, judged_events long'
-GOLD_SCHEMA='attribution_day string, campaign_id string, slot string, hour int, source string, load_test boolean, '+MEASURES+', burn_ratio double, budget_mw long, observation_cutoff_ms long, provisional_close_ms long, final_close_ms long, provisional_closed boolean, final_closed boolean'
+MEASURES=('impressions long, clicks long, ctr double, cost_mw long, ecpm_mw double, cpc_mw double, '
+          'invalid_events long, pending_events long, invalid_ratio double, context_missing_events long, judged_events long, '
+          'invalid_impressions long, invalid_clicks long, invalid_impression_rate double, invalid_click_rate double, load_test_events long')
+GOLD_SCHEMA='attribution_day string, campaign_id string, slot string, hour int, source string, load_test boolean, '+MEASURES+', observation_cutoff_ms long, provisional_close_ms long, final_close_ms long, provisional_closed boolean, final_closed boolean'
+CAMPAIGN_DAILY_SCHEMA=('attribution_day string, campaign_id string, source string, confirmed_net_mw long, '
+                       'budget_mw long, burn_ratio double, observation_cutoff_ms long')
 TRAINING_SCHEMA='attribution_day string, creative_id string, slot string, preset_id string, outcome string, hour int, source string, '+MEASURES
 
 
