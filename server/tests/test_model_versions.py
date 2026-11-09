@@ -123,6 +123,20 @@ class ServiceVersions(TestCase):
         self.service.command(data, "player")
         self.assertEqual(len(self.events), 2)
 
+    def test_conflict_path_is_not_observed(self):
+        """같은 명령의 동시 요청이 경합에서 저장 응답을 받으면 이벤트를 다시 넘기지 않는다."""
+        from engine.ports import VersionConflict
+        game = self.start()
+        data = SubmitCommandInput(game.view.game_id, "c1", 0, Command(CommandKind.ADVANCE, "mudang"))
+        commit = self.service.repository.commit
+
+        def concurrent_winner(*args):
+            commit(*args)          # 다른 요청이 같은 결과를 먼저 저장했다
+            raise VersionConflict(0, 1)
+        self.service.repository.commit = concurrent_winner
+        self.service.command(data, "player")
+        self.assertEqual(len(self.events), 1)   # 시작 때 1번만
+
     def test_observer_failure_does_not_break_command(self):
         """지표 실패는 저장된 명령 응답을 막지 않는다."""
         def broken(events):

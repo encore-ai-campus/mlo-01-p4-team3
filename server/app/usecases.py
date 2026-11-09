@@ -171,12 +171,14 @@ class GameService:
         if self.interactions is not None:
             self.interactions.prepare_command_effects(data.command_id, args[-1].response_json,
                                                        state, result.state, result.render_requests)
+        committed = False
         try:
             try:
                 self.repository.commit(*args)
             except (ConnectionError, TimeoutError):
                 # 결과가 불명확한 전송 오류에만 같은 commit을 한 번 재전송한다.
                 self.repository.commit(*args)
+            committed = True
         except VersionConflict:
             current, _ = self.owned(data.game_id, player_pseudonym)
             saved = self.repository.find_command(data.game_id, data.command_id)
@@ -188,7 +190,9 @@ class GameService:
                 return self.replay_command(data.game_id, saved, player_pseudonym)
             # 저장 성공 후 확인 응답만 유실된 경우에도 아래 후속 처리를 마친다.
             output = replay
-        self._observe(result.events)
+        if committed:
+            # 경합 경로는 이 요청의 저장인지 같은 명령의 동시 요청인지 가릴 수 없어 세지 않는다(중복 집계 방지).
+            self._observe(result.events)
         if self.interactions is not None:
             self.interactions.complete_command_effects(data.game_id, args[-1], player_pseudonym)
         return output
