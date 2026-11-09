@@ -1,0 +1,64 @@
+{
+  "task": "D-08-01",
+  "commit": "5ca320127d4eb5367e7d127fc994a44b3b7a1a5b",
+  "generated_at": "2026-11-09T07:24:29Z",
+  "source": "k3s 9 jobs, max 2 in flight, CPU 500m and memory 512Mi per Job, rule-0.6.decision-1, rule-v0, LogicBot, content-min-0.1. Seeds 901..909. source commit 9d822afa3e0b46e6174f60dad629bc94c6f02c53; OCI sha256:3e96d6a00111b95401ca5168695c806cf3a34391edd38b68475c1bb8ff407268. ACK sha256 f49c7b7126580303c4cdd10a03fd46c0b08e2a46d5681d56883973e318765792. Pinned official bronze v117 with raw body SHA256, complete seq and all-game ACK checks; read-only Spark export partitions 64, 1 core and 512Mi executor. Raw job inventory, per-run ACK and verification scripts in out/d08-01/dev-9d822af.",
+  "metrics": {
+    "completed_games": {
+      "value": 3900,
+      "unit": "count"
+    },
+    "source_events": {
+      "value": 325074,
+      "unit": "count"
+    },
+    "bronze_events": {
+      "value": 325074,
+      "unit": "count"
+    },
+    "lost": {
+      "value": 0,
+      "unit": "count"
+    },
+    "duplicate": {
+      "value": 0,
+      "unit": "count"
+    },
+    "hash_mismatches": {
+      "value": 0,
+      "unit": "count"
+    },
+    "illegal_commands": {
+      "value": 0,
+      "unit": "count"
+    },
+    "bronze_version": {
+      "value": 117,
+      "unit": ""
+    },
+    "base6_games": {
+      "value": 3000,
+      "unit": "games"
+    },
+    "base7_games": {
+      "value": 300,
+      "unit": "games"
+    },
+    "large8_games": {
+      "value": 300,
+      "unit": "games"
+    },
+    "short5_games": {
+      "value": 300,
+      "unit": "games"
+    },
+    "completed_jobs": {
+      "value": 9,
+      "unit": "jobs"
+    },
+    "failed_pods": {
+      "value": 0,
+      "unit": "pods"
+    }
+  }
+}
