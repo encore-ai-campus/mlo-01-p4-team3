@@ -1,0 +1,7 @@
+{% extends 'base.html' %}{% block content %}
+<section class="paper-page"><h1>공식 에셋 확인</h1>
+<p>여성 무당은 사용자 확정 v5를 전신·초상에 함께 적용했습니다. 등록 그림 18개와 임시 파일 {{ placeholder_count }}개를 구분합니다. 등록은 최종 미술 승인과 다릅니다.</p>
+<h2>회의·밤 배경</h2><div class="pm-asset-grid">{% for asset in backgrounds %}<figure><img src="{{ asset.url }}" alt="{{ asset.id }} 배경" loading="lazy"><figcaption>{{ asset.id }} · {% if asset.placeholder %}임시{% else %}등록{% endif %}</figcaption></figure>{% endfor %}</div>
+<h2>등록 그림 {{ official_assets|length }}개</h2><div class="pm-official-grid pm-asset-grid">{% for asset in official_assets %}<figure><a href="{{ asset.url }}" target="_blank" rel="noopener"><img src="{{ asset.url }}" alt="{{ asset.id }}" loading="lazy"></a><figcaption>{{ asset.kind }}:{{ asset.id }}</figcaption></figure>{% endfor %}</div>
+<p>전체 시안과 비교 자료는 별도 보존 worktree에 있으며 정식 브랜치에 이미지·글꼴 파일을 포함하지 않습니다. 원본 출처 및 인계 계획은 web/PM_UI_REVIEW.md를 참고하세요.</p>
+</section>{% endblock %}

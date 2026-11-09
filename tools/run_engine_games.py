@@ -134,13 +134,13 @@ def with_policy_versions(state: GameState, version: str) -> GameState:
 
 
 def run_game(engine: PaldoEngine, deps: EngineDeps, preset_id: str, seed: int, i: int, policy_version: str,
-             sink: EventSink) -> GameRun:
+             sink: EventSink, *, model_version: str = FakeSuspicionModel.model_version) -> GameRun:
     """판 하나를 끝까지 진행하며 전이마다 봉투를 `sink`에 넘긴다. 명령 거부·상한 초과는 RuntimeError."""
     content: ContentBundle = deps.content
     gseed = game_seed(seed, i)
     meta = GameMeta(f"eng_{preset_id}_{seed}_{i:05d}", PRESETS[preset_id], gseed, DataSource.BOT,
                     params.RULE_PARAMS_VERSION, ENGINE_VERSION, content.content_version,
-                    model_versions={"suspicion": FakeSuspicionModel.model_version})
+                    model_versions={"suspicion": model_version})
     r = engine.new_game(meta, deps)
     st = with_policy_versions(r.state, policy_version)
     tr = r.truth

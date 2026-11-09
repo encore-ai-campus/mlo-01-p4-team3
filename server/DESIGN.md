@@ -1,4 +1,14 @@
-# 서버 설계
+# 서버 디자인
+
+## B-10-07 최신 계약 UI 인계
+
+기준 dev 62e7525(PR #304)의 확정 VN 계약을 따른다. PALDO_GAME_UI 기본 vn, classic 선택 시 meeting_classic.html의 기존 화면으로 복귀한다. ui_templates.py가 모드별 템플릿 캐시를 분리한다. 공개 기록은 meeting_parts/records.html, 명령은 기존 폼/API를 공유한다.
+
+시안은 먹·한지·놋쇠 배색과 창 틀만 참고한다. 공통 토큰은 web/static/css/theme.css, 글꼴은 시스템 글꼴이다. 호랑이·브랜딩·시안 이미지·사용자 글꼴은 정식 브랜치에 포함하지 않는다. 게임 그림은 manifest ID만 쓰며 여성 무당 전신·초상은 사용자 확정 v5다.
+
+폭 900px 이상은 무대 하단 25% 대사창과 x=860/1280 이후 선택지 패널이다. 900px 미만은 16:9 무대를 유지하고 같은 #meeting 안에서 대사·선택지를 무대 아래에 붙인다. 기록·수첩·지도·주민은 정보 창으로 연다. 모두 보기는 발언을 펼치고 건너뛰기는 전신 컷을 종료한다. 읽기는 서버 상태를 바꾸지 않으며 sessionStorage 차단 시 탭 메모리에 보존한다.
+
+최초 등장·추방/처형·엔딩 전신·표정 등 E의 잔여는 완료로 표시하지 않고 Refs로 인계한다. 설정 후 두 웹 프로세스를 재시작하는 절차는 ops/proxy/README.md, 비교·계정·별도 시안 위치는 web/PM_UI_REVIEW.md, 검증은 docs/evidence/B-10-07.md다.
 
 ## B-10-02 지도·공개 주민 초상
 
@@ -8,7 +18,7 @@ asset_attribution은 SOURCES.md 첫 공개 출처 줄만 HTML 이스케이프해
 
 ## B-09-06 VN 표시 경계
 
-[VN 규칙](../docs/contracts/vn.md)은 E 검토 대기인 후속 화면 설계다. PlayerView·명령·이벤트·저장소를 변경하지 않는다. 읽기 상태는 브라우저에만 두고, 추궁 답변은 기존 render 폴링의 game_id·speech_id·job_id·final 처리를 유지한다. 실제 연결·회귀는 B-10-07에서 수행하며 문서 작성만으로 구현 완료를 주장하지 않는다.
+[VN 규칙](../docs/contracts/vn.md)은 PR #304에서 확정됐다. B-10-07 부분 인계는 PlayerView·명령·이벤트·저장소를 변경하지 않는다. 읽기 상태는 브라우저에만 두고, 추궁 답변은 기존 render 폴링의 game_id·speech_id·job_id·final 처리를 유지한다. 화면 연결·읽기 회귀는 검증했으며 첫 등장·추방/처형·엔딩 전신과 표정은 E 후속 구현으로 남는다.
 
 ## B-08-02 공개 프리셋과 화면 검증
 

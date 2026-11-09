@@ -1,0 +1,24 @@
+{
+  "task": "D-08-01",
+  "commit": "c778c8c532eb36c9c7003d80b6e1a4d9ff1587db",
+  "generated_at": "2026-11-08T11:56:08Z",
+  "source": "python -c \"import runpy;runpy.run_path('out/d08-01/compare_win_rates.py')\"",
+  "metrics": {
+    "games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "model_village_win_rate": {
+      "value": 36.0,
+      "unit": "%"
+    },
+    "rule_v0_village_win_rate": {
+      "value": 28.0,
+      "unit": "%"
+    },
+    "village_win_rate_delta": {
+      "value": 8.0,
+      "unit": "%p"
+    }
+  }
+}

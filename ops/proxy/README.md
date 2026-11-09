@@ -36,7 +36,7 @@ sudo systemctl stop caddy paldo-web
    - Caddy: `sudo journalctl -u caddy --since '5 minutes ago' | grep -i unhealthy`가 비어 있음.
    - 브라우저: HTTPS 홈 200, `/ws/game/` 101(위 "참가자에게 전달할 문구"의 운영자 확인과 같다).
    - 로그: 소스의 `out/logs/web.jsonl`(8000)과 `out/logs/web-8002.jsonl`(8002)이 각각 늘어남.
-4. 지표: C-08-01의 수집 설정에서 게임 웹 대상을 프로세스마다 둔다(8000·8002, `process` 라벨 `web-1`·`web-2`, 로컬 예시는 `ops/compose/prometheus.yml`의 `paldo-web`). 웹은 loopback에만 bind하므로 metrics-01에서 원격으로 긁으려면 app-01 안에서 수집해 넘기는 방식이 필요하다. 방식은 C-08-01에서 정한다. 수집 요청의 Host는 대상 주소의 호스트(예: `127.0.0.1`)이고 Prometheus는 Host 헤더를 바꿀 수 없으므로, 웹 프로필 `environment`에 `PALDO_EXTRA_ALLOWED_HOSTS=127.0.0.1`처럼 수집용 호스트를 더해야 `/metrics`가 400이 아니다(기본 없음). 대시보드의 게임 API p95·오류율은 두 프로세스를 합산한다.
+4. 지표: C-08-01이 정한 [웹 프로세스별 수집 절차](../prometheus/README.md#웹-프로세스별-지표)를 따른다. 두 Daphne는 loopback에 두고, app-01의 relay가 허용된 Host로 고정 경로를 요청한다. 운영 웹 프로필의 `PALDO_EXTRA_ALLOWED_HOSTS`는 비워 둔다. 대시보드의 게임 API p95·오류율은 두 프로세스를 합산한다.
 
 ### 되돌림 (1개, 약 2분)
 
@@ -121,3 +121,9 @@ api_bench의 proxy 모드는 **Django TestClient가 아닌 실제 HTTP 요청**�
 ## 운영 인계 범위
 
 웹·광고·Outbox·광고 publish/expire/refund·공식 bronze를 동시에 실행했고 앱 6개 Python 프로세스는 모두 3.14.4, HTTP 지표 6개 엔드포인트는 모두 200이었다. Spark driver/executor 3.14.4도 별도 작업에서 확인했다. Mongo 콘텐츠는 `content` 컬렉션의 `content-1.0`을 실제 읽었다. 이후 C-06-01 후속 작업에서 기존 관리자 보호 파일로 정상 인증해 Mongo 전용 DB·계정으로 전환했고, 전환 후 wss와 새 게임 52건 Kafka/Delta 일치도 확인했다(ops/mongo.md). B의 실제 HTTP 광고 어댑터, C-08-01 중앙 Prometheus 대시보드·경보 및 C-08-02 광고 silver/rejudge/gold는 후속 태스크이며 이 프록시 검증으로 완료 처리하지 않는다. E의 INT 통합 판정도 E가 수행한다.
+
+## 게임 UI 선택과 되돌림
+
+B-09-06 확정 기준: PALDO_GAME_UI는 vn 기본, classic 선택이다. classic은 meeting_classic.html, 두 모드는 같은 공개 기록과 명령 경로를 쓴다. 다른 값은 기동 오류다.
+
+VN 문제 시 환경을 PALDO_GAME_UI=classic으로 바꾸고 게임 웹 Daphne 두 프로세스(8000·8002)를 모두 재시작한다. 기존 서비스 관리 절차를 쓰며 두 백엔드 healthz·로그인·진행 중 판 재개를 확인한다. 한쪽만 바꾸면 분배에 따라 화면이 섞이므로 둘의 설정을 같게 한다. vn 복귀도 같은 절차다. DB·게임 상태는 바꾸지 않는다. 로컬 설정 왕복 검증이며 실제 VM 재시작은 실행하지 않았다. 11/10 배포/동결 규칙은 별도로 따른다.

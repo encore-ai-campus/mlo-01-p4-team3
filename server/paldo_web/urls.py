@@ -5,9 +5,11 @@ from django.urls import include, path
 from server.accounts import views as account_views
 from server.api.assets import asset_file
 from server.api.sessions import sessions
+from server.api.ui_review import ui_review
 from . import probes
 
 urlpatterns = [
+    path('ui-review', ui_review, name='ui-review'),
     path("", account_views.home, name="home"),
     path("healthz", probes.health, name="health"),
     path("readyz", probes.ready, name="ready"),

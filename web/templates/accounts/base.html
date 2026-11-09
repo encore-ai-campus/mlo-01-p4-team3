@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>팔도무록 계정</title>
-  <style>.portrait-choice{max-width:36rem}.portrait-choice label{display:inline-flex;align-items:center;gap:.5rem;margin:.5rem}.portrait-choice img{object-fit:contain}.portrait-choice p{line-height:1.6}main{overflow-wrap:anywhere}img{max-width:100%}</style>
+  <link rel="stylesheet" href="/static/game.css">
   <link rel="icon" href="{% asset_url 'ui:notebook' %}">
   {% if request.user.is_authenticated %}<script src="/static/js/vendor/htmx.min.js" defer></script><script src="/static/js/paldo_ws.js" defer></script><script src="/static/js/ad_slots.js" defer></script>{% endif %}
-</head>
-<body>
-  <header><a href="{% url 'home' %}">팔도무록</a></header>
-  <main>{% block content %}{% endblock %}</main>
-</body>
+<script type="module" src="/static/js/ui-vn.js"></script></head>
+<body class="account-page">
+  <a class="skip-link" href="#main-content">본문으로 이동</a>
+  {% include "site_header.html" %}
+  <main id="main-content" tabindex="-1">{% block content %}{% endblock %}</main>
+{% include "ui_help.html" %}{% include "ui_review_footer.html" %}</body>
 </html>

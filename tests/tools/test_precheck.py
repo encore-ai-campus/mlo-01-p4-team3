@@ -182,12 +182,53 @@ class Quick(unittest.TestCase):
         self.assertIn("대상 전체(코드가 아닌 파일 content/bundle_v1.json)", lines[-1])
         rec.assert_not_called()
 
-    def test_full_mode_unchanged(self):
+    def test_default_runs_selected_and_records(self):
+        """11/9 사용자 결정: 기본 검사(PR 직전·훅)도 고른 모듈만 돌리고 통과 기록을 남긴다."""
         r = self.R(["engine/core.py"])
         rc, lines, rec = self._main([], r)
-        self.assertEqual(self._folders(r), ["tests/contract", "tests/engine", "tests/tools"])
-        self.assertTrue(lines[-1].startswith("precheck: 통과"))
+        self.assertEqual(rc, 0)
+        self.assertEqual(self._folders(r), [])
+        self.assertEqual(self._modules_run(r), ["tests.engine.test_core"])
+        self.assertEqual(lines[-1], "precheck: 통과 (구조·비밀·테스트·문서·증빙, 테스트 3개(선택: tests/engine 1개), "
+                                    "base ccccccc, 0초)")
         rec.assert_called_once()
+        self.assertTrue(rec.call_args.kwargs["selected"])
+
+    def test_default_falls_back_to_full_without_selection_label(self):
+        for changed in ([], ["content/bundle_v1.json"]):
+            r = self.R(changed)
+            rc, lines, rec = self._main([], r)
+            self.assertEqual(self._folders(r), ["tests/contract", "tests/engine", "tests/tools"], changed)
+            self.assertNotIn("선택", lines[-1])
+            self.assertFalse(rec.call_args.kwargs["selected"])
+
+    def test_with_assets_always_runs_asset_folder(self):
+        r = self.R(["engine/core.py"])
+        rc, lines, rec = self._main(["--with-assets"], r)
+        self.assertEqual(self._folders(r), ["tests/assets"])
+        self.assertEqual(self._modules_run(r), ["tests.engine.test_core"])
+        self.assertIn("선택: tests/assets 전체·tests/engine 1개", lines[-1])
+
+    def test_full_tests_runs_all_folders(self):
+        r = self.R(["engine/core.py"])
+        rc, lines, rec = self._main(["--full-tests"], r)
+        self.assertEqual(self._folders(r), ["tests/contract", "tests/engine", "tests/tools"])
+        self.assertIn("[테스트] 대상: 전체(--full-tests)", lines)
+        self.assertNotIn("선택", lines[-1])
+        self.assertFalse(rec.call_args.kwargs["selected"])
+
+    def test_summary_selected_line(self):
+        rc, line = summarize([StepResult("테스트", True, tests=4)], "abc1234", 9.2, selected="tests/engine 1개")
+        self.assertEqual(line, "precheck: 통과 (테스트, 테스트 4개(선택: tests/engine 1개), base abc1234, 9초)")
+        rc, line = summarize([StepResult("테스트", False)], "abc1234", 3, selected="tests/engine 1개")
+        self.assertEqual(line, "precheck: 실패 (테스트; base abc1234, 선택 tests/engine 1개, 3초)")
+
+    def test_quick_rejects_full_options(self):
+        import io
+        from contextlib import redirect_stderr
+        for flag in ("--full-tests", "--all-slow"):
+            with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                precheck.main(["--quick", flag], runner=self.R([]))
 
     def test_only_tests_keeps_assets_rule_and_whole_folders(self):
         r = FakeRunner()
@@ -238,3 +279,57 @@ class GitEnvIsolation(unittest.TestCase):
             victim_cfg = (Path(victim) / ".git" / "config").read_text(encoding="utf-8")
             self.assertNotIn("name = t", victim_cfg)
             self.assertTrue((Path(work) / ".git").is_dir())
+
+
+class Slow(unittest.TestCase):
+    """무거운 테스트(11/9): 전체 검사에서도 바뀐 파일과 이어질 때만 돌리고, 뺀 개수를 요약 줄에 적는다."""
+
+    class R(Quick.R):
+        def run(self, args, env=None):
+            if args[1:3] == ["-m", "tools.run_tests"]:
+                self.calls.append((args, env))
+                return 0, f"precheck-skip: {args.count('--skip')}\nRan 3 tests in 0.1s\n\nOK\n"
+            return super().run(args, env)
+
+    def _main(self, args, changed):
+        r = self.R(changed)
+        rc, lines, _ = Quick._main(self, args, r)
+        skips = {a[a.index("-s") + 1]: [a[i + 1] for i, x in enumerate(a) if x == "--skip"]
+                 for a, _ in r.calls if a[1:3] == ["-m", "tools.run_tests"]}
+        return rc, lines, skips
+
+    def test_rules(self):
+        self.assertEqual(precheck.count_skipped("precheck-skip: 2\nRan 3 tests\nprecheck-skip: 1\n"), 3)
+        rc, line = summarize([StepResult("테스트", True, tests=5, slow_skipped=2)], "abc1234", 7)
+        self.assertEqual(line, "precheck: 통과 (테스트, 테스트 5개, 무거운 테스트 2개 생략, base abc1234, 7초)")
+
+    def test_unrelated_slow_tests_skipped(self):
+        from tools.precheck_scope import SLOW_TESTS
+        rc, lines, skips = self._main(["--full-tests"], ["engine/core.py"])
+        self.assertEqual(rc, 0)
+        self.assertEqual(sorted(skips), ["tests/engine", "tests/tools"])
+        self.assertEqual(sum(len(v) for v in skips.values()), len(SLOW_TESTS))
+        self.assertIn(f"무거운 테스트 {len(SLOW_TESTS)}개 생략", lines[-1])
+        self.assertTrue(lines[-1].startswith("precheck: 통과"))
+
+    def test_all_slow_no_change_or_shared_file_runs_everything(self):
+        for args, changed, why in ((["--all-slow"], ["engine/core.py"], None),
+                                   (["--full-tests"], [], "바뀐 파일 없음"),
+                                   (["--full-tests"], ["tools/precheck.py"], "공용 파일 tools/precheck.py")):
+            rc, lines, skips = self._main(args, changed)
+            self.assertEqual(skips, {}, changed)
+            self.assertNotIn("생략", lines[-1])
+            if why:
+                self.assertIn(f"[무거운 테스트] 모두 실행({why})", lines)
+
+    def test_check_pass_rejects_all_slow(self):
+        import io
+        from contextlib import redirect_stderr
+        for flag in ("--all-slow", "--full-tests"):
+            with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                precheck.main(["--check-pass", "a" * 40, flag], runner=FakeRunner())
+
+    def test_selected_run_keeps_slow_tests_of_selected_modules(self):
+        rc, lines, skips = self._main([], ["engine/core.py"])  # 고른 실행은 run_tests를 쓰지 않는다
+        self.assertEqual(skips, {})
+        self.assertNotIn("생략", lines[-1])

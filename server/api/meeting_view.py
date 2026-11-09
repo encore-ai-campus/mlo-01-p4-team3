@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, DivinationResult, Phase
 from engine.ports import PlayerView
 from .viewmodels import PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_meeting_vm
+from .ui_viewmodels import build_ui_vm
 
 DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
@@ -68,7 +69,7 @@ def _place_asset(place):
 
 def meeting_context(view: PlayerView):
     """공개 진술·투표와 허용 행동, 본인의 점괘를 화면 모델로 전달한다."""
-    vm = build_meeting_vm(view)
+    vm = build_ui_vm(view)
     claims = []
     for card, record in zip(vm.claims, view.public.claims, strict=True):
         kind = "divination" if record.claim_type is ClaimType.DIVINATION_REVEAL else "claim"
@@ -112,7 +113,7 @@ def meeting_context(view: PlayerView):
             actions.extend(MeetingAction(kind, target) for target in active_targets)
         else:
             actions.append(MeetingAction(kind))
-    return {"vm": vm, "claims": claims, "disappearances": disappearances,
+    return {"vm": vm, "claims": claims, "claim_nights": sorted({c.card.night for c in claims if c.card.night is not None}), "disappearances": disappearances,
             "own_divinations": own_divinations, "divination_options": divination_options,
             "published_votes": published_votes, "published_locks": published_locks, "active_targets": active_targets,
             "vote_targets": vote_targets,

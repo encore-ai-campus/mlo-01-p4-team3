@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import unittest
 
-from tools.precheck_scope import describe, dir_literals, import_names, module_name, select_tests
+from tools.precheck_scope import (SLOW_TESTS, describe, dir_literals, import_names, module_name, select_tests,
+                                   slow_skips)
 
 DIRS = ["ads", "assets", "contract", "engine", "sim", "tools"]
 SOURCES = {
@@ -152,3 +153,39 @@ class Select(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SlowTests(unittest.TestCase):
+    """무거운 테스트(11/9): 전체 검사에서도 바뀐 파일과 이어질 때만 돈다."""
+
+    SLOW = {"tests.engine.test_model.Big.test_a": "", "tests.tools.test_report.Big.test_b": "",
+            "tests.ads.test_x.Big.test_c": ""}
+
+    def test_skip_unless_module_selected(self):
+        sel = {"engine": ["tests.engine.test_model"], "tools": ["tests.tools.test_cli"]}
+        self.assertEqual(slow_skips(sel, True, self.SLOW),
+                         {"ads": ["tests.ads.test_x.Big.test_c"], "tools": ["tests.tools.test_report.Big.test_b"]})
+
+    def test_whole_folder_keeps_all(self):
+        self.assertEqual(slow_skips({"engine": None, "tools": None, "ads": None}, True, self.SLOW), {})
+
+    def test_full_reason_or_no_change_keeps_all(self):
+        self.assertEqual(slow_skips(None, True, self.SLOW), {})
+        self.assertEqual(slow_skips({}, False, self.SLOW), {})
+
+    def test_docs_only_change_skips_all(self):
+        self.assertEqual(sum(len(v) for v in slow_skips({}, True, self.SLOW).values()), 3)
+
+    def test_registry_ids_exist_in_repository(self):
+        import ast
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[2]
+        for tid in SLOW_TESTS:
+            parts = tid.split(".")
+            self.assertEqual(len(parts), 5, tid)
+            path = root.joinpath(*parts[:3]).with_suffix(".py")
+            self.assertTrue(path.is_file(), tid)
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            cls = next((n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == parts[3]), None)
+            self.assertIsNotNone(cls, tid)
+            self.assertIn(parts[4], {n.name for n in cls.body if isinstance(n, ast.FunctionDef)}, tid)
