@@ -40,6 +40,7 @@ TASK = "INT-07"
 SOURCE = ("python -m server.tests.int07_stack --scenarios <int07_scenarios 결과> --kafka-config <발행기 TLS JSON> "
           "--out <폴더> --record")
 WEB_PORT = 8010
+BUNDLE = ROOT / "content" / "bundle_v1.json"
 INT1_SEED = 70301
 GOALS = ("false_reveal", "last_possessed", "confession_switch")
 SERVICES = ("mongo", "kafka", "mysql")   # 이 확인에 필요한 Compose 서비스
@@ -302,11 +303,16 @@ def kafka_offsets(env: dict) -> dict[str, int]:
     raise SystemExit("Kafka 오프셋을 읽지 못함")
 
 
-def content_loaded(env: dict) -> bool:
-    """`content` 컬렉션에 적재된 콘텐츠가 있는지."""
+def bundle_version(path: Path = BUNDLE) -> str:
+    """저장소 콘텐츠 묶음의 `content_version`(적재·판 메타가 쓰는 버전 이름)."""
+    return json.loads(path.read_text(encoding="utf-8"))["content_version"]
+
+
+def content_loaded(env: dict, version: str) -> bool:
+    """`content` 컬렉션에 이 버전이 적재돼 있는지(버전 이름이 문서 `_id`)."""
     from pymongo import MongoClient
     with MongoClient(env["PALDO_MONGO_URI"], serverSelectionTimeoutMS=5000) as client:
-        return client.get_default_database()["content"].count_documents({}) > 0
+        return client.get_default_database()["content"].find_one({"_id": version}, {"_id": 1}) is not None
 
 
 # ---------------------------------------------------------------- 응용(흐름)
@@ -375,14 +381,14 @@ def run(scenarios: Path, kafka_config: Path, out: Path, record: bool, project: s
         raise SystemExit(f"Compose 프로젝트 {project}가 연 포트와 다른 연결 대상: {wrong}")
     base = {**env, "PYTHONIOENCODING": "utf-8", "PYTHONPATH": str(ROOT), "PALDO_LOG_DIR": str(out / "logs")}
     web = {**base, "DJANGO_SETTINGS_MODULE": "server.paldo_web.settings", "PALDO_PUBLIC_ORIGIN": f"http://localhost:{WEB_PORT}",
-           "PALDO_GAME_SERVICE_FACTORY": "server.infra.game_factory.build_game_service", "PALDO_CONTENT_VERSION": "content-1.0"}
+           "PALDO_GAME_SERVICE_FACTORY": "server.infra.game_factory.build_game_service", "PALDO_CONTENT_VERSION": bundle_version()}
     ads = {**base, "DJANGO_SETTINGS_MODULE": "ads.project.settings"}
     pub = {k: v for k, v in base.items() if k != "PALDO_KAFKA_BOOTSTRAP"}   # 발행기는 TLS 설정 파일의 주소
     found = json.loads(scenarios.read_text(encoding="utf-8"))
     stack = Stack(out)
     stack.run("web_migrate", ["server/manage.py", "migrate", "--noinput"], web)
-    if not content_loaded(web):
-        stack.run("load_content", ["-m", "tools.load_content", "content/bundle_v1.json"], web)
+    if not content_loaded(web, web["PALDO_CONTENT_VERSION"]):
+        stack.run("load_content", ["-m", "tools.load_content", str(BUNDLE.relative_to(ROOT))], web)
     stack.run("ads_migrate", ["ads/manage.py", "migrate", "--noinput"], ads)
     stack.run("ads_fixtures", ["ads/manage.py", "load_ad_fixtures"], ads)
     setups = {g: participant(stack, web, g, found[g]["seed"]) for g in GOALS}
