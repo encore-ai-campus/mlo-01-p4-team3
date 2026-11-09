@@ -683,3 +683,15 @@ button { border-radius:2px; }
  .vn-stage.show-full #stage-actions { display:block; }
  .vn-reading,.vn-options { margin-top:8px; }
 }
+
+/* PM 11/9 (user request): larger desktop stage; action panel beside the dialogue so no command sits under it. */
+@media(min-width:900px) {
+ body.game-page:has(#meeting) { max-width:1840px; }
+ .vn-player { max-width:min(100%,calc((100svh - 190px)*16/9)); display:flex; flex-wrap:wrap; align-items:center; column-gap:16px; }
+ .vn-player > .vn-stage { flex:0 0 100%; }
+ .vn-player > .vn-reading { flex:1 1 auto; margin:0; padding:6px 0; }
+ .vn-player > .vn-options { flex:0 1 auto; margin:0; padding:6px 0; border:0; }
+ .vn-dialogue { right:33.8125%; }
+ #stage-actions { bottom:1.5%; }
+ #stage-actions .action-sheet > summary { min-height:48px; flex-direction:row; padding:8px 12px; }
+}
