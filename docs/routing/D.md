@@ -33,3 +33,4 @@
 | 광고 원장·만료·발행·환입 검증 | `ads/infra/`, `ads/manage.py ad_worker`, `tests/ads/`, 증빙 `docs/evidence/D-06-02.md` |
 | 합성 광고 HTTP 트래픽·피로·무효 클릭·재처리 검증 | `tools/ad_traffic_sim.py`, `ads/testing/traffic_server.py`, `tools/perf/ad_traffic_bench.py`, `tests/tools/test_ad_traffic_sim.py`, 설명 `docs/modules/ads.md` |
 | 모델 포트·모델 판 실행·폴백 검사 | `ml/adapters/suspicion_model.py`, `ml/adapters/run_model_games.py`, `tests/sim/test_suspicion_adapter.py`, 증빙 `docs/evidence/D-08-01.md` |
+| 실제 모델 웹 2프로세스 부하 | `tools/perf/api_bench.py --web-processes 2 --mlruns <디렉터리> --suspicion-version <버전>`, `server/tests/multiproc_bench.py` |

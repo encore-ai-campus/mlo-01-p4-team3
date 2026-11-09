@@ -12,6 +12,7 @@ from http.cookiejar import CookieJar
 import json
 import os
 from pathlib import Path
+from random import Random
 import secrets
 import socket
 import subprocess
@@ -27,8 +28,19 @@ from .api_bench import mongo_uri, percentile
 from .ws_smoke import _send, _receive, _recv_exact
 
 
+def actual_command(public_view, rng):
+    """직전 API 응답의 공개 상태에서 합법 명령과 낙관적 잠금 버전을 만든다."""
+    from engine.domain.serde import from_jsonable, to_jsonable
+    from engine.ports import PlayerView
+    from tools.perf.engine_bench import bench_player_command
+
+    view = from_jsonable(PlayerView, public_view)
+    return {"expected_state_version": view.state_version,
+            "command": to_jsonable(bench_player_command(view, rng))}
+
+
 def measure_game(origin, cookie, steps, minutes, barrier):
-    """api_bench와 같은 초당 한 요청·독립 판의 시작/명령을 실제 HTTP로 측정한다."""
+    """초당 한 요청으로 독립 판을 진행한다. steps=None이면 실제 공개 상태를 따른다."""
     csrf = secrets.token_hex(16)
     opener = build_opener(HTTPCookieProcessor(CookieJar()))
     headers = {"Cookie": cookie + "; csrftoken=" + csrf, "X-CSRFToken": csrf,
@@ -37,6 +49,9 @@ def measure_game(origin, cookie, steps, minutes, barrier):
     by_route = {"start": [], "command": []}
     request_timings = []
     game, step = None, 0
+    actual = steps is None
+    rng = Random(0)
+    view = None
     barrier.wait(timeout=30)
     deadline = time.monotonic() + minutes * 60
     while time.monotonic() < deadline:
@@ -44,10 +59,14 @@ def measure_game(origin, cookie, steps, minutes, barrier):
         route = 'start' if game is None else 'command'
         server_timing = {}
         if game is None:
-            path, body = "/games", dict(preset_id="base6", session_id="test-session", mudang_variant="f")
+            path, body = "/games", dict(preset_id="base6", session_id=None if actual else "test-session",
+                                        mudang_variant="f")
+            if actual:
+                body["start_token"] = str(uuid.uuid4())
         else:
             path = f"/games/{game}/commands"
-            body = dict(steps[step]["request"], game_id=game, command_id=str(uuid.uuid4()))
+            request = actual_command(view, rng) if actual else steps[step]["request"]
+            body = dict(request, game_id=game, command_id=str(uuid.uuid4()))
         try:
             with opener.open(Request(origin + path, json.dumps(body).encode(), headers), timeout=5) as response:
                 status, data = response.status, json.load(response)
@@ -65,6 +84,12 @@ def measure_game(origin, cookie, steps, minutes, barrier):
         if status != 200 or not data.get("view") or game is not None and not data.get("accepted"):
             errors += 1
             game, step = None, 0
+        elif actual:
+            view = data["view"]
+            game = view["game_id"]
+            if view["result"] is not None:
+                finished += 1
+                game = None
         elif game is None:
             game = data["view"]["game_id"]
         else:

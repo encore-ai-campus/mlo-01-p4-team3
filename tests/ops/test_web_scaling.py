@@ -206,6 +206,41 @@ class BenchOptions(unittest.TestCase):
                                    "p2_memory_p95_ms": {"value": 700.5, "unit": "ms"},
                                    "p2_memory_throughput_rps": {"value": 3.0, "unit": "rps"}})
 
+    def test_model_inference_uses_weighted_buckets_and_counts_failures(self):
+        """두 프로세스의 누적 버킷과 실패를 같은 표본 집합으로 합산한다."""
+        from server.tests.multiproc_bench import inference_metrics
+
+        def scrape(version, result, fast, slow):
+            labels = f'model_version="{version}",result="{result}"'
+            return ('# TYPE paldo_model_inference_duration_seconds histogram\n'
+                    f'paldo_model_inference_duration_seconds_bucket{{{labels},le="0.1"}} {fast}\n'
+                    f'paldo_model_inference_duration_seconds_bucket{{{labels},le="0.25"}} {slow}\n'
+                    f'paldo_model_inference_duration_seconds_bucket{{{labels},le="+Inf"}} {slow}\n')
+
+        version = "model-v0"
+        rows = {"8001": scrape(version, "ok", 100, 100),
+                "8002": scrape(version, "fallback", 0, 4) + scrape("other", "ok", 0, 100)}
+        self.assertEqual(inference_metrics(rows, version), {
+            "inference_calls": 104, "inference_failures": 4, "inference_p95_upper_ms": 100,
+            "inference_calls_by_process": {"8001": 100, "8002": 4},
+        })
+        self.assertIsNone(inference_metrics({"8001": ""}, version)["inference_p95_upper_ms"])
+
+    def test_real_model_verdict_requires_games_and_inference_on_every_process(self):
+        """미호출·오류·미완주를 빠른 응답으로 위장할 수 없다."""
+        from server.tests.multiproc_bench import model_load_passed
+
+        row = dict(errors=0, finished_games=1, beacon_errors=0, beacon_acks=30, p95_ms=1000,
+                   inference_calls=20, inference_failures=0, inference_p95_upper_ms=100,
+                   inference_calls_by_process={"8000": 10, "8002": 10})
+        self.assertTrue(model_load_passed(row))
+        for change in (dict(errors=1), dict(finished_games=0), dict(inference_calls=0),
+                       dict(inference_failures=1), dict(inference_p95_upper_ms=None),
+                       dict(inference_p95_upper_ms=250), dict(p95_ms=1000.1),
+                       dict(inference_calls_by_process={"8000": 20, "8002": 0})):
+            with self.subTest(change=change):
+                self.assertFalse(model_load_passed(dict(row, **change)))
+
     def test_api_bench_delegates_process_comparison(self):
         sys.path.insert(0, str(ROOT / "tools" / "perf"))
         try:

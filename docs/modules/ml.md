@@ -66,6 +66,8 @@ python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --model
 
 `--preset/--games/--seed/--out/--policy/--record`는 기존 도구와 같다. 기본 정책은 모델을 호출하는 `rule-v0`다. 파일 경로 모드는 `--model`, `PALDO_SUSPICION_MODEL_PATH`, 위 로컬 경로 순으로 읽는다. 신뢰된 학습 산출물 `models.pkl`과 그 의존 패키지가 필요하다. 없으면 종료 코드 1이며 모델 실행 성공 manifest를 만들지 않는다. `--policy min-legal`은 모델을 사용하지 않아 성공으로 판정하지 않는다.
 
+웹 부하 시험은 `tools/perf/api_bench.py --web-processes 2 --mlruns <로컬 디렉터리> --suspicion-version <고정 버전>`으로 실제 엔진과 어댑터를 조립한다. 기본 녹화 엔진 모드와 같은 계정·Caddy·Mongo 접두어 격리를 사용하고, 시험 이벤트에는 `load_test=true`를 기록한다. 공개 PlayerView에서 명령을 만들어 일반 판을 끝까지 진행한다. 각 웹 프로세스의 모델 호출·실패와 히스토그램을 합산해 추론 p95 버킷 상한을 기록한다. 미호출·미완주·오류, 모델 p95 상한 100ms 초과 또는 게임 API p95 1초 초과면 종료 코드 1이다. 최종 검증은 적격 모델로 사용자 테스트 서버 또는 동급 VM에서 `--users 30 --minutes 3 --front binary --result-task D-08-01 --result-name model_web_load`를 붙인다.
+
 ### 로컬 모델 인계 (D-08-04)
 
 1. 수명주기 1·2절을 통과한 씐 자 모델의 D-07-02 `models.pkl`과 `report.json`을 함께 `mlruns/suspicion-v0/<suspicion_version>/`에 둔다. D-08-01의 버전은 `suspicion-logistic-` 뒤에 `models.pkl`의 SHA-256 앞 12자리를 붙인 값이다. 같은 버전의 파일을 덮어쓰지 않는다.
@@ -113,7 +115,7 @@ Get-FileHash out/d08-04/bench-a/events.jsonl -Algorithm SHA256
 | D-07-02 | 11/8 | 최신 dev 규칙 반영, 거짓말 전략 고정 생성·별도 평가·판/seed 중복 거부·실제 선택 이후 관측 분리 |
 | D-07-02 | 11/8 | C Delta 행의 원본 관측 대조와 학습 코드 연결 실행 추가 |
 | D-07-03 | 11/7 | intent/의 CPU 미세조정·동일 기준선 평가와 모델·계보 저장 경로를 연결 |
-| D-08-01 | 11/8 | 중단 가능한 모델 포트·판 실행, 버전 고정·폴백·특징 경보 검증. dev2ed4a53 반영 후 50판 연결 회귀와 승률 관문 실패 기록 |
+| D-08-01 | 11/9 | 병합된 Selector와 실제 후보 50판 반복 재현. 격리 웹 부하의 실제 엔진·모델 모드 및 프로세스별 추론 집계 추가 |
 | D-08-04 | 11/8 | 로컬 Selector의 고정 버전 조회·특징 버전 검사와 A·B 재현 절차 추가 |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.

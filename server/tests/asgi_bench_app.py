@@ -1,4 +1,6 @@
 """B-07-05·B-08-03 시험 조립. 실제 Mongo·녹화 엔진과 가짜/HTTP 광고를 분리한다."""
+import atexit
+from dataclasses import replace
 import os
 import re
 
@@ -14,9 +16,35 @@ from server.app.ads_port import AdGateway
 from engine.testing.fakes import ScriptedGameEngine
 from ads.testing.fakes import FakeAdProvider
 
-runtime = open_mongo_runtime(engine=ScriptedGameEngine(), suspicion=None,
+model_version = os.environ.get("PALDO_BENCH_SUSPICION_VERSION")
+if model_version:
+    from ml.suspicion.features import FEATURE_VERSION
+    from server.infra.game_factory import ContentPolicyEngine
+    from server.infra.model_selector import LocalModelSelector
+    from server.infra.observed_models import ObservedSuspicionModel
+
+    selector = LocalModelSelector(os.environ["PALDO_BENCH_MLRUNS"], suspicion_version=model_version,
+                                  intent_version="", feature_version=FEATURE_VERSION)
+    adapter = selector.suspicion_model(model_version)
+    atexit.register(adapter.close)
+    suspicion = ObservedSuspicionModel(adapter)
+    engine = ContentPolicyEngine(model_version=model_version)
+else:
+    engine, suspicion = ScriptedGameEngine(), None
+runtime = open_mongo_runtime(engine=engine, suspicion=suspicion,
                              uri=os.environ["PALDO_MONGO_URI"], collection_prefix=os.environ["PALDO_BENCH_PREFIX"])
-game = fixture_service(runtime)
+if model_version:
+    game = runtime.game
+    prepare_start = game.prepare_start
+
+    def prepare_model_game(data, player):
+        """시험 판의 이벤트에 이 프로세스가 읽은 모델 버전을 기록한다."""
+        return replace(prepare_start(data, player), model_versions={"suspicion": model_version})
+
+    game.prepare_start = prepare_model_game
+    game.load_test = True
+else:
+    game = fixture_service(runtime)
 configure_game_service(game)
 configure_session_service(runtime.sessions)
 from server.tests.asgi_bench_metrics import timed
@@ -37,7 +65,6 @@ usecases.dumps = timed(usecases.dumps, 'stored_response_conversion')
 runtime.sessions.store.ad_identity = timed(runtime.sessions.store.ad_identity, 'ad_identity')
 scenario = os.environ["PALDO_BENCH_SCENARIO"]
 if internal_url := os.environ.get('PALDO_BENCH_HTTP_ADS_URL'):
-    from dataclasses import replace
     from server.infra.ad_client import HTTPAdProvider
 
     class LoadTestHTTPAdProvider(HTTPAdProvider):
