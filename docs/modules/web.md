@@ -117,3 +117,5 @@ B-06-03의 실제 Mongo 조립은 `server/paldo_web/mongo.py`를 사용한다. �
 B-08-01 콘텐츠 문안은 `server/story_catalog.json`에 버전별로 보관한다. E 콘텐츠 갱신 시 새 버전 공개 문안을 추가하고 기존 버전은 유지한다. 게임은 메타 버전, 진척은 진척 버전으로 조회해 콘텐츠 갱신 후에도 원문을 보존한다. 현재 원문과 보관본의 일치·버전 갱신 전후 화면 보존은 `server/tests/test_story_ui.py`에서 검사한다.
 
 B-08-03은 PALDO_ADS_INTERNAL_URL을 주입하면 기존 광고 Gateway에 내부 HTTP 제공자를 연결한다. 상세 운영/시험 및 D 인수 범위는 [서버 설계](../../server/DESIGN.md#b-08-03-내부-광고-http-연결)와 [증빙](../evidence/B-08-03.md)을 따른다. 루트 .env.example의 기존 키를 사용하며 실제 접속값은 기록하지 않는다.
+
+C-08-01은 모델 계측과 서버 예외 종류를 기록하며 검증 부하 도구를 제공한다.
