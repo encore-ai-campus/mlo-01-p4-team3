@@ -27,31 +27,26 @@ from .api_bench import mongo_uri, percentile
 from .ws_smoke import _send, _receive, _recv_exact
 
 
-def measure_game(origin, cookie, steps, minutes, barrier):
-    """api_bench와 같은 초당 한 요청·독립 판의 시작/명령을 실제 HTTP로 측정한다."""
+def measure_game(origin, cookie, steps, minutes, barrier, *, intent_every=0):
+    """독립 판을 초당 한 주기로 진행하며, 설정한 주기에 해석·취소 HTTP 요청을 추가한다."""
     csrf = secrets.token_hex(16)
     opener = build_opener(HTTPCookieProcessor(CookieJar()))
     headers = {"Cookie": cookie + "; csrftoken=" + csrf, "X-CSRFToken": csrf,
                "Accept": "application/json", "Content-Type": "application/json"}
     samples, statuses, errors, finished = [], {}, 0, 0
-    by_route = {"start": [], "command": []}
+    by_route = {"start": [], "command": [], "utterance": [], "cancel": []}
     request_timings = []
-    game, step = None, 0
-    barrier.wait(timeout=30)
-    deadline = time.monotonic() + minutes * 60
-    while time.monotonic() < deadline:
+
+    def send(route, path, body):
+        # 해석·취소도 오류 표본까지 전체 게임 API p95에 포함한다.
         started = time.monotonic()
-        route = 'start' if game is None else 'command'
         server_timing = {}
-        if game is None:
-            path, body = "/games", dict(preset_id="base6", session_id="test-session", mudang_variant="f")
-        else:
-            path = f"/games/{game}/commands"
-            body = dict(steps[step]["request"], game_id=game, command_id=str(uuid.uuid4()))
         try:
             with opener.open(Request(origin + path, json.dumps(body).encode(), headers), timeout=5) as response:
                 status, data = response.status, json.load(response)
                 server_timing = json.loads(response.headers.get('X-Paldo-Bench-Timing', '{}'))
+                if not isinstance(data, dict):
+                    data = {}
         except HTTPError as error:
             status, data = error.code, {}
             error.close()
@@ -60,8 +55,26 @@ def measure_game(origin, cookie, steps, minutes, barrier):
         elapsed = (time.monotonic() - started) * 1000
         samples.append(elapsed)
         request_timings.append(dict(route=route, client_ms=round(elapsed, 3), stages=server_timing))
-        by_route["start" if game is None else "command"].append(elapsed)
+        by_route[route].append(elapsed)
         statuses[str(status)] = statuses.get(str(status), 0) + 1
+        return status, data
+
+    game, step, view, command_number = None, 0, None, 0
+    barrier.wait(timeout=30)
+    deadline = time.monotonic() + minutes * 60
+    while time.monotonic() < deadline:
+        started = time.monotonic()
+        if game is None:
+            path, body = "/games", dict(preset_id="base6", session_id="test-session", mudang_variant="f")
+        else:
+            from .intent_load import probe_intent, should_probe
+            command_number += 1
+            if should_probe(view, command_number, intent_every):
+                errors += probe_intent(view, send)
+            path = f"/games/{game}/commands"
+            body = dict(steps[step]["request"], game_id=game, command_id=str(uuid.uuid4()))
+        status, data = send('start' if game is None else 'command', path, body)
+        view = data.get('view')
         if status != 200 or not data.get("view") or game is not None and not data.get("accepted"):
             errors += 1
             game, step = None, 0

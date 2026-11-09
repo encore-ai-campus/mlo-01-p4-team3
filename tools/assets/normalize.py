@@ -1,6 +1,8 @@
 """A-09-05: 이미 바탕이 투명한 원본(RGBA)을 규격 sprite·마스코트로 맞춰 실제 경로에 쓴다.
+A-10-05: 장면 배경 원본(불투명 RGB)을 1280×720으로 맞춰 실제 경로에 쓴다.
 
     python -m tools.assets.normalize <원본 폴더> [--repo <저장소>] [--report <JSON 경로>]
+    python -m tools.assets.normalize --background meeting=<원본.png> --background night=<원본.png>
 
 - 원본 폴더 구조: `characters/<인물 id>.png`(sprite), `mascots/<MASCOT_SOURCES 파일명>`(마스코트).
   원본 폴더는 읽기만 한다. 바탕 제거가 필요한 단색 바탕 원본은 `cutout`을 쓴다.
@@ -9,9 +11,12 @@
 - 마스코트: 보이는 경계 상자를 단일 배율로 줄여 512×512 가운데, 발끝 기준선 y=480, 위 여백 `MASCOT_TOP` 이상에 둔다.
 - 쓴 sprite·마스코트 항목은 manifest `placeholder: false`로 바꾸고, 그 sprite에서 파생한 초상은 `placeholder: true`로 돌린다.
   초상은 이어서 `python -m tools.assets.make_placeholders`로 다시 파생한다(이 도구는 초상 파일을 쓰지 않는다).
+- 장면 배경: 가운데 기준으로 정확한 16:9(16k×9k 중 원본에 들어가는 가장 큰 k)로 자른 뒤 면적 평균으로
+  1280×720까지 줄인다(가로·세로 같은 배율, 확대하지 않음). 결과는 불투명 RGB이고 manifest `placeholder: false`로 바꾼다.
 - 같은 입력이면 같은 픽셀이 나온다(면적 평균 축소, 난수 없음). 압축 바이트는 zlib 구현에 따라 다를 수 있다(spec 5절).
 
-계층: `fit_mascot`·`HAIR_TOP`은 규칙(도메인, 파일 없음), `normalize`는 흐름(응용), `main`은 CLI(표현).
+계층: `fit_mascot`·`fit_background`·`background_crop`·`HAIR_TOP`은 규칙(도메인, 파일 없음),
+`normalize`·`normalize_backgrounds`는 흐름(응용), `main`은 CLI(표현).
 파일 읽기·쓰기는 `png`·`sources`(인프라).
 """
 from __future__ import annotations
@@ -68,12 +73,47 @@ def fit_mascot(width: int, rows: Sequence[bytes]) -> list[bytearray]:
     return out
 
 
-def _encode(width: int, height: int, rows: list, kind: str) -> bytes:
-    """무손실 PNG. 용량 상한을 넘으면 행별 필터 선택으로 다시 압축하고, 그래도 넘으면 ValueError."""
+def background_crop(width: int, height: int) -> tuple[int, int, int, int]:
+    """원본 크기에서 가운데 기준 정확한 16:9 자르기 상자 (x0, y0, x1, y1). 1280×720보다 작으면 ValueError."""
+    bw, bh = vn.BACKGROUND_SIZE
+    k = min(width // 16, height // 9)
+    cw, ch = 16 * k, 9 * k
+    if cw < bw or ch < bh:
+        raise ValueError(f"배경 원본 {width}x{height}이 {bw}x{bh}보다 작음(확대하지 않음)")
+    x0, y0 = (width - cw) // 2, (height - ch) // 2
+    return x0, y0, x0 + cw, y0 + ch
+
+
+def fit_background(width: int, height: int, channels: int, rows: Sequence[bytes]) -> list[bytearray]:
+    """불투명 원본(RGB 또는 알파가 모두 255인 RGBA)을 16:9로 잘라 1280×720 RGB 행으로 줄인다."""
+    if channels not in (3, 4) or len(rows) != height or any(len(r) != width * channels for r in rows):
+        raise ValueError("RGB·RGBA 행 길이가 맞지 않음")
+    if channels == 4 and any(bytes(r[3::4]).strip(bytes((255,))) for r in rows):
+        raise ValueError("투명·반투명 픽셀이 있음(장면 배경은 불투명 원본만)")
+    x0, y0, x1, y1 = background_crop(width, height)
+    rgba = []
+    for r in rows[y0:y1]:
+        line = bytearray((x1 - x0) * 4)
+        for i, x in enumerate(range(x0, x1)):
+            line[i * 4:i * 4 + 3] = r[x * channels:x * channels + 3]
+            line[i * 4 + 3] = 255
+        rgba.append(line)
+    small = vn.resize_rgba(rgba, x1 - x0, vn.BACKGROUND_SIZE)
+    out = []
+    for line in small:
+        rgb = bytearray(vn.BACKGROUND_SIZE[0] * 3)
+        rgb[0::3], rgb[1::3], rgb[2::3] = line[0::4], line[1::4], line[2::4]
+        out.append(rgb)
+    return out
+
+
+def _encode(width: int, height: int, rows: list, kind: str, rgb: bool = False) -> bytes:
+    """무손실 PNG(RGBA, `rgb`면 RGB). 용량 상한을 넘으면 행별 필터 선택으로 다시 압축하고, 그래도 넘으면 ValueError."""
     limit = sources.load_spec().max_bytes_for(kind)
-    data = png.encode_rgba(width, height, rows)
+    encode = png.encode_rgb if rgb else png.encode_rgba
+    data = encode(width, height, rows)
     if len(data) > limit:
-        data = png.encode_rgba(width, height, rows, optimize=True)
+        data = encode(width, height, rows, optimize=True)
     if len(data) > limit:
         raise ValueError(f"{kind}: 무손실 재압축 후에도 {len(data)} > {limit}바이트")
     return data
@@ -135,15 +175,62 @@ def normalize(src_dir: Path, repo: Path) -> dict:
     return report
 
 
+def normalize_backgrounds(srcs: dict[str, Path], repo: Path) -> dict:
+    """배경 id → 원본 경로를 규격 배경으로 맞춰 `repo`에 쓰고 manifest 표시를 바꾼다. 모두 통과한 뒤에만 쓴다."""
+    spec = sources.load_spec()
+    manifest = sources.load_manifest(repo, spec)
+    by_key = {(e.kind, e.id): e for e in manifest}
+    report: dict = {}
+    updated = []
+    for bid, path in sorted(srcs.items()):
+        entry = by_key.get(("background", bid))
+        if entry is None:
+            raise ValueError(f"manifest에 background:{bid} 항목이 없음")
+        w, h, ch, rows = png.decode(path.read_bytes())
+        out = fit_background(w, h, ch, rows)
+        problems = vn.check_background(*vn.BACKGROUND_SIZE, 3, out)
+        if problems:
+            raise ValueError(f"background:{bid}: " + "; ".join(problems))
+        data = _encode(*vn.BACKGROUND_SIZE, out, "background", rgb=True)
+        x0, y0, x1, y1 = background_crop(w, h)
+        report[f"background:{bid}"] = {"src_size": [w, h], "crop": [x0, y0, x1, y1],
+                                       "scale": round(vn.BACKGROUND_SIZE[0] / (x1 - x0), 5), "bytes": len(data)}
+        updated.append((replace(entry, placeholder=False), data))
+    for entry, data in updated:
+        sources.write_file(repo, entry.path, data)
+    keys = {(e.kind, e.id) for e, _ in updated}
+    sources.write_manifest(repo, spec, [e for e in manifest if (e.kind, e.id) not in keys] + [e for e, _ in updated])
+    return report
+
+
+def _parse_backgrounds(items: list[str]) -> dict[str, Path]:
+    out: dict[str, Path] = {}
+    for item in items:
+        bid, sep, path = item.partition("=")
+        if not sep or not bid or not path:
+            raise ValueError(f"--background 형식은 id=경로: {item!r}")
+        if bid in out:
+            raise ValueError(f"--background {bid} 중복")
+        out[bid] = Path(path)
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI: 성공 0, 입력·규격 위반 2."""
-    ap = argparse.ArgumentParser(description="투명 원본 → 규격 sprite·마스코트(A-09-05)")
-    ap.add_argument("src", type=Path, help="characters/·mascots/가 있는 원본 폴더(읽기만)")
+    ap = argparse.ArgumentParser(description="투명 원본 → 규격 sprite·마스코트(A-09-05), 배경 원본 → 장면 배경(A-10-05)")
+    ap.add_argument("src", type=Path, nargs="?", help="characters/·mascots/가 있는 원본 폴더(읽기만)")
+    ap.add_argument("--background", action="append", default=[], metavar="ID=PATH",
+                    help="장면 배경 원본(읽기만). 여러 번 줄 수 있다")
     ap.add_argument("--repo", type=Path, default=sources.ROOT)
-    ap.add_argument("--report", type=Path, help="인물별 수치 JSON을 쓸 경로")
+    ap.add_argument("--report", type=Path, help="수치 JSON을 쓸 경로")
     args = ap.parse_args(argv)
+    if args.src is None and not args.background:
+        ap.error("원본 폴더 또는 --background가 필요하다")
     try:
-        report = normalize(args.src, args.repo)
+        backgrounds = _parse_backgrounds(args.background)
+        report = normalize(args.src, args.repo) if args.src is not None else {}
+        if backgrounds:
+            report.update(normalize_backgrounds(backgrounds, args.repo))
     except (OSError, ValueError) as exc:
         print(f"오류: {exc}", file=sys.stderr)
         return 2
@@ -151,7 +238,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.report:
         args.report.write_text(body + "\n", encoding="utf-8")
     print(body)
-    print("다음: python -m tools.assets.make_placeholders (초상 파생)")
+    if args.src is not None:
+        print("다음: python -m tools.assets.make_placeholders (초상 파생)")
     return 0
 
 

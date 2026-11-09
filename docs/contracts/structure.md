@@ -247,6 +247,7 @@ ops/prometheus/**
 ops/grafana/**
 ops/k3s/**
 ops/mlflow/**
+ops/privacy/**
 ops/aws/**
 ops/runbook/**
 content/**
