@@ -12,6 +12,7 @@ def main():
     """운영 .env·저장소에 접속하지 않는 루프백 미리보기를 시작한다."""
     parser = argparse.ArgumentParser(description='공통 UI 검수: 임시 DB·녹화 엔진 전용')
     parser.add_argument('--port', type=int, default=8783)
+    parser.add_argument('--font-probe', action='store_true', help='로그인 첫 화면의 로컬 글꼴·로드 계측 활성화')
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error('port must be between 1 and 65535')
@@ -26,6 +27,10 @@ def main():
     with TemporaryDirectory(prefix='paldo-ui-theme-') as directory:
         settings.DATABASES['default']['NAME'] = str(Path(directory) / 'accounts.sqlite3')
         settings.ALLOWED_HOSTS = ['127.0.0.1']
+        # 별도 worktree/포트의 검수 화면이 서로의 로그인 세션을 덮어쓰지 않는다.
+        settings.SESSION_COOKIE_NAME = f'paldo_ui_preview_{args.port}'
+        if args.font_probe:
+            settings.MIDDLEWARE = [*settings.MIDDLEWARE, 'server.tests.ui_font_probe.FontProbe']
         django.setup()
         from django.contrib.auth.models import User
         from django.core.management import call_command

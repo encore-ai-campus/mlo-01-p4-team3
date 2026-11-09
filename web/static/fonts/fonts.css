@@ -1,0 +1,4 @@
+@import url("/static/fonts/pretendard-subset.css");
+@font-face { font-family:"Gowun Batang"; src:url("/static/fonts/GowunBatang-Regular.woff2") format("woff2"); font-style:normal; font-weight:400; font-display:swap; }
+@font-face { font-family:"Gowun Batang"; src:url("/static/fonts/GowunBatang-Bold.woff2") format("woff2"); font-style:normal; font-weight:700; font-display:swap; }
+:root { --pd-sans:"Pretendard Variable",system-ui,sans-serif; --pd-serif:"Gowun Batang",serif; }

@@ -14,6 +14,9 @@ python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis -
   또는 `binary`(이미 설치된 caddy 실행 파일, `--caddy-bin`. 시험 서버처럼 Docker가 없는 곳).
 - 이미 떠 있는 앞단 주소로만 부하를 보내는 모드는 두지 않는다. 이 부하는 시험용 엔진(ScriptedGameEngine)·시험 접두어
   컬렉션을 쓰므로 실제 엔진이 도는 서버에 보낼 수 없다. 같은 서버에서 이 도구가 프로세스를 직접 띄워 비교한다.
+- B-09-02 준비: `--intent-every N`은 말하기 단계의 N번째 명령마다 해석·취소를 추가한다(0은 기존 부하).
+  `--intent-factory`로 시험 해석기를 선택한다. 전체 API p95에는 두 요청을 포함하고 순수 해석 지연도 따로 기록한다.
+  이 옵션만으로 D-08-01의 실제 엔진·모델 부하나 실제 BERT·VM 검증을 완료한 것은 아니다.
 Mongo는 PALDO_MONGO_URI(api_bench.mongo_uri 규칙)로 받는다. 결과는 out/handoff/e0910-multiproc-report.json에 쓴다.
 """
 import argparse
@@ -21,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import socket
@@ -84,7 +88,8 @@ def caddyfile(ports, front_host, listen=":8080", upstream_host="host.docker.inte
 
 
 RESULT_KEYS = ("requests", "errors", "throughput_rps", "p50_ms", "p95_ms", "p99_ms", "command_p95_ms",
-               "beacon_acks", "beacon_errors")
+               "beacon_acks", "beacon_errors", "intent_requests", "cancel_requests", "intent_http_p95_ms",
+               "intent_parse_p95_ms")
 
 
 def result_metrics(rows) -> dict:
@@ -100,10 +105,12 @@ def result_metrics(rows) -> dict:
 
 def stage_counts(metrics_text: str) -> dict:
     """프로세스별 bench 단계 지표에서 명령 저장(commit) 수를 읽어 분배를 본다."""
+    counts = {"commit": 0.0}
     for line in metrics_text.splitlines():
-        if line.startswith("paldo_bench_stage_seconds_count") and 'stage="commit"' in line:
-            return {"commit": float(line.rsplit(" ", 1)[1])}
-    return {"commit": 0.0}
+        for stage in ('commit', 'intent_parse'):
+            if line.startswith("paldo_bench_stage_seconds_count") and f'stage="{stage}"' in line:
+                counts[stage] = float(line.rsplit(" ", 1)[1])
+    return counts
 
 
 def redis_clients(url):
@@ -130,7 +137,7 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
         for port in ports:
             env = dict(os.environ, PALDO_MONGO_URI=uri, PALDO_PUBLIC_ORIGIN=origin, PALDO_BENCH_PREFIX=prefix,
                        PALDO_BENCH_PORT=str(port), PALDO_BENCH_SCENARIO="normal", PALDO_CHANNEL_LAYER=layer,
-                       PALDO_WEB_INSTANCE=str(port))
+                       PALDO_WEB_INSTANCE=str(port), PALDO_BENCH_INTENT_FACTORY=args.intent_factory if args.intent_every else '')
             if layer == "redis":
                 env["PALDO_REDIS_URL"] = args.redis_url
             log = (folder / f"{name}-{port}.log").open("wb")
@@ -205,7 +212,8 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
                                      daemon=True)
                     sampler.start()
                 barrier = Barrier(args.users)
-                futures = [pool.submit(measure_game, origin, cookie, steps, args.minutes, barrier) for cookie in users]
+                futures = [pool.submit(measure_game, origin, cookie, steps, args.minutes, barrier,
+                                       intent_every=args.intent_every) for cookie in users]
                 results = [future.result() for future in futures]
             finally:
                 stop.set()
@@ -221,6 +229,10 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
             for status, count in row["statuses"].items():
                 statuses[status] = statuses.get(status, 0) + count
         command = [v for row in results for v in row["by_route"]["command"]]
+        intent = [v for result in results for v in result['by_route']['utterance']]
+        cancel = [v for result in results for v in result['by_route']['cancel']]
+        parses = [r['stages']['intent_parse'] for result in results for r in result['request_timings']
+                  if r['route'] == 'utterance' and 'intent_parse' in r['stages']]
         row = dict(case=name, processes=processes, channel_layer=layer, users=args.users, minutes=args.minutes,
                    started_at=started_at, elapsed_seconds=round(elapsed, 3), requests=len(values),
                    throughput_rps=round(len(values) / elapsed, 2), statuses=statuses,
@@ -231,6 +243,11 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
                    beacon_acks=sum(r["acks"] for r in beacon_rows), beacon_errors=sum(r["errors"] for r in beacon_rows),
                    per_process_commits=per_process, redis_clients=clients or None,
                    mongo_version=runtime.client.server_info()["version"])
+        row.update(engine='scripted', intent_every=args.intent_every,
+                   intent_parser_factory=args.intent_factory if args.intent_every else None,
+                   intent_requests=len(intent), cancel_requests=len(cancel),
+                   intent_http_p95_ms=round(percentile(intent, .95), 3) if intent else None,
+                   intent_parse_p95_ms=round(percentile(parses, .95), 3) if parses else None)
         print(json.dumps(row), flush=True)
         return row
     finally:
@@ -252,7 +269,10 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
             for path in folder.glob(f"{name}-*.log"):
                 (keep / path.name).write_bytes(path.read_bytes())
         try:
-            for collection in runtime.collection_names:
+            collections = [*runtime.collection_names]
+            if args.intent_every:
+                collections.append(prefix + 'b_interactions')
+            for collection in collections:
                 if not collection.startswith(prefix):
                     raise AssertionError("unsafe_cleanup")
                 runtime.database.drop_collection(collection)
@@ -275,7 +295,15 @@ def main(argv=None):
     parser.add_argument("--result-task", default="E-09-10", help="증빙 결과 JSON을 둘 태스크 ID")
     parser.add_argument("--compare-asgi", action="store_true", help="C-08-04 명령 호환용. 받기만 한다")
     parser.add_argument("--keep-logs", default="", help="daphne 로그를 복사할 폴더(out/ 아래 권장)")
+    parser.add_argument('--intent-every', type=int, default=0,
+                        help='N번째 명령의 말하기 단계마다 해석·취소 추가. 0은 기존 부하')
+    parser.add_argument('--intent-factory', default='intent.parser.BaselineIntentParser',
+                        help='시험 프로세스에서 한 번 생성할 IntentParser 팩토리. 운영 설정은 변경하지 않음')
     args = parser.parse_args(argv)
+    if not 0 <= args.intent_every <= 100:
+        parser.error('intent-every=0..100')
+    if args.intent_every and not re.fullmatch(r'[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+', args.intent_factory):
+        parser.error('intent-factory에는 Python 모듈의 공개 팩토리 경로가 필요하다')
     names = case_names(args.cases, args.web_processes, args.channel_layer)
     try:
         cases = {name: parse_case(name) for name in names}
@@ -333,9 +361,16 @@ def main(argv=None):
                            f"--result-name {args.result_name}") if args.web_processes else \
                     (f"python -B -m server.tests.multiproc_bench --cases {','.join(names)} --users {args.users} "
                      f"--minutes {args.minutes} --front {args.front} --result-name {args.result_name}")
+                if args.intent_every:
+                    command += f' --intent-every {args.intent_every} --intent-factory {args.intent_factory}'
+                command += f' --result-task {args.result_task}'
                 path = write_result(args.result_task, args.result_name, result_metrics(rows), command, root=root)
                 print(json.dumps({"result": str(path.relative_to(root)).replace(os.sep, "/")}), flush=True)
             print(json.dumps({"done": True}), flush=True)
+            if args.intent_every and any(row['errors'] or row['beacon_errors'] or
+                    not row['intent_requests'] or row['intent_requests'] != row['cancel_requests'] or
+                    row['intent_parse_p95_ms'] is None for row in rows):
+                return 1
             return 0
         finally:
             connections.close_all()

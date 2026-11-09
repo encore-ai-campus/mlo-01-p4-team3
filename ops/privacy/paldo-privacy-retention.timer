@@ -1,0 +1,10 @@
+[Unit]
+Description=Prepare the PJ4 user-test retention scope on December 12
+
+[Timer]
+OnCalendar=2026-12-12 00:00:00 Asia/Seoul
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

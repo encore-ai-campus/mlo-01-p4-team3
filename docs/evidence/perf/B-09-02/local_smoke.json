@@ -1,0 +1,104 @@
+{
+  "task": "B-09-02",
+  "commit": "d106024d1e6a4aa7b11c0e47355dd8a01cd38c41",
+  "generated_at": "2026-11-09T08:34:51Z",
+  "source": "python -B tools/perf/api_bench.py --web-processes 2 --users 2 --minutes 0.3 --intent-every 1; same command without --intent-every",
+  "metrics": {
+    "baseline_mixed_requests": {
+      "value": 84,
+      "unit": "count"
+    },
+    "baseline_mixed_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_mixed_throughput_rps": {
+      "value": 4.65,
+      "unit": "rps"
+    },
+    "baseline_mixed_p50_ms": {
+      "value": 94.45,
+      "unit": "ms"
+    },
+    "baseline_mixed_p95_ms": {
+      "value": 203.29,
+      "unit": "ms"
+    },
+    "baseline_mixed_p99_ms": {
+      "value": 276.022,
+      "unit": "ms"
+    },
+    "baseline_mixed_command_p95_ms": {
+      "value": 205.219,
+      "unit": "ms"
+    },
+    "baseline_mixed_beacon_acks": {
+      "value": 36,
+      "unit": "count"
+    },
+    "baseline_mixed_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_mixed_intent_requests": {
+      "value": 24,
+      "unit": "count"
+    },
+    "baseline_mixed_cancel_requests": {
+      "value": 24,
+      "unit": "count"
+    },
+    "baseline_mixed_intent_http_p95_ms": {
+      "value": 274.979,
+      "unit": "ms"
+    },
+    "baseline_mixed_intent_parse_p95_ms": {
+      "value": 2.414,
+      "unit": "ms"
+    },
+    "original_requests": {
+      "value": 36,
+      "unit": "count"
+    },
+    "original_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "original_throughput_rps": {
+      "value": 1.99,
+      "unit": "rps"
+    },
+    "original_p50_ms": {
+      "value": 50.804,
+      "unit": "ms"
+    },
+    "original_p95_ms": {
+      "value": 111.864,
+      "unit": "ms"
+    },
+    "original_p99_ms": {
+      "value": 116.734,
+      "unit": "ms"
+    },
+    "original_command_p95_ms": {
+      "value": 76.902,
+      "unit": "ms"
+    },
+    "original_beacon_acks": {
+      "value": 36,
+      "unit": "count"
+    },
+    "original_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "original_intent_requests": {
+      "value": 0,
+      "unit": "count"
+    },
+    "original_cancel_requests": {
+      "value": 0,
+      "unit": "count"
+    }
+  }
+}

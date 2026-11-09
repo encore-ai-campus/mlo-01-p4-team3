@@ -41,7 +41,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """대상과 단계, 보호된 증빙 파일, 실행 확인을 받는다."""
-        parser.add_argument("stage", choices=("freeze", "plan", "purge-games", "finalize"))
+        parser.add_argument("stage", choices=("freeze", "plan", "purge-games", "purge-ad-mapping", "finalize"))
         parser.add_argument("--player", type=UUID, required=True)
         parser.add_argument("--plan", type=Path)
         parser.add_argument("--apply", action="store_true")
@@ -71,9 +71,9 @@ class Command(BaseCommand):
 
             if not options["plan"] or not settings.SESSION_MONGO_URI:
                 raise CommandError("privacy_plan_and_mongo_required")
-            if stage in ("purge-games", "finalize") and not options["game_writes_drained"]:
+            if stage != "plan" and not options["game_writes_drained"]:
                 raise CommandError("privacy_game_drain_required")
-            if stage in ("purge-games", "finalize") and not options["tombstone_registered"]:
+            if stage != "plan" and not options["tombstone_registered"]:
                 raise CommandError("privacy_tombstone_required")
             try:
                 with MongoClient(settings.SESSION_MONGO_URI, timeoutMS=15000) as client:
@@ -99,6 +99,21 @@ class Command(BaseCommand):
                 raise CommandError("privacy_plan_player_mismatch")
             if stage == "purge-games":
                 result = purge_games(database, player, plan["game_ids"])
+            elif stage == "purge-ad-mapping":
+                if not options["external_deletions_verified"]:
+                    raise CommandError("privacy_external_verification_required")
+                scope = game_scope(database, player)
+                remaining_interactions = database.b_interactions.count_documents(
+                    {"_id": {"$in": plan["game_ids"]}}
+                )
+                if any(scope[key] for key in ("game_ids", "progress", "interactions", "test_sessions")) or remaining_interactions:
+                    raise CommandError("privacy_game_data_remaining")
+                if not set(scope["ad_sessions"]).issubset(plan["ad_sessions"]):
+                    raise CommandError("privacy_ad_mapping_scope_changed")
+                removed = database.b_ad_identities.delete_many({
+                    "player_pseudonym": player, "session_pseudonym": {"$in": plan["ad_sessions"]}
+                }).deleted_count
+                result = {"ad_mappings_deleted": removed}
             else:
                 if not options["external_deletions_verified"]:
                     raise CommandError("privacy_external_verification_required")

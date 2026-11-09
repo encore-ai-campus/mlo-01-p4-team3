@@ -5,11 +5,11 @@
 게임 화면(B)과 광고 서버(D)가 쓰는 이미지 파일의 규격, 파일 목록(`manifest.json`), 임시 세트를 관리한다.
 - 입력: 규격표 `docs/assets/spec.md`, 콘텐츠 ID(`fixtures/content_min/bundle.json` 인물 + 무당 2종, 계약 `Place`, 규격표의 UI 아이콘 10개, `fixtures/ads/campaigns.json` 소재 × 지면 규격)
 - 출력: `content/images/<kind>/…` PNG와 `content/images/manifest.json`(kind, id, size(광고만), path, url, placeholder, derived_from(초상만), edited_from·edited_from_sha256(표정 변형 sprite만))
-- 유형 8개: portrait·sprite·background·mascot·place·ui·map·ad. 비주얼 노벨 회의 화면용 sprite(전신 512×1280, 바탕 투명)를 원본으로 두고, 초상은 sprite에서 인물별 크롭 위 y(`vn.portrait_top`)부터 512×512를 먹남 위에 알파 합성해 만든다(크로스체크 17·18, 11/6 키 등급). 표정 변형은 `<인물 id>__<표정 id>` sprite·초상이고 기본 sprite에서 얼굴만 편집한다(크로스체크 19). 마스코트는 까치·족제비 512×512 RGBA다.
+- 유형 9개: portrait·sprite·background·mascot·branding·place·ui·map·ad. 비주얼 노벨 회의 화면용 sprite(전신 512×1280, 바탕 투명)를 원본으로 두고, 초상은 sprite에서 인물별 크롭 위 y(`vn.portrait_top`)부터 512×512를 먹남 위에 알파 합성해 만든다(크로스체크 17·18, 11/6 키 등급). 표정 변형은 `<인물 id>__<표정 id>` sprite·초상이고 기본 sprite에서 얼굴만 편집한다(크로스체크 19). 마스코트는 까치·족제비 512×512 RGBA다.
 - 계층(`tools/assets/`)
   - 도메인: `spec.py`(규격표 해석, 기대 항목, 대조, 초상-sprite 쌍 검사)·`art.py`(유형별 임시 그림 배분)·`portrait_art.py`(임시 sprite: 회색 실루엣·기준선·이름표, 초상 합성 크롭)·`background_art.py`(임시 장면 배경: 그라데이션·이름표)·`mascot_art.py`(임시 마스코트: 동물 실루엣·이름표)·`glyphs.py`(이름표 글자 찍기, 비트맵 `glyph_data.py`)·`vn.py`(sprite 기준선·배경·표정 얼굴 영역·마스코트 검사, 평소/전신 컷·마스코트 배치 수치, 부드러운 축소, 검수용 합성)
   - 인프라: `sources.py`(파일·로그·결과 JSON, 인물 표시 이름)·`png.py`(PNG RGB/RGBA 쓰기·읽기)·`build_glyphs.py`(Windows 글꼴 → `glyph_data.py`, GDI·ctypes, 개발 도구 CLI)
-  - 응용+표현: `make_placeholders.py`(생성·대조 흐름, CLI)·`preview_vn.py`(검수용 합성 PNG CLI)·`normalize.py`(바탕이 투명한 실제 원본 → 키 등급 sprite·마스코트 배치, 인물별 머리카락 윗선 표 `HAIR_TOP`, A-09-05)
+  - 응용+표현: `make_placeholders.py`(생성·대조 흐름, CLI)·`preview_vn.py`(검수용 합성 PNG CLI)·`normalize.py`(바탕이 투명한 실제 원본 → 키 등급 sprite·마스코트 배치, 인물별 머리카락 윗선 표 `HAIR_TOP`, A-09-05; 장면 배경 원본 → 16:9 자르기·1280×720 축소 `--background`, A-10-05)
   - 의존: `make_placeholders`·`preview_vn` → `spec`·`art`·`vn` → `portrait_art`·`background_art`·`mascot_art` → `glyphs`, `sources`·`png` → `spec`. 도메인은 인프라를 import하지 않는다.
 - 고칠 곳: 규격·기대 수 → `docs/assets/spec.md` + `spec.py`, 임시 실루엣 → `portrait_art.py`, 임시 배경 → `background_art.py`, 임시 마스코트 → `mascot_art.py`, 표정 목록·대상 → `spec.md` 8·9절, 이름표 글자 추가 → `python -m tools.assets.build_glyphs`, sprite·배경 검사 기준·화면 배치 수치 → `vn.py`, PNG 형식 → `png.py`.
 - 그림 기준은 `docs/assets/style_guide.md`(반실사 일러스트, 사람이 체크리스트로 판정). 임시 에셋은 회색 실루엣과 이름 표기, 크기·기준선·배치 확인용이며 최종 그림이 아니다.
@@ -48,6 +48,8 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 - 빠진 콘텐츠 ID의 실제 파일 항목(`placeholder: false`)은 manifest에서 지우지 않고 `extra_in_manifest`로 보고한다(ID가 다시 생겨도 보호된다).
 - 콘텐츠 ID가 늘면(인물 추가, 소재 추가) 다시 실행하면 된다. 없어진 ID의 파일은 지우지 않고 `extra_files`로 보고한다.
 
+`python -B -m tools.assets.branding <시안 원본 PNG>`는 RGBA 원본을 비율 유지해 512×512 투명 캔버스로 정규화하고 공식 로고 ID·manifest를 등록한다. 다른 내용의 기존 로고는 덮어쓰지 않는다. `check_assets`·`make_placeholders`는 같은 branding 규격·RGBA 검사를 사용하며 전체 기대 수량은 103이다. 로고 출처는 B-10-08의 `SOURCES.md` 기록을 따른다.
+
 ## 설정값
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
@@ -82,8 +84,10 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
+| B-10-08 | 11/9 | 확정 branding 유형·규격표·기대 항목·임시 생성·RGBA 검사, 승인 시안 호랑이 로고 정규화·등록·출처. 인물·배경 파일은 보존 |
 | A-08-04 | 11/8 | (11/6 선행 작업) `cutout.py`·`test_cutout.py`: 실제 생성 원본의 단색 바탕 편차·가는 머리카락·색 번짐을 처리하고 straight alpha로 복원, 키 등급별 단일 배율 배치. 생성·처리 기록 `content/images/SOURCES.md`, 시험 증빙 `docs/evidence/A-08-04.md`. 시험 파일은 out/ 보관, 실제 manifest 교체 전 |
 | A-09-05 | 11/9 | `normalize.py`·`test_normalize.py`: 바탕이 투명한 원본을 인물별 머리카락 윗선(`HAIR_TOP`)·발끝으로 단일 배율 배치(sprite), 512×512 가운데·아랫변 480(마스코트), 모두 통과해야 쓰고 manifest `placeholder: false`. 첫 플레이 sprite 8장·마스코트 2장 실제 파일, 초상 8장 파생, `SOURCES.md` A-09-05 절 |
+| A-10-05 | 11/9 | `normalize.py`·`test_normalize.py`: 장면 배경 정규화(`background_crop` 가운데 정확한 16:9 자르기, `fit_background` 면적 평균 1280×720 불투명 RGB, `normalize_backgrounds` 모두 통과해야 쓰고 manifest `placeholder: false`, CLI `--background id=경로`). B 화면 설계 시안의 회의·밤 배경 2장 실제 파일, `SOURCES.md` A-10-05 절 |
 | E-05-05 | 11/5 | 규격표(도트 격자 포함)·스타일 가이드(도트), 임시 세트 생성기(`make_placeholders`)와 37개 임시 세트·manifest, 임시 초상 13장은 코드로 그린 도트 그림(`portrait_art`). 도트 기준은 같은 날 반실사 개정으로 대체(아래 E-08-07 행) |
 | E-08-07 | 11/8 | (11/5 사전 작업) 유형 sprite·background 추가(기대 52), 초상을 sprite 크롭으로 파생(`derived_from`, 쌍 상태 검사), RGBA PNG 쓰기·읽기, sprite·배경 검사(`vn.py`), 검수용 합성(`preview_vn`), 임시 sprite 13장·배경 2장. 같은 날 화풍을 반실사로 바꿔(크로스체크 18) sprite를 전신 512×1280으로, 검사를 px 기준선으로 바꾸고 도트 격자·팔레트·블록·알파 이진 검사를 뺐다. 초상은 알파 합성 크롭, 배치는 평소/전신 컷 두 모드. 이어서 임시 sprite·초상·배경을 회색 실루엣 + 이름표로 바꾸고(`glyphs`·`glyph_data`·`build_glyphs`) 코드 인물 그림·마을 그림을 지웠다 |
 | E-08-07 | 11/8 | (11/5 사전 작업, 크로스체크 19) 표정 변형(`<id>__<표정 id>`, 규격표 8·9절, `edited_from`·`edited_from_sha256`, 얼굴 영역 밖 동일·얼굴 변화 검사)과 마스코트 유형(`mascot`, 까치·족제비, `mascot_art`) 추가, 기대 90. `preview_vn --expr --mascot` |
