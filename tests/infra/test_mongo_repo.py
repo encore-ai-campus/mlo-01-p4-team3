@@ -47,6 +47,37 @@ class MongoContractTests(unittest.TestCase):
         event=serde.from_jsonable(EventEnvelope,load_jsonl('fixtures/events/sample_events.jsonl')[0])
         return state,truth,replace(event,game_id=state.meta.game_id)
 
+    def test_replay_recovers_published_and_pending_confessions(self):
+        """실제 아웃박스를 두 번 읽어 단서와 해금을 한 번씩 복구한다."""
+        from ops.replay_progress import replay_games
+        from tests.engine import test_progress as scenario
+        from server.infra.mongo_repo import MongoGameRepository
+        from server.infra.progress_store import MongoProgressRepository
+        from server.infra.content_store import MongoContentSource
+
+        names = [self.prefix + uuid.uuid4().hex + "_" + suffix for suffix in ("games", "progress", "content")]
+        games = MongoGameRepository(self.database[names[0]], self.histogram)
+        progress = MongoProgressRepository(self.database[names[1]])
+        content = MongoContentSource(self.database[names[2]])
+        try:
+            content.insert(scenario.CONTENT)
+            failing = scenario.FailingProgress(progress, "add_clue")
+            service = scenario.make_service([scenario.SEED_TWO_CLUES, scenario.SEED_TARGET_CLUE], games, failing)
+            with self.assertLogs("paldo.progress", "ERROR"):
+                first_game = scenario.play(service, scenario.SEED_TWO_CLUES)
+                second_game = scenario.play(service, scenario.SEED_TARGET_CLUE)
+            games.collection.update_one({"_id": first_game}, {"$set": {"outbox.$[].published": True}})
+            query = {"_id": {"$in": [first_game, second_game]}}
+            self.assertEqual(progress.load(scenario.PLAYER).clues, {})
+            first = replay_games(games.collection, progress, content, query)
+            self.assertEqual((first["games"], first["clues_added"], first["endings_unlocked"]), (2, 3, 1))
+            second = replay_games(games.collection, progress, content, query)
+            self.assertEqual((second["games"], second["clues_added"], second["endings_unlocked"]), (2, 0, 0))
+            self.assertIn("haewon:h1", progress.load(scenario.PLAYER).endings_unlocked)
+        finally:
+            for name in names:
+                self.database.drop_collection(name)
+
     def test_cas_outbox_response_and_copy_semantics(self):
         state,truth,event=self.make_game();game=state.meta.game_id
         next_state=replace(state,state_version=1)

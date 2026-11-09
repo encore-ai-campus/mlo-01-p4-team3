@@ -24,6 +24,8 @@
 
 ## 사용법
 
+진척 저장 중 장애가 난 판은 보호된 `PALDO_MONGO_URI`를 설정하고 `python -m tools.replay_progress --game-id <판 ID>`로 복구한다. 여러 판은 `--game-id`를 반복하고, 플레이어 단위는 `--player`를 쓴다. 전체 판은 `--all`을 명시해야 한다. 발행 여부와 관계없이 고백·종료 이벤트를 읽으며, 판에 고정된 콘텐츠를 사용한다. 재실행 결과의 신규 단서·결말은 0건이어야 한다. 격리 시험에서만 시험용 컬렉션 `--prefix`를 붙인다.
+
 ```
 py -3.14 -m ops.compose.run make-env                        # .env 생성(있으면 그대로)
 docker compose -p paldo-dev -f ops/compose/dev.yml up -d
@@ -95,3 +97,4 @@ MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/READM
 | C-08-03 | 11/8 | k3s Job·Kafka sink·5호스트 자원 재측정 |
 | C-08-04 | 11/8 | E 태그 archive·4th_private 전용 조회 계정 guard |
 | E-09-10 | 11/9 | 실행 도구 `web --port 8000·8002`, Caddyfile upstream 2개·능동 상태 확인, 로컬 Prometheus `paldo-web` 대상 2개(`process` 라벨), Compose 선택 Redis(profile `redis`), proxy README 웹 프로세스 2개 절차·되돌림·비교 측정(`tools/perf/api_bench.py --web-processes`)·선택 Redis 절 |
+| C-09-04 | 11/9 | 판 아웃박스 기반 진척 재처리 및 실제 Mongo 멱등 검증 |
