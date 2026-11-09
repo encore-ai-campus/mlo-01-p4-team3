@@ -1,0 +1,17 @@
+/* B-09-06: 먹·한지·놋쇠 공통 토큰, 외부 이미지·글꼴 없음. */
+:root {
+  color-scheme: dark;
+  --page: #0c1316;
+  --surface: #172428;
+  --text: #eee8d9;
+  --muted: #bcbdb4;
+  --line: #657478;
+  --accent: #dbc397;
+  --danger: #ffb4a6;
+  font-family: system-ui, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--page);
+  font-synthesis: none;
+}
+:root { --page:#0c1113; --surface:#172123; --text:#e9e4d5; --muted:#b6b6a9; --line:#74664e; --accent:#c3ac7e; }
+:root { --pd-sans:system-ui,sans-serif; --pd-serif:serif,serif; --pd-paper:#e8dfc8; --pd-text:#242b28; --pd-muted:#5d594e; }

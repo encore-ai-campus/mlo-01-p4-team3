@@ -1,14 +1,16 @@
 {% extends "accounts/base.html" %}
 {% load l10n %}
-{% load ad_slots %}
+{% load ad_slots %}{% load meeting %}
 {% block content %}
-<h1>팔도무록</h1>
+<div class="home-layout review-lobby">
+
+<div class="lobby-actor"><img data-lobby-actor src="{% review_asset 'sprite:mudang_f' %}" alt="여성 무당"></div>
+<section class="home-intro"><h1>팔도무록</h1><p>주민의 말을 듣고,<br>숨은 진실을 찾으세요.</p></section>
+<div class="home-content">
 {% if request.user.is_authenticated %}
-  {% if player_id %}<p>내 가명 ID <code>{{ player_id }}</code></p>{% endif %}
-  <p><a href="{% url 'player-progress' %}">모은 원한 단서 보기</a></p>
   {% if request.user.is_staff %}<p><a href="{% url 'admin:index' %}">운영자 화면</a> · <a href="{% url 'test-sessions' %}">테스트 세션 관리</a></p>{% endif %}
   {% if open_presets or open_games or open_unavailable %}
-    <section id="open-game">
+    <section id="open-game" class="session-card">
       <h2>새 게임</h2>
       {% if open_unavailable %}<p>지금은 게임을 시작할 수 없습니다.</p>{% else %}
         {% for game_id in open_games %}
@@ -24,15 +26,18 @@
           </select></label>{% endif %}
           {% include 'accounts/portrait_choice.html' %}
           {% include "ending_choice.html" %}
-          <button>새 게임 시작</button>
+          <button class="start-round">새 게임 시작 <span aria-hidden="true">→</span></button>
         </form>
         {% endif %}
       {% endif %}
     </section>
   {% endif %}
-  {% if assignments_unavailable %}<p>지금은 테스트 회차를 조회할 수 없습니다.</p>{% endif %}
+{% else %}
+  <p><a href="{% url 'accounts:signup' %}">가입</a> · <a href="{% url 'accounts:login' %}">로그인</a></p>
+{% endif %}
+</div></div>{% if request.user.is_authenticated %}<div class="session-list">  {% if assignments_unavailable %}<p>지금은 테스트 회차를 조회할 수 없습니다.</p>{% endif %}
   {% for assignment in assignments %}
-    <section>
+    <section class="session-card">
       <h2>테스트 회차 {{ assignment.session_id }}</h2>
       {% with plan=assignment.plan %}
         {% if not plan %}
@@ -47,16 +52,17 @@
             <input type="hidden" name="seed" value="{{ plan.seed|unlocalize }}">
             {% include 'accounts/portrait_choice.html' %}
             {% include "ending_choice.html" %}
-            <button>{{ plan.number }}번째 판 시작</button>
+            <button class="start-round">{{ plan.number }}번째 판 시작</button>
           </form>
         {% endif %}
       {% endwith %}
     </section>
   {% empty %}
   {% endfor %}
+  {% if player_id %}<p class="player-identity">내 가명 ID <code>{{ player_id }}</code></p>{% endif %}
+  <p><a href="{% url 'player-progress' %}">모은 원한 단서 보기</a></p>
   <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button>로그아웃</button></form>
   {% ad_slot 'lobby_banner' %}
-{% else %}
-  <p><a href="{% url 'accounts:signup' %}">가입</a> · <a href="{% url 'accounts:login' %}">로그인</a></p>
-{% endif %}
+</div>{% endif %}<div class="lobby-after"><a href="{% url 'player-progress' %}">원한의 단서와 진척 보기</a>
+</div>
 {% endblock %}

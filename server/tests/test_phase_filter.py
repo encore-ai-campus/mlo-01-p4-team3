@@ -196,12 +196,14 @@ class CommandBar(RecordedGame):
         self.assertEqual(stale.status_code, 409)
         self.assertIn('id="meeting-actions"', self.bar(stale))
 
-    def test_bar_css_is_sticky_and_half_height(self):
-        """막대는 sticky(본문 끝에서 제자리)·높이 절반 이하(테두리 포함)·안쪽 스크롤."""
-        css = (Path(__file__).resolve().parents[2] / "web" / "static" / "game.css").read_text(encoding="utf-8")
-        rule = css[css.index(".command-bar {"):css.index("}", css.index(".command-bar {"))]
-        for part in ("position: sticky", "bottom: 0", "box-sizing: border-box", "max-height: 50vh", "overflow-y: auto"):
-            self.assertIn(part, rule)
+    @override_settings(GAME_UI="vn")
+    def test_controls_have_stage_destination_with_noscript_forms(self):
+        """11/9 B-10-07 기준: 명령·자유 입력은 무대 창으로 옮기며 JS 없이도 원본 폼을 보존한다."""
+        html = self.client.get(self.base, HTTP_HX_REQUEST="true").content.decode()
+        self.assertIn('data-stage-open="stage-actions"', html)
+        self.assertIn('id="stage-actions" data-stage-panel="행동 선택"', html)
+        self.assertIn('id="utterance-input"', html)
+        self.assertIn('method="post"', html)
 
 
 class PreviousSelectionTemplate(TestCase):
@@ -238,7 +240,9 @@ class FunctionlessInputs(RecordedGame):
         self.assertEqual(html.count('<details class="evidence-picker">'), 1)
         self.assertNotIn('<details class="evidence-picker" open>', html)
         self.advance_from(3, 5)
-        self.assertNotIn('type="checkbox"', self.page())
+        # 읽기 옵션·비교 선택은 실제 UI 기능이다. 명령/자유 입력의 쓰이지 않는 근거만 금지한다.
+        self.assertNotIn('name="selected_cards"', self.page())
+        self.assertNotIn('name="evidence"', self.page())
 
     def test_cards_show_evidence_only_for_kinds_that_use_it(self):
         """카드 수정: 의심·모순 지적·"왜 말이 다른가"만 진술 목록, "왜 의심하는가"·투표는 없음. 근거가 애매하면 열어 둔다."""
