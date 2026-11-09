@@ -22,14 +22,6 @@ def check_run(client, run_id, evaluate):
     return passed
 
 
-def lookup_model(client, name, alias):
-    """지정 별칭의 MLflow 모델 버전과 source를 돌려준다."""
-    if alias not in {"candidate", "canary", "production", "previous"}:
-        raise ValueError("invalid_model_alias")
-    result = client.get_model_version_by_alias(name, alias)
-    return {"version": str(result.version), "source": result.source, "run_id": result.run_id}
-
-
 def main(argv=None):
     """평가 콜백을 실행하고 통과 실행에만 candidate 별칭을 부여한다."""
     from mlflow import MlflowClient, register_model

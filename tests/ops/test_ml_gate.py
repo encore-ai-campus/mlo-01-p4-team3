@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from ops.mlflow import gate
+from server.infra.model_selector import lookup_model
 
 
 class GateTests(unittest.TestCase):
@@ -46,3 +47,12 @@ class GateTests(unittest.TestCase):
         self.assertEqual(self.invoke(lambda run: (True, "ok")), 0)
         self.register.assert_not_called()
         self.client.set_registered_model_alias.assert_called_once_with("suspicion", "candidate", "3")
+
+    def test_selector_resolves_an_alias_to_an_exact_version(self):
+        self.client.get_model_version_by_alias.return_value = SimpleNamespace(
+            version=3, source="mlflow-artifacts:/1/r1/artifacts/model", run_id="r1"
+        )
+        self.assertEqual(lookup_model(self.client, "suspicion", "candidate"), {
+            "version": "3", "source": "mlflow-artifacts:/1/r1/artifacts/model", "run_id": "r1"
+        })
+        self.client.get_model_version_by_alias.assert_called_once_with("suspicion", "candidate")
