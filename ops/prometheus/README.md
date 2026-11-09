@@ -11,7 +11,7 @@
 ```sh
 promtool check rules ops/prometheus/alerts.yml
 python -m unittest tests.ops.test_c08_observability -v
-python -m tools.perf.web_concurrency --profile "$PRIVATE_VALIDATION_PROFILE" --out "$PRIVATE_RESULT" --ca "$PRIVATE_CA" --concurrency 30 --hold-seconds 180 --execute
+python -m ops.web_concurrency --profile "$PRIVATE_VALIDATION_PROFILE" --out "$PRIVATE_RESULT" --ca "$PRIVATE_CA" --concurrency 30 --hold-seconds 180 --execute
 ```
 
 6개 JSON은 `ops/grafana/dashboards/`에 있다. Prometheus datasource 선택 변수로 환경에 맞추며 재import할 수 있다. P-31에 따라 runtime LLM은 꺼져 있고 큐 대기·생성 지연은 N/A로 표시한다. 값이 없을 때 0 성공값을 만들어 넣지 않는다.
