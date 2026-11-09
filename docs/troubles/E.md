@@ -118,3 +118,9 @@
 - 원인: `MongoContentSource.load`가 버전 고정 판마다 같은 문서를 매번 `find_one`·`from_jsonable`했다. 콘텐츠 버전은 적재 뒤 바뀌지 않는데(`insert`가 같은 버전을 `content_version_exists`로 거부) 결과를 다시 쓰지 않았다.
 - 대응: `load`가 처음 읽은 버전의 번들을 프로세스 안 사전에 두고 같은 객체를 돌려준다(잠금 안 이중 확인, 없는 버전·조회 실패는 캐시하지 않음). 엔진은 번들을 읽기만 하고, `ContentPolicyEngine`도 이미 버전마다 같은 번들로 정책을 만들어 판끼리 공유하고 있었다. 무효화는 두지 않는다(새 콘텐츠는 새 버전으로 적재하는 기존 규칙).
 - 결과: 시험 `tests/infra/test_content_cache.py` 7개 통과(같은 버전 조회 1회, 버전별 분리, 없는 버전·조회 실패 미캐시, 32개 동시 조회 1회, 공유 번들로 6판 뒤 번들 불변, 동시 6판 = 차례 6판). 로컬 10명·1분 비교에서 `content` 단계 평균 26.4~70.8ms → 0.02~0.05ms, 오류 0. 증빙 [`docs/evidence/E-09-09.md`](../evidence/E-09-09.md)
+
+### E-09-10 게임 웹 다중 프로세스 + Redis 채널 레이어(설정 전환·되돌림)
+- 문제: Redis 채널 레이어로 웹소켓 비콘을 걸면 연결이 몇 초 쉬는 사이 모두 끊겼다(2개 프로세스 시험에서 비콘 3개 중 3개 오류). 또 두 프로세스가 같은 `out/logs/web.jsonl`을 시간 단위로 돌려 쓰면 회전 때 서로의 파일을 덮는다.
+- 원인: `redis` 8.1.0 클라이언트가 `channels_redis` 4.3.0의 블로킹 대기(BZPOPMIN, 5초)보다 짧은 읽기 시한으로 끊어 `TimeoutError`를 낸다. 7.4.1·6.4.0·5.2.1에서는 같은 대기가 문제없다. 로그는 `TimedRotatingFileHandler`가 프로세스마다 따로 회전한다.
+- 대응: `requirements/web.txt`에 `channels_redis==4.3.0`, `redis==7.4.1`을 고정하고, 8초 대기에도 끊기지 않는 회귀 시험(`tests/ops/test_web_scaling.py`)을 더했다. 로그는 `PALDO_WEB_INSTANCE`(포트)로 프로세스마다 파일을 나눈다(8000은 `web.jsonl`, 8002는 `web-8002.jsonl`). 기본 구성은 웹소켓이 광고 신호 전용이라 InMemory로 두고 Redis는 설정으로만 켠다.
+- 결과: 수정 뒤 2개+Redis 비콘 오류 0. 또 1개 과부하 측정에서 Caddy 능동 확인(시한 2초·1회 실패)이 유일한 upstream을 빼 503 90건이 났고, 시한 5초·연속 3회 실패로 바꾼 뒤 0건. 30명 3분에서 2개+InMemory p95 1,019ms·오류 0, 1개+InMemory p95 2,408ms·오류 0([증빙](../evidence/E-09-10.md)). app-01이 2 vCPU라 프로세스를 늘려도 최대 약 2배이며 그 너머는 VM 추가나 요청당 비용 절감이 필요하다

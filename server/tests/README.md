@@ -2,6 +2,10 @@
 
 B-10-02의 test_village_assets는 전체/htmx의 지도·초상·하단 출처, manifest 좌표 변경·출처 갱신/이스케이프, 읽기 전용 상태 보존, 밤의 추가 패널 비표시를 검사한다. 기존 test_assets의 이미지 교체와 test_preset_screens의 8인 회귀를 함께 실행한다. 로컬 Chrome 미리보기·첫 로딩 측정은 [증빙](../../docs/evidence/B-10-02.md)을 따른다.
 
+## E-09-10 웹 프로세스 수 비교 부하
+
+`python tools/perf/api_bench.py --web-processes 2,1 --users 30 --minutes 3`(경우 이름으로는 `python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis --redis-url redis://127.0.0.1:6379/0`)은 B-07-05의 시험 조립(`asgi_bench_app.py`)을 Daphne N개로 띄우고 Caddy(운영 Caddyfile과 같은 분배·상태 확인, `--front docker`는 공식 이미지 `caddy:2.10.2`, `--front binary`는 설치된 caddy)를 앞에 둔 채 같은 부하(사용자당 초당 한 요청 + 웹소켓 비콘 1개)를 준다. 모든 경우가 같은 Caddy 경로를 지나므로 경우끼리 비교하며, Docker Desktop 경유 지연이 포함돼 운영 절대값이 아니다. Mongo는 `PALDO_MONGO_URI`, 결과는 `out/handoff/e0910-multiproc-report.json`. 설정 전환·포트·Caddy·Prometheus 대응 시험은 `tests/ops/test_web_scaling.py`(Redis 통합은 `PALDO_TEST_REDIS_URL`이 있을 때만).
+
 ## B-08-01 결과·진척·결말 선택
 
 `python -B server/manage.py test server.tests.test_story_ui server.tests.test_open_start server.tests.test_preset_screens --settings=server.paldo_web.test_settings --noinput`으로 결과·수집 단서·일반 판/고정 회차 결말·초상·시작 UUID 재생을 확인한다. 진척·해금 입력은 시험 전용 대역이며 E-09-08의 실제 해금·재처리를 검증하지 않는다. 도전 필드는 인수 전까지 임의로 추가하지 않는다. [증빙](../../docs/evidence/B-08-01.md)
