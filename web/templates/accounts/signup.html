@@ -1,5 +1,5 @@
 {% extends "accounts/base.html" %}{% block content %}
-<div class="auth-layout">{% load meeting %}<aside class="auth-intro"><h2>팔도무록</h2><p>주민의 말을 듣고,<br>숨은 진실을 찾으세요.</p></aside><section class="auth-content"><h1>가입</h1>
+<div class="auth-layout">{% load meeting %}{% include "accounts/scene_intro.html" %}<section class="auth-content"><h1>가입</h1>
 {% if error %}<p role="alert">{{ error }}</p>{% endif %}
 <form class="auth-form" method="post">{% csrf_token %}
 <p><label>로그인 ID <input name="username" maxlength="150" autocomplete="username" required></label></p>
@@ -8,4 +8,4 @@
 <p>비밀번호는 소문자·숫자·특수문자를 각각 포함해야 합니다.</p>
 {% if invite_required %}<p><label>초대 코드 <input name="invite_code" type="password" autocomplete="off" required></label></p>{% endif %}
 <p class="consent-copy">{{ consent_text }}</p><label><input name="consent" type="checkbox" required> 동의합니다</label>
-<button>가입</button></form></section></div>{% endblock %}
+<button>가입</button></form><p class="account-switch">이미 계정이 있으신가요? <a href="{% url 'accounts:login' %}">로그인</a></p></section></div>{% endblock %}

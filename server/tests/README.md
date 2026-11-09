@@ -146,3 +146,9 @@ B-08-01 버전 회귀는 현재 E 원문과 B 보관본의 일치, 새 버전 �
 - D가 장애를 주입한 뒤 같은 조건으로 --scenario stopped|unresponsive|delay|error --baseline out/handoff/ad-normal.json을 각각 실행한다. 장애 종류는 외부 운영자가 제어하고 CLI가 별도 제어 API를 호출하지 않는다.
 
 게임 부하는 기존 asgi_bench의 api_bench 명령 경로를 재사용하며 세 지면·웹소켓 비콘·클릭을 동시에 요청한다. 테스트 계정은 임시 SQLite, 게임은 녹화 엔진·실제 격리 Mongo다. 부하 요청에는 load_test가 붙는다. 결과에는 토큰·쿠키·주소·계정 ID를 기록하지 않는다. local-http-fixture 결과나 5분 미만 실행은 공식 D/VM 합격 증빙이 아니다. [인수 항목·수치](../../docs/evidence/B-08-03.md).
+
+## B-10-08 계정 화면·글꼴 계측
+
+첫 화면 확인은 `python -B -m server.tests.ui_theme_preview --port 8794` 뒤 자기 PC의 `/`에서 시작한다. 비로그인 소개/시작 안내, 로그인 뒤 일반 게임/배정 테스트 단일 펼침과 이어 하기를 확인한다. 배경은 PR #323 공식 manifest 그림이다. 새 시험은 `test_account_design.py`의 공개 홈·시작 모드·공식 자원/게임 로고 경계다. 포트별 시험 쿠키로 다른 미리보기 로그인과 분리한다. [PM/E 전달 항목](../../web/PM_UI_REVIEW.md).
+
+`python -B -m server.tests.ui_theme_preview --font-probe --port 8792`는 임시 SQLite·기존 녹화 판의 로그인 GET에만 숨김 `#font-probe`의 `data-sample` JSON을 남긴다. 실제 Navigation/Resource Timing·글꼴 준비 시점·뷰포트·그림 실패만 포함하고 입력·쿠키·토큰은 담지 않는다. 1280·360px에서 새로고침 뒤 DOM 표본을 각각 시험 파일로 보관하고 `python -B -m tools.perf.account_assets --browser-sample <표본 파일>`로 기록한다. 운영과 기본 미리보기에는 계측이 없다.

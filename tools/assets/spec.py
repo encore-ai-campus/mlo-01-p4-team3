@@ -15,7 +15,8 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Callable, Iterable, Optional
 
-KINDS: tuple[str, ...] = ("portrait", "sprite", "background", "mascot", "place", "ui", "map", "ad")
+KINDS: tuple[str, ...] = ("portrait", "sprite", "background", "mascot", "branding", "place", "ui", "map", "ad")
+BRANDING_IDS: tuple[str, ...] = ("tiger_emblem",)
 MUDANG_VARIANT_IDS: tuple[str, ...] = ("mudang_f", "mudang_m")  # 주인공 여·남(11/4 PM 결정, B-08-02 mudang_variant)
 MAP_IDS: tuple[str, ...] = ("village",)
 BACKGROUND_IDS: tuple[str, ...] = ("meeting", "night")  # 회의 장소 고정 1장, 밤 마을 공통 1장(spec.md 7절)
@@ -282,6 +283,7 @@ def expected_entries(spec: AssetSpec, npc_ids: Iterable[str], place_ids: Iterabl
         entries.append(replace(e, edited_from=f"sprite:{base}") if expr else e)
     entries += [_simple_entry(spec, "background", b) for b in BACKGROUND_IDS]
     entries += [_simple_entry(spec, "mascot", m) for m in MASCOT_IDS]
+    entries += [_simple_entry(spec, "branding", b) for b in BRANDING_IDS]
     entries += [_simple_entry(spec, "place", p) for p in place_ids]
     entries += [_simple_entry(spec, "ui", i) for i in spec.ui_icon_ids]
     regions = map_regions(place_ids, spec.sizes["map"], spec.sizes["place"])

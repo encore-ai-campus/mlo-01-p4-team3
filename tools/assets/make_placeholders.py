@@ -240,7 +240,7 @@ def inspect_files(repo: Path, entries: list[AssetEntry], spec: AssetSpec) -> tup
         limit = spec.max_bytes_for(e.kind)
         if len(data) > limit:
             bad.append(f"{e.path}: {len(data)}바이트 > {limit}")
-        if e.kind not in ("sprite", "background", "portrait", "mascot"):
+        if e.kind not in ("sprite", "background", "portrait", "mascot", "branding"):
             continue
         try:
             decoded[e.path] = png.decode(data)
@@ -253,6 +253,9 @@ def inspect_files(repo: Path, entries: list[AssetEntry], spec: AssetSpec) -> tup
             bad += [f"{e.path}: {msg}" for msg in vn.check_background(*decoded[e.path])]
         elif e.kind == "mascot":
             bad += [f"{e.path}: {msg}" for msg in vn.check_mascot(*decoded[e.path])]
+        elif e.kind == "branding":
+            from tools.assets.branding import check_logo
+            bad += [f"{e.path}: {msg}" for msg in check_logo(*decoded[e.path])]
     by_label = {key_label(e.key): e for e in entries}
     for e in entries:                       # 표정 변형 = 기본 sprite에서 얼굴만 편집
         base = by_label.get(e.edited_from or "")
