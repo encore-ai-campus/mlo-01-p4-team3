@@ -202,6 +202,13 @@ class Quick(unittest.TestCase):
             self.assertNotIn("선택", lines[-1])
             self.assertFalse(rec.call_args.kwargs["selected"])
 
+    def test_with_assets_always_runs_asset_folder(self):
+        r = self.R(["engine/core.py"])
+        rc, lines, rec = self._main(["--with-assets"], r)
+        self.assertEqual(self._folders(r), ["tests/assets"])
+        self.assertEqual(self._modules_run(r), ["tests.engine.test_core"])
+        self.assertIn("선택: tests/assets 전체·tests/engine 1개", lines[-1])
+
     def test_full_tests_runs_all_folders(self):
         r = self.R(["engine/core.py"])
         rc, lines, rec = self._main(["--full-tests"], r)

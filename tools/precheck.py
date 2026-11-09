@@ -395,6 +395,7 @@ def select_plan(runner, base: str | None, with_assets: bool) -> tuple[Selection 
     """테스트 대상(폴더별 테스트 모듈)과 설명. (None, 이유)면 전체 테스트.
 
     비교 기준이 없거나 바뀐 파일을 못 구하면 전체, 바뀐 파일이 없으면(dev 자체를 검사) 전체다(덜 줄이는 쪽).
+    `with_assets`면 고른 결과와 무관하게 tests/assets 폴더 전체를 넣는다(명시 요청).
     """
     changed_files = getattr(runner, "changed_files", None)
     if base is None or changed_files is None:
@@ -410,6 +411,12 @@ def select_plan(runner, base: str | None, with_assets: bool) -> tuple[Selection 
         note = why[len(head):] if why.startswith(head) else ""  # Django 쪽 안내 등 덧붙인 말
         selection = {d: m for d, m in selection.items() if d != ASSETS_DIR}
         why = describe(selection) + note + "(tests/assets는 --with-assets로)"
+    if selection is not None and with_assets and selection.get(ASSETS_DIR, []) is not None:
+        # 명시적으로 요청한 에셋 테스트는 고르기와 무관하게 폴더 전체를 돈다
+        head = describe(selection)
+        note = why[len(head):] if why.startswith(head) else ""
+        selection = dict(selection, **{ASSETS_DIR: None})
+        why = describe(selection) + note
     return selection, why
 
 
