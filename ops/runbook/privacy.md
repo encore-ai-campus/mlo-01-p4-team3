@@ -24,6 +24,23 @@ python -m tools.privacy_delete --register --directory "$PROTECTED_REGISTRY" \
 
 광고 키 옵션은 복수일 때 반복한다. 위 명령은 제외 목록을 기록한다. 저장소 삭제는 각 어댑터의 실행과 검증이 필요하다. Bronze는 배치마다 새 목록을 읽고 `privacy_filtered` 건수를 남긴다. 데이터를 재처리한 뒤 삭제 가명·연관 키가 0건인지 확인한다. 재학습 입력에도 같은 제외 목록을 전달한다.
 
+## 계정·게임 정리
+
+승인된 가명 한 건을 웹 운영 설정으로 아래 순서에 따라 처리한다. 계획 파일은 보호 디렉터리의 새 경로를 사용한다. 먼저 계정과 세션을 비활성화한 뒤 진행 중이던 게임 쓰기가 모두 끝났는지 확인한다. 광고 데이터의 후속 삭제를 위해 대응표는 유지한다.
+
+```sh
+python server/manage.py privacy_game_cleanup freeze --player "$PLAYER" --apply
+python server/manage.py privacy_game_cleanup plan --player "$PLAYER" --plan "$PRIVATE_PLAN"
+# 재유입 제외 목록 등록과 게임 쓰기 종료 확인 후
+python server/manage.py privacy_game_cleanup purge-games --player "$PLAYER" --plan "$PRIVATE_PLAN" --apply --game-writes-drained --tombstone-registered
+```
+
+광고·Delta·아티팩트 등 외부 삭제와 광고 가명 대응표 정리가 모두 확인된 뒤에만 계정 행을 정리한다.
+
+```sh
+python server/manage.py privacy_game_cleanup finalize --player "$PLAYER" --plan "$PRIVATE_PLAN" --apply --game-writes-drained --tombstone-registered --external-deletions-verified
+```
+
 11/9 Kafka 10개 토픽 실측에서 `cleanup.policy=delete`, `retention.ms=86400000`, `segment.ms=604800000`, broker 정리 주기 `300000`이었다. 설정 합계로 추정한 삭제 대기 시간은 **8일 5분**이다. 실제 세그먼트가 닫히는 시점과 브로커 상태를 확인하고, 이 추정값을 물리적 소멸 검증 결과로 쓰지 않는다.
 
 ## 보존 기한
