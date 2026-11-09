@@ -53,7 +53,7 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 | `GET /healthz`, `GET /readyz`, `GET /metrics` | [paldo_web/probes.py](paldo_web/probes.py). |
 | `GET /static/…` | [api/assets.py](api/assets.py). |
 | `/ws/game/` | [paldo_web/asgi.py](paldo_web/asgi.py)의 출처·세션 인증 → [api/routing.py](api/routing.py) → [api/consumers.py](api/consumers.py). `hello`의 폐기 사유는 [api/ad_metrics.py](api/ad_metrics.py)에 집계하고, `ad.impression`은 [app/ad_events.py](app/ad_events.py)로 중계한다. |
-| `GET /ads/click?t=…`, `GET /ads/landing/{creative_id}` | [api/ad_relay.py](api/ad_relay.py) → [app/ad_events.py](app/ad_events.py) → [app/ads_port.py](app/ads_port.py). 실패 시 홈 이동 또는 돌아가기 링크를 제공한다. |
+| `GET /ads/click?t=…`, `GET /ads/landing/{creative_id}` | [api/ad_relay.py](api/ad_relay.py) → [app/ad_events.py](app/ad_events.py) → [app/ads_port.py](app/ads_port.py). 클릭·랜딩 실패는 홈으로 보내지 않고 게임 조회 없는 안내와 돌아가기를 같은 응답으로 보인다(B-08-03 E 보완). 랜딩 ID는 합성 소재의 `syn:`을 받는다. 중계 로그에 `request_id`와 `serve_id`(토큰 본문에서 읽음, 서명 검증은 광고 서버)를 남긴다. |
 | `GET /ads/slot/{slot}` | [api/ad_slots.py](api/ad_slots.py) → B-07-05의 광고 게이트웨이 조립 → `AdGateway.fetch`. 게임 명령과 분리해 광고 HTML 조각만 반환한다. 미제공·실패는 200 빈 조각이다. |
 
 B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은 `InteractionService.participant_records`를 거친다. 저장 계획은 보조 저장의 `effects`, 공개 표시 값은 `state`에 보존하고 C 게임 아웃박스의 동일 키 재생으로 복구한다. C의 별도 `outbox_publisher`가 `paldo.player`로 발행한다. API·이벤트 형식은 그대로다.
