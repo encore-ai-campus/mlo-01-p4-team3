@@ -1,0 +1,32 @@
+{
+  "task": "D-08-04",
+  "commit": "c9b077731d702b6fa7713fbde928566ef24ecf5c",
+  "generated_at": "2026-11-09T05:34:52Z",
+  "source": "python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --out out/d08-04/merged-a --policy rule-v0 --mlruns out/d08-04/actual/mlruns --suspicion-version suspicion-logistic-1afb8f051c4e --intent-version tfidf-lr-v0-2a678588557c | python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --out out/d08-04/merged-b --policy rule-v0 --mlruns out/d08-04/actual/mlruns --suspicion-version suspicion-logistic-1afb8f051c4e --intent-version tfidf-lr-v0-2a678588557c",
+  "metrics": {
+    "games_per_run": {
+      "value": 50,
+      "unit": "판"
+    },
+    "runs": {
+      "value": 2,
+      "unit": "회"
+    },
+    "model_calls": {
+      "value": 640,
+      "unit": "건"
+    },
+    "reproduction_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "legal_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "suspicion_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
