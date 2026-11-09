@@ -201,8 +201,10 @@ class OpenAIStream:
 
 # --- 응용: 요청 한 건 ---
 def run_request(client, item: FreeQuestion, lexicon: Lexicon, session: int = 0, item_id: str = "",
-                clock: Callable[[], float] = time.monotonic, timeout: float = TIMEOUT_S) -> Record:
-    """시도 → (첫 문장 실패면) 재생성 1회 → 폴백. 통과 문장만 공개한다."""
+                clock: Callable[[], float] = time.monotonic, timeout: float = TIMEOUT_S,
+                on_publish: Callable[[str], None] | None = None) -> Record:
+    """시도 → (첫 문장 실패면) 재생성 1회 → 폴백. 통과 문장만 공개한다. `on_publish`는 문장이 검사를 통과한 즉시
+    (폴백이면 폴백 문장을) 받는다(E-11-12 자유 대화 클라이언트가 화면에 바로 보이는 데 씀)."""
     t0 = clock()
     rec = Record(session=session, item_id=item_id, start=t0)
     messages = build_messages(item)
@@ -210,7 +212,7 @@ def run_request(client, item: FreeQuestion, lexicon: Lexicon, session: int = 0, 
         rec.attempts = attempt
         gate, parser = SentenceGate(item, lexicon), AnswerStream()
         try:
-            result = _one_attempt(client, messages, gate, parser, rec, t0, clock, timeout)
+            result = _one_attempt(client, messages, gate, parser, rec, t0, clock, timeout, on_publish)
         except (StreamError, TimeoutError) as exc:
             late = isinstance(exc, TimeoutError) or clock() - t0 >= timeout or str(exc) == "deadline"
             rec.outcome, rec.error = ("timeout", "timeout") if late else ("error", str(exc))
@@ -226,11 +228,13 @@ def run_request(client, item: FreeQuestion, lexicon: Lexicon, session: int = 0, 
     now = clock() - t0
     rec.published, rec.outcome, rec.complete = [text], "fallback", now
     rec.first_display = min(rec.first_display, now)
+    if on_publish:
+        on_publish(text)
     return rec
 
 
 def _one_attempt(client, messages, gate: SentenceGate, parser: AnswerStream, rec: Record, t0: float,
-                 clock, timeout: float) -> str:
+                 clock, timeout: float, on_publish: Callable[[str], None] | None = None) -> str:
     remaining = timeout - (clock() - t0)
     if remaining <= 0:
         raise TimeoutError
@@ -241,20 +245,23 @@ def _one_attempt(client, messages, gate: SentenceGate, parser: AnswerStream, rec
         rec.first_token = min(rec.first_token, now)
         for ev in parser.feed(piece):
             act = gate.on_event(ev)
-            _mark(rec, act, clock() - t0)
+            _mark(rec, act, clock() - t0, gate, on_publish)
         if gate.failed or gate.partial:
             return gate.finish() if gate.partial else "fail"
     for ev in parser.close():
-        _mark(rec, gate.on_event(ev), clock() - t0)
+        _mark(rec, gate.on_event(ev), clock() - t0, gate, on_publish)
     if clock() - t0 > timeout:
         raise TimeoutError
     return gate.finish()
 
 
-def _mark(rec: Record, act: str | None, now: float) -> None:
+def _mark(rec: Record, act: str | None, now: float, gate: SentenceGate | None = None,
+          on_publish: Callable[[str], None] | None = None) -> None:
     if act == "publish":
         rec.first_display = min(rec.first_display, now)
         rec.complete = now
+        if on_publish and gate is not None:
+            on_publish(gate.published[-1])
 
 
 # --- 응용: 닫힌 루프 ---

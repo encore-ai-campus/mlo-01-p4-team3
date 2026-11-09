@@ -87,12 +87,13 @@ class ChatSession:
         self.records: list[Record] = []
         self.leaks: list[int] = []
 
-    def ask(self, question: str) -> tuple[Record, FreeQuestion]:
-        """질문 한 번: 요청 기록과 그때 쓴 입력을 돌려준다. 공개한 답이 있을 때만 직전 대화에 더한다."""
+    def ask(self, question: str, on_publish: Callable[[str], None] | None = None) -> tuple[Record, FreeQuestion]:
+        """질문 한 번: 요청 기록과 그때 쓴 입력을 돌려준다. 통과한 문장은 그 즉시 `on_publish`로 넘기고, 공개한 답이 있을
+        때만 직전 대화에 더한다."""
         item = FreeQuestion.from_json({**self.base, "question": question,
                                        "history": self.history[-(MAX_HISTORY_TURNS // 2):]})
         rec = run_request(self.client, item, self.lexicon, 0, f"turn_{len(self.records) + 1:03d}",
-                          self.clock, self.timeout)
+                          self.clock, self.timeout, on_publish)
         self.records.append(rec)
         self.leaks.append(published_leaks(item, self.lexicon, rec.published))
         if rec.published:
@@ -116,9 +117,12 @@ def run_terminal(session: ChatSession, input_fn: Callable[[str], str], out: Text
             break
         if not q:
             continue
-        rec, _ = session.ask(q)
-        answer = " ".join(rec.published) if rec.published else "(답 없음: " + (rec.error or rec.outcome) + ")"
-        print(f"{name}> {answer}", file=out, flush=True)
+        print(f"{name}>", end="", file=out, flush=True)
+        # 검사를 통과한 문장을 받는 즉시 보인다(첫 표시 지연과 화면이 같게)
+        rec, _ = session.ask(q, lambda s: print(" " + s, end="", file=out, flush=True))
+        if not rec.published:
+            print(" (답 없음: " + (rec.error or rec.outcome) + ")", end="", file=out)
+        print(file=out, flush=True)
         log.write(json.dumps({"question": q, **_record_json(rec), "leak_published": session.leaks[-1]},
                              ensure_ascii=False) + "\n")
         log.flush()

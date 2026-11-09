@@ -92,6 +92,29 @@ class SessionTest(unittest.TestCase):
                         clock=lambda: next(ticks))
         self.assertEqual(len(session2.records), 1)
 
+    def test_sentence_shown_before_stream_ends(self):
+        # 첫 문장이 검사를 통과하면 둘째 문장을 받기 전에 화면에 나온다(Codex 11/9: 첫 표시 지연과 화면 일치)
+        out = io.StringIO()
+        seen_at_second = []
+
+        class SlowSecond(FakeClient):
+            def stream(self, messages, timeout=None):
+                yield "근거: s1,s2\n나는 훈장이오. "
+                seen_at_second.append(out.getvalue())
+                yield "무슨 일이든 따져 보고 말하는 편이오."
+
+        session = fc.ChatSession(SlowSecond([]), self.base, LEX)
+        fc.run_terminal(session, inputs("자네는 누구요?"), out, io.StringIO(), minutes=10)
+        self.assertIn("나는 훈장이오.", seen_at_second[0])
+        self.assertIn("훈장> 나는 훈장이오. 무슨 일이든 따져 보고 말하는 편이오.\n", out.getvalue())
+
+    def test_fallback_is_shown(self):
+        out = io.StringIO()
+        session = fc.ChatSession(FakeClient(["근거: s1\n나는 창귀요."] * 2), self.base, LEX)
+        fc.run_terminal(session, inputs("자네는 누구요?"), out, io.StringIO(), minutes=10)
+        self.assertEqual(session.records[0].outcome, "fallback")
+        self.assertIn("훈장> 나는 훈장이오.\n", out.getvalue())
+
     def test_published_leak_recheck_counts_role_word(self):
         from llm.free_answer import FreeQuestion
         item = FreeQuestion.from_json({**self.base, "question": "누구요?"})
