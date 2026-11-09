@@ -170,3 +170,18 @@ class AdReceipt(models.Model):
     result = models.JSONField(null=True)
     pending_input = models.JSONField(null=True)
     pending_after_ms = models.PositiveBigIntegerField(default=0, db_index=True)
+
+
+class AdOptimizationVersion(models.Model):
+    """Immutable complete CTR/pacing snapshots; newest as-of wins, replay never promotes."""
+
+    kind = models.CharField(max_length=6)
+    version = models.CharField(max_length=80, unique=True, db_collation="utf8mb4_0900_bin")
+    source_version = models.CharField(max_length=200, db_collation="utf8mb4_0900_bin")
+    as_of_ms = models.PositiveBigIntegerField()
+    payload = models.JSONField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["kind", "source_version", "as_of_ms"],
+                                                name="ad_optimization_revision")]
+        indexes = [models.Index(fields=["kind", "as_of_ms"], name="ad_optimization_latest")]
