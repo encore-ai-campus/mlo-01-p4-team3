@@ -6,6 +6,12 @@
 - 대응: 기존 허용 고유 컬렉션에서 저장소 시험 후, 최초 설치 폴더의 0600 관리자 JSON을 찾아 정상 root 인증 검증. 입력/발행 중지·root 전용 백업·빈 대상 복사·canonical hash 대조·대상 DB readWrite 앱 계정과 TLS로 전환. 기존 DB/인증은 유지하고 롤백·자동 재개를 준비했다.
 - 결과: 원래 majority/CAS 벤치마크와 별도로 6개 컬렉션 24문서 hash 불일치 0, 다른 DB 읽기 ERROR 13. 새 HTTPS 게임 52건이 Mongo/Kafka/Delta ID·seq·hash 일치, 유실/중복/API 오류 0. wss 재연결과 기존 회차 유지, 임시 검증 프로세스 종료. 증빙 C-06-01 및 ops/mongo.md.
 
+### C-09-01
+- 문제: MLflow와 아티팩트 저장소가 연결되어 있지 않았다.
+- 원인: NiFi VM에 별도 추적 서비스가 없었다.
+- 대응: loopback 추적 서비스와 Garage 전용 버킷·키를 사용하고 필수 태그와 평가 결과를 등록 전에 검사했다.
+- 결과: 실제 Garage 아티팩트 왕복 1회, candidate 조회 1회, 거절 2경로 확인.
+
 ### C-06-04 LLM 최종 자원 미확정·Garage 역할 정정
 - 문제: E CPU 잠정값과 Colab MVP를 게임 운영 확정으로 볼 수 없고, 초기 media-storage 끄기 계획은 현재 Garage 두 노드 쓰기와 충돌했다.
 - 원인: 최종 GPU·예산·실측·B/E 서비스 인계가 아직 없고 기존 두 노드 스토리지 구성을 초기 계획에 반영하지 않았다.

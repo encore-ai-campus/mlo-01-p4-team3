@@ -11,6 +11,14 @@ from engine.ports import FeatureVersionMismatch, IntentParser, ModelUnavailable,
 _VERSION = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?")
 
 
+def lookup_model(client, name, alias):
+    """MLflow 별칭을 판에 고정할 레지스트리 버전·아티팩트 출처로 바꾼다."""
+    if alias not in {"candidate", "canary", "production", "previous"}:
+        raise ValueError("invalid_model_alias")
+    result = client.get_model_version_by_alias(name, alias)
+    return {"version": str(result.version), "source": result.source, "run_id": result.run_id}
+
+
 def _close(model: SuspicionModel) -> None:
     close = getattr(model, "close", None)
     if close is not None:
