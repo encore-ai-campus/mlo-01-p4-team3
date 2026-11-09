@@ -12,14 +12,28 @@ def private_output(path):
     return path
 
 
-def release_archive(repo,tag,out):
-    """dev/main 대신 이미 존재하는 E 태그의 커밋만 고정해 zip을 만든다."""
-    if not re.fullmatch(r'v-usertest-[12]',tag):raise ValueError('confirmed_usertest_tag_required')
-    repo=Path(repo);out=Path(out)
-    if out.exists():raise ValueError('new_archive_required')
-    sha=subprocess.check_output(['git','-C',str(repo),'rev-parse','--verify','refs/tags/'+tag+'^{commit}'],text=True).strip()
-    if not re.fullmatch('[0-9a-f]{40}',sha):raise ValueError('invalid_release_commit')
-    subprocess.run(['git','-C',str(repo),'archive','--format=zip','--output',str(out),sha],check=True)
+def release_archive(repo, tag, out, *, candidate=None):
+    """E가 고른 dev 후보 SHA 또는 확정 태그의 커밋을 고정해 zip을 만든다."""
+    if (tag is None) == (candidate is None):
+        raise ValueError('exactly_one_release_reference_required')
+    if tag is not None and not re.fullmatch(r'v-usertest-[12]', tag):
+        raise ValueError('confirmed_usertest_tag_required')
+    if candidate is not None and not re.fullmatch(r'[0-9a-f]{40}', candidate):
+        raise ValueError('full_candidate_sha_required')
+    out = Path(out)
+    if out.exists():
+        raise ValueError('new_archive_required')
+    git = ['git', '-C', str(repo)]
+    ref = 'refs/tags/' + tag if tag else candidate
+    sha = subprocess.check_output([*git, 'rev-parse', '--verify', ref+'^{commit}'], text=True).strip()
+    if candidate is not None and (
+        sha != candidate or subprocess.run(
+            [*git, 'merge-base', '--is-ancestor', sha, 'refs/remotes/origin/dev'],
+            capture_output=True,
+        ).returncode
+    ):
+        raise ValueError('candidate_must_be_a_dev_commit')
+    subprocess.run([*git, 'archive', '--format=zip', '--output', str(out), sha], check=True)
     with zipfile.ZipFile(out,'a',zipfile.ZIP_DEFLATED) as archive:
         archive.writestr('.paldo-release.json',json.dumps({'tag':tag,'commit':sha,'frozen':True})+'\n')
     return {'tag':tag,'commit':sha,'archive_sha256':hashlib.sha256(out.read_bytes()).hexdigest()}
@@ -58,11 +72,14 @@ print(JSON.stringify({readonly_account_created:true,read_verified:true,write_den
 def main(argv=None):
     """계정 원문을 출력하지 않고 작업 종류별 비밀 없는 결과만 반환한다."""
     parser=argparse.ArgumentParser();sub=parser.add_subparsers(dest='mode',required=True)
-    release=sub.add_parser('release');release.add_argument('--repo',type=Path,required=True);release.add_argument('--tag',required=True);release.add_argument('--out',type=Path,required=True)
+    release=sub.add_parser('release');release.add_argument('--repo',type=Path,required=True);release.add_argument('--out',type=Path,required=True)
+    reference=release.add_mutually_exclusive_group(required=True)
+    reference.add_argument('--tag')
+    reference.add_argument('--candidate')
     reader=sub.add_parser('reader')
     for name in ('admin-profile','ca','out'):reader.add_argument('--'+name,type=Path,required=True)
     reader.add_argument('--seed',required=True);args=parser.parse_args(argv)
-    result=release_archive(args.repo,args.tag,args.out) if args.mode=='release' else readonly_account(args.admin_profile,args.ca,args.seed,args.out)
+    result=release_archive(args.repo,args.tag,args.out,candidate=args.candidate) if args.mode=='release' else readonly_account(args.admin_profile,args.ca,args.seed,args.out)
     print(json.dumps(result))
 
 
