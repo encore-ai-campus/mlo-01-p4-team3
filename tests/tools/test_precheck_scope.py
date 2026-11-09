@@ -28,6 +28,7 @@ SOURCES = {
     "tests/contract/test_layers.py": "ROOT = 'README.md'\n",
     "tests/assets/__init__.py": "",
     "tests/assets/test_spec.py": "SPEC = 'docs/assets/spec.md'\n",
+    "tests/tools/test_templates.py": "T = 'web/templates/game.html'\n",
 }
 
 
@@ -66,11 +67,14 @@ class Select(unittest.TestCase):
     def test_docs_change_picks_tests_that_read_docs(self):
         self.assertEqual(self.pick(["docs/troubles/E.md"])[0], ["assets", "contract"])
 
+    def test_web_file_change_picks_tests_that_read_web(self):
+        self.assertEqual(self.pick(["web/templates/game.html", "web/static/game.js"])[0], ["tools"])
+
     def test_full_for_shared_unknown_or_unused(self):
         for changed in (["tools/precheck.py"], ["tools/precheck_scope.py"], ["tests/fixtures/a.json"],
                         ["tests/__init__.py"], ["tests/test_top.py"], ["requirements/base.txt"],
-                        ["pyproject.toml"], ["web/templates/a.html"], ["content/bundle_v1.json"],
-                        ["tools/lonely.py"], ["engine/domain/model.py", "web/a.js"]):
+                        ["pyproject.toml"], ["content/bundle_v1.json"], ["ops/a.yml"],
+                        ["tools/lonely.py"], ["engine/domain/model.py", "content/a.json"]):
             dirs, why = self.pick(changed)
             self.assertIsNone(dirs, changed)
             self.assertTrue(why, changed)

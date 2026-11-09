@@ -5,9 +5,11 @@
 - `.py` 변경: 저장소 전체 `.py`의 import 관계를 거슬러 올라가 그 모듈을 (간접으로라도) 쓰는 테스트 폴더를 고른다.
   `"-m", "tools.x"`처럼 하위 명령으로 부르는 점 이름 문자열과 `tools/x.py` 같은 경로 문자열도 import로 본다.
 - `.md` 변경: 문서를 읽는 테스트 파일(본문에 `docs`·`README`가 있는 것)의 폴더를 고른다.
+- `web/` 아래 비 `.py` 변경(템플릿·정적 파일): 화면 파일을 읽는 테스트 파일(본문에 `web/`·`templates`·`"web"`이 있는 것)의 폴더.
+  Django 렌더링 테스트(`server/tests`)는 전체 검사에도 없다.
 - `tests/<폴더>/` 아래 변경: 그 폴더.
 - 전체 테스트로 도는 경우(덜 줄이는 쪽): 공용 파일(`QUICK_FULL_PATHS`), 저장소 루트 파일(`README.md` 제외),
-  테스트 루트·`tests/fixtures`, 그 밖의 비 `.py` 파일(콘텐츠·화면·설정·데이터), 쓰는 테스트를 하나도 못 찾은 `.py` 변경.
+  테스트 루트·`tests/fixtures`, 그 밖의 비 `.py` 파일(콘텐츠·설정·데이터), 쓰는 테스트를 하나도 못 찾은 `.py` 변경.
 
 계층: 도메인(문자열·구문 트리만, 파일·git 접근 없음). 표준 라이브러리만 쓴다.
 저장소 밖 사본 `githooks_local/precheck_quick.py`가 이 규칙을 그대로 옮겨 쓴다(병합 전 임시). 규칙을 바꾸면 사본도 맞춘다.
@@ -24,6 +26,7 @@ QUICK_FULL_PATHS = (
 )
 _MODULE_STR_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+$")
 _DOC_HINTS = ("docs", "README")
+_WEB_HINTS = ("web/", "templates", '"web"')
 
 
 def module_name(path: str) -> str | None:
@@ -93,7 +96,7 @@ def select_test_dirs(changed: list[str], sources: dict[str, str],
     known = set(test_dirs)
     picked: set[str] = set()
     targets: set[str] = set()
-    docs_changed = False
+    hints: set[tuple[str, ...]] = set()
     for path in changed:
         if any(path == f or (f.endswith("/") and path.startswith(f)) for f in QUICK_FULL_PATHS):
             return None, f"공용 파일 {path}"
@@ -106,17 +109,20 @@ def select_test_dirs(changed: list[str], sources: dict[str, str],
             picked.add(d)
             continue
         if path.endswith(".md"):
-            docs_changed = True
+            hints.add(_DOC_HINTS)
+            continue
+        if path.startswith("web/") and not path.endswith(".py"):
+            hints.add(_WEB_HINTS)
             continue
         mod = module_name(path)
         if mod is None:
             return None, f"코드가 아닌 파일 {path}"
         targets.add(mod)
 
-    if docs_changed:
+    for group in hints:
         for path, src in sources.items():
             d = _test_dir_of(path, known)
-            if d and any(h in src for h in _DOC_HINTS):
+            if d and any(h in src for h in group):
                 picked.add(d)
     if targets:
         modules = {p: module_name(p) for p in sources}

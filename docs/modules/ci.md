@@ -10,7 +10,7 @@
 |---|---|---|
 | `.githooks/pre-push` | 표현(진입점) | `git push` 때 푸시하는 커밋마다 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 먼저 `precheck --check-pass <SHA>`로 통과 기록을 보고, 같은 비교 기준으로 이미 통과한 커밋이면 생략. 그 커밋이 HEAD가 아니거나 작업 트리에 변경이 있으면 임시 worktree에서 검사. precheck를 부를 때만 git이 훅에 넘긴 저장소 지정 변수(`GIT_DIR` 등, `git rev-parse --local-env-vars`)를 지운다 |
 | `tools/precheck.py` | 도메인(`summarize`·`may_record`·`skip_decision` 등) + 인프라(`SubprocessRunner`·`PassStore`) + 응용(`run_precheck`·`record_pass`·`check_pass`·`quick_plan`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. 깨끗한 트리에서 전체 통과하면 통과 기록을 남기고, `--check-pass`로 훅에 생략 여부를 알려 준다. `--quick`은 바뀐 파일과 이어진 테스트 폴더만 돌리고 기록을 남기지 않는다. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다. 하위 명령 환경에서 저장소 지정 git 변수를 뺀다(`clean_env`) |
-| `tools/precheck_scope.py` | 도메인 | 빠른 검사 대상 고르기: `.py`는 저장소 import 관계(`-m` 모듈 이름·`.py` 경로 문자열 포함)를 거슬러 쓰는 테스트 폴더, `.md`는 문서를 읽는 테스트 폴더, 공용·비 `.py`·쓰는 테스트 없음은 전체 |
+| `tools/precheck_scope.py` | 도메인 | 빠른 검사 대상 고르기: `.py`는 저장소 import 관계(`-m` 모듈 이름·`.py` 경로 문자열 포함)를 거슬러 쓰는 테스트 폴더, `.md`는 문서를 읽는 테스트 폴더, `web/` 화면 파일은 화면 파일을 읽는 테스트 폴더, 공용·그 밖의 비 `.py`·쓰는 테스트 없음은 전체 |
 | `tools/check_evidence.py` | 도메인 규칙 + 응용 + 표현(`main`) | 증빙 형식(`--format`), 완료 검사(`--complete`, 4절 규칙 1~6), PR 본문 문법(11절) |
 | `tools/check_docs.py` | 도메인 규칙 + 응용 + 표현(`main`) | 문서화 검사(10절 규칙 1~6) |
 | `tools/check_secrets.py` | 도메인 규칙 + 응용 + 표현(`main`) | 비밀정보 검사(E-05-02 조건 5), 예외 `tools/secrets_allowlist.txt` |
@@ -100,7 +100,7 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 
 - 자동으로 막는 장치가 없다. 훅은 `core.hooksPath`를 설정한 clone에서만 돌고 `git push --no-verify`로 건너뛸 수 있으며, PR 본문의 결과 줄은 손으로 쓸 수 있다. 실수로 빼먹는 것만 막는다. PM은 `Closes` PR을 병합하기 전에 PR 브랜치에서 `precheck --pr-body`를 다시 돌린다(README 11절).
 - 통과 기록은 각자 노트북의 git 폴더에만 있다. 다른 사람·다른 clone이 같은 커밋을 푸시하면 다시 검사한다. 기록은 손으로 만들 수 있으므로 실수 방지용이다(위와 같은 한계).
-- 빠른 검사의 대상 고르기는 정적 분석이다. 문자열을 조립하는 동적 import, 테스트가 경로를 조립해 읽는 비 `.py` 파일은 보지 못한다. 그래서 비 `.py` 변경은 문서(`.md`)만 빼고 전체로 돌고, PR 직전 전체 검사를 빼지 않는다. `server/tests`(Django)는 전체 검사와 마찬가지로 대상이 아니다.
+- 빠른 검사의 대상 고르기는 정적 분석이다. 문자열을 조립하는 동적 import, 테스트가 경로를 조립해 읽는 비 `.py` 파일은 보지 못한다. 그래서 비 `.py` 변경은 문서(`.md`)와 `web/` 화면 파일만 빼고 전체로 돌고, PR 직전 전체 검사를 빼지 않는다. `server/tests`(Django)는 전체 검사와 마찬가지로 대상이 아니다.
 - 병합 뒤 `dev`에서 자동 검사가 돌지 않는다. 두 PR이 각각 통과해도 합친 결과가 깨질 수 있어, PM이 매일 `dev`에서 `precheck`를 한 번 돌린다.
 - `tests/assets`(단일 테스트가 10초를 넘는다)는 기본에서 빠진다. 에셋 관련 파일(`tools/assets/`, `tests/assets/`, `docs/assets/`, `content/images/`)을 바꾼 사람만 `--with-assets`로 돌린다.
 - Django(`server/manage.py test`)와 외부 서비스 테스트(결정 #12, `tests/infra/`·`tests/ads/`, `PALDO_SERVICE_TESTS=1`)는 `precheck`에 넣지 않았다. 두 폴더를 기본 discover에서 빼는 `load_tests`는 폴더를 처음 만드는 태스크(C-06-01, D-05-03)가 그 `__init__.py`에 두고, 실제 실행은 각자 Compose와 통합(INT)에서 한다.
