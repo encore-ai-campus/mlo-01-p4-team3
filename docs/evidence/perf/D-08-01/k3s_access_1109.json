@@ -1,0 +1,28 @@
+{
+  "task": "D-08-01",
+  "commit": "4a87e147043a5c4d080c1b7d46795d741de5ae9e",
+  "generated_at": "2026-11-09T01:43:49Z",
+  "source": "NAS-approved sudo read-only k3s kubectl get nodes/jobs, captured out/d08-01/rule06-local/k3s-sudo-readonly.jsonl",
+  "metrics": {
+    "nodes": {
+      "value": 2,
+      "unit": "노드"
+    },
+    "ready_nodes": {
+      "value": 2,
+      "unit": "노드"
+    },
+    "jobs": {
+      "value": 3,
+      "unit": "개"
+    },
+    "completed_jobs": {
+      "value": 2,
+      "unit": "개"
+    },
+    "failed_jobs": {
+      "value": 1,
+      "unit": "개"
+    }
+  }
+}

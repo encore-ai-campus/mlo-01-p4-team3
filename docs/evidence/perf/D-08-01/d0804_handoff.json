@@ -1,0 +1,40 @@
+{
+  "task": "D-08-01",
+  "commit": "4fbff9cfc4b5d11d82265fd9189ad643dfaa7133",
+  "generated_at": "2026-11-09T05:12:28Z",
+  "source": "python out/d08-01/d0804-handoff-verify/verify_selector.py (D-08-04 uncommitted selector snapshot, local candidate only)",
+  "metrics": {
+    "selector_tests": {
+      "value": 7,
+      "unit": "개"
+    },
+    "runs": {
+      "value": 2,
+      "unit": "회"
+    },
+    "games_per_run": {
+      "value": 50,
+      "unit": "판"
+    },
+    "model_calls": {
+      "value": 640,
+      "unit": "건"
+    },
+    "legal_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "suspicion_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reproduction_mismatches": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
