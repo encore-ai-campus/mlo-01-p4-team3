@@ -52,7 +52,7 @@ python -m unittest tests.tools.test_check_templates tests.tools.test_check_endin
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
-| `content_version` | `content-1.0` | 첫 플레이 버전 묶음 | 내용을 바꾸면 올린다 |
+| `content_version` | `content-1.0.1` | 첫 플레이 버전 묶음(11/9 hothead 해명 변형 어조 한 줄 수정으로 `content-1.0`에서 올림. 7·8인 판 E-08-02는 `content-1.1`) | 내용을 바꾸면 올린다. 결과·진척 화면 문안 `server/story_catalog.json`에 같은 버전 키를 둔다 |
 | 묶음 크기 | 인물 6·성향 4·비밀 6·원한 단서 4·장소 5·템플릿 47 | 6인 판 `base6`과 5인 판 `short5`를 채운다 | 7·8인 판 인물 2명은 E-08-02에서 추가 |
 | `--bundle` | `content/bundle_v1.json` | 검사할 묶음(저장소 기준 경로) | - |
 | `--preset` | 없음 | 배정 검증할 프리셋 ID(예: `base6`) | 없으면 구조 검사만 |
@@ -87,3 +87,4 @@ python -m unittest tests.tools.test_check_templates tests.tools.test_check_endin
 | E-06-02 | 11/6 | 의도 예시 `content/intent/examples_v1.jsonl` 사람 작성 280행(라벨 10종, 대조쌍, 해소 유형 표기, 역할 단어 행, 현대어 입력 행 `register=modern`)과 `intent_examples` 검사·집계. 변형 생성·D 검수는 E-08-10 뒤 |
 | E-07-05 | 11/7 | 원한 단서 4개 문장 다듬기(삼돌·김 훈장, 신원 단서 2개가 각자 신원을 밝힘), 대상 단서 ID `clue_tiger` → `clue_gate`, 결말 문안 `content/endings_v1.json`(퇴마 6줄·한풀이 8줄)과 `check_endings`, 계약 `content.md` 1절 `Ending` |
 | E-06-02 | 11/7 | 2단계: 로컬 LLM 변형 252행을 `generated`(검수 전)로 원본 뒤에 추가(계보 `<원본>_vN`, 위반·중복 0), D 검수 시트 `docs/evidence/perf/E-06-02/variants_review.csv`. 생성·반영 도구는 `llm` 모듈 |
+| E-08-10 | 11/9 | 사전 테스트 대사 확인(사용자): `t_ans_explain_hothead` 변형 "{fact} 됐냐?" → "{fact} 됐나?", `content_version` `content-1.0.1`(결말 파일·`server/story_catalog.json` 같은 버전 키) |
