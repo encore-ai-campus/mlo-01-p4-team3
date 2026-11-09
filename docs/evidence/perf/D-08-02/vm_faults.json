@@ -1,0 +1,192 @@
+{
+  "task": "D-08-02",
+  "commit": "8706ec056650e82b21405b06c4e2d195d3f81857",
+  "generated_at": "2026-11-09T06:09:06.231045+00:00",
+  "source": "B-08-03 entry point from 8706ec0, isolated Daphne and local Mongo 8.0.34 on app-01; normal uses actual ad-01; faults use app-01 loopback listeners",
+  "app_deployment_updated": false,
+  "users": 10,
+  "minutes_per_case": 5,
+  "passed": false,
+  "scope_notes": [
+    "Recorded game engine, temporary SQLite authentication and disposable local Mongo replica set",
+    "Benchmark HTTP provider overrides source=synthetic and load_test=true",
+    "Normal ad target is actual ad-01; four faults are injected into benchmark-only loopback listeners",
+    "Full production app, production Mongo and browser-network acceptance remain separate"
+  ],
+  "package_sha256": "6040685a228d339d7faafea86288af3edd3d8e4339c108745d445533096841fb",
+  "raw_report_sha256": "4c2e6d26de27d1239fdfe5e5003805d00a920741a2dd86455d8c5fec31577749",
+  "scenarios": {
+    "normal": {
+      "requests": 3000,
+      "elapsed_seconds": 301.603,
+      "p95_ms": 179.71,
+      "errors": 0,
+      "beacon_relayed": 3005,
+      "beacon_failed": 7,
+      "click_requests": 3011,
+      "click_errors": 0,
+      "finished_games": 230,
+      "passed": true,
+      "started_at": "2026-11-09T05:43:46.863009+00:00",
+      "ended_at": "2026-11-09T05:48:48.467382+00:00",
+      "p95_increase_ms": 0.0,
+      "error_rate_increase": 0,
+      "relay_circuit_open": 0,
+      "game_load_calls": 3040
+    },
+    "stopped": {
+      "requests": 3000,
+      "elapsed_seconds": 301.174,
+      "p95_ms": 722.512,
+      "errors": 0,
+      "beacon_relayed": 0,
+      "beacon_failed": 3009,
+      "click_requests": 2736,
+      "click_errors": 0,
+      "finished_games": 230,
+      "passed": false,
+      "started_at": "2026-11-09T05:48:50.993836+00:00",
+      "ended_at": "2026-11-09T05:53:52.169496+00:00",
+      "p95_increase_ms": 542.802,
+      "error_rate_increase": 0,
+      "relay_circuit_open": 5736,
+      "game_load_calls": 33698
+    },
+    "unresponsive": {
+      "requests": 3000,
+      "elapsed_seconds": 302.848,
+      "p95_ms": 804.192,
+      "errors": 0,
+      "beacon_relayed": 0,
+      "beacon_failed": 3011,
+      "click_requests": 2734,
+      "click_errors": 0,
+      "finished_games": 230,
+      "passed": false,
+      "started_at": "2026-11-09T05:53:54.660814+00:00",
+      "ended_at": "2026-11-09T05:58:57.509419+00:00",
+      "p95_increase_ms": 624.482,
+      "error_rate_increase": 0,
+      "relay_circuit_open": 5737,
+      "game_load_calls": 33697
+    },
+    "delay": {
+      "requests": 3000,
+      "elapsed_seconds": 302.743,
+      "p95_ms": 845.942,
+      "errors": 0,
+      "beacon_relayed": 0,
+      "beacon_failed": 3011,
+      "click_requests": 2744,
+      "click_errors": 0,
+      "finished_games": 230,
+      "passed": false,
+      "started_at": "2026-11-09T05:58:59.804900+00:00",
+      "ended_at": "2026-11-09T06:04:02.549546+00:00",
+      "p95_increase_ms": 666.232,
+      "error_rate_increase": 0,
+      "relay_circuit_open": 5745,
+      "game_load_calls": 33881
+    },
+    "error": {
+      "requests": 3000,
+      "elapsed_seconds": 301.313,
+      "p95_ms": 835.472,
+      "errors": 0,
+      "beacon_relayed": 0,
+      "beacon_failed": 3009,
+      "click_requests": 2734,
+      "click_errors": 0,
+      "finished_games": 230,
+      "passed": false,
+      "started_at": "2026-11-09T06:04:04.917218+00:00",
+      "ended_at": "2026-11-09T06:09:06.231045+00:00",
+      "p95_increase_ms": 655.762,
+      "error_rate_increase": 0,
+      "relay_circuit_open": 5735,
+      "game_load_calls": 33699
+    }
+  },
+  "metrics": {
+    "normal_requests": {
+      "value": 3000,
+      "unit": "건"
+    },
+    "normal_game_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "normal_p95_ms": {
+      "value": 179.71,
+      "unit": "ms"
+    },
+    "normal_p95_increase_ms": {
+      "value": 0.0,
+      "unit": "ms"
+    },
+    "stopped_requests": {
+      "value": 3000,
+      "unit": "건"
+    },
+    "stopped_game_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "stopped_p95_ms": {
+      "value": 722.512,
+      "unit": "ms"
+    },
+    "stopped_p95_increase_ms": {
+      "value": 542.802,
+      "unit": "ms"
+    },
+    "unresponsive_requests": {
+      "value": 3000,
+      "unit": "건"
+    },
+    "unresponsive_game_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "unresponsive_p95_ms": {
+      "value": 804.192,
+      "unit": "ms"
+    },
+    "unresponsive_p95_increase_ms": {
+      "value": 624.482,
+      "unit": "ms"
+    },
+    "delay_requests": {
+      "value": 3000,
+      "unit": "건"
+    },
+    "delay_game_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "delay_p95_ms": {
+      "value": 845.942,
+      "unit": "ms"
+    },
+    "delay_p95_increase_ms": {
+      "value": 666.232,
+      "unit": "ms"
+    },
+    "error_requests": {
+      "value": 3000,
+      "unit": "건"
+    },
+    "error_game_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "error_p95_ms": {
+      "value": 835.472,
+      "unit": "ms"
+    },
+    "error_p95_increase_ms": {
+      "value": 655.762,
+      "unit": "ms"
+    }
+  }
+}

@@ -75,7 +75,7 @@ python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --model
 
 ### 로컬 모델 인계 (D-08-04)
 
-1. 수명주기 1·2절을 통과한 씐 자 모델의 D-07-02 `models.pkl`과 `report.json`을 함께 `mlruns/suspicion-v0/<suspicion_version>/`에 둔다. D-08-01의 버전은 `suspicion-logistic-` 뒤에 `models.pkl`의 SHA-256 앞 12자리를 붙인 값이다. 같은 버전의 파일을 덮어쓰지 않는다.
+1. D-07-02의 `models.pkl`과 `report.json`을 함께 `mlruns/suspicion-v0/<suspicion_version>/`에 둔다. D-08-01의 버전은 `suspicion-logistic-` 뒤에 `models.pkl`의 SHA-256 앞 12자리를 붙인 값이다. 같은 버전의 파일을 덮어쓰지 않는다. 11/9 사용자 결정에 따라 D-08-04는 로컬 인계·50판 재현으로 완료하며, 레지스트리 후보 등록·운영 적용은 A-10-01 3번과 수명주기 평가 관문을 통과한 뒤 연결한다.
 2. 사용할 TF-IDF 기준선은 기존 `mlruns/intent-v0/<intent_version>/model.joblib` 경로에 둔다. `<intent_version>`은 저장된 `IntentBaseline.model_version`과 같아야 한다. 두 파일 형식 모두 신뢰하는 로컬 산출물만 사용한다.
 3. A·B는 동일 커밋·콘텐츠·모델 파일에서 아래 명령으로 각 50판을 실행한다. 각자 다른 `--out`을 사용하고, `manifest.json`의 두 모델 버전과 위반·폴백 0건, `events.jsonl`의 SHA-256을 대조한다. 벤치마크는 의도 아티팩트도 불러 버전을 검사하며, 봇 판의 이벤트에는 추론에 사용한 의심 모델 버전이 기록된다.
 4. B 조립에서는 `LocalModelSelector(Path("mlruns"), suspicion_version=suspicion_version, intent_version=intent_version, feature_version=FEATURE_VERSION)`을 만든다. `FEATURE_VERSION`은 `ml.suspicion.features`에서 가져온다. `select(game_id, player_pseudonym)`의 버전을 판 메타에 고정하고 그 값으로 두 모델을 조회한다. 실제 `ParseResult.versions["model"]`도 판 메타와 비교한다. 반환된 의심 어댑터의 `close()`는 사용을 끝낸 호출자가 실행한다.
@@ -89,6 +89,12 @@ Get-FileHash out/d08-04/bench-a/events.jsonl -Algorithm SHA256
 
 ```powershell
 python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version $suspicionVersion --intent-version $intentVersion --games 50 --seed 1 --out out/d08-04/repro
+```
+
+11/9 로컬 인계 버전은 `suspicion-logistic-1afb8f051c4e`와 `tfidf-lr-v0-2a678588557c`다. 원본 SHA-256과 검증 범위는 `mlruns/handoff-v0.json`, 증빙은 `docs/evidence/D-08-04.md`에 있다. A CLI 두 번과 B의 `ContentPolicyEngine` 조립 한 번을 D 환경에서 실행해 각 50판, 총 추론 960건 성공, 이벤트 해시 일치를 확인했다. 확인 절차는 저장소 루트에서 위 두 버전으로 재현 명령 실행 → `<out>/reproduce.json`의 `passed=true`·`reproduced=true`·`games=50` 확인 → 아래 기대 해시와 대조 순서다.
+
+```text
+848dbdd20f02fefccda9bdbf4438830e844181949412bac7a5a70704bb58f8ca
 ```
 
 `select`는 고정 설정의 모델을 실제로 열어 검증한 뒤 버전 두 개와 `False`를 반환한다. 파일·로더·모델 ID 오류는 `ModelUnavailable`, 의심 특징 불일치는 `FeatureVersionMismatch`다. 조회는 로컬 경로와 버전만 사용한다. 판별 인스턴스 수명·버전 고정과 카나리아는 B-09-01, 원격 레지스트리는 C-09-01에서 연결한다. BERT 해석기 연결은 D-09-01 범위다.
@@ -134,5 +140,6 @@ python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version 
 | D-08-01 | 11/9 | 병합된 Selector와 실제 후보 50판 반복 재현. 격리 웹 부하의 실제 엔진·모델 모드 및 프로세스별 추론 집계 추가 |
 | D-08-04 | 11/8 | 로컬 Selector의 고정 버전 조회·특징 버전 검사와 A·B 재현 절차 추가 |
 | D-08-04 | 11/9 | A 쪽 재현 명령 `reproduce_model_games`(같은 모델·시드 두 실행 비교, 실제 v0 수령 전 가짜 모델 시험, E) |
+| D-08-04 | 11/9 | 사용자 변경 기준 적용, 실제 로컬 모델 인계와 A CLI·B 조립 50판 비교 완료 |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.

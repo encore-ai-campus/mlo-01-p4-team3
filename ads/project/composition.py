@@ -9,6 +9,7 @@ from ads.app.serve import AdService
 from ads.domain.model import AdSlot, SlotPolicy
 from ads.infra.mysql_ledger import MySQLLedger
 from ads.infra.mysql_store import MySQLAdStore
+from ads.infra.optimization import OptimizationCache
 from ads.web.models import Campaign
 
 
@@ -25,9 +26,18 @@ def load_policies():
 
 
 _policies = lru_cache(maxsize=1)(load_policies)
+_optimization = OptimizationCache()
 
 
 def get_service():
     """HTTP 요청의 임시 작업 상태를 만들고 공유 상태는 MySQL에서 읽는다."""
-    return AdService(load_campaigns, _policies().copy(), settings.ADS_TOKEN_KEY.encode(),
-                     book=MySQLLedger(), store=MySQLAdStore())
+    service = AdService(load_campaigns, _policies().copy(), settings.ADS_TOKEN_KEY.encode(),
+                        book=MySQLLedger(), store=MySQLAdStore())
+    versions = _optimization.get()
+    if row := versions.get("ctr"):
+        service.ctr_version = row.version
+        service.ctr = {(r["creative_id"], AdSlot(r["slot"])): (r["alpha"], r["beta"]) for r in row.payload}
+    if row := versions.get("pacing"):
+        service.policy_version = row.version
+        service.pacing = {(r["campaign_id"], r["attribution_day"]): r["probability"] for r in row.payload}
+    return service

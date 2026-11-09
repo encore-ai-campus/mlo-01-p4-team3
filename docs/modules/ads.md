@@ -34,7 +34,7 @@ python ads/manage.py runserver 127.0.0.1:8001 --noreload
 
 ### 원장과 별도 작업자 (D-06-02)
 
-- `ads/infra/schema.sql`은 Django migration `0002_mysql_ledger`·`0003_pending_rejudgement`의 SQL 참조다. 광고 DB에는 위의 `migrate`로 적용한다.
+- `ads/infra/schema.sql`은 Django migration `0002_mysql_ledger`·`0003_pending_rejudgement`·`0004_optimization_versions`의 SQL 참조다. 광고 DB에는 위의 `migrate`로 적용한다.
 - 광고 웹과 아래 명령 세 개를 각각 독립 프로세스로 실행한다. 환입 프로세스는 브로커·DB 실패 시 커밋하지 않은 offset부터 다시 읽도록 서비스 관리자의 재시작 설정을 사용한다.
 - 로컬은 Compose Kafka를 시작하고 `PALDO_KAFKA_BOOTSTRAP`을 지정한다. 운영은 C가 인계한 광고 DB TLS 계정·CA 및 Kafka TLS 클라이언트 설정을 사용한다. 브로커에 이미 생성된 `ad.*` 토픽을 사용한다.
 - 발행 완료 표시는 브로커 ACK 후 기록한다. ACK와 완료 표시 사이에 중단되면 같은 `event_id`를 다시 보낸다. C 소비자는 이 ID로 중복을 제거한다. 원장 해제·환입의 상태 변경 기록은 같은 DB 트랜잭션에 남고 공개 Kafka 토픽은 이벤트 계약의 세 종류를 사용한다.
@@ -84,6 +84,46 @@ python -m unittest tests.tools.test_ad_traffic_sim -v
 - `--replay`는 같은 프로세스에 모든 serve·비콘·클릭을 재전송한다. serve 응답 캐시 일치와 추가 예약·과금 0건을 검사한다. 클릭 재전송은 현재 메모리 판정에서 duplicate/expired 등으로 거부될 수 있다. 관측 이벤트 파일은 event_id별 최초 확정 판정을 유지하고 pending만 최종 판정으로 갱신한다. 영속 판정 결과 재생은 D-06-02 범위다.
 - 수용 측정은 고정 시드 10의 원래 CTR로 0%·5%·20% 각각 실행하고 5%의 같은 시드·실행 ID를 새 프로세스에서 다시 실행해 이벤트 해시·요약 전체를 비교한다. 결과 JSON은 `docs/evidence/perf/D-06-03/traffic.json`이다. 기반 HEAD와 미커밋 소스 해시는 증빙에 남긴다.
 
+### CTR·페이싱·시나리오 (D-08-02)
+
+`ads/app/ctr_update.py`는 전체 확정 관측 셀을 소재×지면으로 합해 사전분포부터 재계산한다. 같은 소재가 캠페인을 옮긴 이력도 합한다. 이전 사후분포에 새 집계를 더하지 않는다. `ads/infra/optimization.py`는 불변 MySQL 버전 행을 저장하고 HTTP 프로세스마다 60초 TTL로 최신 기준 시각의 행을 읽는다. 첫 요청/재시작도 DB에서 시작한다. 재적재 실패 시 마지막 정상 캐시와 오류 로그를 남긴다.
+
+아래 명령은 설정을 주입한 개발 환경에서 실행한다. 11/8 기존 개발 DB 적용·기동은 자동 승인 검토에서 차단됐다. 11/9 사용자 요청으로 별도 MySQL 8.4.11 컨테이너와 B/D Daphne 서버를 기동해 세 지면 직접 연결을 검증했다. B 인증은 임시 SQLite, 회차·광고 가명은 메모리 시험 저장소로 구성했다. 원본·명령·범위는 [D-08-02 증빙](../evidence/D-08-02.md)에 있다.
+
+```powershell
+python ads/manage.py migrate ads_web 0004 --noinput
+python ads/manage.py ad_update ctr --input <C가-내보낸-전체-확정-집계.json>
+python ads/manage.py ad_update pacing --once
+python ads/manage.py ad_update pacing
+python ads/manage.py runserver 127.0.0.1:8002 --noreload
+python -m tools.ad_scenarios --scenario 1..5 --seeds 17,29,43 --requests 12000
+$env:PALDO_SERVICE_TESTS = "1"
+python ads/manage.py test tests.ads --keepdb
+```
+
+- CTR 입력 봉투·셀 형식은 [ads 계약 5절](../contracts/ads.md)에 있다. C-08-02 gold의 물리 스키마가 이 형식이라는 뜻은 아니다. C가 확정 범위·원과금일 환입·노출/클릭의 유효 상태·전체 export를 보장한 뒤 연결한다. 부분 집계 파일을 전체 입력처럼 쓰면 이전 관측을 잃으므로 금지한다.
+- 페이싱은 단일 작업자가 5분 버킷마다 Primary의 예약+확정 순액을 읽는다. 같은 버킷 재실행으로 두 번 조정하지 않는다. 확률 범위·조정 폭은 기존 도메인 함수(0.05~1, ±0.2)를 사용한다. CTR 입력의 비용이나 평가 정답은 소진액으로 쓰지 않는다.
+- serve는 CPC 순위와 CPM 소재 선택 모두 적재된 Beta를 추출한다. 탐색 부족분은 노출이 가장 적은 합법 소재를 고르되 페이싱을 우회하지 않는다. 유효 노출만 탐색 분모·분자로 세며, MySQL의 기존 serve 기록으로 재시작 뒤에도 이어간다. 요청마다 캠페인 일 노출 집계를 SQL 집계로 읽으므로 운영 규모에서 해당 쿼리 지연은 추가 측정이 필요하다.
+- 평가 생성기는 학습 생성기를 import하지 않고 시간 변화·사용자 이질성·반복 피로·1~90초 지연 클릭·비콘 손실을 만든다. 3개 지면을 모두 사용한다. 정답은 `out/ad_scenarios/*-truth.json`, 모델에 주는 입력은 확정 관측 N/C뿐이다. CTR 평가는 최종 사후분포와 노출 가중 잠재 CTR을 비교하며, 학습 초기를 포함하는 온라인 예측 오차도 별도로 보고한다. 두 수치를 혼동하지 않는다.
+- 비교 정책은 톰슨, 독립 Uniform(0,1) CTR 점수의 무작위 순위, 지면 사전 CTR 고정 탐욕, 평가 전용 true-CTR oracle이다. 초기 요청·후보·예산·빈도·탐색·페이싱 규칙을 같게 둔다. 후회는 oracle 전일 유효 클릭/확정 순액에서 각 정책의 같은 값을 뺀 부호 있는 차이이며, 표본 변동·가격/예산 경로 때문에 음수도 가능하다. 이 oracle이 전역 최적이라는 주장은 하지 않는다. random/fixed/oracle의 CTR 오차 열은 저장된 사전분포 진단값이고 순위 점수의 정확도는 아니다(oracle은 순위에 정답을 쓴다). CTR 합격선은 톰슨 정책에만 적용한다.
+- CLI는 시드 3개 이상을 요구하고 로컬 수치/기대 동작 미달 시 종료 코드 1을 반환한다. 원본·정답·표·JSON은 `out/ad_scenarios/`, 커밋할 측정 요약은 `docs/evidence/perf/D-08-02/scenarios.json`이다. 결론은 **알고리즘·회계·제어 루프 동작 검증**으로 한정한다.
+- B-08-03 로컬 직접 연결은 세 지면의 serve 200·인증 웹소켓 비콘/D 204 valid·클릭 302 valid·랜딩 200을 확인했다. B/D 요청 ID는 12건 일치했고 MySQL 아웃박스는 9건이었다. 첫 로컬 시험에서는 웹 원본에 serve_id가 없어 대조 표를 만들었다. 이후 B 보완을 반영한 app-01 시험 웹·ad-01 원본 로그에서 동일 요청/serve ID 8쌍을 대조했다. 운영 배포본 브라우저 확인은 B-08-03 담당 E의 후속 범위다. B에 전달할 설정은 내부 주소와 네 경로, 요청/serve ID 조회 방법이며 서명 키·광고 DB 인증은 D에서 관리한다.
+- 초기 개발 DB 점검에서는 0001만 적용돼 있었다. 이후 격리 MySQL에서 전체 migration을 검증하고, 운영자가 ad-01의 기존 0001~0003 위에 `0004_optimization_versions`를 적용했다. 새 원장/예산/요청/세션/이벤트/판정/버전 테이블과 pending 열·색인을 추가한다. SQL은 `ads/infra/schema.sql`, Django 적용 파일은 `ads/web/migrations/0002*`~`0004*`에서 검토할 수 있다.
+
+### 실제 VM 합성 입력 (D-08-02 조건 7)
+
+11/9 운영자가 ad-01에서 D-08-02 코드 11개와 migration 0004를 적용했다. 배포 보고서의 해시 11개가 로컬 소스와 일치했고 광고·만료·발행·환입 서비스가 모두 active이며 실제 metrics는 HTTP 200이었다.
+
+같은 날 D 실행 `c08_d0802_20261109b`의 실제 요청 1,000건과 공식 bronze 1,960건을 대조했다. C Spark의 기준선 대사와 Kafka 재판정 한 건에 따른 MySQL −524,590밀리원 환입 후 재대사는 모두 불일치 0건이다. 최종 Delta·MySQL 순액은 6,815,093밀리원이다. 확정 단계는 합성 검증용 논리 종료 시각을 적용했다.
+
+검증된 Delta 집계의 유효 노출 913·클릭 43을 CTR 3행으로 변환해 실제 MySQL에 저장했다. 페이싱 11행도 실제 원장의 예약·확정 순액으로 계산해 저장했다. CTR 재실행과 같은 5분 bucket의 페이싱 재실행은 각각 버전 1행을 유지했다. 실제 광고 서버는 갱신 직후 기존 버전을 유지하고 61초 뒤 재시작 없이 새 버전을 세 지면에 반영했다. serve·노출·클릭 9개 이벤트의 버전 고정과 Beta 평균 사용, 부하 시험의 확정 과금 0건·캠페인 상태 복구를 확인했다. [실제 버전 증빙](../evidence/perf/D-08-02/live_versions.json)
+
+app-01에서는 별도 Daphne·임시 SQLite·loopback Mongo replica set으로 10명 기준 정상 5분과 장애 4종 각 5분을 측정했다. 정상 구간은 실제 ad-01의 합성 캠페인, 장애 구간은 시험용 loopback listener를 사용했다. 보완 전에는 네 장애의 p95 증가가 542.802~666.232ms로 기준을 넘었다. dev `44a6206` 재시험에서는 게임 API 15,000건의 오류가 0건이고, 새 정상 대비 장애별 p95 변화는 −40.240~−14.249ms로 조건 2의 측정 기준을 충족했다. 장애 클릭의 홈 복귀는 0건이다. 운영 웹 배포·브라우저 검증은 남아 있다. [D-08-02 증빙](../evidence/D-08-02.md)
+
+`tools.ad_traffic_sim --base-url <내부 출처> --campaigns-manifest <JSON> --run-id <ID>`는 운영자가 준비한 합성 캠페인만 사용해 실제 serve·비콘·클릭을 전송한다. manifest는 `run_id`와 도메인 `Campaign` JSON 목록인 `campaigns`를 담는다. 숨긴 CTR은 클라이언트의 `out/ad_truth/<ID>.json`, 관측은 `out/ad_traffic/<ID>/http.jsonl`에 저장한다. 같은 실행의 파일이 있으면 거절해 덮어쓰기를 방지한다. 실행 ID가 `c08_d0802_...`이면 C의 기존 `syn:c08_` 입력 검증과 호환된다.
+
+실제 서버 모드의 공격은 원래 합성 serve에 연결되는 중복 클릭이다. 위조 토큰은 원래 source를 판정할 수 없어 실제 지표에 섞일 수 있으므로 `unsupported_invalid_types`에 위조·만료·serve 없음을 표시한다. 자체 서버의 시계·서명 제어는 실제 서버에 제공하지 않는다. HTTP 성공은 원장 검증과 별도이고 `ledger_verified=false`를 기록한다. 운영자는 해당 실행의 원본 아웃박스·원장·예산을 내보내 C의 실제 bronze 전량 대조·silver/gold·건별 대사에 사용해야 한다. 자체 서버 모드는 기존 CLI로 실행한다.
+
 ## 설정값
 | 이름 | 값·의미 |
 |---|---|
@@ -101,15 +141,15 @@ python -m unittest tests.tools.test_ad_traffic_sim -v
 | 지면 정책 | fixtures/ads/campaigns.json의 slot_policies. 프로세스 시작 시 읽음 |
 | PALDO_ADS_DB_SSL_CA | 운영 광고 DB CA 파일 경로. 설정 시 CA와 서버 호스트 이름을 함께 검증한다 |
 | PALDO_KAFKA_BOOTSTRAP, --kafka-config | 로컬 브로커 또는 운영 Kafka TLS 클라이언트 JSON 파일 |
-| 버전 | 계약 ads-0.6, auction-v0.1, beta-prior-v0.1. 토큰 30분, 짝 맞추기 유예 2분 |
+| 버전 | 계약 ads-0.6. 버전 행이 없으면 auction-v0.1/beta-prior-v0.1, 적재 후 pacing/ctr SHA-256 버전. 토큰 30분, 짝 맞추기 유예 2분 |
 | 금액·귀속일 | 정수 밀리원, serve 시각의 Asia/Seoul 날짜. 1건 금액은 그 건의 단가만으로 정함(CPM `floor(단가/1000)`, 나머지 이월 없음, `ads-0.6`). 지면 최저 eCPM 하한 100원 |
 | DB 드라이버 | requirements/web.txt의 PyMySQL. 게임 웹 설정은 import하지 않음 |
 
 ## 한계
 - D-06-03의 합성 시험 호스트는 메모리 원장으로 격리한다. 운영 HTTP 원장·판정·응답 재생·빈도는 MySQL을 사용한다.
-- 운영에서 ad-01 작업자 배포와 C-08-02 실제 silver·Delta 대사 연동은 별도 검증이 필요하다. 시험용 재판정 입력으로 로컬 환입을 검증한다.
+- 11/9 ad-01 작업자 배포, 실제 Kafka 재판정·환입·Delta 재대사와 합성 집계 기반 버전 반영을 검증했다. 운영 전체 광고 gold의 상시 스케줄과 사람 광고 성과는 후속 범위다.
 - 원장·아웃박스·요청 재생 데이터의 보존 기간과 삭제 절차는 운영 인계에서 정한다.
-- CTR은 지면 사전분포만 사용한다. 실제 집계 갱신·페이싱 연결은 D-08-02다. 캠페인별 탐색 하한도 아직 구현하지 않는다.
+- CTR·페이싱·탐색은 D-08-02로 연결했다. 같은 D 실행의 C 실제 Delta 집계·대사·환입과 ad-01 버전 저장·재적재를 검증했다. 합성 검증용 논리 마감 시각과 결과 범위는 해당 증빙에 보존한다.
 - D-05-03 조건 2는 11/8 PM 결정(PR #263) 반영 뒤 로컬 검증을 통과했다. 경매·유효 판정과 예산 예약·확정·해제는 HTTP 경유, 환입·대사는 HTTP로 만든 원장에 도메인 연산을 적용한다. 대사 시험도 원과금을 HTTP serve·click으로 만들고 원장 금액·상태·행 수와 모든 픽스처 기대값을 확인한다. 실제 Kafka 환입·Delta 대사는 D-06-02·C-08-02의 별도 범위다. [D-05-03 증빙](../evidence/D-05-03.md)에 결정 근거와 재검증 범위를 기록했다.
 - 현재 p95는 개발 서버의 로컬 순차 호출 실측이다. B의 실제 게임 웹 중계·네트워크·장애 시험은 B-08-03에서 확인한다.
 - 이미지는 게임 웹이 제공한다. 광고 서버는 외부 공개용 CORS·정적 이미지 서비스를 제공하지 않는다.
@@ -124,3 +164,5 @@ python -m unittest tests.tools.test_ad_traffic_sim -v
 | D-06-01 | 11/6 | 게임 플레이어 봇의 실행·지표는 sim 모듈 문서로 연결하고 광고 HTTP 선택과 분리(일괄 문서화) |
 | D-06-02 | 11/6 | ads-0.6 MySQL 원장·판정 재생·아웃박스, 만료·Kafka 발행·환입 작업자, 로컬 통합과 운영 인계 구분 |
 | D-06-03 | 11/6 | 실제 Django HTTP 합성 트래픽·정답 격리·피로·4종 무효 클릭·재전송·재현 검증. D-05-03 조건 2의 최신 판정은 해당 증빙 참조, D-06-02 외부 저장 범위 유지 |
+| D-08-02 | 11/8 | 전체 확정 Beta·MySQL 버전·60초 재적재·5분 페이싱·탐색·독립 평가. 11/9 실제 C 집계·환입 재대사·ad-01 새 버전 반영과 B 로그·장애 재시험 통과. 병목에 따른 인계 지연을 기록하고 사용자 승인으로 완료 판정 |
+| D-08-04 | 11/8 | 일괄 문서화 대상으로 D-08-02의 실행·설정·실측·한계와 변경 이력 6개 절 확인 |

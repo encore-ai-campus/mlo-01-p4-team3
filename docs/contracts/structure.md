@@ -58,7 +58,7 @@ paldo/
 │  │                               expire_reservations.py, refund_consumer.py [D-06-02]
 │  │                               ctr_update.py, pacing_update.py [D-08-02]
 │  │                               bid_update.py [D-10-02]
-│  ├─ infra/                       mysql_ledger.py, outbox.py, schema.sql [D-06-02]
+│  ├─ infra/                       mysql_ledger.py, mysql_store.py, outbox.py, schema.sql [D-06-02], optimization.py [D-08-02]
 │  ├─ web/                         Django 앱(내부 API, 비콘, 클릭, 가상 랜딩, admin) [D-05-03]
 │  └─ testing/                     fakes.py(FakeAdProvider), traffic_server.py(D-06-03 격리 HTTP 시험 호스트)
 │
