@@ -155,6 +155,7 @@ class LoadTestTag(str, enum.Enum):
 # ---------------------------------------------------------------- 프리셋
 @dataclass(frozen=True)
 class Preset:
+    """판 구성(인원·창귀 수·비밀 수)과 선택형 도전 옵션. 도전 필드가 기본값이면 일반 프리셋과 같다."""
     preset_id: str
     n_active: int        # 1일째 활동 인원(무당 포함)
     n_possessed: int     # K
