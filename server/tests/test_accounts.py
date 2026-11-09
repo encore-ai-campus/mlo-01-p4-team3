@@ -316,7 +316,7 @@ class Accounts(TestCase):
         sessions = TestSessionService(MemorySessionStore())
         configure_session_service(sessions)
         self.addCleanup(configure_session_service, None)
-        provider = FakeAdProvider()
+        provider = self.privacy_provider()
         gateway = AdGateway(provider)
         configure_ad_gateway(gateway)
         self.addCleanup(configure_ad_gateway, None)
@@ -415,6 +415,14 @@ class Accounts(TestCase):
                                     ("ad_provider_requests", dumps(provider.calls))):
             with self.subTest(output=output_name):
                 self.assertFalse(any(value in output for value in forbidden), "인증 입력이 외부 기록에 노출되었습니다.")
+        self.check_ad_http_privacy(provider, forbidden, (pseudonym, login_session_key, game_id))
+
+    def privacy_provider(self):
+        """같은 인증 시나리오에 포트 대역 또는 별도 실제 광고 HTTP 제공자를 연결한다."""
+        return FakeAdProvider()
+
+    def check_ad_http_privacy(self, provider, forbidden, identities):
+        """기본 포트 시험은 위 DTO까지 검사한다. HTTP 수신 시험은 별도 클래스가 확장한다."""
 
 
 class AccountConcurrency(TransactionTestCase):
