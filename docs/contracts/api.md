@@ -108,7 +108,7 @@
 
 ## 7. 웹소켓과 광고 중계 (11/4 PM 결정, B-07-05)
 - 브라우저는 게임 웹 출처 하나에만 접속한다. 광고 노출 비콘은 웹소켓으로, 클릭·랜딩은 HTTP로 게임 웹에 보내고, 게임 웹이 광고 서버에 넘긴다([ports.md 5절](ports.md), [ads.md 3절](ads.md)). 게임 명령·화면은 지금처럼 HTTP(htmx)이고 웹소켓으로 옮기지 않는다. LLM 답변 폴링(5절)도 그대로다.
-- **연결**: `/ws/game/`(HTTPS 환경에서는 `wss://`), 페이지당 1개, 로그인 필수(2-1절). 구성은 `ProtocolTypeRouter` → `OriginValidator`(허용 출처는 `PALDO_PUBLIC_ORIGIN` 전체 값 하나. `AllowedHostsOriginValidator`는 호스트만 비교해 스킴·포트가 다른 출처를 통과시키므로 쓰지 않는다) → `AuthMiddlewareStack` → `URLRouter`. 채널 계층은 `InMemoryChannelLayer`이고 게임 웹은 Daphne 프로세스 1개로 띄운다. InMemory 계층은 프로세스끼리 공유되지 않지만 그룹 방송을 쓰지 않으므로 이 범위에서는 문제가 없다. 프로세스를 늘리려면 채널 계층 교체가 먼저다.
+- **연결**: `/ws/game/`(HTTPS 환경에서는 `wss://`), 페이지당 1개, 로그인 필수(2-1절). 구성은 `ProtocolTypeRouter` → `OriginValidator`(허용 출처는 `PALDO_PUBLIC_ORIGIN` 전체 값 하나. `AllowedHostsOriginValidator`는 호스트만 비교해 스킴·포트가 다른 출처를 통과시키므로 쓰지 않는다) → `AuthMiddlewareStack` → `URLRouter`. 채널 계층은 `InMemoryChannelLayer`이고 게임 웹은 Daphne 프로세스 2개(E-09-10, 되돌림 1개)로 띄운다. InMemory 계층은 프로세스끼리 공유되지 않지만 연결마다 자기 요청에만 응답하고 그룹 방송을 쓰지 않으므로 문제가 없다. 다른 프로세스의 연결로 보내는 기능이 생기면 Redis 채널 계층(`PALDO_CHANNEL_LAYER=redis`)을 켠다([server/DESIGN.md](../../server/DESIGN.md) "동시성 구조와 한계").
 
 | 상황 | 처리 |
 |---|---|

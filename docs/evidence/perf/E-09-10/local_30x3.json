@@ -1,0 +1,80 @@
+{
+  "task": "E-09-10",
+  "commit": "cb6bece453fc1321ae0b4faf562b3b9968c1ddcf",
+  "generated_at": "2026-11-09T02:28:43Z",
+  "source": "python -B tools/perf/api_bench.py --web-processes 2,1 --channel-layer memory --users 30 --minutes 3.0 --front docker --result-name local_30x3",
+  "metrics": {
+    "p2_memory_requests": {
+      "value": 5360,
+      "unit": "count"
+    },
+    "p2_memory_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "p2_memory_throughput_rps": {
+      "value": 29.54,
+      "unit": "rps"
+    },
+    "p2_memory_p50_ms": {
+      "value": 378.41,
+      "unit": "ms"
+    },
+    "p2_memory_p95_ms": {
+      "value": 1019.035,
+      "unit": "ms"
+    },
+    "p2_memory_p99_ms": {
+      "value": 1296.212,
+      "unit": "ms"
+    },
+    "p2_memory_command_p95_ms": {
+      "value": 1034.497,
+      "unit": "ms"
+    },
+    "p2_memory_beacon_acks": {
+      "value": 5267,
+      "unit": "count"
+    },
+    "p2_memory_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "p1_memory_requests": {
+      "value": 2914,
+      "unit": "count"
+    },
+    "p1_memory_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "p1_memory_throughput_rps": {
+      "value": 15.97,
+      "unit": "rps"
+    },
+    "p1_memory_p50_ms": {
+      "value": 1846.733,
+      "unit": "ms"
+    },
+    "p1_memory_p95_ms": {
+      "value": 2407.679,
+      "unit": "ms"
+    },
+    "p1_memory_p99_ms": {
+      "value": 2857.144,
+      "unit": "ms"
+    },
+    "p1_memory_command_p95_ms": {
+      "value": 2443.168,
+      "unit": "ms"
+    },
+    "p1_memory_beacon_acks": {
+      "value": 1346,
+      "unit": "count"
+    },
+    "p1_memory_beacon_errors": {
+      "value": 13,
+      "unit": "count"
+    }
+  }
+}
