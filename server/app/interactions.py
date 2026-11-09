@@ -312,7 +312,7 @@ class InteractionService:
                    "comment": mask_text(data.comment), "mask_version": "b-mask-1"}
         with self.participant_records(data.game_id) as records:
             if records.survey is not None and records.survey.get("reason"):
-                # 떠날 때 자동으로 남긴 건너뜀 뒤에는 같은 건너뜀만 재전송으로 받고 응답은 받지 않는다(판당 1건).
+                # 서버가 자동으로 채운 건너뜀(홈·일괄 보완) 뒤에는 같은 건너뜀만 재전송으로 받고 응답은 받지 않는다(판당 1건).
                 if data.skipped:
                     return False
                 raise InteractionConflict
@@ -330,7 +330,7 @@ class InteractionService:
     def skip_survey(self, game_id, player, reason, state=None):
         """끝난 판에 설문 이벤트(응답·건너뜀)가 없으면 건너뜀 1건을 남긴다(B-09-07 9번).
 
-        reason은 채운 경로(`beacon`: 결과 화면을 떠날 때, `backfill`: 같은 참가자의 다음 요청).
+        reason은 채운 경로(`backfill`: 같은 참가자의 다음 홈 요청 또는 스냅숏 전 일괄 보완).
         이미 설문 이벤트가 있거나 판이 끝나지 않았으면 아무것도 남기지 않고 False.
         state는 같은 요청에서 이미 읽은 판 상태(소유권 확인 끝난 것)를 넘길 때만 쓴다.
         """
@@ -359,6 +359,17 @@ class InteractionService:
             except KeyError:
                 continue
             filled += self.skip_survey(game_id, player, "backfill", state)
+        return filled
+
+    def backfill_all_skipped_surveys(self, players):
+        """스냅숏 전 일괄 보완: 참가자마다 진척의 판 목록으로 `backfill_skipped_surveys`를 부르고 채운 판 수를 반환한다.
+
+        다시 오지 않은 참가자의 끝난 판도 설문 이벤트 1건을 갖게 한다. 이미 설문 이벤트가 있는 판은 건너뛴다.
+        """
+        filled = 0
+        for player in players:
+            game_ids = self.game.progress.load(player).game_ids
+            filled += self.backfill_skipped_surveys(player, game_ids, self.game.repository.load)
         return filled
 
     def register_renders(self, state, requests):

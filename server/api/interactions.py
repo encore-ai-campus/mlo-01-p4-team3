@@ -108,14 +108,3 @@ def submit_survey(request, game_id):
             return render(request, "survey_done.html")
         return HttpResponse(status=204, headers={"HX-Refresh": "true"})
     return HttpResponse(status=204)
-
-
-@game_request
-@require_http_methods(["POST"])
-def leave_survey(request, game_id):
-    """결과 화면을 설문 없이 떠날 때의 비콘(B-09-07 9번). 끝난 판에 설문 이벤트가 없을 때만 건너뜀 1건."""
-    service = _service(request, game_id)
-    if set(request.POST) - {"csrfmiddlewaretoken", "game_id"} or request.POST.get("game_id") != game_id:
-        raise ValueError("invalid_survey_leave")
-    service.skip_survey(game_id, request.player_pseudonym, "beacon")
-    return HttpResponse(status=204)

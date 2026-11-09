@@ -10,12 +10,8 @@ const document = {
   querySelectorAll: () => [],
   getElementById: () => null,
 };
-const windowListeners = {};
-const beacons = [];
 vm.runInNewContext(fs.readFileSync(path.resolve(__dirname, '../../web/static/js/game.js'), 'utf8'),
-  {document, crypto: {randomUUID: () => 'id'}, URLSearchParams,
-   addEventListener: (name, cb) => (windowListeners[name] ||= []).push(cb),
-   navigator: {sendBeacon: (url, body) => { beacons.push([url, String(body)]); return true; }}});
+  {document, crypto: {randomUUID: () => 'id'}});
 
 function makeForm() {
   const form = {};
@@ -78,25 +74,4 @@ listeners['htmx:afterSwap'].forEach(cb => cb({detail: {target: cardsBox}}));
 assert.equal(scrolled, 1);
 listeners['htmx:afterSwap'].forEach(cb => cb({detail: {target: {id: 'meeting'}}}));
 assert.equal(scrolled, 1);
-// 9번: 설문 양식이 남은 결과 화면을 떠나면(pagehide) 건너뜀 비콘을 보낸다. 제출 뒤(양식 없음)·설문 없는 화면은 보내지 않는다.
-const survey = {dataset: {leaveUrl: '/games/g1/survey/leave', csrf: 'tok', gameId: 'g1'}, querySelector: () => ({})};
-document.getElementById = id => (id === 'survey' ? survey : null);
-windowListeners.pagehide.forEach(cb => cb({}));
-assert.deepEqual(beacons, [['/games/g1/survey/leave', 'csrfmiddlewaretoken=tok&game_id=g1']]);
-survey.querySelector = () => null;
-windowListeners.pagehide.forEach(cb => cb({}));
-document.getElementById = () => null;
-windowListeners.pagehide.forEach(cb => cb({}));
-assert.equal(beacons.length, 1);
-// 키보드 새로 고침 뒤의 pagehide는 떠남이 아니므로 보내지 않는다. 다른 키를 누르면 다시 보낸다.
-document.getElementById = id => (id === 'survey' ? survey : null);
-survey.querySelector = () => ({});
-listeners.keydown.forEach(cb => cb({key: 'F5'}));
-windowListeners.pagehide.forEach(cb => cb({}));
-listeners.keydown.forEach(cb => cb({key: 'r', ctrlKey: true}));
-windowListeners.pagehide.forEach(cb => cb({}));
-assert.equal(beacons.length, 1);
-listeners.keydown.forEach(cb => cb({key: 'Tab'}));
-windowListeners.pagehide.forEach(cb => cb({}));
-assert.equal(beacons.length, 2);
-console.log('game.js whereabouts sync 4 cases, command bar cards scroll, survey leave beacon (keyboard reload skipped) ok');
+console.log('game.js whereabouts sync 4 cases, command bar cards scroll');
