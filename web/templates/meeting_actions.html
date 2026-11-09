@@ -1,12 +1,14 @@
 {% load meeting %}
-<section id="meeting-actions" aria-labelledby="meeting-actions-title">
+<section class="control-panel" id="meeting-actions" aria-labelledby="meeting-actions-title">
   <h2 id="meeting-actions-title">행동 선택</h2>
   <p id="command-status" role="status" aria-live="polite"></p>
   {% url 'game-command' vm.game_id as command_url %}
   {% if 'vote' in vm.allowed_actions %}<h3>투표할 대상</h3>{% endif %}
   {% if 'divine' in vm.allowed_actions %}<h3>점칠 대상</h3>{% endif %}
+  <div class="action-grid">
   {% for action in actions %}
     {% with kind=action.kind %}
+    {% if kind == 'suspect' or kind == 'defend' or kind == 'interrogate' or kind == 'point_contradiction' or kind == 'reveal_divination' %}<details class="action-sheet"><summary><span data-action-symbol="{{ kind }}"></span>{{ kind|action_label }}</summary>{% endif %}
     <form class="command-form{% if action.target %} target-form{% endif %}" method="post"
           action="{{ command_url }}" hx-post="{{ command_url }}" hx-target="#meeting"
           hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
@@ -81,11 +83,12 @@
         {% with icon=kind|action_icon %}
           {% if icon %}<img src="{% asset_url icon %}" alt="" width="20" height="20">{% endif %}
         {% endwith %}
-        {% if action.target %}{{ action.target.name|display_name }} {% endif %}{{ kind|action_label }}
+        {% if action.target %}{% if vm.phase != 'night' %}{% with key='portrait:'|add:action.target.npc_id %}<img class="target-portrait review-portrait" src="{% review_asset key %}" alt="" width="64" height="64">{% endwith %}{% endif %}{{ action.target.name|display_name }} {% endif %}{{ kind|action_label }}
       </button>
     </form>
+    {% if kind == 'suspect' or kind == 'defend' or kind == 'interrogate' or kind == 'point_contradiction' or kind == 'reveal_divination' %}</details>{% endif %}
     {% endwith %}
   {% empty %}
     <p>지금 선택할 행동이 없습니다.</p>
   {% endfor %}
-</section>
+</div></section>

@@ -1,0 +1,11 @@
+{% load meeting %}
+<dialog id="ui-help" aria-labelledby="ui-help-title">
+  <div class="help-heading"><h2 id="ui-help-title">게임 방법</h2><button type="button" data-help-close aria-label="도움말 닫기">닫기</button></div>
+  <span data-help-mascot-slot>{% if vm.phase != 'night' %}<img class="help-mascot" data-help-mascot src="{% review_asset 'mascot:jokjebi' %}" alt="도움말을 안내하는 족제비" width="120" height="120">{% endif %}</span>
+  <p>주민의 공개 진술을 비교하고, 마을에 숨은 씐 자를 찾아보세요.</p>
+  <ol><li>아침 발표를 읽습니다. 첫날에는 0일째 밤의 행적이 발표됩니다.</li><li>회의에서 의심·변호·모순 지적 등 가능한 행동을 선택합니다.</li><li>캐묻기와 둘째 회의를 거쳐 투표합니다. 표는 투표가 끝난 뒤 공개됩니다.</li><li>밤에는 점칠 대상을 고릅니다. 내 점괘와 낮에 공개하는 말은 구분됩니다.</li></ol>
+  <p>말로 입력했을 때는 해석한 카드를 확인해야 행동합니다. 대사를 넘기거나 진술을 비교하는 것만으로는 행동하지 않습니다.</p>
+  <p>대사 이동: <kbd>Space</kbd>·<kbd>Enter</kbd>. 입력창·버튼·카드·펼침 메뉴를 조작할 때는 대사가 넘어가지 않습니다.</p>
+  <p>글자 출력이 불편하면 ‘대사 바로 표시’를 켜세요. 기록·수첩·지도는 무대 위 창에서 확인합니다. 닫기나 Esc로 원래 화면에 돌아옵니다.</p>
+  <p>이름·전화번호·이메일 등 개인정보는 입력하지 마세요.</p>
+</dialog>

@@ -1,9 +1,9 @@
 {% load meeting %}
-<fieldset class="portrait-choice">
+<fieldset class="portrait-choice avatar-choices">
   <legend>무당 모습 선택</legend>
-  <label><input type="radio" name="mudang_variant" value="f" checked required>
-    <img src="{% asset_url 'portrait:mudang_f' %}" alt="" width="80" height="100"> 여성 무당</label>
-  <label><input type="radio" name="mudang_variant" value="m" required>
-    <img src="{% asset_url 'portrait:mudang_m' %}" alt="" width="80" height="100"> 남성 무당</label>
+  <label><input type="radio" name="mudang_variant" value="f" checked required data-avatar-src="{% review_asset 'sprite:mudang_f' %}">
+    <img src="{% review_asset 'portrait:mudang_f' %}" alt="" width="80" height="100"> 여성 무당</label>
+  <label><input type="radio" name="mudang_variant" value="m" required data-avatar-src="{% review_asset 'sprite:mudang_m' %}">
+    <img src="{% review_asset 'portrait:mudang_m' %}" alt="" width="80" height="100"> 남성 무당</label>
   <p>모습만 달라집니다. 게임 규칙과 인물의 반응에는 영향을 주지 않습니다.</p>
 </fieldset>

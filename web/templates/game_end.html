@@ -10,6 +10,7 @@
   </div>
   <div id="end-panel-result" class="end-panel" role="tabpanel" aria-labelledby="end-tab-result">
     {% include "game_result.html" %}
+    <details class="end-public-records"><summary>이번 판의 공개 기록·투표·감금 결과</summary>{% include "meeting_records.html" %}</details>
     {% ad_slot 'result_banner' %}
     {% if participant_forms_available %}{% include "survey.html" %}{% endif %}
   </div>

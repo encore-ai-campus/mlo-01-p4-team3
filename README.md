@@ -61,6 +61,7 @@ server/infra (인프라) → engine (포트 구현)
 |---|---|
 | 이벤트나 학습 데이터 형식 변경 | `engine/domain/events.py`, `contracts/datasets.py`, `docs/contracts/events.md` |
 | 개인정보 처리 | `docs/contracts/privacy.md` |
+| 삭제·보존 운영 | `ops/runbook/privacy.md`, `tools/privacy_delete.py`, `tools/privacy_retention.py` |
 | 서버와 버전 | `docs/contracts/tech_stack.md`, `ops/runbook/vm_roles.md` |
 | 모델 추적과 등록 관문 | `ops/mlflow/`, `tools/ml_gate.py`, `docs/modules/ml_ops.md` |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
