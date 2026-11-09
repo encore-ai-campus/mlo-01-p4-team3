@@ -118,6 +118,7 @@ class ChallengeChoices(TestCase):
     """공개된 선택형 도전만 홈 판 구성 목록에 이름으로 보인다."""
 
     def setUp(self):
+        """로그인한 참가자 하나를 둔다."""
         user = User.objects.create_user(username="challenge-owner")
         install_test_profiles(self)(user)
         self.client.force_login(user)
