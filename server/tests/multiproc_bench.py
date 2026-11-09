@@ -75,7 +75,8 @@ def caddyfile(ports, front_host, listen=":8080", upstream_host="host.docker.inte
     return ("{\n    admin off\n    auto_https off\n}\n\n" + listen + " {\n"
             f"    reverse_proxy {upstreams} {{\n"
             "        lb_policy least_conn\n        lb_try_duration 2s\n        lb_try_interval 250ms\n"
-            "        fail_duration 10s\n        health_uri /healthz\n        health_interval 5s\n        health_timeout 2s\n"
+            "        fail_duration 10s\n        health_uri /healthz\n        health_interval 5s\n        health_timeout 5s\n"
+            "        health_fails 3\n        health_passes 1\n"
             f"        health_headers {{\n            Host {front_host}\n        }}\n"
             "    }\n}\n")
 

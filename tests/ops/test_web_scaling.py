@@ -154,7 +154,8 @@ class RuntimePorts(unittest.TestCase):
         upstreams = block.group(1).split()
         self.assertEqual(upstreams, [f"127.0.0.1:{port}" for port in service_runtime.WEB_PORTS])
         body = block.group(2)
-        for directive in ("lb_policy least_conn", "health_uri /healthz", "lb_try_duration", "fail_duration"):
+        for directive in ("lb_policy least_conn", "health_uri /healthz", "lb_try_duration", "fail_duration",
+                          "health_timeout 5s", "health_fails 3"):
             self.assertIn(directive, body)
         # Django ALLOWED_HOSTS는 공개 호스트만 허용하므로 상태 확인도 같은 Host를 보낸다.
         self.assertRegex(body, r"health_headers \{\s*Host \{\$PALDO_PROXY_HOST\}\s*\}")
@@ -186,6 +187,14 @@ class BenchOptions(unittest.TestCase):
         self.assertIn("127.0.0.1:9100 {", host)
         self.assertIn("reverse_proxy 127.0.0.1:9001 127.0.0.1:9002 {", host)
         self.assertIn("reverse_proxy host.docker.internal:9001 {", bench.caddyfile([9001], "127.0.0.1"))
+
+    def test_bench_caddy_matches_production_tuning(self):
+        from server.tests import multiproc_bench as bench
+        generated = bench.caddyfile([9001], "127.0.0.1")
+        for line in CADDYFILE.splitlines():
+            if line.strip().startswith(("lb_", "fail_duration", "health_uri", "health_interval", "health_timeout",
+                                        "health_fails", "health_passes")):
+                self.assertIn(line.strip(), generated)
 
     def test_result_metrics_per_case(self):
         from server.tests import multiproc_bench as bench

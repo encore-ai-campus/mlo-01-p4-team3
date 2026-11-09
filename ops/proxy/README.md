@@ -18,7 +18,7 @@ sudo systemctl stop caddy paldo-web
 
 ## 웹 프로세스 2개 (E-09-10)
 
-기본 구성은 Daphne 2개 + `InMemoryChannelLayer`다. 지금 웹소켓은 광고 신호 전용이라 프로세스 사이 전달이 없다(근거는 [서버 설계](../../server/DESIGN.md) "동시성 구조와 한계"). `Caddyfile`은 두 upstream(8000·8002)을 `least_conn`으로 나누고 `/healthz`를 5초마다 확인한다(Host는 `PALDO_PROXY_HOST`). 실제 unit 파일 경로·프로필 경로는 비공개 운영 인계 기록을 따른다.
+기본 구성은 Daphne 2개 + `InMemoryChannelLayer`다. 지금 웹소켓은 광고 신호 전용이라 프로세스 사이 전달이 없다(근거는 [서버 설계](../../server/DESIGN.md) "동시성 구조와 한계"). `Caddyfile`은 두 upstream(8000·8002)을 `least_conn`으로 나누고 `/healthz`를 5초마다 확인한다(Host는 `PALDO_PROXY_HOST`, 시한 5초, 연속 3회 실패 때만 뺀다. 과부하로 잠깐 느린 프로세스를 빼지 않기 위해서다). 실제 unit 파일 경로·프로필 경로는 비공개 운영 인계 기록을 따른다.
 
 ### 필수 절차 (C, 약 20~30분)
 
