@@ -39,12 +39,25 @@ function validateInterrogation(form) {
   const selected = [...form.querySelectorAll('input[name="evidence"]:checked')]
     .filter(input => input.value.startsWith("claim:"));
   const missingPair = question.value === "contradiction" && selected.length < 2;
+  // "왜 의심하는가"는 진술을 쓰지 않으므로 진술 목록을 숨기고 보내지 않는다.
+  const picker = form.querySelector(".evidence-picker");
+  if (picker) {
+    picker.hidden = question.value === "suspicion_reason";
+    const box = picker.querySelector?.("fieldset");
+    if (box) box.disabled = picker.hidden;
+  }
   question.setCustomValidity(missingPair ? "관련 진술 두 개를 선택해 주세요." : "");
   form.querySelector('button[type="submit"]').disabled = missingPair || (whereabouts && !form.elements.night.validity.valid);
   return !missingPair;
 }
+/* 접힌 진술 목록 요약에 고른 개수를 보인다. */
+function countEvidence(picker) {
+  const count = picker?.querySelector?.(".evidence-count");
+  if (count) count.textContent = String(picker.querySelectorAll('input[name="evidence"]:checked').length);
+}
 function refreshInterrogations() {
   document.querySelectorAll(".command-form").forEach(validateInterrogation);
+  document.querySelectorAll(".evidence-picker").forEach(countEvidence);
 }
 /* 진술을 체크하면 행적 질문의 밤·시간 칸을 그 진술의 밤·시간으로 맞춘다. 직접 고른 값은 건드리지 않는다. */
 function syncWhereabouts(input) {
@@ -57,6 +70,12 @@ function syncWhereabouts(input) {
 document.addEventListener("change", event => {
   syncWhereabouts(event.target);
   validateInterrogation(event.target.closest(".command-form"));
+  countEvidence(event.target.closest?.(".evidence-picker"));
+  // "왜 말이 다른가"를 고르면 진술 두 개를 골라야 하므로 접힌 목록을 연다.
+  if (event.target.name === "interrogation_kind" && event.target.value === "contradiction") {
+    const picker = event.target.closest(".command-form")?.querySelector(".evidence-picker");
+    if (picker) picker.open = true;
+  }
 });
 document.addEventListener("submit", event => {
   const form = event.target.closest(".command-form");

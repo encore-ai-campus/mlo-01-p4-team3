@@ -33,7 +33,11 @@
               <label>시간 <select name="slot" required><option value="evening" {% if card.slot == 'evening' %}selected{% endif %}>초저녁</option><option value="midnight" {% if card.slot == 'midnight' %}selected{% endif %}>한밤</option></select></label>
             {% endif %}
           {% endif %}
-          {% for claim in card.evidence_options %}<label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}" {% if claim.evidence_value in card.evidence %}checked{% endif %}>{{ claim.card.speaker_name|display_name }}: {{ claim.card.text }}</label>{% endfor %}
+          {% if card.ambiguous_evidence or card.kind == 'point_contradiction' or card.kind == 'suspect' or card.kind == 'defend' or card.interrogation_kind == 'contradiction' %}
+            <details class="evidence-picker"{% if card.ambiguous_evidence %} open{% endif %}><summary>관련 진술 <span class="evidence-count">{{ card.evidence_count }}</span>개 고름</summary><fieldset>
+            {% for claim in card.evidence_options %}<label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}" {% if claim.evidence_value in card.evidence %}checked{% endif %}>{{ claim.card.speaker_name|display_name }}: {{ claim.card.text }}</label>{% endfor %}
+            </fieldset></details>
+          {% endif %}
           {% if card.kind == 'reveal_divination' %}<label>점괘 <select name="divination" required>{% for option in divination_options %}<option value="{{ option.value }}" {% if option.value == card.divination %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select></label>{% endif %}
           <button type="submit">수정한 카드 실행</button>
         </form>

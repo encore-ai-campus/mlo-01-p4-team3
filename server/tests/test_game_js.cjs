@@ -66,6 +66,32 @@ unknownNight.checked = true;
 change(unknownNight);
 assert.equal(form.elements.night.value, '0');
 assert.equal(form.elements.slot.value, 'evening');
+// 10번: 접힌 진술 목록은 고른 개수를 보이고, "왜 의심하는가"면 숨겨 보내지 않으며, "왜 말이 다른가"를 고르면 열린다.
+{
+  const count = {textContent: '0'};
+  const box = {disabled: false};
+  const checked = [];
+  const picker = {hidden: false, open: false, querySelector: s => (s === '.evidence-count' ? count : s === 'fieldset' ? box : null),
+                  querySelectorAll: () => checked};
+  const pform = makeForm();
+  pform.querySelector = s => (s === '.evidence-picker' ? picker : {disabled: false});
+  const claim = {name: 'evidence', value: 'claim:cl01', checked: true, dataset: {},
+                 closest: s => (s === '.evidence-picker' ? picker : s === '.command-form' ? pform : null)};
+  checked.push(claim);
+  change(claim);
+  assert.equal(count.textContent, '1');
+  const question = pform.elements.interrogation_kind;
+  question.name = 'interrogation_kind';
+  question.value = 'suspicion_reason';
+  change(question);
+  assert.equal(picker.hidden, true);
+  assert.equal(box.disabled, true);
+  question.value = 'contradiction';
+  change(question);
+  assert.equal(picker.hidden, false);
+  assert.equal(box.disabled, false);
+  assert.equal(picker.open, true);
+}
 // 8번: 발언 카드 조각을 바꿔 그리면 명령 막대 안에서 카드가 보이게 스크롤한다.
 let scrolled = 0;
 const cardsBox = {id: 'speech-cards', closest: s => (s === '.command-bar' ? {} : null), scrollIntoView: () => scrolled++};
@@ -74,4 +100,4 @@ listeners['htmx:afterSwap'].forEach(cb => cb({detail: {target: cardsBox}}));
 assert.equal(scrolled, 1);
 listeners['htmx:afterSwap'].forEach(cb => cb({detail: {target: {id: 'meeting'}}}));
 assert.equal(scrolled, 1);
-console.log('game.js whereabouts sync 4 cases, command bar cards scroll');
+console.log('game.js whereabouts sync 4 cases, command bar cards scroll, evidence picker count/hide/open');

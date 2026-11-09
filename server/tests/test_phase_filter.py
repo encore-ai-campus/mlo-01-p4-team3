@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.test import SimpleTestCase, TestCase, override_settings
 
-from engine.domain.model import Command, CommandKind, InterrogationKind, Phase
+from engine.domain.model import Command, CommandKind, EvidenceRef, EvidenceType, InterrogationKind, Phase
 from engine.ports import CommandCandidate, ParseFailure, ParseResult, UtteranceForm
 from server.api.interaction_view import cards_context
 from server.api.meeting_view import meeting_context
@@ -217,6 +217,52 @@ class PreviousSelectionTemplate(TestCase):
         addressee = html[html.index('name="addressee"'):html.index("</select>", html.index('name="addressee"'))]
         self.assertNotIn("selected", addressee)
         self.assertIn('value="suspicion_reason" selected', html)
+
+
+class FunctionlessInputs(RecordedGame):
+    """10번: 기능 없는 체크박스를 지우고, 진술 선택은 쓰는 명령에만 접힌 목록으로 둔다."""
+
+    def page(self):
+        """현재 회의 화면 조각."""
+        return self.client.get(self.base, HTTP_HX_REQUEST="true").content.decode()
+
+    def test_meeting_forms_keep_evidence_only_where_used(self):
+        """자유 입력의 진술 체크박스는 없고, 의심·감싸기·모순 지적·심문 양식만 접힌 진술 목록(고른 개수 0)을 갖는다."""
+        self.advance_to(1)
+        html = self.page()
+        self.assertNotIn('name="selected_cards"', html)
+        self.assertEqual(html.count('<details class="evidence-picker">'), 3)
+        self.assertEqual(html.count('<span class="evidence-count">0</span>개 고름'), 3)
+        self.advance_from(2, 2)
+        html = self.page()
+        self.assertEqual(html.count('<details class="evidence-picker">'), 1)
+        self.assertNotIn('<details class="evidence-picker" open>', html)
+        self.advance_from(3, 5)
+        self.assertNotIn('type="checkbox"', self.page())
+
+    def test_cards_show_evidence_only_for_kinds_that_use_it(self):
+        """카드 수정: 의심·모순 지적·"왜 말이 다른가"만 진술 목록, "왜 의심하는가"·투표는 없음. 근거가 애매하면 열어 둔다."""
+        self.advance_to(2)
+        ask = lambda kind: CommandCandidate(Command(CommandKind.INTERROGATE, "mudang", addressee="jumo",
+                                                    interrogation_kind=kind), 0.6, UtteranceForm.QUESTION)
+        cards = self.parse([ask(InterrogationKind.SUSPICION_REASON), ask(InterrogationKind.CONTRADICTION)])
+        html = cards.content.decode()
+        self.assertEqual(html.count('class="evidence-picker"'), 1)
+        self.assertEqual(html.count('name="evidence"'), len(cards.context["claims"]))
+
+    def test_card_evidence_count_and_ambiguous_open(self):
+        """고른 진술 수는 카드 근거 중 선택지에 있는 것만 세고, 근거가 애매한 카드는 목록을 연 채로 그린다."""
+        view = self.service.engine.views[1]
+        claims = meeting_context(view)["claims"]
+        ref = claims[0].card.claim_id
+        sus = CommandCandidate(Command(CommandKind.SUSPECT, "mudang", target="blacksmith",
+                                       evidence=[EvidenceRef(EvidenceType.CLAIM, ref)]), 0.9, UtteranceForm.ASSERTION,
+                               [], {}, [EvidenceRef(EvidenceType.CLAIM, ref)])
+        context = cards_context(ParseUtteranceOutput("a1", 1, [sus], None, True), view)
+        self.assertEqual(context["cards"][0].evidence_count, 1)
+        html = render_to_string("speech_cards.html", context)
+        self.assertIn('<details class="evidence-picker" open>', html)
+        self.assertIn('<span class="evidence-count">1</span>개 고름', html)
 
 
 class VoteCardTargets(TestCase):

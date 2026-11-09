@@ -52,15 +52,17 @@
       {% endif %}
       {% if claims %}
         {% if kind == 'interrogate' or kind == 'point_contradiction' or kind == 'suspect' or kind == 'defend' %}
-          <fieldset>
-            <legend>관련 진술</legend>
-            {% for claim in claims %}
-              {% if claim.card.selectable %}
-                <label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}"{% if claim.slot %} data-night="{{ claim.night }}" data-slot="{{ claim.slot }}"{% endif %}>
-                  {{ claim.card.speaker_name|display_name }}: {{ claim.card.text }}</label>
-              {% endif %}
-            {% endfor %}
-          </fieldset>
+          <details class="evidence-picker">
+            <summary>관련 진술 <span class="evidence-count">0</span>개 고름</summary>
+            <fieldset>
+              {% for claim in claims %}
+                {% if claim.card.selectable %}
+                  <label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}"{% if claim.slot %} data-night="{{ claim.night }}" data-slot="{{ claim.slot }}"{% endif %}>
+                    {{ claim.card.speaker_name|display_name }}: {{ claim.card.text }}</label>
+                {% endif %}
+              {% endfor %}
+            </fieldset>
+          </details>
         {% endif %}
       {% endif %}
       {% if kind == 'reveal_divination' %}

@@ -12,7 +12,6 @@
     <label>대화 상대 <select name="selected_npc"><option value="">선택 안 함</option>
       {% for person in active_targets %}<option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>{% endfor %}
     </select></label>
-    {% for claim in claims %}<label><input type="checkbox" name="selected_cards" value="{{ claim.evidence_value }}">{{ claim.card.text }}</label>{% endfor %}
     <button type="submit">뜻 확인하기</button>
     </fieldset>
   </form>

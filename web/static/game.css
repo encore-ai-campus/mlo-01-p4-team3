@@ -31,6 +31,8 @@ button:disabled { opacity: .55; }
 .village-map-place span { background: #f6f5ef; color: #242b28; padding: .1rem; white-space: nowrap; }
 .resident-gallery { margin-top: 1rem; }
 .resident-gallery summary { cursor: pointer; padding: .5rem; }
+.evidence-picker summary { cursor: pointer; padding: .35rem; }
+.evidence-picker fieldset { max-height: 12rem; overflow-y: auto; }
 .resident-portraits { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 1rem; padding: 0; list-style: none; }
 .resident-portraits li { display: grid; justify-items: center; align-content: start; overflow-wrap: anywhere; }
 .resident-portraits img { width: 96px; max-width: 100%; height: auto; }
