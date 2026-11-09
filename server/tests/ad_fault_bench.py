@@ -44,10 +44,24 @@ def http_beacons(origin, cookie, stop, ready):
     return beacon_load(origin, cookie, stop, ready, token=token or 'b0803.unavailable')
 
 
+def click_outcome(origin, final_url):
+    """클릭 뒤 도착한 같은 출처 경로를 랜딩·실패 안내·홈·기타로 나눈다(원인 계측, B-08-03 E 보완)."""
+    path = urlsplit(final_url).path
+    if path.startswith('/ads/landing/'):
+        return 'landing'
+    if path == '/ads/click':
+        return 'unavailable'
+    return 'home' if path == '/' else 'other'
+
+
 def http_ads_and_clicks(origin, cookie, stop):
-    """세 지면·클릭·랜딩을 게임 출처로만 요청하며 실패 시 홈 복귀도 정상으로 센다."""
+    """세 지면·클릭·랜딩을 게임 출처로만 요청하며 실패 시 안내·홈 복귀도 정상으로 센다.
+
+    클릭마다 도착 경로(랜딩·실패 안내·홈)와 왕복 시간을 남겨, 장애 때 작업 부하가 바뀌는지 본다.
+    """
     opener = build_opener()
-    counts = dict(requests=0, errors=0, clicks=0, click_errors=0)
+    counts = dict(requests=0, errors=0, clicks=0, click_errors=0,
+                  outcomes=dict(landing=0, unavailable=0, home=0, other=0), click_ms=[])
     slots = ('lobby_banner', 'result_banner', 'review_side')
     while not stop.is_set():
         started = time.monotonic()
@@ -57,14 +71,17 @@ def http_ads_and_clicks(origin, cookie, stop):
         except (OSError, ValueError):
             counts['errors'] += 1
         counts['requests'] += 1
+        click_started = time.monotonic()
         try:
             with opener.open(Request(origin + '/ads/click?' + urlencode({'t': token or 'b0803.unavailable'}),
                                      headers={'Cookie': cookie}), timeout=5) as response:
                 if response.status != 200 or urlsplit(response.url).netloc != urlsplit(origin).netloc:
                     counts['click_errors'] += 1
                 response.read()
+                counts['outcomes'][click_outcome(origin, response.url)] += 1
         except OSError:
             counts['click_errors'] += 1
+        counts['click_ms'].append((time.monotonic() - click_started) * 1000)
         counts['clicks'] += 1
         stop.wait(max(0, 1 - (time.monotonic() - started)))
     return counts

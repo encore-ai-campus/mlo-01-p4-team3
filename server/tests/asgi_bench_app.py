@@ -45,6 +45,17 @@ if model_version:
     game.load_test = True
 else:
     game = fixture_service(runtime)
+if os.environ.get('PALDO_BENCH_INTENT_FACTORY'):
+    from server.app.interactions import InteractionService
+    from server.infra.interaction_store import MongoInteractionStore
+    from django.utils.module_loading import import_string
+    from server.paldo_web.intent import ObservedIntentParser
+    from server.tests.asgi_bench_metrics import timed
+
+    parser = ObservedIntentParser(import_string(os.environ['PALDO_BENCH_INTENT_FACTORY'])())
+    parser.parse = timed(parser.parse, 'intent_parse')
+    store = MongoInteractionStore(runtime.database[os.environ['PALDO_BENCH_PREFIX'] + 'b_interactions'])
+    game.interactions = InteractionService(game, store, parser=parser)
 configure_game_service(game)
 configure_session_service(runtime.sessions)
 from server.tests.asgi_bench_metrics import timed

@@ -10,6 +10,7 @@ from prometheus_client import Counter
 
 from ads.domain.model import AdContext, AdRequest, AdSlot, SLOT_SIZES
 from server.api.sessions import ensure_ad_identity
+from server.app.ad_events import serve_id_of
 from server.app.usecases import StartUnavailable
 from server.paldo_web import composition
 from server.paldo_web.middleware import LOGGER
@@ -54,8 +55,11 @@ def slot(request, slot):
     if result == "ok" and not _local_image(response.creative.image_path):
         result = "error"
     FETCH_TOTAL.labels(result).inc()
+    fields = {"result": result, "request_id": request_id}
+    if result == "ok" and serve_id_of(response.serve_token):
+        fields["serve_id"] = serve_id_of(response.serve_token)
     LOGGER.log(30 if result in {"error", "timeout"} else 20, "ad_fetch",
-               extra={"component": "ads", "fields": {"result": result, "request_id": request_id}})
+               extra={"component": "ads", "fields": fields})
     if result == "ok":
         context.update(creative=response.creative, token=response.serve_token,
                        click_path="/ads/click?" + urlencode({"t": response.serve_token}))

@@ -39,38 +39,26 @@ def actual_command(public_view, rng):
             "command": to_jsonable(bench_player_command(view, rng))}
 
 
-def measure_game(origin, cookie, steps, minutes, barrier):
-    """초당 한 요청으로 독립 판을 진행한다. steps=None이면 실제 공개 상태를 따른다."""
+def measure_game(origin, cookie, steps, minutes, barrier, *, intent_every=0):
+    """독립 판을 초당 한 주기로 진행한다. steps=None이면 실제 공개 상태를 따른다."""
     csrf = secrets.token_hex(16)
     opener = build_opener(HTTPCookieProcessor(CookieJar()))
     headers = {"Cookie": cookie + "; csrftoken=" + csrf, "X-CSRFToken": csrf,
                "Accept": "application/json", "Content-Type": "application/json"}
     samples, statuses, errors, finished = [], {}, 0, 0
-    by_route = {"start": [], "command": []}
+    by_route = {"start": [], "command": [], "utterance": [], "cancel": []}
     request_timings = []
-    game, step = None, 0
-    actual = steps is None
-    rng = Random(0)
-    view = None
-    barrier.wait(timeout=30)
-    deadline = time.monotonic() + minutes * 60
-    while time.monotonic() < deadline:
+
+    def send(route, path, body):
+        # 해석·취소도 오류 표본까지 전체 게임 API p95에 포함한다.
         started = time.monotonic()
-        route = 'start' if game is None else 'command'
         server_timing = {}
-        if game is None:
-            path, body = "/games", dict(preset_id="base6", session_id=None if actual else "test-session",
-                                        mudang_variant="f")
-            if actual:
-                body["start_token"] = str(uuid.uuid4())
-        else:
-            path = f"/games/{game}/commands"
-            request = actual_command(view, rng) if actual else steps[step]["request"]
-            body = dict(request, game_id=game, command_id=str(uuid.uuid4()))
         try:
             with opener.open(Request(origin + path, json.dumps(body).encode(), headers), timeout=5) as response:
                 status, data = response.status, json.load(response)
                 server_timing = json.loads(response.headers.get('X-Paldo-Bench-Timing', '{}'))
+                if not isinstance(data, dict):
+                    data = {}
         except HTTPError as error:
             status, data = error.code, {}
             error.close()
@@ -79,8 +67,32 @@ def measure_game(origin, cookie, steps, minutes, barrier):
         elapsed = (time.monotonic() - started) * 1000
         samples.append(elapsed)
         request_timings.append(dict(route=route, client_ms=round(elapsed, 3), stages=server_timing))
-        by_route["start" if game is None else "command"].append(elapsed)
+        by_route[route].append(elapsed)
         statuses[str(status)] = statuses.get(str(status), 0) + 1
+        return status, data
+
+    game, step, view, command_number = None, 0, None, 0
+    actual = steps is None
+    rng = Random(0)
+    barrier.wait(timeout=30)
+    deadline = time.monotonic() + minutes * 60
+    while time.monotonic() < deadline:
+        started = time.monotonic()
+        if game is None:
+            path, body = "/games", dict(preset_id="base6", session_id=None if actual else "test-session",
+                                        mudang_variant="f")
+            if actual:
+                body["start_token"] = str(uuid.uuid4())
+        else:
+            from .intent_load import probe_intent, should_probe
+            command_number += 1
+            if should_probe(view, command_number, intent_every):
+                errors += probe_intent(view, send)
+            path = f"/games/{game}/commands"
+            request = actual_command(view, rng) if actual else steps[step]["request"]
+            body = dict(request, game_id=game, command_id=str(uuid.uuid4()))
+        status, data = send('start' if game is None else 'command', path, body)
+        view = data.get('view')
         if status != 200 or not data.get("view") or game is not None and not data.get("accepted"):
             errors += 1
             game, step = None, 0
@@ -176,6 +188,16 @@ def assess(rows):
             and all(row["beacon_failed"] > 0 for row in rows if row["case"] in {"daphne_delay", "daphne_failure"}))
 
 
+
+def stage_counts(lines):
+    """단계 히스토그램 줄에서 단계별 호출 수(load=게임 상태 조회 등)만 꺼낸다."""
+    counts = {}
+    for line in lines:
+        if line.startswith('paldo_bench_stage_seconds_count{stage="'):
+            stage = line.split('stage="', 1)[1].split('"', 1)[0]
+            counts[stage] = int(float(line.rsplit(' ', 1)[1]))
+    return counts
+
 def run_case(args, name, transport, scenario, mixed, uri, users, steps, folder,
              *, extra_env=None, ad_worker=None, beacon_worker=None):
     """시나리오별 서버·부하·Mongo 감사를 실행하고 자기 자원만 정리한다."""
@@ -258,9 +280,14 @@ def run_case(args, name, transport, scenario, mixed, uri, users, steps, folder,
             if ad_worker:
                 row['click_requests'] = sum(r['clicks'] for r in ad_rows)
                 row['click_errors'] = sum(r['click_errors'] for r in ad_rows)
+                if all('outcomes' in r for r in ad_rows):
+                    row['click_outcomes'] = {k: sum(r['outcomes'][k] for r in ad_rows) for k in ad_rows[0]['outcomes']}
+                    click_ms = [v for r in ad_rows for v in r['click_ms']]
+                    row['click_p95_ms'] = round(percentile(click_ms, .95), 3) if click_ms else None
             row['started_at'] = started_at
             row['ended_at'] = datetime.now(timezone.utc).isoformat()
             row['stage_metrics'] = [line for line in metrics.splitlines() if line.startswith('paldo_bench_stage_seconds_') and not line.startswith('paldo_bench_stage_seconds_created')]
+            row['stage_counts'] = stage_counts(row['stage_metrics'])
             row['routes'] = {}
             row['request_timings'] = [sample for result in results for sample in result['request_timings']]
             for route in ('start', 'command'):

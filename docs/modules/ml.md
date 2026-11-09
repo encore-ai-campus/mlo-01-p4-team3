@@ -7,6 +7,7 @@
 `evaluate.py`는 관측별 softmax, 다중분류 로그 손실·상위1 적중률·후보별 ECE를 계산한다.
 `strategies.py`는 기존 `RuleV0Policy`와 `MixSource`로 거짓 행적 유형을 고정한 실제 엔진 판을 만든다.
 `server/infra/model_selector.py`는 로컬에 등록한 모델을 정확한 버전으로 조회하고 의심 모델의 특징 버전을 검사한다.
+`ml/adapters/reproduce_model_games.py`는 Selector로 고른 같은 모델·시드로 판 실행을 두 번 돌려 결과가 같은지 비교한다(D-08-04 재현).
 의도 기준선은 [intent.md](intent.md), 광고 서버는 [ads.md](ads.md)를 따른다.
 
 ## 왜
@@ -80,6 +81,12 @@ python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --mlrun
 Get-FileHash out/d08-04/bench-a/events.jsonl -Algorithm SHA256
 ```
 
+같은 PC에서 두 번 돌려 바로 비교하려면 재현 명령을 쓴다(11/9, E가 A 쪽으로 준비). 두 실행의 판 ID·모델·특징·규칙 버전, `events.jsonl` SHA-256, 판별 이벤트 수, 판별 종료 결과(승자·사유)를 비교하고, 실행 시간·추론 지연·커밋·출력 경로는 비교하지 않는다. 같고 두 실행이 모두 통과(위반·폴백 0, p95 100ms 이하)하면 종료 코드 0이다. 보고는 `<out>/reproduce.json`.
+
+```powershell
+python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version $suspicionVersion --intent-version $intentVersion --games 50 --seed 1 --out out/d08-04/repro
+```
+
 `select`는 고정 설정의 모델을 실제로 열어 검증한 뒤 버전 두 개와 `False`를 반환한다. 파일·로더·모델 ID 오류는 `ModelUnavailable`, 의심 특징 불일치는 `FeatureVersionMismatch`다. 조회는 로컬 경로와 버전만 사용한다. 판별 인스턴스 수명·버전 고정과 카나리아는 B-09-01, 원격 레지스트리는 C-09-01에서 연결한다. BERT 해석기 연결은 D-09-01 범위다.
 
 ## 설정값
@@ -117,5 +124,6 @@ Get-FileHash out/d08-04/bench-a/events.jsonl -Algorithm SHA256
 | D-07-03 | 11/7 | intent/의 CPU 미세조정·동일 기준선 평가와 모델·계보 저장 경로를 연결 |
 | D-08-01 | 11/9 | 병합된 Selector와 실제 후보 50판 반복 재현. 격리 웹 부하의 실제 엔진·모델 모드 및 프로세스별 추론 집계 추가 |
 | D-08-04 | 11/8 | 로컬 Selector의 고정 버전 조회·특징 버전 검사와 A·B 재현 절차 추가 |
+| D-08-04 | 11/9 | A 쪽 재현 명령 `reproduce_model_games`(같은 모델·시드 두 실행 비교, 실제 v0 수령 전 가짜 모델 시험, E) |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.

@@ -40,6 +40,8 @@ INT-07 웹 자동 재현(실제 HTTP 게임 웹 + Mongo 레플리카셋 + 운영
 PALDO_MONGO_URI=<레플리카셋 URI, /paldo_web 포함> python -m tools.perf.int07_web_run --out <임시 폴더> --record < /dev/null
 ```
 
+B-10-08: `python -B -m tools.perf.account_assets --browser-sample <로그인 계측 JSON>`은 로컬 WOFF2 합계와 명시적 미리보기의 Navigation/Resource Timing 표본을 대조한다. 1280·360px 로그인만 받으며 계측은 `ui_theme_preview --font-probe`로 실행한다. `initial_load_ms`는 navigation `loadEventEnd`, `font_ready_ms`는 load 뒤 `document.fonts.ready`와 다음 화면 갱신 시점이다. 내려받은 글꼴 바이트는 Resource Timing의 `encodedBodySize` 합계이며 네트워크 전송량·VM 성능·화면 품질 합격을 뜻하지 않는다. 결과는 `perf/B-10-08/login-<폭>.json`이다.
+
 ## 설정값
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
@@ -63,6 +65,7 @@ PALDO_MONGO_URI=<레플리카셋 URI, /paldo_web 포함> python -m tools.perf.in
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
+| B-10-08 | 11/9 | 로그인 브라우저 Timing·로컬 글꼴 용량을 분리 계측하는 account_assets, 결과 JSON과 로컬 표본의 한계 기록 |
 | B-06-02 | 11/6 | 실제 Mongo API 부하 CLI·20개 HTTP 경합·재생/충돌/거부 검증. 저장소 Compose Mongo 10명·3분 p95 244.861ms·오류 0, 네이티브 결과와 분리 |
 | B-06-03 | 11/6 | C Mongo 연결 조립·실제 회차 재개 검증. Compose API p95 측정은 B-06-02 증빙, VM·ASGI 비교는 B-07-05에서 관리 |
 | E-07-03 | 11/8 | INT-07 웹 자동 재현 도구 `int07_web_run.py` 추가 |

@@ -92,8 +92,9 @@ class NetworkBenchVerdict(TestCase):
         opener = MagicMock()
         opener.open.return_value = response
         with patch("server.tests.asgi_bench.build_opener", return_value=opener), \
-                patch("server.tests.asgi_bench.time.monotonic", side_effect=[0, 0, 0, 0, 0, 0, 99]), \
-                patch("server.tests.asgi_bench.time.sleep"):
+                patch("server.tests.asgi_bench.time") as clock:
+            clock.monotonic.return_value = 0
+            clock.sleep.side_effect = lambda _: setattr(clock.monotonic, "return_value", 99)
             measure_game("http://localhost", "sessionid=test", None, 1, Barrier(1))
         request = opener.open.call_args.args[0]
         body = json.loads(request.data)
