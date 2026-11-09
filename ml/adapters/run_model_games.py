@@ -1,7 +1,7 @@
-"""모델 v0 판 실행. D-07-02 통합 뒤 --model 또는 PALDO_SUSPICION_MODEL_PATH로 선택한다.
+"""모델 v0 판 실행. 고정 버전이나 신뢰된 로컬 모델 경로로 실행한다.
 
 python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1
-기존 tools.run_engine_games와 같은 실행 인자에 --model(신뢰된 로컬 pickle)을 더한다.
+--suspicion-version과 --intent-version을 함께 주면 로컬 Selector로 불러온다.
 """
 from __future__ import annotations
 
@@ -35,22 +35,48 @@ def main(argv=None) -> int:
     parser.add_argument('--out', default='out/model_games')
     parser.add_argument('--policy', choices=sorted(runner.POLICIES), default='rule-v0')
     parser.add_argument('--record', metavar='TASK_ID')
-    parser.add_argument('--model', default=os.environ.get('PALDO_SUSPICION_MODEL_PATH',
-                                                       'out/suspicion/run1/models.pkl'))
+    model_choice = parser.add_mutually_exclusive_group()
+    model_choice.add_argument('--model', help='신뢰된 로컬 models.pkl')
+    model_choice.add_argument('--suspicion-version', help='mlruns에 등록된 의심 모델 버전')
+    parser.add_argument('--intent-version', help='같이 검증할 의도 기준선 버전')
+    parser.add_argument('--mlruns', help='로컬 Selector 루트(기본 mlruns)')
     args = parser.parse_args(argv)
     if not 0 < args.games < runner.SEED_STRIDE or args.seed < 0:
         parser.error('games는 양수·SEED_STRIDE 미만, seed는 0 이상')
-    command = shlex.join(['python', '-m', 'ml.adapters.run_model_games', '--preset', args.preset,
-                          '--games', str(args.games), '--seed', str(args.seed), '--out', args.out,
-                          '--policy', args.policy, '--model', args.model])
+    if (args.suspicion_version is None) != (args.intent_version is None):
+        parser.error('--suspicion-version과 --intent-version은 함께 지정해야 한다')
+    if args.mlruns is not None and args.suspicion_version is None:
+        parser.error('--mlruns는 버전 조회에서만 사용한다')
+    command = ['python', '-m', 'ml.adapters.run_model_games', '--preset', args.preset,
+               '--games', str(args.games), '--seed', str(args.seed), '--out', args.out,
+               '--policy', args.policy]
     model = None
     try:
         out = Path(args.out)
         out.mkdir(parents=True, exist_ok=True)
         (out / runner.MANIFEST_FILE).unlink(missing_ok=True)
-        model = load_model(Path(args.model))
+        versions = {}
+        if args.suspicion_version is None:
+            model_path = args.model if args.model is not None else os.environ.get(
+                'PALDO_SUSPICION_MODEL_PATH', 'out/suspicion/run1/models.pkl')
+            command += ['--model', model_path]
+            model = load_model(Path(model_path))
+        else:
+            from ml.suspicion.features import FEATURE_VERSION
+            from server.infra.model_selector import LocalModelSelector
+
+            root = args.mlruns if args.mlruns is not None else 'mlruns'
+            command += ['--mlruns', root, '--suspicion-version', args.suspicion_version,
+                        '--intent-version', args.intent_version]
+            selector = LocalModelSelector(root, suspicion_version=args.suspicion_version,
+                                          intent_version=args.intent_version, feature_version=FEATURE_VERSION)
+            model = selector.suspicion_model(args.suspicion_version)
+            selector.intent_parser(args.intent_version)
+            versions['intent'] = args.intent_version
         if model.model_version == 'unavailable':
             raise ModelUnavailable('모델/특징 코드/패키지 인계 필요; 모델 실행을 시작하지 않음')
+        versions['suspicion'] = model.model_version
+        source_command = shlex.join(command)
         content = FixtureContentSource().load('*')
         deps = EngineDeps(content, model)
         policy = runner.POLICIES[args.policy]()
@@ -77,16 +103,16 @@ def main(argv=None) -> int:
                   and not checks['legal_violations'] and not checks['inference_violations']
                   and not checks['suspicion_fallbacks']
                   and metrics['inference_p95']['value'] <= 100)
-        manifest = dict(command=command, status='passed' if passed else 'failed', games=len(runs),
+        manifest = dict(command=source_command, status='passed' if passed else 'failed', games=len(runs),
                         preset_id=args.preset, seed=args.seed, policy=args.policy,
                         npc_policy_version=policy.version, events=sink.count, source='bot',
-                        model_versions={'suspicion': model.model_version}, feature_version=model.feature_version,
+                        model_versions=versions, feature_version=model.feature_version,
                         rule_version=params.RULE_PARAMS_VERSION, contract_version=CONTRACT_VERSION,
                         engine_version=runner.ENGINE_VERSION, code_commit=GitRepo().head(),
                         game_ids=[run.game_id for run in runs], metrics=metrics)
         (out / runner.MANIFEST_FILE).write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
         if args.record:
-            write_result(args.record, 'model_games', metrics, command)
+            write_result(args.record, 'model_games', metrics, source_command)
         log('run_model_games', 'info' if passed else 'warning', '모델 판 실행 결과',
             model_version=model.model_version, status=manifest['status'],
             **{key: value['value'] for key, value in metrics.items()})
