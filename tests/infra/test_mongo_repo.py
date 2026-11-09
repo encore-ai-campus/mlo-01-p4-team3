@@ -49,7 +49,7 @@ class MongoContractTests(unittest.TestCase):
 
     def test_replay_recovers_published_and_pending_confessions(self):
         """실제 아웃박스를 두 번 읽어 단서와 해금을 한 번씩 복구한다."""
-        from ops.replay_progress import replay_games
+        from server.infra.replay_progress import replay_games
         from tests.engine import test_progress as scenario
         from server.infra.mongo_repo import MongoGameRepository
         from server.infra.progress_store import MongoProgressRepository
