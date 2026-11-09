@@ -102,10 +102,13 @@ class SilhouetteTest(unittest.TestCase):
     def test_committed_files_match_generator(self):
         """커밋된 임시 sprite·초상이 지금 생성기와 같은 그림이다(표시가 true인 것만). 해상도·채널·디코드 픽셀로 비교(zlib 차이 허용)."""
         spec = sources.load_spec()
-        seen = 0
+        seen = real = 0
         labels = dict(spec.expressions)
         for e in sources.load_manifest(ROOT, spec):
-            if e.kind not in ("sprite", "portrait") or not e.placeholder:
+            if e.kind not in ("sprite", "portrait"):
+                continue
+            if not e.placeholder:
+                real += 1                   # 실제 파일(A-09-05 이후)은 생성기와 비교하지 않는다
                 continue
             base, expr = split_variant(e.id)
             args = (base, e.width, e.height, NAMES.get(base), labels[expr] if expr else None)
@@ -115,7 +118,7 @@ class SilhouetteTest(unittest.TestCase):
                 data = png.encode_rgb(e.width, e.height, pa.render(*args))
             self.assertTrue(png.same_image((ROOT / e.path).read_bytes(), data), e.path)
             seen += 1
-        self.assertEqual(seen, 74)          # 인물 13 + 표정 변형 24, sprite·초상 각각
+        self.assertEqual(seen + real, 74)   # 인물 13 + 표정 변형 24, sprite·초상 각각
 
 
 class CacheTest(unittest.TestCase):
