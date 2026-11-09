@@ -41,7 +41,7 @@ python -B server/preview.py --port 8769
 1. 현장에서 본인임을 확인한 뒤 `python server/manage.py changepassword <로그인 ID>`를 실행한다. 새 비밀번호는 가입과 같은 규칙으로 검사되며 변경 전 세션은 무효가 된다.
 2. 로그인 잠금을 해제하려면 `python server/manage.py unlock_account`를 실행하고 프롬프트에 로그인 ID를 입력한다.
 
-일반 판은 홈의 "새 게임 시작"으로 시작한다. 공개 프리셋(지금 `base6`)만 고를 수 있고 시드는 서버가 정하며, 끝나지 않은 일반 판은 홈의 "이어 하기"로 돌아간다. 판 메타의 콘텐츠 버전은 `PALDO_CONTENT_VERSION`에서 읽으므로 운영에서는 적재한 콘텐츠 버전(예: `content-1.0`)을 넣는다. 입력 규칙은 [API 계약 2-3절](../contracts/api.md).
+일반 판은 홈의 "새 게임 시작"으로 시작한다. 공개 프리셋(지금 `base6`)만 고를 수 있고 시드는 서버가 정하며, 끝나지 않은 일반 판은 홈의 "이어 하기"로 돌아간다. 판 메타의 콘텐츠 버전은 `PALDO_CONTENT_VERSION`에서 읽으므로 운영에서는 적재한 콘텐츠 버전(예: `content-1.0.1`)을 넣는다. 입력 규칙은 [API 계약 2-3절](../contracts/api.md).
 
 고정 회차는 운영자 로그인 뒤 `/admin/sessions`에서 등록한다. 회차 ID, 참가자 화면에 표시된 가명 ID, 실행에 쓸 규칙·엔진·콘텐츠 버전을 입력한다. 고정 판 목록은 [사용자 테스트 계획의 순서](../user_test/plan.md#8-고정-시드-판-목록)에 따라 `preset_id`와 `seed`를 가진 JSON 배열로 입력한다. 참가자는 로그인 뒤 홈에서 다음 판을 시작하거나 진행 중인 판을 이어 간다.
 
@@ -49,11 +49,11 @@ python -B server/preview.py --port 8769
 
 1. 계정 MySQL·Mongo(레플리카셋)를 띄우고 `DJANGO_SECRET_KEY`, `PALDO_PUBLIC_ORIGIN`, `PALDO_AUTH_DB_*`를 설정한다(로컬 Compose는 `ops/compose/README.md`).
 2. `PALDO_MONGO_URI`에 DB 이름 `paldo_web`을 넣은 레플리카셋 연결 문자열을, `PALDO_GAME_SERVICE_FACTORY`에 `server.infra.game_factory.build_game_service`를 넣는다. 연결·컬렉션(`games`·`progress`·`content`·`b_test_sessions`·`b_ad_identities`)은 B 실행 자원(`server/paldo_web/mongo.py`)이 맡고, 운영 조립은 `b_interactions`만 더한다.
-3. 콘텐츠를 한 번 적재한다: `python -m tools.load_content content/bundle_v1.json`(버전 `content-1.0`). 적재 도구는 B 실행 자원이 읽는 `content` 컬렉션에 쓴다(11/7 이름 통일).
+3. 콘텐츠를 한 번 적재한다: `python -m tools.load_content content/bundle_v1.json`(버전 `content-1.0.1`). 적재 도구는 B 실행 자원이 읽는 `content` 컬렉션에 쓴다(11/7 이름 통일).
 4. `python server/manage.py migrate`, 운영자 계정은 `python server/manage.py createsuperuser`로 만든다.
 5. 서버를 띄운다: `python -m daphne -b 127.0.0.1 -p 8000 server.paldo_web.asgi:application`. 브라우저는 `PALDO_PUBLIC_ORIGIN` 주소로 연다.
-6. 참가자로 가입해 홈의 가명 ID를 확인하고, 운영자로 `/admin/sessions`에서 회차를 등록한다. 버전은 규칙 `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"`가 출력하는 값(`engine/domain/params.py`의 `RULE_PARAMS_VERSION`, 결정 층 파라미터가 바뀌면 함께 바뀐다), 엔진 `paldo-engine`, 콘텐츠 `content-1.0`이다. 고정 판은 `[{"preset_id": "base6", "seed": 1}]`처럼 넣는다.
-7. 참가자로 로그인해 홈에서 판을 시작한다. 회차 없이 "새 게임"으로 하려면 서버를 띄우기 전에 `PALDO_CONTENT_VERSION=content-1.0`을 설정한다(이 경우 6의 회차 등록은 필요 없다).
+6. 참가자로 가입해 홈의 가명 ID를 확인하고, 운영자로 `/admin/sessions`에서 회차를 등록한다. 버전은 규칙 `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"`가 출력하는 값(`engine/domain/params.py`의 `RULE_PARAMS_VERSION`, 결정 층 파라미터가 바뀌면 함께 바뀐다), 엔진 `paldo-engine`, 콘텐츠 `content-1.0.1`(3번에서 적재한 버전과 같아야 한다)이다. 고정 판은 `[{"preset_id": "base6", "seed": 1}]`처럼 넣는다.
+7. 참가자로 로그인해 홈에서 판을 시작한다. 회차 없이 "새 게임"으로 하려면 서버를 띄우기 전에 `PALDO_CONTENT_VERSION=content-1.0.1`을 설정한다(이 경우 6의 회차 등록은 필요 없다).
 
 웹소켓 실행은 환경을 준비한 뒤 `python -m daphne -b 127.0.0.1 -p 8769 server.paldo_web.asgi:application`을 사용한다. 프로세스는 하나로 유지하고 외부 연결은 C 프록시를 거친다. `configure_ad_gateway`로 실제 광고 제공자를 조립하기 전에는 중계가 실패 응답과 대체 화면으로 끝난다. `server/preview.py`는 HTTP 화면용이며 웹소켓 실행 명령을 대신하지 않는다.
 
@@ -72,11 +72,15 @@ python -B server/preview.py --port 8769
 | `SESSION_COOKIE_AGE` | 1,209,600초 | 세션 유효 기간 | 새 세션의 기본 유효 기간이 바뀜 |
 | `PALDO_GAME_SERVICE_FACTORY` | 비어 있음. 운영 예: `server.infra.game_factory.build_game_service` | 운영 게임 서비스를 조립하는 함수 경로 | 운영 게임 API가 사용하는 서비스가 바뀜. 비어 있으면 게임 API를 쓸 수 없다 |
 | `PALDO_MONGO_URI` | 비어 있음 | Mongo 게임·진척·콘텐츠·회차·광고 가명 접속값. 운영 조립은 같은 DB에 보조 기록 `b_interactions`를 더한다 | DB 경로 생략 시 `paldo_web`을 사용한다. 콘텐츠 적재 도구·발행기와 같은 DB를 쓰도록 경로에 DB 이름을 넣는다. 미설정 시 Mongo 게임·회차 조립을 사용할 수 없다 |
-| `PALDO_CONTENT_VERSION` | 비어 있음. 운영 예: `content-1.0` | 회차 없는 일반 판의 판 메타 `content_version`(Mongo에 적재된 활성 버전) | 새 일반 판의 콘텐츠가 바뀜. 비어 있으면 일반 판 시작은 503, 적재되지 않은 버전이면 시작 시 503 |
+| `PALDO_CONTENT_VERSION` | 비어 있음. 운영 예: `content-1.0.1` | 회차 없는 일반 판의 판 메타 `content_version`(Mongo에 적재된 활성 버전) | 새 일반 판의 콘텐츠가 바뀜. 비어 있으면 일반 판 시작은 503, 적재되지 않은 버전이면 시작 시 503 |
 | `ASSET_MANIFEST` | `content/images/manifest.json` | 콘텐츠 ID, URL, 이미지 경로 목록 | 화면 조회와 정적 이미지 응답에 함께 적용 |
 | 출처 요약 | `content/images/SOURCES.md` 첫 비어 있지 않은 줄 | 게임 하단의 도구·이용 안내 | 다음 조회에 반영, 누락은 확인 필요 표시 |
 | `server/app/presets_enabled.json` | `["base6"]` | 새 일반 판에 공개할 프리셋 ID 목록 | 파일만 바꾸면 홈과 일반 판 시작 허용 목록이 함께 바뀜. 추가 공개는 PM 승인 이후. 회차 판·기존 판 재개는 유지 |
 | 미리보기 `--port` | 8766 | 로컬 HTTP 포트 | 루프백 미리보기 접속 주소가 바뀜 |
+| `PALDO_CHANNEL_LAYER` | `memory`(비어 있어도 같음) | 채널 레이어. `memory`는 프로세스 안, `redis`는 Redis(선택, E-09-10) | `redis`면 `PALDO_REDIS_URL` 필수, 기동 때 연결 실패면 멈춤. 지금 웹소켓은 광고 신호 전용이라 프로세스 2개도 `memory`로 충분 |
+| `PALDO_REDIS_URL`, `PALDO_REDIS_PREFIX` | 비어 있음, `paldo-web` | Redis 채널 레이어 주소(`redis://127.0.0.1:6379/0`, 같은 VM)와 키 접두어 | `PALDO_CHANNEL_LAYER=redis`일 때만 쓴다 |
+| `PALDO_EXTRA_ALLOWED_HOSTS` | 비어 있음 | 지표 수집기가 대상 주소의 호스트로 올 때 더할 호스트 이름(쉼표, E-09-10). 로컬 Compose Prometheus는 `host.docker.internal` | 와일드카드·포트가 들어가면 기동 거부 |
+| `PALDO_WEB_INSTANCE` | 비어 있음(실행 도구가 포트로 채움) | 웹 프로세스 구분. 8000이 아니면 로그를 `out/logs/web-<포트>.jsonl`에 씀 | 숫자가 아니면 기동 거부 |
 
 홈·종료 화면의 단서 링크로 본인 진척을 확인하고 다음 고정 판 시작 폼에서 열린 결말을 선택한다. API는 기존 `ending_choice`를 사용한다. 선택형 도전은 전송·메타 계약 및 공개 판정 인수 전 비활성이며 세부 인수 항목은 서버 설계에 있다.
 
@@ -93,6 +97,8 @@ B-07-02의 설문은 같은 API에서 응답과 전체 건너뛰기를 받는다
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
+| B-09-07 | 11/9 | 자유 입력 카드 단계 거르기(투표·결선 의심 → 투표 카드, 0장이면 현재 단계 행동 안내), 아침·밤 입력 칸 비활성, 심문 양식 진술 체크 → 밤·시간 맞춤·직전 대상·질문 유지, 명령 패널·자유 입력 화면 아래 고정 막대(`.command-bar`), 설문 없이 떠난 끝난 판의 건너뜀 보완(다음 홈 요청·18:00 마감 직후 관리 명령 `backfill_surveys`), 기능 없는 체크박스 정리(선택형 도전·자유 입력 진술 선택 삭제, 진술 선택은 쓰는 명령에만 접힌 `details.evidence-picker`) |
+| E-09-08 | 11/9 | `server/app/progress.py` `apply_progress`(고백 단서·한풀이 해금 멱등 반영)를 `GameService.command` 저장 직후에 연결(진척 저장 실패는 `paldo.progress` 오류 기록만, 복구는 재처리), 판 시작 결말 검사를 `ending_available`로(퇴마는 진척 문서와 무관하게 허용) |
 | B-10-02 | 11/9 | manifest 고정 지도·장소 이름·전체 초상 13종·출처 연결. 좌표/출처 갱신·읽기 전용 회귀, Chrome 모바일·확대·완주와 용량·첫 로딩 기록 |
 | B-05-01 | 11/5 | Django 설정, 상태 확인, 요청 로그와 계측 |
 | B-05-02 | 11/5 | 게임 JSON API 열 개, 입력 DTO 검증, 가짜 엔진 회귀 시험 |
@@ -108,11 +114,15 @@ B-07-02의 설문은 같은 API에서 응답과 전체 건너뛰기를 받는다
 | B-07-03 | 11/7 | 로비·결과 광고 지연 로드, 3지면 조각·가명 분리·serve별 노출 비콘·동일 출처 클릭 검증. 미제공·실패의 200 빈 조각 검증. 복기 배치는 B-10-01 범위 |
 | E-08-14 | 11/8 | 회차 없는 일반 판 시작(서버 랜덤 시드, 공개 프리셋, 배포 버전, 시작 UUID 중복 방지), 홈 새 게임·이어 하기, 기본·Mongo 조립 모두 시작 정책 연결. 회차 판 경로 유지 |
 | B-08-02 | 11/8 | 공개 프리셋 파일과 일반 판 연동, 무당 초상 선택·기본값, 공개 8인 녹화 15화면·렌더 측정, 거절 코드 로그·심문 양식 제한·PM 결정의 Kanana 표기 제거. 현재 dev의 6인 공동 완주·E 재확인은 대기이며 태그는 선행 조건이 아님. 11/10 태그 리허설은 B-09-03 |
-| B-08-01 | 11/8 | 공개 결과·수집 단서·결말 선택 화면. 11/9 최신 dev에서 일반 판·고정 회차에 연결하고 시작 UUID·초상·첫 결말 보존을 재검증. 선택형 도전의 필드·공개 판정 인수 대기 콘텐츠 버전별 문안 보관·갱신 후 기존 결말/단서 유지 회귀 |
+| B-08-01 | 11/8 | 공개 결과·수집 단서·결말 선택 화면. 11/9 최신 dev에서 일반 판·고정 회차에 연결하고 시작 UUID·초상·첫 결말 보존을 재검증. 콘텐츠 버전별 문안 보관·갱신 후 기존 결말/단서 유지 회귀. 11/9 판 종료 화면 안 결과·복기·원한 단서 탭(조각 지연 로드), 공개된 선택형 도전 목록, 퇴마 상시 선택 |
+| B-10-01 | 11/9 | 복기 탭 `review_panel.html`: 종료 뒤에만(그 전 403) 정체·숨긴 비밀·이 판 단서와 `review_side` 지면 1개. 행동 이유·해설·승률 그래프는 E-10-10 병합 뒤 |
 | B-08-03 | 11/8 | 내부 HTTP 제공자·환경 조립, 재시도 없는 4경로·헤더 분리·실패 화면 회귀와 로컬 장애 시험 CLI, 실패 후 홈의 요청 내 진척·판 조회 재사용. D 인수·5분 장애 시험·실제 배치는 대기 |
+| E-09-10 | 11/9 | 게임 웹 Daphne 2개(8000·8002)와 Caddy `least_conn`·`/healthz` 능동 확인, 채널 레이어 설정 전환(`memory` 기본·`redis` 선택, 연결 실패 시 기동 거부), 프로세스별 로그 파일, 비교 부하 `tests/multiproc_bench.py`(`api_bench.py --web-processes`·`--front`·`--result-name`), 동시성 구조와 한계(server/DESIGN.md) |
 
 B-06-03의 실제 Mongo 조립은 `server/paldo_web/mongo.py`를 사용한다. 엔진·모델을 명시적으로 넘겨 `open_mongo_runtime`을 호출하고 HTTP 처리 전 `configure()`로 연결한다. 기존 `PALDO_GAME_SERVICE_FACTORY` 함수 안에서는 `factory_service()`를 반환한다. 고정된 콘텐츠 버전·같은 고정 판을 복원한다. 접속 정보는 기존 `PALDO_MONGO_URI` 하나를 사용한다. 고유 컬렉션의 실제 시험은 `server/tests/mongo_game_sessions.py`이며 B-06-03의 회차·가명·동의 재검증은 완료했고 운영 조립·PM 브라우저 재개 판정도 병합됐다. VM·ASGI 성능은 B-07-05, 실제 광고 요청은 B-08-03에서 관리한다. 보조 저장의 실제 검증은 B-07-02 증빙에 있다.
 
 B-08-01 콘텐츠 문안은 `server/story_catalog.json`에 버전별로 보관한다. E 콘텐츠 갱신 시 새 버전 공개 문안을 추가하고 기존 버전은 유지한다. 게임은 메타 버전, 진척은 진척 버전으로 조회해 콘텐츠 갱신 후에도 원문을 보존한다. 현재 원문과 보관본의 일치·버전 갱신 전후 화면 보존은 `server/tests/test_story_ui.py`에서 검사한다.
 
 B-08-03은 PALDO_ADS_INTERNAL_URL을 주입하면 기존 광고 Gateway에 내부 HTTP 제공자를 연결한다. 상세 운영/시험 및 D 인수 범위는 [서버 설계](../../server/DESIGN.md#b-08-03-내부-광고-http-연결)와 [증빙](../evidence/B-08-03.md)을 따른다. 루트 .env.example의 기존 키를 사용하며 실제 접속값은 기록하지 않는다.
+
+C-08-01은 모델 계측과 서버 예외 종류를 기록하며 검증 부하 도구를 제공한다.

@@ -1,0 +1,16 @@
+{
+  "task": "C-08-04",
+  "commit": "43d21ad4ad7081f4856832313e654556dc72545a",
+  "generated_at": "2026-11-08T14:29:48Z",
+  "source": "정상 앱 Mongo TLS 인증으로 MongoContentSource.load(content-1.0)와 후보 5315516 content/bundle_v1.json DTO canonical SHA-256 대조",
+  "metrics": {
+    "content_equal": {
+      "value": 1,
+      "unit": "여부"
+    },
+    "content_hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

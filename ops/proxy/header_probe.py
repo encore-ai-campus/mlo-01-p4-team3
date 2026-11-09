@@ -36,7 +36,8 @@ def main(argv=None):
             template=Path(args.template).read_text().replace('127.0.0.1:2019','127.0.0.1:2021')
             template=template.replace('http://{$PALDO_PROXY_HOST}', 'http://{$PALDO_PROXY_HOST}:18445')
             template=template.replace('https://{$PALDO_PROXY_HOST}', 'https://{$PALDO_PROXY_HOST}:18444')
-            template=template.replace('127.0.0.1:8000','127.0.0.1:'+str(backend.server_port))
+            for upstream in ('127.0.0.1:8000','127.0.0.1:8002'):  # 두 upstream 모두 시험 backend로(E-09-10)
+                template=template.replace(upstream,'127.0.0.1:'+str(backend.server_port))
             config=root/'Caddyfile';config.write_text(template)
             env=dict(os.environ,PALDO_PROXY_HOST='127.0.0.1',PALDO_STATIC_ROOT=directory,
                      XDG_DATA_HOME=str(root/'data'),XDG_CONFIG_HOME=str(root/'config'),HOME=directory)

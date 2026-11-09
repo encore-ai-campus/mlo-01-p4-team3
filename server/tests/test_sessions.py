@@ -186,7 +186,7 @@ class SessionAPI(TestCase):
                     command = dict(recorded["request"], game_id=game_id, command_id=str(uuid.uuid4()))
                     result = self.client.post(f"/games/{game_id}/commands", command, content_type="application/json")
                     self.assertEqual(result.status_code, 200, result.content)
-                self.assertContains(self.client.get(f"/games/{game_id}", HTTP_ACCEPT="text/html"), "테스트 회차로 돌아가기")
+                self.assertContains(self.client.get(f"/games/{game_id}", HTTP_ACCEPT="text/html"), "새 판을 시작하러 홈으로")
         self.assertContains(self.client.get("/"), "배정된 판을 모두 마쳤습니다.")
 
     def test_lazy_factory_connects_home_sessions_and_start_policy(self):

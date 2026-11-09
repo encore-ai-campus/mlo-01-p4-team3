@@ -67,15 +67,17 @@ silver/label 실행도 같은 writer lock을 사용한다. 운영 갱신은 bron
 
 귀속은 serve 서버 시각의 Asia/Seoul 날짜·시간이다. 클라이언트 시각은 클릭 인정에 쓰지 않는다. `serve_id`로 serve context를 붙이고 지연 serve는 매 실행 다시 조인한다. 맥락이 없는 행은 학습에서 제외하고 건수를 별도 기록한다. 맥락 조인 자체가 과금을 바꾸지 않는다. 온라인 서명 실패 판정은 보존하며 토큰 서명을 silver에서 재검증했다고 주장하지 않는다.
 
-CTR=유효 click serve 수/유효 impression serve 수(유효 click은 노출 1회 포함), 0노출이면 null이다. 비용은 정수 밀리원, 실현 eCPM=순액×1000/유효 노출, 실현 CPC=순액/유효 클릭, 0분모는 null이다. 무효율은 impression/click 판정 행 중 invalid 비율이며 pending을 별도 센다. 소진율은 캠페인·귀속일·source의 순액/일 예산이다. gold는 캠페인×지면×귀속 시간·source·load_test로, 학습 행은 소재×지면×preset_id×outcome×시간·source로 분리하며 부하·맥락 없음·0유효 노출은 학습에서 제외한다.
+CTR은 유효 click serve 수를 유효 impression serve 수로 나눈다. 유효 click은 노출 1회를 포함한다. 비용은 정수 밀리원이다. 실현 eCPM은 순액×1000/유효 노출, 실현 CPC는 순액/유효 클릭이다. 분모가 0이면 null이다. 시간별 gold는 캠페인·지면·귀속 시간·source별로 집계한다. 무효율은 impression과 click 각각의 invalid/(valid+invalid)이며 pending과 부하 이벤트를 분모에서 뺀다. Fill은 source별 전체와 지면별로 중복 제거한 serve의 채움 비율을 기록한다. 학습 행은 소재·지면·preset_id·outcome·시간·source별로 만들고 부하·맥락 없음·0유효 노출은 제외한다.
 
-잠정 마감=다음 날 서울 자정, 확정 마감=자정+토큰 TTL 30분+판정 유예 2분이다. 잠정·확정 Delta 경로를 분리한다. 같은 silver 관찰 종료 시각으로만 gold를 만든다. 확정된 gold의 변경은 `final_restatement_approved`가 없으면 거절한다. 확정 후 환입 정책 제안은 원 귀속일을 정정하되 Delta 이력과 학습 입력 버전을 보존하는 방식이며, 실제 적용은 PM 확정 뒤에만 한다.
+일별 캠페인 보고서는 원 귀속일·캠페인·source의 확정 순액과 일 예산을 사용한다. 순액은 확정 과금과 음수 환입의 합이며 예약액은 제외한다. 소진율은 순액/예산이며 예산이 없거나 0이면 null이다. 원장 입력은 같은 silver snapshot 범위로 내보내고, 예산 JSON은 `{귀속일: {캠페인 ID: 정수 밀리원}}` 구조로 준비한다. 대사 불일치가 있으면 gold를 쓰기 전에 종료한다.
+
+잠정 마감은 다음 날 서울 자정, 확정 마감은 자정+토큰 TTL 30분+판정 유예 2분이다. 시간별 gold·일별 보고서·학습 입력은 각각 잠정·확정 경로를 분리한다. 새 경로는 `ads_p25_gold_<phase>_path`, `ads_p25_campaign_daily_<phase>_path`, `ad_p25_training_<phase>_path`로 지정한다. 같은 silver 버전과 관찰 종료 시각으로만 gold를 만든다. 확정 뒤 늦은 환입이 들어오면 원 귀속일을 정정하고 Delta 이력과 학습 입력 버전을 보존한다. 더 오래된 관찰 종료 시각으로 되돌리는 작업은 거절한다.
 
 silver는 invalid가 된 온라인 유효 과금만 결정적 ID의 ad.rejudge로 보낸다. SQLite outbox에 먼저 쓰고 Kafka ACK 뒤 published를 기록한다. D의 실제 환입 소비자가 MySQL에 원과금 반대 금액을 1회 추가한 뒤 재대사한다. 수정된 동일 serve의 CPM 과금을 재생성하지 않는다. 원장만/Delta만/중복/금액 차이/고아 환입을 모두 센다.
 
 ```sh
 spark-submit <외부 TLS·JAR 옵션> pipeline/spark/ads_silver.py --config "$PRIVATE_AD_CONFIG" --as-of-ms "$CUTOFF" --publish-rejudges
-spark-submit <외부 TLS·JAR 옵션> pipeline/spark/ads_gold.py --config "$PRIVATE_AD_CONFIG" --as-of-ms "$CUTOFF" --phase final
+spark-submit <외부 TLS·JAR 옵션> pipeline/spark/ads_gold.py --config "$PRIVATE_AD_CONFIG" --as-of-ms "$CUTOFF" --phase final --ledger "$PRIVATE_LEDGER_EXPORT" --budgets "$PRIVATE_BUDGETS"
 spark-submit <외부 TLS·JAR 옵션> pipeline/spark/ads_reconcile.py --config "$PRIVATE_AD_CONFIG" --ledger "$PRIVATE_LEDGER_EXPORT"
 python -m unittest tests.contract.test_ads_pipeline -v
 ```

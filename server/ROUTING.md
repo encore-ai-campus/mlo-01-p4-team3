@@ -59,6 +59,8 @@ B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은
 자유 입력의 직전 상대는 응용이 공개 캐묻기 발언에서 보완한다. 재입력 경로도 시도에 보존된 선택 인물·근거·직전 상대를 전달하며, 확인 요청은 선택한 카드의 누락 슬롯과 근거 모호성만 검사한다.
 - [서버 설계](DESIGN.md) · [서버 시험](tests/README.md) · [웹 화면 라우팅](../web/ROUTING.md)
 
+E-09-10 다중 프로세스: Caddy(`ops/proxy/Caddyfile`, upstream 8000·8002) → Daphne 2개(`ops/mysql/service_runtime.py web --port`) → 같은 URL 경로. 채널 레이어 설정은 `paldo_web/channel_layers.py`, 동시성 구조와 한계는 [서버 설계](DESIGN.md) "동시성 구조와 한계", 비교 부하는 `tests/multiproc_bench.py`.
+
 ## B-06-03 실제 Mongo 연결
 
 명령 저장은 `GameService.command` → B의 `WebMongoGameRepository.commit` → C의 `MongoGameRepository.commit` 순서다. Mongo 연결 오류를 B에서 정규화한 뒤 응용이 같은 commit을 한 번 재시도하고, 이미 저장됐다면 CAS 충돌 → 명령 조회 → 저장 응답 재생으로 끝난다.
@@ -69,7 +71,7 @@ B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 �
 
 ## B-08-01 결과·진척·결말 선택
 
-`GET /players/me/progress`는 기존 JSON DTO를 유지하고 HTML·htmx 요청에는 `progress.html`을 반환한다. `story_view.py`는 본인 진척의 수집 단서만 문안과 연결한다. 홈의 일반 판·고정 회차 폼은 `ending_choice.html`에서 열린 결말을 고르고 `POST /games`의 폼·JSON을 같은 `StartGameInput`으로 처리한다. 일반 판의 `start_token`·초상·공개 프리셋 경로는 유지한다. 종료된 `GET /games/{id}`·명령 응답은 기존 회의 조각에 `game_result.html`을 포함한다. 공개 결과는 `PlayerView`, 선택 결말·콘텐츠 버전은 소유권 확인한 메타에서 읽는다.
+`GET /players/me/progress`는 기존 JSON DTO를 유지하고 HTML 요청에는 로비용 `progress.html`, htmx 요청(판 종료 화면 단서 탭)에는 `progress_panel.html` 조각을 반환한다. `GET /games/{id}/review`도 htmx 요청이면 종료 뒤 `review_panel.html`(B-10-01 복기 탭)을, 그 밖에는 `ReviewOutput` JSON을 반환한다. `story_view.py`는 본인 진척의 수집 단서만 문안과 연결한다. 홈의 일반 판·고정 회차 폼은 `ending_choice.html`에서 열린 결말을 고르고 `POST /games`의 폼·JSON을 같은 `StartGameInput`으로 처리한다. 일반 판의 `start_token`·초상·공개 프리셋 경로는 유지한다. 종료된 `GET /games/{id}`·명령 응답은 기존 회의 조각에 `game_end.html`(결과 `game_result.html`·복기·단서 탭)을 포함한다. 공개 결과는 `PlayerView`, 선택 결말·콘텐츠 버전은 소유권 확인한 메타에서 읽는다.
 
 B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
 

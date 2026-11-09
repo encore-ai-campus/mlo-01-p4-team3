@@ -1,5 +1,5 @@
 {
-  "content_version": "content-1.0",
+  "content_version": "content-1.0.1",
   "places": [
     {
       "place": "well",
@@ -707,7 +707,7 @@
       "temperament_id": "hothead",
       "reaction": "explain",
       "variants": [
-        "{fact} 됐냐?",
+        "{fact} 됐나?",
         "{fact} 그게 다다!"
       ]
     },

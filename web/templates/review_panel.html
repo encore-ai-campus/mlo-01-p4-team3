@@ -1,0 +1,19 @@
+{% load ad_slots %}
+<section class="end-card end-review" aria-labelledby="review-title">
+  <h2 id="review-title">그날의 선택을 돌아봅니다.</h2>
+  <h3>마을 사람들의 정체</h3>
+  <ul class="review-residents">
+    {% for row in review.residents %}
+      <li{% if row.possessed %} class="is-possessed"{% endif %}>
+        <strong>{{ row.name }}</strong> · {{ row.role }}{% if row.secret %} <small>숨긴 비밀: {{ row.secret }}</small>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% if review.reasons %}
+    <h3>행동의 이유</h3>
+    <ul class="review-reasons">{% for row in review.reasons %}<li>{{ row.actor }} · {{ row.reason_codes|join:", " }}</li>{% endfor %}</ul>
+  {% endif %}
+  <h3>이번 판에서 얻은 원한 단서</h3>
+  <ul class="review-clues">{% for text in review.clues %}<li>{{ text }}</li>{% empty %}<li>이번 판에서 새로 얻은 단서는 없습니다.</li>{% endfor %}</ul>
+</section>
+{% ad_slot 'review_side' %}

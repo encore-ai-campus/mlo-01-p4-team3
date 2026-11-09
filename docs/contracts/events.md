@@ -21,7 +21,7 @@
 | `paldo.player` | `notebook_updated`, `survey_submitted` | D 평가, E 분석 |
 | `paldo.truth` | `truth_revealed`(**판 종료 후에만**) | C 라벨 조인 |
 
-- **`survey_submitted` 본문**(P-29, api.md 2-2절): `skipped`(bool), `fun`·`unfair`·`npc_plausible`(1~5, 건너뛰면 셋 다 `null`), `comment`(마스킹 후, 건너뛰면 `""`), `mask_version`. 저장·아웃박스·Kafka·적재 단계에서 `null` 점수를 0이나 기본값으로 바꾸지 않는다.
+- **`survey_submitted` 본문**(P-29, api.md 2-2절): `skipped`(bool), `fun`·`unfair`·`npc_plausible`(1~5, 건너뛰면 셋 다 `null`), `comment`(마스킹 후, 건너뛰면 `""`), `mask_version`, 자동 건너뜀이면 `reason`(`backfill`: 같은 참가자의 다음 홈 요청 또는 18:00 마감 직후 일괄 보완 명령에서 서버가 채움. 마감 전에 끝난 판의 이 건너뜀은 이벤트 시각이 마감 뒤여도 집계에 든다(`ut-metrics-1.2`). 참가자가 직접 누른 건너뜀·응답에는 없음, B-09-07). 끝난 판마다 설문 이벤트는 정확히 1건이다. 저장·아웃박스·Kafka·적재 단계에서 `null` 점수를 0이나 기본값으로 바꾸지 않는다.
   - 점수 평균·보상·학습에는 `skipped=false`인 이벤트만 쓴다.
   - 응답률은 `skipped=false` 건수 ÷ 설문 이벤트 수(= 판 수)다. 건너뜀은 분모에만 들어간다.
 

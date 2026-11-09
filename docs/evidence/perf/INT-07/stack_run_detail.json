@@ -1,0 +1,313 @@
+{
+  "task": "INT-07",
+  "commit": "539d17a1125eddc150a1ad4e52b762679db720ca",
+  "source": "python -m server.tests.int07_stack --scenarios <int07_scenarios 결과> --kafka-config <발행기 TLS JSON> --out <폴더> --record",
+  "compose_project": "paldo-int07",
+  "topics_created_rf1": 0,
+  "kafka_offsets_before": {
+    "ad.click": 0,
+    "ad.impression": 0,
+    "ad.rejudge": 0,
+    "ad.serve": 5,
+    "paldo.game": 510,
+    "paldo.intent": 0,
+    "paldo.llm": 15,
+    "paldo.observations": 854,
+    "paldo.player": 0,
+    "paldo.truth": 12
+  },
+  "started_at": "2026-11-08T15:09:59+00:00",
+  "ad_serve_status": 200,
+  "components": {
+    "web": {
+      "metrics_status": 200,
+      "required": {
+        "paldo_repo_commit_duration_seconds": true
+      },
+      "python_info": "3.14.6",
+      "process_python": "3.14.6",
+      "alive": true
+    },
+    "outbox_publisher": {
+      "metrics_status": 200,
+      "required": {
+        "paldo_outbox_publish_lag_seconds": true
+      },
+      "python_info": "3.14.6",
+      "process_python": "3.14.6",
+      "alive": true
+    },
+    "ads_web": {
+      "metrics_status": 200,
+      "required": {
+        "paldo_ad_serve_total": true
+      },
+      "python_info": null,
+      "process_python": "3.14.6",
+      "alive": true
+    },
+    "ad_worker_expire": {
+      "metrics_status": 200,
+      "required": {
+        "paldo_ad_worker_processed_total": true
+      },
+      "python_info": null,
+      "process_python": "3.14.6",
+      "alive": true
+    },
+    "ad_worker_publish": {
+      "metrics_status": 200,
+      "required": {
+        "paldo_ad_worker_processed_total": true
+      },
+      "python_info": null,
+      "process_python": "3.14.6",
+      "alive": true
+    },
+    "ad_worker_refund": {
+      "metrics_status": 200,
+      "required": {
+        "paldo_ad_worker_processed_total": true
+      },
+      "python_info": null,
+      "process_python": "3.14.6",
+      "alive": true
+    }
+  },
+  "containers": [
+    {
+      "service": "kafka",
+      "image": "apache/kafka:4.3.2",
+      "status": "Up 36 minutes (healthy)",
+      "port_matches": true
+    },
+    {
+      "service": "mongo",
+      "image": "mongo:8.0.34",
+      "status": "Up 41 minutes (healthy)",
+      "port_matches": true
+    },
+    {
+      "service": "mysql",
+      "image": "mysql:8.4.11",
+      "status": "Up 41 minutes (healthy)",
+      "port_matches": true
+    }
+  ],
+  "kafka_offsets_after": {
+    "ad.click": 0,
+    "ad.impression": 0,
+    "ad.rejudge": 0,
+    "ad.serve": 6,
+    "paldo.game": 606,
+    "paldo.intent": 0,
+    "paldo.llm": 18,
+    "paldo.observations": 1016,
+    "paldo.player": 0,
+    "paldo.truth": 14
+  },
+  "http_5xx": 0,
+  "forbidden_hits": [],
+  "responses_checked": 41,
+  "games": {
+    "false_reveal": {
+      "seed": 2,
+      "target": "gwabu",
+      "commands": 8,
+      "all_accepted": true,
+      "html_status": 200,
+      "reproduced": true,
+      "result": null,
+      "steps": [
+        {
+          "kind": "advance",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "silence",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "advance",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "silence",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "vote",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "divine",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "advance",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "reveal_divination",
+          "status": 200,
+          "accepted": true
+        }
+      ]
+    },
+    "last_possessed": {
+      "seed": 10,
+      "target": "hunjang",
+      "commands": 5,
+      "all_accepted": true,
+      "html_status": 200,
+      "reproduced": true,
+      "result": {
+        "winner": "village",
+        "reason": "all_possessed_locked",
+        "day": 1,
+        "completed": true
+      },
+      "steps": [
+        {
+          "kind": "advance",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "suspect",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "advance",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "suspect",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "vote",
+          "status": 200,
+          "accepted": true
+        }
+      ]
+    },
+    "confession_switch": {
+      "seed": 6,
+      "target": "meosum",
+      "commands": 15,
+      "all_accepted": true,
+      "html_status": 200,
+      "reproduced": true,
+      "result": null,
+      "steps": [
+        {
+          "kind": "advance",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "suspect",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "advance",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "silence",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "vote",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "divine",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "advance",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "silence",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "interrogate",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "interrogate",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "advance",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "suspect",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "vote",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "vote",
+          "status": 200,
+          "accepted": true
+        },
+        {
+          "kind": "divine",
+          "status": 200,
+          "accepted": true
+        }
+      ]
+    },
+    "int1": {
+      "seed": 70301,
+      "commands": 6,
+      "winner": "changgwi",
+      "errors": []
+    }
+  },
+  "collected_at": "2026-11-08T15:11:43+00:00",
+  "verdicts": {
+    "9": {
+      "result": "확인 완료, PM 판정 대기",
+      "detail": "Python 구성요소 6개 지표 누락 0, 3.14 아닌 프로세스 0, 필수 컨테이너 3개 중 없음·비정상·주소 불일치 0, 토픽 증가 {'ad.serve': 1, 'paldo.game': 96, 'paldo.llm': 3, 'paldo.observations': 162, 'paldo.truth': 2}"
+    },
+    "1": {
+      "result": "확인 완료",
+      "detail": "통합 환경 1판 명령 6개, 결과 changgwi, 500·503 0건"
+    },
+    "2": {
+      "result": "자동 웹 재현 완료, 사람 브라우저 확인 대기",
+      "detail": "웹 재현 3/3: ['false_reveal', 'last_possessed', 'confession_switch']"
+    }
+  }
+}
