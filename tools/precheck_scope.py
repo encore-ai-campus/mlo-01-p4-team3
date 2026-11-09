@@ -13,7 +13,8 @@
   Django 렌더링 테스트(`server/tests`)는 전체 검사에도 없다.
 - `server/tests/` 아래 변경(precheck가 돌리지 않는 Django·JS 테스트): `.py`는 가져다 쓰는 테스트, 그 밖의 파일은
   경로나 파일 이름을 적은 테스트만 고르고, 없으면 테스트를 돌리지 않는다(테스트 코드라 쓰는 곳이 없는 것이 정상).
-- `tests/<폴더>/` 아래 변경: 그 테스트 파일과 그것을 가져다 쓰는 테스트(데이터 파일이면 그 폴더 전체).
+- `tests/<폴더>/` 아래 변경: 그 테스트 파일과 그것을 가져다 쓰는 테스트(데이터 파일·`__init__.py`면 그 폴더 전체,
+  지운 테스트 파일은 가져다 쓰던 테스트만).
 - 결과는 폴더별 테스트 모듈 목록이다. `__init__.py`에 `load_tests`가 있는 폴더(서비스 테스트 거르기)는 그 규칙을 지키려고 폴더 전체로 돈다.
 - 전체 테스트로 도는 경우(덜 줄이는 쪽): 공용 파일(`QUICK_FULL_PATHS`), 저장소 루트 파일(`README.md` 제외),
   테스트 루트·`tests/fixtures`, 그 밖의 비 `.py` 파일(콘텐츠·설정·데이터), 쓰는 테스트를 하나도 못 찾은 `.py` 변경.
@@ -146,10 +147,11 @@ def select_tests(changed: list[str], sources: dict[str, str],
             if d is None:
                 return None, f"테스트 공용 위치 {path}"
             mod = module_name(path)
-            if mod is None:          # 테스트 폴더의 데이터 파일: 그 폴더 전체
+            # 데이터 파일·패키지 초기화 파일(테스트 모듈이 import 없이 실행): 그 폴더 전체
+            if mod is None or path.endswith("/__init__.py"):
                 whole.add(d)
                 continue
-            if _is_test_file(path):
+            if _is_test_file(path) and path in sources:  # 지우거나 이름을 바꾼 옛 경로는 직접 돌리지 않는다
                 files.add(path)
             test_mods[mod] = path
             continue

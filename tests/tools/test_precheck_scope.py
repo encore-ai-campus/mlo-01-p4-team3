@@ -82,6 +82,13 @@ class Select(unittest.TestCase):
     def test_test_folder_data_file_runs_that_folder(self):
         self.assertEqual(self.pick(["tests/engine/data.json"])[0], {"engine": None})
 
+    def test_test_package_init_runs_that_folder(self):
+        self.assertEqual(self.pick(["tests/engine/__init__.py"])[0], {"engine": None})
+
+    def test_deleted_test_file_not_run_directly(self):
+        sources = dict(SOURCES, **{"tests/sim/test_uses_old.py": "from tests.engine import test_gone\n"})
+        self.assertEqual(self.pick(["tests/engine/test_gone.py"], sources)[0], {"sim": ["tests.sim.test_uses_old"]})
+
     def test_folder_with_load_tests_runs_whole(self):
         self.assertEqual(self.pick(["ads/ledger.py"])[0], {"ads": None})
 
