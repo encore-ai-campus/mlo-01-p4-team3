@@ -1,6 +1,10 @@
 # ML 모델
 
 ## 무엇을
+`gate.py`는 수명주기 평가 판정, `bandit.py`는 P-16 보상·상한·버전 고정 전략 공급자,
+`mongo_bandit.py`는 전체 이벤트 export 배치·Mongo CAS와 C의 판 ID별 삭제 연결을 제공한다.
+구체적인 입력·B/C 책임·실행과 미충족 범위는 [D-09-02 인계](../reports/D-09-02-handoff.md)를 따른다.
+
 `ml/suspicion/`은 씐 자 1명 판의 마을 NPC 관측을 학습·평가하는 인프라 모듈이다.
 `features.py`는 실제 엔진 bot JSONL을 `TrainingRow` JSONL과 provenance manifest로 변환한다.
 `train.py`는 게임 분할·로지스틱 회귀·LightGBM·로컬 MLflow 추적을 수행한다.
@@ -104,6 +108,10 @@ python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version 
 어댑터의 추론 응답 대기 마감은 90ms, native 초기화·워밍업을 포함한 로드 마감은 30초다. 고정 주민 수의 로컬 순차 IPC에서 검증했으며 웹 동시성·큰 메시지의 절대 wall-clock 상한은 별도 검증이 필요하다. 특징 버전·열 순서·보정 온도는 D-07-02 산출물과 기존 특징 모듈로 검증한다.
 
 ## 한계
+관문 통과는 별도 candidate 등록·카나리아·승격을 자동 실행하지 않는다. 실제 사람 성능은 미측정이다.
+밴딧은 클래스룸 파일럿용 단일 Mongo 문서(16 MiB 한계)다. B의 실제 판 시작 주입과 종료 이벤트 연결은 수신 검증 대기다.
+삭제 필터를 등록한 C가 `MongoBanditStore.forget_games`를 호출해야 후속 전체 이력 갱신이 정상 동작한다.
+
 
 모델 비교와 Delta 연결 검증은 별도 실행이다. 다른 프리셋의 최소 판 수와 모델 합격선은 D-08-01부터 적용한다.
 형식용 synthetic/scripted와 사람 데이터는 현재 경계에서 거부한다. 현재 데이터는 실제 bot 판이다.
@@ -118,6 +126,7 @@ python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | D-05-03 | 11/5 | 하루 일괄 문서화로 ML 패키지의 미구현 범위와 후속 작업 위치를 명시 |
+| D-09-02 | 11/9 | 수명주기 관문·P-16 밴딧·동시성/재시도/삭제 처리·BERT/B/C 인계. 사람·운영 검증은 별도 |
 | D-07-02 | 11/7 | 로컬 TrainingRow 변환·게임 분할·두 추정기·규칙 비교·MLflow·경계 테스트 |
 | D-07-02 | 11/8 | 최신 dev 규칙 반영, 거짓말 전략 고정 생성·별도 평가·판/seed 중복 거부·실제 선택 이후 관측 분리 |
 | D-07-02 | 11/8 | C Delta 행의 원본 관측 대조와 학습 코드 연결 실행 추가 |

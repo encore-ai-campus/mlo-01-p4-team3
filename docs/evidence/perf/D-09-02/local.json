@@ -1,0 +1,40 @@
+{
+  "task": "D-09-02",
+  "commit": "4058df7200395fb569375ca9b6470ca52346f590",
+  "generated_at": "2026-11-09T02:12:40Z",
+  "source": "python work/record_verification.py",
+  "metrics": {
+    "unit_tests": {
+      "value": 22,
+      "unit": "개"
+    },
+    "unit_failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "torch_tests_skipped": {
+      "value": 4,
+      "unit": "개"
+    },
+    "strategy_profiles": {
+      "value": 18,
+      "unit": "개"
+    },
+    "checkpoint_verified": {
+      "value": 1,
+      "unit": ""
+    },
+    "bert_runtime_available": {
+      "value": 0,
+      "unit": ""
+    },
+    "human_evaluation_available": {
+      "value": 0,
+      "unit": ""
+    },
+    "runpod_user_evidence_available": {
+      "value": 0,
+      "unit": ""
+    }
+  }
+}

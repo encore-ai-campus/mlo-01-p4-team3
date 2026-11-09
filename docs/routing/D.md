@@ -24,6 +24,8 @@
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 모델 교체·승격·롤백 | `docs/contracts/ml_lifecycle.md` |
+| 평가 관문·전략 밴딧 배치·B/C 연결 | `ml/gate.py`, `ml/bandit.py`, `ml/mongo_bandit.py`, `docs/reports/D-09-02-handoff.md`, 증빙 `docs/evidence/D-09-02.md` |
+| 로컬 BERT IntentParser 주입 | `intent/bert.py`, `intent/README.md`, `docs/reports/D-09-02-handoff.md` |
 | 씐 자 모델 로컬 첫 학습·평가 | `ml/suspicion/features.py`(실제 엔진→TrainingRow), `train.py`(게임 분할·학습·MLflow), `evaluate.py`(softmax·지표), `tests/test_suspicion.py`, `docs/evidence/D-07-02.md` |
 | 학습 미사용 씐 자 전략 평가 | `ml/suspicion/strategies.py`(거짓 행적 유형 고정), `train.py --heldout-rows`(판·seed 분리 및 별도 지표) |
 | 승인된 의도 예시로 CPU BERT 미세조정·기준선 비교 | `intent/finetune.py`, CLI `tools/perf/intent_finetune.py`, 증빙 `docs/evidence/D-07-03.md`, 모델·계보 기록 `mlruns/intent_bert/`(Git 제외) |
