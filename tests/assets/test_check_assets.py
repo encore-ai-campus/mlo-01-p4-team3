@@ -72,19 +72,19 @@ class PlaceholderSetTest(_Repo):
     def test_generated_placeholder_set_passes(self):
         r = check(self.repo, placeholder_mode=True)
         self.assertTrue(r.ok, format_report(r))
-        self.assertEqual((r.real_count, r.placeholder_count), (0, 102))
+        self.assertEqual((r.real_count, r.placeholder_count), (0, 103))
         m = result_metrics(r)
         self.assertEqual((m["missing_count"]["value"], m["extra_count"]["value"]), (0, 0))
 
     def test_default_mode_rejects_placeholders(self):
         r = check(self.repo)
         self.assertFalse(r.ok)
-        self.assertEqual(len(r.policy_errors), 102)
+        self.assertEqual(len(r.policy_errors), 103)
 
     def test_allow_placeholder_only_listed_kinds(self):
         r = check(self.repo, allowed=frozenset({"place", "ui", "map", "ad"}))
         bad_kinds = {e.split(":")[0] for e in r.policy_errors}
-        self.assertEqual(bad_kinds, {"portrait", "sprite", "background", "mascot"})
+        self.assertEqual(bad_kinds, {"portrait", "sprite", "background", "mascot", "branding"})
         self.assertFalse(r.ok)
 
 
@@ -279,7 +279,7 @@ class CliTest(_Repo):
         self.assertEqual(_quiet(["--repo", str(self.repo), "--placeholder", "--result"]), 0)
         body = json.loads((self.repo / "docs/evidence/perf/E-08-07/check_assets.json").read_text(encoding="utf-8"))
         self.assertEqual(body["task"], "E-08-07")
-        self.assertEqual(body["metrics"]["placeholder_count"]["value"], 102)
+        self.assertEqual(body["metrics"]["placeholder_count"]["value"], 103)
         self.assertIn("--placeholder", body["source"])
 
     def test_inputs_from_selected_repo(self):

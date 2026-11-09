@@ -4,7 +4,7 @@ B-09-02 사전 부하: 기존 `tools/perf/api_bench.py --web-processes 2 --inten
 
 B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
 
-공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 공식 18개·임시 배경 상태만 표시하고 classic은 404다. 시안 원화/글꼴 카탈로그는 읽지 않는다. 전체 시안은 별도 보존 worktree다.
+공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 manifest의 정식 그림(현재 로고·회의/밤 배경 포함 21개)과 임시 자원 상태를 표시하고 classic은 404다. 수량은 manifest에서 계산한다. 시안 후보 카탈로그는 읽지 않는다. 보존한 전체 HTML 시안과 실제 화면의 적용 범위는 web/UI_APPLY.md에서 구분한다.
 
 종료 탭은 같은 판 URL에서 결과·복기·단서를 표시한다. GET review의 htmx는 review_panel.html, 일반 HTML은 review.html, JSON DTO·소유권·진행 중 403은 유지한다. 서버·웹 디자인 및 web/PM_UI_REVIEW.md·UI_ASSET_PLAN.md·UI_APPLY.md를 함께 갱신한다.
 
@@ -90,3 +90,9 @@ B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story
 시험 진입점은 tools/perf/ad_fault_test.py → tests/ad_fault_bench.py → tests/asgi_bench.py·asgi_bench_app.py다. HTTP 대역은 tests/ad_http_host.py이며 운영 요청과 분리한다. [증빙](../docs/evidence/B-08-03.md).
 
 광고 클릭 실패 → 홈의 accounts/views.py는 진척 1회·판별 최대 1회 조회를 요청 안에서 재사용한다. 다음 요청은 다시 조회하며 홈의 기존 회차·일반 판·결말 선택 표시를 유지한다.
+
+## B-10-08 계정 디자인·시험 계측
+
+계정 GET/POST·홈·게임 시작 URL과 시작 정책은 유지한다. `accounts/views.py`는 배정된 미완료 판 여부를 `test_round_pending`으로 전달하고 계정의 `account-start.js`가 일반/테스트 영역을 하나씩 펼친다. `accounts/base.html`이 판 시작 전 로고와 계정 전용 CSS를 연결하고 게임 기본 템플릿은 로고를 연결하지 않는다. 배경은 `api/assets.py`의 기존 `asset_url`로 공식 manifest의 정식 night를 읽는다. 자원은 기존 공식 manifest·`web/static/` 허용 경로로 제공한다.
+
+`tests/ui_theme_preview.py --font-probe`는 `tests/ui_font_probe.py`를 시험 미들웨어에만 주입한다. 로그인 GET에만 글꼴 Timing 표본을 추가하며 운영 설정·URL은 바꾸지 않는다. 기록 도구는 `tools/perf/account_assets.py`다. [웹 라우팅](../web/ROUTING.md#b-10-08-계정-디자인로고글꼴)

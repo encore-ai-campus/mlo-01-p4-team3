@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>팔도무록 계정</title>
+  <title>창귀</title>
   <style>.portrait-choice{max-width:36rem}.portrait-choice label{display:inline-flex;align-items:center;gap:.5rem;margin:.5rem}.portrait-choice img{object-fit:contain}.portrait-choice p{line-height:1.6}main{overflow-wrap:anywhere}img{max-width:100%}</style>
   <link rel="icon" href="{% asset_url 'ui:notebook' %}">
   {% if request.user.is_authenticated %}<script src="/static/js/vendor/htmx.min.js" defer></script><script src="/static/js/paldo_ws.js" defer></script><script src="/static/js/ad_slots.js" defer></script>{% endif %}
-</head>
+<link rel="stylesheet" href="/static/fonts/fonts.css"><style>body{font-family:var(--pd-sans)}h1,h2,h3,header{font-family:var(--pd-serif)}</style></head>
 <body>
-  <header><a href="{% url 'home' %}">팔도무록</a></header>
+  <header><a href="{% url 'home' %}">창귀</a></header>
   <main>{% block content %}{% endblock %}</main>
 </body>
 </html>

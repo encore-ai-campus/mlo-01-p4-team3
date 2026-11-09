@@ -607,6 +607,13 @@
     "placeholder": false
   },
   {
+    "kind": "branding",
+    "id": "tiger_emblem",
+    "path": "content/images/branding/tiger_emblem.png",
+    "url": "/static/assets/branding/tiger_emblem.png",
+    "placeholder": false
+  },
+  {
     "kind": "place",
     "id": "gate",
     "path": "content/images/place/gate.png",

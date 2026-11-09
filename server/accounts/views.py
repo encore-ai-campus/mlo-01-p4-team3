@@ -36,6 +36,7 @@ def home(request):
         try:
             service = get_session_service()
             context["assignments"] = service.assigned(player[0], load_game)
+            context["test_round_pending"] = any(item["plan"] is not None for item in context["assignments"])
         except StartUnavailable:
             context["assignments"] = []   # 회차 저장소가 없어도 일반 판은 시작할 수 있다(E-08-14)
         except GameServiceUnavailable:
