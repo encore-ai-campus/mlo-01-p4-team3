@@ -4,7 +4,7 @@
 
 - `.py` 변경: 저장소 전체 `.py`의 import 관계를 거슬러 올라가 그 모듈을 (간접으로라도) 쓰는 테스트 폴더를 고른다.
   `"-m", "tools.x"`처럼 하위 명령으로 부르는 점 이름 문자열과 `tools/x.py` 같은 경로 문자열도 import로 본다.
-- `.md` 변경: 문서를 읽는 테스트 파일(본문에 `docs`·`README`가 있는 것)의 폴더를 고른다.
+- `.md`와 `docs/` 아래 변경(증빙 수치 JSON 포함): 문서를 읽는 테스트 파일(본문에 `docs`·`README`가 있는 것)의 폴더를 고른다.
 - `web/` 아래 비 `.py` 변경(템플릿·정적 파일): 화면 파일을 읽는 테스트 파일(본문에 `web/`·`templates`·`"web"`이 있는 것)의 폴더.
   Django 렌더링 테스트(`server/tests`)는 전체 검사에도 없다.
 - `tests/<폴더>/` 아래 변경: 그 폴더.
@@ -108,7 +108,7 @@ def select_test_dirs(changed: list[str], sources: dict[str, str],
                 return None, f"테스트 공용 위치 {path}"
             picked.add(d)
             continue
-        if path.endswith(".md"):
+        if path.endswith(".md") or path.startswith("docs/"):
             hints.add(_DOC_HINTS)
             continue
         if path.startswith("web/") and not path.endswith(".py"):

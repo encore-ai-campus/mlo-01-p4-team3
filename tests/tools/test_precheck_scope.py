@@ -66,6 +66,7 @@ class Select(unittest.TestCase):
 
     def test_docs_change_picks_tests_that_read_docs(self):
         self.assertEqual(self.pick(["docs/troubles/E.md"])[0], ["assets", "contract"])
+        self.assertEqual(self.pick(["docs/evidence/perf/X/a.json"])[0], ["assets", "contract"])
 
     def test_web_file_change_picks_tests_that_read_web(self):
         self.assertEqual(self.pick(["web/templates/game.html", "web/static/game.js"])[0], ["tools"])
