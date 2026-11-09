@@ -1,0 +1,26 @@
+{% load ad_slots %}
+{# B-10-01·B-08-01(11/9 사용자 결정): 판이 끝나면 같은 판 화면 안에서 결과·설문, 복기, 원한 단서를 바꿔 본다. 페이지를 옮기지 않는다. #}
+<link rel="stylesheet" href="/static/css/result.css">
+<script src="/static/js/game_end.js" defer></script>
+<section id="game-end" class="end-screen" aria-label="판 종료 화면">
+  <div class="end-tabs" role="tablist" aria-label="판 종료 화면 보기">
+    <button type="button" role="tab" id="end-tab-result" aria-controls="end-panel-result" aria-selected="true">결과</button>
+    <button type="button" role="tab" id="end-tab-review" aria-controls="end-panel-review" aria-selected="false" tabindex="-1">복기</button>
+    <button type="button" role="tab" id="end-tab-clues" aria-controls="end-panel-clues" aria-selected="false" tabindex="-1">원한 단서</button>
+  </div>
+  <div id="end-panel-result" class="end-panel" role="tabpanel" aria-labelledby="end-tab-result">
+    {% include "game_result.html" %}
+    <details class="end-public-records"><summary>이번 판의 공개 기록·투표·감금 결과</summary>{% include "meeting_records.html" %}</details>
+    {% ad_slot 'result_banner' %}
+    {% if participant_forms_available %}{% include "survey.html" %}{% endif %}
+  </div>
+  <div id="end-panel-review" class="end-panel" role="tabpanel" aria-labelledby="end-tab-review" hidden
+       hx-get="{% url 'game-review' vm.game_id %}" hx-trigger="paldo:end-open" hx-swap="innerHTML">
+    <p class="end-loading">복기를 불러오는 중입니다.</p>
+  </div>
+  <div id="end-panel-clues" class="end-panel" role="tabpanel" aria-labelledby="end-tab-clues" hidden
+       hx-get="{% url 'player-progress' %}" hx-trigger="paldo:end-open" hx-swap="innerHTML">
+    <p class="end-loading">원한 단서를 불러오는 중입니다.</p>
+  </div>
+  <p class="end-home"><a href="{% url 'home' %}">새 판을 시작하러 홈으로</a></p>
+</section>

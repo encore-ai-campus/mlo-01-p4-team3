@@ -34,3 +34,4 @@
 | 광고 서버 실행·admin·HTTP 검사·지연 측정 | 표현 `ads/manage.py`·`ads/web/`, 응용 `ads/app/`, 설명 `docs/modules/ads.md`, 측정 `tools/perf/ads_bench.py` |
 | 광고 원장·만료·발행·환입 검증 | `ads/infra/`, `ads/manage.py ad_worker`, `tests/ads/`, 증빙 `docs/evidence/D-06-02.md` |
 | 합성 광고 HTTP 트래픽·피로·무효 클릭·재처리 검증 | `tools/ad_traffic_sim.py`, `ads/testing/traffic_server.py`, `tools/perf/ad_traffic_bench.py`, `tests/tools/test_ad_traffic_sim.py`, 설명 `docs/modules/ads.md` |
+| 모델 포트·모델 판 실행·폴백 검사 | `ml/adapters/suspicion_model.py`, `ml/adapters/run_model_games.py`, `tests/sim/test_suspicion_adapter.py`, 증빙 `docs/evidence/D-08-01.md` |

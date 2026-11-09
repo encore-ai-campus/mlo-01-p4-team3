@@ -5,7 +5,7 @@
 # - 비밀값은 저장소 루트의 .env(Git 추적 안 함)에서 읽는다. 양식은 .env.example.
 # - 포트는 모두 127.0.0.1에만 연다. MySQL 호스트 포트는 루트 .env의 PALDO_ADS_DB_PORT(make-env가 ops/compose/.env로 옮김),
 #   나머지는 셸 환경 변수 PALDO_*_PORT로 바꿀 수 있다(README 6절).
-# - mem_limit 합계 3.0GB(기준 PC 실사용 약 1.0GB). 32GB 노트북에서 VM 4대와 함께 띄우는 것을 전제로 작게 잡았다.
+# - mem_limit 합계 3.0GB(기준 PC 실사용 약 1.0GB, 선택 profile redis 128MB 별도). 32GB 노트북에서 VM 4대와 함께 띄우는 것을 전제로 작게 잡았다.
 name: paldo-dev
 
 services:
@@ -145,6 +145,8 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # 호스트에서 띄운 게임 웹 /metrics 수집(E-09-10). Windows·macOS는 기본 제공
     ports:
       - "127.0.0.1:${PALDO_PROMETHEUS_PORT:-9090}:9090"
     healthcheck:
@@ -153,6 +155,23 @@ services:
       timeout: 5s
       retries: 6
     mem_limit: 256m
+    restart: unless-stopped
+
+  # Redis 채널 레이어(E-09-10, 선택). 기본 구성(InMemory)에서는 띄우지 않는다.
+  # 켤 때: docker compose -p paldo-dev -f ops/compose/dev.yml --profile redis up -d redis
+  #        그리고 웹에 PALDO_CHANNEL_LAYER=redis, PALDO_REDIS_URL=redis://127.0.0.1:6379/0
+  redis:
+    image: redis:7.4.12
+    profiles: ["redis"]
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb"]
+    ports:
+      - "127.0.0.1:${PALDO_REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    mem_limit: 128m
     restart: unless-stopped
 
   grafana:

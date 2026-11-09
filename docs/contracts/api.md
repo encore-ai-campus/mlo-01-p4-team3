@@ -49,7 +49,7 @@
 
 - 위 두 경우가 아닌 조합(점수 일부만, `skipped=true`인데 점수나 의견이 있음, `skipped=false`인데 점수가 `null`)은 400이다. `skipped`가 없는 기존 응답 요청은 그대로 통과한다.
 - 설문은 판마다 한 번이다. 같은 내용을 다시 보내면 204이고 이벤트를 더 만들지 않는다. 처음과 다른 내용(건너뛴 뒤 응답으로 바꾸기 포함)은 409다.
-- 건너뛰어도 `survey_submitted` 이벤트를 1건 낸다(INT-09 7번: 판 수 = 설문 이벤트 수). 이벤트 본문은 [events.md](events.md) 2절.
+- 건너뛰어도 `survey_submitted` 이벤트를 1건 낸다(INT-09 7번: 판 수 = 설문 이벤트 수). 이벤트 본문은 [events.md](events.md) 2절. 결과 화면을 설문 없이 떠난 판은 같은 참가자의 다음 홈 요청(회차 복귀·새 판 시작 폼이 있는 화면)이, 다시 오지 않은 참가자의 판은 18:00 마감 직후 1회 실행하는 관리 명령 `python server/manage.py backfill_surveys`가 건너뜀(`reason=backfill`)으로 채운다. 결과 화면을 떠나거나 새로 고칠 때 브라우저가 보내는 것은 없다. 이미 설문 이벤트가 있으면 더 남기지 않는다. 자동 건너뜀 뒤의 응답은 409, 같은 건너뜀 재전송은 204다(B-09-07).
 - 입력 형식과 화면·재전송 동작은 [설문 처리 경로](../../server/ROUTING.md)와 [B-07-02 검증](../evidence/B-07-02.md)에서 확인한다.
 
 ### 2-3. 판 시작: 일반 판과 회차 판 (11/8 사용자 결정, E-08-14)
@@ -94,6 +94,7 @@
    | `unparseable` | 다시 입력하게 한다 |
 
 5. 시도가 해석한 시점의 `state_version`이 바뀌면, 그 시도로는 실행할 수 없다(409). 다시 입력해야 한다.
+6. 단계 거르기(B-09-07): 응답 카드(`cards`)에는 현재 단계에서 플레이어가 낼 수 있는 명령만 남는다(`is_legal_kind`). 투표·결선 단계의 `suspect` 후보는 같은 대상의 `vote` 카드로 바꾸고(결선이면 결선 후보 대상만), 뜻이 뒤집히는 후보(`defend` 등)는 버린다. 거른 뒤 카드가 0장이면 `unsupported_intent`로 안내하고 `suggestions`에 현재 단계의 플레이어 행동 종류를 담는다. `intent_attempt` 이벤트의 `candidates`·`failure`는 해석기 원래 결과 그대로다. 아침·밤 화면은 입력 칸을 비활성으로 둔다.
 
 ## 5. LLM 답변 폴링
 - 게임 추궁 답변에는 `Powered by Kanana`를 표시하지 않는다(11/8 PM 결정, B-08-02 ③). 게임 문장은 템플릿·Claude Code 사전 작성 변형을 사용한다. 최초 화면·폴링 조각·완료·취소 재조회 모두 동일하며, 별도 Kanana 실험의 표기 의무와 구분한다.
@@ -108,7 +109,7 @@
 
 ## 7. 웹소켓과 광고 중계 (11/4 PM 결정, B-07-05)
 - 브라우저는 게임 웹 출처 하나에만 접속한다. 광고 노출 비콘은 웹소켓으로, 클릭·랜딩은 HTTP로 게임 웹에 보내고, 게임 웹이 광고 서버에 넘긴다([ports.md 5절](ports.md), [ads.md 3절](ads.md)). 게임 명령·화면은 지금처럼 HTTP(htmx)이고 웹소켓으로 옮기지 않는다. LLM 답변 폴링(5절)도 그대로다.
-- **연결**: `/ws/game/`(HTTPS 환경에서는 `wss://`), 페이지당 1개, 로그인 필수(2-1절). 구성은 `ProtocolTypeRouter` → `OriginValidator`(허용 출처는 `PALDO_PUBLIC_ORIGIN` 전체 값 하나. `AllowedHostsOriginValidator`는 호스트만 비교해 스킴·포트가 다른 출처를 통과시키므로 쓰지 않는다) → `AuthMiddlewareStack` → `URLRouter`. 채널 계층은 `InMemoryChannelLayer`이고 게임 웹은 Daphne 프로세스 1개로 띄운다. InMemory 계층은 프로세스끼리 공유되지 않지만 그룹 방송을 쓰지 않으므로 이 범위에서는 문제가 없다. 프로세스를 늘리려면 채널 계층 교체가 먼저다.
+- **연결**: `/ws/game/`(HTTPS 환경에서는 `wss://`), 페이지당 1개, 로그인 필수(2-1절). 구성은 `ProtocolTypeRouter` → `OriginValidator`(허용 출처는 `PALDO_PUBLIC_ORIGIN` 전체 값 하나. `AllowedHostsOriginValidator`는 호스트만 비교해 스킴·포트가 다른 출처를 통과시키므로 쓰지 않는다) → `AuthMiddlewareStack` → `URLRouter`. 채널 계층은 `InMemoryChannelLayer`이고 게임 웹은 Daphne 프로세스 2개(E-09-10, 되돌림 1개)로 띄운다. InMemory 계층은 프로세스끼리 공유되지 않지만 연결마다 자기 요청에만 응답하고 그룹 방송을 쓰지 않으므로 문제가 없다. 다른 프로세스의 연결로 보내는 기능이 생기면 Redis 채널 계층(`PALDO_CHANNEL_LAYER=redis`)을 켠다([server/DESIGN.md](../../server/DESIGN.md) "동시성 구조와 한계").
 
 | 상황 | 처리 |
 |---|---|

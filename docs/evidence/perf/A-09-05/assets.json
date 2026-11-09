@@ -1,0 +1,68 @@
+{
+  "task": "A-09-05",
+  "commit": "3162430fe43bec0542e3b9811203056d3f316173",
+  "generated_at": "2026-11-09T03:49:14Z",
+  "source": "python measure.py <repo> (저장소 밖 측정 스크립트: manifest·tools.assets.vn·check_assets --placeholder·tests.assets.test_normalize)",
+  "metrics": {
+    "real_sprite_count": {
+      "value": 8,
+      "unit": "장"
+    },
+    "real_portrait_count": {
+      "value": 8,
+      "unit": "장"
+    },
+    "real_mascot_count": {
+      "value": 2,
+      "unit": "장"
+    },
+    "sprite_rule_violation_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "foot_off_baseline_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "sprite_center_max_dev": {
+      "value": 0.5,
+      "unit": "px"
+    },
+    "mascot_rule_violation_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "asset_spec_violation_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "asset_record_missing_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "asset_missing_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "asset_policy_violation_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "asset_real_count": {
+      "value": 18,
+      "unit": "개"
+    },
+    "max_real_file_bytes": {
+      "value": 1060938,
+      "unit": "바이트"
+    },
+    "normalize_tests_run": {
+      "value": 6,
+      "unit": "개"
+    },
+    "normalize_test_failures": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

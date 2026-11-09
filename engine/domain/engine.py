@@ -18,7 +18,7 @@ from . import params, serde
 from .content import Assignment, Character, ContentBundle, Secret, required_counts, validate_assignment
 from .events import DomainEvent, EventType
 from .model import (
-    LIMITS, PHASE_RULES, PLAYER_ID, Claim, ClaimTruth, ClaimType, Command, CommandEnvelope, CommandKind,
+    LIMITS, PHASE_RULES, PLAYER_ID, PRESETS, Claim, ClaimTruth, ClaimType, Command, CommandEnvelope, CommandKind,
     ConfessionRecord, DisappearanceRecord, DivinationResult, EndReason, EvidenceRef, EvidenceType, GameMeta, GameResult, GameState, GameTruth,
     InterrogationKind, LockRecord, NightPlan, NpcState, ObservationSnapshot, Phase, Place, Preset,
     PrivateKnowledge, PUBLIC_PLACES, PublicRecord, ReactionIntent, RejectCode, Role, Sighting, Slot, Speech,
@@ -60,7 +60,7 @@ def make_setup(preset: Preset, content: ContentBundle, seed: int, game_id: str) 
         a = _draw_assignment(rng, preset, content, game_id)
         if a is None:
             continue
-        sightings = _draw_sightings(rng, a)
+        sightings = _draw_sightings(rng, a, preset.witness_scale)
         plan = a.night0_plan
         alibi = executor_alibi(rng, a.night0_whereabouts[plan.executor][Slot.MIDNIGHT], sightings[plan.executor])
         if preset.n_possessed == 2:                       # 2명 판은 실행자의 거짓 알리바이를 합의한다
@@ -168,16 +168,18 @@ def executor_alibi(rng: random.Random, crime: Place, own_sightings: list[Sightin
 
 
 # ---------------------------------------------------------------- 목격과 거짓 행적
-def _draw_sightings(rng: random.Random, a: Assignment) -> dict[str, list[Sighting]]:
+def _draw_sightings(rng: random.Random, a: Assignment, scale: float = 1.0) -> dict[str, list[Sighting]]:
     """0일째 밤 목격(`draw_sightings`에 배정의 행적을 넣는다)."""
-    return draw_sightings(rng, NIGHT0, a.residents, a.night0_whereabouts)
+    return draw_sightings(rng, NIGHT0, a.residents, a.night0_whereabouts, scale)
 
 
 def draw_sightings(rng: random.Random, night: int, people: list[str],
-                   where: dict[str, dict[Slot, Place]]) -> dict[str, list[Sighting]]:
+                   where: dict[str, dict[Slot, Place]], scale: float = 1.0) -> dict[str, list[Sighting]]:
     """같은 시간대·같은 공공장소의 두 사람은 WITNESS_PROB로 서로를 본다(기획서 4.2, domain.md 5절 4-3).
 
     0일째와 이후 밤이 같은 규칙을 쓴다. 쌍마다 한 번 뽑고 서로 본다. 못 봤다는 것은 부재 증명이 아니다.
+    `scale`은 선택형 도전 "목격 정보 축소"의 확률 배율이다(`Preset.witness_scale`). 쌍마다 난수를 한 번씩
+    뽑는 순서는 배율과 무관하게 같아서, 배율 1.0이면 기존 판과 결과가 같다.
     """
     seen: dict[str, dict[Slot, list[str]]] = {r: {s: [] for s in SLOTS} for r in people}
     for slot in SLOTS:
@@ -185,7 +187,7 @@ def draw_sightings(rng: random.Random, night: int, people: list[str],
             here = [r for r in people if where[r][slot] is place]
             for i, x in enumerate(here):
                 for y in here[i + 1:]:
-                    if rng.random() < params.WITNESS_PROB:
+                    if rng.random() < params.WITNESS_PROB * scale:
                         seen[x][slot].append(y)
                         seen[y][slot].append(x)
     return {r: [Sighting(night, s, where[r][s], sorted(seen[r][s])) for s in SLOTS if seen[r][s]]
@@ -254,7 +256,8 @@ def night_claims(speakers: list[str], night: int, day: int, where: dict[str, dic
 def setup_from_assignment(a: Assignment, content: ContentBundle, seed: int) -> Setup:
     """이미 정해진 배정(픽스처·재현용)에서 목격·거짓 행적을 시드로 만든다. 배정 자체는 바꾸지 않는다."""
     rng = random.Random(f"{seed}:fixed")
-    sightings = _draw_sightings(rng, a)
+    preset = PRESETS.get(a.preset_id)
+    sightings = _draw_sightings(rng, a, preset.witness_scale if preset else 1.0)
     plan = a.night0_plan
     alibi = executor_alibi(rng, a.night0_whereabouts[plan.executor][Slot.MIDNIGHT], sightings[plan.executor])
     return Setup(a, 1, sightings, _lies_of(a, content, alibi))
@@ -822,6 +825,7 @@ class _Tx:
 
         1. 상태 고정(점 결과를 밤 시작 상태로 판정) → 2. 행적 → 3. 목격 → 4. 실종 → 5. 종료 판정 →
         6. 점 결과 전달(대상이 그 밤 실종돼도 전달, 확정 결정 ②). 끝나지 않았으면 다음 날 아침 진술.
+        선택형 도전 "점 1회 제한"에서 횟수를 다 쓴 밤은 6을 건너뛴다(`divination_available`).
         """
         st, tr = self.st, self.tr
         night = st.day
@@ -831,7 +835,8 @@ class _Tx:
         participants = [n for n in st.active if n != PLAYER_ID]
         where = _night_whereabouts(self.rng("whereabouts"), participants, self.chars, plan)   # 2
         tr.whereabouts[night] = where
-        sightings = draw_sightings(self.rng("sightings"), night, participants, where)          # 3
+        sightings = draw_sightings(self.rng("sightings"), night, participants, where,
+                                   st.meta.preset.witness_scale)                               # 3
         for n in participants:
             st.npcs[n].private.whereabouts[night] = dict(where[n])
             st.npcs[n].private.witnessed.extend(sightings[n])
@@ -842,8 +847,9 @@ class _Tx:
         st.public.disappearances.append(DisappearanceRecord(night, victim, crime, Slot.MIDNIGHT))
         end = end_reason(st, tr)                                                               # 5
         self.emit(EventType.NIGHT_RESOLVED, {"victim": victim, "end": end.value if end else None})
-        st.player.divinations.setdefault(night, {})[target] = result                           # 6
-        self.emit(EventType.DIVINATION_DONE, {"target": target, "night": night, "result": result.value})
+        if divination_available(st):                                                           # 6
+            st.player.divinations.setdefault(night, {})[target] = result
+            self.emit(EventType.DIVINATION_DONE, {"target": target, "night": night, "result": result.value})
         if end is not None:
             self.finish(end)
             return
@@ -914,6 +920,13 @@ def end_reason(state: GameState, truth: GameTruth) -> Optional[EndReason]:
     g = sum(1 for n in state.active if truth.roles.get(n) is Role.POSSESSED)
     v = sum(1 for n in state.active if truth.roles.get(n) is Role.VILLAGER)
     return check_end(g, v, PLAYER_ID in state.active, PLAYER_ID in state.locked)
+
+
+def divination_available(state: GameState) -> bool:
+    """이번 밤 점 결과를 받을 수 있는가. 선택형 도전 "점 1회 제한"(`Preset.divination_limit`)에서
+    횟수를 다 쓴 뒤의 밤은 점 명령으로 밤만 넘기고 결과는 없다(공개할 점도 생기지 않는다)."""
+    limit = state.meta.preset.divination_limit
+    return limit is None or sum(len(v) for v in state.player.divinations.values()) < limit
 
 
 def night_divination(state: GameState, truth: GameTruth, target: str) -> DivinationResult:

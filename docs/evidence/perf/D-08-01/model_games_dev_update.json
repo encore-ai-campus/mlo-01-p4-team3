@@ -1,0 +1,60 @@
+{
+  "task": "D-08-01",
+  "commit": "c778c8c532eb36c9c7003d80b6e1a4d9ff1587db",
+  "generated_at": "2026-11-08T11:50:26Z",
+  "source": "python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --out out/model50 --policy rule-v0 --model C:/Users/playdata/.codex/worktrees/d-07-02/mlo-01-p4-team3/out/suspicion/1108/pm-run/models.pkl",
+  "metrics": {
+    "games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "events": {
+      "value": 3129,
+      "unit": "개"
+    },
+    "elapsed": {
+      "value": 3.195,
+      "unit": "s"
+    },
+    "games_per_sec": {
+      "value": 15.651,
+      "unit": "판/초"
+    },
+    "events_per_game_mean": {
+      "value": 62.58,
+      "unit": "개"
+    },
+    "events_per_game_min": {
+      "value": 51,
+      "unit": "개"
+    },
+    "events_per_game_max": {
+      "value": 122,
+      "unit": "개"
+    },
+    "legal_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "suspicion_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "model_calls": {
+      "value": 243,
+      "unit": "건"
+    },
+    "model_successes": {
+      "value": 243,
+      "unit": "건"
+    },
+    "inference_p95": {
+      "value": 2.491299994289875,
+      "unit": "ms"
+    }
+  }
+}

@@ -1,12 +1,30 @@
 # 게임 명령 시험
 
+## 공통 UI 미리보기
+
+저장소 루트에서 `python -B -m server.tests.ui_theme_preview --port 8783`을 실행한다. 루프백 주소·시험 계정과 임시 DB·녹화 판으로만 동작한다. 운영 설정·실제 DB·광고와 분리된 검수 환경이며 실행·시험 범위는 [UI 적용 검증](../../web/UI_APPLY.md)을 따른다. 운영 계정 또는 실제 엔진·모델 성능 검증에 사용하지 않는다.
+
 B-10-02의 test_village_assets는 전체/htmx의 지도·초상·하단 출처, manifest 좌표 변경·출처 갱신/이스케이프, 읽기 전용 상태 보존, 밤의 추가 패널 비표시를 검사한다. 기존 test_assets의 이미지 교체와 test_preset_screens의 8인 회귀를 함께 실행한다. 로컬 Chrome 미리보기·첫 로딩 측정은 [증빙](../../docs/evidence/B-10-02.md)을 따른다.
+
+## E-09-10 웹 프로세스 수 비교 부하
+
+`python tools/perf/api_bench.py --web-processes 2,1 --users 30 --minutes 3`(경우 이름으로는 `python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis --redis-url redis://127.0.0.1:6379/0`)은 B-07-05의 시험 조립(`asgi_bench_app.py`)을 Daphne N개로 띄우고 Caddy(운영 Caddyfile과 같은 분배·상태 확인, `--front docker`는 공식 이미지 `caddy:2.10.2`, `--front binary`는 설치된 caddy)를 앞에 둔 채 같은 부하(사용자당 초당 한 요청 + 웹소켓 비콘 1개)를 준다. 모든 경우가 같은 Caddy 경로를 지나므로 경우끼리 비교하며, Docker Desktop 경유 지연이 포함돼 운영 절대값이 아니다. Mongo는 `PALDO_MONGO_URI`, 결과는 `out/handoff/e0910-multiproc-report.json`. 설정 전환·포트·Caddy·Prometheus 대응 시험은 `tests/ops/test_web_scaling.py`(Redis 통합은 `PALDO_TEST_REDIS_URL`이 있을 때만).
+
+전체 PM UI의 test_ui_review는 게임 에셋 manifest 우선·시안 경로 탈출/외부 URL 대체, 진행 중 복기 403·타인 404·종료 후 HTML/JSON, PM 안내의 로그인 제한, 등록 18/임시 84 구분·확정 v5 원화 연결·manifest 보존·classic/vn 왕복·classic 검토 경로 차단을 검사한다. 원본 전체·후보 갤러리와 계약 차이는 [PM 검토 목록](../../web/PM_UI_REVIEW.md), 새로 준비할 에셋은 [제작 계획](../../web/UI_ASSET_PLAN.md)을 따른다. 원본 시안의 고정 데이터와 실제 판을 혼동하지 않는다.
 
 ## B-08-01 결과·진척·결말 선택
 
 `python -B server/manage.py test server.tests.test_story_ui server.tests.test_open_start server.tests.test_preset_screens --settings=server.paldo_web.test_settings --noinput`으로 결과·수집 단서·일반 판/고정 회차 결말·초상·시작 UUID 재생을 확인한다. 진척·해금 입력은 시험 전용 대역이며 E-09-08의 실제 해금·재처리를 검증하지 않는다. 도전 필드는 인수 전까지 임의로 추가하지 않는다. [증빙](../../docs/evidence/B-08-01.md)
 
 ## B-08-02 프리셋·8인 화면
+
+최신 dev `44a6206` 반영 후 사전 회귀50건·연계 회귀36건·game.js 시험을 통과했다. [재검증 범위와 미수행 항목](../../docs/evidence/B-08-02.md#joint-dev-recheck)을 확인한다.
+
+공동 확인 전에는 아래 회귀검사를 별도 최신 dev worktree에서 실행한다. [11/9 사전검사·환경 확인·공동 체크리스트·E 확인 항목](../../docs/evidence/B-08-02.md#공동-확인-준비--119-1556-kst)에 실제 준비 결과를 기록했다. 자동 시험은 B·E의 base6 공동 완주를 대신하지 않는다.
+
+~~~powershell
+python -B server/manage.py test server.tests.test_preset_screens server.tests.test_open_start server.tests.test_utterance_ui --settings=server.paldo_web.test_settings --noinput
+~~~
 
 외형 선택·기본값, 공개 설정 파일의 홈/일반 판 반영, 8인 15화면 HTTP·HTML, 거절 코드 로그, 심문 양식과 실제 엔진 정상·거절 조합을 검사한다.
 

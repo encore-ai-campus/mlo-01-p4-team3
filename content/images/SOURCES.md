@@ -1,4 +1,4 @@
-Codex 내장 image_gen · 비상업 교육 프로젝트용 생성물
+Codex 내장 image_gen · ChatGPT(gpt-image) · 비상업 교육 프로젝트용 생성물
 
 ## A-08-04 시험 기록
 
@@ -111,3 +111,41 @@ Create ONE fully rendered MALE Korean shaman full-body game sprite, age32. REFER
 ## 반복 시험과 원본 보관
 
 첫 여성 원본과 repeat는 프롬프트·참고 이미지 입력 없음·transparent_background=false가 같다. 요청은 `out/assets/A-08-04/independent/requests/*-request.json`, 시간은 `*-timing.json`이다. 두 원본·최종 파일 해시와 화풍 비교·생성 시간은 [A-08-04 증빙](../../docs/evidence/A-08-04.md)에 있다. 원본·참고 이미지·측정 스크립트와 미리보기는 저장소 밖 전달 폴더에도 복사한다.
+
+## A-09-05 실제 에셋 (첫 플레이 sprite 8·마스코트 2)
+
+B(김영주)가 생성해 팀 공유 폴더 `2.asset 개선안 및 게임 UI 구성(김영주)/`에 올린 원본(바탕 투명 RGBA 793×1983, 마스코트 1254×1254)을 E가 규격에 맞췄다(A-09-05, 11/9 담당 D → E). 원본은 저장소에 넣지 않는다.
+
+- 도구·모델·생성 시각은 원본 PNG의 콘텐츠 자격 증명(C2PA `caBX` 청크)에 적힌 값이다(`ChatGPT`, `gpt-image`, `c2pa.created`). 서명 검증은 하지 않았다. 정규화한 파일은 다시 인코딩해서 이 청크가 없다.
+- 시드는 ChatGPT가 제공하지 않는다. 프롬프트 전문·금지 지시는 받지 않고 "확인 불가"로 적는다(11/9 사용자 결정, 에셋2 예외: 다른 사람이 만든 원본이라 프롬프트를 확인할 수 없으면 파일 안 생성 기록으로 도구·모델·생성 시각을 확인해 적는다). 이 기록으로 에셋2를 충족한 것으로 본다.
+- 무당 여는 기본 `mudang_f.png`를 썼다. 변형(`-v2`·`-v3`·`-legacy-v4`·`-legacy-v5`)과 `branding/`은 쓰지 않았다.
+- 처리: 인물별 머리카락 윗선(`tools/assets/normalize.py`의 `HAIR_TOP`, 원본 좌표)과 보이는 발끝으로 단일 배율을 정해 키 등급 머리 꼭대기·발끝 y=1248·가로 가운데 256에 둔다(면적 평균 축소, 가로·세로 같은 배율). 마스코트는 단일 배율로 512×512 가운데, 발끝 기준선 y=480, 위 여백 32 이상. 초상은 `make_placeholders`로 파생. 인물별 배율·결과 위치는 [A-09-05 증빙](../../docs/evidence/A-09-05.md).
+
+| 항목 | 결과 파일 | 원본 파일(공유 폴더) | 도구 | 모델·버전 | 시드 | 생성 시각 UTC | 프롬프트 전문 | 부정 프롬프트·금지 지시 | 처리 |
+|---|---|---|---|---|---|---|---|---|---|
+| sprite:mudang_f | `content/images/sprite/mudang_f.png` | `characters/mudang_f.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:03:17Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:mudang_m | `content/images/sprite/mudang_m.png` | `characters/mudang_m.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:04:57Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:hunjang | `content/images/sprite/hunjang.png` | `characters/hunjang.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:05:01Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:meosum | `content/images/sprite/meosum.png` | `characters/meosum.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:05:40Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:yakcho | `content/images/sprite/yakcho.png` | `characters/yakcho.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:07Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:jumo | `content/images/sprite/jumo.png` | `characters/jumo.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:29Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:gwabu | `content/images/sprite/gwabu.png` | `characters/gwabu.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:39Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:blacksmith | `content/images/sprite/blacksmith.png` | `characters/blacksmith.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:07:39Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| mascot:kkachi | `content/images/mascot/kkachi.png` | `mascots/kkachi-v2.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:38:47Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| mascot:jokjebi | `content/images/mascot/jokjebi.png` | `mascots/jokjebi-v2.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:40:05Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+
+```powershell
+python -m tools.assets.normalize <원본 폴더 사본>
+python -m tools.assets.make_placeholders
+```
+
+## 11/9 사용자 확정 v5 여성 무당 교체
+
+B-ui-apply에서 사용자가 `mudang_f-legacy-v5.png`를 최종 v5로 지정했다. 위 A-09-05의 최초 입력 기록은 이력으로 보존하며 현재 여성 무당 전신·초상은 아래 입력을 따른다. 다른 17개 등록 그림과 manifest ID·크기는 유지한다. 재생성·화풍 리터칭은 하지 않았다.
+
+- 입력(정식 PR에는 원화 미포함, 로컬 보존 브랜치 backup/B-ui-apply-full-20261109, 커밋 e22034e): `web/static/design-preview/assets/proposals/characters/mudang_f-legacy-v5.png`(793×1983 RGBA). SHA-256 `2f23c1c15e25d3a033b9e300fe2ede44456ca098fa544a5bb55b992fc867dee4`.
+- 출처: 기존 B UI 원화, ChatGPT 이미지 생성. 모델 세부 버전·생성 시각·프롬프트 전문·금지 지시는 이 교체 작업에서 검증하지 않아 확인 불가로 기록한다. 이미지 생성은 이번 작업에서 실행하지 않았다.
+- 처리: `tools.assets.cutout.fit_sprite(width, rows, 'mudang_f', 203)`. v5 눈 중심 y=338·턱 끝 y=448, 갓에 가린 머리 윗선은 기존 추정 방식 338−1.23×(448−338)≈203. 최초 원본용 HAIR_TOP=287은 사용하지 않는다. 단일 배율로 키 등급·발끝 1248·가운데 256을 맞춘다.
+- 초상: `portrait_art.crop_portrait(512, sprite_rows, vn.portrait_top('mudang_f'))`의 RGB를 `png.encode_rgb(..., optimize=True)`로 인코딩한다. 전신은 RGBA. 초상을 따로 그리지 않는다.
+- 출력: sprite 820482 bytes, SHA-256 `9181e7f15244e141bea0408c30596a64bb70764b0b408518b48c885bc162fe8d`; portrait 164120 bytes, SHA-256 `79f85c206a20a922aaae8d07c4be365f80eadc538d1c07dc5f237ce38008599b`.
+- 여성 표정 3종은 아직 임시이므로 승인된 실제 표정으로 계산하지 않는다. 실제 표정 제작 시 이 v5 기본 sprite와 edited_from_sha256을 기준으로 얼굴 영역만 편집해야 한다.

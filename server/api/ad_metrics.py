@@ -10,8 +10,10 @@ for _reason in ("queue_full", "page_exit", "rate_limited"):
     DROPPED.labels(_reason)
 
 
-def relay_result(kind, result, request_id):
-    """본문·토큰·로그인 ID 없이 중계 결과만 기록한다."""
+def relay_result(kind, result, request_id, serve_id=None):
+    """본문·토큰·로그인 ID 없이 중계 결과만 기록한다. serve_id는 광고 서버 로그와 대조하는 용도다."""
     RELAY.labels(kind, result).inc()
-    LOGGER.info("ad_relay", extra={"component": "ad_relay", "fields": {
-        "request_id": request_id, "kind": kind, "result": result}})
+    fields = {"request_id": request_id, "kind": kind, "result": result}
+    if serve_id:
+        fields["serve_id"] = serve_id
+    LOGGER.info("ad_relay", extra={"component": "ad_relay", "fields": fields})

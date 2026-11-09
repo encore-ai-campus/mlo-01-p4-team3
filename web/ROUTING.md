@@ -1,8 +1,14 @@
-# 웹 화면 라우팅
+# 웹 라우팅
+
+B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
+
+공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 공식 18개·임시 배경 상태만 표시하고 classic은 404다. 시안 원화/글꼴 카탈로그는 읽지 않는다. 전체 시안은 별도 보존 worktree다.
+
+종료 탭은 같은 판 URL에서 결과·복기·단서를 표시한다. GET review의 htmx는 review_panel.html, 일반 HTML은 review.html, JSON DTO·소유권·진행 중 403은 유지한다. 서버·웹 디자인 및 web/PM_UI_REVIEW.md·UI_ASSET_PLAN.md·UI_APPLY.md를 함께 갱신한다.
 
 B-10-02: 기존 게임 전체/htmx 응답의 meeting.html → village_assets.html(고정 지도·전체 초상 펼치기)·asset_credits.html(하단 출처). 좌표·URL은 manifest, 출처는 SOURCES.md에서 읽는다. 펼치기는 HTML details로 처리하며 서버 명령을 보내지 않는다. 새 URL·API는 없다.
 
-B-09-06의 [VN 규칙](../docs/contracts/vn.md)은 기존 회의·밤 경로의 후속 표시 설계다. 새 URL·명령·서버 읽기 저장 경로를 추가하지 않는다. 실제 화면 연결은 B-10-07에서 진행하며 현재는 E 검토 대기다.
+B-09-06의 [VN 규칙](../docs/contracts/vn.md)은 PR #304에서 확정됐다. B-10-07 부분 인계에서 기존 회의·밤 경로에 화면을 연결했고 새 명령·서버 읽기 저장 경로는 추가하지 않았다. 첫 등장·추방/처형·엔딩 전신과 표정은 E 후속 구현으로 남는다.
 
 판 시작의 저장 후 재조회는 유지하고 같은 요청의 같은 버전 콘텐츠만 재사용한다. 시험 경로는 `asgi_bench.py` → `asgi_bench_app.py` → 시험 전용 `asgi_bench_metrics.py`·`asgi_bench_settings.py`이며 숫자 헤더로 요청별 시간만 연결한다. 운영 URL·DTO·화면 흐름·계약 조건은 유지한다.
 
@@ -21,6 +27,8 @@ dev `f24f6a8`의 엔진·에셋 갱신을 반영한 재검증도 같은 경로�
 홈 시작 폼 → `accounts/portrait_choice.html`은 여성·남성 무당 초상을 라디오 버튼으로 선택한다. `mudang_variant`를 기존 시작 API로 보내며 `meeting.html`은 응답 값으로 무당 초상을 표시한다. 오래된 녹화 판의 값 없음은 여성 기본 초상이다. 선택지는 서버의 `presets_enabled.json`을 따르며 초기에는 `base6`만 보인다. 8인 녹화 화면은 시험에서만 임시 설정으로 공개한다.
 
 B-08-02 공동 확인은 현재 dev 빌드의 홈 → 6인 게임 시작 → 진행 → 종료를 함께 확인하고 E가 재확인한다. 후보 태그를 선행 조건으로 두지 않으며, 11/10 테스트 서버 리허설 화면 확인은 B-09-03이다.
+
+B-09-07: 자유 입력 카드(`speech_cards.html`)는 응용 계층(`server/app/interactions.py`)이 현재 단계 합법 명령으로 거른 카드만 받는다(0장이면 `unsupported_intent`와 "지금 할 수 있는 행동"). 아침·밤에는 `utterance_input.html` 입력 칸이 비활성이다. 심문 양식의 진술 체크박스는 `data-night`·`data-slot`을 가지며 `game.js`가 행적 질문의 밤·시간 칸을 맞춘다. 같은 날·단계에 다시 그린 양식은 직전 대상·질문 종류를 고른다(`views._previous_interrogation`). 회의 화면은 `meeting_actions.html`·`utterance_input.html`(발언 카드 자리 포함)을 `.command-bar`(명령·자유 입력 묶음)로 감싼다. 이 검토 브랜치에서는 11/9 B-10-07 기준으로 무대 안 창이 하단 sticky 배치를 대체한다. 설문 없이 떠난 끝난 판은 홈(회차 복귀·새 판 시작 폼) 요청에서 `participant_forms.backfill_surveys`가 같은 요청의 진척·판 조회로 응용 계층 `backfill_skipped_surveys`를 부르고, 18:00 마감 직후에는 관리 명령 `server/accounts/management/commands/backfill_surveys.py`가 응용 계층 `backfill_all_skipped_surveys`로 일괄 채운다. 결과 화면을 떠날 때 브라우저가 보내는 요청은 없다. 10번: 진술 선택은 의심·감싸기·모순 지적·심문 양식과 해당 카드 수정에만 접힌 `details.evidence-picker`(요약 `.evidence-count`에 고른 개수)로 두고, `game.js`가 개수 갱신·"왜 의심하는가"에서 숨김·"왜 말이 다른가"에서 열기를 한다. 자유 입력은 진술을 고르지 않는다(서버 `selected_cards` 처리는 빈 값으로 남김). 선택형 도전 입력은 E-09-08이 실제 옵션과 함께 붙인다.
 
 `meeting_actions.html`의 밤 선택은 0~오늘−1이며, `game.js`는 모순 질문에 관련 진술 두 개를 고르기 전 제출을 막는다. 두 개 미만의 선택 가능한 진술만 있으면 해당 질문 선택지도 비활성화한다. 정상 질문은 같은 명령 경로와 `#meeting` 교체를 사용한다.
 
@@ -65,11 +73,13 @@ B-06-03의 `POST /games/{id}/commands` 저장 응답 유실은 서버에서 동�
 
 B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 하기 → `POST /games`·`GET /games/{id}` 경로는 그대로다. 최신 dev에서 회차·소유자 가명·동의·광고 대응표·재접속 보존을 재검증했다. [증빙](../docs/evidence/B-06-03.md).
 
-## B-08-01 결과·진척·결말
+## B-08-01 결과·진척·결말, B-10-01 복기(판 종료 화면)
 
-- 홈의 일반 판·고정 회차 시작 폼은 `ending_choice.html`을 포함한다. 열린 결말만 선택할 수 있고 준비 중인 도전은 비활성이다. 초상 선택과 일반 판 시작 UUID는 기존 필드로 함께 전달한다.
-- 기존 `GET /games/{id}`의 전체 화면·회의 조각은 종료 시 `game_result.html`에 공개 승패·종료 사유와 선택 결말을 표시한다. 감금 기록·광고·설문 경로는 유지한다.
-- 홈·결과의 단서 링크는 `GET /players/me/progress` → `progress.html`로 이동한다. 일반 API 요청은 기존 `ProgressOutput` JSON이다.
+- 홈의 일반 판·고정 회차 시작 폼은 `ending_choice.html`을 포함한다. 퇴마는 항상, 한풀이는 해금된 것만 고를 수 있다. 판 구성 목록은 `presets_enabled.json`에 공개된 선택형 도전이 있을 때만 `선택형 도전` 묶음으로 보인다(`story_view.preset_choices`).
+- 판이 끝나면 기존 `GET /games/{id}` 전체 화면·회의 조각의 `#meeting` 안에 `game_end.html`(결과·복기·원한 단서 탭)을 넣는다. 탭 전환은 `web/static/js/game_end.js`, 모양은 `web/static/css/result.css`(B-10-07 `--pd-*` 이름, 대체값 포함).
+- 결과 탭: `game_result.html`(승패·종료 사유·결말 문안)·`result_banner`·종료 설문. 복기 탭: 열 때 `GET /games/{id}/review`(htmx) → `review_panel.html`(정체·숨긴 비밀·이 판 단서·`review_side`). 단서 탭: 열 때 `GET /players/me/progress`(htmx) → `progress_panel.html`.
+- 일반 요청은 그대로다: 복기는 `ReviewOutput` JSON, 진척은 로비용 전체 화면 `progress.html`. 행동 이유(E-10-10 `review_trace`)가 없으면 복기의 이유 영역은 숨긴다.
+- 고칠 곳: 문구·배치 → 위 템플릿, 복기·진척 화면 값 → `server/api/story_view.py`(표현 보조), 요청 분기 → `server/api/views.py`.
 
 B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
 
