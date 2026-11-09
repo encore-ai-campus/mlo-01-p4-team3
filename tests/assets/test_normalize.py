@@ -1,4 +1,4 @@
-"""A-09-05: 투명 원본 정규화(마스코트 배치·머리카락 윗선 표·흐름)."""
+"""A-09-05: 투명 원본 정규화(마스코트 배치·머리카락 윗선 표·흐름). A-10-05: 장면 배경 정규화."""
 from __future__ import annotations
 
 import json
@@ -99,6 +99,70 @@ class NormalizeFlowTest(unittest.TestCase):
                 normalize.normalize(src, repo)            # 원본 없음
             self.assertEqual((repo / spec.manifest_path).read_bytes(), before)
             self.assertFalse((repo / spec.root / "sprite").exists())
+
+
+def _rgb(w: int, h: int, color=(90, 110, 130)) -> list[bytearray]:
+    return [bytearray(bytes(color) * w) for _ in range(h)]
+
+
+class BackgroundTest(unittest.TestCase):
+    def test_crop_is_exact_16_9_centered(self):
+        self.assertEqual(normalize.background_crop(1672, 941), (4, 2, 1668, 938))
+        self.assertEqual(normalize.background_crop(1280, 720), (0, 0, 1280, 720))
+        x0, y0, x1, y1 = normalize.background_crop(2000, 1500)
+        self.assertEqual(((x1 - x0) * 9, y0, 1500 - y1), ((y1 - y0) * 16, 187, 188))
+
+    def test_small_source_is_rejected_without_upscale(self):
+        with self.assertRaises(ValueError):
+            normalize.background_crop(1279, 720)
+
+    def test_fit_background_gives_opaque_rgb_stage(self):
+        rows = _rgb(1312, 729)                  # 자르기 상자 1296×729, 왼쪽 x 8부터
+        for x in range(8):                      # 자르기 상자 밖 왼쪽 띠는 결과에 남지 않는다
+            for r in rows:
+                r[x * 3:x * 3 + 3] = bytes((255, 0, 0))
+        out = normalize.fit_background(1312, 729, 3, rows)
+        self.assertEqual((len(out[0]) // 3, len(out)), vn.BACKGROUND_SIZE)
+        self.assertEqual(vn.check_background(*vn.BACKGROUND_SIZE, 3, out), [])
+        self.assertEqual(bytes(out[360][0:3]), bytes((90, 110, 130)))
+
+    def test_rgba_with_transparency_is_rejected(self):
+        rows = [bytearray(bytes((1, 2, 3, 255)) * 1280) for _ in range(720)]
+        rows[5][3] = 0
+        with self.assertRaises(ValueError):
+            normalize.fit_background(1280, 720, 4, rows)
+
+    def test_flow_writes_backgrounds_and_flips_only_them(self):
+        spec = sources.load_spec()
+        with tempfile.TemporaryDirectory() as temp:
+            repo, src = Path(temp) / "repo", Path(temp) / "src"
+            (repo / spec.manifest_path).parent.mkdir(parents=True)
+            shutil.copy(sources.ROOT / spec.manifest_path, repo / spec.manifest_path)
+            before = {(d["kind"], d["id"], str(d.get("size"))): d["placeholder"]
+                      for d in json.loads((repo / spec.manifest_path).read_text(encoding="utf-8"))}
+            src.mkdir()
+            paths = {}
+            for bid in ("meeting", "night"):
+                paths[bid] = src / f"{bid}.png"
+                paths[bid].write_bytes(png.encode_rgb(1296, 729, _rgb(1296, 729)))
+            report = normalize.normalize_backgrounds(paths, repo)
+            again = normalize.fit_background(1296, 729, 3, _rgb(1296, 729))
+            self.assertEqual(set(report), {"background:meeting", "background:night"})
+            data = json.loads((repo / spec.manifest_path).read_text(encoding="utf-8"))
+            for d in data:
+                key = (d["kind"], d["id"], str(d.get("size")))
+                with self.subTest(key=key):
+                    want = False if d["kind"] == "background" else before[key]
+                    self.assertEqual(d["placeholder"], want)
+            w, h, ch, rows = png.decode((repo / spec.root / "background" / "meeting.png").read_bytes())
+            self.assertEqual((w, h, ch), (*vn.BACKGROUND_SIZE, 3))
+            self.assertEqual(rows, [bytes(r) for r in again])      # 같은 입력이면 같은 픽셀
+
+    def test_cli_parses_background_pairs(self):
+        self.assertEqual(normalize._parse_backgrounds(["meeting=a.png"]), {"meeting": Path("a.png")})
+        for bad in (["meeting"], ["=a.png"], ["meeting=a.png", "meeting=b.png"]):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                normalize._parse_backgrounds(bad)
 
 
 if __name__ == "__main__":

@@ -583,14 +583,14 @@
     "id": "meeting",
     "path": "content/images/background/meeting.png",
     "url": "/static/assets/background/meeting.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "background",
     "id": "night",
     "path": "content/images/background/night.png",
     "url": "/static/assets/background/night.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "mascot",
