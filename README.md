@@ -71,7 +71,7 @@ server/infra (인프라) → engine (포트 구현)
 | 태스크 문서화(트러블·docstring은 태스크마다, 모듈 문서는 흐름별 하루 1회 일괄 갱신) | `docs/tasks/README.md` 10절 → `docs/modules/`, `docs/troubles/` |
 | 이슈 만들기·동기화, 오늘 열린 태스크 보기 | `python -m tools.tasks_to_issues --dry-run`, `docs/tasks/README.md` 11절 |
 | dev 받기·충돌 풀기, 여럿이 고치는 파일(README 표 등)에 행 넣기 | `docs/tasks/README.md` 3절 "브랜치 모델" |
-| 로컬 검사(precheck)·증빙·문서화·비밀정보 검사 규칙 바꾸기 | 표현 `.githooks/pre-push`, 응용 `tools/precheck.py`(빠른 검사 대상 고르기 도메인 `tools/precheck_scope.py`), 규칙 `tools/check_evidence.py`·`check_docs.py`·`check_secrets.py`·`check_structure.py`, 예외 `tools/secrets_allowlist.txt`, 설명 `docs/modules/ci.md` |
+| 로컬 검사(precheck)·증빙·문서화·비밀정보 검사 규칙 바꾸기 | 표현 `.githooks/pre-push`, 응용 `tools/precheck.py`(빠른 검사 대상·무거운 테스트 목록 도메인 `tools/precheck_scope.py`, 테스트 빼고 실행 `tools/run_tests.py`), 규칙 `tools/check_evidence.py`·`check_docs.py`·`check_secrets.py`·`check_structure.py`, 예외 `tools/secrets_allowlist.txt`, 설명 `docs/modules/ci.md` |
 | 저장소 배정 전 제출·병합(NAS 번들, 로컬 CI, 원장, 진행표) | 표현·응용 `tools/interim.py`, 규칙(도메인) `tools/interim_rules.py`, 기록 `docs/ops/interim_ledger.md`, 절차 `docs/tasks/README.md` 10-1절 |
 | 태스크 조건 바꾸기 | `docs/tasks/<흐름>.md`를 고치는 PR(이슈 본문은 직접 고치지 않음) |
 | 로그·지표 이름 정하기 | `docs/tasks/README.md` 5절 |
@@ -83,6 +83,7 @@ server/infra (인프라) → engine (포트 구현)
 git config core.hooksPath .githooks                       # 처음 한 번: push 때 precheck 자동 실행
 python -m tools.precheck --quick                          # 작업 중 빠른 검사(바뀐 파일과 이어진 테스트만, PR에는 못 붙임)
 python -m tools.precheck                                  # 로컬 검사(구조·비밀·테스트(assets 제외)·문서·증빙). PR 직전 1회, 본문에 마지막 줄
+python -m tools.precheck --all-slow                       # 무거운 테스트도 모두(기본은 바뀐 파일과 이어질 때만)
 git fetch origin && git merge origin/dev                  # PR 직전에 dev 받기(시작 때는 fetch 후 origin/dev에서 브랜치). 리베이스·강제 푸시 금지
 python -m tools.precheck --pr-body pr.md                  # PR 본문(Task·Closes/Refs)까지. 에셋을 바꿨으면 --with-assets
 python -m unittest discover -s tests -t .                 # 계약 테스트

@@ -238,3 +238,51 @@ class GitEnvIsolation(unittest.TestCase):
             victim_cfg = (Path(victim) / ".git" / "config").read_text(encoding="utf-8")
             self.assertNotIn("name = t", victim_cfg)
             self.assertTrue((Path(work) / ".git").is_dir())
+
+
+class Slow(unittest.TestCase):
+    """무거운 테스트(11/9): 전체 검사에서도 바뀐 파일과 이어질 때만 돌리고, 뺀 개수를 요약 줄에 적는다."""
+
+    class R(Quick.R):
+        def run(self, args, env=None):
+            if args[1:3] == ["-m", "tools.run_tests"]:
+                self.calls.append((args, env))
+                return 0, f"precheck-skip: {args.count('--skip')}\nRan 3 tests in 0.1s\n\nOK\n"
+            return super().run(args, env)
+
+    def _main(self, args, changed):
+        r = self.R(changed)
+        rc, lines, _ = Quick._main(self, args, r)
+        skips = {a[a.index("-s") + 1]: [a[i + 1] for i, x in enumerate(a) if x == "--skip"]
+                 for a, _ in r.calls if a[1:3] == ["-m", "tools.run_tests"]}
+        return rc, lines, skips
+
+    def test_rules(self):
+        self.assertEqual(precheck.count_skipped("precheck-skip: 2\nRan 3 tests\nprecheck-skip: 1\n"), 3)
+        rc, line = summarize([StepResult("테스트", True, tests=5, slow_skipped=2)], "abc1234", 7)
+        self.assertEqual(line, "precheck: 통과 (테스트, 테스트 5개, 무거운 테스트 2개 생략, base abc1234, 7초)")
+
+    def test_unrelated_slow_tests_skipped(self):
+        from tools.precheck_scope import SLOW_TESTS
+        rc, lines, skips = self._main([], ["engine/core.py"])
+        self.assertEqual(rc, 0)
+        self.assertEqual(sorted(skips), ["tests/engine", "tests/tools"])
+        self.assertEqual(sum(len(v) for v in skips.values()), len(SLOW_TESTS))
+        self.assertIn(f"무거운 테스트 {len(SLOW_TESTS)}개 생략", lines[-1])
+        self.assertTrue(lines[-1].startswith("precheck: 통과"))
+
+    def test_all_slow_no_change_or_shared_file_runs_everything(self):
+        for args, changed, why in ((["--all-slow"], ["engine/core.py"], None),
+                                   ([], [], "바뀐 파일 없음"),
+                                   ([], ["tools/precheck.py"], "공용 파일 tools/precheck.py")):
+            rc, lines, skips = self._main(args, changed)
+            self.assertEqual(skips, {}, changed)
+            self.assertNotIn("생략", lines[-1])
+            if why:
+                self.assertIn(f"[무거운 테스트] 모두 실행({why})", lines)
+
+    def test_check_pass_rejects_all_slow(self):
+        import io
+        from contextlib import redirect_stderr
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            precheck.main(["--check-pass", "a" * 40, "--all-slow"], runner=FakeRunner())

@@ -19,6 +19,9 @@
 - 전체 테스트로 도는 경우(덜 줄이는 쪽): 공용 파일(`QUICK_FULL_PATHS`), 저장소 루트 파일(`README.md` 제외),
   테스트 루트·`tests/fixtures`, 그 밖의 비 `.py` 파일(콘텐츠·설정·데이터), 쓰는 테스트를 하나도 못 찾은 `.py` 변경.
 
+무거운 테스트(`SLOW_TESTS`, 11/9 PM 결정): 전체 검사에서도 위 규칙으로 바뀐 파일과 이어질 때만 돈다(`slow_skips`).
+전체로 돌 이유가 있거나(공용 파일 등) 바뀐 파일이 없으면(dev 자체를 검사할 때) 모두 돈다.
+
 계층: 도메인(문자열·구문 트리만, 파일·git 접근 없음). 표준 라이브러리만 쓴다.
 저장소 밖 사본 `githooks_local/precheck_quick.py`가 이 규칙을 그대로 옮겨 쓴다(병합 전 임시). 규칙을 바꾸면 사본도 맞춘다.
 """
@@ -238,3 +241,42 @@ def select_tests(changed: list[str], sources: dict[str, str],
             mods.sort()
     note = f"(Django 쪽 {len(django_only)}개는 server/tests에서)" if django_only else ""
     return selection, describe(selection) + note
+
+
+# 무거운 테스트(11/9 dev fdf41d6에서 폴더별 순서 실행으로 잰 시간, 다른 검사와 함께 돈 노트북). 전체 검사는 폴더를
+# 동시에 돌려 가장 느린 폴더(tests/engine·tests/tools 각 약 5분)가 전체 시간을 정하므로, 그 두 폴더의 10초 이상만 둔다.
+# 테스트 id(`폴더.모듈.클래스.메서드`) → 이유. 이름을 바꾸면 여기도 바꾼다(`tests/tools/test_precheck_scope.py`가 존재를 검사).
+SLOW_TESTS: dict[str, str] = {
+    "tests.tools.test_ad_traffic_sim.TrafficTests.test_http_invalid_mix_replay_and_seed_reproduction":
+        "127초, 광고 트래픽 시뮬 HTTP 재현",
+    "tests.engine.test_setup.AllPresets.test_serde_round_trip": "90초, 모든 프리셋 저장·복원 왕복",
+    "tests.engine.test_npc.EngineRuleV0.test_no_inference_violation": "40초, 판을 돌려 추론 위반 검사",
+    "tests.tools.test_run_engine_games.RunAndCheck.test_malformed_truth_fields": "23초, 판 실행",
+    "tests.engine.test_projection.EngineGames.test_observation_payload_is_snapshot": "21초, 판 실행",
+    "tests.tools.test_run_engine_games.RunAndCheck.test_malformed_payload_types_reported_not_raised": "14초, 판 실행",
+    "tests.tools.test_run_engine_games.RunAndCheck.test_reason_codes": "9초, 판 실행",
+    "tests.tools.test_run_engine_games.RunAndCheck.test_not_base6_and_game_count": "9초, 판 실행",
+    "tests.tools.test_run_engine_games.RunAndCheck.test_double_end_and_truth_missing": "9초, 판 실행",
+}
+
+
+def slow_skips(selection: Selection | None, changed_any: bool,
+               slow: dict[str, str] | None = None) -> dict[str, list[str]]:
+    """전체 검사에서 생략할 무거운 테스트(테스트 폴더 → 테스트 id 목록, 정렬).
+
+    `selection`은 `select_tests`의 결과다. None(전체로 돌 이유가 있음)이거나 바뀐 파일이 없으면(`changed_any` 거짓,
+    dev 자체를 검사할 때) 아무것도 생략하지 않는다. 그 밖에는 그 테스트의 모듈이 선택에 없을 때만 생략한다
+    (폴더 전체 선택이면 그 폴더는 생략하지 않는다).
+    """
+    if selection is None or not changed_any:
+        return {}
+    out: dict[str, list[str]] = {}
+    for tid in sorted(SLOW_TESTS if slow is None else slow):
+        parts = tid.split(".")
+        if len(parts) < 4 or parts[0] != "tests":
+            continue
+        d, mod = parts[1], ".".join(parts[:3])
+        if d in selection and (selection[d] is None or mod in (selection[d] or [])):
+            continue
+        out.setdefault(d, []).append(tid)
+    return out
