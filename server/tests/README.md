@@ -6,6 +6,10 @@
 
 ## B-09-02 해석 혼합 부하 사전 준비
 
+D 어댑터 수신 회귀는 `python -B server/manage.py test server.tests.test_bert_receive --settings=server.paldo_web.test_settings --noinput`다. 로더 대역을 쓰는 조립·HTTP 시험과 실물 시험을 구분한다. 실제 D 체크포인트를 보호 경로로 인수한 뒤 환경 변수 `PALDO_BERT_RECEIVE_RUN_DIR`에 그 폴더를 지정하고 같은 명령을 실행하면 실물 HTTP 시험도 실행한다. 실제 모델 경로는 Git에 넣지 않는다. D torch 경계 실물 시험은 별도 ML 의존 환경에서 `PALDO_BERT_TESTS=1`로 실행한다. 두 플래그를 지정하는 것만으로 모델·패키지가 준비되는 것은 아니다.
+
+서비스 조립 설정은 `INTENT_PARSER_FACTORY = "server.paldo_web.intent.make_bert_parser"`, 아티팩트 경로는 `PALDO_INTENT_BERT_RUN_DIR`다. 이번 변경은 운영 기본값을 바꾸지 않는다. 실제 엔진·VM 성능과 B-09-01의 판별 버전 고정 검증 전 사용자 테스트 서버를 전환하지 않는다.
+
 `python -B tools/perf/api_bench.py --web-processes 2 --users 2 --minutes 0.3 --intent-every 1`로 짧게 확인한다. Mongo 접속은 기존 `PALDO_MONGO_URI`를 환경에 주입한다. 임시 계정 DB·고유 접두어 Mongo·시험 Daphne·Caddy만 만들며 운영 서버로 부하를 보내지 않는다. Docker가 없으면 기존 `--front binary --caddy-bin <실행 파일>`을 쓴다. 해석기는 `--intent-factory`로 바꾸고 기본은 `intent.parser.BaselineIntentParser`다. 옵션을 빼거나 `--intent-every 0`이면 기존 부하다.
 
 해석·취소는 전체 API 표본에 포함하고 상태 버전·확인 상태를 검사한다. `intent_http_p95_ms`는 DB·HTTP 포함, `intent_parse_p95_ms`는 시험 헤더의 순수 parse 표본이다. 각 프로세스의 해석 호출 수도 결과에 남긴다. 해석 요청 0건·취소 누락·오류는 혼합 시험 성공으로 처리하지 않는다. 30명·3분 이상이어야 기존 `--result-name`을 쓸 수 있으나 녹화 결과로 B-09-02 전체 완료를 판정하지 않는다.
