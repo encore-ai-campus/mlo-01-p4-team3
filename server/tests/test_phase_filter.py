@@ -285,6 +285,21 @@ class VoteCardTargets(TestCase):
                          [1, len(context["active_targets"])])
 
 
+class CardMissingLabels(SimpleTestCase):
+    """카드의 빠진 항목은 명령 칸 이름이 아니라 카드 수정 칸과 같은 문구로 보인다(11/9 로컬 6인 판)."""
+
+    def test_missing_slot_uses_screen_label_without_leading_dot(self):
+        """대상 없는 캐묻기 카드: '질문 상대' 앞에 구분점이 없고, 빠진 시간은 'slot'이 아니라 '시간'."""
+        view = make_service().engine.views[1]
+        ask = CommandCandidate(Command(CommandKind.INTERROGATE, "mudang", addressee="jumo",
+                                       interrogation_kind=InterrogationKind.WHEREABOUTS, night=0),
+                               0.6, UtteranceForm.QUESTION, ["slot"])
+        html = render_to_string("speech_cards.html", cards_context(ParseUtteranceOutput("a1", 1, [ask], None, True), view))
+        self.assertIn("빠진 항목: 시간</p>", html)
+        self.assertIn("<p>질문 상대:", html)
+        self.assertNotIn("빠진 항목: slot", html)
+
+
 @skipUnless(shutil.which("node"), "Node.js가 있는 환경에서 화면 스크립트 시험 실행")
 class GameScriptSync(SimpleTestCase):
     """진술 체크 → 밤·시간 칸 맞춤 스크립트 시험(`node server/tests/test_game_js.cjs`)을 함께 돌린다."""
