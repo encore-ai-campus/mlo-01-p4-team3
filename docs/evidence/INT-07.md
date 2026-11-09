@@ -5,6 +5,7 @@
 - 11/8 재판정(C-07-02 #251·C-06-03 #249·C-07-01 #250·C-07-04 #252 병합 뒤, 증빙 기준, PM 결정): #5 통과, #8 통과. 통과 #1·#3·#4·#5·#6·#8, 미통과 #2·#7·#9. 9개 중 통과 6. 실제 스택 재실행은 하지 않았고 #9 동시 기동 확인 때 함께 본다.
 - 11/8 재판정 2(D-07-02 #269 병합 뒤, dev c15cbab, 증빙 기준, PM 결정): #7 통과. 통과 #1·#3·#4·#5·#6·#7·#8, 미통과 #2·#9. 9개 중 통과 7. #2는 사람 웹 재현 3개, #9는 통합 환경 동시 기동이 남아 새 증빙이 없다.
 - 11/8 통합 환경 동시 기동·웹 재현(로컬 Compose, 아래 "11/8 통합 환경 동시 기동·웹 재현" 절): #9 확인 완료(Python 구성요소 6개 지표 누락 0, 3.14 아닌 프로세스 0, 컨테이너 3개 정상), #1 통합 환경 1판 확인 완료(명령 6개, 500·503 0건), #2 남은 반례 3개 자동 웹 재현 3/3(사람 브라우저 확인 대기). 통과 여부는 PM 판정 대기이고 위 재판정 2의 통과 수(7/9)는 바꾸지 않았다.
+- 11/9 PM 최종 판정: #2·#9 통과, 9/9. #9는 11/8 로컬 Compose 동시 기동(필수 지표 누락 0, 3.14 아닌 프로세스 0)으로 판정했고, 기준과 다른 점(Kafka TLS 리스너 실행용 추가, 토픽 복제 1, 별도 Compose 프로젝트 이름)은 실행 조건이라 판정에 영향이 없다고 PM이 판단했다. #2는 시나리오 테스트 5개, 웹 재현 2개(11/8), 남은 3개 게임 웹 API 자동 재현 3/3(11/8)과 11/9 사람 브라우저 확인(시드 2 거짓 점괘 공개: 공개 기록 맑음·무당 수첩 탁함, 시드 10 마지막 씐 자 감금: 훈장 감금·마을 승리)으로 판정했다. 시드 6(점괘·고백 전환)은 사람 확인에서 심문 양식 문제 두 가지로 재현되지 않았다: ① "어디 있었는가"는 밤·시간 칸만 쓰는데 관련 진술 체크박스가 보여 한밤 진술을 체크해도 시간 기본값 초저녁이 전송됨(회차 `int07human6b`), ② 질문 제출 뒤 대상 선택이 목록 첫 NPC로 돌아가 두 번째 질문이 대장장이에게 감(회차 `int07human6c`). 엔진에 같은 명령을 다시 넣어 같은 입력이면 같은 결과임을 확인했고(결정성 문제 아님), 두 양식 문제는 B-09-07(#284)에서 고친다. PM은 기준 "웹 1회씩 재현"이 자동 웹 재현으로 채워졌다고 보고 통과로 판정했다.
 - 커밋: edae77caaa794eb2009bd6d66e5d1d8eb432b0c6
 - 작성자(흐름): E
 - 환경: 로컬(노트북 Windows 11, Python 3.14.6). 통합 환경(Compose의 웹·Mongo·Kafka·광고 서버 동시 기동)은 11/8 로컬 Compose로 구성해 확인했다(아래 "11/8 통합 환경 동시 기동·웹 재현"). Mongo 실제 저장소 시험은 C-06-01 증빙의 VM 레플리카셋 결과를 근거로 삼는다(접속 정보는 저장소 밖).
@@ -185,15 +186,15 @@ PM 판정용 자동 확인이다(E-07-03, 11/8 사용자 지시 "INT-07은 할 �
 
 | 조건 | 기준 | 측정값 | 측정 방법(지표 이름 또는 스크립트) | 결과 파일 | 통과 |
 |---|---|---|---|---|---|
-| 1 | 3판 완주, 오류 0 | 11/8 통과: 실제 HTTP 웹·Mongo 자동 3판 완주(500·503 0건), 사람 브라우저 1판 결과 화면까지 진행(위 "사람 브라우저 확인 결과") | `tools/perf/int07_web_run.py`, 사람 확인 | `docs/evidence/perf/INT-07/web_run.json` | 예 |
-| 2 | 시나리오 테스트 + 웹 1회씩 재현 | 11/8 미통과: 시나리오 테스트 5개 통과, 웹 재현 2개(결선 재동점 무감금, 무당 감금), 미재현 3개(점괘·고백 전환, 마지막 씐 자 감금, 거짓 점괘 공개). 담당 E, 기한 통합 2(11/9). 11/8 통합 환경 자동 웹 재현: 남은 3개 모두 재현(시드 2·10·6), 사람 브라우저 확인 대기 | `tests.engine.test_int07`, `tools.perf.int07_scenarios`·`server.tests.int07_stack`, 사람 확인 | `docs/evidence/perf/INT-07/stack_run_detail.json` | 아니오(PM 판정 대기) |
-| 3 | 0일째·1일째 모두 | 11/8 통과: 자동 아침 화면 확인 4회 빠짐 0, 사람 브라우저에서 1일째·2일째 아침 문장 확인 | `tools/perf/int07_web_run.py`, 사람 확인 | `docs/evidence/perf/INT-07/web_run_detail.json` | 예 |
-| 4 | 테스트 + 웹에서 재현 | 11/8 통과: 자동 재전송 재생·409·재시작 뒤 같은 화면, 사람 브라우저 두 번 누르기·탭 두 개·재시작 뒤 이어 하기 | `tools/perf/int07_web_run.py`, 사람 확인 | `docs/evidence/perf/INT-07/web_run_detail.json` | 예 |
-| 5 | `reconcile_game_events.py` 불일치 0 | 11/8 재판정 통과(C-07-02 #251, 실제 스택): 브로커·발행기 정지·재개 중 두 판 Mongo 104건 = Kafka 고유 104건 = Delta bronze 104건, 누락 0·중복 0·해시 불일치 0, 정지 중 HTTPS API 오류 0. 불일치 출력은 계약 시험 `tests.contract.test_reconcile_events` | `tools/reconcile_game_events.py` | `docs/evidence/perf/C-07-02/live_faults.json` | 예 |
-| 6 | 판 3개 전체 HTML·JSON 금지 키 0 | 11/8 통과: 자동 응답 86개 금지 키 0건, 사람 브라우저 네트워크 탭 검색 0건 | `tools/perf/int07_web_run.py`, 사람 확인 | `docs/evidence/perf/INT-07/web_run.json` | 예 |
-| 7 | D-07-02 수치 존재 | 11/8 재판정 통과(D-07-02 #269 병합, 이슈 #79 닫힘): 실제 엔진 200판(rule-v0) 학습 행 12,364행으로 rule_v0·logistic·lightgbm 비교(test 30판, log loss 1.183387·0.866493·0.848075). C Delta export(silver 버전 1)에서 학습 코드로 14,460행을 넘겨 같은 학습 경로가 돌아감(연결 확인용, 11/8 PM 결정). C 몫은 C-07-01 #250 | C-07-01·D-07-02 증빙, `ml.suspicion.train` | `docs/evidence/perf/D-07-02/suspicion.json`, `docs/evidence/perf/D-07-02/delta_connectivity.json` | 예 |
-| 8 | 테스트 + 토픽 오프셋 증가 | 11/8 재판정 통과: 경매·유효 판정 픽스처 HTTP 재생(D-05-03 `test_auction_fixtures_over_http`), MySQL 과금 원장·예약·확정·환입(D-06-02 원장 시험, 실제 세 토픽 고유 3건), 실제 광고 HTTP serve·노출·클릭 → MySQL Outbox → Kafka → 공식 bronze 적재(C-06-03 #249 조건 2·3, C-07-01 ad-verification). 토픽 오프셋 수치 대신 Kafka를 거친 bronze 적재로 도달을 확인했다. D-05-03 2번(환입·대사 전체 HTTP 재생)과 D-06-02 8번(ad-01 운영 작업자)은 각 태스크의 남은 범위 | D-05-03·D-06-02·C-06-03·C-07-01 증빙 | `docs/evidence/perf/D-06-02/local_stack.json` | 예 |
-| 9 | 구성요소 누락 0, 3.14 아닌 프로세스 0 | 구성요소별 증빙: 웹 `/metrics`·Python 3.14.6(B-05-01, B-07-05), Mongo 저장소 `paldo_repo_commit_duration_seconds`·Python 3.14.4(C-06-01), 발행기 `paldo_outbox_publish_lag_seconds`(C-06-02), 광고 서버 `/metrics`·Python 3.14.6(D-05-03). 구성요소가 통합 환경에 함께 떠 있지 않아 동시 기동 기준의 누락 0·프로세스별 버전 확인은 하지 못함. 런타임 LLM은 P-31 (나)로 구성요소에서 빠짐. 담당 전원, 기한 통합 2(11/9) 전. 11/8 로컬 Compose 동시 기동: Python 구성요소 6개(게임 웹·발행기·광고 서버·광고 작업자 3) 필수 지표 누락 0, 3.14 아닌 프로세스 0(모두 3.14.6), 컨테이너 3개 healthy, 같은 실행 중 Kafka 264건 증가. Kafka TLS 리스너·토픽 복제 1은 로컬 실행용 추가 | `server.tests.int07_stack` | `docs/evidence/perf/INT-07/stack_run.json`, `stack_run_detail.json` | PM 판정 대기 |
+| 1 | - | 기준: 3판 완주, 오류 0. 11/8 통과: 실제 HTTP 웹·Mongo 자동 3판 완주(500·503 0건), 사람 브라우저 1판 결과 화면까지 진행(위 "사람 브라우저 확인 결과") | `tools/perf/int07_web_run.py`, 사람 확인. 결과 파일: `docs/evidence/perf/INT-07/web_run.json` | - | 예 |
+| 2 | - | 기준: 시나리오 테스트 + 웹 1회씩 재현. 11/8 미통과: 시나리오 테스트 5개 통과, 웹 재현 2개(결선 재동점 무감금, 무당 감금), 미재현 3개(점괘·고백 전환, 마지막 씐 자 감금, 거짓 점괘 공개). 담당 E, 기한 통합 2(11/9). 11/8 통합 환경 자동 웹 재현: 남은 3개 모두 재현(시드 2·10·6). 11/9 PM 최종 판정 통과: 사람 브라우저 확인 시드 2·10, 시드 6은 심문 양식 문제(B-09-07 #284)로 사람 재현 안 됨, 자동 웹 재현으로 기준 충족 | `tests.engine.test_int07`, `tools.perf.int07_scenarios`·`server.tests.int07_stack`, 사람 확인. 결과 파일: `docs/evidence/perf/INT-07/stack_run_detail.json` | - | 예 |
+| 3 | - | 기준: 0일째·1일째 모두. 11/8 통과: 자동 아침 화면 확인 4회 빠짐 0, 사람 브라우저에서 1일째·2일째 아침 문장 확인 | `tools/perf/int07_web_run.py`, 사람 확인. 결과 파일: `docs/evidence/perf/INT-07/web_run_detail.json` | - | 예 |
+| 4 | - | 기준: 테스트 + 웹에서 재현. 11/8 통과: 자동 재전송 재생·409·재시작 뒤 같은 화면, 사람 브라우저 두 번 누르기·탭 두 개·재시작 뒤 이어 하기 | `tools/perf/int07_web_run.py`, 사람 확인. 결과 파일: `docs/evidence/perf/INT-07/web_run_detail.json` | - | 예 |
+| 5 | - | 기준: `reconcile_game_events.py` 불일치 0. 11/8 재판정 통과(C-07-02 #251, 실제 스택): 브로커·발행기 정지·재개 중 두 판 Mongo 104건 = Kafka 고유 104건 = Delta bronze 104건, 누락 0·중복 0·해시 불일치 0, 정지 중 HTTPS API 오류 0. 불일치 출력은 계약 시험 `tests.contract.test_reconcile_events` | `tools/reconcile_game_events.py`. 결과 파일: `docs/evidence/perf/C-07-02/live_faults.json` | - | 예 |
+| 6 | - | 기준: 판 3개 전체 HTML·JSON 금지 키 0. 11/8 통과: 자동 응답 86개 금지 키 0건, 사람 브라우저 네트워크 탭 검색 0건 | `tools/perf/int07_web_run.py`, 사람 확인. 결과 파일: `docs/evidence/perf/INT-07/web_run.json` | - | 예 |
+| 7 | - | 기준: D-07-02 수치 존재. 11/8 재판정 통과(D-07-02 #269 병합, 이슈 #79 닫힘): 실제 엔진 200판(rule-v0) 학습 행 12,364행으로 rule_v0·logistic·lightgbm 비교(test 30판, log loss 1.183387·0.866493·0.848075). C Delta export(silver 버전 1)에서 학습 코드로 14,460행을 넘겨 같은 학습 경로가 돌아감(연결 확인용, 11/8 PM 결정). C 몫은 C-07-01 #250 | C-07-01·D-07-02 증빙, `ml.suspicion.train`. 결과 파일: `docs/evidence/perf/D-07-02/suspicion.json`, `docs/evidence/perf/D-07-02/delta_connectivity.json` | - | 예 |
+| 8 | - | 기준: 테스트 + 토픽 오프셋 증가. 11/8 재판정 통과: 경매·유효 판정 픽스처 HTTP 재생(D-05-03 `test_auction_fixtures_over_http`), MySQL 과금 원장·예약·확정·환입(D-06-02 원장 시험, 실제 세 토픽 고유 3건), 실제 광고 HTTP serve·노출·클릭 → MySQL Outbox → Kafka → 공식 bronze 적재(C-06-03 #249 조건 2·3, C-07-01 ad-verification). 토픽 오프셋 수치 대신 Kafka를 거친 bronze 적재로 도달을 확인했다. D-05-03 2번(환입·대사 전체 HTTP 재생)과 D-06-02 8번(ad-01 운영 작업자)은 각 태스크의 남은 범위 | D-05-03·D-06-02·C-06-03·C-07-01 증빙. 결과 파일: `docs/evidence/perf/D-06-02/local_stack.json` | - | 예 |
+| 9 | - | 기준: 구성요소 누락 0, 3.14 아닌 프로세스 0. 구성요소별 증빙: 웹 `/metrics`·Python 3.14.6(B-05-01, B-07-05), Mongo 저장소 `paldo_repo_commit_duration_seconds`·Python 3.14.4(C-06-01), 발행기 `paldo_outbox_publish_lag_seconds`(C-06-02), 광고 서버 `/metrics`·Python 3.14.6(D-05-03). 구성요소가 통합 환경에 함께 떠 있지 않아 동시 기동 기준의 누락 0·프로세스별 버전 확인은 하지 못함. 런타임 LLM은 P-31 (나)로 구성요소에서 빠짐. 담당 전원, 기한 통합 2(11/9) 전. 11/8 로컬 Compose 동시 기동: Python 구성요소 6개(게임 웹·발행기·광고 서버·광고 작업자 3) 필수 지표 누락 0, 3.14 아닌 프로세스 0(모두 3.14.6), 컨테이너 3개 healthy, 같은 실행 중 Kafka 264건 증가. Kafka TLS 리스너·토픽 복제 1은 로컬 실행용 추가. 11/9 PM 최종 판정 통과(기준과 다른 점은 실행 조건) | `server.tests.int07_stack`. 결과 파일: `docs/evidence/perf/INT-07/stack_run.json`, `stack_run_detail.json` | - | 예 |
 
 ## 미통과 항목 담당·기한 (11/7 사용자 결정)
 
@@ -204,8 +205,8 @@ PM 판정용 자동 확인이다(E-07-03, 11/8 사용자 지시 "INT-07은 할 �
 | #5 | 해결(11/8 재판정 통과, C-07-02 #251) | C | - |
 | #8 | 해결(11/8 재판정 통과, C-06-03 #249·D-05-03·D-06-02) | C·D | - |
 | #7 | 해결(11/8 재판정 2 통과, C-07-01 #250·D-07-02 #269) | C·D | - |
-| #2 웹 재현 3개 | 11/8 PM 판정으로 #1·#3·#4·#6 통과. #2는 점괘·고백 전환, 마지막 씐 자 감금, 거짓 점괘 공개 웹 재현이 남음. 운영 Mongo 콘텐츠 재적재는 C 확인 대기. 11/8 자동 웹 재현 3/3 완료, 사람 브라우저 확인(위 순서, 약 10분)과 PM 판정만 남음 | E(재현), C(재적재) | 통합 2(11/9) |
-| #9 | 통합 환경 동시 기동. 11/8 로컬 Compose 동시 기동 확인 완료, PM 판정 대기 | 전원 | 통합 2(11/9) 전 |
+| #2 | 해결(11/9 PM 최종 판정 통과: 자동 웹 재현 3/3, 사람 확인 시드 2·10. 시드 6 사람 재현을 막은 심문 양식 문제는 B-09-07 #284) | E | - |
+| #9 | 해결(11/9 PM 최종 판정 통과, 11/8 로컬 Compose 동시 기동) | 전원 | - |
 
 INT 항목은 아니지만 사전 테스트(E-08-10, 11/8)에 필요한 C-07-04(HTTPS 프록시, 참가자 안내 문구 → E)는 11/8 사전 테스트 전까지다.
 
