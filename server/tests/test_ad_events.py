@@ -43,7 +43,9 @@ class ServeIdOf(SimpleTestCase):
 
     def test_malformed_tokens(self):
         """형식이 틀린 토큰은 None."""
-        for token in (None, "", "abc", "a.b.c", "!!!.sig", "e30.sig", "x" * 5000):
+        import base64
+        nested = base64.urlsafe_b64encode(b"[" * 1500 + b"]" * 1500).decode().rstrip("=") + ".sig"
+        for token in (None, "", "abc", "a.b.c", "!!!.sig", "e30.sig", "x" * 5000, nested):
             self.assertIsNone(serve_id_of(token))
 
     def test_relay_log_carries_serve_id_and_request_id(self):

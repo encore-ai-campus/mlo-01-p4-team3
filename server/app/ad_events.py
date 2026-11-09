@@ -40,7 +40,7 @@ def serve_id_of(token):
     body = token.split(".", 1)[0]
     try:
         claims = json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, RecursionError):   # 깊게 중첩된 본문도 잘못된 토큰으로 본다
         return None
     serve_id = claims.get("serve_id") if isinstance(claims, dict) else None
     return serve_id if isinstance(serve_id, str) and _SERVE_ID.fullmatch(serve_id) else None
