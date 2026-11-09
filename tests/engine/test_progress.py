@@ -19,11 +19,11 @@ from engine.domain.content import GrudgeClue
 from engine.domain.engine import PaldoEngine, divination_available, draw_sightings, make_setup
 from engine.domain.events import EventEnvelope, EventType
 from engine.domain.model import (
-    CHALLENGE_PRESET_IDS, PRESETS, CommandEnvelope, CommandKind, DataSource, GameMeta, Place, PlayerProgress, Preset, Slot,
+    CHALLENGE_PRESET_IDS, PRESETS, CommandEnvelope, CommandKind, ConfessionRecord, DataSource, GameMeta, Place, PlayerProgress, Preset, Slot,
 )
 from engine.domain.npc import RuleV0Policy
 from engine.domain.progress import (
-    EXORCISM, ClueGain, clue_gains, completed_hypotheses, confession_source_id, ending_available, ending_unlocks,
+    EXORCISM, ClueGain, clue_gains, clue_gains_from_confessions, completed_hypotheses, confession_source_id, ending_available, ending_unlocks,
     haewon_ending, progress_events,
 )
 from engine.ports import EngineDeps
@@ -31,7 +31,7 @@ from engine.sim.bots import LogicBot
 from engine.testing.fakes import FakeSuspicionModel, InMemoryGameRepository, InMemoryProgressRepository
 from server.app.dto import StartGameInput, SubmitCommandInput
 from server.app.progress import apply_progress
-from server.app.usecases import GameService
+from server.app.usecases import GameService, ReviewNotReady
 from tools.check_content import load_bundle
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -78,6 +78,13 @@ class ClueRules(unittest.TestCase):
     def test_same_confession_twice_in_input_counts_once(self):
         e = confession("jumo", "clue_famine", seq=1)
         self.assertEqual(len(clue_gains([e, replace(e, event_id="g1:00009", seq=9)], CLUES)), 1)
+
+    def test_public_confession_record_gives_same_key_as_event(self):
+        recs = [ConfessionRecord(2, "jumo", "grain"), ConfessionRecord(2, "hunjang", "letter"),
+                ConfessionRecord(3, "jumo", "grain")]
+        got = clue_gains_from_confessions("g1", recs, CONTENT.secrets, CLUES)
+        self.assertEqual(got, [ClueGain("clue_famine", "g1", 2, confession_source_id("g1", "jumo"))])
+        self.assertEqual(got[0].source_event_id, clue_gains([confession("jumo", "clue_famine", day=2)], CLUES)[0].source_event_id)
 
     def test_hypothesis_needs_all_three_parts_of_same_hypothesis(self):
         clues = [clue("a", "identity"), clue("b", "death"), clue("c", "target"),
@@ -266,16 +273,48 @@ class FailureRecovery(unittest.TestCase):
         self.assertEqual((rec.clues, rec.endings), ([], ["haewon:h1"]))
         self.assertEqual(inner.load(PLAYER).endings_unlocked, ["exorcism", "haewon:h1"])
 
-    def test_transient_failure_then_live_retry_does_not_duplicate(self):
-        """첫 고백 반영만 실패하고 이후는 성공: 재처리와 실시간 반영이 겹쳐도 단서는 한 번씩만."""
+    def test_transient_failure_caught_up_at_game_end_without_duplicates(self):
+        """첫 고백 반영만 실패: 판 종료 명령의 따라잡기(`sweep_game`)가 복구하고, 재처리를 더 돌려도 중복 0."""
         games, inner = GAME_FACTORY(), PROGRESS_FACTORY()
         service = make_service([SEED_TWO_CLUES], games, FailingProgress(inner, "add_clue", fail_times=1))
         with self.assertLogs("paldo.progress", "ERROR"):
             gid = play(service, SEED_TWO_CLUES)
-        self.assertEqual(sorted(inner.load(PLAYER).clues), ["clue_debt"])
-        rec = self.replay(games, [gid], inner)
-        self.assertEqual(rec.clues, ["clue_famine"])
         self.assertEqual(sorted(inner.load(PLAYER).clues), ["clue_debt", "clue_famine"])
+        rec = self.replay(games, [gid], inner)
+        self.assertEqual((rec.clues, rec.endings), ([], []))
+        self.assertEqual(len(inner.load(PLAYER).clues), 2)
+
+    def test_command_retry_and_review_catch_up(self):
+        """판 도중 반영이 실패한 뒤 같은 명령 ID 재요청, 또는 종료 뒤 복기 조회가 진척을 따라잡는다."""
+        games, inner = GAME_FACTORY(), PROGRESS_FACTORY()
+        failing = FailingProgress(inner, "add_clue")
+        service = make_service([SEED_TWO_CLUES], games, failing)
+        out = service.start(StartGameInput(PLAYER, "base6", None, "f"), PLAYER, True)
+        view, rng, bot = out.view, random.Random(SEED_TWO_CLUES), LogicBot()
+        with self.assertLogs("paldo.progress", "ERROR"):
+            for i in range(500):
+                cmd = bot.choose(view, rng)
+                data = SubmitCommandInput(view.game_id, f"c{i:04d}", view.state_version, cmd)
+                res = service.command(data, PLAYER)
+                view = res.view
+                if res.view.public.confessions:
+                    break
+        self.assertEqual(inner.load(PLAYER).clues, {})
+        failing.left = 0                                       # 장애가 풀린 뒤 같은 명령 재요청
+        again = service.command(data, PLAYER)
+        self.assertTrue(again.replayed)
+        self.assertEqual(sorted(inner.load(PLAYER).clues), ["clue_famine"])
+        with self.assertRaises(ReviewNotReady):
+            service.review(view.game_id, PLAYER)               # 종료 전에는 복기를 열 수 없다
+        while view.result is None:
+            i += 1
+            res = service.command(SubmitCommandInput(view.game_id, f"c{i:04d}", view.state_version,
+                                                     bot.choose(view, rng)), PLAYER)
+            view = res.view
+        # 복기 조회도 같은 따라잡기를 한다: 진척이 비어 있는 저장소로 바꿔도 복기 때 이 판의 단서가 채워진다
+        service.progress = PROGRESS_FACTORY()
+        review = service.review(view.game_id, PLAYER)
+        self.assertEqual(review.clues_gained, ["clue_debt", "clue_famine"])
 
 
 # ---------------------------------------------------------------- 선택형 도전(프리셋 옵션)

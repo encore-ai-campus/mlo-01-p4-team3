@@ -17,9 +17,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Mapping
 
-from .content import GrudgeClue
+from .content import GrudgeClue, Secret
 from .events import EventEnvelope, EventType
-from .model import ClueRecord, PlayerProgress
+from .model import ClueRecord, ConfessionRecord, PlayerProgress
 
 EXORCISM = "exorcism"
 HAEWON_PREFIX = "haewon:"
@@ -73,6 +73,26 @@ def clue_gains(events: Iterable[EventEnvelope], grudge_clues: Iterable[GrudgeClu
             continue
         seen.add(key)
         out.append(ClueGain(clue_id, e.game_id, e.day, key))
+    return out
+
+
+def clue_gains_from_confessions(game_id: str, confessions: Iterable[ConfessionRecord], secrets: Iterable[Secret],
+                                grudge_clues: Iterable[GrudgeClue]) -> list[ClueGain]:
+    """판의 공개 고백 기록(`PublicRecord.confessions`)에서 단서를 고른다. 이벤트판과 같은 멱등 키를 쓴다.
+
+    저장된 판 상태만으로 다시 계산할 수 있어, 명령 직후 반영이 실패해도 판 종료·같은 명령 재요청·복기 때 따라잡는다.
+    """
+    known = {c.clue_id for c in grudge_clues}
+    clue_of = {s.secret_id: s.grudge_clue_id for s in secrets}
+    out: list[ClueGain] = []
+    seen: set[str] = set()
+    for rec in confessions:
+        clue_id = clue_of.get(rec.secret_id)
+        key = confession_source_id(game_id, rec.npc_id)
+        if not clue_id or clue_id not in known or key in seen:
+            continue
+        seen.add(key)
+        out.append(ClueGain(clue_id, game_id, rec.day, key))
     return out
 
 
