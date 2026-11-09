@@ -46,6 +46,6 @@ B-09-06 산출물은 [VN 연출 규칙과 UI 적용 범위](../contracts/vn.md)�
 | 광고 비콘·클릭·랜딩 중계 | ASGI `server/paldo_web/asgi.py` → 표현 `server/api/consumers.py`·`ad_relay.py` → 응용 `server/app/ad_events.py` → 포트 `server/app/ads_port.py`. 실제 HTTP 인프라 `server/infra/ad_client.py`는 PALDO_ADS_INTERNAL_URL로 연결(B-08-03, D 인수·실제 배치 검증 대기) |
 | 웹소켓 재연결·비콘 폐기 사유 | `web/static/js/paldo_ws.js` → `server/api/consumers.py` → `server/api/ad_metrics.py`. 클라이언트·Consumer·실제 Daphne 검증은 [B-07-05 증빙](../evidence/B-07-05.md) |
 | 광고 지면을 게임 화면에 붙이기 | `server/api/ad_slots.py`·`ad_slot_tags.py`, `web/templates/ad_slot.html·ad_placeholder.html`, `web/static/js/ad_slots.js` → `server/app/ads_port.py`. 웹소켓 중계는 병합된 B-07-05 조립 사용 |
-| 결과·진척·결말 선택 화면 | `server/api/story_view.py` → 버전별 공개 문안 `server/story_catalog.json`, `server/api/views.py`, `web/templates/game_result.html`·`progress.html`·`ending_choice.html`. 도전 계약 인수 항목은 [서버 설계](../../server/DESIGN.md) |
+| 결과·진척·결말 선택 화면 | `server/api/story_view.py` → 버전별 공개 문안 `server/story_catalog.json`, `server/api/views.py`, 판 종료 탭 `web/templates/game_end.html`(결과 `game_result.html`, 복기 `review_panel.html`, 단서 `progress_panel.html`)·`web/static/js/game_end.js`·`web/static/css/result.css`, 로비 `progress.html`·`ending_choice.html`, 선택형 도전 목록 `story_view.preset_choices`·`accounts/home.html` |
 
 B-08-03 시험: tools/perf/ad_fault_test.py → server/tests/ad_fault_bench.py → 기존 실제 Daphne·api_bench 게임 명령 부하. 로컬 대역과 D 인수 서버 결과를 구분하며 실제 배치 조건은 보류한다.

@@ -71,7 +71,7 @@ B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 �
 
 ## B-08-01 결과·진척·결말 선택
 
-`GET /players/me/progress`는 기존 JSON DTO를 유지하고 HTML·htmx 요청에는 `progress.html`을 반환한다. `story_view.py`는 본인 진척의 수집 단서만 문안과 연결한다. 홈의 일반 판·고정 회차 폼은 `ending_choice.html`에서 열린 결말을 고르고 `POST /games`의 폼·JSON을 같은 `StartGameInput`으로 처리한다. 일반 판의 `start_token`·초상·공개 프리셋 경로는 유지한다. 종료된 `GET /games/{id}`·명령 응답은 기존 회의 조각에 `game_result.html`을 포함한다. 공개 결과는 `PlayerView`, 선택 결말·콘텐츠 버전은 소유권 확인한 메타에서 읽는다.
+`GET /players/me/progress`는 기존 JSON DTO를 유지하고 HTML 요청에는 로비용 `progress.html`, htmx 요청(판 종료 화면 단서 탭)에는 `progress_panel.html` 조각을 반환한다. `GET /games/{id}/review`도 htmx 요청이면 종료 뒤 `review_panel.html`(B-10-01 복기 탭)을, 그 밖에는 `ReviewOutput` JSON을 반환한다. `story_view.py`는 본인 진척의 수집 단서만 문안과 연결한다. 홈의 일반 판·고정 회차 폼은 `ending_choice.html`에서 열린 결말을 고르고 `POST /games`의 폼·JSON을 같은 `StartGameInput`으로 처리한다. 일반 판의 `start_token`·초상·공개 프리셋 경로는 유지한다. 종료된 `GET /games/{id}`·명령 응답은 기존 회의 조각에 `game_end.html`(결과 `game_result.html`·복기·단서 탭)을 포함한다. 공개 결과는 `PlayerView`, 선택 결말·콘텐츠 버전은 소유권 확인한 메타에서 읽는다.
 
 B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
 
