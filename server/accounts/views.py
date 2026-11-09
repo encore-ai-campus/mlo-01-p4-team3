@@ -59,6 +59,9 @@ def _open_game_context(player, load_game=None):
         progress = service.progress.load(player)
         from server.api.story_view import ending_options
         context['ending_options'] = ending_options(progress)
+        # 설문 없이 떠난 끝난 판을 건너뜀으로 채운다(B-09-07 9번). 같은 요청의 진척·판 조회를 그대로 쓴다.
+        from server.api.participant_forms import backfill_surveys
+        backfill_surveys(service, player, progress.game_ids, load_game or service.repository.load)
         if not isinstance(service.prepare_start, StartPolicy):
             context["open_presets"] = []
         context["open_games"] = unfinished_open_games(progress.game_ids, load_game or service.repository.load)

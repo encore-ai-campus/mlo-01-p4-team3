@@ -74,3 +74,13 @@ document.addEventListener("htmx:afterSwap", event => {
     cards.scrollIntoView({block: "nearest"});
   }
 });
+
+/* B-09-07 9번: 결과 화면에서 설문에 답하지 않고 떠나면(링크 이동·탭 닫기) 건너뜀을 비콘으로 남긴다.
+   서버는 끝난 판에 설문 이벤트가 없을 때만 1건 남긴다. 비콘이 안 가면 다음 요청에서 서버가 채운다. */
+function leaveSurvey() {
+  const survey = document.getElementById("survey");
+  if (!survey?.dataset?.leaveUrl || !survey.querySelector("form") || !globalThis.navigator?.sendBeacon) return;
+  navigator.sendBeacon(survey.dataset.leaveUrl,
+    new URLSearchParams({csrfmiddlewaretoken: survey.dataset.csrf, game_id: survey.dataset.gameId}));
+}
+globalThis.addEventListener?.("pagehide", leaveSurvey);

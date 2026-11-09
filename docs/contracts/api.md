@@ -23,6 +23,7 @@
 | GET `/games/{id}/renders/{job_id}` | `PollRenderInput` | `RenderOutput` | `speech_line` |
 | PUT `/games/{id}/notebook` | `SaveNotebookInput` | 204 | - |
 | POST `/games/{id}/survey` | `SubmitSurveyInput` | 204 | `survey_done` |
+| POST `/games/{id}/survey/leave` | 폼 `game_id`(+CSRF) | 204 | 없음(결과 화면을 떠날 때 비콘, B-09-07) |
 | GET `/games/{id}/review` | - | `ReviewOutput`(종료 후만, 그 전에는 403) | `review` |
 | GET `/players/me/progress` | - | `ProgressOutput` | `progress` |
 
@@ -49,7 +50,7 @@
 
 - 위 두 경우가 아닌 조합(점수 일부만, `skipped=true`인데 점수나 의견이 있음, `skipped=false`인데 점수가 `null`)은 400이다. `skipped`가 없는 기존 응답 요청은 그대로 통과한다.
 - 설문은 판마다 한 번이다. 같은 내용을 다시 보내면 204이고 이벤트를 더 만들지 않는다. 처음과 다른 내용(건너뛴 뒤 응답으로 바꾸기 포함)은 409다.
-- 건너뛰어도 `survey_submitted` 이벤트를 1건 낸다(INT-09 7번: 판 수 = 설문 이벤트 수). 이벤트 본문은 [events.md](events.md) 2절.
+- 건너뛰어도 `survey_submitted` 이벤트를 1건 낸다(INT-09 7번: 판 수 = 설문 이벤트 수). 이벤트 본문은 [events.md](events.md) 2절. 결과 화면을 설문 없이 떠나면 비콘(`/survey/leave`)이, 비콘이 안 가면 같은 참가자의 다음 홈 요청(회차 복귀·새 판 시작 폼이 있는 화면)이 건너뜀(`reason`)을 채운다. 이미 설문 이벤트가 있으면 더 남기지 않는다. 자동 건너뜀 뒤의 응답은 409, 같은 건너뜀 재전송은 204다(B-09-07).
 - 입력 형식과 화면·재전송 동작은 [설문 처리 경로](../../server/ROUTING.md)와 [B-07-02 검증](../evidence/B-07-02.md)에서 확인한다.
 
 ### 2-3. 판 시작: 일반 판과 회차 판 (11/8 사용자 결정, E-08-14)

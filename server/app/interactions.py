@@ -310,6 +310,11 @@ class InteractionService:
                    "npc_plausible": data.npc_plausible,
                    "comment": mask_text(data.comment), "mask_version": "b-mask-1"}
         with self.participant_records(data.game_id) as records:
+            if records.survey is not None and records.survey.get("reason"):
+                # 떠날 때 자동으로 남긴 건너뜀 뒤에는 같은 건너뜀만 재전송으로 받고 응답은 받지 않는다(판당 1건).
+                if data.skipped:
+                    return False
+                raise InteractionConflict
             if records.survey is not None:
                 previous = dict(records.survey)
                 previous.setdefault("skipped", False)
@@ -320,6 +325,40 @@ class InteractionService:
             self._save_participant(state, 'survey', EventType.SURVEY_SUBMITTED, payload,
                                    {**payload, 'comment_digest': comment_digest}, records)
             return True
+
+    def skip_survey(self, game_id, player, reason, state=None):
+        """끝난 판에 설문 이벤트(응답·건너뜀)가 없으면 건너뜀 1건을 남긴다(B-09-07 9번).
+
+        reason은 채운 경로(`beacon`: 결과 화면을 떠날 때, `backfill`: 같은 참가자의 다음 요청).
+        이미 설문 이벤트가 있거나 판이 끝나지 않았으면 아무것도 남기지 않고 False.
+        state는 같은 요청에서 이미 읽은 판 상태(소유권 확인 끝난 것)를 넘길 때만 쓴다.
+        """
+        if state is None:
+            state, _ = self.game.owned(game_id, player)
+        if state.result is None or state.meta.player_pseudonym != player:
+            return False
+        payload = {"skipped": True, "fun": None, "unfair": None, "npc_plausible": None,
+                   "comment": "", "mask_version": "b-mask-1", "reason": reason}
+        with self.participant_records(game_id) as records:
+            if records.survey is not None:
+                return False
+            self._save_participant(state, 'survey', EventType.SURVEY_SUBMITTED, payload,
+                                   {**payload, 'comment_digest': ""}, records)
+            return True
+
+    def backfill_skipped_surveys(self, player, game_ids, load_game):
+        """참가자의 끝난 판 중 설문 이벤트가 없는 판을 건너뜀(`backfill`)으로 채우고 채운 수를 반환한다.
+
+        game_ids·load_game은 호출한 요청이 이미 읽은 진척의 판 목록과 같은 요청 안 판 조회(중복 조회를 늘리지 않음).
+        """
+        filled = 0
+        for game_id in list(game_ids):
+            try:
+                state, _ = load_game(game_id)
+            except KeyError:
+                continue
+            filled += self.skip_survey(game_id, player, "backfill", state)
+        return filled
 
     def register_renders(self, state, requests):
         """수락·저장된 전이의 렌더 요청만 등록한다. 외부 실패는 폴백으로 닫는다."""
