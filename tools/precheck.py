@@ -367,7 +367,8 @@ def quick_plan(runner, base: str | None, with_assets: bool) -> tuple[Selection |
         return None, "바뀐 파일을 못 구함"
     selection, why = select_tests(changed, runner.python_sources(), runner.test_dirs())
     if selection is not None and not with_assets and ASSETS_DIR in selection:
-        note = why[len(describe(selection)):]  # Django 쪽 안내 등 덧붙인 말
+        head = describe(selection)
+        note = why[len(head):] if why.startswith(head) else ""  # Django 쪽 안내 등 덧붙인 말
         selection = {d: m for d, m in selection.items() if d != ASSETS_DIR}
         why = describe(selection) + note + "(tests/assets는 --with-assets로)"
     return selection, why
