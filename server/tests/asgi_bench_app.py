@@ -1,4 +1,4 @@
-"""B-07-05 시험 프로세스 조립. 실제 Mongo·녹화 엔진·가짜 광고만 연결한다."""
+"""B-07-05·B-08-03 시험 조립. 실제 Mongo·녹화 엔진과 가짜/HTTP 광고를 분리한다."""
 import os
 import re
 
@@ -36,7 +36,20 @@ views.JsonResponse = timed(views.JsonResponse, 'json_response')
 usecases.dumps = timed(usecases.dumps, 'stored_response_conversion')
 runtime.sessions.store.ad_identity = timed(runtime.sessions.store.ad_identity, 'ad_identity')
 scenario = os.environ["PALDO_BENCH_SCENARIO"]
-gateway = AdGateway(FakeAdProvider(latency_ms=3000 if scenario == "delay" else 0, fail=scenario == "failure"))
+if internal_url := os.environ.get('PALDO_BENCH_HTTP_ADS_URL'):
+    from dataclasses import replace
+    from server.infra.ad_client import HTTPAdProvider
+
+    class LoadTestHTTPAdProvider(HTTPAdProvider):
+        """부하 시험에서 발급하는 광고 토큰은 실제 과금·학습에서 제외한다."""
+
+        def request_ad(self, req, connect_timeout_ms, total_timeout_ms):
+            """운영 어댑터는 그대로 사용하고 시험 요청의 load_test만 켠다."""
+            return super().request_ad(replace(req, load_test=True), connect_timeout_ms, total_timeout_ms)
+
+    gateway = AdGateway(LoadTestHTTPAdProvider(internal_url))
+else:
+    gateway = AdGateway(FakeAdProvider(latency_ms=3000 if scenario == "delay" else 0, fail=scenario == "failure"))
 configure_ad_gateway(gateway)
 
 if __name__ == "__main__":

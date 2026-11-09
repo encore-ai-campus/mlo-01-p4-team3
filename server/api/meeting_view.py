@@ -112,4 +112,5 @@ def meeting_context(view: PlayerView):
     return {"vm": vm, "claims": claims, "disappearances": disappearances,
             "own_divinations": own_divinations, "divination_options": divination_options,
             "published_votes": published_votes, "published_locks": published_locks, "active_targets": active_targets,
-            "actions": actions}
+            "actions": actions, "past_nights": list(range(max(0, view.day))),
+            "contradiction_ready": sum(item.card.selectable and item.evidence_value.startswith('claim:') for item in claims) >= 2}

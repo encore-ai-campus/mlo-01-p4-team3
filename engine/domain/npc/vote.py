@@ -6,6 +6,7 @@
 - 결정: 성향 가중 확률(기여값에 `Temperament.group_weights`를 곱해 로그 오즈를 고친 확률)
   + 동조(`Temperament.conformity`) × 예상 득표(오늘 그 후보를 공개 의심한 다른 투표자 비율) + 잡음. 최댓값을 고른다.
 - 안전: 합법 후보(자기 아님)만 두고 확정 명제(`not_possessed`)로 무고가 확정된 사람과 고백자를 뺀다.
+  무당은 신뢰도가 `MODEL_MUDANG_VOTE_TRUST` 이상이고 다른 후보가 남아 있으면 뺀다(`skip_trusted_mudang`, A-09-06).
   전부 빠지면 합법 후보 중 추정 의심도 최댓값으로 돌아간다.
 
 실패 처리(ports.md 3): 모델이 `ModelUnavailable`·`FeatureVersionMismatch`를 내거나, 호출 경과 시간이 100ms를 넘거나,
@@ -38,6 +39,12 @@ from ..observation import Decision, ReasonCode
 from . import beliefs as bl
 
 SUSPICION_TIMEOUT_S = 0.1     # 엔진 측 시간 초과(ports.md 3, 100ms)
+# 모델 경로 투표에서 무당을 후보로 두는 신뢰도 상한(A-09-06, 11/9 사용자 결정). 신뢰도가 이 값 이상이고 다른 후보가 있으면 뺀다.
+# 시작 신뢰도가 50이므로 "공개된 일(틀린 지적·맑음 공개 실수·다른 주민의 무당 의심)로 신뢰가 시작값 아래로 떨어진 무당만 후보"다.
+# 규칙 v0 대체 경로(`policy_villager.MUDANG_VOTE_TRUST`, 20)도 같은 규칙 "신뢰도가 문턱 이상인 무당은 후보에서 뺀다"이고
+# 값만 다르다: 모델 경로는 무당 의심도 q가 이미 신뢰도를 반영하므로 시작값부터, 대체 경로는 무당 점수(100 − 신뢰도)가
+# 주민 의심도와 같은 척도라 더 낮은 신뢰도에서만 후보로 둔다(대체 경로가 더 보수적). 두 경로 모두 같은 이유 코드를 남긴다.
+MODEL_MUDANG_VOTE_TRUST = 50.0
 # 동조 항 크기(params.CONFORMITY_SCALE)·결정 층 잡음 폭(params.VOTE_NOISE)·q_max(params.Q_MAX)는
 # `decision_params.json`(A-08-03)에서 읽고, 호출할 때마다 params 모듈 값을 쓴다(탐색 도구가 바꿀 수 있게).
 PROB_EPS = 1e-6               # 로그 오즈 계산에서 0·1을 피하는 경계
@@ -186,7 +193,10 @@ def decision_scores(susp: dict[str, float], expected: dict[str, float], conformi
 
 # ---------------------------------------------------------------- 3층: 안전
 def safe_pool(obs: ObservationSnapshot, b: Beliefs, candidates: Iterable[str]) -> tuple[list[str], list[ReasonCode]]:
-    """합법(자기 아님) 후보에서 확정 명제 무고와 고백자를 뺀다. 남는 사람이 없으면 빈 목록(호출자가 폴백)."""
+    """합법(자기 아님) 후보에서 확정 명제 무고와 고백자, 신뢰받는 무당(다른 후보가 있을 때)을 뺀다.
+
+    남는 사람이 없으면 빈 목록(호출자가 폴백).
+    """
     legal = [c for c in candidates if c != obs.observer]
     codes: list[ReasonCode] = []
     cleared = bl.cleared_by_proposition(b)
@@ -197,6 +207,9 @@ def safe_pool(obs: ObservationSnapshot, b: Beliefs, candidates: Iterable[str]) -
     kept = [c for c in pool if c in allowed]
     if len(kept) < len(pool):
         codes.append(ReasonCode.SKIP_CONFESSED)
+    if PLAYER_ID in kept and len(kept) > 1 and b.trust_in_mudang >= MODEL_MUDANG_VOTE_TRUST:
+        kept = [c for c in kept if c != PLAYER_ID]
+        codes.append(ReasonCode.SKIP_TRUSTED_MUDANG)
     return kept, codes
 
 

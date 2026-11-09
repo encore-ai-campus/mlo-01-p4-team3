@@ -216,9 +216,36 @@ class DecisionLayer(unittest.TestCase):
 class SafetyLayer(unittest.TestCase):
     def test_excludes_self_cleared_and_confessed(self):
         s = snap(candidates=("c", "d"), confessions=[ConfessionRecord(1, "b", "s1")])
-        pool, codes = vt.safe_pool(s, Beliefs(propositions=[cleared("c")]), ["a", "b", "c", "d", PLAYER_ID])
+        b = Beliefs(trust_in_mudang=40.0, propositions=[cleared("c")])   # 신뢰가 문턱 아래라 무당도 후보
+        pool, codes = vt.safe_pool(s, b, ["a", "b", "c", "d", PLAYER_ID])
         self.assertEqual(pool, ["d", PLAYER_ID])
         self.assertEqual(codes, [ReasonCode.EXCLUDE_PROPOSITION, ReasonCode.SKIP_CONFESSED])
+
+    def test_trusted_mudang_excluded_from_pool(self):
+        """A-09-06: 신뢰도가 문턱(50) 이상이면 다른 후보가 있을 때 무당을 빼고 이유 코드를 남긴다."""
+        s = snap()
+        for trust in (vt.MODEL_MUDANG_VOTE_TRUST, 90.0):
+            pool, codes = vt.safe_pool(s, Beliefs(trust_in_mudang=trust), ["b", "c", PLAYER_ID])
+            self.assertNotIn(PLAYER_ID, pool)
+            self.assertIn(ReasonCode.SKIP_TRUSTED_MUDANG, codes)
+        pool, codes = vt.safe_pool(s, Beliefs(trust_in_mudang=vt.MODEL_MUDANG_VOTE_TRUST - 1), ["b", "c", PLAYER_ID])
+        self.assertIn(PLAYER_ID, pool)
+        self.assertNotIn(ReasonCode.SKIP_TRUSTED_MUDANG, codes)
+
+    def test_trusted_mudang_kept_when_only_candidate(self):
+        """남은 후보가 무당 하나면 빼지 않는다(결선 등)."""
+        s = snap(candidates=())
+        pool, codes = vt.safe_pool(s, Beliefs(trust_in_mudang=90.0), [PLAYER_ID])
+        self.assertEqual(pool, [PLAYER_ID])
+        self.assertNotIn(ReasonCode.SKIP_TRUSTED_MUDANG, codes)
+
+    def test_trusted_mudang_not_voted_even_if_top_score(self):
+        """무당 점수가 가장 커도(q_max 0.7·신뢰 50 → q 0.35) 신뢰가 시작값 이상이면 주민에게 표가 간다."""
+        e = est({"b": 0.34, "c": 0.33, "d": 0.33})
+        t, codes = vt.choose_target(snap(), Beliefs(trust_in_mudang=50.0), ["a", "b", "c", "d", PLAYER_ID], e, None,
+                                    random.Random(0))
+        self.assertNotEqual(t, PLAYER_ID)
+        self.assertIn(ReasonCode.SKIP_TRUSTED_MUDANG, codes)
 
     def test_cleared_top_suspect_is_not_voted(self):
         e = est({"b": 0.8, "c": 0.1, "d": 0.1})

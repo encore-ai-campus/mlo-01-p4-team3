@@ -1,0 +1,80 @@
+{
+  "task": "A-09-06",
+  "commit": "4b2bbe09f3478b0d52810ac63e32ba1bb2a21917",
+  "generated_at": "2026-11-08T15:42:59Z",
+  "source": "python -m tools.perf.vote_balance --games 200 --seed 7 --record A-09-06",
+  "metrics": {
+    "logic_village_win": {
+      "value": 0.905,
+      "unit": ""
+    },
+    "logic_mudang_locked": {
+      "value": 0.07,
+      "unit": ""
+    },
+    "logic_mudang_locked_d1": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "logic_mean_days": {
+      "value": 1.6,
+      "unit": ""
+    },
+    "logic_silence_rate_d1": {
+      "value": 0.294,
+      "unit": ""
+    },
+    "logic_npc_suspect_npc_d1_per_game": {
+      "value": 4.94,
+      "unit": ""
+    },
+    "random_village_win": {
+      "value": 0.705,
+      "unit": ""
+    },
+    "random_mudang_locked": {
+      "value": 0.18,
+      "unit": ""
+    },
+    "random_mudang_locked_d1": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "random_mean_days": {
+      "value": 1.85,
+      "unit": ""
+    },
+    "random_silence_rate_d1": {
+      "value": 0.303,
+      "unit": ""
+    },
+    "random_npc_suspect_npc_d1_per_game": {
+      "value": 5.085,
+      "unit": ""
+    },
+    "passive_village_win": {
+      "value": 0.56,
+      "unit": ""
+    },
+    "passive_mudang_locked": {
+      "value": 0.355,
+      "unit": ""
+    },
+    "passive_mudang_locked_d1": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "passive_mean_days": {
+      "value": 1.885,
+      "unit": ""
+    },
+    "passive_silence_rate_d1": {
+      "value": 0.357,
+      "unit": ""
+    },
+    "passive_npc_suspect_npc_d1_per_game": {
+      "value": 4.73,
+      "unit": ""
+    }
+  }
+}

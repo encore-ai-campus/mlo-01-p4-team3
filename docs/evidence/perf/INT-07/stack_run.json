@@ -1,0 +1,44 @@
+{
+  "task": "INT-07",
+  "commit": "539d17a1125eddc150a1ad4e52b762679db720ca",
+  "generated_at": "2026-11-08T15:11:43Z",
+  "source": "python -m server.tests.int07_stack --scenarios <int07_scenarios 결과> --kafka-config <발행기 TLS JSON> --out <폴더> --record",
+  "metrics": {
+    "components_up": {
+      "value": 6,
+      "unit": "개"
+    },
+    "components_total": {
+      "value": 6,
+      "unit": "개"
+    },
+    "non_314_processes": {
+      "value": 0,
+      "unit": "개"
+    },
+    "containers_healthy": {
+      "value": 3,
+      "unit": "개"
+    },
+    "kafka_events_published": {
+      "value": 264,
+      "unit": "건"
+    },
+    "scenarios_reproduced": {
+      "value": 3,
+      "unit": "개"
+    },
+    "int1_commands": {
+      "value": 6,
+      "unit": "개"
+    },
+    "http_5xx": {
+      "value": 0,
+      "unit": "건"
+    },
+    "forbidden_hits": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
