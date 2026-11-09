@@ -15,7 +15,9 @@ from django.test import SimpleTestCase, TestCase, override_settings
 
 from engine.domain.model import Command, CommandKind, InterrogationKind, Phase
 from engine.ports import CommandCandidate, ParseFailure, ParseResult, UtteranceForm
+from server.api.interaction_view import cards_context
 from server.api.meeting_view import meeting_context
+from server.app.dto import ParseUtteranceOutput
 from server.app.interactions import phase_cards, player_kinds
 from server.paldo_web.composition import configure_game_service
 from .support import install_test_profiles, make_service
@@ -49,6 +51,12 @@ class PhaseCards(SimpleTestCase):
         """결선은 결선 후보 대상만 투표 카드로 바꾼다."""
         self.assertEqual(len(phase_cards([suspect("jumo")], Phase.RUNOFF, ["blacksmith", "meosum"])), 0)
         self.assertEqual(phase_cards([suspect()], Phase.RUNOFF, ["blacksmith"])[0].command.kind, CommandKind.VOTE)
+
+    def test_runoff_keeps_targetless_suspect_as_vote(self):
+        """결선에서 대상이 빠진 의심은 버리지 않고 대상 칸이 빠진 투표 카드로 남긴다(카드 수정에서 결선 후보 중 고름)."""
+        cards = phase_cards([suspect(None, ["target"])], Phase.RUNOFF, ["blacksmith"])
+        self.assertEqual([(c.command.kind, c.command.target, c.missing_slots) for c in cards],
+                         [(CommandKind.VOTE, None, ["target"])])
 
     def test_other_phases_keep_only_legal_kinds(self):
         """1라운드는 의심 유지, 심문은 캐묻기만, 아침·밤은 의심을 버린다."""
@@ -209,6 +217,22 @@ class PreviousSelectionTemplate(TestCase):
         addressee = html[html.index('name="addressee"'):html.index("</select>", html.index('name="addressee"'))]
         self.assertNotIn("selected", addressee)
         self.assertIn('value="suspicion_reason" selected', html)
+
+
+class VoteCardTargets(TestCase):
+    """투표 카드 수정의 대상 목록은 투표 대상(결선이면 결선 후보)만 보인다."""
+
+    def test_vote_card_lists_only_vote_targets(self):
+        """대상이 빠진 투표 카드의 대상 칸은 vote_targets만, 의심 카드는 활동 대상 전체."""
+        view = make_service().engine.views[5]
+        vote = CommandCandidate(Command(CommandKind.VOTE, "mudang"), 0.9, UtteranceForm.ASSERTION, ["target"])
+        output = ParseUtteranceOutput("a1", 1, [vote, suspect(None, ["target"])], None, True)
+        context = cards_context(output, view)
+        context["vote_targets"] = context["active_targets"][:1]
+        html = render_to_string("speech_cards.html", context)
+        selects = [html[i:html.index("</select>", i)] for i in range(len(html)) if html.startswith('name="target"', i)]
+        self.assertEqual([part.count("<option value=\"") - 1 for part in selects],
+                         [1, len(context["active_targets"])])
 
 
 @skipUnless(shutil.which("node"), "Node.js가 있는 환경에서 화면 스크립트 시험 실행")

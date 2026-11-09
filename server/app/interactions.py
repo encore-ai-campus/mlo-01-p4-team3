@@ -64,7 +64,7 @@ def mask_text(text):
 def phase_cards(candidates, phase, runoff_candidates=()):
     """해석기 후보 중 현재 단계에서 플레이어가 낼 수 있는 카드만 남긴다.
 
-    투표·결선 단계의 의심(`suspect`)은 같은 대상의 투표 카드로 바꾸고(결선이면 결선 후보만),
+    투표·결선 단계의 의심(`suspect`)은 같은 대상의 투표 카드로 바꾸고(결선이면 결선 후보만, 대상이 빠진 후보는 그대로 남김),
     변호처럼 투표로 바꾸면 뜻이 뒤집히는 후보와 단계에 맞지 않는 후보는 버린다.
     같은 명령 종류·대상 카드는 한 장만 남긴다. 해석기 원래 후보는 바꾸지 않는다.
     """
@@ -73,7 +73,8 @@ def phase_cards(candidates, phase, runoff_candidates=()):
     for candidate in candidates:
         command = candidate.command
         if voting and command.kind is CommandKind.SUSPECT:
-            if phase is Phase.RUNOFF and command.target not in runoff_candidates:
+            # 대상이 빠진 후보는 남겨 카드 수정에서 고르게 한다(결선이면 대상 목록이 결선 후보뿐).
+            if phase is Phase.RUNOFF and command.target is not None and command.target not in runoff_candidates:
                 continue
             candidate = CommandCandidate(Command(CommandKind.VOTE, command.actor, target=command.target),
                                          candidate.intent_score, candidate.form,

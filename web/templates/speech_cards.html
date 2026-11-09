@@ -23,7 +23,7 @@
           <input type="hidden" name="state_version" value="{{ attempt_version }}"><input type="hidden" name="command_id">
           <input type="hidden" name="reaction" value="edit"><input type="hidden" name="kind" value="{{ card.kind }}">
           {% if card.kind == 'suspect' or card.kind == 'defend' or card.kind == 'vote' or card.kind == 'divine' or card.interrogation_kind == 'suspicion_reason' %}
-            <label>대상 <select name="target" required><option value="">선택하세요</option>{% for person in active_targets %}<option value="{{ person.npc_id }}" {% if person.npc_id == card.target %}selected{% endif %}>{{ person.name|display_name }}</option>{% endfor %}</select></label>
+            <label>대상 <select name="target" required><option value="">선택하세요</option>{% if card.kind == 'vote' %}{% for person in vote_targets %}<option value="{{ person.npc_id }}" {% if person.npc_id == card.target %}selected{% endif %}>{{ person.name|display_name }}</option>{% endfor %}{% else %}{% for person in active_targets %}<option value="{{ person.npc_id }}" {% if person.npc_id == card.target %}selected{% endif %}>{{ person.name|display_name }}</option>{% endfor %}{% endif %}</select></label>
           {% endif %}
           {% if card.kind == 'interrogate' %}
             <label>질문 상대 <select name="addressee" required><option value="">선택하세요</option>{% for person in active_targets %}<option value="{{ person.npc_id }}" {% if person.npc_id == card.addressee %}selected{% endif %}>{{ person.name|display_name }}</option>{% endfor %}</select></label>

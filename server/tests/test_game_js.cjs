@@ -88,4 +88,15 @@ windowListeners.pagehide.forEach(cb => cb({}));
 document.getElementById = () => null;
 windowListeners.pagehide.forEach(cb => cb({}));
 assert.equal(beacons.length, 1);
-console.log('game.js whereabouts sync 4 cases, command bar cards scroll, survey leave beacon ok');
+// 키보드 새로 고침 뒤의 pagehide는 떠남이 아니므로 보내지 않는다. 다른 키를 누르면 다시 보낸다.
+document.getElementById = id => (id === 'survey' ? survey : null);
+survey.querySelector = () => ({});
+listeners.keydown.forEach(cb => cb({key: 'F5'}));
+windowListeners.pagehide.forEach(cb => cb({}));
+listeners.keydown.forEach(cb => cb({key: 'r', ctrlKey: true}));
+windowListeners.pagehide.forEach(cb => cb({}));
+assert.equal(beacons.length, 1);
+listeners.keydown.forEach(cb => cb({key: 'Tab'}));
+windowListeners.pagehide.forEach(cb => cb({}));
+assert.equal(beacons.length, 2);
+console.log('game.js whereabouts sync 4 cases, command bar cards scroll, survey leave beacon (keyboard reload skipped) ok');
