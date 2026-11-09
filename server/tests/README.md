@@ -91,9 +91,11 @@ python -B server/tests/bench.py --memory --users 10 --minutes 3
 
 메모리 부하 시험은 임시 SQLite 세션과 녹화 엔진·원자 저장 대역으로 사용자마다 독립 판을 진행한다. 응답 p50·p95와 오류 건수를 출력한다.
 
-## B-06-04 계정과 광고 포트 비노출
+## B-06-04 계정과 광고 HTTP 비노출
 
-B-06-04의 `test_accounts.Accounts.test_credentials_absent_from_logs_outbox_and_metrics`는 가입·로그인·실패·잠금·녹화 판 완주를 거쳐 파일 로그·아웃박스·지표와 광고 포트 DTO의 인증 입력 비노출을 함께 검사한다. 광고 요청은 세 지면과 판 종료를 포함한 4건이다. 계정 가명·로그인 세션 키·판 ID·쿼리 위조값도 전달하지 않는다. 이 시험의 `FakeAdProvider`·메모리 회차 조립은 테스트 전용이며 실제 HTTP 광고 서버 수신 검증은 B-08-03 연결 뒤 별도로 한다.
+`python -B server/manage.py test server.tests.test_account_http_privacy --settings=server.paldo_web.test_settings --noinput`은 같은 전체 인증 시나리오를 B의 `HTTPAdProvider` → 별도 루프백 프로세스의 D 원본 Django WSGI·API·AdService로 실행한다. `ad_privacy_host.py`는 시험 전용이며 D의 메모리 광고 저장소·가상 캠페인을 사용한다. 실제 수신 본문4건·헤더와 D 파일 로그를 검사하며 Cookie·Authorization·계정 정보·판 ID가 없는지 확인한다. VM 운영 배치·광고 MySQL 검증은 아니다. 실제 수신 원자료와 인증 입력은 메모리에서만 대조하고 종료 시 제거한다. MySQL 계정 회귀는 같은 명령의 설정을 `server.paldo_web.mysql_test_settings`로 바꾼다(시험 전용 접속 정보 필요).
+
+B-06-04의 `test_accounts.Accounts.test_credentials_absent_from_logs_outbox_and_metrics`는 가입·로그인·실패·잠금·녹화 판 완주를 거쳐 파일 로그·아웃박스·지표와 광고 포트 DTO의 인증 입력 비노출을 함께 검사한다. 광고 요청은 세 지면과 판 종료를 포함한 4건이다. 계정 가명·로그인 세션 키·판 ID·쿼리 위조값도 전달하지 않는다. 기본 시험의 `FakeAdProvider`·메모리 회차 조립은 테스트 전용이며, 위 별도 HTTP 시험이 D 실제 API 수신 경계까지 확장한다.
 
 ## B-06-03 고정 회차와 광고 가명
 

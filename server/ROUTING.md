@@ -28,7 +28,7 @@ B-08-02: 홈 `accounts/views.py`와 일반 판 시작 `app/open_start.py`의 `op
 
 B-07-05 성능 시험은 `tools/perf/api_bench.py --compare-asgi` → `server/tests/api_bench.py` → `asgi_bench.py` → 시험 전용 `asgi_bench_app.py`·`asgi_bench_settings.py` 순서다. 하위 프로세스의 WSGI 또는 실제 Daphne에 루프백 HTTP로 기존 `POST /games`·명령을 보내며, 혼합 부하에서는 `GET /ads/slot/lobby_banner`와 인증 `/ws/game/` 비콘을 함께 보낸다. 운영 URL·조립은 바꾸지 않는다.
 
-B-06-04 비노출 검증: 가입·로그인 → 기존 `/games`·명령 → `GET /ads/slot/{slot}` → `api/ad_slots.py` → `ensure_ad_identity` → `AdGateway.fetch`. `server/tests/test_accounts.py`가 인증 실패 경로까지 로그·이벤트·지표·광고 DTO를 대조한다. HTTP 광고 서버 연결은 B-08-03에서 이어 검증한다. URL 변경은 없다.
+B-06-04 비노출 검증: 가입·로그인 → 기존 `/games`·명령 → `GET /ads/slot/{slot}` → `api/ad_slots.py` → `ensure_ad_identity` → `AdGateway.fetch` → `HTTPAdProvider` → D Django 광고 API다. `test_accounts.py`의 같은 인증 시나리오를 `test_account_http_privacy.py`가 재사용하고 `ad_privacy_host.py`의 별도 루프백 D WSGI 프로세스가 수신 본문·헤더·D 로그를 검사한다. 광고 저장소만 메모리인 시험 전용 호스트이며 운영 조립·URL 변경은 없다.
 
 B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_bench.py` → 기존 `/games`·`/games/{id}/commands` → 실제 Mongo 조립이다. URL·운영 핸들러는 바꾸지 않는다. `server/tests/mongo_commands.py`는 같은 API의 실제 저장·20개 경합을 검사한다.
 
