@@ -138,3 +138,14 @@ B(김영주)가 생성해 팀 공유 폴더 `2.asset 개선안 및 게임 UI 구
 python -m tools.assets.normalize <원본 폴더 사본>
 python -m tools.assets.make_placeholders
 ```
+
+## 11/9 사용자 확정 v5 여성 무당 교체
+
+B-ui-apply에서 사용자가 `mudang_f-legacy-v5.png`를 최종 v5로 지정했다. 위 A-09-05의 최초 입력 기록은 이력으로 보존하며 현재 여성 무당 전신·초상은 아래 입력을 따른다. 다른 17개 등록 그림과 manifest ID·크기는 유지한다. 재생성·화풍 리터칭은 하지 않았다.
+
+- 입력(정식 PR에는 원화 미포함, 로컬 보존 브랜치 backup/B-ui-apply-full-20261109, 커밋 e22034e): `web/static/design-preview/assets/proposals/characters/mudang_f-legacy-v5.png`(793×1983 RGBA). SHA-256 `2f23c1c15e25d3a033b9e300fe2ede44456ca098fa544a5bb55b992fc867dee4`.
+- 출처: 기존 B UI 원화, ChatGPT 이미지 생성. 모델 세부 버전·생성 시각·프롬프트 전문·금지 지시는 이 교체 작업에서 검증하지 않아 확인 불가로 기록한다. 이미지 생성은 이번 작업에서 실행하지 않았다.
+- 처리: `tools.assets.cutout.fit_sprite(width, rows, 'mudang_f', 203)`. v5 눈 중심 y=338·턱 끝 y=448, 갓에 가린 머리 윗선은 기존 추정 방식 338−1.23×(448−338)≈203. 최초 원본용 HAIR_TOP=287은 사용하지 않는다. 단일 배율로 키 등급·발끝 1248·가운데 256을 맞춘다.
+- 초상: `portrait_art.crop_portrait(512, sprite_rows, vn.portrait_top('mudang_f'))`의 RGB를 `png.encode_rgb(..., optimize=True)`로 인코딩한다. 전신은 RGBA. 초상을 따로 그리지 않는다.
+- 출력: sprite 820482 bytes, SHA-256 `9181e7f15244e141bea0408c30596a64bb70764b0b408518b48c885bc162fe8d`; portrait 164120 bytes, SHA-256 `79f85c206a20a922aaae8d07c4be365f80eadc538d1c07dc5f237ce38008599b`.
+- 여성 표정 3종은 아직 임시이므로 승인된 실제 표정으로 계산하지 않는다. 실제 표정 제작 시 이 v5 기본 sprite와 edited_from_sha256을 기준으로 얼굴 영역만 편집해야 한다.

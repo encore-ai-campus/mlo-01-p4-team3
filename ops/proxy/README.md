@@ -121,3 +121,9 @@ api_bench의 proxy 모드는 **Django TestClient가 아닌 실제 HTTP 요청**�
 ## 운영 인계 범위
 
 웹·광고·Outbox·광고 publish/expire/refund·공식 bronze를 동시에 실행했고 앱 6개 Python 프로세스는 모두 3.14.4, HTTP 지표 6개 엔드포인트는 모두 200이었다. Spark driver/executor 3.14.4도 별도 작업에서 확인했다. Mongo 콘텐츠는 `content` 컬렉션의 `content-1.0`을 실제 읽었다. 이후 C-06-01 후속 작업에서 기존 관리자 보호 파일로 정상 인증해 Mongo 전용 DB·계정으로 전환했고, 전환 후 wss와 새 게임 52건 Kafka/Delta 일치도 확인했다(ops/mongo.md). B의 실제 HTTP 광고 어댑터, C-08-01 중앙 Prometheus 대시보드·경보 및 C-08-02 광고 silver/rejudge/gold는 후속 태스크이며 이 프록시 검증으로 완료 처리하지 않는다. E의 INT 통합 판정도 E가 수행한다.
+
+## 게임 UI 선택과 되돌림
+
+B-09-06 확정 기준: PALDO_GAME_UI는 vn 기본, classic 선택이다. classic은 meeting_classic.html, 두 모드는 같은 공개 기록과 명령 경로를 쓴다. 다른 값은 기동 오류다.
+
+VN 문제 시 환경을 PALDO_GAME_UI=classic으로 바꾸고 게임 웹 Daphne 두 프로세스(8000·8002)를 모두 재시작한다. 기존 서비스 관리 절차를 쓰며 두 백엔드 healthz·로그인·진행 중 판 재개를 확인한다. 한쪽만 바꾸면 분배에 따라 화면이 섞이므로 둘의 설정을 같게 한다. vn 복귀도 같은 절차다. DB·게임 상태는 바꾸지 않는다. 로컬 설정 왕복 검증이며 실제 VM 재시작은 실행하지 않았다. 11/10 배포/동결 규칙은 별도로 따른다.

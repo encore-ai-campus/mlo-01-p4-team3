@@ -1,4 +1,10 @@
-# 웹 화면 라우팅
+# 웹 라우팅
+
+B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
+
+공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 공식 18개·임시 배경 상태만 표시하고 classic은 404다. 시안 원화/글꼴 카탈로그는 읽지 않는다. 전체 시안은 별도 보존 worktree다.
+
+종료 탭은 같은 판 URL에서 결과·복기·단서를 표시한다. GET review의 htmx는 review_panel.html, 일반 HTML은 review.html, JSON DTO·소유권·진행 중 403은 유지한다. 서버·웹 디자인 및 web/PM_UI_REVIEW.md·UI_ASSET_PLAN.md·UI_APPLY.md를 함께 갱신한다.
 
 B-10-02: 기존 게임 전체/htmx 응답의 meeting.html → village_assets.html(고정 지도·전체 초상 펼치기)·asset_credits.html(하단 출처). 좌표·URL은 manifest, 출처는 SOURCES.md에서 읽는다. 펼치기는 HTML details로 처리하며 서버 명령을 보내지 않는다. 새 URL·API는 없다.
 
@@ -22,7 +28,7 @@ dev `f24f6a8`의 엔진·에셋 갱신을 반영한 재검증도 같은 경로�
 
 B-08-02 공동 확인은 현재 dev 빌드의 홈 → 6인 게임 시작 → 진행 → 종료를 함께 확인하고 E가 재확인한다. 후보 태그를 선행 조건으로 두지 않으며, 11/10 테스트 서버 리허설 화면 확인은 B-09-03이다.
 
-B-09-07: 자유 입력 카드(`speech_cards.html`)는 응용 계층(`server/app/interactions.py`)이 현재 단계 합법 명령으로 거른 카드만 받는다(0장이면 `unsupported_intent`와 "지금 할 수 있는 행동"). 아침·밤에는 `utterance_input.html` 입력 칸이 비활성이다. 심문 양식의 진술 체크박스는 `data-night`·`data-slot`을 가지며 `game.js`가 행적 질문의 밤·시간 칸을 맞춘다. 같은 날·단계에 다시 그린 양식은 직전 대상·질문 종류를 고른다(`views._previous_interrogation`). 회의 화면은 `meeting_actions.html`·`utterance_input.html`(발언 카드 자리 포함)을 `.command-bar`(화면 아래 sticky, 높이 50vh 이하, 안쪽 스크롤)로 감싼다. B-10-07 무대 안 선택지 패널이 이 막대를 대체한다. 설문 없이 떠난 끝난 판은 홈(회차 복귀·새 판 시작 폼) 요청에서 `participant_forms.backfill_surveys`가 같은 요청의 진척·판 조회로 응용 계층 `backfill_skipped_surveys`를 부르고, 18:00 마감 직후에는 관리 명령 `server/accounts/management/commands/backfill_surveys.py`가 응용 계층 `backfill_all_skipped_surveys`로 일괄 채운다. 결과 화면을 떠날 때 브라우저가 보내는 요청은 없다. 10번: 진술 선택은 의심·감싸기·모순 지적·심문 양식과 해당 카드 수정에만 접힌 `details.evidence-picker`(요약 `.evidence-count`에 고른 개수)로 두고, `game.js`가 개수 갱신·"왜 의심하는가"에서 숨김·"왜 말이 다른가"에서 열기를 한다. 자유 입력은 진술을 고르지 않는다(서버 `selected_cards` 처리는 빈 값으로 남김). 선택형 도전 입력은 E-09-08이 실제 옵션과 함께 붙인다.
+B-09-07: 자유 입력 카드(`speech_cards.html`)는 응용 계층(`server/app/interactions.py`)이 현재 단계 합법 명령으로 거른 카드만 받는다(0장이면 `unsupported_intent`와 "지금 할 수 있는 행동"). 아침·밤에는 `utterance_input.html` 입력 칸이 비활성이다. 심문 양식의 진술 체크박스는 `data-night`·`data-slot`을 가지며 `game.js`가 행적 질문의 밤·시간 칸을 맞춘다. 같은 날·단계에 다시 그린 양식은 직전 대상·질문 종류를 고른다(`views._previous_interrogation`). 회의 화면은 `meeting_actions.html`·`utterance_input.html`(발언 카드 자리 포함)을 `.command-bar`(명령·자유 입력 묶음)로 감싼다. 이 검토 브랜치에서는 11/9 B-10-07 기준으로 무대 안 창이 하단 sticky 배치를 대체한다. 설문 없이 떠난 끝난 판은 홈(회차 복귀·새 판 시작 폼) 요청에서 `participant_forms.backfill_surveys`가 같은 요청의 진척·판 조회로 응용 계층 `backfill_skipped_surveys`를 부르고, 18:00 마감 직후에는 관리 명령 `server/accounts/management/commands/backfill_surveys.py`가 응용 계층 `backfill_all_skipped_surveys`로 일괄 채운다. 결과 화면을 떠날 때 브라우저가 보내는 요청은 없다. 10번: 진술 선택은 의심·감싸기·모순 지적·심문 양식과 해당 카드 수정에만 접힌 `details.evidence-picker`(요약 `.evidence-count`에 고른 개수)로 두고, `game.js`가 개수 갱신·"왜 의심하는가"에서 숨김·"왜 말이 다른가"에서 열기를 한다. 자유 입력은 진술을 고르지 않는다(서버 `selected_cards` 처리는 빈 값으로 남김). 선택형 도전 입력은 E-09-08이 실제 옵션과 함께 붙인다.
 
 `meeting_actions.html`의 밤 선택은 0~오늘−1이며, `game.js`는 모순 질문에 관련 진술 두 개를 고르기 전 제출을 막는다. 두 개 미만의 선택 가능한 진술만 있으면 해당 질문 선택지도 비활성화한다. 정상 질문은 같은 명령 경로와 `#meeting` 교체를 사용한다.
 

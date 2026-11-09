@@ -49,3 +49,5 @@ B-09-06 산출물은 [VN 연출 규칙과 UI 적용 범위](../contracts/vn.md)�
 | 결과·진척·결말 선택 화면 | `server/api/story_view.py` → 버전별 공개 문안 `server/story_catalog.json`, `server/api/views.py`, 판 종료 탭 `web/templates/game_end.html`(결과 `game_result.html`, 복기 `review_panel.html`, 단서 `progress_panel.html`)·`web/static/js/game_end.js`·`web/static/css/result.css`, 로비 `progress.html`·`ending_choice.html`, 선택형 도전 목록 `story_view.preset_choices`·`accounts/home.html` |
 
 B-08-03 시험: tools/perf/ad_fault_test.py → server/tests/ad_fault_bench.py → 기존 실제 Daphne·api_bench 게임 명령 부하. 로컬 대역과 D 인수 서버 결과를 구분하며 실제 배치 조건은 보류한다.
+
+B-10-07 UI 인계: server/paldo_web/ui_templates.py → web/templates/classic/(기본) 또는 web/templates/(vn). ui-stage.js는 원래 양식을 무대 창으로 옮기고 ui-vn.js는 읽기·기록·확인을 처리한다. api/ui_viewmodels.py는 공개 정보만 더하고 ui_assets.py는 기존 manifest로 게임 이미지를 조회한다. v5 여성 전신·초상은 같은 ID다. 인증된 vn의 /ui-review → ui_review.py → 비교 화면, classic은 404. 시험 실행은 server/tests/ui_theme_preview.py, 계획·검수는 web/PM_UI_REVIEW.md·UI_ASSET_PLAN.md·UI_APPLY.md, 상세 경로는 server/ROUTING.md·web/ROUTING.md다.

@@ -1,0 +1,139 @@
+{% load meeting %}
+{% if classic_mode %}
+  {% for event in disappearances %}
+    <p>
+      {% if event.place_asset_id %}<img src="{% asset_url event.place_asset_id %}" alt="" width="20" height="20">{% endif %}
+      {{ event.record.text }}
+    </p>
+  {% endfor %}
+  {% if claims %}
+    <section aria-labelledby="claim-list-title">
+      <h2 id="claim-list-title">진술표</h2>
+      <ul class="claim-cards">
+        {% for claim in claims %}
+          <li>
+            {% if claim.place_asset_id %}<img src="{% asset_url claim.place_asset_id %}" alt="" width="20" height="20">{% endif %}
+            <strong>{{ claim.card.speaker_name|display_name }}</strong> · {{ claim.card.text }}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if vm.speeches %}
+    <h2>발언</h2>
+    {% for speech in vm.speeches %}<p>{{ speech.speaker_name|display_name }}:
+      <span id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
+    </p>{% endfor %}
+  {% endif %}
+  {% if published_votes %}
+    <section id="published-votes" aria-labelledby="published-votes-title">
+      <h2 id="published-votes-title">공개된 투표</h2>
+      <ul>
+        {% for vote in published_votes %}
+          <li data-vote-round="{{ vote.round }}">{{ vote.day }}일째 {% if vote.round == 'runoff' %}결선{% else %}본투표{% endif %} · {{ vote.voter|display_name }} → {{ vote.target|display_name }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if published_locks %}
+    <section id="published-locks" aria-labelledby="published-locks-title">
+      <h2 id="published-locks-title">감금 결과</h2>
+      <ul>
+        {% for lock in published_locks %}
+          <li>
+            {{ lock.day }}일째 ·
+            {% if lock.name is None %}
+              무감금
+            {% else %}
+              {{ lock.name|display_name }} 감금
+              {% if lock.revealed_possessed is True %}· 금줄 반응으로 씐 자임이 밝혀졌습니다.
+              {% elif lock.revealed_possessed is False %}· 금줄 반응으로 씐 자가 아님이 밝혀졌습니다.
+              {% endif %}
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if own_divinations %}
+    <section id="own-divinations" aria-labelledby="own-divinations-title">
+      <h2 id="own-divinations-title">내 점괘</h2>
+      <ul>{% for result in own_divinations %}<li>{{ result }}</li>{% endfor %}</ul>
+    </section>
+  {% endif %}
+{% else %}
+{% load meeting %}
+  {% for event in disappearances %}
+    <p class="vn-source" data-line-id="announcement-{{ vm.day }}-{{ forloop.counter }}" data-day="{{ event.record.night|add:'1' }}" data-phase="morning" data-speaker="아침 발표" data-full="true" data-actor-name="{{ event.record.victim_name }}" data-speaker-id="{{ event.record.npc_id }}" data-sprite="{% with sprite_id='sprite:'|add:event.record.npc_id %}{% review_asset sprite_id %}{% endwith %}">
+      {% if event.place_asset_id %}<img src="{% asset_url event.place_asset_id %}" alt="" width="20" height="20">{% endif %}
+      <span class="vn-source-text">{{ event.record.text }}</span>
+    </p>
+  {% endfor %}
+  {% if claims %}
+    <section class="record-panel" aria-labelledby="claim-list-title">
+      <h2 id="claim-list-title">진술표</h2>
+      <p class="section-guide">공개된 진술입니다. 서로의 말을 비교하며 판단하세요.</p>
+      <div class="record-filters"><label>인물<select data-record-filter="speaker"><option value="">전체</option>{% for person in vm.people %}<option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>{% endfor %}</select></label><label>가리키는 밤<select data-record-filter="night"><option value="">전체</option>{% for night in claim_nights %}<option value="{{ night }}">{{ night }}일째 밤</option>{% endfor %}</select></label><label>시간대<select data-record-filter="slot"><option value="">전체</option><option value="evening">초저녁</option><option value="midnight">한밤</option></select></label></div>
+      <p class="record-count" data-record-count></p>
+      <ul class="claim-cards">
+        {% for claim in claims %}
+          <li data-record-speaker="{{ claim.card.speaker_id }}" data-record-night="{{ claim.card.night }}" data-record-slot="{{ claim.card.slot }}" data-record-id="{{ claim.card.claim_id }}">
+            <div class="claim-speaker">
+              <label class="record-selection"><input type="checkbox" data-record-select value="{{ claim.evidence_value }}" aria-label="{{ claim.card.claim_id }} 진술 선택"></label>
+              {% if vm.phase != 'night' %}{% if claim.card.speaker_id == 'mudang' %}<img class="review-portrait" src="{% review_asset mudang_portrait_id|default:'portrait:mudang_f' %}" alt="" width="32" height="32">{% else %}{% with key='portrait:'|add:claim.card.speaker_id %}<img class="review-portrait" src="{% review_asset key %}" alt="" width="32" height="32">{% endwith %}{% endif %}{% endif %}
+              <strong>{{ claim.card.speaker_name|display_name }}</strong>
+              <span class="claim-number">{{ claim.card.claim_id }}</span>
+            </div>
+            <span class="claim-meta">{{ claim.card.night }}일째 밤 · {% if claim.card.slot == 'evening' %}초저녁{% elif claim.card.slot == 'midnight' %}한밤{% endif %} · {{ claim.card.place }}</span><p>{{ claim.card.text }}</p><details class="record-details"><summary>기록 상세</summary><p>진술 번호 {{ claim.card.claim_id }}{% if claim.card.corrects %} · 정정 대상 {{ claim.card.corrects }}{% endif %}</p></details>
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="record-compare-tools"><span data-record-selection-count>선택한 진술 0개</span><button type="button" data-record-compare disabled>두 진술 비교</button><button type="button" data-record-clear>선택 해제</button></div>
+      <div class="record-comparison" data-record-comparison hidden><h3>선택한 두 진술</h3><div data-record-comparison-lines></div><p class="section-guide">공개된 문장을 나란히 보여 줍니다. 진위나 모순 여부는 직접 판단하세요.</p></div>
+    </section>
+  {% endif %}
+  {% if vm.speeches %}
+    <details class="speech-transcript"><summary>공개 발언 전체 보기</summary><h2>발언</h2>
+    {% for speech in vm.speeches %}<p class="vn-source" data-line-id="{{ speech.speech_id }}" data-speaker-id="{{ speech.speaker_id }}" data-day="{{ speech.day }}" data-phase="{{ speech.phase }}" data-speaker="{{ speech.speaker_name|display_name }}" data-sprite="{% if speech.speaker_id == 'mudang' %}{% with sprite_id=mudang_portrait_id|default:'portrait:mudang_f'|cut:'portrait:' %}{% with key='sprite:'|add:sprite_id %}{% review_asset key %}{% endwith %}{% endwith %}{% else %}{% with sprite_id='sprite:'|add:speech.speaker_id %}{% review_asset sprite_id %}{% endwith %}{% endif %}">{{ speech.speaker_name|display_name }}:
+      <span class="vn-source-text" id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
+    </p>{% endfor %}
+    </details>
+  {% endif %}
+  {% if published_votes %}
+    <section id="published-votes" class="record-panel ballot-records" aria-labelledby="published-votes-title">
+      <h2 id="published-votes-title">공개된 투표</h2>
+      <ul>
+        {% for vote in published_votes %}
+          <li data-vote-round="{{ vote.round }}">{{ vote.day }}일째 {% if vote.round == 'runoff' %}결선{% else %}본투표{% endif %} · {{ vote.voter|display_name }} → {{ vote.target|display_name }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if published_locks %}
+    <section id="published-locks" class="record-panel" aria-labelledby="published-locks-title">
+      <h2 id="published-locks-title">감금 결과</h2>
+      <ul>
+        {% for lock in published_locks %}
+          <li>
+            {{ lock.day }}일째 ·
+            {% if lock.name is None %}
+              무감금
+            {% else %}
+              {{ lock.name|display_name }} 감금
+              {% if lock.revealed_possessed is True %}· 금줄 반응으로 씐 자임이 밝혀졌습니다.
+              {% elif lock.revealed_possessed is False %}· 금줄 반응으로 씐 자가 아님이 밝혀졌습니다.
+              {% endif %}
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if own_divinations %}
+    <section id="own-divinations" class="record-panel player-records" aria-labelledby="own-divinations-title">
+      <h2 id="own-divinations-title">내 점괘</h2>
+      <p class="section-guide">나에게만 보이는 점괘 기록입니다.</p>
+      <ul>{% for result in own_divinations %}<li>{{ result }}</li>{% endfor %}</ul>
+    </section>
+  {% endif %}
+{% endif %}
