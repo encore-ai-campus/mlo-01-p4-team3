@@ -229,14 +229,24 @@ def progress(request):
     output = get_game_service().player_progress(request.player_pseudonym)
     if _wants_meeting(request):
         from .story_view import progress_context
-        return render(request, "progress.html", progress_context(output.progress))
+        # htmx는 판 화면 안 '원한 단서' 패널(B-10-01, 11/9 사용자 결정)이 쓰는 조각, 일반 요청은 로비의 전체 화면이다.
+        template = "progress_panel.html" if request.headers.get("HX-Request") == "true" else "progress.html"
+        return render(request, template, progress_context(output.progress))
     return JsonResponse(to_jsonable(output))
 
 
 @game_request
 @require_GET
 def review(request, game_id):
-    """종료된 자기 판에서 공개 가능한 복기 DTO만 반환한다."""
-    output = get_game_service().review(game_id, request.player_pseudonym)
+    """종료된 자기 판에서 공개 가능한 복기 DTO만 반환한다.
+
+    htmx 요청은 판 화면 안 복기 패널 조각(`review_panel.html`, B-10-01)을 받는다. 종료 전에는 어느 표현이든 403이다.
+    """
+    service = get_game_service()
+    output = service.review(game_id, request.player_pseudonym)
     request.game_id = output.game_id
+    if request.headers.get("HX-Request") == "true":
+        from .story_view import review_context
+        state, _ = service.owned(game_id, request.player_pseudonym)
+        return render(request, "review_panel.html", review_context(output, service.dependencies(state.meta).content))
     return JsonResponse(to_jsonable(output))

@@ -1,7 +1,16 @@
-<section id="game-result" aria-labelledby="game-result-title">
-  <h2 id="game-result-title">판 종료 결과</h2>
-  {% if game_result.completed %}<p>{{ game_result.winner }} · {{ game_result.day }}일째</p><p>{{ game_result.reason }}</p>
-  {% else %}<p>중단된 판입니다.</p>{% endif %}
-  {% if game_result.lines %}<h3>{{ game_result.ending_title }}</h3>{% for line in game_result.lines %}<p>{{ line }}</p>{% endfor %}{% endif %}
-  <a href="{% url 'player-progress' %}">모은 원한 단서 보기</a>
+<section id="game-result" class="end-card end-result" aria-labelledby="game-result-title">
+  <p class="end-kicker">판이 종료됐습니다.</p>
+  {% if game_result.completed %}
+    <h2 id="game-result-title">{{ game_result.winner }}</h2>
+    <p class="end-reason">{{ game_result.reason }} · {{ game_result.day }}일째</p>
+  {% else %}
+    <h2 id="game-result-title">중단된 판입니다.</h2>
+  {% endif %}
+  {% if game_result.lines %}
+    <section class="end-ending" aria-labelledby="game-ending-title">
+      <h3 id="game-ending-title">{{ game_result.ending_title }}</h3>
+      {% for line in game_result.lines %}<p>{{ line }}</p>{% endfor %}
+    </section>
+  {% endif %}
+  <p class="end-hint">위의 '복기'에서 마을 사람들의 정체를, '원한 단서'에서 모은 단서를 볼 수 있습니다.</p>
 </section>

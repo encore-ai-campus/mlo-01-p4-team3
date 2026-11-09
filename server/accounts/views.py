@@ -55,6 +55,8 @@ def _open_game_context(player, load_game=None):
     context = {"open_presets": [], "open_start_token": str(uuid.uuid4()), "open_games": []}
     try:
         context['open_presets'] = open_preset_ids()
+        from server.api.story_view import preset_choices
+        context['open_base_presets'], context['open_challenges'] = preset_choices(context['open_presets'])
         service = get_game_service()
         progress = service.progress.load(player)
         from server.api.story_view import ending_options

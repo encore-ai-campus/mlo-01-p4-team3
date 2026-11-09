@@ -67,11 +67,13 @@ B-06-03의 `POST /games/{id}/commands` 저장 응답 유실은 서버에서 동�
 
 B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 하기 → `POST /games`·`GET /games/{id}` 경로는 그대로다. 최신 dev에서 회차·소유자 가명·동의·광고 대응표·재접속 보존을 재검증했다. [증빙](../docs/evidence/B-06-03.md).
 
-## B-08-01 결과·진척·결말
+## B-08-01 결과·진척·결말, B-10-01 복기(판 종료 화면)
 
-- 홈의 일반 판·고정 회차 시작 폼은 `ending_choice.html`을 포함한다. 열린 결말만 선택할 수 있고 준비 중인 도전은 비활성이다. 초상 선택과 일반 판 시작 UUID는 기존 필드로 함께 전달한다.
-- 기존 `GET /games/{id}`의 전체 화면·회의 조각은 종료 시 `game_result.html`에 공개 승패·종료 사유와 선택 결말을 표시한다. 감금 기록·광고·설문 경로는 유지한다.
-- 홈·결과의 단서 링크는 `GET /players/me/progress` → `progress.html`로 이동한다. 일반 API 요청은 기존 `ProgressOutput` JSON이다.
+- 홈의 일반 판·고정 회차 시작 폼은 `ending_choice.html`을 포함한다. 퇴마는 항상, 한풀이는 해금된 것만 고를 수 있다. 판 구성 목록은 `presets_enabled.json`에 공개된 선택형 도전이 있을 때만 `선택형 도전` 묶음으로 보인다(`story_view.preset_choices`).
+- 판이 끝나면 기존 `GET /games/{id}` 전체 화면·회의 조각의 `#meeting` 안에 `game_end.html`(결과·복기·원한 단서 탭)을 넣는다. 탭 전환은 `web/static/js/game_end.js`, 모양은 `web/static/css/result.css`(B-10-07 `--pd-*` 이름, 대체값 포함).
+- 결과 탭: `game_result.html`(승패·종료 사유·결말 문안)·`result_banner`·종료 설문. 복기 탭: 열 때 `GET /games/{id}/review`(htmx) → `review_panel.html`(정체·숨긴 비밀·이 판 단서·`review_side`). 단서 탭: 열 때 `GET /players/me/progress`(htmx) → `progress_panel.html`.
+- 일반 요청은 그대로다: 복기는 `ReviewOutput` JSON, 진척은 로비용 전체 화면 `progress.html`. 행동 이유(E-10-10 `review_trace`)가 없으면 복기의 이유 영역은 숨긴다.
+- 고칠 곳: 문구·배치 → 위 템플릿, 복기·진척 화면 값 → `server/api/story_view.py`(표현 보조), 요청 분기 → `server/api/views.py`.
 
 B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
 
