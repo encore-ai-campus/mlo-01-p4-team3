@@ -11,6 +11,7 @@ class PrivacyGameCleanupTests(TestCase):
     """대상 하나만 잠그고 일반 실행과 운영자 처리를 거절한다."""
 
     def test_freeze_removes_only_subject_sessions(self):
+        """실행 확인 후 대상 세션만 제거한다."""
         subject = User.objects.create_user("subject")
         other = User.objects.create_user("other")
         profile = AccountProfile.objects.create(user=subject)
@@ -26,6 +27,7 @@ class PrivacyGameCleanupTests(TestCase):
         self.assertEqual(other_client.session.get("_auth_user_id"), str(other.pk))
 
     def test_freeze_rejects_staff(self):
+        """운영자 계정은 잠그지 않는다."""
         staff = User.objects.create_user("staff", is_staff=True)
         profile = AccountProfile.objects.create(user=staff)
         with self.assertRaisesRegex(CommandError, "privacy_staff_account_excluded"):
