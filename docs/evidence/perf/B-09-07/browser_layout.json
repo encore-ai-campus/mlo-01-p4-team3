@@ -1,0 +1,82 @@
+{
+  "task": "B-09-07",
+  "commit": "27c6f905e9bf4595c73f0558f64f20baccff3603",
+  "generated_at": "2026-11-09T01:20:05Z",
+  "source": "Chrome headless + CDP Emulation.setDeviceMetricsOverride(360x780 DSF1, 180x390 DSF2 = 360px 200% 확대). 녹화 base6 심문 화면(카드 0장·3장)을 시험 클라이언트로 렌더한 정적 HTML, 저장소 game.css·이미지 사용",
+  "cases": {
+    "i360": {
+      "vw": 360,
+      "vh": 780,
+      "bar_h": 390,
+      "bar_ratio": 0.5,
+      "bar_scrolls": true,
+      "page_overflow_x": false,
+      "end_overlap_px": 0,
+      "focus_last_visible": true,
+      "focusables": 21,
+      "cards_in_bar": true,
+      "speech_cards": 0
+    },
+    "i360z200": {
+      "vw": 180,
+      "vh": 390,
+      "bar_h": 195,
+      "bar_ratio": 0.5,
+      "bar_scrolls": true,
+      "page_overflow_x": false,
+      "end_overlap_px": 0,
+      "focus_last_visible": true,
+      "focusables": 21,
+      "cards_in_bar": true,
+      "speech_cards": 0
+    },
+    "c360": {
+      "vw": 360,
+      "vh": 780,
+      "bar_h": 390,
+      "bar_ratio": 0.5,
+      "bar_scrolls": true,
+      "page_overflow_x": false,
+      "end_overlap_px": 0,
+      "focus_last_visible": true,
+      "focusables": 56,
+      "cards_in_bar": true,
+      "speech_cards": 3
+    },
+    "c360z200": {
+      "vw": 180,
+      "vh": 390,
+      "bar_h": 195,
+      "bar_ratio": 0.5,
+      "bar_scrolls": true,
+      "page_overflow_x": false,
+      "end_overlap_px": 0,
+      "focus_last_visible": true,
+      "focusables": 56,
+      "cards_in_bar": true,
+      "speech_cards": 3
+    }
+  },
+  "metrics": {
+    "bar_height_ratio_max": {
+      "value": 0.5,
+      "unit": "ratio"
+    },
+    "end_overlap_px_max": {
+      "value": 0,
+      "unit": "px"
+    },
+    "page_overflow_x_cases": {
+      "value": 0,
+      "unit": "count"
+    },
+    "focus_hidden_cases": {
+      "value": 0,
+      "unit": "count"
+    },
+    "cases": {
+      "value": 4,
+      "unit": "count"
+    }
+  }
+}

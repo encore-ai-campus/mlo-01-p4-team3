@@ -1,9 +1,11 @@
 """수첩·확신도·설문 화면 모델과 HTML 폼을 공통 DTO 입력으로 바꾼다."""
+import logging
 from dataclasses import dataclass
 
 from django.http import QueryDict
 
 from server.app.dto import SaveNotebookInput, SubmitSurveyInput
+from server.app.interactions import InteractionUnavailable
 from .input_validation import parse_game_input
 
 
@@ -76,3 +78,17 @@ def participant_input(request, dto, game_id):
     if data.game_id != game_id:
         raise ValueError("path_body_mismatch")
     return data
+
+
+def backfill_surveys(service, player, game_ids, load_game):
+    """같은 참가자의 다음 요청(홈)에서 설문 이벤트 없는 끝난 판을 건너뜀으로 채운다(B-09-07 9번).
+
+    보완이 실패해도 홈은 막지 않는다. 다음 요청에서 다시 시도한다.
+    """
+    if service.interactions is None:
+        return 0
+    try:
+        return service.interactions.backfill_skipped_surveys(player, game_ids, load_game)
+    except (InteractionUnavailable, ConnectionError, TimeoutError):
+        logging.getLogger(__name__).warning("survey_backfill_unavailable")
+        return 0

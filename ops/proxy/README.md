@@ -14,7 +14,70 @@ sudo journalctl -u caddy --since '10 minutes ago'
 sudo systemctl stop caddy paldo-web
 ```
 
-웹은 Daphne **1개·127.0.0.1:8000**으로 실행한다. 웹의 `PALDO_PUBLIC_ORIGIN`은 브라우저 HTTPS 출처와 같게 설정한다. Caddy만 내부 인터페이스의 80/443에 bind한다. XFF는 사용자 입력을 버리고 실제 remote_host로 덮어쓰고 XFP는 https로 덮어쓴다. 처음 bind를 좁히는 reload가 기존 wildcard HTTP/3 UDP listener와 충돌하면 검증한 설정으로 Caddy를 재시작한다. 방화벽 정책 변경은 별도 운영 범위이며 이번 검증에서 변경하지 않았다.
+웹은 Daphne **2개·127.0.0.1:8000·8002**로 실행한다(E-09-10, 아래 "웹 프로세스 2개" 절). 웹의 `PALDO_PUBLIC_ORIGIN`은 브라우저 HTTPS 출처와 같게 설정한다. Caddy만 내부 인터페이스의 80/443에 bind한다. XFF는 사용자 입력을 버리고 실제 remote_host로 덮어쓰고 XFP는 https로 덮어쓴다. 처음 bind를 좁히는 reload가 기존 wildcard HTTP/3 UDP listener와 충돌하면 검증한 설정으로 Caddy를 재시작한다. 방화벽 정책 변경은 별도 운영 범위이며 이번 검증에서 변경하지 않았다.
+
+## 웹 프로세스 2개 (E-09-10)
+
+기본 구성은 Daphne 2개 + `InMemoryChannelLayer`다. 지금 웹소켓은 광고 신호 전용이라 프로세스 사이 전달이 없다(근거는 [서버 설계](../../server/DESIGN.md) "동시성 구조와 한계"). `Caddyfile`은 두 upstream(8000·8002)을 `least_conn`으로 나누고 `/healthz`를 5초마다 확인한다(Host는 `PALDO_PROXY_HOST`, 시한 5초, 연속 3회 실패 때만 뺀다. 과부하로 잠깐 느린 프로세스를 빼지 않기 위해서다). 실제 unit 파일 경로·프로필 경로는 비공개 운영 인계 기록을 따른다.
+
+### 필수 절차 (C, 약 20~30분)
+
+1. 웹 unit을 포트 인자를 받는 템플릿으로 바꾼다. 기존 `paldo-web` unit을 복사해 `paldo-web@.service`로 만들고 실행 줄만 `service_runtime.py --profile <보호 프로필> web --port %i`로 바꾼다. `Restart=always`, `RestartSec=2`를 둔다(한 프로세스가 죽으면 systemd가 다시 띄우고, 그동안 Caddy가 그 upstream을 뺀다). 허용 포트는 8000·8002뿐이다.
+2. 적용한다.
+   ```sh
+   sudo systemctl daemon-reload
+   sudo systemctl disable --now paldo-web
+   sudo systemctl enable --now paldo-web@8000 paldo-web@8002
+   caddy validate --config <설정 경로>   # 환경값 적용 상태로
+   sudo systemctl reload caddy
+   ```
+3. 확인한다.
+   - 각 프로세스: `curl -s -o /dev/null -w '%{http_code}\n' -H "Host: $PALDO_PROXY_HOST" http://127.0.0.1:8000/healthz`, 같은 명령을 8002로. 둘 다 200.
+   - Caddy: `sudo journalctl -u caddy --since '5 minutes ago' | grep -i unhealthy`가 비어 있음.
+   - 브라우저: HTTPS 홈 200, `/ws/game/` 101(위 "참가자에게 전달할 문구"의 운영자 확인과 같다).
+   - 로그: 소스의 `out/logs/web.jsonl`(8000)과 `out/logs/web-8002.jsonl`(8002)이 각각 늘어남.
+4. 지표: C-08-01의 수집 설정에서 게임 웹 대상을 프로세스마다 둔다(8000·8002, `process` 라벨 `web-1`·`web-2`, 로컬 예시는 `ops/compose/prometheus.yml`의 `paldo-web`). 웹은 loopback에만 bind하므로 metrics-01에서 원격으로 긁으려면 app-01 안에서 수집해 넘기는 방식이 필요하다. 방식은 C-08-01에서 정한다. 수집 요청의 Host는 대상 주소의 호스트(예: `127.0.0.1`)이고 Prometheus는 Host 헤더를 바꿀 수 없으므로, 웹 프로필 `environment`에 `PALDO_EXTRA_ALLOWED_HOSTS=127.0.0.1`처럼 수집용 호스트를 더해야 `/metrics`가 400이 아니다(기본 없음). 대시보드의 게임 API p95·오류율은 두 프로세스를 합산한다.
+
+### 되돌림 (1개, 약 2분)
+
+```sh
+sudo systemctl disable --now paldo-web@8002
+```
+
+Caddy 설정은 바꾸지 않는다. 능동 확인이 8002를 빼고, 그 사이 접속 실패는 8000으로 다시 보낸다. 다시 2개로: `sudo systemctl enable --now paldo-web@8002`.
+
+### 프로세스 수 비교 측정 (C-08-04 5번)
+
+`tools/perf/api_bench.py --web-processes`가 같은 서버에서 시험용 daphne를 N개 직접 띄우고, 운영과 같은 분배·상태 확인 설정의 Caddy를 앞에 세워 같은 부하(사용자당 초당 1요청 + 사용자별 웹소켓 비콘 1개)를 경우마다 차례로 준다. 운영 중인 `paldo-web@8000·8002`와 Caddy는 건드리지 않는다(빈 포트를 따로 고른다). 이미 떠 있는 앞단 주소로 부하만 보내는 모드는 없다. 이 부하는 시험용 엔진과 시험 접두어 컬렉션을 쓰므로 실제 엔진이 도는 서버로 보낼 수 없다.
+
+- C-08-04 5번 명령 `python -B tools/perf/api_bench.py --compare-asgi --users 30 --minutes 3`에 `--web-processes`를 붙이면 이 비교로 넘어간다(`--compare-asgi`는 받기만 한다). `--result-name <이름>`을 주면 증빙 결과 JSON을 `docs/evidence/perf/<--result-task>/<이름>.json`에 쓴다(기본 태스크 E-09-10, C 측정은 `--result-task C-08-04` 등 해당 태스크로).
+- 옵션: `--web-processes 2,1`(띄울 수 목록, 1~4), `--channel-layer memory|redis`(기본 memory, redis면 `--redis-url` 필요), `--users`(기본 30), `--minutes`(기본 3), `--front docker|binary`(기본 docker. Docker가 없으면 `binary`와 `--caddy-bin <caddy 경로>`. Linux의 docker는 host 네트워크로 loopback daphne에 붙는다), `--keep-logs <out/ 아래 폴더>`.
+- 준비: 소스 checkout과 `requirements/web.txt`가 설치된 venv, Mongo 레플리카셋 접속값 `PALDO_MONGO_URI`(DB 이름 포함). 시험은 `b0705_<임의값>_` 접두어 컬렉션만 만들고 끝나면 지운다. 운영 데이터와 섞지 않으려면 DB 이름을 시험용(예: `/paldo_bench`)으로 바꾼 URI를 쓴다. 계정은 임시 SQLite에 만들므로 MySQL은 쓰지 않는다.
+- 시간: 경우당 약 3분 30초(기동·상태 확인 포함). 2개·1개 비교는 약 8분.
+- 실행 예:
+  ```sh
+  cd <소스>
+  PALDO_MONGO_URI='<보호 접속값, DB 이름은 시험용>' <venv>/bin/python tools/perf/api_bench.py --compare-asgi --users 30 --minutes 3 --web-processes 2,1 --front binary --caddy-bin "$(command -v caddy)" --result-name server_2p_1p --result-task C-08-04
+  # Redis 비용까지 볼 때(선택 절 Redis를 띄운 뒤)
+  PALDO_MONGO_URI='...' <venv>/bin/python tools/perf/api_bench.py --web-processes 2 --channel-layer redis --redis-url redis://127.0.0.1:6379/15 --front binary
+  ```
+- 결과: 소스의 `out/handoff/e0910-multiproc-report.json`(`rows`마다 `processes`·`p50_ms`·`p95_ms`·`p99_ms`·`errors`·`beacon_errors`·`per_process_commits`). 화면에도 경우마다 한 줄 JSON이 나온다. 2개에서 `per_process_commits`가 두 포트로 나뉘어야 분배가 된 것이다.
+- 해석: app-01은 2 vCPU라 프로세스를 늘려도 최대 약 2배다. 부하 생성기도 같은 VM에서 돌면 CPU를 나눠 쓰므로 수치는 경우끼리 비교만 한다.
+
+### 선택: Redis 채널 레이어 (Redis를 켤 때만)
+
+서버가 다른 프로세스의 웹소켓 연결로 메시지를 보내는 기능(예: 서버 쪽 판 상태 전송)이 생기면 켠다. 지금 기본 구성에서는 하지 않는다.
+
+1. app-01 같은 VM 안에 Redis를 설치하고 loopback에만 연다(밖으로 열지 않음). 저장은 끈다.
+   ```sh
+   sudo apt-get install -y redis-server
+   # /etc/redis/redis.conf: bind 127.0.0.1 -::1, protected-mode yes, save "", appendonly no, maxmemory 64mb
+   sudo systemctl enable --now redis-server
+   redis-cli -h 127.0.0.1 ping    # PONG
+   ```
+2. 웹 프로필 `environment`에 `PALDO_CHANNEL_LAYER=redis`, `PALDO_REDIS_URL=redis://127.0.0.1:6379/0`를 넣고 `sudo systemctl restart paldo-web@8000 paldo-web@8002`. venv에 `requirements/web.txt`(channels_redis 4.3.0, redis 7.4.1. redis 8.1.0은 웹소켓이 끊겨 쓰지 않는다)가 설치돼 있어야 한다.
+3. 확인: 두 프로세스 `/healthz` 200, `redis-cli info clients`의 `connected_clients`가 웹 프로세스 수만큼 늘어남(channels_redis는 프로세스마다 수신 연결 하나를 나눠 쓴다. 30명 측정에서 1→3). Redis에 연결할 수 없으면 웹이 기동 때 "Redis 채널 레이어에 연결할 수 없습니다"로 멈춘다(InMemory로 떨어지지 않음).
+4. 되돌림: `PALDO_CHANNEL_LAYER=memory`로 바꾸고(또는 줄 삭제) 웹을 다시 시작한다. Redis는 `sudo systemctl disable --now redis-server`.
 
 ## 참가자에게 전달할 문구
 

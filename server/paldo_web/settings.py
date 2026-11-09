@@ -1,5 +1,6 @@
 """환경 변수 기반 설정. 운영 계정 저장소는 MySQL만 사용한다."""
 import os
+import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -15,6 +16,12 @@ _origin = urlsplit(PUBLIC_ORIGIN)
 if _origin.scheme not in ("http", "https") or not _origin.hostname or _origin.path not in ("", "/") or _origin.query or _origin.fragment or _origin.username:
     raise ImproperlyConfigured("PALDO_PUBLIC_ORIGIN에 게임 웹 출처를 지정하세요.")
 ALLOWED_HOSTS = [_origin.hostname]
+# E-09-10: 지표 수집기는 Host를 바꿀 수 없어(Prometheus는 Host 헤더 설정 금지) 대상 주소의 호스트로 온다.
+# 수집용 호스트 이름만 더한다(기본 없음, 와일드카드 금지). 로컬 Compose 예: host.docker.internal
+_extra_hosts = [h.strip().lower() for h in os.environ.get("PALDO_EXTRA_ALLOWED_HOSTS", "").split(",") if h.strip()]
+if any(not re.fullmatch(r"[a-z0-9]([a-z0-9.-]*[a-z0-9])?", h) for h in _extra_hosts):
+    raise ImproperlyConfigured("PALDO_EXTRA_ALLOWED_HOSTS는 쉼표로 나눈 호스트 이름만 받습니다(와일드카드·포트 금지).")
+ALLOWED_HOSTS += _extra_hosts
 CSRF_TRUSTED_ORIGINS = [PUBLIC_ORIGIN.rstrip("/")]
 SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = _origin.scheme == "https"
 SESSION_COOKIE_HTTPONLY = True
@@ -25,7 +32,11 @@ if SESSION_COOKIE_SECURE:
 ROOT_URLCONF = "server.paldo_web.urls"
 WSGI_APPLICATION = "server.paldo_web.wsgi.application"
 ASGI_APPLICATION = "server.paldo_web.asgi.application"
-CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+from .channel_layers import ChannelLayerConfigError, channel_layers
+try:  # E-09-10: 기본 memory(웹 프로세스 2개·1개 모두), Redis는 선택. server/DESIGN.md "동시성 구조와 한계"
+    CHANNEL_LAYERS = channel_layers(os.environ)
+except ChannelLayerConfigError as error:
+    raise ImproperlyConfigured(str(error)) from None
 LOGIN_URL = "/accounts/login"
 SIGNUP_INVITE_CODE = os.environ.get("PALDO_SIGNUP_INVITE_CODE", "")
 GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
@@ -86,13 +97,18 @@ STATICFILES_DIRS = [BASE_DIR / "web" / "static"]
 ASSET_MANIFEST = BASE_DIR / "content" / "images" / "manifest.json"
 LOG_DIR = BASE_DIR / "out" / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+# 웹 프로세스가 둘이면(E-09-10) 같은 파일을 함께 회전하지 않도록 두 번째부터 포트를 붙인 파일에 쓴다.
+_web_instance = os.environ.get("PALDO_WEB_INSTANCE", "")
+if _web_instance and not _web_instance.isdigit():
+    raise ImproperlyConfigured("PALDO_WEB_INSTANCE는 웹 포트 숫자여야 합니다.")
+WEB_LOG_FILE = "web.jsonl" if _web_instance in ("", "8000") else f"web-{_web_instance}.jsonl"
 LOGGING = {
     "version": 1, "disable_existing_loggers": False,
     "formatters": {"json": {"()": "server.paldo_web.middleware.JsonFormatter"}},
     "handlers": {
         "console": {"class": "logging.StreamHandler", "formatter": "json"},
         "file": {"class": "logging.handlers.TimedRotatingFileHandler",
-                 "filename": str(LOG_DIR / "web.jsonl"), "when": "midnight", "utc": True,
+                 "filename": str(LOG_DIR / WEB_LOG_FILE), "when": "midnight", "utc": True,
                  "backupCount": 7, "encoding": "utf-8", "formatter": "json"},
         "null": {"class": "logging.NullHandler"},
     },

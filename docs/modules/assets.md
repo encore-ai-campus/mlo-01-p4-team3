@@ -9,7 +9,7 @@
 - 계층(`tools/assets/`)
   - 도메인: `spec.py`(규격표 해석, 기대 항목, 대조, 초상-sprite 쌍 검사)·`art.py`(유형별 임시 그림 배분)·`portrait_art.py`(임시 sprite: 회색 실루엣·기준선·이름표, 초상 합성 크롭)·`background_art.py`(임시 장면 배경: 그라데이션·이름표)·`mascot_art.py`(임시 마스코트: 동물 실루엣·이름표)·`glyphs.py`(이름표 글자 찍기, 비트맵 `glyph_data.py`)·`vn.py`(sprite 기준선·배경·표정 얼굴 영역·마스코트 검사, 평소/전신 컷·마스코트 배치 수치, 부드러운 축소, 검수용 합성)
   - 인프라: `sources.py`(파일·로그·결과 JSON, 인물 표시 이름)·`png.py`(PNG RGB/RGBA 쓰기·읽기)·`build_glyphs.py`(Windows 글꼴 → `glyph_data.py`, GDI·ctypes, 개발 도구 CLI)
-  - 응용+표현: `make_placeholders.py`(생성·대조 흐름, CLI)·`preview_vn.py`(검수용 합성 PNG CLI)
+  - 응용+표현: `make_placeholders.py`(생성·대조 흐름, CLI)·`preview_vn.py`(검수용 합성 PNG CLI)·`normalize.py`(바탕이 투명한 실제 원본 → 키 등급 sprite·마스코트 배치, 인물별 머리카락 윗선 표 `HAIR_TOP`, A-09-05)
   - 의존: `make_placeholders`·`preview_vn` → `spec`·`art`·`vn` → `portrait_art`·`background_art`·`mascot_art` → `glyphs`, `sources`·`png` → `spec`. 도메인은 인프라를 import하지 않는다.
 - 고칠 곳: 규격·기대 수 → `docs/assets/spec.md` + `spec.py`, 임시 실루엣 → `portrait_art.py`, 임시 배경 → `background_art.py`, 임시 마스코트 → `mascot_art.py`, 표정 목록·대상 → `spec.md` 8·9절, 이름표 글자 추가 → `python -m tools.assets.build_glyphs`, sprite·배경 검사 기준·화면 배치 수치 → `vn.py`, PNG 형식 → `png.py`.
 - 그림 기준은 `docs/assets/style_guide.md`(반실사 일러스트, 사람이 체크리스트로 판정). 임시 에셋은 회색 실루엣과 이름 표기, 크기·기준선·배치 확인용이며 최종 그림이 아니다.
@@ -38,6 +38,7 @@ python -m tools.assets.preview_vn --bg meeting --id jumo --expr sad --mascot kka
 python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrait_art tests.assets.test_vn tests.assets.test_expression_mascot
 ```
 
+- 바탕이 투명한 생성 원본(`characters/<id>.png`, `mascots/<파일>`)을 맞출 때: 인물의 머리카락 윗선(원본 좌표, 장식 제외)을 `normalize.HAIR_TOP`에 근거와 함께 적고 `python -m tools.assets.normalize <원본 폴더>` → `make_placeholders`. 단색 바탕 원본은 `cutout`.
 - 실제 sprite를 넣을 때: `content/images/sprite/<id>.png`(512×1280 8비트 RGBA, 반투명 허용, 팔레트 PNG 안 됨)를 덮어쓰고 sprite 항목 `placeholder`를 `false`로 바꾼 뒤 `make_placeholders`를 실행한다. 초상이 그 sprite에서 다시 합성·크롭되고(무손실 필터 선택으로 저장) 초상 표시도 `false`가 된다. 초상 파일은 따로 넣지 않는다.
 - 실제 표정 sprite를 넣을 때: 기본 sprite를 편집 입력으로 얼굴 영역만 바꾼 결과를 기본에 붙여 넣어 `sprite/<id>__<표정 id>.png`에 덮어쓰고 `placeholder: false`로 바꾼 뒤 `make_placeholders`를 실행한다. 처음 실제로 표시될 때 기본 sprite 파일의 SHA-256이 `edited_from_sha256`에 기록되고, 이후 기본이 바뀌면 위반으로 보고한다. 표정을 새 기본에서 다시 만들었으면 그 항목의 `edited_from_sha256`을 지우고 다시 실행한다.
 - 검수용 합성(`preview_vn`)은 저장소의 파일을 그대로 겹친다. 출력은 저장소 밖이나 `out/` 아래만 허용하고, `--bg night`에 `--id`를 주면 오류다.
@@ -82,6 +83,7 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | A-08-04 | 11/8 | (11/6 선행 작업) `cutout.py`·`test_cutout.py`: 실제 생성 원본의 단색 바탕 편차·가는 머리카락·색 번짐을 처리하고 straight alpha로 복원, 키 등급별 단일 배율 배치. 생성·처리 기록 `content/images/SOURCES.md`, 시험 증빙 `docs/evidence/A-08-04.md`. 시험 파일은 out/ 보관, 실제 manifest 교체 전 |
+| A-09-05 | 11/9 | `normalize.py`·`test_normalize.py`: 바탕이 투명한 원본을 인물별 머리카락 윗선(`HAIR_TOP`)·발끝으로 단일 배율 배치(sprite), 512×512 가운데·아랫변 480(마스코트), 모두 통과해야 쓰고 manifest `placeholder: false`. 첫 플레이 sprite 8장·마스코트 2장 실제 파일, 초상 8장 파생, `SOURCES.md` A-09-05 절 |
 | E-05-05 | 11/5 | 규격표(도트 격자 포함)·스타일 가이드(도트), 임시 세트 생성기(`make_placeholders`)와 37개 임시 세트·manifest, 임시 초상 13장은 코드로 그린 도트 그림(`portrait_art`). 도트 기준은 같은 날 반실사 개정으로 대체(아래 E-08-07 행) |
 | E-08-07 | 11/8 | (11/5 사전 작업) 유형 sprite·background 추가(기대 52), 초상을 sprite 크롭으로 파생(`derived_from`, 쌍 상태 검사), RGBA PNG 쓰기·읽기, sprite·배경 검사(`vn.py`), 검수용 합성(`preview_vn`), 임시 sprite 13장·배경 2장. 같은 날 화풍을 반실사로 바꿔(크로스체크 18) sprite를 전신 512×1280으로, 검사를 px 기준선으로 바꾸고 도트 격자·팔레트·블록·알파 이진 검사를 뺐다. 초상은 알파 합성 크롭, 배치는 평소/전신 컷 두 모드. 이어서 임시 sprite·초상·배경을 회색 실루엣 + 이름표로 바꾸고(`glyphs`·`glyph_data`·`build_glyphs`) 코드 인물 그림·마을 그림을 지웠다 |
 | E-08-07 | 11/8 | (11/5 사전 작업, 크로스체크 19) 표정 변형(`<id>__<표정 id>`, 규격표 8·9절, `edited_from`·`edited_from_sha256`, 얼굴 영역 밖 동일·얼굴 변화 검사)과 마스코트 유형(`mascot`, 까치·족제비, `mascot_art`) 추가, 기대 90. `preview_vn --expr --mascot` |
