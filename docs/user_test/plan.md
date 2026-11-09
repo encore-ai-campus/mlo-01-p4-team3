@@ -74,12 +74,13 @@
 |---|---|---|
 | `rule_version` | `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"` | `rule-0.6.decision-1` |
 | `engine_version` | `python -c "from engine.domain.model import ENGINE_VERSION; print(ENGINE_VERSION)"`(E-08-14부터 단일 출처) | `paldo-engine` |
-| `content_version` | `python -c "import json; print(json.load(open('content/bundle_v1.json', encoding='utf-8'))['content_version'])"` | `content-1.0` |
+| `content_version` | `python -c "import json; print(json.load(open('content/bundle_v1.json', encoding='utf-8'))['content_version'])"` | `content-1.0.1`(11/9 성향 hothead 해명 변형 한 줄 어조 수정으로 올림) |
 
 - 참고 열은 태그 전 값이다. 증빙에는 태그에서 읽은 값을 적는다.
 - **콘텐츠 적재 확인.** 운영 게임은 판의 `content_version`으로 Mongo `content` 컬렉션에서 그 버전을 읽는다(`server/infra/content_store.py`). 같은 버전은 다시 적재할 수 없다(`content_version_exists`).
   - `content-1.0`은 C-07-04 운영 인계 때 실제로 읽혔다([`ops/proxy/README.md`](../../ops/proxy/README.md) "운영 인계 범위"). 적재된 내용이 태그의 `content/bundle_v1.json`과 같은지 대조한 기록은 없다. `bundle_v1.json`은 11/7 E-07-05에서도 바뀌었다.
-  - 그래서 **11/10 09:00 배포 전에** 후보 커밋에서 대조한다(C-08-04 1번. 11/8에 준비·1차 대조, 11/10 09:00에 그 시점 후보 커밋으로 재대조). 운영 DB 읽기 권한이 있는 환경에서 `MongoContentSource(<content 컬렉션>).load("content-1.0")`의 결과와, 후보 커밋의 `tools.check_content.load_bundle(Path("content/bundle_v1.json"))` 결과(`pathlib.Path`로 넘긴다)가 같은지 본다.
+  - 11/9에 `content-1.0.1`로 올렸으므로(대사 어조 한 줄) 운영 Mongo에는 아직 없다. 11/10 09:00 배포 때 후보 커밋으로 `tools.load_content`를 한 번 적재한 뒤 대조하고, 일반 판용 `PALDO_CONTENT_VERSION`도 `content-1.0.1`로 둔다.
+  - 그래서 **11/10 09:00 배포 전에** 후보 커밋에서 대조한다(C-08-04 1번. 11/8에 준비·1차 대조, 11/10 09:00에 그 시점 후보 커밋으로 재대조). 운영 DB 읽기 권한이 있는 환경에서 `MongoContentSource(<content 컬렉션>).load(<후보 커밋의 content_version>)`의 결과와, 후보 커밋의 `tools.check_content.load_bundle(Path("content/bundle_v1.json"))` 결과(`pathlib.Path`로 넘긴다)가 같은지 본다.
   - 다르면 `bundle_v1.json`의 `content_version`을 올린 커밋을 `dev`에 병합하고 그 커밋으로 적재한다(`python -m tools.load_content content/bundle_v1.json`). 배포·리허설·태그와 버전 값 읽기를 그 커밋에서 한다. 배포 커밋과 서버 콘텐츠 버전이 어긋나지 않게 하려는 것이다.
   - 대조·적재와 후보 커밋 배포는 C가 한다([C-08-04](../tasks/C_infra.md), 11/8 PM 결정).
 
