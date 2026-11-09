@@ -63,7 +63,7 @@ python -B server/preview.py --port 8769
 
 ## B-10-07 UI 인계
 
-PALDO_GAME_UI=classic(선택)은 dev 62e7525의 기존 화면, vn(기본)은 공식 시안 UI다. 모드별 템플릿 캐시를 분리한다. 공개 UI 모델은 PlayerView를 보강하며 API·도메인 DTO·명령·DB는 유지한다. 무대 창은 원래 폼을 이동하고 자동 명령을 만들지 않는다. 대사창 25%, 전체 발언 펼침·전신 건너뛰기·탭 읽기 보존을 연결한다. 여성 무당은 사용자 확정 v5를 공식 sprite/portrait ID에 함께 반영했다.
+PALDO_GAME_UI=vn(기본)은 확정 VN 화면, classic(선택)은 기존 화면이다. 모드별 템플릿 캐시를 분리한다. 공개 UI 모델은 PlayerView를 보강하며 API·도메인 DTO·명령·DB는 유지한다. 무대 창은 원래 폼을 이동하고 자동 명령을 만들지 않는다. 대사창 25%, 전체 발언 펼침·전신 건너뛰기·탭 읽기 보존을 연결한다. 여성 무당은 사용자 확정 v5를 공식 sprite/portrait ID에 함께 반영했다.
 
 [PM 검토](../../web/PM_UI_REVIEW.md) · [되돌림](../../ops/proxy/README.md#게임-ui-선택과-되돌림) · [증빙](../evidence/B-10-07.md). 첫 등장·추방/처형·엔딩 컷과 표정은 E 인수 잔여이며 제목·호랑이는 이번 범위에서 제외하고 모바일은 900px 미만 무대 아래 배치로 확정됐다. 전체 종료 대신 Refs로 연결한다.
 
