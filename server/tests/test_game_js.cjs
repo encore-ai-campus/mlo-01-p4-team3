@@ -66,4 +66,12 @@ unknownNight.checked = true;
 change(unknownNight);
 assert.equal(form.elements.night.value, '0');
 assert.equal(form.elements.slot.value, 'evening');
-console.log('game.js whereabouts sync: 4 cases ok');
+// 8번: 발언 카드 조각을 바꿔 그리면 명령 막대 안에서 카드가 보이게 스크롤한다.
+let scrolled = 0;
+const cardsBox = {id: 'speech-cards', closest: s => (s === '.command-bar' ? {} : null), scrollIntoView: () => scrolled++};
+document.getElementById = id => (id === 'speech-cards' ? cardsBox : null);
+listeners['htmx:afterSwap'].forEach(cb => cb({detail: {target: cardsBox}}));
+assert.equal(scrolled, 1);
+listeners['htmx:afterSwap'].forEach(cb => cb({detail: {target: {id: 'meeting'}}}));
+assert.equal(scrolled, 1);
+console.log('game.js whereabouts sync 4 cases, command bar cards scroll ok');

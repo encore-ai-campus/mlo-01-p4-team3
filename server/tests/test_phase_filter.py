@@ -63,8 +63,8 @@ class PhaseCards(SimpleTestCase):
         self.assertEqual(player_kinds(Phase.INTERROGATION), ["interrogate"])
 
 
-class PhaseFilterScreens(TestCase):
-    """녹화 판을 단계별로 진행하며 같은 문장의 화면 결과를 대조한다."""
+class RecordedGame(TestCase):
+    """녹화 판 조립과 진행·해석 도우미(시험 없음)."""
 
     def setUp(self):
         """동의한 계정과 녹화 판을 만든다."""
@@ -105,6 +105,9 @@ class PhaseFilterScreens(TestCase):
     def attempt(self, response):
         """저장된 시도 기록."""
         return self.service.interactions.store.records[self.gid].attempts[response.context["attempt_id"]]
+
+class PhaseFilterScreens(RecordedGame):
+    """녹화 판을 단계별로 진행하며 같은 문장의 화면 결과를 대조한다."""
 
     def test_same_sentence_across_phases(self):
         """아침 입력 비활성, 1라운드 의심, 심문 실패 안내, 투표 카드 실행 422 0건, 원래 후보 보존."""
@@ -157,6 +160,40 @@ class PhaseFilterScreens(TestCase):
         page = self.client.get(self.base, HTTP_HX_REQUEST="true")
         self.assertContains(page, 'value="claim:cl02" data-night="0" data-slot="midnight"')
         self.assertContains(page, 'value="claim:cl01" data-night="0" data-slot="evening"')
+
+
+class CommandBar(RecordedGame):
+    """8번: 명령 패널·자유 입력·발언 카드가 화면 아래 고정 막대 안에 있고, 조각 교체·409 뒤에도 유지된다."""
+
+    def bar(self, response):
+        """막대 영역 HTML."""
+        html = response.content.decode()
+        start = html.index('<div class="command-bar"')
+        return html[start:html.index('<footer class="asset-credits"', start)]
+
+    def test_bar_wraps_actions_input_and_cards(self):
+        """회의 화면(전체·htmx 조각) 모두 막대 안에 행동 선택·말로 행동하기·발언 카드 자리가 있다."""
+        for headers in ({"HTTP_ACCEPT": "text/html"}, {"HTTP_HX_REQUEST": "true"}):
+            bar = self.bar(self.client.get(self.base, **headers))
+            self.assertIn('id="meeting-actions"', bar)
+            self.assertIn('id="utterance-input"', bar)
+            self.assertIn('id="speech-cards"', bar)
+
+    def test_bar_survives_stale_409_swap(self):
+        """오래된 버전 명령의 409 회의 화면 교체에도 막대가 그대로 있다."""
+        self.advance_to(1)
+        stale = self.client.post(self.base + "/commands", urlencode({
+            "game_id": self.gid, "command_id": str(uuid.uuid4()), "state_version": "0", "kind": "advance"}),
+            content_type="application/x-www-form-urlencoded", HTTP_HX_REQUEST="true")
+        self.assertEqual(stale.status_code, 409)
+        self.assertIn('id="meeting-actions"', self.bar(stale))
+
+    def test_bar_css_is_sticky_and_half_height(self):
+        """막대는 sticky(본문 끝에서 제자리)·높이 절반 이하(테두리 포함)·안쪽 스크롤."""
+        css = (Path(__file__).resolve().parents[2] / "web" / "static" / "game.css").read_text(encoding="utf-8")
+        rule = css[css.index(".command-bar {"):css.index("}", css.index(".command-bar {"))]
+        for part in ("position: sticky", "bottom: 0", "box-sizing: border-box", "max-height: 50vh", "overflow-y: auto"):
+            self.assertIn(part, rule)
 
 
 class PreviousSelectionTemplate(TestCase):

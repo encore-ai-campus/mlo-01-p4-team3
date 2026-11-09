@@ -67,3 +67,10 @@ document.addEventListener("submit", event => {
 }, true);
 document.addEventListener("DOMContentLoaded", refreshInterrogations);
 document.addEventListener("htmx:afterSwap", refreshInterrogations);
+/* 명령 막대 안에서 새로 그린 발언 카드를 보이게 한다(막대 안 스크롤로 카드 확인을 끝낸다). */
+document.addEventListener("htmx:afterSwap", event => {
+  const cards = document.getElementById("speech-cards");
+  if (cards && event.detail?.target?.id === "speech-cards" && cards.closest(".command-bar")) {
+    cards.scrollIntoView({block: "nearest"});
+  }
+});
