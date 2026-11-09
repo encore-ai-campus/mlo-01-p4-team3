@@ -9,8 +9,9 @@
 | 파일 | 계층 | 하는 일 |
 |---|---|---|
 | `.githooks/pre-push` | 표현(진입점) | `git push` 때 푸시하는 커밋마다 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 먼저 `precheck --check-pass <SHA>`로 통과 기록을 보고, 같은 비교 기준으로 이미 통과한 커밋이면 생략. 그 커밋이 HEAD가 아니거나 작업 트리에 변경이 있으면 임시 worktree에서 검사. precheck를 부를 때만 git이 훅에 넘긴 저장소 지정 변수(`GIT_DIR` 등, `git rev-parse --local-env-vars`)를 지운다 |
-| `tools/precheck.py` | 도메인(`summarize`·`may_record`·`skip_decision` 등) + 인프라(`SubprocessRunner`·`PassStore`) + 응용(`run_precheck`·`record_pass`·`check_pass`·`quick_plan`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. 깨끗한 트리에서 전체 통과하면 통과 기록을 남기고, `--check-pass`로 훅에 생략 여부를 알려 준다. `--quick`은 바뀐 파일과 이어진 테스트 모듈만 돌리고 기록을 남기지 않는다. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다. 하위 명령 환경에서 저장소 지정 git 변수를 뺀다(`clean_env`) |
-| `tools/precheck_scope.py` | 도메인 | 빠른 검사 대상(폴더별 테스트 모듈) 고르기: `.py`는 저장소 import 관계(`-m` 모듈 이름·`.py` 경로 문자열 포함)를 거슬러 쓰는 테스트와 상위 폴더 이름을 적은 폴더 훑기 테스트, `.md`·`docs/` 아래 파일은 문서를 읽는 테스트, `web/` 화면 파일은 화면 파일을 읽는 테스트, `server/tests/`(precheck 밖 Django·JS 테스트)는 그것을 쓰거나 적은 테스트만(없으면 테스트 없음). precheck 테스트가 쓰지 않는 `server/` 모듈은 Django 쪽으로 보고 전체로 넘기지 않는다. `load_tests`가 있는 폴더는 폴더 전체. 공용·그 밖의 비 `.py`·쓰는 테스트 없는 그 밖의 모듈은 전체 |
+| `tools/precheck.py` | 도메인(`summarize`·`may_record`·`skip_decision` 등) + 인프라(`SubprocessRunner`·`PassStore`) + 응용(`run_precheck`·`record_pass`·`check_pass`·`quick_plan`·`slow_plan`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. 전체 검사에서도 무거운 테스트는 바뀐 파일과 이어질 때만 돌리고(`--all-slow`면 모두) 뺀 개수를 요약 줄에 적는다. 깨끗한 트리에서 전체 통과하면 통과 기록을 남기고, `--check-pass`로 훅에 생략 여부를 알려 준다. `--quick`은 바뀐 파일과 이어진 테스트 모듈만 돌리고 기록을 남기지 않는다. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다. 하위 명령 환경에서 저장소 지정 git 변수를 뺀다(`clean_env`) |
+| `tools/precheck_scope.py` | 도메인 | 빠른 검사 대상(폴더별 테스트 모듈) 고르기: `.py`는 저장소 import 관계(`-m` 모듈 이름·`.py` 경로 문자열 포함)를 거슬러 쓰는 테스트와 상위 폴더 이름을 적은 폴더 훑기 테스트, `.md`·`docs/` 아래 파일은 문서를 읽는 테스트, `web/` 화면 파일은 화면 파일을 읽는 테스트, `server/tests/`(precheck 밖 Django·JS 테스트)는 그것을 쓰거나 적은 테스트만(없으면 테스트 없음). precheck 테스트가 쓰지 않는 `server/` 모듈은 Django 쪽으로 보고 전체로 넘기지 않는다. `load_tests`가 있는 폴더는 폴더 전체. 공용·그 밖의 비 `.py`·쓰는 테스트 없는 그 밖의 모듈은 전체. 무거운 테스트 목록 `SLOW_TESTS`와 전체 검사에서 뺄 것 고르기(`slow_skips`) |
+| `tools/run_tests.py` | 도메인(`drop_tests`) + 표현(`main`) | 테스트 폴더 하나를 `unittest discover`와 같이 돌리되 지정한 테스트 id를 뺀다. 실제로 뺀 개수를 `precheck-skip: N`으로 내고 종료 코드는 `unittest`와 같다(0·1·5) |
 | `tools/check_evidence.py` | 도메인 규칙 + 응용 + 표현(`main`) | 증빙 형식(`--format`), 완료 검사(`--complete`, 4절 규칙 1~6), PR 본문 문법(11절) |
 | `tools/check_docs.py` | 도메인 규칙 + 응용 + 표현(`main`) | 문서화 검사(10절 규칙 1~6) |
 | `tools/check_secrets.py` | 도메인 규칙 + 응용 + 표현(`main`) | 비밀정보 검사(E-05-02 조건 5), 예외 `tools/secrets_allowlist.txt` |
@@ -33,6 +34,7 @@
 - 저장소 지정 git 변수를 지우는 이유: 훅이 받은 `GIT_DIR`·`GIT_INDEX_FILE`이 precheck의 테스트까지 이어지면, 테스트가 임시 저장소 대신 실제 저장소에 `git init`·commit·config를 한다(11/5 사고, [트러블 E](../troubles/E.md#e-05-02)).
 - 통과 기록으로 훅 검사를 생략하는 이유(11/7 PM 결정): 작업 세션이 PR 본문 검사로 같은 커밋을 이미 통과시켰는데 푸시 때 같은 검사가 다시 돌아 1~2분씩 들었다. 기록은 커밋 SHA와 비교 기준이 모두 같을 때만 쓰고, 깨끗한 작업 트리·전체 통과일 때만 남긴다. `--pr-body` 실행은 본문 종류(P-xx)에 따라 push 때의 `check_evidence --changed`를 건너뛸 수 있어, 기록 전에 그 검사를 한 번 더 돌린다.
 - 빠른 검사(`--quick`)를 둔 이유(11/9 PM 결정): 작업 중 확인에 전체 테스트(약 940개, 4~5분)를 매번 돌리면 기다리는 시간이 길다. 작업 중에는 바뀐 계층과 이어진 테스트만 돌리고, 다른 변경과 합친 결과를 잡는 전체 검사는 PR 직전과 push 때 한 번 돈다. 그래서 빠른 검사는 통과 기록을 남기지 않고(훅이 생략하지 않게), 요약 줄을 `precheck(빠른):`로 바꿔 PR 본문에 붙이면 `check_evidence`가 거부한다. 고르는 규칙이 애매하면 전체로 돈다(덜 줄이는 쪽).
+- 무거운 테스트를 전체 검사에서도 고르는 이유(11/9 PM 결정): 전체 검사는 폴더를 동시에 돌려 가장 느린 폴더가 전체 시간을 정한다. 11/9 측정에서 `tests/engine`(약 290초)·`tests/tools`(약 260초)가 그 폴더였고, 그 시간의 절반 이상이 10초 넘는 테스트 9개(광고 트래픽 HTTP 재현 127초, 프리셋 저장·복원 왕복 90초, 판 실행 검사들)였다. 이 9개는 바뀐 파일이 import로 이어질 때만 돌리고, 공용 파일을 바꿨거나 바뀐 파일이 없으면(PM이 `dev`를 받아 그대로 돌리는 매일 검사) 모두 돈다. 목록은 `tools/precheck_scope.py`의 `SLOW_TESTS` 한 곳이라 테스트 파일은 고치지 않는다.
 - 비교 기준을 못 구하면 문서·증빙 단계를 실패로 보는 이유: 건너뛰면 검사 없이 `precheck: 통과` 줄이 나와 PR 본문의 결과 줄을 믿을 수 없게 된다.
 
 ## 사용법
@@ -45,6 +47,7 @@ python -m tools.precheck --with-assets                       # 에셋 관련 파
 python -m tools.precheck --base <커밋>                        # 비교 기준 직접 지정(기본 origin/dev와의 merge-base)
 python -m tools.precheck --check-pass <SHA>                  # 훅용: 통과 기록이 지금 비교 기준과 맞으면 0(생략), 아니면 1
 python -m tools.precheck --quick                             # 작업 중 빠른 검사(바뀐 파일과 이어진 테스트 모듈만, 기록 없음, PR에 못 붙임)
+python -m tools.precheck --all-slow                          # 무거운 테스트(SLOW_TESTS)도 모두(기본: 바뀐 파일과 이어질 때만)
 python -m unittest discover -s tests -t .                    # 단위 테스트 전체(검사 도구 자체 테스트 포함)
 python -m tools.check_secrets                                # 비밀정보
 python -m tools.check_structure --all                        # 추적 파일의 모든 폴더가 structure.md 6절 안
@@ -101,7 +104,8 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 - 자동으로 막는 장치가 없다. 훅은 `core.hooksPath`를 설정한 clone에서만 돌고 `git push --no-verify`로 건너뛸 수 있으며, PR 본문의 결과 줄은 손으로 쓸 수 있다. 실수로 빼먹는 것만 막는다. PM은 `Closes` PR을 병합하기 전에 PR 브랜치에서 `precheck --pr-body`를 다시 돌린다(README 11절).
 - 통과 기록은 각자 노트북의 git 폴더에만 있다. 다른 사람·다른 clone이 같은 커밋을 푸시하면 다시 검사한다. 기록은 손으로 만들 수 있으므로 실수 방지용이다(위와 같은 한계).
 - 빠른 검사의 대상 고르기는 정적 분석이다. 문자열을 조립하는 동적 import, 테스트가 경로를 조립해 읽는 비 `.py` 파일은 보지 못한다. 그래서 비 `.py` 변경은 문서(`.md`·`docs/`)와 `web/` 화면 파일만 빼고 전체로 돌고, PR 직전 전체 검사를 빼지 않는다. `server/tests`(Django)는 전체 검사와 마찬가지로 대상이 아니다. precheck 테스트가 쓰지 않는 `server/` 모듈(Django 화면·관리 명령)을 전체로 넘기지 않는 것도 같은 이유다(전체 검사도 그 모듈을 돌리지 않는다). 테스트 폴더의 탐색 전용 장치(`load_tests` 외 `setUpModule` 등)는 모듈을 직접 지정해 돌려도 그대로 적용된다.
-- 병합 뒤 `dev`에서 자동 검사가 돌지 않는다. 두 PR이 각각 통과해도 합친 결과가 깨질 수 있어, PM이 매일 `dev`에서 `precheck`를 한 번 돌린다.
+- 병합 뒤 `dev`에서 자동 검사가 돌지 않는다. 두 PR이 각각 통과해도 합친 결과가 깨질 수 있어, PM이 매일 `dev`에서 `precheck`를 한 번 돌린다. 이때는 바뀐 파일이 없어 무거운 테스트도 모두 돈다(작업 트리에 추적 안 하는 파일이 있으면 `--all-slow`).
+- 무거운 테스트 고르기도 빠른 검사와 같은 정적 분석이라, 동적으로 불러오는 경로로만 이어진 변경에서는 PR 단계에서 빠질 수 있다. 그런 결함은 위 매일 `dev` 검사에서 잡는다. 새로 10초 넘는 테스트가 생기면 `SLOW_TESTS`에 더한다(목록의 id는 `tests/tools/test_precheck_scope.py`가 실제 존재를 검사).
 - `tests/assets`(단일 테스트가 10초를 넘는다)는 기본에서 빠진다. 에셋 관련 파일(`tools/assets/`, `tests/assets/`, `docs/assets/`, `content/images/`)을 바꾼 사람만 `--with-assets`로 돌린다.
 - Django(`server/manage.py test`)와 외부 서비스 테스트(결정 #12, `tests/infra/`·`tests/ads/`, `PALDO_SERVICE_TESTS=1`)는 `precheck`에 넣지 않았다. 두 폴더를 기본 discover에서 빼는 `load_tests`는 폴더를 처음 만드는 태스크(C-06-01, D-05-03)가 그 `__init__.py`에 두고, 실제 실행은 각자 Compose와 통합(INT)에서 한다.
 - 임시 운영 로컬 CI(`tools/interim.py`)는 Actions와 같은 검사 함수를 부르지만 실행 환경은 각자 노트북이다(Python 3.14 버전은 `.ci.txt`에 기록). 서비스 테스트는 `PALDO_SERVICE_TESTS=1`과 Compose 기동이 있어야 돌고, 대상 영역을 바꿨는데 안 돌렸으면 실패로 본다. 원장 검사는 병합 SHA·부모·흐름만 보고 검토 내용 자체는 보지 않는다.
@@ -128,3 +132,4 @@ write_result("B-06-02", "api", {"api_p95": {"value": 412.3, "unit": "ms"}}, "pyt
 | P-27 | 11/6 | `check_docs` 규칙 6을 라우팅 2단 구조에 맞춤: 새 최상위 폴더는 루트 `README.md`, 두 번째 단계는 루트 README 또는 `docs/routing/<A~E>.md`. 삭제된 경로는 문서 변경으로 치지 않음 |
 | P-10 | 11/7 | 통과 기록: 깨끗한 트리에서 전체 통과한 커밋을 `<git 공용 폴더>/precheck-pass/<SHA>`에 기록, 훅은 `--check-pass`로 같은 비교 기준이면 검사 생략(11/7 PM 결정, 끄기 `PALDO_PRECHECK_NO_CACHE=1`) |
 | P-10 | 11/9 | 빠른 검사 `--quick`(작업 중, 바뀐 파일과 이어진 테스트 모듈만, `tools/precheck_scope.py`), 통과 기록 없음, 요약 줄 `precheck(빠른):`은 PR 본문 검사에서 거부. 전체 검사·훅·통과 기록 동작은 그대로(11/9 PM 결정) |
+| P-10 | 11/9 | 무거운 테스트 9개(`SLOW_TESTS`)는 전체 검사에서도 바뀐 파일과 이어질 때만(`tools/run_tests.py`로 빼고 실행, 요약 줄에 생략 개수), 공용 파일·변경 없음·`--all-slow`면 모두(11/9 PM 결정) |

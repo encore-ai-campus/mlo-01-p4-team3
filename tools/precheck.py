@@ -6,6 +6,7 @@
     python -m tools.precheck --base <커밋>         # 비교 기준 직접 지정(기본: origin/dev와 HEAD의 merge-base)
     python -m tools.precheck --base origin/main   # 승격 PR(dev → main): dev에서 main 이후 바뀐 증빙 검사
     python -m tools.precheck --quick              # 작업 중 빠른 검사: 바뀐 파일과 이어진 테스트 모듈만(통과 기록 없음)
+    python -m tools.precheck --all-slow           # 무거운 테스트도 모두 돌린다(기본: 바뀐 파일과 이어질 때만)
 
 `git push` 때 `.githooks/pre-push`가 이 명령을 부른다(설치: `git config core.hooksPath .githooks`).
 
@@ -21,13 +22,17 @@ PR 본문에는 이 마지막 줄을 붙인다.
 구조·비밀·문서·증빙은 그대로 돈다. 통과 기록을 남기지 않고, 마지막 줄은 `precheck(빠른): …`이라 PR 본문에
 붙일 수 없다(`check_evidence`가 거부). PR 직전과 push 때는 전체 검사를 한 번 돈다.
 
+무거운 테스트(`precheck_scope.SLOW_TESTS`, 11/9 PM 결정): 전체 검사에서도 빠른 검사와 같은 규칙으로 바뀐 파일과
+이어질 때만 돌리고, 아니면 `tools/run_tests.py`로 그 테스트만 빼고 폴더를 돌린다. 전체로 돌 이유가 있거나(공용 파일 등)
+바뀐 파일이 없으면(dev를 받아 그대로 돌릴 때) 모두 돈다. `--all-slow`면 항상 모두 돈다. 뺀 개수는 요약 줄에 적는다.
+
 비교 기준을 못 구하면(원격 `origin/dev`를 받아 오지 않은 새 clone 등) 문서·증빙 검사를 할 수 없으므로
 건너뛰지 않고 실패로 본다. 검사 없이 통과 줄이 나오는 것을 막기 위해서다. `git fetch origin` 뒤 다시 돌리거나 `--base`를 준다.
 
 계층: `StepResult`·`test_rc_ok`·`count_tests`·`summarize`·`PassRecord`·`format_record`·`parse_record`·
-`may_record`·`skip_decision`(도메인, 문자열·숫자만) / `SubprocessRunner`·`PassStore`(인프라, 하위 명령·기록 파일) /
-`run_precheck`·`record_pass`·`check_pass`·`quick_plan`(응용, 순서 조립) / `main`(표현).
-빠른 검사 대상 고르기는 도메인 모듈 `tools/precheck_scope.py`.
+`may_record`·`skip_decision`·`count_skipped`(도메인, 문자열·숫자만) / `SubprocessRunner`·`PassStore`(인프라, 하위 명령·기록 파일) /
+`run_precheck`·`record_pass`·`check_pass`·`quick_plan`·`slow_plan`(응용, 순서 조립) / `main`(표현).
+빠른 검사 대상 고르기와 무거운 테스트 목록은 도메인 모듈 `tools/precheck_scope.py`.
 표준 라이브러리만 쓴다.
 """
 from __future__ import annotations
@@ -43,7 +48,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from tools.precheck_scope import Selection, describe, select_tests
+from tools.precheck_scope import Selection, describe, select_tests, slow_skips
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BASE_REF = "origin/dev"
@@ -54,6 +59,7 @@ NO_CACHE_ENV = "PALDO_PRECHECK_NO_CACHE"
 RECORD_MAX_AGE = timedelta(days=14)
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _RAN_RE = re.compile(r"^Ran (\d+) tests?\b", re.M)
+_SKIP_RE = re.compile(r"^precheck-skip: (\d+)$", re.M)  # tools/run_tests.SKIP_LINE
 
 
 # ---------------------------------------------------------------- 도메인
@@ -65,6 +71,7 @@ class StepResult:
     ok: bool
     output: str = ""
     tests: int = 0
+    slow_skipped: int = 0
 
 
 def test_rc_ok(rc: int) -> bool:
@@ -75,6 +82,11 @@ def test_rc_ok(rc: int) -> bool:
 def count_tests(output: str) -> int:
     """unittest 출력의 `Ran N tests`를 모두 더한다. 없으면 0."""
     return sum(int(n) for n in _RAN_RE.findall(output))
+
+
+def count_skipped(output: str) -> int:
+    """`tools/run_tests` 출력의 `precheck-skip: N`(실제로 뺀 무거운 테스트 수)을 모두 더한다. 없으면 0."""
+    return sum(int(n) for n in _SKIP_RE.findall(output))
 
 
 def summarize(results: list[StepResult], base_short: str | None, seconds: float,
@@ -91,8 +103,10 @@ def summarize(results: list[StepResult], base_short: str | None, seconds: float,
     if failed:
         return 1, f"{head}: 실패 ({', '.join(failed)}; base {base}{target}, {seconds:.0f}초)"
     n = sum(r.tests for r in results)
+    skipped = sum(r.slow_skipped for r in results)
+    slow = f", 무거운 테스트 {skipped}개 생략" if skipped else ""
     names = "·".join(r.name for r in results)
-    return 0, f"{head}: 통과 ({names}, 테스트 {n}개, base {base}{target}, {seconds:.0f}초)"
+    return 0, f"{head}: 통과 ({names}, 테스트 {n}개{slow}, base {base}{target}, {seconds:.0f}초)"
 
 
 @dataclass(frozen=True)
@@ -263,8 +277,11 @@ class PassStore:
 # ---------------------------------------------------------------- 응용
 def run_precheck(runner, base: str | None, with_assets: bool = False,
                  pr_body: str | None = None, workers: int | None = None,
-                 only_tests: Selection | None = None) -> list[StepResult]:
+                 only_tests: Selection | None = None,
+                 skip_tests: dict[str, list[str]] | None = None) -> list[StepResult]:
     """구조·비밀·단위 테스트(폴더별)·문서·증빙을 동시에 돌리고 결과는 이 순서로 모은다.
+
+    `skip_tests`(폴더 → 테스트 id)가 있는 폴더는 `tools.run_tests`로 그 테스트만 빼고 돌린다(무거운 테스트 생략).
 
     서로 독립인 하위 명령이라 병렬로 돌린다(11/5: 순서대로 돌리면 약 90초). 앞 단계가 실패해도 끝까지 돈다.
     """
@@ -278,8 +295,12 @@ def run_precheck(runner, base: str | None, with_assets: bool = False,
         test_dirs = [d for d in test_dirs if d in only_tests]
     for d in test_dirs:
         mods = only_tests.get(d) if only_tests is not None else None
+        skips = (skip_tests or {}).get(d)
         if mods:  # 빠른 검사: 고른 테스트 모듈만
             jobs[f"tests/{d}"] = ([py, "-m", "unittest", *mods], None)
+        elif skips:  # 전체 검사: 바뀐 파일과 이어지지 않는 무거운 테스트는 빼고
+            flags = [a for t in skips for a in ("--skip", t)]
+            jobs[f"tests/{d}"] = ([py, "-m", "tools.run_tests", "-s", f"tests/{d}", "-t", ".", *flags], None)
         else:
             jobs[f"tests/{d}"] = ([py, "-m", "unittest", "discover", "-s", f"tests/{d}", "-t", "."], None)
     if base is not None:
@@ -295,14 +316,15 @@ def run_precheck(runner, base: str | None, with_assets: bool = False,
         done = {k: f.result() for k, f in futures.items()}
 
     results = [StepResult(k, done[k][0] == 0, done[k][1]) for k in ("구조", "비밀")]
-    outputs, ok, n = [], True, 0
+    outputs, ok, n, skipped = [], True, 0, 0
     for d in test_dirs:
         rc, out = done[f"tests/{d}"]
         n += count_tests(out)
+        skipped += count_skipped(out)
         if not test_rc_ok(rc):
             ok = False
             outputs.append(f"[tests/{d}] rc={rc}\n{out}")
-    results.append(StepResult("테스트", ok, "\n".join(outputs), tests=n))
+    results.append(StepResult("테스트", ok, "\n".join(outputs), tests=n, slow_skipped=skipped))
     if base is None:
         msg = "비교 기준을 못 구함(`git fetch origin` 뒤 다시 돌리거나 --base 지정)"
         results.append(StepResult("문서", False, msg))
@@ -374,6 +396,25 @@ def quick_plan(runner, base: str | None, with_assets: bool) -> tuple[Selection |
     return selection, why
 
 
+def slow_plan(runner, base: str | None) -> tuple[dict[str, list[str]], str]:
+    """전체 검사에서 뺄 무거운 테스트(폴더 → 테스트 id)와 설명. 바뀐 파일을 못 구하면 빼지 않는다(덜 줄이는 쪽)."""
+    changed_files = getattr(runner, "changed_files", None)
+    if base is None or changed_files is None:
+        return {}, "모두 실행(비교 기준 없음)"
+    changed = changed_files(base)
+    if changed is None:
+        return {}, "모두 실행(바뀐 파일을 못 구함)"
+    if not changed:
+        return {}, "모두 실행(바뀐 파일 없음)"
+    selection, why = select_tests(changed, runner.python_sources(), runner.test_dirs())
+    if selection is None:
+        return {}, f"모두 실행({why})"
+    skips = slow_skips(selection, True)
+    n = sum(len(v) for v in skips.values())
+    return skips, (f"{n}개 생략(바뀐 파일과 이어지지 않음, 모두 돌리려면 --all-slow)" if n
+                   else "모두 실행(바뀐 파일과 이어짐)")
+
+
 # ---------------------------------------------------------------- 표현
 def main(argv: list[str] | None = None, runner=None) -> int:
     """명령줄 진입점. 통과 0, 실패 1, 사용법 오류 2."""
@@ -383,12 +424,14 @@ def main(argv: list[str] | None = None, runner=None) -> int:
     ap.add_argument("--pr-body", metavar="FILE", help="PR 본문 파일(Task·Closes/Refs 검사)")
     ap.add_argument("--quick", action="store_true",
                     help="작업 중 빠른 검사: 바뀐 파일과 이어진 테스트 모듈만, 통과 기록 없음(PR 직전·push 때는 전체)")
+    ap.add_argument("--all-slow", action="store_true",
+                    help="무거운 테스트도 모두 돌린다(기본: 전체 검사에서 바뀐 파일과 이어질 때만)")
     ap.add_argument("--check-pass", metavar="SHA",
                     help="훅용: 그 커밋의 통과 기록이 지금 비교 기준과 맞으면 0(생략), 아니면 1(전체 검사)")
     args = ap.parse_args(argv)
     runner = runner or SubprocessRunner()
     if args.check_pass:
-        if args.base or args.with_assets or args.pr_body or args.quick:
+        if args.base or args.with_assets or args.pr_body or args.quick or args.all_slow:
             ap.error("--check-pass는 다른 인자와 함께 쓸 수 없다")
         skip, why = check_pass(runner, args.check_pass, dict(os.environ))
         print(f"pre-push: {args.check_pass[:7]} {why}")
@@ -408,7 +451,12 @@ def main(argv: list[str] | None = None, runner=None) -> int:
         only, why = quick_plan(runner, base, args.with_assets)
         quick_target = why if only is not None else f"전체({why})"
         print(f"[빠른 검사] 대상: {quick_target}")
-    results = run_precheck(runner, base, with_assets=args.with_assets, pr_body=pr_body, only_tests=only)
+    skips: dict[str, list[str]] = {}
+    if not args.quick and not args.all_slow:
+        skips, slow_why = slow_plan(runner, base)
+        print(f"[무거운 테스트] {slow_why}")
+    results = run_precheck(runner, base, with_assets=args.with_assets, pr_body=pr_body, only_tests=only,
+                           skip_tests=skips)
     for r in results:
         print(f"[{'통과' if r.ok else '실패'}] {r.name}")
         if not r.ok and r.output.strip():
