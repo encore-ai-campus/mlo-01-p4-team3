@@ -49,11 +49,11 @@ python -B server/preview.py --port 8769
 
 1. 계정 MySQL·Mongo(레플리카셋)를 띄우고 `DJANGO_SECRET_KEY`, `PALDO_PUBLIC_ORIGIN`, `PALDO_AUTH_DB_*`를 설정한다(로컬 Compose는 `ops/compose/README.md`).
 2. `PALDO_MONGO_URI`에 DB 이름 `paldo_web`을 넣은 레플리카셋 연결 문자열을, `PALDO_GAME_SERVICE_FACTORY`에 `server.infra.game_factory.build_game_service`를 넣는다. 연결·컬렉션(`games`·`progress`·`content`·`b_test_sessions`·`b_ad_identities`)은 B 실행 자원(`server/paldo_web/mongo.py`)이 맡고, 운영 조립은 `b_interactions`만 더한다.
-3. 콘텐츠를 한 번 적재한다: `python -m tools.load_content content/bundle_v1.json`(버전 `content-1.0`). 적재 도구는 B 실행 자원이 읽는 `content` 컬렉션에 쓴다(11/7 이름 통일).
+3. 콘텐츠를 한 번 적재한다: `python -m tools.load_content content/bundle_v1.json`(버전 `content-1.0.1`). 적재 도구는 B 실행 자원이 읽는 `content` 컬렉션에 쓴다(11/7 이름 통일).
 4. `python server/manage.py migrate`, 운영자 계정은 `python server/manage.py createsuperuser`로 만든다.
 5. 서버를 띄운다: `python -m daphne -b 127.0.0.1 -p 8000 server.paldo_web.asgi:application`. 브라우저는 `PALDO_PUBLIC_ORIGIN` 주소로 연다.
 6. 참가자로 가입해 홈의 가명 ID를 확인하고, 운영자로 `/admin/sessions`에서 회차를 등록한다. 버전은 규칙 `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"`가 출력하는 값(`engine/domain/params.py`의 `RULE_PARAMS_VERSION`, 결정 층 파라미터가 바뀌면 함께 바뀐다), 엔진 `paldo-engine`, 콘텐츠 `content-1.0`이다. 고정 판은 `[{"preset_id": "base6", "seed": 1}]`처럼 넣는다.
-7. 참가자로 로그인해 홈에서 판을 시작한다. 회차 없이 "새 게임"으로 하려면 서버를 띄우기 전에 `PALDO_CONTENT_VERSION=content-1.0`을 설정한다(이 경우 6의 회차 등록은 필요 없다).
+7. 참가자로 로그인해 홈에서 판을 시작한다. 회차 없이 "새 게임"으로 하려면 서버를 띄우기 전에 `PALDO_CONTENT_VERSION=content-1.0.1`을 설정한다(이 경우 6의 회차 등록은 필요 없다).
 
 웹소켓 실행은 환경을 준비한 뒤 `python -m daphne -b 127.0.0.1 -p 8769 server.paldo_web.asgi:application`을 사용한다. 프로세스는 하나로 유지하고 외부 연결은 C 프록시를 거친다. `configure_ad_gateway`로 실제 광고 제공자를 조립하기 전에는 중계가 실패 응답과 대체 화면으로 끝난다. `server/preview.py`는 HTTP 화면용이며 웹소켓 실행 명령을 대신하지 않는다.
 
@@ -72,7 +72,7 @@ python -B server/preview.py --port 8769
 | `SESSION_COOKIE_AGE` | 1,209,600초 | 세션 유효 기간 | 새 세션의 기본 유효 기간이 바뀜 |
 | `PALDO_GAME_SERVICE_FACTORY` | 비어 있음. 운영 예: `server.infra.game_factory.build_game_service` | 운영 게임 서비스를 조립하는 함수 경로 | 운영 게임 API가 사용하는 서비스가 바뀜. 비어 있으면 게임 API를 쓸 수 없다 |
 | `PALDO_MONGO_URI` | 비어 있음 | Mongo 게임·진척·콘텐츠·회차·광고 가명 접속값. 운영 조립은 같은 DB에 보조 기록 `b_interactions`를 더한다 | DB 경로 생략 시 `paldo_web`을 사용한다. 콘텐츠 적재 도구·발행기와 같은 DB를 쓰도록 경로에 DB 이름을 넣는다. 미설정 시 Mongo 게임·회차 조립을 사용할 수 없다 |
-| `PALDO_CONTENT_VERSION` | 비어 있음. 운영 예: `content-1.0` | 회차 없는 일반 판의 판 메타 `content_version`(Mongo에 적재된 활성 버전) | 새 일반 판의 콘텐츠가 바뀜. 비어 있으면 일반 판 시작은 503, 적재되지 않은 버전이면 시작 시 503 |
+| `PALDO_CONTENT_VERSION` | 비어 있음. 운영 예: `content-1.0.1` | 회차 없는 일반 판의 판 메타 `content_version`(Mongo에 적재된 활성 버전) | 새 일반 판의 콘텐츠가 바뀜. 비어 있으면 일반 판 시작은 503, 적재되지 않은 버전이면 시작 시 503 |
 | `ASSET_MANIFEST` | `content/images/manifest.json` | 콘텐츠 ID, URL, 이미지 경로 목록 | 화면 조회와 정적 이미지 응답에 함께 적용 |
 | 출처 요약 | `content/images/SOURCES.md` 첫 비어 있지 않은 줄 | 게임 하단의 도구·이용 안내 | 다음 조회에 반영, 누락은 확인 필요 표시 |
 | `server/app/presets_enabled.json` | `["base6"]` | 새 일반 판에 공개할 프리셋 ID 목록 | 파일만 바꾸면 홈과 일반 판 시작 허용 목록이 함께 바뀜. 추가 공개는 PM 승인 이후. 회차 판·기존 판 재개는 유지 |

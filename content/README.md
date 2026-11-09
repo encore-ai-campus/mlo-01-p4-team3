@@ -5,7 +5,7 @@
 
 | 파일 | 내용 | 담당 |
 |---|---|---|
-| `bundle_v1.json` | 첫 플레이 버전(`content-1.0`). 인물 6·성향 4·비밀 6·원한 단서 4·템플릿 47 | E (E-05-03, 템플릿 E-06-01) |
+| `bundle_v1.json` | 첫 플레이 버전(`content-1.0.1`, 11/9 대사 어조 한 줄 수정). 인물 6·성향 4·비밀 6·원한 단서 4·템플릿 47 | E (E-05-03, 템플릿 E-06-01) |
 | `endings_v1.json` | 결말 문안 2개(퇴마 `exorcism`, 한풀이 `haewon:h1`). 엔진은 읽지 않고 게임 웹 결말 선택·종료 연출과 복기 해설이 읽는다 | E (E-07-05) |
 | `images/` | 이미지 에셋과 `manifest.json`. [`docs/assets/spec.md`](../docs/assets/spec.md) | E·A |
 
