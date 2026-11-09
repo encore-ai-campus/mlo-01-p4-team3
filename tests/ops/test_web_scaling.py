@@ -149,6 +149,51 @@ class RuntimePorts(unittest.TestCase):
             self.assertRegex(PROMETHEUS, rf'targets: \["host\.docker\.internal:{port}"\]\s*\n\s*labels: \{{process: {label}\}}')
 
 
+class BenchOptions(unittest.TestCase):
+    """C-08-04 측정용 비교 부하 옵션(`--web-processes`·`--front`)."""
+
+    def test_web_processes_build_case_names(self):
+        from server.tests import multiproc_bench as bench
+        self.assertEqual(bench.case_names("p2_memory", "2,1", "memory"), ["p2_memory", "p1_memory"])
+        self.assertEqual(bench.case_names("p2_memory,p1_redis", "", "memory"), ["p2_memory", "p1_redis"])
+        self.assertEqual(bench.parse_case("p4_redis"), (4, "redis"))
+        for bad in ("p0_memory", "p5_memory", "p2_kafka", "x2_memory", "p_memory"):
+            with self.assertRaises(ValueError):
+                bench.parse_case(bad)
+
+    def test_front_mode_reaches_loopback_daphne(self):
+        from server.tests import multiproc_bench as bench
+        self.assertEqual(bench.front_mode("docker", "linux"), "docker-host")
+        self.assertEqual(bench.front_mode("docker", "win32"), "docker-desktop")
+        self.assertEqual(bench.front_mode("binary", "win32"), "binary")
+        host = bench.caddyfile([9001, 9002], "127.0.0.1", listen="127.0.0.1:9100", upstream_host="127.0.0.1")
+        self.assertIn("127.0.0.1:9100 {", host)
+        self.assertIn("reverse_proxy 127.0.0.1:9001 127.0.0.1:9002 {", host)
+        self.assertIn("reverse_proxy host.docker.internal:9001 {", bench.caddyfile([9001], "127.0.0.1"))
+
+    def test_result_metrics_per_case(self):
+        from server.tests import multiproc_bench as bench
+        metrics = bench.result_metrics([{"case": "p2_memory", "requests": 10, "p95_ms": 700.5, "throughput_rps": 3.0,
+                                         "command_p95_ms": None}])
+        self.assertEqual(metrics, {"p2_memory_requests": {"value": 10, "unit": "count"},
+                                   "p2_memory_p95_ms": {"value": 700.5, "unit": "ms"},
+                                   "p2_memory_throughput_rps": {"value": 3.0, "unit": "rps"}})
+
+    def test_api_bench_delegates_process_comparison(self):
+        sys.path.insert(0, str(ROOT / "tools" / "perf"))
+        try:
+            import api_bench as cli
+        finally:
+            sys.path.remove(str(ROOT / "tools" / "perf"))
+        with mock.patch.object(cli.subprocess, "call", return_value=0) as call:
+            cli.main(["--web-processes", "2,1", "--users", "3"])
+            self.assertIn("server.tests.multiproc_bench", call.call_args[0][0])
+            cli.main(["--compare-asgi", "--web-processes=2"])
+            self.assertIn("server.tests.multiproc_bench", call.call_args[0][0])
+            cli.main(["--users", "3"])
+            self.assertIn("server.tests.api_bench", call.call_args[0][0])
+
+
 @unittest.skipUnless(HAS_REDIS_PACKAGE and TEST_REDIS_URL, "PALDO_TEST_REDIS_URL 없음(로컬 Redis가 없는 환경)")
 class RedisAcrossProcesses(unittest.TestCase):
     def test_group_message_reaches_other_process(self):
@@ -181,7 +226,7 @@ class RedisAcrossProcesses(unittest.TestCase):
         self.assertNotEqual(message["pid"], os.getpid())
 
     def test_idle_connection_channel_survives_blocking_wait(self):
-        """연결마다 채널 대기가 블로킹 읽기 시한(5초)을 넘겨도 끊기지 않는다. redis 8.1.0에서 실패해 7.4.1로 고정."""
+        """채널 수신 대기가 블로킹 읽기 시한(5초)을 넘겨도 끊기지 않는다. redis 8.1.0에서 실패해 7.4.1로 고정."""
         import asyncio
         from channels_redis.core import RedisChannelLayer
 

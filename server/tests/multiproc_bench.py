@@ -4,8 +4,16 @@
 거쳐 B-07-05와 같은 부하(사용자당 초당 한 요청의 시작·명령 + 사용자별 웹소켓 비콘 1개)를 준다.
 부하 생성기(이 프로세스)와 서버(daphne 프로세스)는 분리된다. 모든 경우가 같은 Caddy 경로를 지나므로 경우끼리 비교한다.
 
-python -B -m server.tests.multiproc_bench --users 30 --minutes 3 --cases p2_memory,p1_memory,p2_redis \
-    --redis-url redis://127.0.0.1:6379/0
+python tools/perf/api_bench.py --web-processes 2,1 --users 30 --minutes 3            # 2개·1개, memory
+python tools/perf/api_bench.py --web-processes 2 --channel-layer redis --redis-url redis://127.0.0.1:6379/0
+python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis --redis-url ...   # 경우 이름으로 지정
+- `--web-processes`: 띄울 daphne 수 목록(1~4, 쉼표). `--channel-layer`(memory 기본·redis)와 묶어 경우 `p<N>_<layer>`가 된다.
+- `--result-name <이름>`: 증빙 결과 JSON(`docs/evidence/perf/<--result-task, 기본 E-09-10>/<이름>.json`)도 쓴다.
+  30명·3분 이상일 때만. `--compare-asgi`는 C-08-04 명령과 맞추려고 받기만 한다(이 도구는 늘 앞단 경유 비교다).
+- `--front`: 앞단 Caddy를 띄우는 방법. `docker`(기본, 공식 이미지. Linux는 host 네트워크로 loopback daphne에 닿는다)
+  또는 `binary`(이미 설치된 caddy 실행 파일, `--caddy-bin`. 시험 서버처럼 Docker가 없는 곳).
+- 이미 떠 있는 앞단 주소로만 부하를 보내는 모드는 두지 않는다. 이 부하는 시험용 엔진(ScriptedGameEngine)·시험 접두어
+  컬렉션을 쓰므로 실제 엔진이 도는 서버에 보낼 수 없다. 같은 서버에서 이 도구가 프로세스를 직접 띄워 비교한다.
 Mongo는 PALDO_MONGO_URI(api_bench.mongo_uri 규칙)로 받는다. 결과는 out/handoff/e0910-multiproc-report.json에 쓴다.
 """
 import argparse
@@ -28,7 +36,30 @@ from .api_bench import mongo_uri, percentile
 from .asgi_bench import beacon_load, measure_game
 
 CADDY_IMAGE = "caddy:2.10.2"
-CASES = {"p1_memory": (1, "memory"), "p2_memory": (2, "memory"), "p2_redis": (2, "redis"), "p1_redis": (1, "redis")}
+LAYERS = ("memory", "redis")
+MAX_PROCESSES = 4
+
+
+def parse_case(name: str):
+    """경우 이름 `p<N>_<layer>`를 (프로세스 수, 채널 레이어)로 읽는다. 틀리면 ValueError."""
+    head, _, layer = name.partition("_")
+    if not (head[:1] == "p" and head[1:].isdigit() and 1 <= int(head[1:]) <= MAX_PROCESSES and layer in LAYERS):
+        raise ValueError(name)
+    return int(head[1:]), layer
+
+
+def case_names(cases: str, web_processes: str, layer: str) -> list:
+    """`--web-processes`(우선)나 `--cases`에서 경우 이름 목록을 만든다."""
+    if web_processes:
+        return [f"p{count.strip()}_{layer}" for count in web_processes.split(",") if count.strip()]
+    return [name.strip() for name in cases.split(",") if name.strip()]
+
+
+def front_mode(front: str, platform: str = sys.platform) -> str:
+    """앞단 실행 방식: binary, docker-host(Linux host 네트워크), docker-desktop(host.docker.internal)."""
+    if front == "binary":
+        return "binary"
+    return "docker-host" if platform.startswith("linux") else "docker-desktop"
 
 
 def free_port() -> int:
@@ -38,15 +69,30 @@ def free_port() -> int:
         return probe.getsockname()[1]
 
 
-def caddyfile(ports, front_host) -> str:
+def caddyfile(ports, front_host, listen=":8080", upstream_host="host.docker.internal") -> str:
     """운영 Caddyfile(ops/proxy/Caddyfile)의 분배·상태 확인 설정을 평문 HTTP로 옮긴다."""
-    upstreams = " ".join(f"host.docker.internal:{port}" for port in ports)
-    return ("{\n    admin off\n    auto_https off\n}\n\n:8080 {\n"
+    upstreams = " ".join(f"{upstream_host}:{port}" for port in ports)
+    return ("{\n    admin off\n    auto_https off\n}\n\n" + listen + " {\n"
             f"    reverse_proxy {upstreams} {{\n"
             "        lb_policy least_conn\n        lb_try_duration 2s\n        lb_try_interval 250ms\n"
             "        fail_duration 10s\n        health_uri /healthz\n        health_interval 5s\n        health_timeout 2s\n"
             f"        health_headers {{\n            Host {front_host}\n        }}\n"
             "    }\n}\n")
+
+
+RESULT_KEYS = ("requests", "errors", "throughput_rps", "p50_ms", "p95_ms", "p99_ms", "command_p95_ms",
+               "beacon_acks", "beacon_errors")
+
+
+def result_metrics(rows) -> dict:
+    """경우별 행을 증빙 결과 JSON metrics(`<경우>_<항목>`)로 바꾼다."""
+    metrics = {}
+    for row in rows:
+        for key in RESULT_KEYS:
+            if row.get(key) is not None:
+                unit = "ms" if key.endswith("_ms") else ("rps" if key == "throughput_rps" else "count")
+                metrics[f"{row['case']}_{key}"] = {"value": row[key], "unit": unit}
+    return metrics
 
 
 def stage_counts(metrics_text: str) -> dict:
@@ -91,12 +137,25 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)), log))
         config = folder / f"caddy-{name}"
         config.mkdir()
-        (config / "Caddyfile").write_text(caddyfile(ports, "127.0.0.1"), encoding="utf-8")
-        caddy = "paldo-e0910-caddy-" + uuid.uuid4().hex[:8]
-        subprocess.run(["docker", "run", "-d", "--name", caddy, "-p", f"127.0.0.1:{front}:8080",
-                        "-v", f"{config.resolve()}:/etc/caddy:ro", CADDY_IMAGE,
-                        "caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"],
-                       check=True, capture_output=True, env=dict(os.environ, MSYS_NO_PATHCONV="1"))
+        mode = front_mode(args.front)
+        if mode == "docker-desktop":   # Docker Desktop은 host.docker.internal로 호스트 loopback에 닿는다
+            text = caddyfile(ports, "127.0.0.1")
+        else:                          # host 네트워크·실행 파일은 같은 loopback에서 바로 붙는다
+            text = caddyfile(ports, "127.0.0.1", listen=f"127.0.0.1:{front}", upstream_host="127.0.0.1")
+        (config / "Caddyfile").write_text(text, encoding="utf-8")
+        if mode == "binary":
+            caddy_log = (folder / f"{name}-caddy.log").open("wb")
+            servers.append((subprocess.Popen(
+                [args.caddy_bin, "run", "--config", str(config / "Caddyfile"), "--adapter", "caddyfile"],
+                stdout=caddy_log, stderr=subprocess.STDOUT,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)), caddy_log))
+        else:
+            caddy = "paldo-e0910-caddy-" + uuid.uuid4().hex[:8]
+            network = ["-p", f"127.0.0.1:{front}:8080"] if mode == "docker-desktop" else ["--network", "host"]
+            subprocess.run(["docker", "run", "-d", "--name", caddy, *network,
+                            "-v", f"{config.resolve()}:/etc/caddy:ro", CADDY_IMAGE,
+                            "caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"],
+                           check=True, capture_output=True, env=dict(os.environ, MSYS_NO_PATHCONV="1"))
         opener = build_opener()
         for port in ports:   # 각 프로세스가 직접 뜬 뒤 Caddy를 거쳐 응답하는지 확인한다
             for _ in range(200):
@@ -203,14 +262,31 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--users", type=int, default=30)
     parser.add_argument("--minutes", type=float, default=3)
-    parser.add_argument("--cases", default="p2_memory,p1_memory")
+    parser.add_argument("--cases", default="p2_memory,p1_memory", help="경우 이름 p<N>_<memory|redis> 쉼표 목록")
+    parser.add_argument("--web-processes", default="", help="daphne 수 목록(예: 2,1). 주면 --cases 대신 쓴다")
+    parser.add_argument("--channel-layer", default="memory", choices=LAYERS, help="--web-processes와 함께 쓸 채널 레이어")
+    parser.add_argument("--front", default="docker", choices=("docker", "binary"), help="앞단 Caddy 실행 방식")
+    parser.add_argument("--caddy-bin", default="caddy", help="--front binary일 때 caddy 실행 파일")
     parser.add_argument("--redis-url", default="")
+    parser.add_argument("--result-name", default="", help="증빙 결과 JSON 이름(30명·3분 이상)")
+    parser.add_argument("--result-task", default="E-09-10", help="증빙 결과 JSON을 둘 태스크 ID")
+    parser.add_argument("--compare-asgi", action="store_true", help="C-08-04 명령 호환용. 받기만 한다")
     parser.add_argument("--keep-logs", default="", help="daphne 로그를 복사할 폴더(out/ 아래 권장)")
     args = parser.parse_args(argv)
-    names = [name.strip() for name in args.cases.split(",") if name.strip()]
-    if not 1 <= args.users <= 60 or not 0 < args.minutes <= 10 or not names or set(names) - set(CASES):
-        parser.error(f"users=1..60, minutes=0..10, cases ⊂ {sorted(CASES)}")
-    if any(CASES[name][1] == "redis" for name in names) and not args.redis_url:
+    names = case_names(args.cases, args.web_processes, args.channel_layer)
+    try:
+        cases = {name: parse_case(name) for name in names}
+    except ValueError as error:
+        parser.error(f"경우 이름이 틀렸다: {error} (p1~p{MAX_PROCESSES}_memory|redis)")
+    if not 1 <= args.users <= 60 or not 0 < args.minutes <= 10 or not names:
+        parser.error("users=1..60, minutes=0..10, 경우가 하나 이상 필요하다")
+    if args.result_name:
+        from tools.evidence_result import NAME_RE
+        from tools.tasks_md import TASK_ID_RE
+        if (not NAME_RE.fullmatch(args.result_name) or args.result_name in (".", "..")
+                or not TASK_ID_RE.fullmatch(args.result_task) or args.users < 30 or args.minutes < 3):
+            parser.error("증빙 결과에는 안전한 이름·태스크 ID, 30명·3분 이상이 필요하다")
+    if any(layer == "redis" for _, layer in cases.values()) and not args.redis_url:
         parser.error("redis 경우에는 --redis-url이 필요하다")
     root = Path(__file__).resolve().parents[2]
     uri = mongo_uri(root)
@@ -241,11 +317,21 @@ def main(argv=None):
         rows = []
         try:
             for name in names:
-                processes, layer = CASES[name]
+                processes, layer = cases[name]
                 print(json.dumps({"starting_case": name}), flush=True)
                 rows.append(run_case(args, name, processes, layer, uri, users, steps, folder))
-            report = {"cpu_count": os.cpu_count(), "rows": rows}
+            report = {"cpu_count": os.cpu_count(), "front": front_mode(args.front), "rows": rows}
             (root / "out/handoff/e0910-multiproc-report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+            if args.result_name:
+                from tools.evidence_result import write_result
+                command = (f"python -B tools/perf/api_bench.py --web-processes "
+                           f"{','.join(str(cases[n][0]) for n in names)} --channel-layer {args.channel_layer} "
+                           f"--users {args.users} --minutes {args.minutes} --front {args.front} "
+                           f"--result-name {args.result_name}") if args.web_processes else \
+                    (f"python -B -m server.tests.multiproc_bench --cases {','.join(names)} --users {args.users} "
+                     f"--minutes {args.minutes} --front {args.front} --result-name {args.result_name}")
+                path = write_result(args.result_task, args.result_name, result_metrics(rows), command, root=root)
+                print(json.dumps({"result": str(path.relative_to(root)).replace(os.sep, "/")}), flush=True)
             print(json.dumps({"done": True}), flush=True)
             return 0
         finally:
