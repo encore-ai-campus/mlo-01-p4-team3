@@ -61,11 +61,11 @@ class StoryScreens(TestCase):
             self.assertIsNone(state.result)
 
     def test_home_shows_locked_and_unlocked_choice_without_story_spoilers(self):
-        """시작 폼은 해금 상태만 표시하고 도전은 인수 전 비활성으로 둔다."""
+        """시작 폼은 해금 상태만 표시하고, 기능 없는 선택형 도전 체크박스는 두지 않는다(B-09-07 10번, E-09-08이 붙임)."""
         page = self.client.get('/')
         self.assertContains(page, 'value="haewon:h1" disabled')
-        self.assertContains(page, '선택형 도전 · 준비 중')
-        self.assertContains(page, '<fieldset disabled>')
+        self.assertNotContains(page, '선택형 도전')
+        self.assertNotContains(page, 'type="checkbox"')
         for ending in self.endings:
             self.assertNotContains(page, ending['lines_ko'][0])
         self.service.progress.unlock_ending(self.player, 'haewon:h1', 'unlock-event')

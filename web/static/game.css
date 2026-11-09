@@ -12,6 +12,12 @@ button:disabled { opacity: .55; }
 .claim-cards { list-style: none; padding: 0; }
 .claim-cards li { border-left: .2rem solid #c6cbc5; margin: .4rem 0; padding: .2rem .6rem; }
 #meeting-actions { scroll-margin-top: 1rem; }
+/* B-09-07 8번: 명령 패널·자유 입력을 화면 아래에 붙여 판 상황을 보면서 명령한다. sticky라 본문 끝에서는 제자리로 돌아가 가리지 않는다. */
+.command-bar { position: sticky; bottom: 0; z-index: 1; box-sizing: border-box; max-height: 50vh; overflow-y: auto; overscroll-behavior: contain;
+  background: #f6f5ef; border-top: 2px solid #35654f; box-shadow: 0 -.25rem .6rem rgba(36, 43, 40, .12); padding: 0 .5rem .5rem; }
+.command-bar h2 { font-size: 1.05rem; margin: .5rem 0 .25rem; }
+.command-bar .command-form { margin: .5rem 0; }
+.command-bar :focus-visible { scroll-margin: 1rem; }
 .preview-guide, .round-result { border-left: .25rem solid #35654f; padding: .65rem .85rem; background: #e4ede4; }
 .round-result h2 { margin: 0 0 .3rem; }
 .people { display: flex; flex-wrap: wrap; list-style: none; padding: 0; gap: 1rem; }
@@ -25,6 +31,8 @@ button:disabled { opacity: .55; }
 .village-map-place span { background: #f6f5ef; color: #242b28; padding: .1rem; white-space: nowrap; }
 .resident-gallery { margin-top: 1rem; }
 .resident-gallery summary { cursor: pointer; padding: .5rem; }
+.evidence-picker summary { cursor: pointer; padding: .35rem; }
+.evidence-picker fieldset { max-height: 12rem; overflow-y: auto; }
 .resident-portraits { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 1rem; padding: 0; list-style: none; }
 .resident-portraits li { display: grid; justify-items: center; align-content: start; overflow-wrap: anywhere; }
 .resident-portraits img { width: 96px; max-width: 100%; height: auto; }
