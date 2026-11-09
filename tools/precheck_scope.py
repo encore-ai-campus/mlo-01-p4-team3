@@ -150,6 +150,8 @@ def select_tests(changed: list[str], sources: dict[str, str],
             # 데이터 파일·패키지 초기화 파일(테스트 모듈이 import 없이 실행): 그 폴더 전체
             if mod is None or path.endswith("/__init__.py"):
                 whole.add(d)
+                if mod is not None:  # 초기화 파일을 가져다 쓰는 다른 폴더 테스트도
+                    test_mods[mod] = path
                 continue
             if _is_test_file(path) and path in sources:  # 지우거나 이름을 바꾼 옛 경로는 직접 돌리지 않는다
                 files.add(path)
