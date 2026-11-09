@@ -47,7 +47,7 @@ def cards_context(output, view):
             list(item.missing_slots), evidence_options, bool(item.evidence_alternatives)))
     return {**context, "attempt_id": output.attempt_id, "attempt_version": output.state_version,
             "cards": cards, "failure": output.failure.value if output.failure else "",
-            "needs_confirmation": output.needs_confirmation}
+            "suggestions": list(output.suggestions), "needs_confirmation": output.needs_confirmation}
 
 
 def line_context(game_id, output, speaker="", is_interrogation_answer=False):

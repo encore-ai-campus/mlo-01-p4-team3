@@ -30,15 +30,15 @@
         <label>대상
           <select name="addressee" required>
             {% for person in active_targets %}
-              <option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>
+              <option value="{{ person.npc_id }}"{% if person.npc_id == previous_interrogation.addressee %} selected{% endif %}>{{ person.name|display_name }}</option>
             {% endfor %}
           </select>
         </label>
         <label>질문
           <select name="interrogation_kind">
             <option value="whereabouts">어디 있었는가</option>
-            <option value="suspicion_reason">왜 의심하는가</option>
-            <option value="contradiction"{% if not contradiction_ready %} disabled{% endif %}>왜 말이 다른가</option>
+            <option value="suspicion_reason"{% if previous_interrogation.interrogation_kind == 'suspicion_reason' %} selected{% endif %}>왜 의심하는가</option>
+            <option value="contradiction"{% if not contradiction_ready %} disabled{% elif previous_interrogation.interrogation_kind == 'contradiction' %} selected{% endif %}>왜 말이 다른가</option>
           </select>
         </label>
         <label>밤 <select name="night" required>{% for night in past_nights %}<option value="{{ night }}">{{ night }}일째 밤</option>{% empty %}<option value="">지난 밤이 없습니다</option>{% endfor %}</select></label>
@@ -56,7 +56,7 @@
             <legend>관련 진술</legend>
             {% for claim in claims %}
               {% if claim.card.selectable %}
-                <label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}">
+                <label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}"{% if claim.slot %} data-night="{{ claim.night }}" data-slot="{{ claim.slot }}"{% endif %}>
                   {{ claim.card.speaker_name|display_name }}: {{ claim.card.text }}</label>
               {% endif %}
             {% endfor %}

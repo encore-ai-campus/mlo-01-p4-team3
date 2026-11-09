@@ -46,7 +46,18 @@ function validateInterrogation(form) {
 function refreshInterrogations() {
   document.querySelectorAll(".command-form").forEach(validateInterrogation);
 }
-document.addEventListener("change", event => validateInterrogation(event.target.closest(".command-form")));
+/* 진술을 체크하면 행적 질문의 밤·시간 칸을 그 진술의 밤·시간으로 맞춘다. 직접 고른 값은 건드리지 않는다. */
+function syncWhereabouts(input) {
+  const form = input?.closest?.(".command-form");
+  if (!form?.elements.interrogation_kind || input.name !== "evidence" || !input.checked || !input.dataset.slot) return;
+  if (![...form.elements.night.options].some(option => option.value === input.dataset.night)) return;
+  form.elements.night.value = input.dataset.night;
+  form.elements.slot.value = input.dataset.slot;
+}
+document.addEventListener("change", event => {
+  syncWhereabouts(event.target);
+  validateInterrogation(event.target.closest(".command-form"));
+});
 document.addEventListener("submit", event => {
   const form = event.target.closest(".command-form");
   if (form?.elements.interrogation_kind) {

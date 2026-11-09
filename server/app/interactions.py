@@ -11,9 +11,9 @@ from dataclasses import dataclass, field, replace
 from typing import ContextManager, Protocol
 
 from engine.domain.events import DomainEvent, EventType
-from engine.domain.model import CommandKind, PLAYER_ID
+from engine.domain.model import Command, CommandKind, PLAYER_ID, Phase, is_legal_kind
 from engine.domain.serde import to_jsonable
-from engine.ports import ParseContext, ParseFailure, RenderStatus
+from engine.ports import CommandCandidate, ParseContext, ParseFailure, RenderStatus
 from .dto import (CommandOutput, ParseUtteranceInput, ParseUtteranceOutput, RenderOutput, ResolveUtteranceInput,
                   SubmitCommandInput, UtteranceReaction)
 from .usecases import ResourceNotFound
@@ -59,6 +59,40 @@ def mask_text(text):
     for pattern in patterns:
         text = re.sub(pattern, "<MASK>", text)
     return text
+
+
+def phase_cards(candidates, phase, runoff_candidates=()):
+    """해석기 후보 중 현재 단계에서 플레이어가 낼 수 있는 카드만 남긴다.
+
+    투표·결선 단계의 의심(`suspect`)은 같은 대상의 투표 카드로 바꾸고(결선이면 결선 후보만),
+    변호처럼 투표로 바꾸면 뜻이 뒤집히는 후보와 단계에 맞지 않는 후보는 버린다.
+    같은 명령 종류·대상 카드는 한 장만 남긴다. 해석기 원래 후보는 바꾸지 않는다.
+    """
+    voting = phase in (Phase.VOTE, Phase.RUNOFF)
+    cards, seen = [], set()
+    for candidate in candidates:
+        command = candidate.command
+        if voting and command.kind is CommandKind.SUSPECT:
+            if phase is Phase.RUNOFF and command.target not in runoff_candidates:
+                continue
+            candidate = CommandCandidate(Command(CommandKind.VOTE, command.actor, target=command.target),
+                                         candidate.intent_score, candidate.form,
+                                         [slot for slot in candidate.missing_slots if slot == "target"],
+                                         {k: v for k, v in candidate.slot_scores.items() if k == "target"})
+        elif not is_legal_kind(phase, command.kind, True):
+            continue
+        key = (candidate.command.kind, candidate.command.target, candidate.command.addressee,
+               candidate.command.interrogation_kind)
+        if candidate.command.kind in (CommandKind.VOTE, CommandKind.SUSPECT, CommandKind.DEFEND) and key in seen:
+            continue
+        seen.add(key)
+        cards.append(candidate)
+    return cards
+
+
+def player_kinds(phase):
+    """실패 안내에 보일 현재 단계의 플레이어 행동 종류(자동 진행 제외)."""
+    return [kind.value for kind in CommandKind if kind is not CommandKind.ADVANCE and is_legal_kind(phase, kind, True)]
 
 
 class InteractionService:
@@ -149,8 +183,14 @@ class InteractionService:
         ctx = ParseContext(data.game_id, state.state_version, state.phase, copy.deepcopy(view.public), aliases,
                            data.selected_npc, data.selected_cards, last_addressee)
         result = self.parser.parse(data.text, ctx)
-        output = ParseUtteranceOutput(str(uuid.uuid4()), state.state_version, result.candidates,
-                                      result.failure, True)
+        # 화면 카드만 현재 단계로 거른다. 시도 기록(payload)에는 해석기 원래 후보·실패를 남긴다.
+        cards = phase_cards(result.candidates, state.phase, state.runoff_candidates)
+        failure, suggestions = result.failure, []
+        if not cards and result.candidates:
+            failure = result.failure or ParseFailure.UNSUPPORTED_INTENT
+        if not cards and failure is ParseFailure.UNSUPPORTED_INTENT:
+            suggestions = player_kinds(state.phase)
+        output = ParseUtteranceOutput(str(uuid.uuid4()), state.state_version, cards, failure, True, suggestions)
         payload = {"attempt_id": output.attempt_id, "superseded_by": None, "text": mask_text(data.text),
                    "mask_version": "b-mask-1", "state_version": state.state_version, "phase": state.phase.value,
                    "candidates": to_jsonable(result.candidates), "failure": to_jsonable(result.failure),

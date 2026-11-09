@@ -15,6 +15,8 @@ class MeetingClaim:
     card: ClaimCardVM
     place_asset_id: str
     evidence_value: str
+    night: int | None = None   # 행적 질문 시간 칸을 맞출 진술의 밤(점괘 공개는 없음)
+    slot: str = ""             # 진술의 시간 값(evening|midnight)
 
 
 @dataclass(frozen=True)
@@ -74,7 +76,8 @@ def meeting_context(view: PlayerView):
             subject = view.names.get(record.subject, record.subject)
             result = DIVINATION_KO.get(record.divination_result, "")
             card = replace(card, text=f"점괘 공개 · {subject} · {result}")
-        claims.append(MeetingClaim(card, _place_asset(record.place), f"{kind}:{card.claim_id}"))
+        claims.append(MeetingClaim(card, _place_asset(record.place), f"{kind}:{card.claim_id}",
+                                   record.night if record.slot else None, record.slot.value if record.slot else ""))
     disappearances = [MeetingDisappearance(item, _place_asset(record.place))
                       for item, record in zip(vm.disappearances, view.public.disappearances, strict=True)]
     own_divinations = []

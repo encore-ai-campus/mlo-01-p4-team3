@@ -5,6 +5,7 @@
   {% elif failure == 'missing_target' %}<p>빠진 대상을 골라 수정 후 실행하세요.</p>
   {% elif failure == 'ambiguous_evidence' %}<p>근거 후보 중 모순을 이루는 주장 두 개를 골라 수정 후 실행하세요.</p>
   {% elif failure == 'unparseable' %}<p>뜻을 해석하지 못했습니다. 문장을 다시 입력하세요.</p>{% endif %}
+  {% if suggestions %}<p class="phase-suggestions">지금 할 수 있는 행동: {% for kind in suggestions %}{{ kind|action_label }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
   {% for card in cards %}
     <article class="speech-card" x-data="{ editing: false }">
       <h3>{{ card.kind|action_label }}</h3>
