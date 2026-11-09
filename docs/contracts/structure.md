@@ -70,7 +70,8 @@ paldo/
 │  ├─ adapters/suspicion_model.py  SuspicionModel 구현 [D-08-01]
 │  ├─ adapters/run_model_games.py  모델 v0 판 실행 진입점 [D-08-01]
 │  ├─ adapters/reproduce_model_games.py  같은 모델·시드 두 실행 재현 비교 [D-08-04]
-│  ├─ gate.py, bandit.py           [D-09-02]
+│  ├─ gate.py, bandit.py           평가 관문·P-16 보상·버전 고정 공급자 [D-09-02]
+│  ├─ mongo_bandit.py              전체 이벤트 export 배치·Mongo CAS·C 삭제 인계 [D-09-02]
 │  └─ ad_ctr.py                    광고 CTR LightGBM [D-10-02]
 ├─ llm/                            LLM · E
 │  ├─ bench/run_bench.py           [E-06-07]
