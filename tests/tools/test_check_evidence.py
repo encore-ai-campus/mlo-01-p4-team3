@@ -317,6 +317,8 @@ class PrBody(unittest.TestCase):
         self.assertTrue(any("빠른 검사 줄" in e for e in self.check(quick).errors))
         full = BODY_OK + "\nprecheck: 통과 (구조·테스트, 테스트 4개, base abc1234, 9초)\n"
         self.assertEqual(self.check(full).errors, [])
+        selected = BODY_OK + "\nprecheck: 통과 (구조·테스트, 테스트 4개(선택: tests/tools 1개), base abc1234, 9초)\n"
+        self.assertEqual(self.check(selected).errors, [])
 
     def test_task_line_count_and_ids(self):
         self.assertIn("1개", self.check(BODY_OK.replace("Task: E-05-01\n", "")).errors[0])

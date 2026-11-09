@@ -30,6 +30,7 @@
 | sprite | 인물 전신 그림 | 512×1280 | portrait와 같은 인물 13종 | `content/images/sprite/<id>.png` | `/static/assets/sprite/<id>.png` |
 | background | 장면 배경 | 1280×720 | `meeting`·`night` 2장 | `content/images/background/<id>.png` | `/static/assets/background/<id>.png` |
 | mascot | 마스코트 | 512×512 | `kkachi`(까치)·`jokjebi`(족제비) 2장 | `content/images/mascot/<id>.png` | `/static/assets/mascot/<id>.png` |
+| branding | 판 시작 전 로고 | 512×512 | `tiger_emblem` 1장, RGBA | `content/images/branding/<id>.png` | `/static/assets/branding/<id>.png` |
 | place | 장소 아이콘 | 128×128 | `engine.domain.model.Place` 값 5개 | `content/images/place/<id>.png` | `/static/assets/place/<id>.png` |
 | ui | UI 아이콘 | 128×128 | 아래 3절 목록 10개 | `content/images/ui/<id>.png` | `/static/assets/ui/<id>.png` |
 | map | 마을 지도 | 1280×720 | `village` 1장 | `content/images/map/<id>.png` | `/static/assets/map/<id>.png` |
@@ -41,6 +42,7 @@
 - **마스코트**(11/5 PM 결정 P-21): 까치 `kkachi`(아침 희생자 발표 장면)와 족제비 `jokjebi`(무당의 짝, 안내·도움말)다. 512×512 RGBA 바탕 투명, 표정 없음. 연출·안내만 하고 새 게임 정보를 주지 않는다(스타일 가이드 6절).
 - **초상은 sprite에서 파생**한다: sprite에서 인물별 크롭 위 y(6절)부터 512×512를 잘라 먹남(`#2E344A`) 위에 알파 합성한다(6절). 한 인물은 sprite 1장만 만들고, 초상은 `make_placeholders`가 만든다. manifest의 초상 항목에 `"derived_from": "sprite:<id>"`가 붙고, 쌍의 `placeholder`는 같아야 한다(4절).
 - **장면 배경**: 회의 `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), 밤 `night`(밤 마을 공통 1장). 장소별 배경은 만들지 않는다(7절).
+- **로고**(11/9 사용자 결정): 판 시작 전 로그인·홈 화면에만 쓰는 호랑이 로고다. 원본은 B의 시안 공유 폴더 `branding/`의 호랑이 엠블럼(시안 로그인 화면 머리에 쓴 파일, B-10-08이 정해 `SOURCES.md`에 적음)이고, 게임 장면(회의·밤)에는 쓰지 않는다(기획서 1.4 세계관). 이미지 안 글자 금지는 다른 유형과 같다. ID는 `branding:tiger_emblem`, 크기 512×512 RGBA, 파일 `content/images/branding/tiger_emblem.png`, url `/static/assets/branding/tiger_emblem.png`이다. 위 표의 `branding` 행은 표를 읽는 도구가 그 유형을 알게 되는 B-10-08에서 `tools/assets/spec.py` `KINDS`·검사와 함께 더한다(그 전에 행만 넣으면 에셋 도구가 알 수 없는 유형으로 멈춤).
 - **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
 - **지도**: ID는 `village`다. 11/5 PM 결정으로 지도는 **시연까지 임시 에셋**이다. 장소 5곳의 영역 좌표는 E-08-07이 임시 지도용 안내 고정값(정보가 없는 균등 배치)으로 manifest 지도 항목의 `regions`에 넣었다(B-10-02 아이콘 배치용). 계약 `Place` 순서대로 지도 가로를 장소 수로 나눈 칸의 가운데, 세로 가운데에 장소 아이콘 크기(128×128) 상자다(`spec.map_regions`). 위치는 장소 사이 거리·방향을 뜻하지 않는다.
 - **정적 파일 연결**(B-05-03 5번): `/static/assets/<kind>/…` → `content/images/<kind>/…`, `/static/ads/…` → `content/images/ad/…`.

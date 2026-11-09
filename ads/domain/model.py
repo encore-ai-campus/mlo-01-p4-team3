@@ -232,6 +232,7 @@ class ServeRecord:
     attribution_day: str            # 비용 귀속일 = serve 시각 기준
     source: str = "human"
     bid_version: str = ""           # 경매 시점의 입찰가 버전. 후속 노출·클릭 이벤트는 이 값을 복사한다(ads-0.4)
+    exploration: bool = False       # 캠페인 일 노출의 5% 탐색 선택. 비용·페이싱과 별도
 
 
 @dataclass

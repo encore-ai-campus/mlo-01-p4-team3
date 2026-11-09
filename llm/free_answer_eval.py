@@ -15,8 +15,8 @@ NPC의 비밀 시간대 행적은 거짓 장소(엔진이 대는 알리바이)�
 E-11-12 자유 대화 확장(11/9, 위 75건 뒤에 붙임, 기존 항목은 바이트 그대로): 기존 3유형 8턴 `LONG_PER_QTYPE`건씩, 그리고
 `kind=chat` 항목 5유형(`intro` 자기소개·인사, `personality` 성미·말투, `impression` 다른 인물 이야기(목격 기록만),
 `incident` 사건에 대한 생각, `smalltalk` 잡담) × 0·2·4·8턴 × `CHAT_PER_CELL`건. chat 항목의 허용 사실 앞에는 자기소개
-사실 `s1`(이름)·`s2`(성향 설명)가 붙는다. 일과·장소는 넣지 않는다. 새 문장 틀은 `chat_sentences`에 있고 사용자 확인 전이다
-(`chat_status`).
+사실 `s1`(이름)·`s2`(성향 설명)가 붙는다. 일과·장소는 넣지 않는다. 새 문장 틀 17개는 `chat_sentences`에 있고 11/9 사용자
+승인을 받았다(지문 `APPROVED_CHAT_SENTENCES_SHA256`, 틀이 바뀌면 `chat_status`가 확인 전으로 돌아간다).
 
 항목 필드: `item_id`, `qtype`, `kind`(normal|false_premise|wrong_history|chat), `turns`, `npc_id`, `npc_name`, `persona`,
 `facts`([{fact_id, sentence}]), `history`([{question, answer}]), `question`, `question_source`, `relevant_fact_ids`
@@ -62,7 +62,7 @@ FALSE_PREMISE_TEMPLATES = (
 DESCRIPTOR_RE = re.compile(r"양반|아낙|나무꾼|어르신")
 WRONG_HISTORY_QUESTIONS = ("ex1_159", "ex1_171", "ex1_139", "ex1_140", "ex1_150", "ex1_174")
 
-# --- E-11-12 자유 대화 확장(11/9 사용자 결정). 아래 문장 틀은 사용자 확인 전이다(`chat_sentences`, `chat_status`) ---
+# --- E-11-12 자유 대화 확장(11/9 사용자 결정). 아래 문장 틀 17개는 11/9 사용자 승인(`chat_sentences`, `chat_status`) ---
 LONG_TURNS = 8                       # 기존 3유형의 8턴 항목(유형마다 `LONG_PER_QTYPE`건)
 LONG_PER_QTYPE = 2
 CHAT_TURNS = (0, 2, 4, 8)
@@ -89,7 +89,7 @@ CHAT_TEMPLATES = {
 }
 # 잡담은 E-06-02 사람 작성 예시(지원 밖 의도의 질문형)를 쓴다
 SMALLTALK_QUESTIONS = ("ex1_217", "ex1_224", "ex1_223", "ex1_226")
-APPROVED_CHAT_SENTENCES_SHA256 = None   # 사용자 확인 뒤 `sentences_fingerprint(chat_sentences())` 값을 넣는다
+APPROVED_CHAT_SENTENCES_SHA256 = "eba0badcf4a8e7ee6eb98f5616b06c09fed1409ef30174743bc5d08685c2e156"  # 11/9 사용자 승인(17문장)
 CHAT_STATUS = "사용자 확인 완료(chat_sentences)"
 CHAT_STATUS_PENDING = "사용자 확인 전(E-11-12 chat_sentences: 새 질문 틀·자기소개 사실 확인 뒤 확정)"
 

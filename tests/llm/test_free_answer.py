@@ -330,9 +330,13 @@ class EvalSetTest(unittest.TestCase):
             else:
                 self.assertTrue(all(i.startswith("f") for i in it["relevant_fact_ids"]), it["item_id"])
 
-    def test_chat_sentences_pending(self):
+    def test_chat_sentences_approved(self):
+        """11/9 사용자 승인본(17문장)과 지문이 같으면 확인 완료, 틀 하나만 바뀌어도 확인 전으로 돌아간다."""
         from llm import free_answer_eval as fe
-        self.assertIn("사용자 확인 전", self.data["chat_status"])
+        self.assertEqual(self.data["chat_status"], fe.CHAT_STATUS)
+        changed = [dict(s) for s in fe.chat_sentences()]
+        changed[0]["text"] += " "
+        self.assertEqual(fe.chat_status_for(changed), fe.CHAT_STATUS_PENDING)
         self.assertEqual(self.data["chat_sentences"], fe.chat_sentences())
         texts = [s["text"] for s in self.data["chat_sentences"]]
         self.assertEqual(len(texts), 1 + 4 + 12)

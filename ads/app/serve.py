@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import random
 import threading
 import time
@@ -15,7 +16,7 @@ from ads.domain.model import (
     slot_image_path,
 )
 from ads.domain.rules import (
-    BudgetBook, TOKEN_TTL_MS, ValidityState, charge_amount_mw, ctr_posterior,
+    BudgetBook, CtrEstimate, MIN_RANK_CTR, TOKEN_TTL_MS, ValidityState, charge_amount_mw, ctr_posterior,
     ecpm_mw, frequency_ok, run_auction, sign_token, targeting_ok, thompson_ctr,
 )
 
@@ -40,10 +41,18 @@ class AdService:
         self.responses, self.auctions, self.requests, self.candidates = {}, {}, {}, {}
         self.frequencies, self.load_tests, self.pending = {}, {}, {}
         self.last_result = None
+        self.ctr, self.pacing, self.exposure_counts = {}, {}, {}
+        self.ctr_version, self.policy_version = CTR_VERSION, POLICY_VERSION
+
+    def estimate(self, creative, policy):
+        """Return a loaded posterior or the slot prior for an unseen creative."""
+        params = self.ctr.get((creative.creative_id, policy.slot))
+        return CtrEstimate(*params) if params else ctr_posterior(policy, 0, 0)
 
     def rank_ctr(self, campaign, creative, policy, rng):
-        """현재는 지면 사전분포를 톰슨 추출한다. 관측 CTR 갱신은 D-08-02 범위다."""
-        return thompson_ctr(ctr_posterior(policy, 0, 0), rng)
+        """Sample learned CTR for CPC ranking and within-campaign CPM selection."""
+        sample = thompson_ctr(self.estimate(creative, policy), rng)
+        return max(sample, MIN_RANK_CTR) if campaign.billing is BillingType.CPC else sample
 
     def serve(self, req: AdRequest) -> AdResponse:
         """동일 입력은 동일 응답을 반환하고 예산을 한 번만 예약한다."""
@@ -51,7 +60,7 @@ class AdService:
             return self.store.serve(self, req)
         return self._serve(req)
 
-    def _serve(self, req, frequency=None):
+    def _serve(self, req, frequency=None, exposure_counts=None):
         with self.lock:
             if req.request_id in self.responses:
                 if self.requests[req.request_id] != asdict(req):
@@ -64,15 +73,18 @@ class AdService:
             policy = self.policies[req.slot]
             request_hash = hashlib.sha256(req.request_id.encode())
             rng = random.Random(int.from_bytes(request_hash.digest(), "big"))
-            campaigns, creatives, bidders = {}, {}, []
+            campaigns, creatives, bidders, exploring = {}, {}, [], {}
             candidates = []
             self.candidates[req.request_id] = candidates
-            for c in self.campaigns():
+            for c in sorted(self.campaigns(), key=lambda c: c.campaign_id):
                 synthetic = req.source == "synthetic"
                 if c.campaign_id.startswith("syn:") != synthetic:
                     continue
                 if not targeting_ok(c, req.slot, req.context, day):
                     continue
+                counts = (exposure_counts(c.campaign_id, day) if exposure_counts else
+                          self.exposure_counts.get((c.campaign_id, day), {}))
+                explore = counts.get("explorations", 0) < math.ceil(.05 * (counts.get("impressions", 0) + 1))
                 choices = []
                 for cr in c.creatives:
                     if cr.creative_id.startswith("syn:") != synthetic:
@@ -83,21 +95,29 @@ class AdService:
                         choices.append((self.rank_ctr(c, cr, policy, rng), cr))
                 if not choices:
                     continue
-                rank, cr = max(choices, key=lambda item: (item[0], item[1].creative_id))
+                if explore:
+                    rank, cr = min(choices, key=lambda item: (
+                        counts.get("creatives", {}).get(item[1].creative_id, 0), item[1].creative_id))
+                else:
+                    rank, cr = max(choices, key=lambda item: (item[0], item[1].creative_id))
+                exploring[c.campaign_id] = explore
                 bidder = Bidder(c.campaign_id, cr.creative_id, c.billing, c.max_bid_mw, rank)
                 candidate = ServeCandidate(c.campaign_id, cr.creative_id, c.billing, c.max_bid_mw,
-                                          rank, policy.prior_ctr, ecpm_mw(bidder))
+                                          rank, self.estimate(cr, policy).mean, ecpm_mw(bidder))
                 candidates.append(candidate)
                 if not self.book.can_reserve(c, day, charge_amount_mw(c.billing, c.max_bid_mw)):
                     candidate.filtered = "budget"
                     continue
                 if candidate.ecpm_mw < policy.reserve_ecpm_mw:
                     candidate.filtered = "reserve"
+                if rng.random() >= self.pacing.get((c.campaign_id, day), 1.):
+                    candidate.filtered = "pacing"
+                    continue
                 campaigns[c.campaign_id], creatives[cr.creative_id] = c, cr
                 bidders.append(bidder)
             auction = run_auction(bidders, policy.reserve_ecpm_mw, req.request_id)
             self.auctions[req.request_id] = auction
-            out = AdResponse(req.request_id, False, policy_version=POLICY_VERSION, ctr_version=CTR_VERSION)
+            out = AdResponse(req.request_id, False, policy_version=self.policy_version, ctr_version=self.ctr_version)
             if auction.winner:
                 winner = auction.winner
                 c, cr = campaigns[winner.campaign_id], creatives[winner.creative_id]
@@ -106,7 +126,7 @@ class AdService:
                             if req.source == "synthetic" else str(uuid.uuid4()))
                 record = ServeRecord(serve_id, req.request_id, c.campaign_id, cr.creative_id,
                     req.slot, c.billing, auction.price_mw, winner.rank_ctr, req.session_pseudonym, now, day,
-                    req.source)
+                    req.source, exploration=exploring[c.campaign_id])
                 if self.book.reserve(c, record):
                     claims = ServeClaims(record.serve_id, req.session_pseudonym, req.slot, now, now + TOKEN_TTL_MS)
                     token = sign_token(claims, self.key)
@@ -116,7 +136,7 @@ class AdService:
                     self.frequencies[key] = self.frequencies.get(key, 0) + 1
                     out = AdResponse(req.request_id, True,
                         AdCreativeView(cr.creative_id, cr.title, cr.body, slot_image_path(cr.image_path, req.slot)),
-                        token, "/ads/v1/impression", f"/ads/v1/click?t={token}", POLICY_VERSION, CTR_VERSION)
+                        token, "/ads/v1/impression", f"/ads/v1/click?t={token}", self.policy_version, self.ctr_version)
                 else:
                     next(candidate for candidate in candidates
                          if candidate.campaign_id == c.campaign_id).filtered = "budget"

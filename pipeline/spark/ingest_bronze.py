@@ -14,6 +14,7 @@ from pathlib import Path
 import time
 
 from pipeline.spark.bronze_contract import ALL_TOPICS, normalize, unique_rows
+from pipeline.spark.privacy_filter import load_tombstones, retained_rows
 from tools.jsonlog import log
 
 SCHEMA = ('event_id string, game_id string, seq long, event_type string, topic string, '
@@ -79,10 +80,12 @@ def process_batch(spark, config, batch, batch_id):
     import base64
     rows = [normalize(base64.b64decode(r.raw_base64).decode('utf-8'), topic=r.topic, key=r.key,
                       partition=r.partition, offset=r.offset) for r in messages]
+    if config.get('privacy_tombstone_dir'):
+        rows = list(retained_rows(rows, load_tombstones(config['privacy_tombstone_dir'])))
     path = config['bronze_path']
     present = DeltaTable.isDeltaTable(spark, path)
     existing = {}
-    if present:
+    if present and rows:
         identities = list({row['event_id'] for row in rows})
         existing = {r.event_id: r.envelope_hash for r in spark.read.format('delta').load(path)
                     .where(F.col('event_id').isin(identities)).select('event_id', 'envelope_hash').collect()}
@@ -93,15 +96,16 @@ def process_batch(spark, config, batch, batch_id):
             DeltaTable.forPath(spark, path).alias('t').merge(incoming.alias('s'), 't.event_id=s.event_id').whenNotMatchedInsertAll().execute()
         else:
             incoming.write.format('delta').mode('errorifexists').save(path)
-    version = DeltaTable.forPath(spark, path).history(1).select('version').first().version
+    version = DeltaTable.forPath(spark, path).history(1).select('version').first().version if present or new_rows else None
     ranges = {}
-    for row in rows:
-        key = f"{row['topic']}:{row['partition']}"
-        offset = row['offset']
+    for message in messages:
+        key = f"{message.topic}:{message.partition}"
+        offset = message.offset
         values = ranges.setdefault(key, {'first': offset, 'last': offset})
         values['first'], values['last'] = min(values['first'], offset), max(values['last'], offset)
     audit = {'batch_id': batch_id, 'delta_version': version, 'offsets': ranges,
-             'received': len(rows), 'inserted': len(new_rows), 'duplicates': len(rows) - len(new_rows),
+             'received': len(messages), 'inserted': len(new_rows), 'duplicates': len(rows) - len(new_rows),
+             'privacy_filtered': len(messages) - len(rows),
              'duration_ms': round((time.monotonic() - started) * 1000, 3),
              'completed_at': datetime.now(timezone.utc).isoformat()}
     write_audit(Path(config['audit_dir']) / f'batch-{batch_id:020d}.json', audit)

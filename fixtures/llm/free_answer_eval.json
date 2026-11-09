@@ -87,7 +87,7 @@
       "text": "{p1}, 범인이 누구일 것 같소?"
     }
   ],
-  "chat_status": "사용자 확인 전(E-11-12 chat_sentences: 새 질문 틀·자기소개 사실 확인 뒤 확정)",
+  "chat_status": "사용자 확인 완료(chat_sentences)",
   "content_version": "content-min-0.1",
   "eval_version": "free-answer-eval-2",
   "intent_examples": "content/intent/examples_v1.jsonl",

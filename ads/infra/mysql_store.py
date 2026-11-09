@@ -86,7 +86,19 @@ class MySQLAdStore:
         frequencies = dict(AdStoredRequest.objects.filter(session_id=req.session_pseudonym, creative_id__isnull=False)
                            .values("creative_id").annotate(total=Count("pk")).values_list("creative_id", "total"))
         service.responses.pop(req.request_id, None)
-        response = service._serve(req, lambda creative_id: frequencies.get(creative_id, 0))
+        def exposures(campaign_id, day):
+            # Sorted campaign order in _serve keeps these cross-session locks consistent.
+            _lock_session("exploration:" + campaign_id + ":" + day, campaign_id.startswith("syn:"))
+            counts = dict(impressions=0, explorations=0, creatives={})
+            rows = AdStoredRequest.objects.filter(impressed=True,
+                serve_data__record__campaign_id=campaign_id, serve_data__record__attribution_day=day)
+            for row in rows.values("creative_id", "serve_data__record__exploration").annotate(total=Count("pk")):
+                count, cr = row["total"], row["creative_id"]
+                counts["impressions"] += count
+                counts["explorations"] += count if row["serve_data__record__exploration"] is True else 0
+                counts["creatives"][cr] = counts["creatives"].get(cr, 0) + count
+            return counts
+        response = service._serve(req, lambda creative_id: frequencies.get(creative_id, 0), exposures)
         claims, _ = verify_token(response.serve_token, service.key, started) if response.filled else (None, None)
         record = service.state.serves[claims.serve_id] if claims else None
         auction = service.auctions[req.request_id]

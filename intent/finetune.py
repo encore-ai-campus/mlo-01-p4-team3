@@ -5,6 +5,7 @@ import argparse
 import gc
 import hashlib
 import json
+import logging
 import math
 import os
 import platform
@@ -23,6 +24,7 @@ from intent.parser import BaselineIntentParser
 from tools.evidence_result import write_result
 from tools.gitrepo import GitRepo
 from tools.jsonlog import log
+from tools.intent_examples import LABELS
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_ID = "monologg/koelectra-base-v3-discriminator"
@@ -68,21 +70,38 @@ def _sha(path):
 
 
 class BertClassifier:
-    """공유 슬롯 파서에 주입하는 평가용 분류기. 기본 운영 해석기는 바꾸지 않는다."""
+    """공유 슬롯 파서에 주입하는 CPU 분류기. 학습 평가와 로컬 런타임이 재사용한다."""
 
     def __init__(self, model, tokenizer, labels, model_version, length=64, threshold=.20):
+        if len(labels) != len(LABELS) or set(labels) != set(LABELS):
+            raise ValueError("expected exactly the ten intent labels")
+        if type(length) is not int or length < 8 or not math.isfinite(threshold) or not 0 <= threshold <= 1:
+            raise ValueError("invalid classifier length/threshold")
         self.model, self.tokenizer, self.labels = model.eval(), tokenizer, labels
         self.model_version, self.length, self.threshold = model_version, length, threshold
         self.tokenizer_version = TOKENIZER_VERSION
 
     def probabilities(self, text):
         """정규화된 문장 하나의 10라벨 확률을 CPU에서 반환한다."""
-        import torch
-        inputs = self.tokenizer(normalize_people(text, {}), return_tensors="pt", truncation=True,
-                                padding="max_length", max_length=self.length)
-        with torch.inference_mode():
-            probabilities = self.model(**inputs).logits.softmax(-1)[0].tolist()
-        return dict(zip(self.labels, map(float, probabilities)))
+        try:
+            import torch
+            inputs = self.tokenizer(normalize_people(text, {}), return_tensors="pt", truncation=True,
+                                    padding="max_length", max_length=self.length)
+            with torch.inference_mode():
+                logits = self.model(**inputs).logits
+                if tuple(logits.shape) != (1, len(self.labels)):
+                    raise ValueError("invalid logits shape")
+                probabilities = list(map(float, logits.softmax(-1)[0].tolist()))
+            if (any(not math.isfinite(p) or not 0 <= p <= 1 for p in probabilities) or
+                    not math.isclose(sum(probabilities), 1., abs_tol=1e-5)):
+                raise ValueError("invalid probabilities")
+            return dict(zip(self.labels, probabilities))
+        except (OSError, ImportError, RuntimeError, ValueError, TypeError, AttributeError, IndexError) as exc:
+            logging.getLogger("paldo.intent").warning(json.dumps({
+                "ts": datetime.now(timezone.utc).isoformat(), "level": "warning", "service": "intent",
+                "component": "bert", "msg": "inference failed", "error_type": type(exc).__name__,
+                "model_version": self.model_version}))
+            raise ValueError("BERT inference failed") from None
 
     def predict(self, text):
         """기준선과 같은 임계값으로 분류한다. 임계값을 평가 결과에 맞춰 조정하지 않는다."""

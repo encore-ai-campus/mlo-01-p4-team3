@@ -11,6 +11,9 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
     raise ImproperlyConfigured("DJANGO_SECRET_KEY 환경 변수가 필요합니다.")
 DEBUG = False
+GAME_UI = os.environ.get("PALDO_GAME_UI", "vn")
+if GAME_UI not in {"classic", "vn"}:
+    raise ImproperlyConfigured("PALDO_GAME_UI는 classic 또는 vn이어야 합니다.")
 PUBLIC_ORIGIN = os.environ.get("PALDO_PUBLIC_ORIGIN", "")
 _origin = urlsplit(PUBLIC_ORIGIN)
 if _origin.scheme not in ("http", "https") or not _origin.hostname or _origin.path not in ("", "/") or _origin.query or _origin.fragment or _origin.username:
@@ -41,6 +44,7 @@ LOGIN_URL = "/accounts/login"
 SIGNUP_INVITE_CODE = os.environ.get("PALDO_SIGNUP_INVITE_CODE", "")
 GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
 INTENT_PARSER_FACTORY = ""  # 기준선 사용 시 "intent.parser.BaselineIntentParser"를 지정한다.
+INTENT_BERT_RUN_DIR = os.environ.get("PALDO_INTENT_BERT_RUN_DIR", "")
 ADS_INTERNAL_URL = os.environ.get("PALDO_ADS_INTERNAL_URL", "")
 SESSION_MONGO_URI = os.environ.get("PALDO_MONGO_URI", "")
 # 회차 없는 일반 판의 content_version(운영 Mongo에 적재된 활성 버전, E-08-14). 비어 있으면 일반 판 시작은 503
@@ -76,8 +80,8 @@ if _db_ca := os.environ.get("PALDO_AUTH_DB_SSL_CA"):
 import pymysql
 pymysql.install_as_MySQLdb()
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
-              "DIRS": [BASE_DIR / "web" / "templates"], "APP_DIRS": True,
-              "OPTIONS": {"context_processors": [
+              "DIRS": [BASE_DIR / "web" / "templates"], "APP_DIRS": False,
+              "OPTIONS": {"loaders": [("server.paldo_web.ui_templates.CachedLoader", ["server.paldo_web.ui_templates.Loader", "django.template.loaders.app_directories.Loader"])], "context_processors": [
                   "django.template.context_processors.request",
                   "django.contrib.auth.context_processors.auth",
                   "django.contrib.messages.context_processors.messages",

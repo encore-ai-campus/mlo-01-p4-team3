@@ -1,11 +1,17 @@
 # ML 모델
 
 ## 무엇을
+`gate.py`는 수명주기 평가 판정, `bandit.py`는 P-16 보상·상한·버전 고정 전략 공급자,
+`mongo_bandit.py`는 전체 이벤트 export 배치·Mongo CAS와 C의 판 ID별 삭제 연결을 제공한다.
+구체적인 입력·B/C 책임·실행과 미충족 범위는 [D-09-02 인계](../reports/D-09-02-handoff.md)를 따른다.
+
 `ml/suspicion/`은 씐 자 1명 판의 마을 NPC 관측을 학습·평가하는 인프라 모듈이다.
 `features.py`는 실제 엔진 bot JSONL을 `TrainingRow` JSONL과 provenance manifest로 변환한다.
 `train.py`는 게임 분할·로지스틱 회귀·LightGBM·로컬 MLflow 추적을 수행한다.
 `evaluate.py`는 관측별 softmax, 다중분류 로그 손실·상위1 적중률·후보별 ECE를 계산한다.
 `strategies.py`는 기존 `RuleV0Policy`와 `MixSource`로 거짓 행적 유형을 고정한 실제 엔진 판을 만든다.
+`server/infra/model_selector.py`는 로컬에 등록한 모델을 정확한 버전으로 조회하고 의심 모델의 특징 버전을 검사한다.
+`ml/adapters/reproduce_model_games.py`는 Selector로 고른 같은 모델·시드로 판 실행을 두 번 돌려 결과가 같은지 비교한다(D-08-04 재현).
 의도 기준선은 [intent.md](intent.md), 광고 서버는 [ads.md](ads.md)를 따른다.
 
 ## 왜
@@ -63,7 +69,33 @@ D-08-01의 `ml/adapters/suspicion_model.py`는 지속 worker로 추론 마감을
 python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --model out/suspicion/run1/models.pkl --out out/model_games
 ```
 
-`--preset/--games/--seed/--out/--policy/--record`는 기존 도구와 같다. 기본 정책은 모델을 호출하는 `rule-v0`다. `--model`을 생략하면 `PALDO_SUSPICION_MODEL_PATH`, 그 값도 없으면 위 로컬 경로를 쓴다. 신뢰된 학습 산출물 `models.pkl`과 그 의존 패키지가 필요하다. 없으면 종료 코드 1이며 모델 실행 성공 manifest를 만들지 않는다. `--policy min-legal`은 모델을 사용하지 않아 성공으로 판정하지 않는다.
+`--preset/--games/--seed/--out/--policy/--record`는 기존 도구와 같다. 기본 정책은 모델을 호출하는 `rule-v0`다. 파일 경로 모드는 `--model`, `PALDO_SUSPICION_MODEL_PATH`, 위 로컬 경로 순으로 읽는다. 신뢰된 학습 산출물 `models.pkl`과 그 의존 패키지가 필요하다. 없으면 종료 코드 1이며 모델 실행 성공 manifest를 만들지 않는다. `--policy min-legal`은 모델을 사용하지 않아 성공으로 판정하지 않는다.
+
+### 로컬 모델 인계 (D-08-04)
+
+1. D-07-02의 `models.pkl`과 `report.json`을 함께 `mlruns/suspicion-v0/<suspicion_version>/`에 둔다. D-08-01의 버전은 `suspicion-logistic-` 뒤에 `models.pkl`의 SHA-256 앞 12자리를 붙인 값이다. 같은 버전의 파일을 덮어쓰지 않는다. 11/9 사용자 결정에 따라 D-08-04는 로컬 인계·50판 재현으로 완료하며, 레지스트리 후보 등록·운영 적용은 A-10-01 3번과 수명주기 평가 관문을 통과한 뒤 연결한다.
+2. 사용할 TF-IDF 기준선은 기존 `mlruns/intent-v0/<intent_version>/model.joblib` 경로에 둔다. `<intent_version>`은 저장된 `IntentBaseline.model_version`과 같아야 한다. 두 파일 형식 모두 신뢰하는 로컬 산출물만 사용한다.
+3. A·B는 동일 커밋·콘텐츠·모델 파일에서 아래 명령으로 각 50판을 실행한다. 각자 다른 `--out`을 사용하고, `manifest.json`의 두 모델 버전과 위반·폴백 0건, `events.jsonl`의 SHA-256을 대조한다. 벤치마크는 의도 아티팩트도 불러 버전을 검사하며, 봇 판의 이벤트에는 추론에 사용한 의심 모델 버전이 기록된다.
+4. B 조립에서는 `LocalModelSelector(Path("mlruns"), suspicion_version=suspicion_version, intent_version=intent_version, feature_version=FEATURE_VERSION)`을 만든다. `FEATURE_VERSION`은 `ml.suspicion.features`에서 가져온다. `select(game_id, player_pseudonym)`의 버전을 판 메타에 고정하고 그 값으로 두 모델을 조회한다. 실제 `ParseResult.versions["model"]`도 판 메타와 비교한다. 반환된 의심 어댑터의 `close()`는 사용을 끝낸 호출자가 실행한다.
+
+```powershell
+python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --mlruns mlruns --suspicion-version $suspicionVersion --intent-version $intentVersion --out out/d08-04/bench-a
+Get-FileHash out/d08-04/bench-a/events.jsonl -Algorithm SHA256
+```
+
+같은 PC에서 두 번 돌려 바로 비교하려면 재현 명령을 쓴다(11/9, E가 A 쪽으로 준비). 두 실행의 판 ID·모델·특징·규칙 버전, `events.jsonl` SHA-256, 판별 이벤트 수, 판별 종료 결과(승자·사유)를 비교하고, 실행 시간·추론 지연·커밋·출력 경로는 비교하지 않는다. 같고 두 실행이 모두 통과(위반·폴백 0, p95 100ms 이하)하면 종료 코드 0이다. 보고는 `<out>/reproduce.json`.
+
+```powershell
+python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version $suspicionVersion --intent-version $intentVersion --games 50 --seed 1 --out out/d08-04/repro
+```
+
+11/9 로컬 인계 버전은 `suspicion-logistic-1afb8f051c4e`와 `tfidf-lr-v0-2a678588557c`다. 원본 SHA-256과 검증 범위는 `mlruns/handoff-v0.json`, 증빙은 `docs/evidence/D-08-04.md`에 있다. A CLI 두 번과 B의 `ContentPolicyEngine` 조립 한 번을 D 환경에서 실행해 각 50판, 총 추론 960건 성공, 이벤트 해시 일치를 확인했다. 확인 절차는 저장소 루트에서 위 두 버전으로 재현 명령 실행 → `<out>/reproduce.json`의 `passed=true`·`reproduced=true`·`games=50` 확인 → 아래 기대 해시와 대조 순서다.
+
+```text
+848dbdd20f02fefccda9bdbf4438830e844181949412bac7a5a70704bb58f8ca
+```
+
+`select`는 고정 설정의 모델을 실제로 열어 검증한 뒤 버전 두 개와 `False`를 반환한다. 파일·로더·모델 ID 오류는 `ModelUnavailable`, 의심 특징 불일치는 `FeatureVersionMismatch`다. 조회는 로컬 경로와 버전만 사용한다. 판별 인스턴스 수명·버전 고정과 카나리아는 B-09-01, 원격 레지스트리는 C-09-01에서 연결한다. BERT 해석기 연결은 D-09-01 범위다.
 
 ## 설정값
 
@@ -80,6 +112,10 @@ python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --model
 어댑터의 추론 응답 대기 마감은 90ms, native 초기화·워밍업을 포함한 로드 마감은 30초다. 고정 주민 수의 로컬 순차 IPC에서 검증했으며 웹 동시성·큰 메시지의 절대 wall-clock 상한은 별도 검증이 필요하다. 특징 버전·열 순서·보정 온도는 D-07-02 산출물과 기존 특징 모듈로 검증한다.
 
 ## 한계
+관문 통과는 별도 candidate 등록·카나리아·승격을 자동 실행하지 않는다. 실제 사람 성능은 미측정이다.
+밴딧은 클래스룸 파일럿용 단일 Mongo 문서(16 MiB 한계)다. B의 실제 판 시작 주입과 종료 이벤트 연결은 수신 검증 대기다.
+삭제 필터를 등록한 C가 `MongoBanditStore.forget_games`를 호출해야 후속 전체 이력 갱신이 정상 동작한다.
+
 
 모델 비교와 Delta 연결 검증은 별도 실행이다. 다른 프리셋의 최소 판 수와 모델 합격선은 D-08-01부터 적용한다.
 형식용 synthetic/scripted와 사람 데이터는 현재 경계에서 거부한다. 현재 데이터는 실제 bot 판이다.
@@ -94,10 +130,14 @@ python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --model
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | D-05-03 | 11/5 | 하루 일괄 문서화로 ML 패키지의 미구현 범위와 후속 작업 위치를 명시 |
+| D-09-02 | 11/9 | 수명주기 관문·P-16 밴딧·동시성/재시도/삭제 처리·BERT/B/C 인계. 사람·운영 검증은 별도 |
 | D-07-02 | 11/7 | 로컬 TrainingRow 변환·게임 분할·두 추정기·규칙 비교·MLflow·경계 테스트 |
 | D-07-02 | 11/8 | 최신 dev 규칙 반영, 거짓말 전략 고정 생성·별도 평가·판/seed 중복 거부·실제 선택 이후 관측 분리 |
 | D-07-02 | 11/8 | C Delta 행의 원본 관측 대조와 학습 코드 연결 실행 추가 |
 | D-07-03 | 11/7 | intent/의 CPU 미세조정·동일 기준선 평가와 모델·계보 저장 경로를 연결 |
 | D-08-01 | 11/8 | 중단 가능한 모델 포트·판 실행, 버전 고정·폴백·특징 경보 검증. dev2ed4a53 반영 후 50판 연결 회귀와 승률 관문 실패 기록 |
+| D-08-04 | 11/8 | 로컬 Selector의 고정 버전 조회·특징 버전 검사와 A·B 재현 절차 추가 |
+| D-08-04 | 11/9 | A 쪽 재현 명령 `reproduce_model_games`(같은 모델·시드 두 실행 비교, 실제 v0 수령 전 가짜 모델 시험, E) |
+| D-08-04 | 11/9 | 사용자 변경 기준 적용, 실제 로컬 모델 인계와 A CLI·B 조립 50판 비교 완료 |
 
-모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. Selector의 모델 선택과 이전 버전 수명 관리는 D-08-04에서 연결한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.
+모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.

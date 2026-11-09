@@ -1,10 +1,11 @@
-{% extends "accounts/base.html" %}{% block content %}<h1>가입</h1>
+{% extends "accounts/base.html" %}{% block content %}
+<div class="auth-layout">{% load meeting %}{% include "accounts/scene_intro.html" %}<section class="auth-content"><h1>가입</h1>
 {% if error %}<p role="alert">{{ error }}</p>{% endif %}
-<form method="post">{% csrf_token %}
+<form class="auth-form" method="post">{% csrf_token %}
 <p><label>로그인 ID <input name="username" maxlength="150" autocomplete="username" required></label></p>
 <p><label>비밀번호 <input name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required></label></p>
 <p><label>비밀번호 확인 <input name="password_confirm" type="password" maxlength="128" autocomplete="new-password" required></label></p>
 <p>비밀번호는 소문자·숫자·특수문자를 각각 포함해야 합니다.</p>
 {% if invite_required %}<p><label>초대 코드 <input name="invite_code" type="password" autocomplete="off" required></label></p>{% endif %}
-<p>{{ consent_text }}</p><label><input name="consent" type="checkbox" required> 동의합니다</label>
-<button>가입</button></form>{% endblock %}
+<p class="consent-copy">{{ consent_text }}</p><label><input name="consent" type="checkbox" required> 동의합니다</label>
+<button>가입</button></form><p class="account-switch">이미 계정이 있으신가요? <a href="{% url 'accounts:login' %}">로그인</a></p></section></div>{% endblock %}

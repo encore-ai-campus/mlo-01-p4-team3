@@ -24,6 +24,8 @@
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 모델 교체·승격·롤백 | `docs/contracts/ml_lifecycle.md` |
+| 평가 관문·전략 밴딧 배치·B/C 연결 | `ml/gate.py`, `ml/bandit.py`, `ml/mongo_bandit.py`, `docs/reports/D-09-02-handoff.md`, 증빙 `docs/evidence/D-09-02.md` |
+| 로컬 BERT IntentParser 주입 | `intent/bert.py`, `intent/README.md`, `docs/reports/D-09-02-handoff.md` |
 | 씐 자 모델 로컬 첫 학습·평가 | `ml/suspicion/features.py`(실제 엔진→TrainingRow), `train.py`(게임 분할·학습·MLflow), `evaluate.py`(softmax·지표), `tests/test_suspicion.py`, `docs/evidence/D-07-02.md` |
 | 학습 미사용 씐 자 전략 평가 | `ml/suspicion/strategies.py`(거짓 행적 유형 고정), `train.py --heldout-rows`(판·seed 분리 및 별도 지표) |
 | 승인된 의도 예시로 CPU BERT 미세조정·기준선 비교 | `intent/finetune.py`, CLI `tools/perf/intent_finetune.py`, 증빙 `docs/evidence/D-07-03.md`, 모델·계보 기록 `mlruns/intent_bert/`(Git 제외) |
@@ -31,5 +33,6 @@
 | 경매·과금·광고 판정 규칙 변경 | 광고 도메인 `ads/domain/`, `docs/contracts/ads.md` |
 | 광고 서버 실행·admin·HTTP 검사·지연 측정 | 표현 `ads/manage.py`·`ads/web/`, 응용 `ads/app/`, 설명 `docs/modules/ads.md`, 측정 `tools/perf/ads_bench.py` |
 | 광고 원장·만료·발행·환입 검증 | `ads/infra/`, `ads/manage.py ad_worker`, `tests/ads/`, 증빙 `docs/evidence/D-06-02.md` |
+| CTR·5분 페이싱 갱신·60초 재적재·시나리오 1~5 | `ads/app/ctr_update.py`, `ads/app/pacing_update.py`, `ads/infra/optimization.py`, `ads/manage.py ad_update`, `tools/ad_scenarios.py`, 계획 `docs/reports/D-08-02-plan.md`, 증빙 `docs/evidence/D-08-02.md` |
 | 합성 광고 HTTP 트래픽·피로·무효 클릭·재처리 검증 | `tools/ad_traffic_sim.py`, `ads/testing/traffic_server.py`, `tools/perf/ad_traffic_bench.py`, `tests/tools/test_ad_traffic_sim.py`, 설명 `docs/modules/ads.md` |
 | 모델 포트·모델 판 실행·폴백 검사 | `ml/adapters/suspicion_model.py`, `ml/adapters/run_model_games.py`, `tests/sim/test_suspicion_adapter.py`, 증빙 `docs/evidence/D-08-01.md` |

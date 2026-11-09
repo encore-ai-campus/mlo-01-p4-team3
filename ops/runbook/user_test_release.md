@@ -10,6 +10,8 @@
 
 [프록시 필수 절차](../proxy/README.md#웹-프로세스-2개-e-09-10)로 Daphne 8000·8002와 InMemory 채널 레이어를 준비한다. 전환 전에 현재 Caddy 바이너리에서 실제 운영 환경값으로 새 Caddyfile을 검증한다. `health_fails`와 `health_passes`를 읽지 못하는 버전에서는 새 설정 적용을 중단하고 호환 바이너리로 다시 검증한다. 두 웹 프로세스의 `/healthz`와 C-08-01에서 정한 지표 대상을 확인한 뒤 Caddy의 HTTPS·웹소켓을 확인한다.
 
+웹 템플릿과 outbox unit의 `WorkingDirectory`, 실행 스크립트 경로, `ReadWritePaths`를 실제 후보 디렉터리와 맞춘다. 서비스 계정에 후보의 `out/` 쓰기 권한을 주고 `systemd-analyze verify` 후 적용한다. Caddy 패키지를 올려야 한다면 기존 Caddyfile과 이전 패키지를 보관하고, 새 바이너리로 기존·후보 설정을 모두 검증한다. 패키지 갱신 직후 기존 HTTPS 응답을 확인한 뒤 두 upstream 설정을 적용한다.
+
 후보 배포 직후 해당 서버에서 프록시 문서의 비교 명령을 `--web-processes 2,1 --channel-layer memory --front binary`로 실행한다. 두 경우 각각 30명·3분을 측정하고 2프로세스의 커밋이 두 포트에 분산됐는지 확인한다. p95 기준은 1초이며 초과하면 E에게 수치를 전달한다. 시험용 Daphne·Caddy와 시험용 게임 엔진이 내는 비교 결과를 운영 후보의 실제 엔진 처리량과 구분해 기록한다.
 
 ## 11/10 18:00 마감

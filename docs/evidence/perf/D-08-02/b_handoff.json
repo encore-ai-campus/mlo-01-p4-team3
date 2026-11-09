@@ -1,0 +1,40 @@
+{
+  "task": "D-08-02",
+  "commit": "8706ec056650e82b21405b06c4e2d195d3f81857",
+  "generated_at": "2026-11-09T01:31:55Z",
+  "source": "PYTHONPATH=<root>;<root>/out/b0803-direct;<root>/out/b0803-direct/deps python -u -X utf8 out/b0803-direct/probe.py; captured run-b92ad5779e; raw-log audit by record_result.py",
+  "metrics": {
+    "filled_slots": {
+      "value": 3,
+      "unit": "개"
+    },
+    "valid_impressions": {
+      "value": 3,
+      "unit": "건"
+    },
+    "valid_clicks": {
+      "value": 3,
+      "unit": "건"
+    },
+    "landing_successes": {
+      "value": 3,
+      "unit": "건"
+    },
+    "matched_request_ids": {
+      "value": 12,
+      "unit": "건"
+    },
+    "correlated_serve_ids": {
+      "value": 3,
+      "unit": "건"
+    },
+    "web_native_serve_ids": {
+      "value": 0,
+      "unit": "건"
+    },
+    "outbox_events": {
+      "value": 9,
+      "unit": "건"
+    }
+  }
+}

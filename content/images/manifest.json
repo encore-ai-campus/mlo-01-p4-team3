@@ -583,14 +583,14 @@
     "id": "meeting",
     "path": "content/images/background/meeting.png",
     "url": "/static/assets/background/meeting.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "background",
     "id": "night",
     "path": "content/images/background/night.png",
     "url": "/static/assets/background/night.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "mascot",
@@ -604,6 +604,13 @@
     "id": "kkachi",
     "path": "content/images/mascot/kkachi.png",
     "url": "/static/assets/mascot/kkachi.png",
+    "placeholder": false
+  },
+  {
+    "kind": "branding",
+    "id": "tiger_emblem",
+    "path": "content/images/branding/tiger_emblem.png",
+    "url": "/static/assets/branding/tiger_emblem.png",
     "placeholder": false
   },
   {

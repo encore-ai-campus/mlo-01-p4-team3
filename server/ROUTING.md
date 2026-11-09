@@ -1,8 +1,18 @@
 # 서버 라우팅
 
+B-09-02 어댑터 수신: `composition._configure_parser` → 설정 `INTENT_PARSER_FACTORY` → `paldo_web.intent.make_bert_parser()` → D의 `intent.bert.BertIntentParser(run_dir)` → 기존 `ObservedIntentParser` → `InteractionService`다. 로컬 아티팩트 경로는 `INTENT_BERT_RUN_DIR`(환경 `PALDO_INTENT_BERT_RUN_DIR`)로 받는다. 기본 팩토리는 빈 문자열로 유지한다. 운영 URL·DTO 변경은 없으며 인수 범위와 실제 가중치 미검증은 [증빙](../docs/evidence/B-09-02.md)에 구분한다.
+
+B-09-02 사전 부하: 기존 `tools/perf/api_bench.py --web-processes 2 --intent-every 1` → `tests/multiproc_bench.py` → 시험 전용 `asgi_bench_app.py` → `asgi_bench.py`·`intent_load.py`다. 시험 해석기는 `--intent-factory`로 고르고 기존 해석기 포트·계측을 사용한다. 공개 화면 버전으로 기존 `POST /games/<id>/utterances` 해석 후 같은 시도를 `cancel`하며 명령은 실행하지 않는다. 보조 기록은 시험 접두어의 Mongo `b_interactions`에 저장하고 종료 때 삭제한다. 운영 URL·DTO·화면·설정 기본값은 변경하지 않는다. 실제 엔진 부하 옵션은 D-08-01과 연결 대기다. [증빙](../docs/evidence/B-09-02.md)
+
+B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
+
+공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 manifest의 정식 그림(현재 로고·회의/밤 배경 포함 21개)과 임시 자원 상태를 표시하고 classic은 404다. 수량은 manifest에서 계산한다. 시안 후보 카탈로그는 읽지 않는다. 보존한 전체 HTML 시안과 실제 화면의 적용 범위는 web/UI_APPLY.md에서 구분한다.
+
+종료 탭은 같은 판 URL에서 결과·복기·단서를 표시한다. GET review의 htmx는 review_panel.html, 일반 HTML은 review.html, JSON DTO·소유권·진행 중 403은 유지한다. 서버·웹 디자인 및 web/PM_UI_REVIEW.md·UI_ASSET_PLAN.md·UI_APPLY.md를 함께 갱신한다.
+
 B-10-02: 기존 GET /games/{game_id} 전체/htmx 화면 → meeting.html → village_guide → api/village_assets.py → manifest 지도·regions·초상. 하단 asset_attribution → SOURCES.md 첫 출처 줄. 이미지는 기존 api/assets.py가 제공한다. 새 URL·명령·DB는 없다.
 
-B-09-06은 [VN 표시 규칙](../docs/contracts/vn.md)을 정의하며 URL·HTTP 메서드·서버 호출 경로를 추가하지 않는다. 회의·밤의 기존 화면 및 render 폴링을 B-10-07에서 연결한다. E 검토 전 초안이다.
+B-09-06은 [VN 표시 규칙](../docs/contracts/vn.md)을 정의하며 URL·HTTP 메서드·서버 호출 경로를 추가하지 않는다. 회의·밤의 기존 화면 및 render 폴링을 B-10-07에서 연결한다. 11/9 PR #304로 확정됐다.
 
 B-08-02: 홈 `accounts/views.py`와 일반 판 시작 `app/open_start.py`의 `open_preset_ids()`가 `app/presets_enabled.json`을 매번 읽는다. 초기 공개는 `base6`만이며, 파일에서 허용한 프리셋만 새 일반 판을 시작한다. 회차 판 배정과 이미 시작한 판의 재전송은 기존 정책을 유지한다. `POST /games`의 `mudang_variant` → 판 메타 → `GameOutput.mudang_variant` → `meeting.html` 초상으로 이어진다.
 
@@ -18,7 +28,7 @@ B-08-02: 홈 `accounts/views.py`와 일반 판 시작 `app/open_start.py`의 `op
 
 B-07-05 성능 시험은 `tools/perf/api_bench.py --compare-asgi` → `server/tests/api_bench.py` → `asgi_bench.py` → 시험 전용 `asgi_bench_app.py`·`asgi_bench_settings.py` 순서다. 하위 프로세스의 WSGI 또는 실제 Daphne에 루프백 HTTP로 기존 `POST /games`·명령을 보내며, 혼합 부하에서는 `GET /ads/slot/lobby_banner`와 인증 `/ws/game/` 비콘을 함께 보낸다. 운영 URL·조립은 바꾸지 않는다.
 
-B-06-04 비노출 검증: 가입·로그인 → 기존 `/games`·명령 → `GET /ads/slot/{slot}` → `api/ad_slots.py` → `ensure_ad_identity` → `AdGateway.fetch`. `server/tests/test_accounts.py`가 인증 실패 경로까지 로그·이벤트·지표·광고 DTO를 대조한다. HTTP 광고 서버 연결은 B-08-03에서 이어 검증한다. URL 변경은 없다.
+B-06-04 비노출 검증: 가입·로그인 → 기존 `/games`·명령 → `GET /ads/slot/{slot}` → `api/ad_slots.py` → `ensure_ad_identity` → `AdGateway.fetch` → `HTTPAdProvider` → D Django 광고 API다. `test_accounts.py`의 같은 인증 시나리오를 `test_account_http_privacy.py`가 재사용하고 `ad_privacy_host.py`의 별도 루프백 D WSGI 프로세스가 수신 본문·헤더·D 로그를 검사한다. 광고 저장소만 메모리인 시험 전용 호스트이며 운영 조립·URL 변경은 없다.
 
 B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_bench.py` → 기존 `/games`·`/games/{id}/commands` → 실제 Mongo 조립이다. URL·운영 핸들러는 바꾸지 않는다. `server/tests/mongo_commands.py`는 같은 API의 실제 저장·20개 경합을 검사한다.
 
@@ -47,7 +57,7 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 | `GET /healthz`, `GET /readyz`, `GET /metrics` | [paldo_web/probes.py](paldo_web/probes.py). |
 | `GET /static/…` | [api/assets.py](api/assets.py). |
 | `/ws/game/` | [paldo_web/asgi.py](paldo_web/asgi.py)의 출처·세션 인증 → [api/routing.py](api/routing.py) → [api/consumers.py](api/consumers.py). `hello`의 폐기 사유는 [api/ad_metrics.py](api/ad_metrics.py)에 집계하고, `ad.impression`은 [app/ad_events.py](app/ad_events.py)로 중계한다. |
-| `GET /ads/click?t=…`, `GET /ads/landing/{creative_id}` | [api/ad_relay.py](api/ad_relay.py) → [app/ad_events.py](app/ad_events.py) → [app/ads_port.py](app/ads_port.py). 실패 시 홈 이동 또는 돌아가기 링크를 제공한다. |
+| `GET /ads/click?t=…`, `GET /ads/landing/{creative_id}` | [api/ad_relay.py](api/ad_relay.py) → [app/ad_events.py](app/ad_events.py) → [app/ads_port.py](app/ads_port.py). 클릭·랜딩 실패는 홈으로 보내지 않고 게임 조회 없는 안내와 돌아가기를 같은 응답으로 보인다(B-08-03 E 보완). 랜딩 ID는 합성 소재의 `syn:`을 받는다. 중계 로그에 `request_id`와 `serve_id`(토큰 본문에서 읽음, 서명 검증은 광고 서버)를 남긴다. |
 | `GET /ads/slot/{slot}` | [api/ad_slots.py](api/ad_slots.py) → B-07-05의 광고 게이트웨이 조립 → `AdGateway.fetch`. 게임 명령과 분리해 광고 HTML 조각만 반환한다. 미제공·실패는 200 빈 조각이다. |
 
 B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은 `InteractionService.participant_records`를 거친다. 저장 계획은 보조 저장의 `effects`, 공개 표시 값은 `state`에 보존하고 C 게임 아웃박스의 동일 키 재생으로 복구한다. C의 별도 `outbox_publisher`가 `paldo.player`로 발행한다. API·이벤트 형식은 그대로다.
@@ -82,3 +92,9 @@ B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story
 시험 진입점은 tools/perf/ad_fault_test.py → tests/ad_fault_bench.py → tests/asgi_bench.py·asgi_bench_app.py다. HTTP 대역은 tests/ad_http_host.py이며 운영 요청과 분리한다. [증빙](../docs/evidence/B-08-03.md).
 
 광고 클릭 실패 → 홈의 accounts/views.py는 진척 1회·판별 최대 1회 조회를 요청 안에서 재사용한다. 다음 요청은 다시 조회하며 홈의 기존 회차·일반 판·결말 선택 표시를 유지한다.
+
+## B-10-08 계정 디자인·시험 계측
+
+계정 GET/POST·홈·게임 시작 URL과 시작 정책은 유지한다. `accounts/views.py`는 배정된 미완료 판 여부를 `test_round_pending`으로 전달하고 계정의 `account-start.js`가 일반/테스트 영역을 하나씩 펼친다. `accounts/base.html`이 판 시작 전 로고와 계정 전용 CSS를 연결하고 게임 기본 템플릿은 로고를 연결하지 않는다. 배경은 `api/assets.py`의 기존 `asset_url`로 공식 manifest의 정식 night를 읽는다. 자원은 기존 공식 manifest·`web/static/` 허용 경로로 제공한다.
+
+`tests/ui_theme_preview.py --font-probe`는 `tests/ui_font_probe.py`를 시험 미들웨어에만 주입한다. 로그인 GET에만 글꼴 Timing 표본을 추가하며 운영 설정·URL은 바꾸지 않는다. 기록 도구는 `tools/perf/account_assets.py`다. [웹 라우팅](../web/ROUTING.md#b-10-08-계정-디자인로고글꼴)

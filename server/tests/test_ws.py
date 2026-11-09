@@ -213,11 +213,20 @@ class WebsocketContract(TransactionTestCase):
         """성공·실패·잘못된 외부 Location과 비로그인 처리를 확인한다."""
         self.assertEqual(self.client.get("/ads/click?t=fake")["Location"], "/ads/landing/cr_fake")
         self.assertContains(self.client.get("/ads/landing/cr_fake"), "가상 광고")
+        with patch.object(self.provider, "send_click", return_value="/ads/landing/syn:cr_fake"):
+            self.assertEqual(self.client.get("/ads/click?t=fake")["Location"], "/ads/landing/syn:cr_fake")
+        self.assertEqual(self.client.get("/ads/landing/syn:cr_fake").status_code, 200)
         self.provider.fail = True
-        self.assertEqual(self.client.get("/ads/click?t=fake")["Location"], "/")
+        failed = self.client.get("/ads/click?t=fake")
+        self.assertEqual(failed.status_code, 200)
+        self.assertNotIn("Location", failed)
+        self.assertContains(failed, "돌아가기")
         self.assertContains(self.client.get("/ads/landing/cr_fake"), "돌아가기")
+        self.provider.fail = False
         with patch.object(self.provider, "send_click", return_value="https://evil.test/"):
-            self.assertEqual(self.client.get("/ads/click?t=fake")["Location"], "/")
+            evil = self.client.get("/ads/click?t=fake")
+            self.assertEqual(evil.status_code, 200)
+            self.assertNotIn("Location", evil)
         self.client.logout()
         self.assertEqual(self.client.get("/ads/click?t=fake").status_code, 302)
         self.assertEqual(self.client.get("/ads/landing/cr_fake").status_code, 302)

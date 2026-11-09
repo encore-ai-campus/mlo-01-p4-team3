@@ -210,10 +210,13 @@ class AdHTTPRoutes(TestCase):
             self.assertNotIn(secret, serialized)
 
     def test_failed_server_has_empty_slot_safe_click_and_landing(self):
-        """장애는 빈 지면·홈 이동·돌아가기 안내이며 게임 진척은 계속 응답한다."""
+        """장애는 빈 지면·홈으로 보내지 않는 안내·돌아가기이며 게임 진척은 계속 응답한다."""
         self.host.mode = 'error'
         self.assertEqual(self.client.get('/ads/slot/lobby_banner').content.strip(), b'')
-        self.assertEqual(self.client.get('/ads/click', {'t': 'token'})['Location'], '/')
+        click = self.client.get('/ads/click', {'t': 'token'})
+        self.assertEqual(click.status_code, 200)
+        self.assertNotIn('Location', click)
+        self.assertContains(click, '광고를 불러오지 못했습니다')
         self.assertContains(self.client.get('/ads/landing/sample'), '돌아가기')
         self.assertEqual(self.client.get('/players/me/progress').status_code, 200)
 

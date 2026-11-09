@@ -1,0 +1,18 @@
+@import url("/static/fonts/fonts.css");
+/* B-10-08: 확정 시안의 먹·한지·놋쇠와 로컬 SIL OFL 글꼴. */
+:root {
+  color-scheme: dark;
+  --page: #0c1316;
+  --surface: #172428;
+  --text: #eee8d9;
+  --muted: #bcbdb4;
+  --line: #657478;
+  --accent: #dbc397;
+  --danger: #ffb4a6;
+  font-family: var(--pd-sans);
+  color: var(--text);
+  background: var(--page);
+  font-synthesis: none;
+}
+:root { --page:#0c1113; --surface:#172123; --text:#e9e4d5; --muted:#b6b6a9; --line:#74664e; --accent:#c3ac7e; }
+:root { --pd-paper:#e8dfc8; --pd-text:#242b28; --pd-muted:#5d594e; }
