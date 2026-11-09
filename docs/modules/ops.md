@@ -94,4 +94,4 @@ MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/READM
 | C-08-02 | 11/8 | 광고 귀속·마감·멱등 집계·실제 환입 재대사 |
 | C-08-03 | 11/8 | k3s Job·Kafka sink·5호스트 자원 재측정 |
 | C-08-04 | 11/8 | E 태그 archive·4th_private 전용 조회 계정 guard |
-| E-09-10 | 11/9 | 실행 도구 `web --port 8000·8002`, Caddyfile upstream 2개·능동 상태 확인, 로컬 Prometheus `paldo-web` 대상 2개(`process` 라벨), Compose 선택 Redis(profile `redis`), proxy README 웹 프로세스 2개 절차·되돌림·선택 Redis 절 |
+| E-09-10 | 11/9 | 실행 도구 `web --port 8000·8002`, Caddyfile upstream 2개·능동 상태 확인, 로컬 Prometheus `paldo-web` 대상 2개(`process` 라벨), Compose 선택 Redis(profile `redis`), proxy README 웹 프로세스 2개 절차·되돌림·비교 측정(`tools/perf/api_bench.py --web-processes`)·선택 Redis 절 |

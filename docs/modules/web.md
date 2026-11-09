@@ -113,7 +113,7 @@ B-07-02의 설문은 같은 API에서 응답과 전체 건너뛰기를 받는다
 | B-08-02 | 11/8 | 공개 프리셋 파일과 일반 판 연동, 무당 초상 선택·기본값, 공개 8인 녹화 15화면·렌더 측정, 거절 코드 로그·심문 양식 제한·PM 결정의 Kanana 표기 제거. 현재 dev의 6인 공동 완주·E 재확인은 대기이며 태그는 선행 조건이 아님. 11/10 태그 리허설은 B-09-03 |
 | B-08-01 | 11/8 | 공개 결과·수집 단서·결말 선택 화면. 11/9 최신 dev에서 일반 판·고정 회차에 연결하고 시작 UUID·초상·첫 결말 보존을 재검증. 선택형 도전의 필드·공개 판정 인수 대기 콘텐츠 버전별 문안 보관·갱신 후 기존 결말/단서 유지 회귀 |
 | B-08-03 | 11/8 | 내부 HTTP 제공자·환경 조립, 재시도 없는 4경로·헤더 분리·실패 화면 회귀와 로컬 장애 시험 CLI, 실패 후 홈의 요청 내 진척·판 조회 재사용. D 인수·5분 장애 시험·실제 배치는 대기 |
-| E-09-10 | 11/9 | 게임 웹 Daphne 2개(8000·8002)와 Caddy `least_conn`·`/healthz` 능동 확인, 채널 레이어 설정 전환(`memory` 기본·`redis` 선택, 연결 실패 시 기동 거부), 프로세스별 로그 파일, 비교 부하 `tests/multiproc_bench.py`, 동시성 구조와 한계(server/DESIGN.md) |
+| E-09-10 | 11/9 | 게임 웹 Daphne 2개(8000·8002)와 Caddy `least_conn`·`/healthz` 능동 확인, 채널 레이어 설정 전환(`memory` 기본·`redis` 선택, 연결 실패 시 기동 거부), 프로세스별 로그 파일, 비교 부하 `tests/multiproc_bench.py`(`api_bench.py --web-processes`·`--front`·`--result-name`), 동시성 구조와 한계(server/DESIGN.md) |
 
 B-06-03의 실제 Mongo 조립은 `server/paldo_web/mongo.py`를 사용한다. 엔진·모델을 명시적으로 넘겨 `open_mongo_runtime`을 호출하고 HTTP 처리 전 `configure()`로 연결한다. 기존 `PALDO_GAME_SERVICE_FACTORY` 함수 안에서는 `factory_service()`를 반환한다. 고정된 콘텐츠 버전·같은 고정 판을 복원한다. 접속 정보는 기존 `PALDO_MONGO_URI` 하나를 사용한다. 고유 컬렉션의 실제 시험은 `server/tests/mongo_game_sessions.py`이며 B-06-03의 회차·가명·동의 재검증은 완료했고 운영 조립·PM 브라우저 재개 판정도 병합됐다. VM·ASGI 성능은 B-07-05, 실제 광고 요청은 B-08-03에서 관리한다. 보조 저장의 실제 검증은 B-07-02 증빙에 있다.
 
