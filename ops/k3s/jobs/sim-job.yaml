@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: paldo-sim
+  namespace: paldo-sim
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      nodeSelector:
+        paldo-role: simulation
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: simulation
+          image: "${SIM_IMAGE}"
+          imagePullPolicy: Never
+          args: ["--kafka-config", "/run/kafka/client.json", "--run-id", "c08_r1", "--preset", "base6", "--games", "50", "--seed", "801", "--bundle", "fixtures/content_min/bundle.json"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: kafka
+              mountPath: /run/kafka
+              readOnly: true
+      volumes:
+        - name: kafka
+          secret:
+            secretName: paldo-sim-kafka
+            defaultMode: 0440
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kafka-only
+  namespace: paldo-sim
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - ipBlock: {cidr: "${KAFKA_1_CIDR}"}
+        - ipBlock: {cidr: "${KAFKA_2_CIDR}"}
+        - ipBlock: {cidr: "${KAFKA_3_CIDR}"}
+      ports:
+        - {protocol: TCP, port: 9092}

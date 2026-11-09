@@ -5,6 +5,7 @@
 <h1>팔도무록</h1>
 {% if request.user.is_authenticated %}
   {% if player_id %}<p>내 가명 ID <code>{{ player_id }}</code></p>{% endif %}
+  <p><a href="{% url 'player-progress' %}">모은 원한 단서 보기</a></p>
   {% if request.user.is_staff %}<p><a href="{% url 'admin:index' %}">운영자 화면</a> · <a href="{% url 'test-sessions' %}">테스트 세션 관리</a></p>{% endif %}
   {% if open_presets or open_games or open_unavailable %}
     <section id="open-game">
@@ -19,9 +20,8 @@
           <input type="hidden" name="start_token" value="{{ open_start_token }}">
           {% if open_presets|length == 1 %}<input type="hidden" name="preset_id" value="{{ open_presets.0 }}">
           {% else %}<label>판 구성 <select name="preset_id">{% for preset_id in open_presets %}<option value="{{ preset_id }}">{{ preset_id }}</option>{% endfor %}</select></label>{% endif %}
-          <label>무당 초상
-            <select name="mudang_variant"><option value="f">여성</option><option value="m">남성</option></select>
-          </label>
+          {% include 'accounts/portrait_choice.html' %}
+          {% include "ending_choice.html" %}
           <button>새 게임 시작</button>
         </form>
         {% endif %}
@@ -43,9 +43,8 @@
             <input type="hidden" name="session_id" value="{{ assignment.session_id }}">
             <input type="hidden" name="preset_id" value="{{ plan.preset_id }}">
             <input type="hidden" name="seed" value="{{ plan.seed|unlocalize }}">
-            <label>무당 초상
-              <select name="mudang_variant"><option value="f">여성</option><option value="m">남성</option></select>
-            </label>
+            {% include 'accounts/portrait_choice.html' %}
+            {% include "ending_choice.html" %}
             <button>{{ plan.number }}번째 판 시작</button>
           </form>
         {% endif %}

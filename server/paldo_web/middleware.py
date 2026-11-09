@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 from prometheus_client import Counter, Histogram
+from engine.domain.model import RejectCode
 
 REQUESTS = Counter("paldo_http_requests_total", "HTTP requests", ["route", "method", "status"])
 DURATION = Histogram("paldo_http_request_duration_seconds", "HTTP latency", ["route", "method", "status"])
@@ -47,6 +48,9 @@ class RequestTelemetryMiddleware:
         DURATION.labels(*labels).observe(seconds)
         fields = {"request_id": request.request_id, "path": route, "status": response.status_code,
                   "duration_ms": round(seconds * 1000, 3), "game_id": getattr(request, "game_id", None)}
+        reject = getattr(request, 'command_reject', None)
+        if response.status_code == 422 and isinstance(reject, RejectCode):
+            fields['reject'] = reject.value
         if response.status_code >= 500:
             fields["error_type"] = "http_server_error"
         LOGGER.log(logging.ERROR if response.status_code >= 500 else logging.INFO,

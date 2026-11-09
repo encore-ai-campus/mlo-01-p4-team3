@@ -32,6 +32,9 @@ Spark 실행·JAR·TLS·지속 서비스와 갱신 순서는 [pipeline/README.md
 
 ## 한계
 
+11/8 일괄 갱신: C-08-01 관측은 `ops/prometheus/README.md`, C-08-02 광고 집계는 `pipeline/README.md`, C-08-03 Job은 `ops/k3s/README.md`, C-08-04 태그·조회 계정은 `ops/runbook/user_test_release.md`(각 태스크 PR의 파일)에서 사용법·설정·한계를 확인한다. P-31 runtime LLM 없음, 기준선 모델 표기, 합성/부하 분리, 20번째 VM 비실행과 E/D 인계 대기를 반영했다. 각 PR 병합 완료를 뜻하지 않는다.
+
+
 11/8 실제 엔진 200판의 17,823건을 Kafka/Garage Delta에 쓰고 전량 재발행해 행 수 불변·ID/hash 일치·유실/중복 0을 확인했다. 완료 200판에 라벨, silver 19,191행·export 14,460행이었다. driver와 두 executor 모두 Python 3.14.4, Spark 4.1.3·Delta 4.4.1 Spark 4.1용 JAR·Java 21을 썼다. 장애 두 판 각 52건도 실제 스택에서 일치했다. 해당 값은 검증 스냅샷이며 이후 입력으로 전체 bronze 행 수는 증가한다.
 
 malformed 입력은 스트림을 멈춘다. 조용히 skip하거나 정답을 가공하지 않는다. 마스킹은 upstream 계약 책임이다. 보존 snapshot_json을 모델 특징으로 그대로 사용하면 안 된다. 파일 lock은 다른 호스트의 S3 쓰기를 막지 않는다. export는 overwrite이므로 완료된 실행의 버전으로 D에게 인계한다. 운영 스트림은 bronze이고 silver/labels는 명시 배치다. D 모델 학습·배포, 광고 silver/rejudge/gold(C-08-02), 중앙 관측(C-08-01)은 후속 범위다. 공용 도구 로그의 service 필드는 현재 ci이며 component로 작업을 구분한다.
@@ -43,3 +46,7 @@ malformed 입력은 스트림을 멈춘다. 조용히 skip하거나 정답을 �
 | C-07-01 | 11/7 | 공식 게임·광고 bronze, 관찰 기반 silver·종료 후 라벨·마을 관찰자 export, 실제 200판 전량 재처리·버전 검증과 지속 서비스. 실측 11/8 |
 | C-07-02 | 11/7 | 실스택 브로커/발행기 정지·재개와 Mongo/Kafka/Delta ID·seq·hash 대조. 실측 11/8 |
 | C-07-04 | 11/7 | pipeline/ops 모듈 일괄 갱신, HTTPS 브라우저·실제 프록시 지연·운영 인계 연결. 실측 11/8 |
+| C-08-01 | 11/8 | 지표 중계·읽기 수집·6대시보드·6경보·부하 실측 |
+| C-08-02 | 11/8 | 광고 귀속·마감·멱등 집계·실제 환입 재대사 |
+| C-08-03 | 11/8 | k3s Job·Kafka sink·5호스트 자원 재측정 |
+| C-08-04 | 11/8 | E 태그 archive·4th_private 전용 조회 계정 guard |

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import secrets
 import uuid
+import json
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Callable
 
@@ -16,14 +18,19 @@ from .usecases import StartUnavailable
 
 SEED_LIMIT = 2**63   # 회차 등록 검증(test_sessions.py)과 같은 시드 범위
 
-# 일반 판에 공개하는 프리셋. 공개 프리셋 설정 파일(B-08-02 `server/app/presets_enabled.json`)이 들어오기 전에는
-# 엔진 프리셋 상태가 사용자 테스트 기본(`test_default`, 지금 base6)인 것만 연다.
-OPEN_PRESET_STATUS = "test_default"
+PRESETS_CONFIG = Path(__file__).with_name('presets_enabled.json')
 
 
 def open_preset_ids():
-    """일반 판에서 고를 수 있는 프리셋 ID(정렬)."""
-    return sorted(pid for pid, preset in PRESETS.items() if preset.status == OPEN_PRESET_STATUS)
+    """공개 설정 파일을 매번 읽어 홈과 일반 판 시작에 같은 목록을 적용한다."""
+    try:
+        enabled = json.loads(PRESETS_CONFIG.read_text(encoding='utf-8'))
+        if (not isinstance(enabled, list) or any(not isinstance(pid, str) or pid not in PRESETS for pid in enabled)
+                or len(set(enabled)) != len(enabled)):
+            raise ValueError('invalid_presets')
+    except (OSError, ValueError):
+        raise StartUnavailable('preset_config_unavailable') from None
+    return sorted(enabled)
 
 
 @dataclass(frozen=True)
