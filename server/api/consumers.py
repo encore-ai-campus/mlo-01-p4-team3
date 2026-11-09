@@ -10,7 +10,7 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
 from django.contrib.auth import get_user
-from server.app.ad_events import relay_impression
+from server.app.ad_events import relay_impression, serve_id_of
 from server.paldo_web.composition import get_ad_gateway, GameServiceUnavailable
 from .ad_metrics import CONNECTIONS, MESSAGES, DROPPED, relay_result
 
@@ -113,7 +113,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             return
         request_id = str(uuid4())
         relayed, result = await sync_to_async(_relay, thread_sensitive=False)(content, request_id)
-        relay_result("impression", result, request_id)
+        relay_result("impression", result, request_id, serve_id_of(content["token"]))
         MESSAGES.labels("ad.impression", result).inc()
         await self.send_json({"type": "ack", "msg_id": message_id, "relayed": relayed})
 
