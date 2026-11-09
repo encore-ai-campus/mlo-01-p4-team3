@@ -8,10 +8,21 @@ from uuid import uuid4
 from pipeline.spark.privacy_filter import load_tombstones, retained_rows
 from tools.privacy_delete import register
 from tools.privacy_retention import retention_subjects
+from tools.privacy_scope import combine
 
 
 class PrivacyReplayTests(unittest.TestCase):
     """별개 요청·재전송·비대상 레코드를 구분한다."""
+
+    def test_combined_scope_requires_matching_ad_sessions(self):
+        """다른 계정의 광고 계획은 대상 범위에 섞지 않는다."""
+        player, session = str(uuid4()), str(uuid4())
+        game = {"player": player, "ad_sessions": [session], "game_ids": ["game"]}
+        ads = {"ad_sessions": [session], "ad_serve_ids": ["serve"], "ad_request_ids": ["request"],
+               "ad_event_ids": ["event"], "ad_charge_ids": ["charge"]}
+        self.assertEqual(combine(game, ads), {"players": [player], "game_ids": ["game"], **ads})
+        with self.assertRaisesRegex(ValueError, "privacy_ad_scope_mismatch"):
+            combine(game, {**ads, "ad_sessions": [str(uuid4())]})
 
     def test_registry_filters_game_and_ad_replays(self):
         player, unrelated = str(uuid4()), str(uuid4())
