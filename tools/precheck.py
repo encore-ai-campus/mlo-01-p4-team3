@@ -5,7 +5,7 @@
     python -m tools.precheck --pr-body pr.md      # PR 본문 파일까지 검사(Task·Closes/Refs 문법, Closes면 --complete)
     python -m tools.precheck --base <커밋>         # 비교 기준 직접 지정(기본: origin/dev와 HEAD의 merge-base)
     python -m tools.precheck --base origin/main   # 승격 PR(dev → main): dev에서 main 이후 바뀐 증빙 검사
-    python -m tools.precheck --quick              # 작업 중 빠른 검사: 바뀐 파일과 이어진 테스트 폴더만(통과 기록 없음)
+    python -m tools.precheck --quick              # 작업 중 빠른 검사: 바뀐 파일과 이어진 테스트 모듈만(통과 기록 없음)
 
 `git push` 때 `.githooks/pre-push`가 이 명령을 부른다(설치: `git config core.hooksPath .githooks`).
 
@@ -17,7 +17,7 @@
 PR 본문에는 이 마지막 줄을 붙인다.
 
 빠른 검사(`--quick`, 11/9 PM 결정): 작업 중에는 바뀐 파일(비교 기준 대비 작업 트리 차이와 추적 안 하는 파일)과
-이어진 테스트 폴더만 돌린다. 고르는 규칙은 `tools/precheck_scope.py`에 있고, 애매하면 전체 테스트로 돈다.
+이어진 테스트 모듈만 돌린다. 고르는 규칙은 `tools/precheck_scope.py`에 있고, 애매하면 전체 테스트로 돈다.
 구조·비밀·문서·증빙은 그대로 돈다. 통과 기록을 남기지 않고, 마지막 줄은 `precheck(빠른): …`이라 PR 본문에
 붙일 수 없다(`check_evidence`가 거부). PR 직전과 push 때는 전체 검사를 한 번 돈다.
 
@@ -43,7 +43,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from tools.precheck_scope import select_test_dirs
+from tools.precheck_scope import Selection, describe, select_tests
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BASE_REF = "origin/dev"
@@ -263,7 +263,7 @@ class PassStore:
 # ---------------------------------------------------------------- 응용
 def run_precheck(runner, base: str | None, with_assets: bool = False,
                  pr_body: str | None = None, workers: int | None = None,
-                 only_test_dirs: list[str] | None = None) -> list[StepResult]:
+                 only_tests: Selection | None = None) -> list[StepResult]:
     """구조·비밀·단위 테스트(폴더별)·문서·증빙을 동시에 돌리고 결과는 이 순서로 모은다.
 
     서로 독립인 하위 명령이라 병렬로 돌린다(11/5: 순서대로 돌리면 약 90초). 앞 단계가 실패해도 끝까지 돈다.
@@ -274,10 +274,14 @@ def run_precheck(runner, base: str | None, with_assets: bool = False,
         "비밀": ([py, "-m", "tools.check_secrets"], None),
     }
     test_dirs = [d for d in runner.test_dirs() if with_assets or d != ASSETS_DIR]
-    if only_test_dirs is not None:  # 빠른 검사: 고른 폴더만(assets 제외 규칙은 그대로)
-        test_dirs = [d for d in test_dirs if d in only_test_dirs]
+    if only_tests is not None:  # 빠른 검사: 고른 폴더만(assets 제외 규칙은 그대로)
+        test_dirs = [d for d in test_dirs if d in only_tests]
     for d in test_dirs:
-        jobs[f"tests/{d}"] = ([py, "-m", "unittest", "discover", "-s", f"tests/{d}", "-t", "."], None)
+        mods = only_tests.get(d) if only_tests is not None else None
+        if mods:  # 빠른 검사: 고른 테스트 모듈만
+            jobs[f"tests/{d}"] = ([py, "-m", "unittest", *mods], None)
+        else:
+            jobs[f"tests/{d}"] = ([py, "-m", "unittest", "discover", "-s", f"tests/{d}", "-t", "."], None)
     if base is not None:
         jobs["문서"] = ([py, "-m", "tools.check_docs", "--diff", base], None)
         if pr_body is not None:
@@ -354,18 +358,19 @@ def check_pass(runner, sha: str, environ: dict[str, str],
     return skip_decision(rec, sha, current, False)
 
 
-def quick_plan(runner, base: str | None, with_assets: bool) -> tuple[list[str] | None, str]:
-    """빠른 검사 대상 테스트 폴더와 설명. (None, 이유)면 전체 테스트. 비교 기준이 없으면 바뀐 파일을 못 구하므로 전체."""
+def quick_plan(runner, base: str | None, with_assets: bool) -> tuple[Selection | None, str]:
+    """빠른 검사 대상(폴더별 테스트 모듈)과 설명. (None, 이유)면 전체 테스트. 비교 기준이 없으면 바뀐 파일을 못 구하므로 전체."""
     if base is None:
         return None, "비교 기준 없음"
     changed = runner.changed_files(base)
     if changed is None:
         return None, "바뀐 파일을 못 구함"
-    dirs, why = select_test_dirs(changed, runner.python_sources(), runner.test_dirs())
-    if dirs is not None and not with_assets and ASSETS_DIR in dirs:
-        dirs = [d for d in dirs if d != ASSETS_DIR]
-        why = ("·".join(f"tests/{d}" for d in dirs) or "없음") + "(tests/assets는 --with-assets로)"
-    return dirs, why
+    selection, why = select_tests(changed, runner.python_sources(), runner.test_dirs())
+    if selection is not None and not with_assets and ASSETS_DIR in selection:
+        note = why[len(describe(selection)):]  # Django 쪽 안내 등 덧붙인 말
+        selection = {d: m for d, m in selection.items() if d != ASSETS_DIR}
+        why = describe(selection) + note + "(tests/assets는 --with-assets로)"
+    return selection, why
 
 
 # ---------------------------------------------------------------- 표현
@@ -376,7 +381,7 @@ def main(argv: list[str] | None = None, runner=None) -> int:
     ap.add_argument("--with-assets", action="store_true", help="tests/assets도 돌린다")
     ap.add_argument("--pr-body", metavar="FILE", help="PR 본문 파일(Task·Closes/Refs 검사)")
     ap.add_argument("--quick", action="store_true",
-                    help="작업 중 빠른 검사: 바뀐 파일과 이어진 테스트 폴더만, 통과 기록 없음(PR 직전·push 때는 전체)")
+                    help="작업 중 빠른 검사: 바뀐 파일과 이어진 테스트 모듈만, 통과 기록 없음(PR 직전·push 때는 전체)")
     ap.add_argument("--check-pass", metavar="SHA",
                     help="훅용: 그 커밋의 통과 기록이 지금 비교 기준과 맞으면 0(생략), 아니면 1(전체 검사)")
     args = ap.parse_args(argv)
@@ -402,7 +407,7 @@ def main(argv: list[str] | None = None, runner=None) -> int:
         only, why = quick_plan(runner, base, args.with_assets)
         quick_target = why if only is not None else f"전체({why})"
         print(f"[빠른 검사] 대상: {quick_target}")
-    results = run_precheck(runner, base, with_assets=args.with_assets, pr_body=pr_body, only_test_dirs=only)
+    results = run_precheck(runner, base, with_assets=args.with_assets, pr_body=pr_body, only_tests=only)
     for r in results:
         print(f"[{'통과' if r.ok else '실패'}] {r.name}")
         if not r.ok and r.output.strip():

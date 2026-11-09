@@ -38,7 +38,7 @@ class FakeRunner:
         self.calls.append((args, env))
         key = args[2] if args[1] == "-m" else args[0]
         if key == "unittest":
-            folder = args[args.index("-s") + 1]
+            folder = args[args.index("-s") + 1] if "-s" in args else " ".join(args[3:])
             return (1 if folder in self.fail else 0), "Ran 3 tests in 0.1s\n\nOK\n"
         return (1 if key in self.fail else 0), f"{key} out"
 
@@ -115,7 +115,7 @@ class Cli(unittest.TestCase):
 
 
 class Quick(unittest.TestCase):
-    """빠른 검사(--quick): 고른 폴더만, 통과 기록 없음, PR에 못 붙이는 요약 줄. 전체 검사는 그대로."""
+    """빠른 검사(--quick): 고른 테스트 모듈만, 통과 기록 없음, PR에 못 붙이는 요약 줄. 전체 검사는 그대로."""
 
     class R(FakeRunner):
         def __init__(self, changed):
@@ -155,19 +155,23 @@ class Quick(unittest.TestCase):
     def _folders(self, r):
         return sorted(a[a.index("-s") + 1] for a, _ in r.calls if "-s" in a)
 
+    def _modules_run(self, r):
+        return sorted(m for a, _ in r.calls if a[1:3] == ["-m", "unittest"] and "discover" not in a for m in a[3:])
+
     def test_summary_quick_line(self):
         rc, line = summarize([StepResult("테스트", True, tests=4)], "abc1234", 9.2, "tests/engine")
         self.assertEqual((rc, line), (0, "precheck(빠른): 통과 (테스트, 테스트 4개, base abc1234, 대상 tests/engine, 9초)"))
         rc, line = summarize([StepResult("테스트", False)], "abc1234", 3, "tests/engine")
         self.assertTrue(line.startswith("precheck(빠른): 실패 (테스트; base abc1234, 대상 tests/engine"))
 
-    def test_quick_runs_selected_folders_and_records_nothing(self):
+    def test_quick_runs_selected_modules_and_records_nothing(self):
         r = self.R(["engine/core.py"])
         rc, lines, rec = self._main(["--quick"], r)
         self.assertEqual(rc, 0)
-        self.assertEqual(self._folders(r), ["tests/engine"])
+        self.assertEqual(self._folders(r), [])
+        self.assertEqual(self._modules_run(r), ["tests.engine.test_core"])
         self.assertTrue(lines[-1].startswith("precheck(빠른): 통과"))
-        self.assertIn("대상 tests/engine", lines[-1])
+        self.assertIn("대상 tests/engine 1개", lines[-1])
         rec.assert_not_called()
         self.assertIn("tools.check_evidence", _modules(r))  # 문서·증빙은 그대로
 
@@ -185,10 +189,12 @@ class Quick(unittest.TestCase):
         self.assertTrue(lines[-1].startswith("precheck: 통과"))
         rec.assert_called_once()
 
-    def test_only_test_dirs_keeps_assets_rule(self):
+    def test_only_tests_keeps_assets_rule_and_whole_folders(self):
         r = FakeRunner()
-        run_precheck(r, "b" * 40, only_test_dirs=["assets", "tools"])
-        self.assertEqual(self._folders(r), ["tests/tools"])
+        run_precheck(r, "b" * 40, only_tests={"assets": ["tests.assets.test_a"], "tools": ["tests.tools.test_b"],
+                                              "contract": None})
+        self.assertEqual(self._modules_run(r), ["tests.tools.test_b"])
+        self.assertEqual(self._folders(r), ["tests/contract"])
 
     def test_check_pass_rejects_quick(self):
         import io
