@@ -184,9 +184,11 @@ class BenchOptions(unittest.TestCase):
         self.assertEqual(bench.front_mode("docker", "win32"), "docker-desktop")
         self.assertEqual(bench.front_mode("binary", "win32"), "binary")
         host = bench.caddyfile([9001, 9002], "127.0.0.1", listen="127.0.0.1:9100", upstream_host="127.0.0.1")
-        self.assertIn("127.0.0.1:9100 {", host)
+        self.assertIn("http://127.0.0.1:9100 {\n    bind 127.0.0.1", host)
         self.assertIn("reverse_proxy 127.0.0.1:9001 127.0.0.1:9002 {", host)
-        self.assertIn("reverse_proxy host.docker.internal:9001 {", bench.caddyfile([9001], "127.0.0.1"))
+        desktop = bench.caddyfile([9001], "127.0.0.1")
+        self.assertIn("http://:8080 {", desktop)
+        self.assertIn("reverse_proxy host.docker.internal:9001 {", desktop)
 
     def test_bench_caddy_matches_production_tuning(self):
         from server.tests import multiproc_bench as bench
