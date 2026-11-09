@@ -1,5 +1,9 @@
 # 게임 명령 시험
 
+## B-09-03 리허설·버그 재현 준비
+
+[리허설 점검·재현 기록 양식](REHEARSAL.md)에 후보 SHA·실행 환경 확인, 6인 판 점검 순서, 결함 분류·인계·재확인 절차를 정리했다. 로컬 회귀와 테스트 서버의 사람 리허설은 별도로 기록한다. [사전 증빙](../../docs/evidence/B-09-03.md)
+
 ## B-09-02 해석 혼합 부하 사전 준비
 
 `python -B tools/perf/api_bench.py --web-processes 2 --users 2 --minutes 0.3 --intent-every 1`로 짧게 확인한다. Mongo 접속은 기존 `PALDO_MONGO_URI`를 환경에 주입한다. 임시 계정 DB·고유 접두어 Mongo·시험 Daphne·Caddy만 만들며 운영 서버로 부하를 보내지 않는다. Docker가 없으면 기존 `--front binary --caddy-bin <실행 파일>`을 쓴다. 해석기는 `--intent-factory`로 바꾸고 기본은 `intent.parser.BaselineIntentParser`다. 옵션을 빼거나 `--intent-every 0`이면 기존 부하다.
