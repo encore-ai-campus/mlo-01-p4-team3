@@ -37,9 +37,12 @@ def _closed_port() -> int:
 
 def _django(env_extra: dict, code: str) -> subprocess.CompletedProcess:
     env = {k: v for k, v in os.environ.items() if not k.startswith(("PALDO_CHANNEL", "PALDO_REDIS", "PALDO_WEB_INSTANCE"))}
-    env.update(DJANGO_SETTINGS_MODULE="server.paldo_web.test_settings", PYTHONPATH=str(ROOT), **env_extra)
+    env = {k: v for k, v in env.items() if k != "PALDO_EXTRA_ALLOWED_HOSTS"}
+    # 하위 프로세스 출력(한글 오류 문구)을 시스템 코드 페이지와 상관없이 UTF-8로 주고받는다.
+    env.update(DJANGO_SETTINGS_MODULE="server.paldo_web.test_settings", PYTHONPATH=str(ROOT), PYTHONIOENCODING="utf-8",
+               **env_extra)
     return subprocess.run([sys.executable, "-B", "-c", "import django;django.setup();" + code], cwd=ROOT, env=env,
-                          capture_output=True, text=True, timeout=120)
+                          capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
 
 
 class ChannelLayerConfig(unittest.TestCase):
@@ -95,6 +98,19 @@ class SettingsWiring(unittest.TestCase):
         bad = _django({"PALDO_WEB_INSTANCE": "../x"}, "pass")
         self.assertNotEqual(bad.returncode, 0)
         self.assertIn("PALDO_WEB_INSTANCE", bad.stderr)
+
+    def test_extra_allowed_hosts_for_metrics_scrape(self):
+        code = "from server.paldo_web import settings as s;print(','.join(s.ALLOWED_HOSTS))"  # 시험 설정이 덮기 전 값
+        base = _django({}, code)
+        self.assertEqual(base.returncode, 0, base.stderr)
+        self.assertNotIn("host.docker.internal", base.stdout)
+        extra = _django({"PALDO_EXTRA_ALLOWED_HOSTS": " Host.Docker.Internal ,127.0.0.1"}, code)
+        self.assertEqual(extra.returncode, 0, extra.stderr)
+        self.assertTrue(extra.stdout.strip().endswith(",host.docker.internal,127.0.0.1"))
+        for bad in ("*", ".example.com", "host:8000", "a b"):
+            result = _django({"PALDO_EXTRA_ALLOWED_HOSTS": bad}, "pass")
+            self.assertNotEqual(result.returncode, 0, bad)
+            self.assertIn("PALDO_EXTRA_ALLOWED_HOSTS", result.stderr)
 
     def test_redis_without_url_is_improperly_configured(self):
         result = _django({"PALDO_CHANNEL_LAYER": "redis"}, "pass")

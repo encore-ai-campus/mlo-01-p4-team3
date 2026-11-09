@@ -1,5 +1,6 @@
 """환경 변수 기반 설정. 운영 계정 저장소는 MySQL만 사용한다."""
 import os
+import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -15,6 +16,12 @@ _origin = urlsplit(PUBLIC_ORIGIN)
 if _origin.scheme not in ("http", "https") or not _origin.hostname or _origin.path not in ("", "/") or _origin.query or _origin.fragment or _origin.username:
     raise ImproperlyConfigured("PALDO_PUBLIC_ORIGIN에 게임 웹 출처를 지정하세요.")
 ALLOWED_HOSTS = [_origin.hostname]
+# E-09-10: 지표 수집기는 Host를 바꿀 수 없어(Prometheus는 Host 헤더 설정 금지) 대상 주소의 호스트로 온다.
+# 수집용 호스트 이름만 더한다(기본 없음, 와일드카드 금지). 로컬 Compose 예: host.docker.internal
+_extra_hosts = [h.strip().lower() for h in os.environ.get("PALDO_EXTRA_ALLOWED_HOSTS", "").split(",") if h.strip()]
+if any(not re.fullmatch(r"[a-z0-9]([a-z0-9.-]*[a-z0-9])?", h) for h in _extra_hosts):
+    raise ImproperlyConfigured("PALDO_EXTRA_ALLOWED_HOSTS는 쉼표로 나눈 호스트 이름만 받습니다(와일드카드·포트 금지).")
+ALLOWED_HOSTS += _extra_hosts
 CSRF_TRUSTED_ORIGINS = [PUBLIC_ORIGIN.rstrip("/")]
 SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = _origin.scheme == "https"
 SESSION_COOKIE_HTTPONLY = True

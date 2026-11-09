@@ -36,7 +36,7 @@ sudo systemctl stop caddy paldo-web
    - Caddy: `sudo journalctl -u caddy --since '5 minutes ago' | grep -i unhealthy`가 비어 있음.
    - 브라우저: HTTPS 홈 200, `/ws/game/` 101(위 "참가자에게 전달할 문구"의 운영자 확인과 같다).
    - 로그: 소스의 `out/logs/web.jsonl`(8000)과 `out/logs/web-8002.jsonl`(8002)이 각각 늘어남.
-4. 지표: C-08-01의 수집 설정에서 게임 웹 대상을 프로세스마다 둔다(8000·8002, `process` 라벨 `web-1`·`web-2`, 로컬 예시는 `ops/compose/prometheus.yml`의 `paldo-web`). 웹은 loopback에만 bind하므로 metrics-01에서 원격으로 긁으려면 app-01 안에서 수집해 넘기는 방식이 필요하다. 방식은 C-08-01에서 정한다. 대시보드의 게임 API p95·오류율은 두 프로세스를 합산한다.
+4. 지표: C-08-01의 수집 설정에서 게임 웹 대상을 프로세스마다 둔다(8000·8002, `process` 라벨 `web-1`·`web-2`, 로컬 예시는 `ops/compose/prometheus.yml`의 `paldo-web`). 웹은 loopback에만 bind하므로 metrics-01에서 원격으로 긁으려면 app-01 안에서 수집해 넘기는 방식이 필요하다. 방식은 C-08-01에서 정한다. 수집 요청의 Host는 대상 주소의 호스트(예: `127.0.0.1`)이고 Prometheus는 Host 헤더를 바꿀 수 없으므로, 웹 프로필 `environment`에 `PALDO_EXTRA_ALLOWED_HOSTS=127.0.0.1`처럼 수집용 호스트를 더해야 `/metrics`가 400이 아니다(기본 없음). 대시보드의 게임 API p95·오류율은 두 프로세스를 합산한다.
 
 ### 되돌림 (1개, 약 2분)
 

@@ -79,6 +79,7 @@ python -B server/preview.py --port 8769
 | 미리보기 `--port` | 8766 | 로컬 HTTP 포트 | 루프백 미리보기 접속 주소가 바뀜 |
 | `PALDO_CHANNEL_LAYER` | `memory`(비어 있어도 같음) | 채널 레이어. `memory`는 프로세스 안, `redis`는 Redis(선택, E-09-10) | `redis`면 `PALDO_REDIS_URL` 필수, 기동 때 연결 실패면 멈춤. 지금 웹소켓은 광고 신호 전용이라 프로세스 2개도 `memory`로 충분 |
 | `PALDO_REDIS_URL`, `PALDO_REDIS_PREFIX` | 비어 있음, `paldo-web` | Redis 채널 레이어 주소(`redis://127.0.0.1:6379/0`, 같은 VM)와 키 접두어 | `PALDO_CHANNEL_LAYER=redis`일 때만 쓴다 |
+| `PALDO_EXTRA_ALLOWED_HOSTS` | 비어 있음 | 지표 수집기가 대상 주소의 호스트로 올 때 더할 호스트 이름(쉼표, E-09-10). 로컬 Compose Prometheus는 `host.docker.internal` | 와일드카드·포트가 들어가면 기동 거부 |
 | `PALDO_WEB_INSTANCE` | 비어 있음(실행 도구가 포트로 채움) | 웹 프로세스 구분. 8000이 아니면 로그를 `out/logs/web-<포트>.jsonl`에 씀 | 숫자가 아니면 기동 거부 |
 
 홈·종료 화면의 단서 링크로 본인 진척을 확인하고 다음 고정 판 시작 폼에서 열린 결말을 선택한다. API는 기존 `ending_choice`를 사용한다. 선택형 도전은 전송·메타 계약 및 공개 판정 인수 전 비활성이며 세부 인수 항목은 서버 설계에 있다.
