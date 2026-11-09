@@ -2,7 +2,7 @@
 from copy import deepcopy
 from datetime import datetime
 import unittest
-from pipeline.spark.ads_contract import silver_rows,gold_rows,rejudge_events,reconcile_rows,closing_times
+from pipeline.spark.ads_contract import campaign_daily_rows,fill_rows,silver_rows,gold_rows,rejudge_events,reconcile_rows,closing_times
 from ads.domain.rules import TOKEN_TTL_MS,GRACE_MS
 
 T=int(datetime.fromisoformat('2026-11-08T23:59:59+09:00').timestamp()*1000)
@@ -120,3 +120,34 @@ class AdsPipeline(unittest.TestCase):
         result=reconcile_rows([row,row],[])
         self.assertIn('s:click',result['differences']['duplicate'])
         self.assertEqual(result['ledger_net_mw'],200)
+
+    def test_p25_invalid_rates_skip_pending_and_load_tests(self):
+        """유효·무효만 분모에 넣고 부하 행은 별도 카운트에 남긴다."""
+        rows=silver_rows(self.normal(),T+3000)
+        click=next(row for row in rows if row['topic']=='ad.click')
+        rows += [click|{'status':'pending','expected_charge_mw':0},
+                 click|{'status':'invalid','expected_charge_mw':0},
+                 click|{'status':'invalid','load_test':True,'expected_charge_mw':0}]
+        gold,_=gold_rows(rows,T+3000)
+        regular=next(row for row in gold if not row['load_test'])
+        load=next(row for row in gold if row['load_test'])
+        self.assertEqual(regular['invalid_click_rate'],0.5)
+        self.assertEqual(load['load_test_events'],1)
+        self.assertIsNone(load['invalid_click_rate'])
+        self.assertNotIn('burn_ratio',regular)
+
+    def test_p25_daily_burn_uses_original_day_net_of_refunds(self):
+        """늦은 환입은 원 귀속일을 정정하고 예약은 순액에서 뺀다."""
+        charge={'attribution_day':'2026-11-08','campaign_id':'c','source':'synthetic','state':'confirmed','amount_mw':80}
+        budgets={'2026-11-08':{'c':100}}
+        rows=[charge,charge|{'state':'reserved','amount_mw':20},charge|{'amount_mw':-30}]
+        self.assertEqual(campaign_daily_rows(rows,budgets)[0]['burn_ratio'],0.5)
+
+    def test_p25_fill_includes_unfilled_and_deduplicates(self):
+        """전체·지면 모두 비채움 serve를 분모에 넣고 재전송은 한 번만 센다."""
+        filled=event('ad.serve','filled')
+        unfilled=event('ad.serve','empty',filled=False)
+        load=event('ad.serve','load',load_test=True)
+        reports=fill_rows([filled,filled,unfilled,load],T+3000)
+        self.assertEqual({row['slot'] for row in reports},{None,'lobby_banner'})
+        self.assertTrue(all(row['fill_ratio']==0.5 and row['load_test_serves']==1 for row in reports))

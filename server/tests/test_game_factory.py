@@ -271,7 +271,9 @@ class AssemblyUnits(unittest.TestCase):
             built = build_game_service()
         kwargs = opened.call_args.kwargs
         self.assertIsInstance(kwargs["engine"], ContentPolicyEngine)
-        self.assertIsInstance(kwargs["suspicion"], FakeSuspicionModel)
+        from server.infra.observed_models import ObservedSuspicionModel
+        self.assertIsInstance(kwargs["suspicion"], ObservedSuspicionModel)
+        self.assertIsInstance(kwargs["suspicion"].model, FakeSuspicionModel)
         self.assertNotIn("collection_prefix", kwargs)
         self.assertIs(built, service)
         runtime.database.__getitem__.assert_called_once_with(INTERACTIONS)

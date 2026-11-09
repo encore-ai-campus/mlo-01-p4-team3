@@ -1,0 +1,87 @@
+{
+  "groups": [
+    {
+      "name": "paldo-c08",
+      "rules": [
+        {
+          "alert": "PaldoCanaryFallback",
+          "expr": "sum(rate(paldo_model_decisions_total{canary=\"true\",result=\"fallback\"}[5m])) / sum(rate(paldo_model_decisions_total{canary=\"true\"}[5m])) > 0.05",
+          "for": "1m",
+          "labels": {
+            "severity": "warning",
+            "project": "pj4"
+          },
+          "annotations": {
+            "summary": "PaldoCanaryFallback",
+            "description": "C detects; D decides rollback, E approves during user test. Missing eligible canary data does not imply success."
+          }
+        },
+        {
+          "alert": "PaldoModelP95",
+          "expr": "histogram_quantile(0.95,sum(rate(paldo_model_inference_duration_seconds_bucket[5m])) by (le,model_version)) > 0.1",
+          "for": "1m",
+          "labels": {
+            "severity": "warning",
+            "project": "pj4"
+          },
+          "annotations": {
+            "summary": "PaldoModelP95",
+            "description": "C detects; D decides rollback, E approves during user test. Missing eligible canary data does not imply success."
+          }
+        },
+        {
+          "alert": "PaldoCanaryVillageWin",
+          "expr": "abs(paldo_village_win_ratio{canary=\"true\"} - ignoring(canary) paldo_village_win_ratio{canary=\"false\"}) > 0.1 and on() paldo_completed_games{canary=\"true\"} >= 30",
+          "for": "1m",
+          "labels": {
+            "severity": "warning",
+            "project": "pj4"
+          },
+          "annotations": {
+            "summary": "PaldoCanaryVillageWin",
+            "description": "C detects; D decides rollback, E approves during user test. Missing eligible canary data does not imply success."
+          }
+        },
+        {
+          "alert": "PaldoIntentEditCancel",
+          "expr": "paldo_intent_edit_cancel_ratio{canary=\"true\"} > ignoring(canary) 1.5 * paldo_intent_edit_cancel_ratio{canary=\"false\"}",
+          "for": "1m",
+          "labels": {
+            "severity": "warning",
+            "project": "pj4"
+          },
+          "annotations": {
+            "summary": "PaldoIntentEditCancel",
+            "description": "C detects; D decides rollback, E approves during user test. Missing eligible canary data does not imply success."
+          }
+        },
+        {
+          "alert": "PaldoGameP95",
+          "expr": "histogram_quantile(0.95,sum(rate(paldo_http_request_duration_seconds_bucket[5m])) by (le)) > 1",
+          "for": "1m",
+          "labels": {
+            "severity": "warning",
+            "project": "pj4"
+          },
+          "annotations": {
+            "summary": "PaldoGameP95",
+            "description": "C detects; D decides rollback, E approves during user test. Missing eligible canary data does not imply success."
+          }
+        },
+        {
+          "alert": "PaldoOutboxGrowing",
+          "expr": "deriv(paldo_outbox_pending_events[5m]) > 0",
+          "for": "1m",
+          "labels": {
+            "severity": "warning",
+            "project": "pj4"
+          },
+          "annotations": {
+            "summary": "PaldoOutboxGrowing",
+            "description": "C detects; D decides rollback, E approves during user test. Missing eligible canary data does not imply success."
+          }
+        }
+      ]
+    }
+  ]
+}

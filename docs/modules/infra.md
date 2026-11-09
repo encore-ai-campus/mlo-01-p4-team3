@@ -41,3 +41,4 @@ python -m unittest tests.infra.test_outbox_publisher -v
 | C-06-02 | 11/6 | 별도 Outbox 발행·실패 재시도·lease·지표, Kafka 실제 소비 확인 |
 | C-06-03 | 11/6 | 본 모듈 변경 없음, 광고·계정 MySQL 분리는 ops/mysql 인계 |
 | C-06-04 | 11/6 | 당일 모듈 문서 일괄 갱신, P-31 상시 LLM 취소·오프라인 생성·RunPod 측정 범위 구분 |
+| E-09-09 | 11/9 | 콘텐츠 번들 버전별 프로세스 캐시(`MongoContentSource.load`, 첫 조회만 Mongo, 없는 버전·조회 실패는 캐시 안 함) |

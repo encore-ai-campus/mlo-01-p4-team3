@@ -35,6 +35,12 @@
 | 시간대별 VM 사용(사용자 테스트·학습·LLM), VM 역할·디스크 예산 | `ops/runbook/schedule.md`, `ops/runbook/vm_roles.md` |
 | HTTPS·인증서 경고·브라우저·프록시 지연 확인 | `ops/proxy/{README.md,Caddyfile,browser_check.py,header_probe.py}`, `tools/perf/api_bench.py --proxy-profile`, `server/tests/proxy_bench.py` |
 
+## C-08-01 작업 위치
+
+| 작업 | 위치 |
+|---|---|
+| C-08-01 작업 | ops/prometheus 지표 중계·읽기 수집기, ops/grafana/dashboards 6종과 alerts.yml. 검증 부하는 tools/perf/web_concurrency.py. |
+
 ## C-08-02 작업 위치
 
 | 작업 | 위치 |
@@ -46,3 +52,9 @@
 | 작업 | 위치 |
 |---|---|
 | C-08-03 작업 | ops/k3s/ 설치·Job·이미지와 pipeline/simulation.py → pipeline/sinks/kafka_sink.py. 이미지 빌드는 images/sim/Dockerfile. |
+
+## C-08-04 작업 위치
+
+| 작업 | 위치 |
+|---|---|
+| C-08-04 작업 | 태그 묶음·집계 계정: ops/user_test_ops.py, ops/runbook/user_test_release.md. |
