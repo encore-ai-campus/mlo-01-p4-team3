@@ -103,6 +103,26 @@ class GameSummaryTests(unittest.TestCase):
         kept = m.game_summary(game("g1", "p1", events, result={"completed": True}), T0 + timedelta(minutes=9))
         self.assertIsNotNone(kept["survey"])  # 경계 포함
 
+    def test_late_backfill_counts_only_for_games_ended_before_cutoff(self):
+        """ut-metrics-1.2(B-09-07): 마감 전에 끝난 판의 마감 뒤 backfill 건너뜀은 세고, 마감 뒤에 끝난 판·다른 이벤트는 기존대로 뺀다."""
+        cutoff = T0 + timedelta(minutes=60)
+        backfill = {"skipped": True, "fun": None, "reason": "backfill"}
+        ended_before = game("g1", "p1", [ev("game_started", 0, 0), ev("game_ended", 50, 1), attempt(61, 2, "late"),
+                                         ev("survey_submitted", 62, 3, payload=backfill)], result={"completed": True})
+        s = m.game_summary(ended_before, cutoff)
+        self.assertEqual(s["survey"], backfill)
+        self.assertEqual(s["input_sentences"], 0)
+        ended_after = game("g2", "p1", [ev("game_started", 0, 0), ev("game_ended", 61, 1),
+                                        ev("survey_submitted", 62, 2, payload=backfill)], result={"completed": True})
+        self.assertIsNone(m.game_summary(ended_after, cutoff)["survey"])
+        late_answer = game("g3", "p1", [ev("game_started", 0, 0), ev("game_ended", 50, 1),
+                                        ev("survey_submitted", 62, 2, payload={"skipped": False, "fun": 4})],
+                           result={"completed": True})
+        self.assertIsNone(m.game_summary(late_answer, cutoff)["survey"])
+        out = m.aggregate([m.game_summary(g, cutoff) for g in (ended_before, ended_after, late_answer)])
+        self.assertEqual((out["survey"]["events"], out["survey"]["skipped"], out["survey"]["ended_without_survey"]),
+                         (1, 1, 1))
+
     def test_game_ended_after_cutoff_is_unfinished(self):
         g = game("g1", "p1", [ev("game_started", 0, 0), ev("game_ended", 70, 9)], result={"completed": True})
         s = m.game_summary(g, T0 + timedelta(minutes=60))
@@ -254,7 +274,7 @@ class MetricsCliTests(unittest.TestCase):
         doc = json.loads(out.getvalue())
         self.assertEqual(doc["definition_version"], m.DEFINITION_VERSION)
         self.assertEqual(doc["metrics"]["games_completed"], 0)  # 13:00 시작, 14:10 종료 > 14:00 마감
-        self.assertEqual(doc["definition_version"], "ut-metrics-1.1")
+        self.assertEqual(doc["definition_version"], "ut-metrics-1.2")
         self.assertNotIn("needs_confirmation", doc)
         self.assertIn("give_up_rate", doc["definitions"])
 

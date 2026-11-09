@@ -88,8 +88,10 @@
     <p><a href="{% url 'home' %}">테스트 회차로 돌아가기</a></p>
   {% else %}
     {% if participant_forms_available %}{% include "notebook.html" %}{% endif %}
-    {% include "meeting_actions.html" %}
-    {% include "utterance_input.html" %}
+    <div class="command-bar" role="region" aria-label="명령">
+      {% include "meeting_actions.html" %}
+      {% include "utterance_input.html" %}
+    </div>
   {% endif %}
   {% asset_attribution %}
 </section>
