@@ -1,0 +1,32 @@
+{
+  "task": "D-06-02",
+  "commit": "c4ea17d5b908b541645cb54a2bc248d8d873b557",
+  "generated_at": "2026-11-08T23:59:17Z",
+  "source": "Read-only ad-01 refund journal for 2026-11-08 13:30–14:00 UTC matched by count and amount to docs/evidence/perf/C-08-02/actual_ads.json (PR #274); DB and Delta metrics come from C proof.",
+  "metrics": {
+    "refund_rows": {
+      "value": 1,
+      "unit": "건"
+    },
+    "refund_mw": {
+      "value": -137284,
+      "unit": "밀리원"
+    },
+    "ledger_net_mw": {
+      "value": 1208456,
+      "unit": "밀리원"
+    },
+    "delta_net_mw": {
+      "value": 1208456,
+      "unit": "밀리원"
+    },
+    "mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "matching_ad01_refund_logs": {
+      "value": 1,
+      "unit": "건"
+    }
+  }
+}

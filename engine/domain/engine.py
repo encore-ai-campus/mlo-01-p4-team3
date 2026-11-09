@@ -492,16 +492,17 @@ class _Tx:
         self.events.append(DomainEvent(et, self.st.day, self.st.phase, payload))
 
     def template(self, kind: CommandKind, reaction: Optional[ReactionIntent] = None,
-                 speaker: Optional[str] = None) -> str:
-        """(kind, reaction) 템플릿 첫 변형. 화자 인물의 성향 템플릿이 있으면 그것, 없으면 공용(A-07-01 조건 7).
+                 speaker: Optional[str] = None, pick: Optional[random.Random] = None) -> str:
+        """(kind, reaction) 템플릿 변형. 화자 인물의 성향 템플릿이 있으면 그것, 없으면 공용(A-07-01 조건 7).
 
-        speaker가 없으면(무당·행적 진술 등) 공용만 쓴다.
+        speaker가 없으면(무당·행적 진술 등) 공용만 쓴다. pick이 있으면 변형 중 하나를 그 난수로 고르고(A-09-06 돌려쓰기),
+        없으면 첫 변형이다. pick은 문장 고르기 전용 목적 키(`line:...`)로 만들어 NPC 결정 난수와 섞이지 않게 한다.
         """
         temp = self.chars[speaker].temperament_id if speaker in self.chars else None
         for want in ((temp, None) if temp else (None,)):
             for t in self.content.templates:
                 if t.kind is kind and t.reaction is reaction and t.temperament_id == want:
-                    return t.variants[0]
+                    return pick.choice(t.variants) if pick is not None and t.variants else t.variants[0]
         return ""
 
     def name(self, pid: Optional[str]) -> str:
@@ -581,7 +582,8 @@ class _Tx:
             bad = _check_npc_talk(st, cmd)
             if bad is not None:
                 raise ValueError(f"NPC 정책이 불법 말 명령을 냄: {npc} {bad}")
-            line = self.template(cmd.kind, speaker=npc).format(target=self.name(cmd.target))
+            pick = self.rng(f"line:{st.phase.value}:{st.turn_index}:{npc}")
+            line = self.template(cmd.kind, speaker=npc, pick=pick).format(target=self.name(cmd.target))
             sp = self.speak(npc, cmd, line_text=line)
             self.emit(EventType.SPEECH_MADE, {"speech_id": sp.speech_id})
             st.turn_index += 1
@@ -633,11 +635,12 @@ class _Tx:
             claim, fact = self.whereabouts_answer(npc, cmd.night, cmd.slot)
             claim_ids.append(claim.claim_id)
         else:
-            fact = self.template(CommandKind.EXPLAIN, speaker=npc)
+            fact = self.template(CommandKind.EXPLAIN, speaker=npc, pick=self.rng(f"line:fact:{n_answers}:{npc}"))
         job_id = f"job_{sum(1 for s in st.public.speeches if s.render_job_id) + 1:03d}"
         q = Command(CommandKind.INTERROGATE, npc, addressee=PLAYER_ID, evidence=list(cmd.evidence))
         sp = self.speak(npc, q, claim_ids, reaction=reaction, fact_sentence=fact, render_job_id=job_id)
-        fallback = self.template(CommandKind.INTERROGATE, reaction, speaker=npc).format(fact=fact) or fact
+        fallback = self.template(CommandKind.INTERROGATE, reaction, speaker=npc,
+                                 pick=self.rng(f"line:react:{n_answers}:{npc}")).format(fact=fact) or fact
         names = [self.name(n) for n in st.active + st.locked + st.missing if n != PLAYER_ID]
         self.renders.append(RenderRequest(job_id, st.meta.game_id, st.state_version, sp.speech_id, npc,
                                           self.chars[npc].speech_style if npc in self.chars else "",
