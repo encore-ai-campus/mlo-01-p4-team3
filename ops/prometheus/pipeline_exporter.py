@@ -5,6 +5,37 @@ from pathlib import Path
 import threading
 
 
+def ads_p25_metrics(root, run):
+    """P-25 집계의 source·phase와 일간/지면 범위를 유지해 노출한다."""
+    def metric(name, value, **labels):
+        encoded = ','.join(f'{key}={json.dumps(str(val), ensure_ascii=False)}' for key, val in labels.items())
+        return f'paldo_ads_{name}{{{encoded}}} {value}'
+
+    for phase in ('provisional', 'final'):
+        path = Path(root) / f'gold-p25-{phase}.json'
+        if not path.exists():
+            continue
+        audit = json.loads(path.read_text(encoding='utf-8'))
+        for source, counts in audit['by_source'].items():
+            labels = dict(source=source, run=run, phase=phase)
+            for name in ('impressions', 'clicks', 'cost_mw', 'load_test_events'):
+                yield metric(f'gold_{name}', counts[name], **labels)
+            for name in ('impressions', 'clicks'):
+                invalid = counts[f'invalid_{name}']
+                total = counts[name] + invalid
+                if total:
+                    yield metric(f'gold_invalid_{name}_ratio', invalid / total, **labels)
+        for row in audit['fill']:
+            if row['fill_ratio'] is not None:
+                yield metric('gold_fill_ratio', row['fill_ratio'], source=row['source'],
+                             run=run, phase=phase, slot=row['slot'] or 'all')
+        for row in audit['campaign_daily']:
+            if row['burn_ratio'] is not None:
+                yield metric('gold_budget_burn_ratio', row['burn_ratio'], source=row['source'],
+                             run=run, phase=phase, day=row['attribution_day'], campaign=row['campaign_id'])
+        yield metric('reconciliation_mismatches', audit['reconciliation_mismatches'], run=run, phase=phase)
+
+
 def collect(config):
     """미완료 batch offset은 제외하고 알 수 없는 수치를 0으로 만들지 않는다."""
     from confluent_kafka import Consumer,TopicPartition
@@ -29,7 +60,9 @@ def collect(config):
         audit=json.loads(audits[-1].read_text())
         for name,key,scale in [('batch_duration_seconds','duration_ms',.001),('batch_received_events','received',1),('batch_inserted_events','inserted',1)]:
             if key in audit:result.append(f'paldo_pipeline_{name} {audit[key]*scale}')
-    if config.get('ads_audit'):
+    if config.get('ads_p25_audit'):
+        result.extend(ads_p25_metrics(config['ads_p25_audit'], config['ads_run']))
+    elif config.get('ads_audit'):
         root=Path(config['ads_audit'])
         for phase in ('provisional','final'):
             path=root/('gold-'+phase+'.json')

@@ -40,7 +40,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "paldo_ads_gold_impressions{phase=\"final\"}",
+          "expr": "paldo_ads_gold_impressions",
           "legendFormat": "{{source}} {{run}} {{phase}}"
         }
       ],
@@ -70,7 +70,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "paldo_ads_gold_clicks{phase=\"final\"}",
+          "expr": "paldo_ads_gold_clicks",
           "legendFormat": "{{source}} {{run}} {{phase}}"
         }
       ],
@@ -100,7 +100,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "paldo_ads_gold_clicks{phase=\"final\"} / paldo_ads_gold_impressions{phase=\"final\"}",
+          "expr": "paldo_ads_gold_clicks / paldo_ads_gold_impressions",
           "legendFormat": "{{source}} {{run}} {{phase}}"
         }
       ],
@@ -130,7 +130,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "paldo_ads_gold_cost_mw{phase=\"final\"} * 1000 / paldo_ads_gold_impressions{phase=\"final\"}",
+          "expr": "paldo_ads_gold_cost_mw * 1000 / paldo_ads_gold_impressions",
           "legendFormat": "{{source}} {{run}} {{phase}}"
         }
       ],
@@ -152,7 +152,7 @@
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Fill ratio",
+      "title": "Gold fill ratio by slot",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -160,8 +160,13 @@
       "targets": [
         {
           "refId": "A",
+          "expr": "paldo_ads_gold_fill_ratio",
+          "legendFormat": "{{source}} {{phase}} {{slot}}"
+        },
+        {
+          "refId": "B",
           "expr": "sum(rate(paldo_ad_serve_total{filled=\"true\"}[5m])) / sum(rate(paldo_ad_serve_total[5m]))",
-          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+          "legendFormat": "live HTTP overall (5m)"
         }
       ],
       "gridPos": {
@@ -182,7 +187,7 @@
     {
       "id": 6,
       "type": "timeseries",
-      "title": "Budget consumed",
+      "title": "Daily confirmed budget burn",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -190,8 +195,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "paldo_ads_committed_mw / paldo_ads_daily_budget_mw",
-          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+          "expr": "paldo_ads_gold_budget_burn_ratio",
+          "legendFormat": "{{day}} {{campaign}} {{source}} {{phase}}"
         }
       ],
       "gridPos": {
@@ -242,7 +247,7 @@
     {
       "id": 8,
       "type": "timeseries",
-      "title": "Invalid click ratio",
+      "title": "Invalid impression and click ratios",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -250,8 +255,13 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(paldo_ad_click_total{status=\"invalid\"}[5m])) / sum(rate(paldo_ad_click_total[5m]))",
-          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+          "expr": "paldo_ads_gold_invalid_impressions_ratio",
+          "legendFormat": "impressions {{source}} {{phase}}"
+        },
+        {
+          "refId": "B",
+          "expr": "paldo_ads_gold_invalid_clicks_ratio",
+          "legendFormat": "clicks {{source}} {{phase}}"
         }
       ],
       "gridPos": {
@@ -311,7 +321,7 @@
         {
           "refId": "A",
           "expr": "paldo_ads_reconciliation_mismatches",
-          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+          "legendFormat": "{{run}} {{phase}}"
         }
       ],
       "gridPos": {

@@ -2,7 +2,7 @@
 
 기존 Prometheus·Grafana와 PJ3 수집 작업을 보존한다. 보호 인벤토리로 node_exporter 20개에 notebook·vm 라벨을 붙이고 기존 node mTLS 설정을 재사용한다. 웹·광고·outbox·3광고 worker·pipeline·lifecycle 지표는 `relay.py`의 고정 경로로만 수집한다. 수집기 IP 이외에는 403, 다른 경로는 404이며 외부 주소·userinfo·redirect를 허용하지 않는다. upstream은 loopback 또는 같은 호스트의 명시 bind 주소다. 앱 포트나 OS 신뢰 저장소는 바꾸지 않는다.
 
-`pipeline_exporter.py`는 Spark checkpoint **commits에 있는 batch**의 offsets와 Kafka high-water를 비교한다. Kafka consumer commit을 하지 않으며 아직 commit되지 않은 offset 파일을 사용하지 않는다. 광고 gold·대사 gauge는 해당 audit가 있을 때만 내보내고 synthetic/run/phase를 표시한다. `ads_state_exporter.py`는 자기 MySQL의 read-only transaction에서 예산 순액을 SELECT한다. 페이싱 편차는 균등 목표 기준이며 실제 D 목표 곡선을 대신한다고 주장하지 않는다.
+`pipeline_exporter.py`는 Spark checkpoint **commits에 있는 batch**의 offsets와 Kafka high-water를 비교한다. Kafka consumer commit을 하지 않으며 아직 commit되지 않은 offset 파일을 사용하지 않는다. `ads_p25_audit`와 `ads_run`을 지정하면 해당 실행의 gold audit에서 source·잠정/확정별 지표를 내보낸다. 캠페인·귀속일별 소진율, 지면별·전체 채움률, 노출·클릭별 무효율을 사용하며 분모가 없으면 지표를 내보내지 않는다. `ads_state_exporter.py`는 자기 MySQL의 read-only transaction에서 예산 순액을 SELECT한다. 페이싱 편차는 균등 목표 기준이며 실제 D 목표 곡선은 D의 지표가 필요하다.
 
 `lifecycle_exporter.py`는 Mongo의 공개 종료 결과와 최종 의도 반응 필드만 projection한다. 부하 판은 제외한다. 수정·취소율은 최종 reaction 중 edit/cancel 비율이며 반응이 없으면 해당 비율은 제공하지 않는다. canary 30완료 판 미만의 승률 경보는 평가하지 않는다. 모델 포트 wrapper는 반환값·예외를 보존하고 실제 버전·추론 지연을 기록한다. 현재 기준선 모델을 학습 모델로 표시하지 않는다.
 
