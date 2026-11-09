@@ -9,7 +9,7 @@ from django.shortcuts import redirect, render
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_GET, require_http_methods
 
-from engine.domain.model import EvidenceType, RejectCode
+from engine.domain.model import CommandKind, EvidenceType, RejectCode
 from engine.domain.serde import SchemaError, to_jsonable
 from server.app.dto import StartGameInput, SubmitCommandInput
 from server.app.interactions import InteractionConflict, InteractionUnavailable
@@ -92,7 +92,7 @@ def _wants_meeting(request):
     ) == "text/html"
 
 
-def _meeting_response(request, view, variant, status=200):
+def _meeting_response(request, view, variant, status=200, previous_interrogation=None):
     from .participant_forms import participant_context
 
     template = "meeting.html" if request.headers.get("HX-Request") == "true" else "game.html"
@@ -111,7 +111,16 @@ def _meeting_response(request, view, variant, status=200):
             speech.text = result.text
             speech.pending_job_id = None if result.final else result.job_id
     return render(request, template, {**context, **participant_context(service, view), "rejected": status >= 400,
+                                     "previous_interrogation": previous_interrogation or {},
                                      "mudang_portrait_id": f"portrait:mudang_{variant or 'f'}"}, status=status)
+
+
+def _previous_interrogation(command, before, view):
+    """같은 날·단계에 다시 그린 심문 양식이 직전 대상·질문 종류를 기본으로 고르게 한다."""
+    if command.kind is not CommandKind.INTERROGATE or (before.day, before.phase) != (view.day, view.phase):
+        return None
+    return {"addressee": command.addressee or "",
+            "interrogation_kind": command.interrogation_kind.value if command.interrogation_kind else ""}
 
 
 def _meeting_command_body(form):
@@ -209,7 +218,8 @@ def submit_command(request, game_id):
         # HTML만 최신 상태로 다시 그린다. JSON은 계약대로 저장 응답을 재생한다.
         current = service.detail(game_id, request.player_pseudonym)
         return _meeting_response(request, current.view, current.mudang_variant)
-    return _meeting_response(request, output.view, state.meta.mudang_variant, _command_status(output))
+    return _meeting_response(request, output.view, state.meta.mudang_variant, _command_status(output),
+                             _previous_interrogation(data.command, state, output.view))
 
 
 @game_request
@@ -219,14 +229,25 @@ def progress(request):
     output = get_game_service().player_progress(request.player_pseudonym)
     if _wants_meeting(request):
         from .story_view import progress_context
-        return render(request, "progress.html", progress_context(output.progress))
+        # htmx는 판 화면 안 '원한 단서' 패널(B-10-01, 11/9 사용자 결정)이 쓰는 조각, 일반 요청은 로비의 전체 화면이다.
+        template = "progress_panel.html" if request.headers.get("HX-Request") == "true" else "progress.html"
+        return render(request, template, progress_context(output.progress))
     return JsonResponse(to_jsonable(output))
 
 
 @game_request
 @require_GET
 def review(request, game_id):
-    """종료된 자기 판에서 공개 가능한 복기 DTO만 반환한다."""
-    output = get_game_service().review(game_id, request.player_pseudonym)
+    """종료된 자기 판에서 공개 가능한 복기 DTO만 반환한다.
+
+    htmx 요청은 판 화면 안 복기 패널 조각(`review_panel.html`, B-10-01)을 받는다. 종료 전에는 어느 표현이든 403이다.
+    """
+    service = get_game_service()
+    output = service.review(game_id, request.player_pseudonym)
     request.game_id = output.game_id
+    if _wants_meeting(request):
+        from .story_view import review_context
+        state, _ = service.owned(game_id, request.player_pseudonym)
+        template = "review_panel.html" if request.headers.get("HX-Request") == "true" else "review.html"
+        return render(request, template, review_context(output, service.dependencies(state.meta).content))
     return JsonResponse(to_jsonable(output))

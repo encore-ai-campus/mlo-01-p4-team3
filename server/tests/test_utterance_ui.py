@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
-from engine.domain.model import Command, CommandKind, EvidenceRef, EvidenceType, ReactionIntent
+from engine.domain.model import Command, CommandKind, EvidenceRef, EvidenceType, Phase, ReactionIntent
 from engine.ports import CommandCandidate, ParseFailure, ParseResult, RenderRequest, RenderResult, RenderStatus, UtteranceForm
 from server.app.dto import RenderOutput
 from server.paldo_web.composition import configure_game_service
@@ -31,6 +31,10 @@ class UtteranceScreens(TestCase):
                                     content_type="application/json", HTTP_ACCEPT="application/json")
         self.gid = response.json()["view"]["game_id"]
         self.base = f"/games/{self.gid}"
+
+    def at_phase(self, phase):
+        """녹화 판 저장 상태의 단계만 바꾼다. 화면 카드는 B-09-07부터 현재 단계 합법 명령만 남긴다."""
+        self.service.repository.docs[self.gid]["state"].phase = phase
 
     def parse(self, result=None, text="지켜보겠소"):
         """화면과 동일한 폼으로 해석한다."""
@@ -83,6 +87,7 @@ class UtteranceScreens(TestCase):
 
     def test_missing_target_disabled_and_edit_has_player_edited_label(self):
         """빠진 슬롯은 확인 불가이고 수정 명령은 player_edited로 기록한다."""
+        self.at_phase(Phase.ROUND1)
         card = CommandCandidate(Command(CommandKind.SUSPECT, "mudang"), 1, UtteranceForm.ASSERTION, ["target"])
         response = self.parse(ParseResult([card], ParseFailure.MISSING_TARGET, True, {}))
         self.assertContains(response, 'name="target" required')
@@ -198,6 +203,7 @@ class UtteranceScreens(TestCase):
 
     def test_ambiguous_evidence_selects_two_candidate_claims(self):
         """모호한 근거는 후보 주장만 표시하고 두 개를 골라 수정 실행한다."""
+        self.at_phase(Phase.ROUND1)
         view = self.service.detail(self.gid, str(self.profile.player_pseudonym)).view
         claims = view.public.claims
         alternatives = [EvidenceRef(EvidenceType.CLAIM, claim.claim_id) for claim in claims[:3]]
@@ -256,6 +262,7 @@ class BaselineUtteranceScreens(UtteranceScreens):
 
     def test_mixed_ambiguity_does_not_disable_complete_card(self):
         """실제 다중 의도에서 근거가 모호한 카드만 확인을 막는다."""
+        self.at_phase(Phase.ROUND1)
         response = self.parse(text="주모가 수상하다; 0일째 밤의 말이 모순이다")
         self.assertEqual(response.context["failure"], "ambiguous_evidence")
         cards = response.context["cards"]
@@ -276,6 +283,7 @@ class BaselineUtteranceScreens(UtteranceScreens):
             response = self.client.post(self.base + "/commands", json.dumps(dict(step["request"],
                 game_id=self.gid, command_id=str(uuid.uuid4()))), content_type="application/json")
             self.assertEqual(response.status_code, 200)
+        self.at_phase(Phase.ROUND1)
         for text, selected, expected in (("수상하다", "", "jumo"), ("수상하다", "hunjang", "hunjang"),
                                          ("주모가 수상하다", "hunjang", "jumo")):
             response = self.client.post(self.base + "/utterances", urlencode({"game_id": self.gid,
@@ -293,6 +301,7 @@ class BaselineUtteranceScreens(UtteranceScreens):
 
     def test_retry_preserves_selected_person_and_evidence(self):
         """재입력도 선택 인물·근거를 이어받고 새 시도를 연결하며 소비하지 않는다."""
+        self.at_phase(Phase.ROUND1)
         view = self.service.detail(self.gid, str(self.profile.player_pseudonym)).view
         selected = [f"claim:{claim.claim_id}" for claim in view.public.claims[:2]]
         for text in ("수상하다", "0일째 밤의 말이 모순이다"):
@@ -312,6 +321,7 @@ class BaselineUtteranceScreens(UtteranceScreens):
 
     def test_configured_parser_is_baseline(self):
         """실제 기준선이 후보를 제안하고 모델 버전을 남기며 판을 소비하지 않는다."""
+        self.at_phase(Phase.ROUND1)
         from intent.parser import BaselineIntentParser
         observed = self.service.interactions.parser
         self.assertIsInstance(observed.parser, BaselineIntentParser)

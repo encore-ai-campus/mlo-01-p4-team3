@@ -251,6 +251,8 @@ _REFS_RE = re.compile(r"(?i)\brefs\s*:?\s*(?:[\w.-]+/[\w.-]+)?#\d+")
 # URL 형태 닫기(`Fixes https://github.com/o/r/issues/2`)도 GitHub가 이슈를 닫으므로 허용하지 않는다
 _CLOSING_URL_RE = re.compile(r"(?i)\b(close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b\s*:?\s*https?://\S+/(?:issues|pull)/\d+")
 _ISSUE_REF_RE = re.compile(r"#\d+|/(?:issues|pull)/\d+")
+# 빠른 검사 요약 줄(`precheck(빠른): …`, 11/9)은 통과 기록 없이 커밋 전 작업 트리를 본 확인이라 PR 본문에 붙일 수 없다
+_QUICK_PRECHECK_RE = re.compile(r"^\s*precheck\s*\(\s*빠른\s*\)", re.M)
 
 
 @dataclass
@@ -295,6 +297,8 @@ def check_pr_body(body: str, task_ids: set[str], confirmed: set[str]) -> PrCheck
     for line in text.splitlines():  # 연결 줄 하나에 이슈 번호가 둘 이상이면(`Closes #1, #2`) 검사를 거치지 않고 닫힐 수 있다
         if (_CLOSING_RE.search(line) or _REFS_RE.search(line)) and len(_ISSUE_REF_RE.findall(line)) > 1:
             errors.append(f"이슈 연결 줄에 이슈 번호가 둘 이상: {line.strip()!r}(번호 하나만)")
+    if _QUICK_PRECHECK_RE.search(text):
+        errors.append("빠른 검사 줄(`precheck(빠른): …`)은 PR 본문에 붙일 수 없음(`python -m tools.precheck --pr-body …`의 마지막 줄을 붙인다)")
     if others == 0 and closes + refs != 1:
         errors.append(f"이슈 연결 줄은 `Closes #<번호>` 또는 `Refs #<번호>` 중 정확히 하나(Closes {closes}, Refs {refs})")
     if errors:

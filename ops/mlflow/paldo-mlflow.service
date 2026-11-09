@@ -1,0 +1,24 @@
+[Unit]
+Description=PJ4 MLflow tracking and registry
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=paldo-mlflow
+Group=paldo-mlflow
+StateDirectory=paldo-mlflow
+WorkingDirectory=/var/lib/paldo-mlflow
+EnvironmentFile=/etc/pj4-mlflow/garage.env
+ExecStart=/opt/pj4/mlflow/venv/bin/mlflow server --host 127.0.0.1 --port 5000 --workers 1 --backend-store-uri sqlite:////var/lib/paldo-mlflow/mlflow.db --artifacts-destination s3://pj4-mlflow-artifacts --serve-artifacts
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+MemoryMax=1024M
+
+[Install]
+WantedBy=multi-user.target

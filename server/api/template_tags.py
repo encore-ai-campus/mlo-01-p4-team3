@@ -4,6 +4,8 @@ from .assets import asset_url
 
 register = template.Library()
 register.simple_tag(asset_url)
+from .ui_assets import review_asset_url
+register.simple_tag(review_asset_url, name='review_asset')
 
 
 @register.inclusion_tag('village_assets.html')

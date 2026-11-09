@@ -24,6 +24,8 @@
 
 ## 사용법
 
+진척 저장 중 장애가 난 판은 보호된 `PALDO_MONGO_URI`를 설정하고 `python -m tools.replay_progress --game-id <판 ID>`로 복구한다. 여러 판은 `--game-id`를 반복하고, 플레이어 단위는 `--player`를 쓴다. 전체 판은 `--all`을 명시해야 한다. 발행 여부와 관계없이 고백·종료 이벤트를 읽으며, 판에 고정된 콘텐츠를 사용한다. 재실행 결과의 신규 단서·결말은 0건이어야 한다. 격리 시험에서만 시험용 컬렉션 `--prefix`를 붙인다.
+
 ```
 py -3.14 -m ops.compose.run make-env                        # .env 생성(있으면 그대로)
 docker compose -p paldo-dev -f ops/compose/dev.yml up -d
@@ -53,6 +55,7 @@ docker compose -p paldo-dev -f ops/compose/dev.yml down     # 이 프로젝트�
 | Kafka `KAFKA_LOG_RETENTION_HOURS` | 24 | 보존 1일(tech_stack.md 2절) | 디스크 사용량 |
 | Mongo `--wiredTigerCacheSizeGB` | 0.25 | WiredTiger 캐시 | 메모리 사용량 |
 | 버킷 | `paldo-lake`, `paldo-mlflow` | Delta·MLflow 아티팩트 | `run.py` `BUCKETS` |
+| `PALDO_REDIS_PORT`(profile `redis`) | 6379 | 선택 Redis 채널 레이어(E-09-10). 기본 `up`에서는 띄우지 않는다(`--profile redis up -d redis`) | 접속 주소 변경 |
 
 MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/README.md`, HTTPS 기동/종료·Chrome/Edge 경고·CA 지문·실제 브라우저/지연 검증은 `ops/proxy/README.md`를 따른다. Kafka 발행기는 dev에 병합됐다. 11/8 PJ4 두 스키마만 복구해 Replica 재시작 뒤 새 marker를 읽었고, 기존 PJ3 기본 GTID 채널은 별도 미복구로 보존했다. P-31로 상시 LLM은 없고 RunPod는 E-11-12 GPU 서비스 시연(게임 미연결)만 계획한다.
 
@@ -93,3 +96,5 @@ MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/READM
 | C-08-02 | 11/8 | 광고 귀속·마감·멱등 집계·실제 환입 재대사 |
 | C-08-03 | 11/8 | k3s Job·Kafka sink·5호스트 자원 재측정 |
 | C-08-04 | 11/8 | E 태그 archive·4th_private 전용 조회 계정 guard |
+| E-09-10 | 11/9 | 실행 도구 `web --port 8000·8002`, Caddyfile upstream 2개·능동 상태 확인, 로컬 Prometheus `paldo-web` 대상 2개(`process` 라벨), Compose 선택 Redis(profile `redis`), proxy README 웹 프로세스 2개 절차·되돌림·비교 측정(`tools/perf/api_bench.py --web-processes`)·선택 Redis 절 |
+| C-09-04 | 11/9 | 판 아웃박스 기반 진척 재처리 및 실제 Mongo 멱등 검증 |

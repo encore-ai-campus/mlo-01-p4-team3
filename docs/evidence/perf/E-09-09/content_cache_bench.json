@@ -1,0 +1,213 @@
+{
+ "task": "E-09-09",
+ "tool": "python -m server.tests.api_bench --compare-asgi --users 10 --minutes 1",
+ "environment": "로컬 노트북 Windows 11, Python 3.14, Docker Mongo 8.0.34 단일 노드 레플리카셋(임시, 측정 뒤 삭제), 녹화 엔진(ScriptedGameEngine), 다른 작업 프로세스가 함께 돌던 상태",
+ "note": "p50·p95는 같은 노트북의 다른 작업 부하로 흔들린다. 캐시 효과는 content 단계 평균으로 본다. 캐시 전 실행은 daphne_failure 사례 전에 시간 제한으로 끊겼다.",
+ "before": {
+  "wsgi": {
+   "requests": 600,
+   "errors": 0,
+   "p50_ms": 327.669,
+   "p95_ms": 620.934,
+   "stage_mean_ms": {
+    "account_sql": 11.56,
+    "progress_load": 22.01,
+    "response_conversion": 0.36,
+    "json_response": 0.17,
+    "content": 40.18,
+    "engine_new_game": 0.26,
+    "create": 18.99,
+    "progress_add_game": 35.51,
+    "load": 46.35,
+    "engine_player_view": 0.61,
+    "find_command": 30.27,
+    "engine_apply": 0.7,
+    "stored_response_conversion": 0.58,
+    "commit": 32.85
+   }
+  },
+  "daphne": {
+   "requests": 600,
+   "errors": 0,
+   "p50_ms": 528.225,
+   "p95_ms": 888.476,
+   "stage_mean_ms": {
+    "account_sql": 14.1,
+    "progress_load": 43.2,
+    "response_conversion": 0.43,
+    "json_response": 0.19,
+    "content": 70.83,
+    "engine_new_game": 0.32,
+    "create": 40.19,
+    "progress_add_game": 58.08,
+    "load": 77.02,
+    "engine_player_view": 0.73,
+    "find_command": 59.79,
+    "engine_apply": 0.84,
+    "stored_response_conversion": 1.02,
+    "commit": 52.03
+   }
+  },
+  "daphne_ads": {
+   "requests": 600,
+   "errors": 0,
+   "p50_ms": 362.751,
+   "p95_ms": 1042.721,
+   "stage_mean_ms": {
+    "account_sql": 6.5,
+    "progress_load": 17.45,
+    "response_conversion": 0.35,
+    "json_response": 0.16,
+    "ad_identity": 11.33,
+    "content": 26.36,
+    "engine_new_game": 0.36,
+    "create": 14.67,
+    "progress_add_game": 21.57,
+    "load": 33.34,
+    "engine_player_view": 0.45,
+    "find_command": 18.87,
+    "engine_apply": 0.57,
+    "stored_response_conversion": 0.61,
+    "commit": 24.79
+   }
+  },
+  "daphne_delay": {
+   "requests": 559,
+   "errors": 0,
+   "p50_ms": 768.821,
+   "p95_ms": 1434.097,
+   "stage_mean_ms": {
+    "account_sql": 4.68,
+    "progress_load": 23.54,
+    "response_conversion": 0.33,
+    "json_response": 0.15,
+    "ad_identity": 8.25,
+    "content": 32.72,
+    "engine_new_game": 0.21,
+    "create": 22.86,
+    "progress_add_game": 25.44,
+    "load": 36.71,
+    "engine_player_view": 0.47,
+    "find_command": 25.81,
+    "engine_apply": 0.54,
+    "stored_response_conversion": 0.72,
+    "commit": 27.12
+   }
+  }
+ },
+ "after": {
+  "wsgi": {
+   "requests": 600,
+   "errors": 0,
+   "p50_ms": 179.52,
+   "p95_ms": 588.916,
+   "stage_mean_ms": {
+    "account_sql": 7.14,
+    "progress_load": 8.82,
+    "response_conversion": 0.28,
+    "json_response": 0.13,
+    "content": 0.02,
+    "engine_new_game": 0.21,
+    "create": 10.14,
+    "progress_add_game": 14.93,
+    "load": 30.3,
+    "engine_player_view": 0.43,
+    "find_command": 16.06,
+    "engine_apply": 0.46,
+    "stored_response_conversion": 0.45,
+    "commit": 21.54
+   }
+  },
+  "daphne": {
+   "requests": 597,
+   "errors": 0,
+   "p50_ms": 341.29,
+   "p95_ms": 865.252,
+   "stage_mean_ms": {
+    "account_sql": 8.19,
+    "progress_load": 11.25,
+    "response_conversion": 0.3,
+    "json_response": 0.14,
+    "content": 0.02,
+    "engine_new_game": 0.24,
+    "create": 33.54,
+    "progress_add_game": 17.14,
+    "load": 44.2,
+    "engine_player_view": 0.42,
+    "find_command": 27.91,
+    "engine_apply": 0.47,
+    "stored_response_conversion": 0.47,
+    "commit": 28.53
+   }
+  },
+  "daphne_ads": {
+   "requests": 600,
+   "errors": 0,
+   "p50_ms": 358.483,
+   "p95_ms": 619.635,
+   "stage_mean_ms": {
+    "account_sql": 6.68,
+    "progress_load": 14.3,
+    "response_conversion": 0.31,
+    "json_response": 0.14,
+    "ad_identity": 4.94,
+    "content": 0.03,
+    "engine_new_game": 0.27,
+    "create": 17.33,
+    "progress_add_game": 22.66,
+    "load": 66.54,
+    "engine_player_view": 0.5,
+    "find_command": 43.19,
+    "engine_apply": 0.56,
+    "stored_response_conversion": 0.57,
+    "commit": 39.41
+   }
+  },
+  "daphne_delay": {
+   "requests": 600,
+   "errors": 0,
+   "p50_ms": 381.791,
+   "p95_ms": 567.187,
+   "stage_mean_ms": {
+    "account_sql": 7.11,
+    "progress_load": 16.55,
+    "response_conversion": 0.3,
+    "json_response": 0.14,
+    "ad_identity": 5.87,
+    "content": 0.05,
+    "engine_new_game": 0.26,
+    "create": 58.66,
+    "progress_add_game": 28.77,
+    "load": 68.14,
+    "engine_player_view": 0.48,
+    "find_command": 45.02,
+    "engine_apply": 0.52,
+    "stored_response_conversion": 0.52,
+    "commit": 39.12
+   }
+  },
+  "daphne_failure": {
+   "requests": 598,
+   "errors": 0,
+   "p50_ms": 371.476,
+   "p95_ms": 899.006,
+   "stage_mean_ms": {
+    "account_sql": 5.8,
+    "progress_load": 13.88,
+    "response_conversion": 0.31,
+    "json_response": 0.14,
+    "ad_identity": 4.97,
+    "content": 0.06,
+    "engine_new_game": 0.26,
+    "create": 24.98,
+    "progress_add_game": 31.49,
+    "load": 55.13,
+    "engine_player_view": 0.45,
+    "find_command": 36.52,
+    "engine_apply": 0.5,
+    "stored_response_conversion": 0.49,
+    "commit": 33.5
+   }
+  }
+ }
+}

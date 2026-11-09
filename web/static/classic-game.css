@@ -1,0 +1,49 @@
+:root { font-family: system-ui, sans-serif; color: #242b28; background: #f6f5ef; }
+body { max-width: 960px; margin: auto; padding: 1.25rem; line-height: 1.7; }
+header { border-bottom: 1px solid #c6cbc5; padding-bottom: .8rem; }
+a { color: #215c43; }
+label { display: inline-block; margin: .35rem; }
+input, select, button, textarea { font: inherit; box-sizing: border-box; max-width: 100%; padding: .45rem; }
+textarea { display: block; width: 100%; }
+button { border: 1px solid #35654f; background: #e4ede4; border-radius: .3rem; cursor: pointer; }
+button:disabled { opacity: .55; }
+.command-form { border: 1px solid #c6cbc5; border-radius: .5rem; padding: .8rem; margin: .8rem 0; }
+.target-form { display: inline-block; border: 0; padding: 0; margin: .25rem .5rem .25rem 0; }
+.claim-cards { list-style: none; padding: 0; }
+.claim-cards li { border-left: .2rem solid #c6cbc5; margin: .4rem 0; padding: .2rem .6rem; }
+#meeting-actions { scroll-margin-top: 1rem; }
+/* B-09-07 8번: 명령 패널·자유 입력을 화면 아래에 붙여 판 상황을 보면서 명령한다. sticky라 본문 끝에서는 제자리로 돌아가 가리지 않는다. */
+.command-bar { position: sticky; bottom: 0; z-index: 1; box-sizing: border-box; max-height: 50vh; overflow-y: auto; overscroll-behavior: contain;
+  background: #f6f5ef; border-top: 2px solid #35654f; box-shadow: 0 -.25rem .6rem rgba(36, 43, 40, .12); padding: 0 .5rem .5rem; }
+.command-bar h2 { font-size: 1.05rem; margin: .5rem 0 .25rem; }
+.command-bar .command-form { margin: .5rem 0; }
+.command-bar :focus-visible { scroll-margin: 1rem; }
+.preview-guide, .round-result { border-left: .25rem solid #35654f; padding: .65rem .85rem; background: #e4ede4; }
+.round-result h2 { margin: 0 0 .3rem; }
+.people { display: flex; flex-wrap: wrap; list-style: none; padding: 0; gap: 1rem; }
+.people li { display: grid; justify-items: center; }
+.village-guide { border: 1px solid #c6cbc5; border-radius: .5rem; padding: .8rem; margin: 1rem 0; }
+.village-guide figure { margin: 0; }
+.village-map { position: relative; width: 100%; }
+.village-map-image { display: block; width: 100%; height: auto; }
+.village-map-place { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: clamp(.7rem, 1.5vw, 1rem); line-height: 1.25; }
+.village-map-place img { width: min(32px, 45%); height: auto; }
+.village-map-place span { background: #f6f5ef; color: #242b28; padding: .1rem; white-space: nowrap; }
+.resident-gallery { margin-top: 1rem; }
+.resident-gallery summary { cursor: pointer; padding: .5rem; }
+.evidence-picker summary { cursor: pointer; padding: .35rem; }
+.evidence-picker fieldset { max-height: 12rem; overflow-y: auto; }
+.resident-portraits { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 1rem; padding: 0; list-style: none; }
+.resident-portraits li { display: grid; justify-items: center; align-content: start; overflow-wrap: anywhere; }
+.resident-portraits img { width: 96px; max-width: 100%; height: auto; }
+.asset-credits { font-size: .85rem; overflow-wrap: anywhere; border-top: 1px solid #c6cbc5; margin-top: 1rem; }
+fieldset { min-width: 0; }
+[role=alert] { color: #9b3024; }
+@media (max-width: 480px) { body { padding: .75rem; } label { display: block; } }
+.confidence-choices { display: flex; flex-wrap: wrap; gap: .5rem; }
+.confidence-choice { position: relative; cursor: pointer; }
+.confidence-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.confidence-choice span { display: block; padding: .65rem .8rem; border: 2px solid #718096; border-radius: .4rem; }
+.confidence-choice input:checked + span { background: #23344a; color: #fff; border-color: #23344a; }
+.confidence-choice input:focus-visible + span { outline: 3px solid #b45309; outline-offset: 2px; }
+.confidence-choice input:disabled + span { opacity: .5; cursor: wait; }

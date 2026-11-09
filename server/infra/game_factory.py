@@ -54,8 +54,10 @@ class ContentPolicyEngine:
     규칙 v0은 인물 성향·동선을 콘텐츠에서 찾으므로 판이 고정한 콘텐츠 버전으로 정책을 만든다.
     """
 
-    def __init__(self, make_policy: Callable[[ContentBundle], object] = RuleV0Policy):
+    def __init__(self, make_policy: Callable[[ContentBundle], object] = RuleV0Policy, model_version='unknown'):
+        """콘텐츠별 엔진 캐시와 관측용 모델 버전을 보관한다."""
         self.make_policy = make_policy
+        self.model_version = model_version
         self._engines: dict[str, PaldoEngine] = {}
         self._lock = threading.Lock()
 
@@ -72,7 +74,10 @@ class ContentPolicyEngine:
 
     def apply(self, state, truth, env, deps):
         """판 콘텐츠 버전의 엔진으로 명령을 적용한다."""
-        return self._for(deps.content).apply(state, truth, env, deps)
+        from server.infra.observed_models import observe_decisions
+        transition=self._for(deps.content).apply(state, truth, env, deps)
+        observe_decisions(transition,self.model_version)
+        return transition
 
     def player_view(self, state, content):
         """판 콘텐츠 버전의 엔진으로 플레이어 화면 정보를 만든다."""
@@ -82,7 +87,9 @@ class ContentPolicyEngine:
 def engine_parts():
     """운영 조립이 B 실행 자원에 넘기는 엔진과 의심 모델."""
     from engine.testing.fakes import FakeSuspicionModel
-    return ContentPolicyEngine(), FakeSuspicionModel()
+    from server.infra.observed_models import ObservedSuspicionModel
+    model=ObservedSuspicionModel(FakeSuspicionModel())
+    return ContentPolicyEngine(model_version=model.model_version), model
 
 
 def attach_interactions(service, store, parser, renderer=None):

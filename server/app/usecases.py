@@ -1,5 +1,6 @@
 """B 게임 응용 흐름. Django와 저장소 구현을 모르며 주입한 포트만 호출한다."""
 import json
+import logging
 import uuid
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -8,7 +9,11 @@ from engine.domain.events import EventEnvelope, topic_of
 from engine.domain.model import CONTRACT_VERSION, CommandEnvelope, DataSource, RejectCode
 from engine.domain.serde import dumps, from_jsonable
 from engine.ports import StoredCommand, VersionConflict
+from engine.domain.progress import ending_available
 from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewOutput
+from .progress import apply_progress, sweep_game
+
+LOGGER = logging.getLogger("paldo.progress")
 
 
 class ResourceNotFound(Exception):
@@ -81,7 +86,7 @@ class GameService:
             raise ConsentRequired
         if data.player_pseudonym != player_pseudonym or data.mudang_variant not in ("f", "m"):
             raise ValueError("invalid_start")
-        if data.ending_choice not in self.progress.load(player_pseudonym).endings_unlocked:
+        if not ending_available(self.progress.load(player_pseudonym), data.ending_choice):
             raise ValueError("ending_locked")
         if self.prepare_start is None:
             raise StartUnavailable
@@ -128,6 +133,7 @@ class GameService:
         if state.result is None:
             raise ReviewNotReady
         game_id = state.meta.game_id
+        self._sweep_saved(player_pseudonym, state)
         progress = self.progress.load(player_pseudonym)
         # 행동 시점 이유는 review_trace 인수 전까지 비워 둔다. 현재 믿음에서 추론하지 않는다.
         timeline = [ReviewItem(speech.speech_id, speech.speaker, [], list(speech.evidence))
@@ -193,6 +199,11 @@ class GameService:
         if committed:
             # 경합 경로는 이 요청의 저장인지 같은 명령의 동시 요청인지 가릴 수 없어 세지 않는다(중복 집계 방지).
             self._observe(result.events)
+        if result.state.result is not None:
+            # 판 종료: 이 판의 모든 고백을 다시 맞춘다(앞 명령에서 실패한 반영 복구 포함, 이번 전이 고백도 포함).
+            self._progress_guard(sweep_game, player_pseudonym, result.state, deps.content)
+        else:
+            self._progress_guard(apply_progress, player_pseudonym, args[4], deps.content.grudge_clues)
         if self.interactions is not None:
             self.interactions.complete_command_effects(data.game_id, args[-1], player_pseudonym)
         return output
@@ -205,10 +216,26 @@ class GameService:
             self.observe_events(events)
         except Exception:  # noqa: BLE001 - 지표 실패로 저장된 명령 응답을 바꾸지 않는다.
             pass
+    def _progress_guard(self, apply, player_pseudonym, *args):
+        """고백 단서·결말 해금을 진척에 반영한다(E-09-08). 판 상태는 이미 저장됐으므로 진척 저장 실패는
+        명령 응답을 바꾸지 않고 기록만 남긴다. 판 종료·같은 명령 재요청·복기 때 `sweep_game`이 따라잡고,
+        그래도 남는 경우는 아웃박스 재처리(C-09-04)로 복구한다."""
+        try:
+            apply(self.progress, player_pseudonym, *args)
+        except Exception:  # noqa: BLE001 - 진척 장애가 게임 진행을 막지 않게 한다
+            LOGGER.exception("progress apply failed; will retry on game end, command retry, review or outbox replay")
+
+    def _sweep_saved(self, player_pseudonym, state):
+        """저장된 판으로 진척을 따라잡는다. 콘텐츠 조회 실패도 가드 안에서 처리해 재요청·복기를 막지 않는다."""
+        self._progress_guard(lambda repo, player: sweep_game(repo, player, state, self.dependencies(state.meta).content),
+                             player_pseudonym)
 
     def replay_command(self, game_id, saved, player_pseudonym):
         """명령·카드 경로 공통: 소유권 확인 뒤 후속 처리를 복구하고 저장 응답을 반환한다."""
-        self.owned(game_id, player_pseudonym)
+        state, _ = self.owned(game_id, player_pseudonym)
+        if state.public.confessions:
+            # 저장 뒤 진척 반영 전에 끊긴 요청을 같은 명령 ID로 다시 보내면 여기서 따라잡는다.
+            self._sweep_saved(player_pseudonym, state)
         if self.interactions is not None:
             self.interactions.complete_command_effects(game_id, saved, player_pseudonym)
         return self._replay(saved)

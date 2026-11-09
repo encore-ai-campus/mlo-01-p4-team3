@@ -102,30 +102,40 @@ def closing_times(day):
     return int(provisional.timestamp()*1000),int(provisional.timestamp()*1000)+TOKEN_TTL_MS+GRACE_MS
 
 
-def gold_rows(rows,as_of_ms,budgets=None):
+def gold_rows(rows,as_of_ms):
     """원래 serve의 날짜·시간에 비용과 CTR을 집계하고 맥락 없는 행은 학습에서 제외한다."""
-    budgets=budgets or {};groups=defaultdict(list);learning=defaultdict(list);daily_cost=defaultdict(int)
+    groups=defaultdict(list);learning=defaultdict(list)
     for row in rows:
         key=tuple(row.get(k) for k in ('attribution_day','campaign_id','slot','hour','source','load_test'))
         groups[key].append(row)
-        daily_cost[(row['attribution_day'],row['campaign_id'],row['source'])]+=row['expected_charge_mw']
         if not row['context_missing'] and not row['load_test']:
             lk=tuple(row.get(k) for k in ('attribution_day','creative_id','slot','preset_id','outcome','hour','source'))
             learning[lk].append(row)
     def measures(items):
-        valid=[r for r in items if r['status']=='valid'];clicks={r['serve_id'] for r in valid if r['topic']=='ad.click'}
+        reportable=[r for r in items if not r['load_test']]
+        valid=[r for r in reportable if r['status']=='valid']
+        invalid=[r for r in reportable if r['status']=='invalid']
+        clicks={r['serve_id'] for r in valid if r['topic']=='ad.click'}
         impressions={r['serve_id'] for r in valid if r['topic']=='ad.impression'}|clicks
-        cost=sum(r['expected_charge_mw'] for r in items)
+        cost=sum(r['expected_charge_mw'] for r in reportable)
+        invalid_impressions=sum(r['topic']=='ad.impression' for r in invalid)
+        invalid_clicks=sum(r['topic']=='ad.click' for r in invalid)
+        impression_total=len(impressions)+invalid_impressions
+        click_total=len(clicks)+invalid_clicks
+        judged=len(valid)+len(invalid)
         return {'impressions':len(impressions),'clicks':len(clicks),'ctr':len(clicks)/len(impressions) if impressions else None,
             'cost_mw':cost,'ecpm_mw':cost*1000/len(impressions) if impressions else None,'cpc_mw':cost/len(clicks) if clicks else None,
-            'invalid_events':sum(r['status']=='invalid' for r in items),'pending_events':sum(r['status']=='pending' for r in items),
-            'invalid_ratio':sum(r['status']=='invalid' for r in items)/len(items) if items else None,
-            'context_missing_events':sum(r['context_missing'] for r in items),'judged_events':len(items)}
+            'invalid_events':len(invalid),'pending_events':sum(r['status']=='pending' for r in reportable),
+            'invalid_ratio':len(invalid)/judged if judged else None,
+            'invalid_impressions':invalid_impressions,'invalid_clicks':invalid_clicks,
+            'invalid_impression_rate':invalid_impressions/impression_total if impression_total else None,
+            'invalid_click_rate':invalid_clicks/click_total if click_total else None,
+            'load_test_events':len(items)-len(reportable),
+            'context_missing_events':sum(r['context_missing'] for r in reportable),'judged_events':judged}
     gold=[]
     for key,items in groups.items():
         row=dict(zip(('attribution_day','campaign_id','slot','hour','source','load_test'),key));row.update(measures(items))
-        budget=budgets.get(row['campaign_id']);cost=daily_cost[(row['attribution_day'],row['campaign_id'],row['source'])]
-        row.update(burn_ratio=cost/budget if budget else None,budget_mw=budget,observation_cutoff_ms=as_of_ms)
+        row['observation_cutoff_ms']=as_of_ms
         provisional,final=closing_times(row['attribution_day']) if row['attribution_day'] else (None,None)
         row.update(provisional_close_ms=provisional,final_close_ms=final,provisional_closed=bool(provisional and as_of_ms>=provisional),
                    final_closed=bool(final and as_of_ms>=final))
@@ -136,6 +146,39 @@ def gold_rows(rows,as_of_ms,budgets=None):
         if not measured['impressions']:continue
         row=dict(zip(('attribution_day','creative_id','slot','preset_id','outcome','hour','source'),key));row.update(measured);training.append(row)
     return gold,training
+
+
+def campaign_daily_rows(ledger_rows, budgets):
+    """캠페인·귀속일·출처별 확정 순액을 해당 일 예산과 비교한다."""
+    amounts=defaultdict(int)
+    for row in ledger_rows:
+        if not row.get('load_test',False):
+            key=(row['attribution_day'],row['campaign_id'],row['source'])
+            amounts[key]+=row['amount_mw'] if row['state']=='confirmed' else 0
+    results=[]
+    for (day,campaign,source),net in sorted(amounts.items()):
+        budget=budgets.get(day,{}).get(campaign)
+        results.append({'attribution_day':day,'campaign_id':campaign,'source':source,
+                        'confirmed_net_mw':net,'budget_mw':budget,'burn_ratio':net/budget if budget else None})
+    return results
+
+
+def fill_rows(records, as_of_ms):
+    """중복 없는 serve의 전체·지면별 채움률을 출처별로 계산한다."""
+    counts=defaultdict(Counter)
+    for event in unique_events(records):
+        if event['_topic']!='ad.serve' or event['received_at_ms']>as_of_ms:
+            continue
+        for slot in (None,event['slot']):
+            count=counts[(event['source'],slot)]
+            if event.get('load_test',False):
+                count['load_test']+=1
+            else:
+                count['total']+=1
+                count['filled']+=int(event['filled'])
+    return [{'source':source,'slot':slot,'serves':count['total'],'filled':count['filled'],
+             'load_test_serves':count['load_test'],'fill_ratio':count['filled']/count['total'] if count['total'] else None}
+            for (source,slot),count in counts.items()]
 
 
 def reconcile_rows(ledger_rows,silver):
