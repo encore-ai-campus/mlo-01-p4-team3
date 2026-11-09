@@ -117,12 +117,16 @@ def main(argv=None) -> int:
                                      "--intent-version", args.intent_version])
 
     out_root = Path(args.out)
+    report_path = Path(args.report) if args.report else out_root / "reproduce.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.unlink(missing_ok=True)   # 이전 실행의 통과 보고가 이번 실패 뒤에 남지 않게 먼저 지운다
     try:
         report = reproduce(run, out_root)
     except (OSError, ValueError) as exc:
-        print(json.dumps({"passed": False, "error": type(exc).__name__, "detail": str(exc)}, ensure_ascii=False))
+        report = {"passed": False, "reproduced": False, "error": type(exc).__name__, "detail": str(exc)}
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps(report, ensure_ascii=False))
         return 1
-    report_path = Path(args.report) if args.report else out_root / "reproduce.json"
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: report[k] for k in ("passed", "reproduced", "exit_codes", "games", "events", "diffs")},
                      ensure_ascii=False))

@@ -58,6 +58,17 @@ class ReproduceTests(unittest.TestCase):
         self.assertTrue(report["reproduced"])
         self.assertFalse(report["passed"])
 
+    def test_failed_rerun_replaces_old_passing_report(self):
+        from unittest import mock
+        from ml.adapters import reproduce_model_games as rmg
+        report = self.root / "r.json"
+        report.write_text(json.dumps({"passed": True}), encoding="utf-8")
+        with mock.patch("ml.adapters.run_model_games.main", return_value=1):
+            code = rmg.main(["--suspicion-version", "v", "--intent-version", "i", "--out", str(self.root / "o"),
+                             "--report", str(report)])
+        self.assertEqual(code, 1)
+        self.assertFalse(json.loads(report.read_text(encoding="utf-8"))["passed"])
+
     def test_digest_and_compare_rules(self):
         events = [{"game_id": "g1", "event_type": "x"},
                   {"game_id": "g1", "event_type": "game_ended", "payload": {"winner": "village", "reason": "r"}}]
