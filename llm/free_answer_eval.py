@@ -12,7 +12,13 @@ NPC의 비밀 시간대 행적은 거짓 장소(엔진이 대는 알리바이)�
 새로 쓴 문장(거짓 전제 질문, 오류 섞인 이전 답)은 `new_sentences`에 모아 두고 사용자 확인을 받는다(11/8 12개 전부 승인). 생성 결과가 승인본 지문(`APPROVED_NEW_SENTENCES_SHA256`)과 다르면
 `status`는 확인 전으로 남고, 새 문장을 다시 확인받은 뒤 지문을 바꾼다.
 
-항목 필드: `item_id`, `qtype`, `kind`(normal|false_premise|wrong_history), `turns`, `npc_id`, `npc_name`, `persona`,
+E-11-12 자유 대화 확장(11/9, 위 75건 뒤에 붙임, 기존 항목은 바이트 그대로): 기존 3유형 8턴 `LONG_PER_QTYPE`건씩, 그리고
+`kind=chat` 항목 5유형(`intro` 자기소개·인사, `personality` 성미·말투, `impression` 다른 인물 이야기(목격 기록만),
+`incident` 사건에 대한 생각, `smalltalk` 잡담) × 0·2·4·8턴 × `CHAT_PER_CELL`건. chat 항목의 허용 사실 앞에는 자기소개
+사실 `s1`(이름)·`s2`(성향 설명)가 붙는다. 일과·장소는 넣지 않는다. 새 문장 틀은 `chat_sentences`에 있고 사용자 확인 전이다
+(`chat_status`).
+
+항목 필드: `item_id`, `qtype`, `kind`(normal|false_premise|wrong_history|chat), `turns`, `npc_id`, `npc_name`, `persona`,
 `facts`([{fact_id, sentence}]), `history`([{question, answer}]), `question`, `question_source`, `relevant_fact_ids`
 (허용 복수 정답), `answerable`, `forbidden_facts`, `secret_id`. 표준 라이브러리와 `llm`만 쓴다.
 """
@@ -27,13 +33,14 @@ import sys
 from pathlib import Path
 
 from llm.eval_set import SLOT_KO, dumps
+from llm.free_answer import SELF_FACT_PREFIX
 from llm.validator import lexicon_from_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 BUNDLE = ROOT / "fixtures" / "content_min" / "bundle.json"
 EXAMPLES = ROOT / "content" / "intent" / "examples_v1.jsonl"
 OUT = ROOT / "fixtures" / "llm" / "free_answer_eval.json"
-EVAL_VERSION = "free-answer-eval-1"
+EVAL_VERSION = "free-answer-eval-2"   # 2: E-11-12 8턴·자유 대화 항목 추가(기존 75건은 그대로)
 # 사용자가 확인한 new_sentences(시드 1, 12개)의 지문. 생성 결과가 이와 같을 때만 확인 완료로 표시한다.
 APPROVED_NEW_SENTENCES_SHA256 = "a1d969e8dbc8c1cb840532306416f095725284bac793334a1d9119b42c75a5ab"
 STATUS = "사용자 확인 완료(11/8, new_sentences 12개 전부 승인)"
@@ -54,6 +61,37 @@ FALSE_PREMISE_TEMPLATES = (
 # 외모·신분으로 부르는 예시("거기 수염 난 양반", "그 젊은 아낙")는 말하는 NPC와 안 맞을 수 있어 뺀다
 DESCRIPTOR_RE = re.compile(r"양반|아낙|나무꾼|어르신")
 WRONG_HISTORY_QUESTIONS = ("ex1_159", "ex1_171", "ex1_139", "ex1_140", "ex1_150", "ex1_174")
+
+# --- E-11-12 자유 대화 확장(11/9 사용자 결정). 아래 문장 틀은 사용자 확인 전이다(`chat_sentences`, `chat_status`) ---
+LONG_TURNS = 8                       # 기존 3유형의 8턴 항목(유형마다 `LONG_PER_QTYPE`건)
+LONG_PER_QTYPE = 2
+CHAT_TURNS = (0, 2, 4, 8)
+CHAT_PER_CELL = 2                    # 5 유형 × 4 길이 × 2 = 40건
+CHAT_QTYPES = ("intro", "personality", "impression", "incident", "smalltalk")
+# 자기소개 사실(ID `s1`·`s2`). 이름과 성향 설명만 둔다. 일과 장소는 빙의자의 거짓 알리바이라 넣지 않는다
+SELF_NAME_TEMPLATE = "나는 {name}{iyo}."
+SELF_TEMPERAMENT = {
+    "scholar": "나는 무슨 일이든 따져 보고 말하는 편이오.",
+    "keen": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오.",
+    "hothead": "나는 성미가 급해 말이 먼저 나가는 편이오.",
+    "timid": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오.",
+}
+# 새 질문 틀. {p1}=말하는 NPC, {p2}=다른 인물, {eun}·{eul}=p2 뒤 조사
+CHAT_TEMPLATES = {
+    "intro": ("{p1}, 처음 보는 것 같은데 자네 소개 좀 해 주시오.", "{p1}, 안녕하시오. 자네는 어떤 사람이오?",
+              "{p1}, 자네 이름이 뭐요?"),
+    "personality": ("{p1}, 자네는 성미가 어떤 사람이오?", "{p1}, 사람들이 자네를 어떻게들 말하오?",
+                    "{p1}, 자네 말투가 참 독특하구려. 원래 그렇게 말하오?"),
+    "impression": ("{p1}, {p2}{eun} 어떤 사람이오?", "{p1}, {p2}{eul} 어떻게 생각하오?",
+                   "{p1}, 요즘 {p2}{eul} 본 적 있소?"),
+    "incident": ("{p1}, 이번 일을 어떻게 생각하오?", "{p1}, 마을에 흉한 일이 생겨 무섭지 않소?",
+                 "{p1}, 범인이 누구일 것 같소?"),
+}
+# 잡담은 E-06-02 사람 작성 예시(지원 밖 의도의 질문형)를 쓴다
+SMALLTALK_QUESTIONS = ("ex1_217", "ex1_224", "ex1_223", "ex1_226")
+APPROVED_CHAT_SENTENCES_SHA256 = None   # 사용자 확인 뒤 `sentences_fingerprint(chat_sentences())` 값을 넣는다
+CHAT_STATUS = "사용자 확인 완료(chat_sentences)"
+CHAT_STATUS_PENDING = "사용자 확인 전(E-11-12 chat_sentences: 새 질문 틀·자기소개 사실 확인 뒤 확정)"
 
 
 def _has_batchim(word: str) -> bool:
@@ -181,11 +219,30 @@ def _history(rng: random.Random, questions: dict, facts: list[dict], name: str, 
     return out
 
 
+def self_facts(bundle: dict, target: dict) -> list[dict]:
+    """말하는 NPC의 자기소개 사실(E-11-12): s1 이름, s2 성향 설명. 행적·장소·시간대는 넣지 않는다(빙의자가 일과 장소를
+    거짓 알리바이로 쓰므로)."""
+    name = target["name_ko"]
+    return [{"fact_id": f"{SELF_FACT_PREFIX}1", "sentence": SELF_NAME_TEMPLATE.format(name=name, iyo=josa(name, "이오/요"))},
+            {"fact_id": f"{SELF_FACT_PREFIX}2", "sentence": SELF_TEMPERAMENT[target["temperament_id"]]}]
+
+
+def chat_sentences() -> list[dict]:
+    """자유 대화 확장에서 새로 쓴 문장 틀(사용자 확인 대상). 시드와 무관하게 늘 같다."""
+    out = [{"field": "self_fact", "key": "s1", "text": SELF_NAME_TEMPLATE}]
+    out += [{"field": "self_fact", "key": f"s2:{k}", "text": v} for k, v in sorted(SELF_TEMPERAMENT.items())]
+    out += [{"field": "question", "key": f"{q}:{i}", "text": t} for q in CHAT_TEMPLATES
+            for i, t in enumerate(CHAT_TEMPLATES[q])]
+    return out
+
+
 def build_items(bundle: dict, questions: dict, seed: int) -> tuple[list[dict], list[dict]]:
-    """(항목 목록, 새로 쓴 문장 목록)."""
+    """(항목 목록, 새로 쓴 문장 목록). E-08-13 항목(75건)을 먼저 같은 난수 순서로 만들고, E-11-12 항목(8턴·자유 대화)은
+    그 뒤에 붙인다. 그래서 기존 항목과 11/8 승인 문장은 바이트 그대로다."""
     rng = random.Random(seed)
     chars = sorted(bundle["characters"], key=lambda c: c["npc_id"])
     items, new_sentences = [], []
+    by_id = questions["_by_id"]
 
     def base(kind: str, qtype: str, turns: int) -> tuple[dict, dict, list[dict], list[str]]:
         target = rng.choice(chars)
@@ -198,25 +255,52 @@ def build_items(bundle: dict, questions: dict, seed: int) -> tuple[list[dict], l
                 "secret_id": world["secret"]["secret_id"] if world["secret"] else None}
         return item, world, facts, forbidden
 
+    def normal(qtype: str, turns: int, k: int) -> None:
+        # 의심 이유는 절반(짝수 번째)을 목격 사실이 있는 판으로 뽑아 답할 수 있는 항목을 만든다(최대 20회)
+        for _ in range(20 if qtype == "suspicion" and k % 2 == 0 else 1):
+            item, world, facts, _ = base("normal", qtype, turns)
+            seen = [f["seen"] for f in facts if f["seen"]]
+            if seen:
+                break
+        want_seen = qtype == "suspicion" and k % 2 == 0
+        use_seen = bool(seen) and (want_seen or rng.random() < 0.6)
+        p2 = rng.choice(seen) if use_seen else rng.choice(world["others"])["name_ko"]
+        ex = rng.choice(questions[qtype])
+        rel = _relevant(qtype, ex, facts, p2)
+        item.update(history=_history(rng, questions, facts, item["npc_name"], turns),
+                    question=fill(ex["text"], item["npc_name"], p2),
+                    question_source=f"E-06-02:{ex['example_id']}", relevant_fact_ids=rel,
+                    answerable=bool(rel))
+        items.append(item)
+
+    def chat(qtype: str, turns: int, k: int) -> None:
+        # 남 이야기는 짝수 번째를 목격 사실이 있는 판으로 뽑아 답할 수 있는 항목을 만든다(최대 20회)
+        for _ in range(20 if qtype == "impression" and k % 2 == 0 else 1):
+            item, world, facts, _ = base("chat", qtype, turns)
+            seen = [f["seen"] for f in facts if f["seen"]]
+            if seen:
+                break
+        target = next(c for c in chars if c["npc_id"] == item["npc_id"])
+        own = self_facts(bundle, target)
+        item["facts"] = own + item["facts"]   # 자기소개 사실이 앞: 폴백 동률이면 이름 소개가 나온다
+        p2 = rng.choice(seen) if seen and k % 2 == 0 else rng.choice(world["others"])["name_ko"]
+        history = _history(rng, questions, facts, item["npc_name"], turns)
+        if qtype == "smalltalk":
+            ex = by_id[SMALLTALK_QUESTIONS[rng.randrange(len(SMALLTALK_QUESTIONS))]]
+            q, source = fill(ex["text"], item["npc_name"], p2), f"E-06-02:{ex['example_id']}"
+        else:
+            t = CHAT_TEMPLATES[qtype][rng.randrange(len(CHAT_TEMPLATES[qtype]))]
+            q = t.format(p1=item["npc_name"], p2=p2, eun=josa(p2, "은/는"), eul=josa(p2, "을/를"))
+            source = "new"
+        rel = {"intro": [f["fact_id"] for f in own], "personality": [own[1]["fact_id"]],
+               "impression": [f["fact_id"] for f in facts if f["seen"] == p2]}.get(qtype, [])
+        item.update(history=history, question=q, question_source=source, relevant_fact_ids=rel, answerable=bool(rel))
+        items.append(item)
+
     for qtype in QTYPES:
         for turns in TURNS:
             for k in range(PER_CELL):
-                # 의심 이유는 절반(짝수 번째)을 목격 사실이 있는 판으로 뽑아 답할 수 있는 항목을 만든다(최대 20회)
-                for _ in range(20 if qtype == "suspicion" and k % 2 == 0 else 1):
-                    item, world, facts, _ = base("normal", qtype, turns)
-                    seen = [f["seen"] for f in facts if f["seen"]]
-                    if seen:
-                        break
-                want_seen = qtype == "suspicion" and k % 2 == 0
-                use_seen = bool(seen) and (want_seen or rng.random() < 0.6)
-                p2 = rng.choice(seen) if use_seen else rng.choice(world["others"])["name_ko"]
-                ex = rng.choice(questions[qtype])
-                rel = _relevant(qtype, ex, facts, p2)
-                item.update(history=_history(rng, questions, facts, item["npc_name"], turns),
-                            question=fill(ex["text"], item["npc_name"], p2),
-                            question_source=f"E-06-02:{ex['example_id']}", relevant_fact_ids=rel,
-                            answerable=bool(rel))
-                items.append(item)
+                normal(qtype, turns, k)
     for i in range(6):
         item, world, facts, _ = base("false_premise", "whereabouts" if i % 3 != 1 else "suspicion", 0)
         slot = rng.choice(sorted(SLOT_KO))
@@ -232,7 +316,6 @@ def build_items(bundle: dict, questions: dict, seed: int) -> tuple[list[dict], l
         item.update(history=[], question=q, question_source="new", relevant_fact_ids=rel, answerable=bool(rel))
         items.append(item)
         new_sentences.append({"item_id": item["item_id"], "field": "question", "text": q})
-    by_id = questions["_by_id"]
     for i in range(6):
         item, world, facts, _ = base("wrong_history", "contradiction", 2)
         f = rng.choice([x for x in facts if "에 있었소." in x["sentence"]])
@@ -246,6 +329,14 @@ def build_items(bundle: dict, questions: dict, seed: int) -> tuple[list[dict], l
                     question_source=f"E-06-02:{ex['example_id']}", relevant_fact_ids=[f["fact_id"]], answerable=True)
         items.append(item)
         new_sentences.append({"item_id": item["item_id"], "field": "history[0].answer", "text": wrong})
+    # E-11-12: 여기부터 새 항목. 위쪽 난수 소비 순서를 바꾸지 않는다
+    for qtype in QTYPES:
+        for k in range(LONG_PER_QTYPE):
+            normal(qtype, LONG_TURNS, k)
+    for qtype in CHAT_QTYPES:
+        for turns in CHAT_TURNS:
+            for k in range(CHAT_PER_CELL):
+                chat(qtype, turns, k)
     return items, new_sentences
 
 
@@ -260,12 +351,21 @@ def status_for(new_sentences: list[dict]) -> str:
     return STATUS if sentences_fingerprint(new_sentences) == APPROVED_NEW_SENTENCES_SHA256 else STATUS_PENDING
 
 
+def chat_status_for(sentences: list[dict]) -> str:
+    """E-11-12 새 문장 틀이 승인본 지문과 같으면 확인 완료, 아니면(승인 전 포함) 확인 전."""
+    ok = APPROVED_CHAT_SENTENCES_SHA256 is not None and sentences_fingerprint(sentences) == APPROVED_CHAT_SENTENCES_SHA256
+    return CHAT_STATUS if ok else CHAT_STATUS_PENDING
+
+
 def build_eval(bundle: dict, questions: dict, seed: int) -> dict:
     """평가 세트 전체(dict). 생성 시각은 넣지 않는다."""
     items, new_sentences = build_items(bundle, questions, seed)
-    return {"eval_version": EVAL_VERSION, "status": status_for(new_sentences), "seed": seed, "content_version": bundle["content_version"],
+    chat = chat_sentences()
+    return {"eval_version": EVAL_VERSION, "status": status_for(new_sentences), "chat_status": chat_status_for(chat),
+            "seed": seed, "content_version": bundle["content_version"],
             "bundle": "fixtures/content_min/bundle.json", "intent_examples": "content/intent/examples_v1.jsonl",
-            "lexicon": lexicon_from_bundle(bundle).to_json(), "items": items, "new_sentences": new_sentences}
+            "lexicon": lexicon_from_bundle(bundle).to_json(), "items": items, "new_sentences": new_sentences,
+            "chat_sentences": chat}
 
 
 def main(argv: list[str] | None = None) -> int:

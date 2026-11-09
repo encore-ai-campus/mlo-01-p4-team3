@@ -8,6 +8,9 @@ OpenAI 호환 `/v1/chat/completions`를 스트리밍(`stream: true`, SSE)으로 
 실패·시간 초과·스트리밍 중 끊김은 완료 시각을 무한대로, 그때까지 첫 표시가 없었으면 첫 표시도 무한대로 넣어 p50·p95를
 계산한다. 모델 첫 토큰 시각(검사 전)은 참고로 남긴다.
 
+질문은 평가 세트 전체에서 고르게 뽑는다. E-11-12 평가 세트(free-answer-eval-2)는 121건 중 46건이 8턴·자유 대화 항목이라
+(자기소개·성미·남 이야기·사건 생각·잡담) 부하에도 그만큼 섞인다. 결과 JSON `qtype_mix`에 유형별 요청·폴백 수를 남긴다.
+
     python -m llm.bench.free_answer_load --base-url http://<사설망 주소>:8000 --model <서버 모델 이름> \
         --sessions 30 --think 5 15 --warmup 120 --duration 600 --seed 1 --label s2_normal \
         --server-version <버전> --image <이미지 태그> --revision <모델 리비전> --options "<실행 옵션>"
@@ -102,6 +105,16 @@ def summarize(records: list[Record], wall_s: float) -> dict:
         "regen_rate": count("regen_ok", "regen_partial", "fallback") / n if n else None,
         "throughput_rps": n / wall_s if wall_s > 0 else None,
     }
+
+
+def qtype_mix(records: list[Record], qtypes: dict[str, str]) -> dict:
+    """질문 유형별 요청 수와 폴백 수(E-11-12: 자유 대화 유형이 섞였는지 확인). qtypes = item_id → 유형."""
+    out: dict[str, dict] = {}
+    for r in records:
+        d = out.setdefault(qtypes.get(r.item_id, "?"), {"n": 0, "fallback": 0})
+        d["n"] += 1
+        d["fallback"] += r.outcome == "fallback"
+    return dict(sorted(out.items()))
 
 
 def _num(x: float) -> float | None:
@@ -316,8 +329,13 @@ def load_items(path: Path) -> tuple[list[tuple[str, FreeQuestion]], Lexicon, dic
     """평가 세트 JSON → ((item_id, 질문) 목록, 어휘, 원본 머리 정보)."""
     data = json.loads(path.read_text(encoding="utf-8"))
     items = [(it["item_id"], FreeQuestion.from_json(it)) for it in data["items"]]
-    head = {k: data.get(k) for k in ("eval_version", "status", "seed", "content_version")}
+    head = {k: data.get(k) for k in ("eval_version", "status", "chat_status", "seed", "content_version")}
     return items, Lexicon.from_json(data["lexicon"]), head
+
+
+def item_qtypes(path: Path) -> dict[str, str]:
+    """평가 세트 JSON의 item_id → 질문 유형."""
+    return {it["item_id"]: it["qtype"] for it in json.loads(path.read_text(encoding="utf-8"))["items"]}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -343,7 +361,8 @@ def main(argv: list[str] | None = None) -> int:
     out = {"label": a.label, "prompt_version": PROMPT_VERSION, "eval": head, "config": asdict(cfg),
            "versions": {"model": a.model, "server_version": a.server_version, "image": a.image,
                         "revision": a.revision, "options": a.options, "gpu": a.gpu},
-           "summary": summarize(records, wall), "in_flight": samples,
+           "summary": summarize(records, wall), "qtype_mix": qtype_mix(records, item_qtypes(Path(a.eval))),
+           "in_flight": samples,
            "records": [_record_json(r) for r in records]}
     out_dir = Path(a.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

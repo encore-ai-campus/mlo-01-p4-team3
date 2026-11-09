@@ -77,6 +77,55 @@ LIMIT_REJECT_CASES = [
 ]
 
 
+# E-11-12 자유 대화: 자기소개 사실(s1 이름, s2 성향)이 붙은 항목. 사건 사실은 ITEM과 같다
+CHAT_ITEM = FreeQuestion(
+    npc_name="훈장", persona=ITEM.persona,
+    facts=(Fact("s1", "나는 훈장이오."), Fact("s2", "나는 무슨 일이든 따져 보고 말하는 편이오."), *ITEM.facts),
+    question="훈장, 안녕하시오. 자네는 어떤 사람이오?", history=(), forbidden_facts=ITEM.forbidden_facts,
+)
+CHAT_PASS_CASES = [
+    ("근거: s1,s2\n허허, 나는 훈장이오. 무슨 일이든 따져 보고 말하는 편이오.", "자기소개(이름·성향)"),
+    ("근거: s2\n무슨 일이든 따져 보고 말하는 편이라오.", "성향만, 인물·장소·시간 없음"),
+    ("근거: s1\n훈장이라 하오.", "이름만"),
+    ("근거: 없음\n허허, 나도 잘 모르겠소.", "잡담·사건 질문에 모름"),
+]
+CHAT_REJECT_CASES = [
+    ("근거: s1\n나는 훈장이오. 대장장이와 친하오.", UNGROUNDED, "자기소개 사실만 인용하고 다른 인물"),
+    ("근거: s1,s2\n나는 훈장이오. 밤마다 서낭당에 가오.", UNGROUNDED, "인용 사실 없이 행적·장소 언급"),
+    ("근거: s2\n한밤엔 집에 있었소.", UNGROUNDED, "자기소개 사실로 행적 주장(시간·장소)"),
+    ("근거: s1\n나는 훈장이오. 사실 나는 창귀요.", LEAK, "역할어"),
+    ("근거: s1\n나는 훈장이오. 서낭당 뒤 투전판에 자주 가오.", LEAK, "비공개 사실 내용어"),
+    ("근거: s1\n나는 훈장이오. 피해자는 독살됐소.", UNGROUNDED, "사건 단정 어휘"),
+]
+
+
+class SelfFactTest(unittest.TestCase):
+    """E-11-12: 자기소개 사실을 인용한 답은 본인 이야기만 할 때 통과, 행적·남 이야기·역할어·비밀은 그대로 거부."""
+
+    def test_pass(self):
+        for raw, why in CHAT_PASS_CASES:
+            with self.subTest(why=why):
+                r = check_answer(raw, CHAT_ITEM, LEX)
+                self.assertTrue(r.ok, f"{why}: {r.details}")
+
+    def test_reject(self):
+        for raw, reason, why in CHAT_REJECT_CASES:
+            with self.subTest(why=why):
+                r = check_answer(raw, CHAT_ITEM, LEX)
+                self.assertFalse(r.ok, why)
+                self.assertIn(reason, r.reasons, f"{why}: {r.details}")
+
+    def test_relaxation_needs_self_fact(self):
+        # 사건 사실만 인용하면 인물·장소·시간 없는 문장은 여전히 거부(E-08-13 규칙 그대로)
+        r = check_answer("근거: f3\n무슨 일이든 따져 보고 말하는 편이오.", CHAT_ITEM, LEX)
+        self.assertIn(UNGROUNDED, r.reasons)
+
+    def test_prompt_mentions_self_facts(self):
+        system = build_messages(CHAT_ITEM)[0]["content"]
+        self.assertIn("s1: 나는 훈장이오.", system)
+        self.assertIn("자기소개", system)
+
+
 class TableTest(unittest.TestCase):
     def test_pass_cases(self):
         for raw, why in PASS_CASES:
@@ -252,10 +301,42 @@ class EvalSetTest(unittest.TestCase):
         normal = [i for i in items if i["kind"] == "normal"]
         self.assertGreaterEqual(len(normal), 60)
         self.assertEqual({(i["qtype"], i["turns"]) for i in normal},
-                         {(q, t) for q in ("whereabouts", "contradiction", "suspicion") for t in (0, 2, 4)})
+                         {(q, t) for q in ("whereabouts", "contradiction", "suspicion") for t in (0, 2, 4, 8)})
         kinds = [i["kind"] for i in items]
         self.assertEqual((kinds.count("false_premise"), kinds.count("wrong_history")), (6, 6))
         self.assertEqual(len(self.data["new_sentences"]), 12)
+        chat = [i for i in items if i["kind"] == "chat"]
+        self.assertEqual(len(chat), 40)
+        self.assertEqual({(i["qtype"], i["turns"]) for i in chat},
+                         {(q, t) for q in ("intro", "personality", "impression", "incident", "smalltalk")
+                          for t in (0, 2, 4, 8)})
+
+    def test_e0813_items_unchanged(self):
+        # E-11-12 항목은 뒤에 붙인다: 앞 75건은 E-08-13 승인 때와 같다(fa_075가 마지막 wrong_history)
+        items = self.data["items"]
+        self.assertEqual([i["kind"] for i in items[69:75]], ["wrong_history"] * 6)
+        self.assertTrue(all(i["turns"] in (0, 2, 4) and i["kind"] != "chat" for i in items[:75]))
+
+    def test_chat_items(self):
+        for it in (i for i in self.data["items"] if i["kind"] == "chat"):
+            ids = [f["fact_id"] for f in it["facts"]]
+            self.assertEqual(ids[:2], ["s1", "s2"], it["item_id"])
+            self.assertTrue(it["facts"][0]["sentence"].startswith(f"나는 {it['npc_name']}"), it["item_id"])
+            # 자기소개 사실에 일과·장소·시간대가 없다(빙의자 알리바이와 섞이지 않게)
+            self.assertFalse(any("밤" in f["sentence"] or "에 있었" in f["sentence"] for f in it["facts"][:2]))
+            expect = {"intro": ["s1", "s2"], "personality": ["s2"], "incident": [], "smalltalk": []}
+            if it["qtype"] in expect:
+                self.assertEqual(it["relevant_fact_ids"], expect[it["qtype"]], it["item_id"])
+            else:
+                self.assertTrue(all(i.startswith("f") for i in it["relevant_fact_ids"]), it["item_id"])
+
+    def test_chat_sentences_pending(self):
+        from llm import free_answer_eval as fe
+        self.assertIn("사용자 확인 전", self.data["chat_status"])
+        self.assertEqual(self.data["chat_sentences"], fe.chat_sentences())
+        texts = [s["text"] for s in self.data["chat_sentences"]]
+        self.assertEqual(len(texts), 1 + 4 + 12)
+        self.assertEqual(len(set(texts)), len(texts))
 
     def test_item_fields(self):
         for it in self.data["items"]:
@@ -264,6 +345,7 @@ class EvalSetTest(unittest.TestCase):
             self.assertEqual(it["answerable"], bool(it["relevant_fact_ids"]))
             self.assertEqual(len(it["history"]), it["turns"] // 2)
             self.assertTrue(it["question_source"] == "new" or it["question_source"].startswith("E-06-02:"))
+            self.assertIn(it["kind"], ("normal", "false_premise", "wrong_history", "chat"))
             self.assertNotIn("<P", it["question"])
 
     def test_facts_and_fallback_pass_checks(self):
