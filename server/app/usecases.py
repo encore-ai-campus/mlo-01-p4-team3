@@ -122,7 +122,7 @@ class GameService:
         if state.result is None:
             raise ReviewNotReady
         game_id = state.meta.game_id
-        self._progress_guard(sweep_game, player_pseudonym, state, self.dependencies(state.meta).content)
+        self._sweep_saved(player_pseudonym, state)
         progress = self.progress.load(player_pseudonym)
         # 행동 시점 이유는 review_trace 인수 전까지 비워 둔다. 현재 믿음에서 추론하지 않는다.
         timeline = [ReviewItem(speech.speech_id, speech.speaker, [], list(speech.evidence))
@@ -201,12 +201,17 @@ class GameService:
         except Exception:  # noqa: BLE001 - 진척 장애가 게임 진행을 막지 않게 한다
             LOGGER.exception("progress apply failed; will retry on game end, command retry, review or outbox replay")
 
+    def _sweep_saved(self, player_pseudonym, state):
+        """저장된 판으로 진척을 따라잡는다. 콘텐츠 조회 실패도 가드 안에서 처리해 재요청·복기를 막지 않는다."""
+        self._progress_guard(lambda repo, player: sweep_game(repo, player, state, self.dependencies(state.meta).content),
+                             player_pseudonym)
+
     def replay_command(self, game_id, saved, player_pseudonym):
         """명령·카드 경로 공통: 소유권 확인 뒤 후속 처리를 복구하고 저장 응답을 반환한다."""
         state, _ = self.owned(game_id, player_pseudonym)
         if state.public.confessions:
             # 저장 뒤 진척 반영 전에 끊긴 요청을 같은 명령 ID로 다시 보내면 여기서 따라잡는다.
-            self._progress_guard(sweep_game, player_pseudonym, state, self.dependencies(state.meta).content)
+            self._sweep_saved(player_pseudonym, state)
         if self.interactions is not None:
             self.interactions.complete_command_effects(game_id, saved, player_pseudonym)
         return self._replay(saved)

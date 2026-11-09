@@ -317,6 +317,26 @@ class FailureRecovery(unittest.TestCase):
         self.assertEqual(review.clues_gained, ["clue_debt", "clue_famine"])
 
 
+class RecoveryNeverBlocks(unittest.TestCase):
+    def test_content_lookup_failure_does_not_block_replay_or_review(self):
+        """따라잡기 중 콘텐츠 조회가 실패해도 같은 명령 재요청·복기는 저장된 결과를 돌려준다."""
+        service = make_service([SEED_TWO_CLUES])
+        gid = play(service, SEED_TWO_CLUES)
+        good = service.dependencies
+
+        def broken(meta):
+            raise KeyError("content version unavailable")
+        service.dependencies = broken
+        with self.assertLogs("paldo.progress", "ERROR"):
+            review = service.review(gid, PLAYER)
+        self.assertEqual(review.clues_gained, ["clue_debt", "clue_famine"])
+        saved = next(iter(service.repository.docs[gid]["commands"].values()))
+        with self.assertLogs("paldo.progress", "ERROR"):
+            out = service.replay_command(gid, saved, PLAYER)
+        self.assertTrue(out.replayed)
+        service.dependencies = good
+
+
 # ---------------------------------------------------------------- 선택형 도전(프리셋 옵션)
 def new_state(preset_id, seed):
     engine = PaldoEngine(RuleV0Policy(CONTENT))
