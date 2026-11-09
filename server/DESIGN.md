@@ -18,7 +18,7 @@ asset_attribution은 SOURCES.md 첫 공개 출처 줄만 HTML 이스케이프해
 
 ## B-09-06 VN 표시 경계
 
-[VN 규칙](../docs/contracts/vn.md)은 E 검토 대기인 후속 화면 설계다. PlayerView·명령·이벤트·저장소를 변경하지 않는다. 읽기 상태는 브라우저에만 두고, 추궁 답변은 기존 render 폴링의 game_id·speech_id·job_id·final 처리를 유지한다. 실제 연결·회귀는 B-10-07에서 수행하며 문서 작성만으로 구현 완료를 주장하지 않는다.
+[VN 규칙](../docs/contracts/vn.md)은 PR #304에서 확정됐다. B-10-07 부분 인계는 PlayerView·명령·이벤트·저장소를 변경하지 않는다. 읽기 상태는 브라우저에만 두고, 추궁 답변은 기존 render 폴링의 game_id·speech_id·job_id·final 처리를 유지한다. 화면 연결·읽기 회귀는 검증했으며 첫 등장·추방/처형·엔딩 전신과 표정은 E 후속 구현으로 남는다.
 
 ## B-08-02 공개 프리셋과 화면 검증
 

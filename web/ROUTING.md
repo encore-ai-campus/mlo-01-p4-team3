@@ -8,7 +8,7 @@ B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py �
 
 B-10-02: 기존 게임 전체/htmx 응답의 meeting.html → village_assets.html(고정 지도·전체 초상 펼치기)·asset_credits.html(하단 출처). 좌표·URL은 manifest, 출처는 SOURCES.md에서 읽는다. 펼치기는 HTML details로 처리하며 서버 명령을 보내지 않는다. 새 URL·API는 없다.
 
-B-09-06의 [VN 규칙](../docs/contracts/vn.md)은 기존 회의·밤 경로의 후속 표시 설계다. 새 URL·명령·서버 읽기 저장 경로를 추가하지 않는다. 실제 화면 연결은 B-10-07에서 진행하며 현재는 E 검토 대기다.
+B-09-06의 [VN 규칙](../docs/contracts/vn.md)은 PR #304에서 확정됐다. B-10-07 부분 인계에서 기존 회의·밤 경로에 화면을 연결했고 새 명령·서버 읽기 저장 경로는 추가하지 않았다. 첫 등장·추방/처형·엔딩 전신과 표정은 E 후속 구현으로 남는다.
 
 판 시작의 저장 후 재조회는 유지하고 같은 요청의 같은 버전 콘텐츠만 재사용한다. 시험 경로는 `asgi_bench.py` → `asgi_bench_app.py` → 시험 전용 `asgi_bench_metrics.py`·`asgi_bench_settings.py`이며 숫자 헤더로 요청별 시간만 연결한다. 운영 URL·DTO·화면 흐름·계약 조건은 유지한다.
 
