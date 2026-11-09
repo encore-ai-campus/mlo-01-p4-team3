@@ -69,6 +69,14 @@ class Select(unittest.TestCase):
                                    "tests/sim/test_uses_fake.py": "from tests.contract.fakes import Fake\n"})
         self.assertEqual(select_test_dirs(["tests/contract/fakes.py"], sources, DIRS)[0], ["contract", "sim"])
 
+    def test_server_tests_folder_is_test_code(self):
+        sources = dict(SOURCES, **{"server/tests/__init__.py": "", "server/tests/test_views.py": "X = 1\n",
+                                   "server/tests/stack.py": "",
+                                   "tests/tools/test_stack.py": "P = 'server/tests/stack.py'\n"})
+        self.assertEqual(select_test_dirs(["server/tests/test_views.py"], sources, DIRS), ([], "없음"))
+        self.assertEqual(select_test_dirs(["server/tests/test_game_js.cjs"], sources, DIRS), ([], "없음"))
+        self.assertEqual(select_test_dirs(["server/tests/stack.py"], sources, DIRS)[0], ["tools"])
+
     def test_each_changed_module_needs_its_own_tests(self):
         dirs, why = self.pick(["engine/domain/model.py", "tools/lonely.py"])
         self.assertIsNone(dirs)

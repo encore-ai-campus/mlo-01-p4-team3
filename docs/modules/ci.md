@@ -10,7 +10,7 @@
 |---|---|---|
 | `.githooks/pre-push` | 표현(진입점) | `git push` 때 푸시하는 커밋마다 `precheck`를 부르고 실패하면 푸시를 멈춘다(태그·브랜치 삭제 푸시 제외). 먼저 `precheck --check-pass <SHA>`로 통과 기록을 보고, 같은 비교 기준으로 이미 통과한 커밋이면 생략. 그 커밋이 HEAD가 아니거나 작업 트리에 변경이 있으면 임시 worktree에서 검사. precheck를 부를 때만 git이 훅에 넘긴 저장소 지정 변수(`GIT_DIR` 등, `git rev-parse --local-env-vars`)를 지운다 |
 | `tools/precheck.py` | 도메인(`summarize`·`may_record`·`skip_decision` 등) + 인프라(`SubprocessRunner`·`PassStore`) + 응용(`run_precheck`·`record_pass`·`check_pass`·`quick_plan`) + 표현(`main`) | 아래 검사 도구를 순서대로 부르고 한 줄 요약. 깨끗한 트리에서 전체 통과하면 통과 기록을 남기고, `--check-pass`로 훅에 생략 여부를 알려 준다. `--quick`은 바뀐 파일과 이어진 테스트 폴더만 돌리고 기록을 남기지 않는다. PR 본문은 환경 변수로만 `check_evidence`에 넘긴다. 하위 명령 환경에서 저장소 지정 git 변수를 뺀다(`clean_env`) |
-| `tools/precheck_scope.py` | 도메인 | 빠른 검사 대상 고르기: `.py`는 저장소 import 관계(`-m` 모듈 이름·`.py` 경로 문자열 포함)를 거슬러 쓰는 테스트 폴더, `.md`·`docs/` 아래 파일은 문서를 읽는 테스트 폴더, `web/` 화면 파일은 화면 파일을 읽는 테스트 폴더, 공용·그 밖의 비 `.py`·쓰는 테스트 없음은 전체 |
+| `tools/precheck_scope.py` | 도메인 | 빠른 검사 대상 고르기: `.py`는 저장소 import 관계(`-m` 모듈 이름·`.py` 경로 문자열 포함)를 거슬러 쓰는 테스트 폴더, `.md`·`docs/` 아래 파일은 문서를 읽는 테스트 폴더, `web/` 화면 파일은 화면 파일을 읽는 테스트 폴더, `server/tests/`(precheck 밖 Django·JS 테스트)는 그것을 쓰거나 적은 테스트 폴더만(없으면 테스트 없음), 공용·그 밖의 비 `.py`·쓰는 테스트 없음은 전체 |
 | `tools/check_evidence.py` | 도메인 규칙 + 응용 + 표현(`main`) | 증빙 형식(`--format`), 완료 검사(`--complete`, 4절 규칙 1~6), PR 본문 문법(11절) |
 | `tools/check_docs.py` | 도메인 규칙 + 응용 + 표현(`main`) | 문서화 검사(10절 규칙 1~6) |
 | `tools/check_secrets.py` | 도메인 규칙 + 응용 + 표현(`main`) | 비밀정보 검사(E-05-02 조건 5), 예외 `tools/secrets_allowlist.txt` |

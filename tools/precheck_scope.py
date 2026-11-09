@@ -7,6 +7,8 @@
 - `.md`와 `docs/` 아래 변경(증빙 수치 JSON 포함): 문서를 읽는 테스트 파일(본문에 `docs`·`README`가 있는 것)의 폴더를 고른다.
 - `web/` 아래 비 `.py` 변경(템플릿·정적 파일): 화면 파일을 읽는 테스트 파일(본문에 `web/`·`templates`·`"web"`이 있는 것)의 폴더.
   Django 렌더링 테스트(`server/tests`)는 전체 검사에도 없다.
+- `server/tests/` 아래 변경(precheck가 돌리지 않는 Django·JS 테스트): `.py`는 가져다 쓰는 테스트 폴더, 그 밖의 파일은
+  경로나 파일 이름을 적은 테스트 폴더만 고르고, 없으면 테스트를 돌리지 않는다(테스트 코드라 쓰는 곳이 없는 것이 정상).
 - `tests/<폴더>/` 아래 변경: 그 폴더.
 - 전체 테스트로 도는 경우(덜 줄이는 쪽): 공용 파일(`QUICK_FULL_PATHS`), 저장소 루트 파일(`README.md` 제외),
   테스트 루트·`tests/fixtures`, 그 밖의 비 `.py` 파일(콘텐츠·설정·데이터), 쓰는 테스트를 하나도 못 찾은 `.py` 변경.
@@ -27,6 +29,7 @@ QUICK_FULL_PATHS = (
 _MODULE_STR_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+$")
 _DOC_HINTS = ("docs", "README")
 _WEB_HINTS = ("web/", "templates", '"web"')
+SERVER_TESTS = "server/tests/"  # precheck가 돌리지 않는 Django·JS 테스트 폴더
 
 
 def module_name(path: str) -> str | None:
@@ -110,6 +113,12 @@ def select_test_dirs(changed: list[str], sources: dict[str, str],
             picked.add(d)
             if module_name(path):
                 test_mods.add(module_name(path))
+            continue
+        if path.startswith(SERVER_TESTS):
+            if module_name(path):
+                test_mods.add(module_name(path))
+            else:
+                hints.add((path, path.rsplit("/", 1)[-1]))
             continue
         if path.endswith(".md") or path.startswith("docs/"):
             hints.add(_DOC_HINTS)
