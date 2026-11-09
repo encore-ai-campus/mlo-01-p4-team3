@@ -1,5 +1,6 @@
 """B 게임 응용 흐름. Django와 저장소 구현을 모르며 주입한 포트만 호출한다."""
 import json
+import logging
 import uuid
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -8,7 +9,11 @@ from engine.domain.events import EventEnvelope, topic_of
 from engine.domain.model import CONTRACT_VERSION, CommandEnvelope, DataSource, RejectCode
 from engine.domain.serde import dumps, from_jsonable
 from engine.ports import StoredCommand, VersionConflict
+from engine.domain.progress import ending_available
 from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewOutput
+from .progress import apply_progress
+
+LOGGER = logging.getLogger("paldo.progress")
 
 
 class ResourceNotFound(Exception):
@@ -75,7 +80,7 @@ class GameService:
             raise ConsentRequired
         if data.player_pseudonym != player_pseudonym or data.mudang_variant not in ("f", "m"):
             raise ValueError("invalid_start")
-        if data.ending_choice not in self.progress.load(player_pseudonym).endings_unlocked:
+        if not ending_available(self.progress.load(player_pseudonym), data.ending_choice):
             raise ValueError("ending_locked")
         if self.prepare_start is None:
             raise StartUnavailable
@@ -177,9 +182,18 @@ class GameService:
                 return self.replay_command(data.game_id, saved, player_pseudonym)
             # 저장 성공 후 확인 응답만 유실된 경우에도 아래 후속 처리를 마친다.
             output = replay
+        self._apply_progress(player_pseudonym, args[4], deps)
         if self.interactions is not None:
             self.interactions.complete_command_effects(data.game_id, args[-1], player_pseudonym)
         return output
+
+    def _apply_progress(self, player_pseudonym, events, deps):
+        """저장된 전이의 고백 단서·결말 해금을 진척에 반영한다(E-09-08). 판 상태는 이미 저장됐으므로
+        진척 저장 실패는 명령 응답을 바꾸지 않고 기록만 남긴다. 복구는 아웃박스 재처리(C-09-04)로 한다."""
+        try:
+            apply_progress(self.progress, player_pseudonym, events, deps.content.grudge_clues)
+        except Exception:  # noqa: BLE001 - 진척 장애가 게임 진행을 막지 않게 한다
+            LOGGER.exception("progress apply failed; replay outbox to recover")
 
     def replay_command(self, game_id, saved, player_pseudonym):
         """명령·카드 경로 공통: 소유권 확인 뒤 후속 처리를 복구하고 저장 응답을 반환한다."""

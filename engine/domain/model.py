@@ -160,10 +160,18 @@ class Preset:
     n_possessed: int     # K
     n_secret: int        # 비밀 있는 주민 수(고정)
     status: str = "candidate"   # candidate | validated | test_default
+    # 선택형 도전 옵션(E-09-08, 기획서 "선택형 도전"). 기본값이면 일반 프리셋과 규칙·난수 소비가 같다.
+    challenge: Optional[str] = None          # None | "divination_once" | "secret3" | "fewer_sightings"
+    divination_limit: Optional[int] = None   # 판 전체에서 결과를 받는 점 횟수. None = 밤마다
+    witness_scale: float = 1.0               # 목격 확률 배율(WITNESS_PROB × 배율). 1.0 = 일반
 
     def __post_init__(self) -> None:
         if self.n_active < 5:
             raise ValueError("n_active는 5 이상")
+        if self.divination_limit is not None and self.divination_limit < 0:
+            raise ValueError("divination_limit은 0 이상")
+        if not 0.0 <= self.witness_scale <= 1.0:
+            raise ValueError("witness_scale은 0~1")
         if self.n_possessed not in (1, 2):
             raise ValueError("n_possessed는 1 또는 2")
         if self.n_possessed == 2 and self.n_active not in (9, 11):
@@ -187,8 +195,13 @@ PRESETS: dict[str, Preset] = {
         Preset("large8", 8, 1, 3),
         Preset("duo9", 9, 2, 3),
         Preset("duo11", 11, 2, 4),
+        # 선택형 도전 3종(E-09-08): 기본 6인을 바탕으로 한 가지씩만 바꾼다. 공개 여부는 P-08(11/8) 기준.
+        Preset("base6_div1", 6, 1, 2, challenge="divination_once", divination_limit=1),
+        Preset("base6_secret3", 6, 1, 3, challenge="secret3"),
+        Preset("base6_sight", 6, 1, 2, challenge="fewer_sightings", witness_scale=0.5),
     )
 }
+CHALLENGE_PRESET_IDS: tuple[str, ...] = tuple(pid for pid, p in PRESETS.items() if p.challenge)
 
 
 # ---------------------------------------------------------------- 공개 기록(②)

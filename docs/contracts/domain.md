@@ -11,6 +11,13 @@
 ## 2. 프리셋
 `PRESETS`가 기준이다. 6가지 프리셋(short5, base6, base7, large8, duo9, duo11)이 있다. 첫 사용자 테스트는 `base6`으로 한다. 등장 주민 수는 `n_active`와 같다(활동 인원 − 무당 + 0일째 실종자 1명).
 
+선택형 도전 3종(E-09-08)도 `PRESETS`의 프리셋으로 둔다. 모두 `base6`에서 한 가지만 바꾼다(`Preset.challenge`).
+- `base6_div1` 점 1회 제한(`divination_limit=1`): 판 전체에서 점 결과는 한 번만 받는다. 횟수를 다 쓴 밤에도 밤 명령은 `divine`이고, 밤만 처리하고 결과·`divination_done` 이벤트는 없다(`divination_available`). 단계별 합법 명령은 그대로다.
+- `base6_secret3` 비밀 있는 주민 3명(`n_secret=3`).
+- `base6_sight` 목격 정보 축소(`witness_scale=0.5`): 목격 확률이 `WITNESS_PROB × 0.5`다. 쌍마다 난수를 한 번 뽑는 순서는 같아서 배율 1.0인 일반 프리셋의 판은 바뀌지 않는다.
+
+공개 여부는 P-08(11/8) 기준이고 측정은 `tools/perf/challenge_balance.py`(증빙 E-09-08). 웹에 여는 것은 `server/app/presets_enabled.json`에 ID를 넣을 때다.
+
 ## 3. 단계별 합법 명령 (`PHASE_RULES`)
 
 | 단계 | 플레이어 | NPC | 다음 단계 |
@@ -105,6 +112,9 @@
 - 같은 `hypothesis_id`의 단서 세 부분(identity, death, target)이 모두 모이면 `endings_unlocked`에 `"haewon:<hypothesis_id>"`를 추가한다. 서로 다른 가설의 부분은 합치지 않는다. `"exorcism"`은 처음부터 열려 있다(기본값).
 - 결말은 판 시작 때 고른다(`StartGameInput.ending_choice` → `GameMeta.ending_choice`). 열리지 않은 결말을 고르면 400을 반환한다. 결말은 승패에 영향이 없고, 종료 연출과 복기 해설만 바뀐다.
 - 저장은 `ProgressRepository`의 원자 연산(`add_clue`, `unlock_ending`)으로 한다. 원천 이벤트 ID로 멱등성을 보장한다. 진척 저장 전에 장애가 나면 아웃박스의 `confession`과 `game_ended` 이벤트를 재처리해 복구한다.
+- 규칙은 `engine/domain/progress.py`, 반영 순서는 `server/app/progress.py` `apply_progress`(E-09-08)다. 게임 서비스는 명령 저장 직후 같은 함수로 반영하고, 진척 저장이 실패해도 명령 응답은 바꾸지 않는다(복구는 재처리). 재처리 도구(C-09-04)도 같은 함수를 쓴다.
+  - 멱등 키: 고백 단서는 `<game_id>:confess:<npc_id>`(판마다 NPC 고백은 한 번), 결말 해금은 `unlock:<ending>`. 저장소가 매기는 이벤트 ID는 저장 뒤에야 정해지므로, 실시간 반영과 재처리가 같은 키를 쓰도록 이벤트 내용으로 만든다.
+  - 해금 확인은 단서를 새로 얻지 않은 호출에서도 한다. 단서 저장 뒤 해금 전에 멈춘 경우도 재처리로 열린다.
 - 프리셋별 최소 콘텐츠는 `required_counts(preset)`로 정한다. 주민 풀은 `n_active` 이상이어야 한다. 비밀은 `n_secret` 이상이어야 하며, 배정 검증기를 통과하는 조합이 있어야 한다.
 - 콘텐츠 버전: 판은 시작할 때 `content_version`을 고정한다(`GameMeta`). 진행 중인 판은 끝날 때까지 그 버전으로 진행한다. 따라서 `ContentSource`는 진행 중인 판이 쓰는 이전 버전을 계속 제공해야 한다. 판 밖 상태는 `clue_id`로 쌓이므로, 단서 ID는 버전이 바뀌어도 유지한다(삭제 금지, 폐기 표시만 허용).
 

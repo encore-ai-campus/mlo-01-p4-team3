@@ -133,6 +133,25 @@ class MongoContractTests(unittest.TestCase):
         self.assertEqual(result.testsRun,3)
         self.assertEqual(result.errors+result.failures,[])
 
+    def test_progress_failure_recovery_with_mongo_implementations(self):
+        """E-09-08 4번: 진척 장애 주입·재처리 복구·중복 0을 Mongo 판·진척 저장소로 다시 돌린다."""
+        from unittest.mock import patch
+        from server.infra.mongo_repo import MongoGameRepository
+        from server.infra.progress_store import MongoProgressRepository
+        from tests.engine import test_progress
+        def game_repository():
+            return MongoGameRepository(self.database[self.prefix+'e0908_games_'+uuid.uuid4().hex],self.histogram)
+        def progress_repository():
+            return MongoProgressRepository(self.database[self.prefix+'e0908_progress_'+uuid.uuid4().hex])
+        loader=unittest.TestLoader()
+        suite=unittest.TestSuite([loader.loadTestsFromTestCase(test_progress.ApplyProgress),
+                                  loader.loadTestsFromTestCase(test_progress.GameFlow),
+                                  loader.loadTestsFromTestCase(test_progress.FailureRecovery)])
+        with patch.object(test_progress,'GAME_FACTORY',side_effect=game_repository),              patch.object(test_progress,'PROGRESS_FACTORY',side_effect=progress_repository):
+            result=unittest.TestResult();suite.run(result)
+        self.assertEqual(result.testsRun,suite.countTestCases())
+        self.assertEqual(result.errors+result.failures,[])
+
     def test_content_version_is_pinned_for_running_game(self):
         from engine.domain.engine import PaldoEngine
         from engine.domain.model import DataSource, GameMeta, PRESETS
