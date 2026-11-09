@@ -114,6 +114,89 @@ class Cli(unittest.TestCase):
         self.assertIn("base 없음", buf.getvalue())
 
 
+class Quick(unittest.TestCase):
+    """빠른 검사(--quick): 고른 폴더만, 통과 기록 없음, PR에 못 붙이는 요약 줄. 전체 검사는 그대로."""
+
+    class R(FakeRunner):
+        def __init__(self, changed):
+            super().__init__(dirs=("assets", "contract", "engine", "tools"))
+            self.changed = changed
+            self.recorded = False
+
+        def merge_base(self, ref, other="HEAD"):
+            return "c" * 40
+
+        def resolve(self, ref):
+            return "a" * 40
+
+        def tree_clean(self):
+            return True
+
+        def git_common_dir(self):
+            return None
+
+        def changed_files(self, base):
+            return self.changed
+
+        def python_sources(self):
+            return {"engine/__init__.py": "", "engine/core.py": "",
+                    "tests/engine/test_core.py": "import engine.core\n",
+                    "tests/tools/test_x.py": "", "tests/contract/test_y.py": ""}
+
+    def _main(self, args, runner):
+        import io
+        from contextlib import redirect_stdout
+        from unittest import mock
+        buf = io.StringIO()
+        with redirect_stdout(buf), mock.patch.object(precheck, "record_pass") as rec:
+            rc = precheck.main(args, runner=runner)
+        return rc, buf.getvalue().rstrip().splitlines(), rec
+
+    def _folders(self, r):
+        return sorted(a[a.index("-s") + 1] for a, _ in r.calls if "-s" in a)
+
+    def test_summary_quick_line(self):
+        rc, line = summarize([StepResult("테스트", True, tests=4)], "abc1234", 9.2, "tests/engine")
+        self.assertEqual((rc, line), (0, "precheck(빠른): 통과 (테스트, 테스트 4개, base abc1234, 대상 tests/engine, 9초)"))
+        rc, line = summarize([StepResult("테스트", False)], "abc1234", 3, "tests/engine")
+        self.assertTrue(line.startswith("precheck(빠른): 실패 (테스트; base abc1234, 대상 tests/engine"))
+
+    def test_quick_runs_selected_folders_and_records_nothing(self):
+        r = self.R(["engine/core.py"])
+        rc, lines, rec = self._main(["--quick"], r)
+        self.assertEqual(rc, 0)
+        self.assertEqual(self._folders(r), ["tests/engine"])
+        self.assertTrue(lines[-1].startswith("precheck(빠른): 통과"))
+        self.assertIn("대상 tests/engine", lines[-1])
+        rec.assert_not_called()
+        self.assertIn("tools.check_evidence", _modules(r))  # 문서·증빙은 그대로
+
+    def test_quick_falls_back_to_full(self):
+        r = self.R(["content/bundle_v1.json"])
+        rc, lines, rec = self._main(["--quick"], r)
+        self.assertEqual(self._folders(r), ["tests/contract", "tests/engine", "tests/tools"])  # assets는 기본 제외
+        self.assertIn("대상 전체(코드가 아닌 파일 content/bundle_v1.json)", lines[-1])
+        rec.assert_not_called()
+
+    def test_full_mode_unchanged(self):
+        r = self.R(["engine/core.py"])
+        rc, lines, rec = self._main([], r)
+        self.assertEqual(self._folders(r), ["tests/contract", "tests/engine", "tests/tools"])
+        self.assertTrue(lines[-1].startswith("precheck: 통과"))
+        rec.assert_called_once()
+
+    def test_only_test_dirs_keeps_assets_rule(self):
+        r = FakeRunner()
+        run_precheck(r, "b" * 40, only_test_dirs=["assets", "tools"])
+        self.assertEqual(self._folders(r), ["tests/tools"])
+
+    def test_check_pass_rejects_quick(self):
+        import io
+        from contextlib import redirect_stderr
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            precheck.main(["--check-pass", "a" * 40, "--quick"], runner=self.R([]))
+
+
 if __name__ == "__main__":
     unittest.main()
 
