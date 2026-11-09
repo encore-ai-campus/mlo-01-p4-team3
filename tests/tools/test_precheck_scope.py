@@ -64,6 +64,16 @@ class Select(unittest.TestCase):
     def test_test_file_change_only_its_folder(self):
         self.assertEqual(self.pick(["tests/engine/test_model.py"])[0], ["engine"])
 
+    def test_shared_test_helper_reaches_other_folders(self):
+        sources = dict(SOURCES, **{"tests/contract/fakes.py": "class Fake: pass\n",
+                                   "tests/sim/test_uses_fake.py": "from tests.contract.fakes import Fake\n"})
+        self.assertEqual(select_test_dirs(["tests/contract/fakes.py"], sources, DIRS)[0], ["contract", "sim"])
+
+    def test_each_changed_module_needs_its_own_tests(self):
+        dirs, why = self.pick(["engine/domain/model.py", "tools/lonely.py"])
+        self.assertIsNone(dirs)
+        self.assertIn("tools.lonely", why)
+
     def test_docs_change_picks_tests_that_read_docs(self):
         self.assertEqual(self.pick(["docs/troubles/E.md"])[0], ["assets", "contract"])
         self.assertEqual(self.pick(["docs/evidence/perf/X/a.json"])[0], ["assets", "contract"])

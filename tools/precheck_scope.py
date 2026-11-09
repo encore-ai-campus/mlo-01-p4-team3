@@ -95,7 +95,8 @@ def select_test_dirs(changed: list[str], sources: dict[str, str],
         return [], "바뀐 파일 없음"
     known = set(test_dirs)
     picked: set[str] = set()
-    targets: set[str] = set()
+    targets: set[str] = set()       # 쓰는 테스트를 못 찾으면 전체로 도는 모듈
+    test_mods: set[str] = set()     # 테스트 폴더 안 모듈: 자기 폴더는 이미 골랐고, 다른 폴더가 가져다 쓰면 그 폴더도
     hints: set[tuple[str, ...]] = set()
     for path in changed:
         if any(path == f or (f.endswith("/") and path.startswith(f)) for f in QUICK_FULL_PATHS):
@@ -107,6 +108,8 @@ def select_test_dirs(changed: list[str], sources: dict[str, str],
             if d is None:
                 return None, f"테스트 공용 위치 {path}"
             picked.add(d)
+            if module_name(path):
+                test_mods.add(module_name(path))
             continue
         if path.endswith(".md") or path.startswith("docs/"):
             hints.add(_DOC_HINTS)
@@ -124,7 +127,7 @@ def select_test_dirs(changed: list[str], sources: dict[str, str],
             d = _test_dir_of(path, known)
             if d and any(h in src for h in group):
                 picked.add(d)
-    if targets:
+    if targets or test_mods:
         modules = {p: module_name(p) for p in sources}
         # 이름(과 그 점 접두어) → 그 이름을 가져다 쓰는 파일. `t`를 쓴다 = 가져다 쓰는 이름이 `t`이거나 `t.`로 시작.
         importers: dict[str, set[str]] = {}
@@ -132,20 +135,28 @@ def select_test_dirs(changed: list[str], sources: dict[str, str],
             for n in import_names(src, modules[p] or "", p.endswith("__init__.py")):
                 for pre in _prefixes(n):
                     importers.setdefault(pre, set()).add(p)
-        affected, frontier, reached = set(targets), set(targets), set()
-        while frontier:
-            nxt: set[str] = set()
-            for t in frontier:
-                for p in importers.get(t, ()):
-                    m = modules[p]
-                    if m and m not in affected:
-                        nxt.add(m)
-                        d = _test_dir_of(p, known)
-                        if d:
-                            reached.add(d)
-            affected |= nxt
-            frontier = nxt
-        if not reached:
-            return None, f"바뀐 모듈을 쓰는 테스트를 못 찾음({', '.join(sorted(targets))[:120]})"
-        picked |= reached
+
+        def reached_from(start: str) -> set[str]:
+            affected, frontier, reached = {start}, {start}, set()
+            while frontier:
+                nxt: set[str] = set()
+                for t in frontier:
+                    for p in importers.get(t, ()):
+                        m = modules[p]
+                        if m and m not in affected:
+                            nxt.add(m)
+                            d = _test_dir_of(p, known)
+                            if d:
+                                reached.add(d)
+                affected |= nxt
+                frontier = nxt
+            return reached
+
+        for t in sorted(targets):  # 모듈마다 따로 본다: 하나라도 쓰는 테스트가 없으면 전체
+            reached = reached_from(t)
+            if not reached:
+                return None, f"바뀐 모듈을 쓰는 테스트를 못 찾음({t})"
+            picked |= reached
+        for t in test_mods:
+            picked |= reached_from(t)
     return sorted(picked), "·".join(f"tests/{d}" for d in sorted(picked)) or "없음"
