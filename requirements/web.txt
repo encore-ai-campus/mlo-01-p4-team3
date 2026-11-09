@@ -11,3 +11,8 @@ prometheus-client==0.26.0
 #    Twisted 26.10.0·autobahn 26.11.1·cryptography 50.0.2 포함). import 실측은 하지 않았다
 channels==4.3.2            # Django Channels(웹소켓, 11/4 PM 결정). tech_stack.md 웹소켓 행의 잠정 범위 하한. 확정은 B-07-05
 daphne==4.2.3              # ASGI 서버(같은 결정, 잠정 범위 하한, 확정은 B-07-05). twisted[tls]·autobahn을 함께 설치
+# E-09-10(11/9): Redis 채널 레이어(선택, PALDO_CHANNEL_LAYER=redis일 때만 import). 기본 InMemory에서는 쓰지 않는다.
+#   Windows Python 3.14.6 + channels 4.3.2에서 설치·group_send 전달·웹소켓 부하 실측(로컬 Redis 7.4.12)
+#   redis 8.1.0은 연결 채널 대기(BZPOPMIN) 중 "Timeout reading"으로 consumer가 죽어 웹소켓이 끊긴다. 7.4.1·6.4.0은 정상
+channels_redis==4.3.0
+redis==7.4.1
