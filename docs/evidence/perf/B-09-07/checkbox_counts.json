@@ -1,0 +1,373 @@
+{
+ "task": "B-09-07",
+ "commit": "f2176a6",
+ "method": "녹화 base6 판의 단계별 화면을 시험 클라이언트로 렌더해 Chrome headless(CDP)로 360x780·1280x900에서 체크박스 수(전체·checkVisibility)와 명령 막대 내용 높이를 쟀다. before=8a7b75c, after=f2176a6. cards는 발언 카드 조각(수정 양식은 접힘).",
+ "metrics": {
+  "visible_checkbox_max_after": {
+   "value": 0,
+   "unit": "count"
+  },
+  "visible_checkbox_max_before": {
+   "value": 24,
+   "unit": "count"
+  },
+  "functionless_checkboxes_after": {
+   "value": 0,
+   "unit": "count"
+  }
+ },
+ "cases": [
+  {
+   "screen": "home",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 3,
+   "visible_checkboxes": 3,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "home",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 3,
+   "visible_checkboxes": 3,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_morning",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 6,
+   "visible_checkboxes": 6,
+   "command_bar_content_px": 809
+  },
+  {
+   "screen": "meeting_morning",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 6,
+   "visible_checkboxes": 6,
+   "command_bar_content_px": 538
+  },
+  {
+   "screen": "result",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "result",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_round1",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 24,
+   "visible_checkboxes": 24,
+   "command_bar_content_px": 2164
+  },
+  {
+   "screen": "meeting_round1",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 24,
+   "visible_checkboxes": 24,
+   "command_bar_content_px": 1363
+  },
+  {
+   "screen": "cards_round1",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "cards_round1",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_interrogation",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 12,
+   "visible_checkboxes": 12,
+   "command_bar_content_px": 1413
+  },
+  {
+   "screen": "meeting_interrogation",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 12,
+   "visible_checkboxes": 12,
+   "command_bar_content_px": 855
+  },
+  {
+   "screen": "cards_interrogation",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 12,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "cards_interrogation",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 12,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_round2",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 24,
+   "visible_checkboxes": 24,
+   "command_bar_content_px": 2164
+  },
+  {
+   "screen": "meeting_round2",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 24,
+   "visible_checkboxes": 24,
+   "command_bar_content_px": 1363
+  },
+  {
+   "screen": "cards_round2",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "cards_round2",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_vote",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 6,
+   "visible_checkboxes": 6,
+   "command_bar_content_px": 927
+  },
+  {
+   "screen": "meeting_vote",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 6,
+   "visible_checkboxes": 6,
+   "command_bar_content_px": 536
+  },
+  {
+   "screen": "meeting_night",
+   "width_px": 360,
+   "when": "before",
+   "checkboxes": 6,
+   "visible_checkboxes": 6,
+   "command_bar_content_px": 911
+  },
+  {
+   "screen": "meeting_night",
+   "width_px": 1280,
+   "when": "before",
+   "checkboxes": 6,
+   "visible_checkboxes": 6,
+   "command_bar_content_px": 579
+  },
+  {
+   "screen": "home",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "home",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_morning",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 613
+  },
+  {
+   "screen": "meeting_morning",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 456
+  },
+  {
+   "screen": "result",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "result",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_round1",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 1259
+  },
+  {
+   "screen": "meeting_round1",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 1032
+  },
+  {
+   "screen": "cards_round1",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "cards_round1",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_interrogation",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 6,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 980
+  },
+  {
+   "screen": "meeting_interrogation",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 6,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 690
+  },
+  {
+   "screen": "cards_interrogation",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 6,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "cards_interrogation",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 6,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_round2",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 1259
+  },
+  {
+   "screen": "meeting_round2",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 1032
+  },
+  {
+   "screen": "cards_round2",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "cards_round2",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 18,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 0
+  },
+  {
+   "screen": "meeting_vote",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 730
+  },
+  {
+   "screen": "meeting_vote",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 454
+  },
+  {
+   "screen": "meeting_night",
+   "width_px": 360,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 714
+  },
+  {
+   "screen": "meeting_night",
+   "width_px": 1280,
+   "when": "after",
+   "checkboxes": 0,
+   "visible_checkboxes": 0,
+   "command_bar_content_px": 497
+  }
+ ]
+}

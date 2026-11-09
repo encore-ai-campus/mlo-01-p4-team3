@@ -4,7 +4,7 @@
     "id": "blacksmith",
     "path": "content/images/portrait/blacksmith.png",
     "url": "/static/assets/portrait/blacksmith.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:blacksmith"
   },
   {
@@ -60,7 +60,7 @@
     "id": "gwabu",
     "path": "content/images/portrait/gwabu.png",
     "url": "/static/assets/portrait/gwabu.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:gwabu"
   },
   {
@@ -92,7 +92,7 @@
     "id": "hunjang",
     "path": "content/images/portrait/hunjang.png",
     "url": "/static/assets/portrait/hunjang.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:hunjang"
   },
   {
@@ -132,7 +132,7 @@
     "id": "jumo",
     "path": "content/images/portrait/jumo.png",
     "url": "/static/assets/portrait/jumo.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:jumo"
   },
   {
@@ -164,7 +164,7 @@
     "id": "meosum",
     "path": "content/images/portrait/meosum.png",
     "url": "/static/assets/portrait/meosum.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:meosum"
   },
   {
@@ -204,7 +204,7 @@
     "id": "mudang_f",
     "path": "content/images/portrait/mudang_f.png",
     "url": "/static/assets/portrait/mudang_f.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:mudang_f"
   },
   {
@@ -236,7 +236,7 @@
     "id": "mudang_m",
     "path": "content/images/portrait/mudang_m.png",
     "url": "/static/assets/portrait/mudang_m.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:mudang_m"
   },
   {
@@ -268,7 +268,7 @@
     "id": "yakcho",
     "path": "content/images/portrait/yakcho.png",
     "url": "/static/assets/portrait/yakcho.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:yakcho"
   },
   {
@@ -300,7 +300,7 @@
     "id": "blacksmith",
     "path": "content/images/sprite/blacksmith.png",
     "url": "/static/assets/sprite/blacksmith.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
@@ -352,7 +352,7 @@
     "id": "gwabu",
     "path": "content/images/sprite/gwabu.png",
     "url": "/static/assets/sprite/gwabu.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
@@ -383,7 +383,7 @@
     "id": "hunjang",
     "path": "content/images/sprite/hunjang.png",
     "url": "/static/assets/sprite/hunjang.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
@@ -421,7 +421,7 @@
     "id": "jumo",
     "path": "content/images/sprite/jumo.png",
     "url": "/static/assets/sprite/jumo.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
@@ -452,7 +452,7 @@
     "id": "meosum",
     "path": "content/images/sprite/meosum.png",
     "url": "/static/assets/sprite/meosum.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
@@ -490,7 +490,7 @@
     "id": "mudang_f",
     "path": "content/images/sprite/mudang_f.png",
     "url": "/static/assets/sprite/mudang_f.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
@@ -521,7 +521,7 @@
     "id": "mudang_m",
     "path": "content/images/sprite/mudang_m.png",
     "url": "/static/assets/sprite/mudang_m.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
@@ -552,7 +552,7 @@
     "id": "yakcho",
     "path": "content/images/sprite/yakcho.png",
     "url": "/static/assets/sprite/yakcho.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
@@ -597,14 +597,14 @@
     "id": "jokjebi",
     "path": "content/images/mascot/jokjebi.png",
     "url": "/static/assets/mascot/jokjebi.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "mascot",
     "id": "kkachi",
     "path": "content/images/mascot/kkachi.png",
     "url": "/static/assets/mascot/kkachi.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "place",

@@ -5,6 +5,7 @@
   {% elif failure == 'missing_target' %}<p>빠진 대상을 골라 수정 후 실행하세요.</p>
   {% elif failure == 'ambiguous_evidence' %}<p>근거 후보 중 모순을 이루는 주장 두 개를 골라 수정 후 실행하세요.</p>
   {% elif failure == 'unparseable' %}<p>뜻을 해석하지 못했습니다. 문장을 다시 입력하세요.</p>{% endif %}
+  {% if suggestions %}<p class="phase-suggestions">지금 할 수 있는 행동: {% for kind in suggestions %}{{ kind|action_label }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
   {% for card in cards %}
     <article class="speech-card" x-data="{ editing: false }">
       <h3>{{ card.kind|action_label }}</h3>
@@ -22,7 +23,7 @@
           <input type="hidden" name="state_version" value="{{ attempt_version }}"><input type="hidden" name="command_id">
           <input type="hidden" name="reaction" value="edit"><input type="hidden" name="kind" value="{{ card.kind }}">
           {% if card.kind == 'suspect' or card.kind == 'defend' or card.kind == 'vote' or card.kind == 'divine' or card.interrogation_kind == 'suspicion_reason' %}
-            <label>대상 <select name="target" required><option value="">선택하세요</option>{% for person in active_targets %}<option value="{{ person.npc_id }}" {% if person.npc_id == card.target %}selected{% endif %}>{{ person.name|display_name }}</option>{% endfor %}</select></label>
+            <label>대상 <select name="target" required><option value="">선택하세요</option>{% if card.kind == 'vote' %}{% for person in vote_targets %}<option value="{{ person.npc_id }}" {% if person.npc_id == card.target %}selected{% endif %}>{{ person.name|display_name }}</option>{% endfor %}{% else %}{% for person in active_targets %}<option value="{{ person.npc_id }}" {% if person.npc_id == card.target %}selected{% endif %}>{{ person.name|display_name }}</option>{% endfor %}{% endif %}</select></label>
           {% endif %}
           {% if card.kind == 'interrogate' %}
             <label>질문 상대 <select name="addressee" required><option value="">선택하세요</option>{% for person in active_targets %}<option value="{{ person.npc_id }}" {% if person.npc_id == card.addressee %}selected{% endif %}>{{ person.name|display_name }}</option>{% endfor %}</select></label>
@@ -32,7 +33,11 @@
               <label>시간 <select name="slot" required><option value="evening" {% if card.slot == 'evening' %}selected{% endif %}>초저녁</option><option value="midnight" {% if card.slot == 'midnight' %}selected{% endif %}>한밤</option></select></label>
             {% endif %}
           {% endif %}
-          {% for claim in card.evidence_options %}<label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}" {% if claim.evidence_value in card.evidence %}checked{% endif %}>{{ claim.card.speaker_name|display_name }}: {{ claim.card.text }}</label>{% endfor %}
+          {% if card.ambiguous_evidence or card.kind == 'point_contradiction' or card.kind == 'suspect' or card.kind == 'defend' or card.interrogation_kind == 'contradiction' %}
+            <details class="evidence-picker"{% if card.ambiguous_evidence %} open{% endif %}><summary>관련 진술 <span class="evidence-count">{{ card.evidence_count }}</span>개 고름</summary><fieldset>
+            {% for claim in card.evidence_options %}<label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}" {% if claim.evidence_value in card.evidence %}checked{% endif %}>{{ claim.card.speaker_name|display_name }}: {{ claim.card.text }}</label>{% endfor %}
+            </fieldset></details>
+          {% endif %}
           {% if card.kind == 'reveal_divination' %}<label>점괘 <select name="divination" required>{% for option in divination_options %}<option value="{{ option.value }}" {% if option.value == card.divination %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select></label>{% endif %}
           <button type="submit">수정한 카드 실행</button>
         </form>
