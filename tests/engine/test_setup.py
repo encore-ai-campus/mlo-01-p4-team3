@@ -44,7 +44,7 @@ class AllPresets(unittest.TestCase):
         for (p, _), r in self.games.items():
             for v in validate_assignment(PRESETS[p], CONTENT, assignment_of(r.state, r.truth)):
                 bad[(p, v.code)] += 1
-        self.assertEqual(len(self.games), 6 * 200)
+        self.assertEqual(len(self.games), len(PRESETS) * 200)   # 기본 6종 + 선택형 도전 3종(E-09-08)
         self.assertEqual(sum(bad.values()), 0, dict(bad))
 
     def test_day0_missing_and_role_counts(self):
