@@ -72,7 +72,7 @@
 
 | 필드 | 읽는 곳·명령 | 참고: 11/8 `dev`(52c08ea) 값 |
 |---|---|---|
-| `rule_version` | `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"` | `rule-0.5.decision-1` |
+| `rule_version` | `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"` | `rule-0.6.decision-1` |
 | `engine_version` | `python -c "from engine.domain.model import ENGINE_VERSION; print(ENGINE_VERSION)"`(E-08-14부터 단일 출처) | `paldo-engine` |
 | `content_version` | `python -c "import json; print(json.load(open('content/bundle_v1.json', encoding='utf-8'))['content_version'])"` | `content-1.0` |
 

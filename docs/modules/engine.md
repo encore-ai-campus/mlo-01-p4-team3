@@ -36,7 +36,7 @@
 - `new_game_from_setup`을 나눈 이유: 시나리오 파일의 고정 배정을 그대로 재현해 실제 엔진으로 재생하려고.
 - 정책 입력을 관찰자 `ObservationSnapshot` 하나로 둔 이유: 상태 전체를 넘기면 다른 NPC의 개인 지식(역할·밤 명령)을 통해 진실이 새기 때문이다(기획서 v1.1 5.1 네 층 분리, A-06-02). 엔진은 결정 직전 `observation`, 직후 `decision`을 같은 `snapshot_id`로 `paldo.observations`에 남기고, 진실은 판 종료 뒤 `truth_revealed`(`paldo.truth`)로만 낸다(events.md 3절, 기획서 8.2).
 - 기색은 공개 기록에 보인 것만 남긴다: 판정 대상이 거짓 주장뿐이라 "판정했다"는 사실 자체가 진위 정보이기 때문이다(domain.md 7절, A-06-01).
-- 결정 파라미터를 json 한 파일(`decision_params.json`)에 두는 이유: 탐색 도구가 결과를 그대로 쓰고, 버전(`DECISION_PARAMS_VERSION`)이 `RULE_PARAMS_VERSION`(`rule-0.5.decision-N`, 연결 문자는 `.`)에 붙어 판 메타만으로 값을 재현하려고(A-08-03). 엔진·투표는 호출할 때마다 `params` 모듈 값을 읽으므로 탐색 도구는 프로세스 안에서 `params.apply`로 후보 값을 바꿔 판을 돌린다. 게임 웹은 `apply`를 부르지 않는다.
+- 결정 파라미터를 json 한 파일(`decision_params.json`)에 두는 이유: 탐색 도구가 결과를 그대로 쓰고, 버전(`DECISION_PARAMS_VERSION`)이 `RULE_PARAMS_VERSION`(`rule-0.6.decision-N`, 연결 문자는 `.`)에 붙어 판 메타만으로 값을 재현하려고(A-08-03). 엔진·투표는 호출할 때마다 `params` 모듈 값을 읽으므로 탐색 도구는 프로세스 안에서 `params.apply`로 후보 값을 바꿔 판을 돌린다. 게임 웹은 `apply`를 부르지 않는다.
 - 규칙 v0 믿음을 공개 기록에서 매번 다시 계산하는 이유: 스냅샷 계약에 압박도·성향이 없고, 같은 스냅샷이면 같은 믿음이 나와야 관측 기록과 실제 판단이 일치한다(A-07-01). 확정 명제를 직접 목격에서만 만드는 이유: 타인 주장은 거짓일 수 있고 "못 봤다"는 없음의 증거가 아니다(기획서 5.2).
 - 투표를 추정·결정·안전 세 층으로 나눈 이유: 추정(의심 모델)은 D가 바꾸고, 성향·동조는 엔진 규칙이며, 안전 층은 어떤 모델이 와도 확정 무고에게 표를 주지 않게 한다(기획서 5.2, ports.md 3). 모델이 실패해도 판이 멈추지 않게 그 결정만 규칙 v0로 대신하고 `-fallback`으로 표시한다(A-07-02).
 - 판 실행 도구가 고정 시각·시드로 같은 바이트를 내는 이유: D·C가 같은 명령으로 인수 데이터를 다시 만들고 해시로 대조하려고(A-06-03). 판 메타의 `npc_policy_versions`를 채우는 이유: D가 정책 버전이 다른 데이터를 한 학습에 섞지 않게(parallel_dev.md 3절).
@@ -77,7 +77,7 @@ n = fallback_count(res2.events)             # engine.domain.npc.vote. B가 paldo
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
-| `RULE_PARAMS_VERSION`(`params.py`) | `rule-0.5.decision-1` | 규칙 기반 버전(`RULE_BASE_VERSION`) + 결정 파라미터 버전. 판 메타에 들어가 재현에 쓴다 | 규칙 상수를 바꾸면 기반 버전을, 결정 파라미터를 바꾸면 json `version`을 올린다 |
+| `RULE_PARAMS_VERSION`(`params.py`) | `rule-0.6.decision-1` | 규칙 기반 버전(`RULE_BASE_VERSION`) + 결정 파라미터 버전. 판 메타에 들어가 재현에 쓴다 | 규칙 상수를 바꾸면 기반 버전을, 결정 파라미터를 바꾸면 json `version`을 올린다 |
 | `WITNESS_PROB`(`decision_params.json` `witness_prob`) | 0.5 | 같은 시간대·공공장소 두 사람이 서로 목격할 확률 | 단서 양·승률이 바뀐다(A-08-03에서 0.7 → 0.5) |
 | `TELL_PROB`(`tell_prob`) | 0.4 | 거짓 사실 주장에 기색이 보일 확률(주장 ID당 1회 판정) | 기색 단서 양이 바뀐다(A-08-03에서 0.5 → 0.4) |
 | `Q_MAX`(`q_max`) | 0.7 | 무당 의심 결합 상한(ports.md 3) | 클수록 NPC가 무당을 의심해 마을 승률이 크게 내려간다(A-08-03에서 0.5 → 0.7) |

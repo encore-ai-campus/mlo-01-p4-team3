@@ -66,6 +66,7 @@ class ReasonCode(str, enum.Enum):
     MODEL_FALLBACK_VERSION = "model_fallback_version"          # 특징 버전 불일치 → 규칙 v0 투표
     MODEL_FALLBACK_TIMEOUT = "model_fallback_timeout"          # 호출 100ms 초과 → 규칙 v0 투표
     MODEL_FALLBACK_INVALID = "model_fallback_invalid"          # 출력 후보·확률이 스냅샷과 맞지 않음 → 규칙 v0 투표
+    SKIP_TRUSTED_MUDANG = "skip_trusted_mudang"    # 투표 안전 층: 신뢰도가 문턱 이상인 무당을 후보에서 뺌(A-09-06)
 
 
 # 근거 기록이 없어도 되는 이유 코드(조건 4 "근거 ID"는 근거가 있을 때만 요구, 11/6 PM 결정).
@@ -80,7 +81,7 @@ NO_EVIDENCE_CODES: frozenset[ReasonCode] = frozenset({
     ReasonCode.NIGHT_TRUSTS_MUDANG, ReasonCode.NIGHT_ANY,
     ReasonCode.MODEL_ESTIMATE, ReasonCode.VOTE_CONFORM, ReasonCode.FALLBACK_MAX_SUSPICION,
     ReasonCode.MODEL_FALLBACK_UNAVAILABLE, ReasonCode.MODEL_FALLBACK_VERSION, ReasonCode.MODEL_FALLBACK_TIMEOUT,
-    ReasonCode.MODEL_FALLBACK_INVALID,
+    ReasonCode.MODEL_FALLBACK_INVALID, ReasonCode.SKIP_TRUSTED_MUDANG,
 })
 SOURCE_CODE: dict[EvidenceSource, ReasonCode] = {
     EvidenceSource.OTHERS_CLAIM: ReasonCode.WITNESS_OTHERS_CLAIM,

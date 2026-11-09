@@ -40,3 +40,9 @@
 | 작업 | 위치 |
 |---|---|
 | C-08-02 작업 | 광고 집계·대사: pipeline/spark/ads_{silver,gold,reconcile}.py, ads_contract.py, ops/ad_probe.py. |
+
+## C-08-03 작업 위치
+
+| 작업 | 위치 |
+|---|---|
+| C-08-03 작업 | ops/k3s/ 설치·Job·이미지와 pipeline/simulation.py → pipeline/sinks/kafka_sink.py. 이미지 빌드는 images/sim/Dockerfile. |

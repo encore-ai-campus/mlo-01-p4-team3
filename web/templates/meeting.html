@@ -1,5 +1,6 @@
 {% load meeting %}
 <section id="meeting" data-state-version="{{ vm.state_version }}">
+  <div class="player-portrait"><img src="{% asset_url mudang_portrait_id %}" alt="선택한 무당 모습" width="64" height="64"><span>무당</span></div>
   <h1>{{ vm.day }}일째 · {{ vm.phase|phase_label }}</h1>
   {% if vm.phase == 'vote' or vm.phase == 'runoff' %}
     <p>이번 투표는 비공개이며, 투표가 끝나면 모두의 표가 함께 공개됩니다.</p>
@@ -8,9 +9,7 @@
   <ul class="people" aria-label="인물">
     {% for person in vm.people %}
       <li>
-        {% if person.npc_id == 'mudang' %}
-          <img src="{% asset_url mudang_portrait_id %}" alt="" width="64" height="64">
-        {% else %}
+        {% if person.npc_id != 'mudang' %}
           {% with portrait_id="portrait:"|add:person.npc_id %}
             <img src="{% asset_url portrait_id %}" alt="" width="64" height="64">
           {% endwith %}
@@ -19,6 +18,7 @@
       </li>
     {% endfor %}
   </ul>
+  {% if vm.phase != 'night' %}{% village_guide %}{% endif %}
   {% for event in disappearances %}
     <p>
       {% if event.place_asset_id %}<img src="{% asset_url event.place_asset_id %}" alt="" width="20" height="20">{% endif %}
@@ -41,7 +41,7 @@
   {% if vm.speeches %}
     <h2>발언</h2>
     {% for speech in vm.speeches %}<p>{{ speech.speaker_name|display_name }}:
-      <span id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}{% if speech.is_interrogation_answer %}<span class="line-attribution">Powered by Kanana</span>{% endif %}</span>
+      <span id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
     </p>{% endfor %}
   {% endif %}
   {% if published_votes %}
@@ -81,6 +81,7 @@
     </section>
   {% endif %}
   {% if vm.ended %}
+    {% include "game_result.html" %}
     {% load ad_slots %}{% ad_slot 'result_banner' %}
     <p class="round-result">판이 종료됐습니다.</p>
     {% if participant_forms_available %}{% include "survey.html" %}{% endif %}
@@ -90,4 +91,5 @@
     {% include "meeting_actions.html" %}
     {% include "utterance_input.html" %}
   {% endif %}
+  {% asset_attribution %}
 </section>

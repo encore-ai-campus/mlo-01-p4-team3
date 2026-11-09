@@ -16,9 +16,21 @@ button:disabled { opacity: .55; }
 .round-result h2 { margin: 0 0 .3rem; }
 .people { display: flex; flex-wrap: wrap; list-style: none; padding: 0; gap: 1rem; }
 .people li { display: grid; justify-items: center; }
+.village-guide { border: 1px solid #c6cbc5; border-radius: .5rem; padding: .8rem; margin: 1rem 0; }
+.village-guide figure { margin: 0; }
+.village-map { position: relative; width: 100%; }
+.village-map-image { display: block; width: 100%; height: auto; }
+.village-map-place { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: clamp(.7rem, 1.5vw, 1rem); line-height: 1.25; }
+.village-map-place img { width: min(32px, 45%); height: auto; }
+.village-map-place span { background: #f6f5ef; color: #242b28; padding: .1rem; white-space: nowrap; }
+.resident-gallery { margin-top: 1rem; }
+.resident-gallery summary { cursor: pointer; padding: .5rem; }
+.resident-portraits { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 1rem; padding: 0; list-style: none; }
+.resident-portraits li { display: grid; justify-items: center; align-content: start; overflow-wrap: anywhere; }
+.resident-portraits img { width: 96px; max-width: 100%; height: auto; }
+.asset-credits { font-size: .85rem; overflow-wrap: anywhere; border-top: 1px solid #c6cbc5; margin-top: 1rem; }
 fieldset { min-width: 0; }
 [role=alert] { color: #9b3024; }
-.line-attribution { display: block; margin-top: .25rem; font-size: 1rem; font-weight: 600; }
 @media (max-width: 480px) { body { padding: .75rem; } label { display: block; } }
 .confidence-choices { display: flex; flex-wrap: wrap; gap: .5rem; }
 .confidence-choice { position: relative; cursor: pointer; }

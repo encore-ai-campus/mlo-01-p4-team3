@@ -1,0 +1,18 @@
+<section class="village-guide" aria-labelledby="village-guide-title">
+  <h2 id="village-guide-title">마을 안내</h2>
+  <p>장소 위치는 안내용 고정 배치이며, 주민의 현재 위치나 이동을 나타내지 않습니다.</p>
+  {% if village %}
+    <figure aria-label="마을 안내 지도">
+      <div class="village-map">
+        <img class="village-map-image" src="{{ village.url }}" width="{{ village.width }}" height="{{ village.height }}" alt="마을의 장소 안내 지도">
+        {% for place in village.places %}<span class="village-map-place" style="left:{{ place.left }}%;top:{{ place.top }}%;width:{{ place.width }}%;height:{{ place.height }}%"><img src="{{ place.url }}" alt="" width="32" height="32"><span>{{ place.name }}</span></span>{% endfor %}
+      </div>
+      <figcaption>{% if village.placeholder %}임시 지도 · {% endif %}장소 안내</figcaption>
+    </figure>
+  {% endif %}
+  <details class="resident-gallery">
+    <summary>주민 전체 초상 보기 · {{ portraits|length }}종</summary>
+    <p>등장할 수 있는 인물과 무당의 모습입니다. 현재 판의 참가자·생존 여부는 인물 목록에서 확인하세요.</p>
+    <ul class="resident-portraits">{% for portrait in portraits %}<li data-portrait-id="{{ portrait.asset_id }}"><img src="{{ portrait.url }}" width="96" height="96" alt="{{ portrait.name }} 초상" loading="lazy"><span>{{ portrait.name }}</span>{% if portrait.placeholder %}<small>임시 초상</small>{% endif %}</li>{% endfor %}</ul>
+  </details>
+</section>

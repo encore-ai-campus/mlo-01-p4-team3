@@ -38,10 +38,11 @@
           <select name="interrogation_kind">
             <option value="whereabouts">어디 있었는가</option>
             <option value="suspicion_reason">왜 의심하는가</option>
-            <option value="contradiction">왜 말이 다른가</option>
+            <option value="contradiction"{% if not contradiction_ready %} disabled{% endif %}>왜 말이 다른가</option>
           </select>
         </label>
-        <label>밤 <input type="number" name="night" value="0" min="0" required></label>
+        <label>밤 <select name="night" required>{% for night in past_nights %}<option value="{{ night }}">{{ night }}일째 밤</option>{% empty %}<option value="">지난 밤이 없습니다</option>{% endfor %}</select></label>
+        <p class="interrogation-guidance" role="status">어디 있었는가는 지난 밤만 물을 수 있습니다. 왜 말이 다른가는 관련 진술 두 개를 고른 뒤 보낼 수 있습니다.</p>
         <label>시간
           <select name="slot">
             <option value="evening">초저녁</option>

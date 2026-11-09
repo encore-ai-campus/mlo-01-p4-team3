@@ -4,9 +4,11 @@
 믿음은 `beliefs.compute_beliefs`로 스냅샷에서 다시 계산한다. 엔진이 `update_beliefs`를 불러 상태에 저장하면
 스냅샷의 믿음과 같은 값이 나온다(같은 입력이면 같은 결과).
 
-- 말: ① 아직 아무도 지적하지 않은 공개 모순 지적 → ② 의심도가 문턱 이상인 후보를 근거와 함께 의심(성향 aggression 확률)
+- 말: ① 아직 아무도 지적하지 않은 공개 모순 지적 → ② 의심도가 문턱 이상인 후보를 근거와 함께 의심(성향 aggression 확률,
+  문턱은 `suspect_min(day)`: 1일째 `SUSPECT_MIN_DAY1`, 그 뒤 `SUSPECT_MIN`. A-09-06, 11/9 사용자 결정)
   → ③ 나에 대한 새 의심이 있으면 해명 → ④ 직접 목격으로 알리바이를 아는 사람이 의심받으면 감싸기 → ⑤ 침묵.
-- 투표(안전 층 포함): 확정 명제(`not_possessed`)로 무고가 확정된 사람과 고백자는 빼고, 무당은 신뢰도가 아주 낮을 때만 후보.
+- 투표(안전 층 포함): 확정 명제(`not_possessed`)로 무고가 확정된 사람과 고백자는 빼고, 무당은 신뢰도가 `MUDANG_VOTE_TRUST` 미만일 때만 후보
+  (빼면 `skip_trusted_mudang`. 모델 경로의 문턱은 `vote.MODEL_MUDANG_VOTE_TRUST`, 두 문턱의 관계는 그 상수 주석).
   남은 후보 중 의심도 + 작은 잡음이 가장 큰 사람. 걸러서 후보가 없으면 합법 후보 전체로 돌아간다.
   엔진이 의심 모델을 넘기면 `vote_with_model`(투표 3층, A-07-02 `vote.py`)을 쓰고, 이 규칙은 모델 실패 때의 대체 결정이다.
 - 캐묻기 답: 비밀 보유자는 압박이 고백 문턱값 이상이면 고백, 숨기는 시간대·모순 추궁이면 회피. 그 밖은 성향에 따라 역공 또는 해명.
@@ -30,9 +32,15 @@ from . import beliefs as bl
 from . import vote as vt
 
 SUSPECT_MIN = 62.0          # 의심 발언을 고려하는 의심도(잠정)
+SUSPECT_MIN_DAY1 = 56.0     # 1일째만 쓰는 의심 발언 문턱(A-09-06: 근거가 적은 첫날 침묵을 줄인다, 조사 200판 값)
 VOTE_NOISE = 2.0            # 투표 점수 잡음 폭(±, 잠정)
-MUDANG_VOTE_TRUST = 20.0    # 무당 신뢰도가 이 값 미만이면 무당도 투표 후보(잠정)
+MUDANG_VOTE_TRUST = 20.0    # 규칙 v0(모델 실패 때 대체) 투표: 무당 신뢰도가 이 값 미만이면 무당도 후보(잠정)
 MAX_VOTE_EVIDENCE = 3       # 투표 결정에 싣는 근거 수
+
+
+def suspect_min(day: int) -> float:
+    """그날의 의심 발언 문턱. 1일째는 `SUSPECT_MIN_DAY1`, 그 뒤는 `SUSPECT_MIN`."""
+    return SUSPECT_MIN_DAY1 if day <= 1 else SUSPECT_MIN
 
 
 class RuleBase:
@@ -129,7 +137,7 @@ class VillagerPolicy(RuleBase):
         if CommandKind.SUSPECT in legal and b.suspicion:
             target, _ = _top(b.suspicion, rng)
             aggression = temp.aggression if temp else 0.5
-            if b.suspicion[target] >= SUSPECT_MIN and rng.random() < 0.4 + 0.6 * aggression:
+            if b.suspicion[target] >= suspect_min(obs.day) and rng.random() < 0.4 + 0.6 * aggression:
                 ref = self.best_ref(b, me, target)
                 if ref is not None:
                     cmd = Command(CommandKind.SUSPECT, me, target=target, evidence=[ref])
@@ -185,6 +193,7 @@ class VillagerPolicy(RuleBase):
             codes.append(ReasonCode.SKIP_CONFESSED)
         if PLAYER_ID in pool and b.trust_in_mudang >= MUDANG_VOTE_TRUST and len(pool) > 1:
             pool = [c for c in pool if c != PLAYER_ID]
+            codes.append(ReasonCode.SKIP_TRUSTED_MUDANG)
         if not pool:
             pool = list(legal)
             codes.append(ReasonCode.FALLBACK_ALL_LEGAL)
