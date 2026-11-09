@@ -12,3 +12,11 @@ scrape_configs:
   - job_name: garage
     static_configs:
       - targets: ["garage:3903"]
+  # 게임 웹 daphne 2개(E-09-10). 호스트에서 띄운 프로세스를 수집한다. process 라벨로 두 프로세스를 구분한다.
+  # 웹을 띄우지 않았으면 down으로 보이며 스모크 검사(PROMETHEUS_JOBS) 대상이 아니다. 1개로 되돌리면 web-2는 down이 정상이다.
+  - job_name: paldo-web
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+        labels: {process: web-1}
+      - targets: ["host.docker.internal:8002"]
+        labels: {process: web-2}

@@ -56,6 +56,17 @@ dev `f24f6a8` 반영 후 같은 저장 계약과 시험 경계를 다시 확인�
 
 고정 회차의 `rule_version`은 최신 엔진이 내보내는 `규칙.결정 파라미터` 문자열을 그대로 저장하고 판 메타에 고정한다. PR #241의 엔진 버전 문자 규칙과 회차 등록 검증을 일치시키며 1~80자 길이와 기존 공백·경로 거부는 유지한다. 엔진·콘텐츠 버전 검증은 기존과 같다.
 
+## 동시성 구조와 한계 (E-09-10)
+
+- **프로세스·스레드:** 게임 웹은 Daphne 프로세스 2개(loopback 8000·8002, [실행 도구](../ops/mysql/service_runtime.py) `web --port`)가 기본이다. 앞단 [Caddy](../ops/proxy/Caddyfile)가 `least_conn`으로 나누고, `/healthz` 능동 확인(5초)과 접속 실패 재시도(2초)로 죽은 프로세스를 뺀다. 프로세스 안에서 HTTP 뷰는 동기 Django 뷰라 요청마다 스레드에서 돈다. I/O는 겹치지만 Python 처리는 GIL 때문에 프로세스당 사실상 코어 1개다. 그래서 처리량은 프로세스 수로 늘린다.
+- **채널 레이어:** 기본은 `InMemoryChannelLayer`다([설정](paldo_web/channel_layers.py), `PALDO_CHANNEL_LAYER`). 지금 웹소켓(`/ws/game/`)은 광고 신호 전용이고, 연결마다 자기 요청에만 응답한다(그룹 전송 없음). 게임 진행은 모두 HTTP다. 그래서 프로세스 사이 전달이 필요 없고 프로세스가 둘이어도 InMemory로 충분하다. 서버 쪽 판 상태 전송처럼 다른 프로세스의 연결로 보내는 기능이 생기면 `PALDO_CHANNEL_LAYER=redis`·`PALDO_REDIS_URL`로 Redis 채널 레이어를 켠다(같은 VM 안 Redis, 절차는 [proxy README](../ops/proxy/README.md)). 켠 상태에서 Redis에 연결할 수 없으면 기동 때 멈춘다(InMemory로 떨어지지 않음).
+- **판 상태 동시성:** 같은 판의 동시 명령은 Mongo 판 문서의 `state_version` 비교 후 교체(CAS)로 하나만 저장되고, 같은 `command_id`는 저장된 응답을 재생한다([저장소](infra/mongo_repo.py), [응용](app/usecases.py)). 보조 기록은 프로세스 안 판별 잠금과 Mongo 임대로 프로세스 사이도 직렬화한다([보조 저장](infra/interaction_store.py)). 로그인 세션·로그인 잠금은 계정 DB(MySQL)에 있어 프로세스가 공유한다.
+- **외부 호출 분리:** 광고 호출은 프로세스마다 스레드 풀과 세마포어(동시 8), 연결 100ms·전체 300ms 시한, 회로 차단기로 게임 요청을 막지 않는다([광고 포트](app/ads_port.py)). 회로 차단기·한도는 프로세스별이라 전체 동시 한도는 프로세스 수만큼 늘어난다. 이벤트는 판 문서의 아웃박스에 같이 저장하고 Kafka 발행은 별도 발행기 프로세스가 맡아 게임 요청과 분리된다.
+- **프로세스별 상태:** `/metrics`는 프로세스마다 따로라 수집 대상을 프로세스 수만큼 두고(`process` 라벨) 합산해서 본다. 엔진·콘텐츠 캐시는 프로세스마다 따로 가진다(읽기 전용). 파일 로그는 두 번째 프로세스부터 `web-<포트>.jsonl`에 써서 같은 파일을 함께 회전하지 않는다(`PALDO_WEB_INSTANCE`).
+- **측정과 한계:** MEASURE_PLACEHOLDER
+- **확장 경로의 한계:** 테스트 서버 app-01은 2 vCPU라 프로세스를 늘려 얻는 이득은 최대 약 2배다. 그 이상은 게임 웹 VM 추가(Caddy upstream에 다른 호스트 추가, 이때는 Redis 채널 레이어 필요 여부를 다시 본다)나 요청당 비용 절감(콘텐츠 캐시 E-09-09 등)으로 간다.
+- **되돌림:** 8002 프로세스만 멈추면 1개로 돈다(Caddy가 능동 확인으로 그 upstream을 뺀다). Redis를 켰다면 `PALDO_CHANNEL_LAYER=memory`로 바꾸고 웹을 다시 시작한다. 절차는 [proxy README](../ops/proxy/README.md) "웹 프로세스 2개" 절.
+
 ## 계층과 저장소
 
 `api/`는 HTTP 입력을 검증하고 응답을 만든다. `app/`은 판 시작과 명령 실행을 조정한다. 게임 상태와 진행 저장소는 [게임 서비스 조립 경계](paldo_web/composition.py)에 주입한다. 계정 저장소는 Django의 `default` MySQL이며, 접속값은 `PALDO_AUTH_DB_*`로 받는다.
@@ -84,7 +95,7 @@ Consumer는 검증과 응답만 맡는다. 중계는 `ad_events` → `AdGateway`
 
 광고 제공자는 `configure_ad_gateway` 주입을 우선하며, PALDO_ADS_INTERNAL_URL이 있으면 B-08-03의 HTTP 제공자를 조립한다. 운영에서 가짜로 자동 대체하지 않는다. 미조립 상태는 비콘 실패 응답과 HTTP 대체 화면으로 처리한다. 참가자 헤더나 요청 객체는 포트 인자에 전달하지 않는다. B-08-03의 실제 loopback HTTP 회귀에서 헤더 분리를 검증하며 D 인수 서버 수신 확인은 남아 있다.
 
-`InMemoryChannelLayer`를 사용하므로 Daphne는 루프백 주소의 프로세스 하나로 실행한다. HTTPS 프록시·VM 검증은 C-07-04와 이어 간다. 로컬 Channels·Daphne 시험은 대상 VM 호환 확정이나 실제 Mongo 성능 증빙을 대신하지 않는다.
+채널 레이어 기본은 `InMemoryChannelLayer`이고 Daphne는 루프백 주소의 프로세스 2개로 실행한다(위 "동시성 구조와 한계", E-09-10). HTTPS 프록시·VM 검증은 C-07-04와 이어 간다. 로컬 Channels·Daphne 시험은 대상 VM 호환 확정이나 실제 Mongo 성능 증빙을 대신하지 않는다.
 
 P-29에 따라 `hello`를 연결당 한 번 받는다. `dropped_by_reason`의 `queue_full`과 `page_exit`는 각각 0 이상 정수이며 합계가 `dropped`와 같아야 한다. 누락·합계 불일치·알 수 없는 사유·중복 보고는 `bad_message`로 응답하고 집계하지 않는다. 지표는 `paldo_ad_beacon_dropped_total{reason}` 하나를 사용한다. `rate_limited`는 서버가 비콘을 빈도 제한으로 거절한 때만 더한다. [웹소켓 계약](../docs/contracts/api.md#7-웹소켓과-광고-중계-114-pm-결정-b-07-05)
 

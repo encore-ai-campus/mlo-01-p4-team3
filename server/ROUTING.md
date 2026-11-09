@@ -59,6 +59,8 @@ B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은
 자유 입력의 직전 상대는 응용이 공개 캐묻기 발언에서 보완한다. 재입력 경로도 시도에 보존된 선택 인물·근거·직전 상대를 전달하며, 확인 요청은 선택한 카드의 누락 슬롯과 근거 모호성만 검사한다.
 - [서버 설계](DESIGN.md) · [서버 시험](tests/README.md) · [웹 화면 라우팅](../web/ROUTING.md)
 
+E-09-10 다중 프로세스: Caddy(`ops/proxy/Caddyfile`, upstream 8000·8002) → Daphne 2개(`ops/mysql/service_runtime.py web --port`) → 같은 URL 경로. 채널 레이어 설정은 `paldo_web/channel_layers.py`, 동시성 구조와 한계는 [서버 설계](DESIGN.md) "동시성 구조와 한계", 비교 부하는 `tests/multiproc_bench.py`.
+
 ## B-06-03 실제 Mongo 연결
 
 명령 저장은 `GameService.command` → B의 `WebMongoGameRepository.commit` → C의 `MongoGameRepository.commit` 순서다. Mongo 연결 오류를 B에서 정규화한 뒤 응용이 같은 commit을 한 번 재시도하고, 이미 저장됐다면 CAS 충돌 → 명령 조회 → 저장 응답 재생으로 끝난다.
