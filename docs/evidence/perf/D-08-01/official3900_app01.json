@@ -1,0 +1,88 @@
+{
+  "task": "D-08-01",
+  "commit": "55ae536256056e63b8b4c34021f55807ec42e661",
+  "generated_at": "2026-11-09T10:34:45Z",
+  "source": "app-01 2 vCPU, isolated Mongo replica and local binary Caddy 2.10.2. python -B tools/perf/api_bench.py --web-processes 2 --users 30 --minutes 3 --front binary --mlruns mlruns --suspicion-version suspicion-logistic-9bbee626f29b. Benchmark source 55ae536256056e63b8b4c34021f55807ec42e661; inference p95 is the combined histogram bucket upper bound.",
+  "metrics": {
+    "p2_memory_requests": {
+      "value": 5400,
+      "unit": "count"
+    },
+    "p2_memory_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "p2_memory_throughput_rps": {
+      "value": 29.96,
+      "unit": "rps"
+    },
+    "p2_memory_p50_ms": {
+      "value": 41.219,
+      "unit": "ms"
+    },
+    "p2_memory_p95_ms": {
+      "value": 193.25,
+      "unit": "ms"
+    },
+    "p2_memory_p99_ms": {
+      "value": 298.827,
+      "unit": "ms"
+    },
+    "p2_memory_command_p95_ms": {
+      "value": 189.937,
+      "unit": "ms"
+    },
+    "p2_memory_beacon_acks": {
+      "value": 5430,
+      "unit": "count"
+    },
+    "p2_memory_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "p2_memory_intent_requests": {
+      "value": 0,
+      "unit": "count"
+    },
+    "p2_memory_cancel_requests": {
+      "value": 0,
+      "unit": "count"
+    },
+    "p2_memory_inference_calls": {
+      "value": 2488,
+      "unit": "count"
+    },
+    "p2_memory_inference_failures": {
+      "value": 2446,
+      "unit": "count"
+    },
+    "p2_memory_inference_p95_upper_ms": {
+      "value": 25.0,
+      "unit": "ms"
+    },
+    "users": {
+      "value": 30,
+      "unit": "users"
+    },
+    "minutes": {
+      "value": 3.0,
+      "unit": "min"
+    },
+    "elapsed_seconds": {
+      "value": 180.233,
+      "unit": "s"
+    },
+    "finished_games": {
+      "value": 398,
+      "unit": "games"
+    },
+    "process1_inference_calls": {
+      "value": 1223,
+      "unit": "count"
+    },
+    "process2_inference_calls": {
+      "value": 1265,
+      "unit": "count"
+    }
+  }
+}

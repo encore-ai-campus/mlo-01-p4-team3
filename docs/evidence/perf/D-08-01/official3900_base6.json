@@ -1,0 +1,72 @@
+{
+  "task": "D-08-01",
+  "commit": "55ae536256056e63b8b4c34021f55807ec42e661",
+  "generated_at": "2026-11-09T10:24:02Z",
+  "source": "python out/d08-01/dev-9d822af/evaluate_official.py; fixed seed 7 game split; untouched base6 test; temperature fixed on dev by ml.suspicion.train; source delta:official-bronze@117:d0801-rule06",
+  "metrics": {
+    "train_games": {
+      "value": 2730,
+      "unit": "games"
+    },
+    "test_base6_games": {
+      "value": 448,
+      "unit": "games"
+    },
+    "human_evaluation_games": {
+      "value": 0,
+      "unit": "games"
+    },
+    "train_base6": {
+      "value": 2108,
+      "unit": "games"
+    },
+    "train_short5": {
+      "value": 207,
+      "unit": "games"
+    },
+    "train_base7": {
+      "value": 202,
+      "unit": "games"
+    },
+    "train_large8": {
+      "value": 213,
+      "unit": "games"
+    },
+    "rule_v0_log_loss": {
+      "value": 1.0282845761985575,
+      "unit": ""
+    },
+    "rule_v0_ece": {
+      "value": 0.013828585571781465,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy": {
+      "value": 0.5166708764839606,
+      "unit": ""
+    },
+    "logistic_log_loss": {
+      "value": 0.9240258258111241,
+      "unit": ""
+    },
+    "logistic_ece": {
+      "value": 0.019209709306488385,
+      "unit": ""
+    },
+    "logistic_top1_accuracy": {
+      "value": 0.5795655468552665,
+      "unit": ""
+    },
+    "lightgbm_log_loss": {
+      "value": 0.884881352991504,
+      "unit": ""
+    },
+    "lightgbm_ece": {
+      "value": 0.02220395386466175,
+      "unit": ""
+    },
+    "lightgbm_top1_accuracy": {
+      "value": 0.5825966153068957,
+      "unit": ""
+    }
+  }
+}
