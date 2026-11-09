@@ -72,7 +72,9 @@ def free_port() -> int:
 def caddyfile(ports, front_host, listen=":8080", upstream_host="host.docker.internal") -> str:
     """운영 Caddyfile(ops/proxy/Caddyfile)의 분배·상태 확인 설정을 평문 HTTP로 옮긴다."""
     upstreams = " ".join(f"{upstream_host}:{port}" for port in ports)
-    return ("{\n    admin off\n    auto_https off\n}\n\n" + listen + " {\n"
+    bind_host = listen.rsplit(":", 1)[0]
+    bind = f"    bind {bind_host}\n" if bind_host else ""
+    return (f"{{\n    admin off\n    auto_https off\n}}\n\nhttp://{listen} {{\n{bind}"
             f"    reverse_proxy {upstreams} {{\n"
             "        lb_policy least_conn\n        lb_try_duration 2s\n        lb_try_interval 250ms\n"
             "        fail_duration 10s\n        health_uri /healthz\n        health_interval 5s\n        health_timeout 5s\n"

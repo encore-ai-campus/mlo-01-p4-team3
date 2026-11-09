@@ -151,6 +151,16 @@ def assess(rows):
             and all(row["beacon_failed"] > 0 for row in rows if row["case"] in {"daphne_delay", "daphne_failure"}))
 
 
+
+def stage_counts(lines):
+    """단계 히스토그램 줄에서 단계별 호출 수(load=게임 상태 조회 등)만 꺼낸다."""
+    counts = {}
+    for line in lines:
+        if line.startswith('paldo_bench_stage_seconds_count{stage="'):
+            stage = line.split('stage="', 1)[1].split('"', 1)[0]
+            counts[stage] = int(float(line.rsplit(' ', 1)[1]))
+    return counts
+
 def run_case(args, name, transport, scenario, mixed, uri, users, steps, folder,
              *, extra_env=None, ad_worker=None, beacon_worker=None):
     """시나리오별 서버·부하·Mongo 감사를 실행하고 자기 자원만 정리한다."""
@@ -233,9 +243,14 @@ def run_case(args, name, transport, scenario, mixed, uri, users, steps, folder,
             if ad_worker:
                 row['click_requests'] = sum(r['clicks'] for r in ad_rows)
                 row['click_errors'] = sum(r['click_errors'] for r in ad_rows)
+                if all('outcomes' in r for r in ad_rows):
+                    row['click_outcomes'] = {k: sum(r['outcomes'][k] for r in ad_rows) for k in ad_rows[0]['outcomes']}
+                    click_ms = [v for r in ad_rows for v in r['click_ms']]
+                    row['click_p95_ms'] = round(percentile(click_ms, .95), 3) if click_ms else None
             row['started_at'] = started_at
             row['ended_at'] = datetime.now(timezone.utc).isoformat()
             row['stage_metrics'] = [line for line in metrics.splitlines() if line.startswith('paldo_bench_stage_seconds_') and not line.startswith('paldo_bench_stage_seconds_created')]
+            row['stage_counts'] = stage_counts(row['stage_metrics'])
             row['routes'] = {}
             row['request_timings'] = [sample for result in results for sample in result['request_timings']]
             for route in ('start', 'command'):

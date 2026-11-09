@@ -1,8 +1,14 @@
 # 서버 라우팅
 
+B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
+
+공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 공식 18개·임시 배경 상태만 표시하고 classic은 404다. 시안 원화/글꼴 카탈로그는 읽지 않는다. 전체 시안은 별도 보존 worktree다.
+
+종료 탭은 같은 판 URL에서 결과·복기·단서를 표시한다. GET review의 htmx는 review_panel.html, 일반 HTML은 review.html, JSON DTO·소유권·진행 중 403은 유지한다. 서버·웹 디자인 및 web/PM_UI_REVIEW.md·UI_ASSET_PLAN.md·UI_APPLY.md를 함께 갱신한다.
+
 B-10-02: 기존 GET /games/{game_id} 전체/htmx 화면 → meeting.html → village_guide → api/village_assets.py → manifest 지도·regions·초상. 하단 asset_attribution → SOURCES.md 첫 출처 줄. 이미지는 기존 api/assets.py가 제공한다. 새 URL·명령·DB는 없다.
 
-B-09-06은 [VN 표시 규칙](../docs/contracts/vn.md)을 정의하며 URL·HTTP 메서드·서버 호출 경로를 추가하지 않는다. 회의·밤의 기존 화면 및 render 폴링을 B-10-07에서 연결한다. E 검토 전 초안이다.
+B-09-06은 [VN 표시 규칙](../docs/contracts/vn.md)을 정의하며 URL·HTTP 메서드·서버 호출 경로를 추가하지 않는다. 회의·밤의 기존 화면 및 render 폴링을 B-10-07에서 연결한다. 11/9 PR #304로 확정됐다.
 
 B-08-02: 홈 `accounts/views.py`와 일반 판 시작 `app/open_start.py`의 `open_preset_ids()`가 `app/presets_enabled.json`을 매번 읽는다. 초기 공개는 `base6`만이며, 파일에서 허용한 프리셋만 새 일반 판을 시작한다. 회차 판 배정과 이미 시작한 판의 재전송은 기존 정책을 유지한다. `POST /games`의 `mudang_variant` → 판 메타 → `GameOutput.mudang_variant` → `meeting.html` 초상으로 이어진다.
 
@@ -47,7 +53,7 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 | `GET /healthz`, `GET /readyz`, `GET /metrics` | [paldo_web/probes.py](paldo_web/probes.py). |
 | `GET /static/…` | [api/assets.py](api/assets.py). |
 | `/ws/game/` | [paldo_web/asgi.py](paldo_web/asgi.py)의 출처·세션 인증 → [api/routing.py](api/routing.py) → [api/consumers.py](api/consumers.py). `hello`의 폐기 사유는 [api/ad_metrics.py](api/ad_metrics.py)에 집계하고, `ad.impression`은 [app/ad_events.py](app/ad_events.py)로 중계한다. |
-| `GET /ads/click?t=…`, `GET /ads/landing/{creative_id}` | [api/ad_relay.py](api/ad_relay.py) → [app/ad_events.py](app/ad_events.py) → [app/ads_port.py](app/ads_port.py). 실패 시 홈 이동 또는 돌아가기 링크를 제공한다. |
+| `GET /ads/click?t=…`, `GET /ads/landing/{creative_id}` | [api/ad_relay.py](api/ad_relay.py) → [app/ad_events.py](app/ad_events.py) → [app/ads_port.py](app/ads_port.py). 클릭·랜딩 실패는 홈으로 보내지 않고 게임 조회 없는 안내와 돌아가기를 같은 응답으로 보인다(B-08-03 E 보완). 랜딩 ID는 합성 소재의 `syn:`을 받는다. 중계 로그에 `request_id`와 `serve_id`(토큰 본문에서 읽음, 서명 검증은 광고 서버)를 남긴다. |
 | `GET /ads/slot/{slot}` | [api/ad_slots.py](api/ad_slots.py) → B-07-05의 광고 게이트웨이 조립 → `AdGateway.fetch`. 게임 명령과 분리해 광고 HTML 조각만 반환한다. 미제공·실패는 200 빈 조각이다. |
 
 B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은 `InteractionService.participant_records`를 거친다. 저장 계획은 보조 저장의 `effects`, 공개 표시 값은 `state`에 보존하고 C 게임 아웃박스의 동일 키 재생으로 복구한다. C의 별도 `outbox_publisher`가 `paldo.player`로 발행한다. API·이벤트 형식은 그대로다.
