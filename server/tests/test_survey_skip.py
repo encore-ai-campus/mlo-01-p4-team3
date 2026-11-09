@@ -1,4 +1,4 @@
-"""B-09-07 9번: 끝난 판마다 설문 이벤트(응답·건너뜀) 정확히 1건, 다음 홈 요청 보완·스냅숏 전 일괄 보완·멱등."""
+"""B-09-07 9번: 끝난 판마다 설문 이벤트(응답·건너뜀) 정확히 1건, 다음 홈 요청 보완·마감 직후 일괄 보완·멱등."""
 import json
 from io import StringIO
 from pathlib import Path
@@ -57,7 +57,7 @@ class SurveySkip(TestCase):
                                 HTTP_ACCEPT="application/json", HTTP_X_CSRFTOKEN=self.token)
 
     def batch(self):
-        """스냅숏 전 일괄 보완 관리 명령."""
+        """마감 직후 일괄 보완 관리 명령."""
         out = StringIO()
         call_command("backfill_surveys", stdout=out)
         return out.getvalue()

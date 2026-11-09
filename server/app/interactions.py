@@ -330,7 +330,7 @@ class InteractionService:
     def skip_survey(self, game_id, player, reason, state=None):
         """끝난 판에 설문 이벤트(응답·건너뜀)가 없으면 건너뜀 1건을 남긴다(B-09-07 9번).
 
-        reason은 채운 경로(`backfill`: 같은 참가자의 다음 홈 요청 또는 스냅숏 전 일괄 보완).
+        reason은 채운 경로(`backfill`: 같은 참가자의 다음 홈 요청 또는 18:00 마감 직후 일괄 보완).
         이미 설문 이벤트가 있거나 판이 끝나지 않았으면 아무것도 남기지 않고 False.
         state는 같은 요청에서 이미 읽은 판 상태(소유권 확인 끝난 것)를 넘길 때만 쓴다.
         """
@@ -362,7 +362,7 @@ class InteractionService:
         return filled
 
     def backfill_all_skipped_surveys(self, players):
-        """스냅숏 전 일괄 보완: 참가자마다 진척의 판 목록으로 `backfill_skipped_surveys`를 부르고 채운 판 수를 반환한다.
+        """마감 직후 일괄 보완: 참가자마다 진척의 판 목록으로 `backfill_skipped_surveys`를 부르고 채운 판 수를 반환한다.
 
         다시 오지 않은 참가자의 끝난 판도 설문 이벤트 1건을 갖게 한다. 이미 설문 이벤트가 있는 판은 건너뛴다.
         """

@@ -24,7 +24,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-DEFINITION_VERSION = "ut-metrics-1.1"
+DEFINITION_VERSION = "ut-metrics-1.2"
 KST = timezone(timedelta(hours=9))
 DEFAULT_CUTOFF = "2026-11-10T18:00:00+09:00"  # 정식 사용자 테스트 클로즈 = 스냅숏(11/8 사용자 결정)
 DEFAULT_OPEN = "2026-11-10T13:00:00+09:00"  # 정식 사용자 테스트 오픈. 그 전 판(리허설 등)은 기본으로 뺀다(Codex 지적 반영)
@@ -35,7 +35,7 @@ DEFINITIONS = {
     "completion_rate": {"text": "game_ended 시각이 마감 시각 이하이고 result.completed가 거짓이 아닌 판 ÷ 시작한 판"},
     "games_unfinished": {"text": "마감 시각까지 game_ended가 없는 판(진행 중이던 판. 마감 뒤에 끝난 판도 여기에 든다). 미완주와 따로 보고"},
     "game_minutes": {"text": "완주 판의 game_ended − game_started 시각(분). 중앙값·p90"},
-    "survey_response_rate": {"text": "마감 시각 이하에 제출된 skipped=false 설문 수 ÷ 마감 시각까지 끝난 판 수(계획서 7절 \"응답 수 ÷ 판 수\", 건너뜀은 분모에만. 11/8 사용자 결정으로 마감 뒤 종료·설문은 세지 않는다). 시작한 판 기준 값(response_rate_of_started)·설문 이벤트 수·건너뜀 수·설문 없는 끝난 판 수를 함께 보고"},
+    "survey_response_rate": {"text": "마감 시각 이하에 제출된 skipped=false 설문 수 ÷ 마감 시각까지 끝난 판 수(계획서 7절 \"응답 수 ÷ 판 수\", 건너뜀은 분모에만. 11/8 사용자 결정으로 마감 뒤 종료·설문은 세지 않는다. 단 마감 전에 끝난 판의 서버 자동 건너뜀(reason=backfill, 마감 직후 backfill_surveys)은 이벤트 시각이 마감 뒤여도 센다, ut-metrics-1.2·B-09-07). 시작한 판 기준 값(response_rate_of_started)·설문 이벤트 수·건너뜀 수·설문 없는 끝난 판 수를 함께 보고"},
     "input_sentences": {"text": "intent_attempt 최초 이벤트(attempt_id별 1건, 재입력은 새 시도) 중 마스킹 후 문장이 비지 않은 수"},
     "desired_action_rate": {"text": "자유 입력 묶음(최초 시도 + superseded_by로 이어진 재입력) 중 마지막 반응이 confirm·edit(명령 수락 뒤에만 기록됨)인 묶음 ÷ 전체 묶음. 반응 없이 남은 묶음은 분모에 넣음"},
     "extra_selections": {"text": "묶음별 (재입력 수 + 마지막 반응이 edit이면 1)의 합과 실행된 묶음당 평균"},
@@ -181,9 +181,10 @@ def phase_dwell(game, phase, end):
 
 
 def game_summary(game, cutoff=None):
-    """판 하나의 집계 재료. 마감 시각을 주면 그 시각의 스냅숏으로 본다(ut-metrics-1.1).
+    """판 하나의 집계 재료. 마감 시각을 주면 그 시각의 스냅숏으로 본다(ut-metrics-1.2).
 
-    마감 시각 뒤의 종료·입력·반응·추궁·명령·설문은 세지 않는다. 마감 시각까지 끝나지 않은 판(마감 뒤에 끝난 판 포함)은
+    마감 시각 뒤의 종료·입력·반응·추궁·명령·설문은 세지 않는다. 예외는 마감 전에 끝난 판의 서버 자동 건너뜀
+    (`survey_submitted`의 `reason=backfill`, 마감 직후 `backfill_surveys` 실행)으로, 이벤트 시각이 마감 뒤여도 센다(B-09-07). 마감 시각까지 끝나지 않은 판(마감 뒤에 끝난 판 포함)은
     `unfinished`이고 완주가 아니다. 시각이 없는 이벤트는 마감 전으로 본다.
     """
     all_events = game.get("events", [])
@@ -195,6 +196,9 @@ def game_summary(game, cutoff=None):
     result = game.get("result") or {}
     completed = end is not None and result.get("completed", True) is not False
     surveys = [e for e in events if e.get("event_type") == "survey_submitted"]
+    if end is not None and not surveys:
+        surveys = [e for e in all_events if e.get("event_type") == "survey_submitted"
+                   and (e.get("payload") or {}).get("reason") == "backfill"]
     survey = (surveys[-1].get("payload") or {}) if surveys else None
     chains, attempts = attempt_chains(events)
     first_seen = _command_first_seen(game)
