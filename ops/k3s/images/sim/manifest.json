@@ -1,0 +1,9 @@
+{
+  "source_commit": "592bff5617b372a4b27f25d09b754fd2c3fd8fb6",
+  "image_digest": "sha256:d70e61bab08dccb1f93e9326a4a907f948c9b2c60e1fdd867f9c78352a40cd24",
+  "local_image": "docker.io/library/paldo-sim:c08-r2",
+  "registry_pushed": false,
+  "python_base_digest": "sha256:2ca02f32b4d9d893863367ce07ec1972819f476dd38d8612f2a9cb6a41cbb727",
+  "buildkit_version": "v0.34.2",
+  "buildkit_sha256": "b9f18b8e37eb450e9e5df03117045237cdd12d3c4a0034ffeeaa857852a15e13"
+}

@@ -1,0 +1,8 @@
+{
+  "version": "v1.36.5+k3s1",
+  "upstream": "https://github.com/k3s-io/k3s/releases/download/v1.36.5%2Bk3s1/",
+  "artifacts": {
+    "k3s": {"sha256": "d73847bcd3c5fccef0115b372e2f9a91f3032dc84bbf71518a4617565294d313", "bytes": 79077538},
+    "k3s-airgap-images-amd64.tar.zst": {"sha256": "7d939471907df2d4e537a9c308bf94173e453fff4a2e9e77e9ae92a64be3007f", "bytes": 194444189}
+  }
+}
