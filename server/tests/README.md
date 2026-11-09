@@ -18,6 +18,14 @@ B-10-02의 test_village_assets는 전체/htmx의 지도·초상·하단 출처, 
 
 ## B-08-02 프리셋·8인 화면
 
+최신 dev `44a6206` 반영 후 사전 회귀50건·연계 회귀36건·game.js 시험을 통과했다. [재검증 범위와 미수행 항목](../../docs/evidence/B-08-02.md#joint-dev-recheck)을 확인한다.
+
+공동 확인 전에는 아래 회귀검사를 별도 최신 dev worktree에서 실행한다. [11/9 사전검사·환경 확인·공동 체크리스트·E 확인 항목](../../docs/evidence/B-08-02.md#공동-확인-준비--119-1556-kst)에 실제 준비 결과를 기록했다. 자동 시험은 B·E의 base6 공동 완주를 대신하지 않는다.
+
+~~~powershell
+python -B server/manage.py test server.tests.test_preset_screens server.tests.test_open_start server.tests.test_utterance_ui --settings=server.paldo_web.test_settings --noinput
+~~~
+
 외형 선택·기본값, 공개 설정 파일의 홈/일반 판 반영, 8인 15화면 HTTP·HTML, 거절 코드 로그, 심문 양식과 실제 엔진 정상·거절 조합을 검사한다.
 
 ```powershell

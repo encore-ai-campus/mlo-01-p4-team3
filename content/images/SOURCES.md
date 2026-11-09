@@ -117,22 +117,22 @@ Create ONE fully rendered MALE Korean shaman full-body game sprite, age32. REFER
 B(김영주)가 생성해 팀 공유 폴더 `2.asset 개선안 및 게임 UI 구성(김영주)/`에 올린 원본(바탕 투명 RGBA 793×1983, 마스코트 1254×1254)을 E가 규격에 맞췄다(A-09-05, 11/9 담당 D → E). 원본은 저장소에 넣지 않는다.
 
 - 도구·모델·생성 시각은 원본 PNG의 콘텐츠 자격 증명(C2PA `caBX` 청크)에 적힌 값이다(`ChatGPT`, `gpt-image`, `c2pa.created`). 서명 검증은 하지 않았다. 정규화한 파일은 다시 인코딩해서 이 청크가 없다.
-- 시드는 ChatGPT가 제공하지 않는다. 프롬프트 전문·금지 지시는 생성한 B에게 받아 채운다("B 확인 대기"). 받기 전에는 에셋2를 충족하지 않은 상태다(`check_assets`는 이 문구를 빈 칸으로 보지 않으므로 사람이 확인한다).
+- 시드는 ChatGPT가 제공하지 않는다. 프롬프트 전문·금지 지시는 받지 않고 "확인 불가"로 적는다(11/9 사용자 결정, 에셋2 예외: 다른 사람이 만든 원본이라 프롬프트를 확인할 수 없으면 파일 안 생성 기록으로 도구·모델·생성 시각을 확인해 적는다). 이 기록으로 에셋2를 충족한 것으로 본다.
 - 무당 여는 기본 `mudang_f.png`를 썼다. 변형(`-v2`·`-v3`·`-legacy-v4`·`-legacy-v5`)과 `branding/`은 쓰지 않았다.
 - 처리: 인물별 머리카락 윗선(`tools/assets/normalize.py`의 `HAIR_TOP`, 원본 좌표)과 보이는 발끝으로 단일 배율을 정해 키 등급 머리 꼭대기·발끝 y=1248·가로 가운데 256에 둔다(면적 평균 축소, 가로·세로 같은 배율). 마스코트는 단일 배율로 512×512 가운데, 발끝 기준선 y=480, 위 여백 32 이상. 초상은 `make_placeholders`로 파생. 인물별 배율·결과 위치는 [A-09-05 증빙](../../docs/evidence/A-09-05.md).
 
 | 항목 | 결과 파일 | 원본 파일(공유 폴더) | 도구 | 모델·버전 | 시드 | 생성 시각 UTC | 프롬프트 전문 | 부정 프롬프트·금지 지시 | 처리 |
 |---|---|---|---|---|---|---|---|---|---|
-| sprite:mudang_f | `content/images/sprite/mudang_f.png` | `characters/mudang_f.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:03:17Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
-| sprite:mudang_m | `content/images/sprite/mudang_m.png` | `characters/mudang_m.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:04:57Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
-| sprite:hunjang | `content/images/sprite/hunjang.png` | `characters/hunjang.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:05:01Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
-| sprite:meosum | `content/images/sprite/meosum.png` | `characters/meosum.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:05:40Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
-| sprite:yakcho | `content/images/sprite/yakcho.png` | `characters/yakcho.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:07Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
-| sprite:jumo | `content/images/sprite/jumo.png` | `characters/jumo.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:29Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
-| sprite:gwabu | `content/images/sprite/gwabu.png` | `characters/gwabu.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:39Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
-| sprite:blacksmith | `content/images/sprite/blacksmith.png` | `characters/blacksmith.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:07:39Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
-| mascot:kkachi | `content/images/mascot/kkachi.png` | `mascots/kkachi-v2.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:38:47Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
-| mascot:jokjebi | `content/images/mascot/jokjebi.png` | `mascots/jokjebi-v2.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:40:05Z | B 확인 대기 | B 확인 대기 | `python -m tools.assets.normalize` |
+| sprite:mudang_f | `content/images/sprite/mudang_f.png` | `characters/mudang_f.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:03:17Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:mudang_m | `content/images/sprite/mudang_m.png` | `characters/mudang_m.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:04:57Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:hunjang | `content/images/sprite/hunjang.png` | `characters/hunjang.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:05:01Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:meosum | `content/images/sprite/meosum.png` | `characters/meosum.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:05:40Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:yakcho | `content/images/sprite/yakcho.png` | `characters/yakcho.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:07Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:jumo | `content/images/sprite/jumo.png` | `characters/jumo.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:29Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:gwabu | `content/images/sprite/gwabu.png` | `characters/gwabu.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:39Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:blacksmith | `content/images/sprite/blacksmith.png` | `characters/blacksmith.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:07:39Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| mascot:kkachi | `content/images/mascot/kkachi.png` | `mascots/kkachi-v2.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:38:47Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| mascot:jokjebi | `content/images/mascot/jokjebi.png` | `mascots/jokjebi-v2.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:40:05Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
 
 ```powershell
 python -m tools.assets.normalize <원본 폴더 사본>
