@@ -1,0 +1,112 @@
+{
+  "task": "D-08-01",
+  "commit": "02dc60244d8ccd9d0bb001202ea1fa1c48c8608a",
+  "generated_at": "2026-11-09T00:33:52Z",
+  "source": "rule-0.6: 700 local rule-v0 games, untouched base6 test, Django WSGI probe and paired fixed seed 200 games",
+  "metrics": {
+    "input_games": {
+      "value": 700,
+      "unit": "판"
+    },
+    "train_games": {
+      "value": 490,
+      "unit": "판"
+    },
+    "test_base6_games": {
+      "value": 60,
+      "unit": "판"
+    },
+    "benchmark_games": {
+      "value": 200,
+      "unit": "판"
+    },
+    "model_village_rate": {
+      "value": 79.0,
+      "unit": "%"
+    },
+    "rule_v0_village_rate": {
+      "value": 65.0,
+      "unit": "%"
+    },
+    "village_rate_difference": {
+      "value": 14.0,
+      "unit": "%p"
+    },
+    "wsgi_calls": {
+      "value": 100,
+      "unit": "건"
+    },
+    "wsgi_inference_p95": {
+      "value": 0.9780996479094028,
+      "unit": "ms"
+    },
+    "input_rows": {
+      "value": 55024,
+      "unit": "행"
+    },
+    "train_base6": {
+      "value": 276,
+      "unit": "판"
+    },
+    "train_short5": {
+      "value": 75,
+      "unit": "판"
+    },
+    "train_base7": {
+      "value": 67,
+      "unit": "판"
+    },
+    "train_large8": {
+      "value": 72,
+      "unit": "판"
+    },
+    "rule_v0_log_loss": {
+      "value": 1.1395969313373269,
+      "unit": ""
+    },
+    "rule_v0_ece": {
+      "value": 0.05158412393920009,
+      "unit": ""
+    },
+    "logistic_log_loss": {
+      "value": 0.9165923788973352,
+      "unit": ""
+    },
+    "logistic_ece": {
+      "value": 0.018280150232738816,
+      "unit": ""
+    },
+    "lightgbm_log_loss": {
+      "value": 0.8876020663135956,
+      "unit": ""
+    },
+    "lightgbm_ece": {
+      "value": 0.0363959047274654,
+      "unit": ""
+    },
+    "model50_games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "model50_model_calls": {
+      "value": 320,
+      "unit": "건"
+    },
+    "model50_model_successes": {
+      "value": 320,
+      "unit": "건"
+    },
+    "model50_legal_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "model50_suspicion_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "model50_inference_p95": {
+      "value": 1.9958000630140305,
+      "unit": "ms"
+    }
+  }
+}
