@@ -55,6 +55,16 @@ python -m ml.suspicion.train --rows out/suspicion/delta1108/aligned/rows.jsonl -
 
 - D-07-03 의도 미세조정은 `python -m tools.perf.intent_finetune --epochs 5 --include-generated`로 실행한다. 증빙은 `docs/evidence/D-07-03.md`, 모델·실행 계보는 `mlruns/intent_bert/`에 보관한다.
 
+### D-08-01 모델 판 실행
+
+D-08-01의 `ml/adapters/suspicion_model.py`는 지속 worker로 추론 마감을 지키고, 실패를 엔진의 규칙 v0 폴백 예외로 바꾼다. `ml/adapters/run_model_games.py`는 기존 판 실행기를 재사용해 모델 버전·합법성·폴백 수·p95를 기록한다. `tools/`에서 `ml/`을 import하지 않는다.
+
+```sh
+python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --model out/suspicion/run1/models.pkl --out out/model_games
+```
+
+`--preset/--games/--seed/--out/--policy/--record`는 기존 도구와 같다. 기본 정책은 모델을 호출하는 `rule-v0`다. `--model`을 생략하면 `PALDO_SUSPICION_MODEL_PATH`, 그 값도 없으면 위 로컬 경로를 쓴다. 신뢰된 학습 산출물 `models.pkl`과 그 의존 패키지가 필요하다. 없으면 종료 코드 1이며 모델 실행 성공 manifest를 만들지 않는다. `--policy min-legal`은 모델을 사용하지 않아 성공으로 판정하지 않는다.
+
 ## 설정값
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
@@ -66,6 +76,8 @@ python -m ml.suspicion.train --rows out/suspicion/delta1108/aligned/rows.jsonl -
 | temperature | .5, 1, 2, 4 중 dev log loss 최소 | 모델별 softmax 로짓 보정 | test는 선택에 사용하지 않음 |
 | ECE | 10 equal-width bins | 후보별 이진 라벨과 확률의 가중 오차 | top1 confidence ECE와 다름 |
 | small test | 50판 미만 300회 게임 bootstrap | 95% 구간 함께 보고 | 개선 판정은 별도 관문 |
+
+어댑터의 추론 응답 대기 마감은 90ms, native 초기화·워밍업을 포함한 로드 마감은 30초다. 고정 주민 수의 로컬 순차 IPC에서 검증했으며 웹 동시성·큰 메시지의 절대 wall-clock 상한은 별도 검증이 필요하다. 특징 버전·열 순서·보정 온도는 D-07-02 산출물과 기존 특징 모듈로 검증한다.
 
 ## 한계
 
@@ -86,3 +98,6 @@ python -m ml.suspicion.train --rows out/suspicion/delta1108/aligned/rows.jsonl -
 | D-07-02 | 11/8 | 최신 dev 규칙 반영, 거짓말 전략 고정 생성·별도 평가·판/seed 중복 거부·실제 선택 이후 관측 분리 |
 | D-07-02 | 11/8 | C Delta 행의 원본 관측 대조와 학습 코드 연결 실행 추가 |
 | D-07-03 | 11/7 | intent/의 CPU 미세조정·동일 기준선 평가와 모델·계보 저장 경로를 연결 |
+| D-08-01 | 11/8 | 중단 가능한 모델 포트·판 실행, 버전 고정·폴백·특징 경보 검증. dev2ed4a53 반영 후 50판 연결 회귀와 승률 관문 실패 기록 |
+
+모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. Selector의 모델 선택과 이전 버전 수명 관리는 D-08-04에서 연결한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.
