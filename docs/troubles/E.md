@@ -95,3 +95,9 @@
 - 원인: Django 시험 클라이언트의 `post(dict)`는 multipart로 보내는데 시작 경로는 urlencoded 폼과 JSON만 받는다(브라우저 폼은 urlencoded). 회차 저장소가 없는 것은 이제 일반 판 시작을 막는 상태가 아니다.
 - 대응: 시험은 브라우저와 같은 urlencoded 본문으로 보낸다. 회차 저장소 미연결은 홈에 오류를 띄우지 않고 새 게임 폼을 보이며, 회차 판 시작은 그대로 503인지 확인하도록 기존 시험을 고쳤다.
 - 결과: `server.tests` 176개 통과(4개 건너뜀, Mongo 필요). 증빙 [`docs/evidence/E-08-14.md`](../evidence/E-08-14.md)
+
+### B-09-01 모델 버전 적용·업데이트 내역 표시
+- 문제: 입력 `ModelSelector`의 실제 구현(D-08-04 `server/infra/model_selector.py`)과 레지스트리 조회(C-09-01)가 dev에 없었다(두 이슈 모두 열림). 또 운영 조립은 의심 모델 하나를 모든 판에 넘겨, 판 메타에 버전을 고정해도 엔진이 그 버전을 쓰지 않았다.
+- 원인: 선행 태스크 미완. 엔진 의존성 함수가 판 메타를 받지만 의심 모델은 조립 때 고정된 객체였다.
+- 대응: 응용 `server/app/model_versions.py`에 레지스트리 포트와 버전 고정 정책을 두고, 인프라 `server/infra/model_registry.py`에 배포된 버전만 아는 임시 레지스트리를 두었다. 엔진 의존성은 판 메타의 의심 모델 버전으로 고르게 감쌌고, 이 프로세스에 없는 버전이면 `ModelUnavailable`을 내 엔진이 규칙 v0로 대신한다(폴백 지표에 잡힘). 다른 담당 코드는 대신 만들지 않았다.
+- 결과: `server.tests.test_model_versions` 19개 통과, `server.tests` 전체 243개 통과(4개 건너뜀, Mongo 필요). 실제 레지스트리 연결·밴딧 비율 주입은 C-09-01·D-09-02 뒤.

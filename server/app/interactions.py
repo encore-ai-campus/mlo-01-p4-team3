@@ -16,6 +16,7 @@ from engine.domain.serde import to_jsonable
 from engine.ports import ParseContext, ParseFailure, RenderStatus
 from .dto import (CommandOutput, ParseUtteranceInput, ParseUtteranceOutput, RenderOutput, ResolveUtteranceInput,
                   SubmitCommandInput, UtteranceReaction)
+from .model_versions import warn_parse_version_mismatch
 from .usecases import ResourceNotFound
 
 
@@ -149,6 +150,7 @@ class InteractionService:
         ctx = ParseContext(data.game_id, state.state_version, state.phase, copy.deepcopy(view.public), aliases,
                            data.selected_npc, data.selected_cards, last_addressee)
         result = self.parser.parse(data.text, ctx)
+        warn_parse_version_mismatch(state.meta, result.versions)
         output = ParseUtteranceOutput(str(uuid.uuid4()), state.state_version, result.candidates,
                                       result.failure, True)
         payload = {"attempt_id": output.attempt_id, "superseded_by": None, "text": mask_text(data.text),

@@ -22,7 +22,7 @@ B-06-04 비노출 검증: 가입·로그인 → 기존 `/games`·명령 → `GET
 
 B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_bench.py` → 기존 `/games`·`/games/{id}/commands` → 실제 Mongo 조립이다. URL·운영 핸들러는 바꾸지 않는다. `server/tests/mongo_commands.py`는 같은 API의 실제 저장·20개 경합을 검사한다.
 
-운영 팩토리는 `server.infra.game_factory.build_game_service` → `paldo_web/mongo.py` 실행 자원 → `infra/interaction_store.py` 보조 저장을 연결한다. B-06-02 시험 조립과 분리되며 설정·실행 순서는 [웹 모듈](../docs/modules/web.md#사용법)에 있다.
+운영 팩토리는 `server.infra.game_factory.build_game_service` → `paldo_web/mongo.py` 실행 자원 → `infra/interaction_store.py` 보조 저장을 연결한다. B-09-01: 판 시작 모델 버전 고정·카나리아 규칙은 응용 `app/model_versions.py`, 레지스트리 조회는 인프라 `infra/model_registry.py`(C-09-01 전 임시 `StaticModelRegistry`), 폴백 지표는 `paldo_web/engine_metrics.py`, 업데이트 내역 패널은 `game.html`의 `update_history.html`(태그 `update_history`). B-06-02 시험 조립과 분리되며 설정·실행 순서는 [웹 모듈](../docs/modules/web.md#사용법)에 있다.
 
 `POST /admin/sessions` → `app/test_sessions.py`는 최신 엔진의 합성 규칙 버전(`rule-0.6.decision-1`)을 회차와 판 메타에 그대로 전달한다. `tests/test_sessions.py`가 등록·시작과 잘못된 버전 거부를 확인한다.
 
@@ -44,7 +44,7 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 | `GET /games/{id}/renders/{job_id}` | [app/interactions.py](app/interactions.py)의 소유권·완료 상태 검사 뒤 JSON 또는 `speech_line.html`을 반환한다. `speech_line.html`은 발언만 갱신하고 완료하면 폴링을 멈춘다. 회의 진술표는 [api/meeting_view.py](api/meeting_view.py)가 공개 주장으로 만든다. |
 | `PUT /games/{id}/notebook` | [api/participant_forms.py](api/participant_forms.py)가 JSON·폼을 `SaveNotebookInput`으로 검증한다. `InteractionService.notebook`이 의심도·투표 확신도를 저장하고 204를 반환한다. 동일 값은 같은 날짜·단계에서만 생략하며 다음 날·결선은 별도 기록한다. |
 | `POST /games/{id}/survey` | `SubmitSurveyInput`의 응답·전체 건너뛰기를 검증하고 종료 후 저장한다. 최초 JSON은 204, 최초 htmx는 200 `survey_done.html`을 반환한다. 같은 요청은 204이며 htmx는 화면을 새로 읽는다. 다른 내용은 409, 잘못된 입력 조합은 400이다. |
-| `GET /healthz`, `GET /readyz`, `GET /metrics` | [paldo_web/probes.py](paldo_web/probes.py). |
+| `GET /healthz`, `GET /readyz`, `GET /metrics` | [paldo_web/probes.py](paldo_web/probes.py). `paldo_engine_suspicion_fallback_total`은 [paldo_web/engine_metrics.py](paldo_web/engine_metrics.py)가 저장된 엔진 이벤트로 올린다(B-09-01). |
 | `GET /static/…` | [api/assets.py](api/assets.py). |
 | `/ws/game/` | [paldo_web/asgi.py](paldo_web/asgi.py)의 출처·세션 인증 → [api/routing.py](api/routing.py) → [api/consumers.py](api/consumers.py). `hello`의 폐기 사유는 [api/ad_metrics.py](api/ad_metrics.py)에 집계하고, `ad.impression`은 [app/ad_events.py](app/ad_events.py)로 중계한다. |
 | `GET /ads/click?t=…`, `GET /ads/landing/{creative_id}` | [api/ad_relay.py](api/ad_relay.py) → [app/ad_events.py](app/ad_events.py) → [app/ads_port.py](app/ads_port.py). 실패 시 홈 이동 또는 돌아가기 링크를 제공한다. |

@@ -38,6 +38,12 @@ class GameService:
         self.prepare_start = prepare_start
         self.interactions = None
         self.load_test = False
+        # 판 시작 때 모델 버전을 고정하는 정책(B-09-01, `model_versions.VersionPinning`). None이면 고정하지 않는다.
+        self.pin_versions = None
+        # 저장에 성공한 엔진 결과 이벤트를 받는 관측 함수(B-09-01 폴백 지표). None이면 부르지 않는다.
+        self.observe_events = None
+        # 업데이트 내역 화면이 읽는 모델 레지스트리(B-09-01, `model_versions.ModelRegistry`). None이면 빈 내역.
+        self.model_registry = None
 
     def owned(self, game_id, player_pseudonym):
         """멱등 응답·버전 확인보다 먼저 판 소유권을 확인한다."""
@@ -93,6 +99,9 @@ class GameService:
         meta = replace(meta, game_id=fixed_id or str(uuid.uuid4()), source=DataSource.HUMAN,
                        player_pseudonym=player_pseudonym, mudang_variant=data.mudang_variant,
                        ending_choice=data.ending_choice)
+        if self.pin_versions is not None:
+            # 새로 만드는 판에만 버전을 고른다. 이미 저장된 판은 위에서 그대로 반환했다.
+            meta = self.pin_versions(meta)
         deps = self.dependencies(meta)
         result = self.engine.new_game(meta, deps)
         if not result.accepted or result.state is None or result.truth is None:
@@ -104,6 +113,8 @@ class GameService:
                 raise
             # 같은 순번의 동시 시작에서 먼저 저장된 판만 반환한다.
             self.owned(fixed_id, player_pseudonym)
+        else:
+            self._observe(result.events)
         self.progress.add_game(meta.player_pseudonym, meta.game_id)
         return self._detail(meta.game_id, player_pseudonym, deps)
 
@@ -177,9 +188,19 @@ class GameService:
                 return self.replay_command(data.game_id, saved, player_pseudonym)
             # 저장 성공 후 확인 응답만 유실된 경우에도 아래 후속 처리를 마친다.
             output = replay
+        self._observe(result.events)
         if self.interactions is not None:
             self.interactions.complete_command_effects(data.game_id, args[-1], player_pseudonym)
         return output
+
+    def _observe(self, events):
+        """이 요청이 저장한 엔진 결과 이벤트를 관측 함수에 넘긴다. 관측 실패는 게임 응답을 막지 않는다."""
+        if self.observe_events is None:
+            return
+        try:
+            self.observe_events(events)
+        except Exception:  # noqa: BLE001 - 지표 실패로 저장된 명령 응답을 바꾸지 않는다.
+            pass
 
     def replay_command(self, game_id, saved, player_pseudonym):
         """명령·카드 경로 공통: 소유권 확인 뒤 후속 처리를 복구하고 저장 응답을 반환한다."""

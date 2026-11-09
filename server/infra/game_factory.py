@@ -8,6 +8,8 @@
 - 보조 기록: `MongoInteractionStore`, 컬렉션은 B 규칙대로 `<접두어>b_interactions`.
 - 해석기: 프로세스마다 한 번 만든 D-07-01 기준선. 웹 조립이 관측 래퍼를 씌운다.
 - 렌더러: 런타임 LLM 없이(P-31 (나)) 엔진의 템플릿 문장(`fallback_text`)을 쓰게 하는 `TemplateLineRenderer`.
+- 모델 버전(B-09-01): 판 시작 때 `VersionPinning`이 레지스트리 운영 버전을 `GameMeta.model_versions`에 고정하고,
+  엔진 의존성은 판이 고정한 의심 모델 버전으로 만든다. 레지스트리는 C-09-01 전까지 `StaticModelRegistry`(배포된 버전).
 - 연결 문자열은 B와 같이 설정 `SESSION_MONGO_URI`(환경 변수 `PALDO_MONGO_URI`)에서 읽는다. 콘텐츠는
   `python -m server.infra.load_content`로 같은 DB의 `content` 컬렉션에 미리 적재한다.
 """
@@ -106,10 +108,32 @@ def build_from_runtime(runtime, parser):
     return attach_interactions(service, store, parser)
 
 
+def attach_model_versions(service, registry, suspicion_models=None, canary_ratio=lambda: 0.0):
+    """게임 서비스에 판 시작 버전 고정(B-09-01)과 판 버전별 의심 모델 선택을 끼운다. 운영과 시험이 같은 함수를 쓴다."""
+    from server.app.model_versions import VersionPinning, pinned_dependencies
+    service.pin_versions = VersionPinning(registry, canary_ratio)
+    service.dependencies = pinned_dependencies(service.dependencies, suspicion_models)
+    service.model_registry = registry
+    return service
+
+
+def deployed_registry(parser, suspicion):
+    """배포 코드가 가진 해석기·의심 모델 버전을 운영 버전으로 하는 임시 레지스트리(C-09-01 전)."""
+    from server.app.model_versions import INTENT_KEY, SUSPICION_KEY
+    from server.infra.model_registry import StaticModelRegistry
+    intent_version = getattr(getattr(parser, "model", None), "model_version", "")
+    return StaticModelRegistry({INTENT_KEY: intent_version, SUSPICION_KEY: getattr(suspicion, "model_version", "")})
+
+
 def build_game_service():
     """`PALDO_GAME_SERVICE_FACTORY`가 부르는 운영 조립. 연결 실패·미설정은 B의 `GameServiceUnavailable`."""
+    from django.conf import settings
     from intent.parser import BaselineIntentParser
+    from server.infra.model_registry import LoadedSuspicionModels
     from server.paldo_web.mongo import open_mongo_runtime
     engine, suspicion = engine_parts()
     runtime = open_mongo_runtime(engine=engine, suspicion=suspicion)
-    return build_from_runtime(runtime, BaselineIntentParser())
+    parser = BaselineIntentParser()
+    service = build_from_runtime(runtime, parser)
+    return attach_model_versions(service, deployed_registry(parser, suspicion), LoadedSuspicionModels(suspicion),
+                                 lambda: getattr(settings, "MODEL_CANARY_RATIO", 0.0))
