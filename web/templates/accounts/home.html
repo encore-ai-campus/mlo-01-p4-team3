@@ -19,7 +19,9 @@
           {% csrf_token %}
           <input type="hidden" name="start_token" value="{{ open_start_token }}">
           {% if open_presets|length == 1 %}<input type="hidden" name="preset_id" value="{{ open_presets.0 }}">
-          {% else %}<label>판 구성 <select name="preset_id">{% for preset_id in open_presets %}<option value="{{ preset_id }}">{{ preset_id }}</option>{% endfor %}</select></label>{% endif %}
+          {% else %}<label>판 구성 <select name="preset_id">{% for preset_id in open_base_presets %}<option value="{{ preset_id }}">{{ preset_id }}</option>{% endfor %}
+            {% if open_challenges %}<optgroup label="선택형 도전">{% for challenge in open_challenges %}<option value="{{ challenge.value }}">{{ challenge.label }}</option>{% endfor %}</optgroup>{% endif %}
+          </select></label>{% endif %}
           {% include 'accounts/portrait_choice.html' %}
           {% include "ending_choice.html" %}
           <button>새 게임 시작</button>
