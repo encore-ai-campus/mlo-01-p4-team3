@@ -7,8 +7,8 @@
 - sprite: 인물별 머리카락 윗선(`HAIR_TOP`, 원본 좌표, 사람이 확인한 값)과 보이는 발끝으로 단일 배율을 정해
   키 등급 머리 꼭대기·발끝 y=1248·가로 가운데 256에 놓는다(`cutout.fit_sprite`, 가로·세로 같은 배율).
 - 마스코트: 보이는 경계 상자를 단일 배율로 줄여 512×512 가운데, 발끝 기준선 y=480, 위 여백 `MASCOT_TOP` 이상에 둔다.
-- 쓴 sprite·마스코트 항목은 manifest `placeholder: false`로 바꾼다. 초상은 이어서
-  `python -m tools.assets.make_placeholders`로 파생한다(이 도구는 초상을 쓰지 않는다).
+- 쓴 sprite·마스코트 항목은 manifest `placeholder: false`로 바꾸고, 그 sprite에서 파생한 초상은 `placeholder: true`로 돌린다.
+  초상은 이어서 `python -m tools.assets.make_placeholders`로 다시 파생한다(이 도구는 초상 파일을 쓰지 않는다).
 - 같은 입력이면 같은 픽셀이 나온다(면적 평균 축소, 난수 없음). 압축 바이트는 zlib 구현에 따라 다를 수 있다(spec 5절).
 
 계층: `fit_mascot`·`HAIR_TOP`은 규칙(도메인, 파일 없음), `normalize`는 흐름(응용), `main`은 CLI(표현).
@@ -126,6 +126,10 @@ def normalize(src_dir: Path, repo: Path) -> dict:
     for entry, data in updated:             # 모두 규격을 통과한 뒤에만 쓴다(일부만 바뀐 상태를 남기지 않음)
         sources.write_file(repo, entry.path, data)
     updated = [e for e, _ in updated]
+    sprites = {f"sprite:{e.id}" for e in updated if e.kind == "sprite"}
+    # 새 sprite에서 초상을 다시 파생하도록 초상 표시를 임시로 돌린다(make_placeholders가 실제 표시 초상은 보호한다).
+    updated += [replace(e, placeholder=True) for e in manifest
+                if e.kind == "portrait" and e.derived_from in sprites and not e.placeholder]
     keys = {(e.kind, e.id) for e in updated}
     sources.write_manifest(repo, spec, [e for e in manifest if (e.kind, e.id) not in keys] + updated)
     return report

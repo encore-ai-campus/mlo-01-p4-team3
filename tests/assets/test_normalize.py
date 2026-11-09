@@ -59,7 +59,11 @@ class NormalizeFlowTest(unittest.TestCase):
             root = Path(temp)
             repo, src = root / "repo", root / "src"
             (repo / spec.manifest_path).parent.mkdir(parents=True)
-            shutil.copy(sources.ROOT / spec.manifest_path, repo / spec.manifest_path)
+            entries = json.loads((sources.ROOT / spec.manifest_path).read_text(encoding="utf-8"))
+            targets = {f"sprite:{c}" for c in normalize.HAIR_TOP}
+            for d in entries:               # 대상 인물의 초상만 실제 표시(이미 한 번 맞춘 뒤 다시 돌리는 경우)
+                d["placeholder"] = not (d["kind"] == "portrait" and d.get("derived_from") in targets)
+            (repo / spec.manifest_path).write_text(json.dumps(entries, ensure_ascii=False), encoding="utf-8")
             (src / "characters").mkdir(parents=True)
             (src / "mascots").mkdir()
             for cid, (top, _) in normalize.HAIR_TOP.items():   # 머리카락 윗선부터 발끝까지 채운 작은 원본
@@ -74,7 +78,9 @@ class NormalizeFlowTest(unittest.TestCase):
             data = json.loads((repo / spec.manifest_path).read_text(encoding="utf-8"))
             real = {(d["kind"], d["id"]) for d in data if not d["placeholder"]}
             want = {("sprite", c) for c in normalize.HAIR_TOP} | {("mascot", m) for m in normalize.MASCOT_SOURCES}
-            self.assertEqual(real, want)
+            self.assertEqual(real, want)          # 다시 맞춘 sprite의 초상은 재파생 대상(임시)으로 돌아간다
+            derived = {d["derived_from"] for d in data if d["kind"] == "portrait" and not d["placeholder"]}
+            self.assertFalse(derived & {f"sprite:{c}" for c in normalize.HAIR_TOP})
             for key, m in report.items():
                 with self.subTest(key=key):
                     kind = key.split(":")[0]
