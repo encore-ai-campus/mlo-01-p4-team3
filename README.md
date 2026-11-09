@@ -75,6 +75,7 @@ server/infra (인프라) → engine (포트 구현)
 | 저장소 배정 전 제출·병합(NAS 번들, 로컬 CI, 원장, 진행표) | 표현·응용 `tools/interim.py`, 규칙(도메인) `tools/interim_rules.py`, 기록 `docs/ops/interim_ledger.md`, 절차 `docs/tasks/README.md` 10-1절 |
 | 태스크 조건 바꾸기 | `docs/tasks/<흐름>.md`를 고치는 PR(이슈 본문은 직접 고치지 않음) |
 | 로그·지표 이름 정하기 | `docs/tasks/README.md` 5절 |
+| 사용자 테스트 지표·회차 등록 가명 ID·`test_human` 동결 | 인프라(읽기 전용 내보내기) `server/infra/ut_export.py` → 도메인·CLI `tools/ut_metrics.py`·`tools/ut_freeze.py`, 지표 정의 변경은 `tools/ut_metrics.py` `DEFINITIONS`, 설명 `docs/modules/user_test.md` |
 
 ## 명령
 
@@ -88,7 +89,7 @@ python -m tools.build_fixtures                            # 픽스처 재생성(
 python -m tools.gen_synthetic --games 50 --seed 7 --ads 20000 --out out/synthetic
 python -m tools.tasks_to_issues --dry-run                 # 태스크 → 이슈 계획(실제 생성은 --apply --repo)
 python -m tools.tasks_to_issues --hours                   # 흐름별 일별 시간(문서화·일괄 갱신 포함, 흐름별 한도, 발표 트랙은 별도 줄)
-# 브랜치: 통합 dev(모든 PR 대상, 기본 브랜치) / 배포 main(최종 배포 전 승격만, 11/9 사용자 테스트는 리허설 태그). docs/tasks/README.md 3절
+# 브랜치: 통합 dev(모든 PR 대상, 기본 브랜치) / 배포 main(최종 배포 전 승격만, 11/10 사용자 테스트는 리허설 태그). docs/tasks/README.md 3절
 ```
 
 텍스트 파일은 UTF-8(BOM 없음), 줄바꿈 LF다(`.gitattributes`가 고정, Windows 스크립트 `.ps1`·`.bat`·`.cmd`만 CRLF).

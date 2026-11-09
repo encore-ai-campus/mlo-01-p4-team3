@@ -1,5 +1,27 @@
 # 게임 명령 시험
 
+B-10-02의 test_village_assets는 전체/htmx의 지도·초상·하단 출처, manifest 좌표 변경·출처 갱신/이스케이프, 읽기 전용 상태 보존, 밤의 추가 패널 비표시를 검사한다. 기존 test_assets의 이미지 교체와 test_preset_screens의 8인 회귀를 함께 실행한다. 로컬 Chrome 미리보기·첫 로딩 측정은 [증빙](../../docs/evidence/B-10-02.md)을 따른다.
+
+## B-08-01 결과·진척·결말 선택
+
+`python -B server/manage.py test server.tests.test_story_ui server.tests.test_open_start server.tests.test_preset_screens --settings=server.paldo_web.test_settings --noinput`으로 결과·수집 단서·일반 판/고정 회차 결말·초상·시작 UUID 재생을 확인한다. 진척·해금 입력은 시험 전용 대역이며 E-09-08의 실제 해금·재처리를 검증하지 않는다. 도전 필드는 인수 전까지 임의로 추가하지 않는다. [증빙](../../docs/evidence/B-08-01.md)
+
+## B-08-02 프리셋·8인 화면
+
+외형 선택·기본값, 공개 설정 파일의 홈/일반 판 반영, 8인 15화면 HTTP·HTML, 거절 코드 로그, 심문 양식과 실제 엔진 정상·거절 조합을 검사한다.
+
+```powershell
+python -B -m server.tests.record_large8
+python -B server/manage.py test server.tests.test_preset_screens server.tests.test_utterance_ui --settings=server.paldo_web.test_settings --noinput
+python -B -m server.tests.preset_render_bench
+```
+
+첫 명령은 `tools.run_engine_games --preset large8 --games 1 --seed 1` 경로를 실행해 공개 PlayerView·명령만 `recorded_large8.json`으로 기록한다. 녹화 재생은 시험 전용이며 운영 엔진을 대체하지 않는다. 렌더 측정은 임시 SQLite·메모리 녹화에서 15화면을 각 10회 HTTP 전체 HTML로 렌더하고 표준 JSON에 기록한다. 브라우저 표시·실제 Mongo·동시 부하 성능으로 해석하지 않는다. 시험에서만 임시 파일/패치로 `large8`을 공개하며 운영 설정 초기값은 `base6`다. 현재 dev 빌드의 6인 공동 완주·E 재확인은 [별도 대기](../../docs/evidence/B-08-02.md)다. 태그 생성은 그 확인의 선행 조건이 아니며 11/10 태그 리허설은 B-09-03이다.
+
+판 시작의 저장 후 재조회는 유지하고 같은 요청의 같은 버전 콘텐츠만 재사용한다. 시험 경로는 `asgi_bench.py` → `asgi_bench_app.py` → 시험 전용 `asgi_bench_metrics.py`·`asgi_bench_settings.py`이며 숫자 헤더로 요청별 시간만 연결한다. 계측의 요청 격리·SQL 원문 비노출 시험은 `server/tests/test_bench_metrics.py`다. 운영 URL·DTO·화면 흐름·계약 조건은 유지한다.
+
+일반 명령은 소유권을 확인한 요청 내 상태·콘텐츠를 재사용하고, 광고 가명은 기존 값을 조회한 뒤 최초 생성만 upsert한다. 소유권·멱등·CAS·세션 폐기·majority 조건을 유지한다. 시험 전용 단계별 계측과 상세 결과는 `server/tests/asgi_bench_app.py`·`asgi_bench.py`, 동작 회귀는 `test_api.py`·`test_ad_identity_reads.py`·`mongo_game_sessions.py`에 있다.
+
 ## B-07-02 실제 Mongo·Kafka 시험
 
 `requirements/web.txt`의 패키지와 Docker Desktop Linux 엔진을 준비한다. Mongo는 위에서 쓰는 Compose Replica Set을 실행하고, 환경·`server/.env`·Compose 루트 `.env` 중 하나에 `PALDO_MONGO_URI`를 지정한다. 실제 Kafka는 CA·클라이언트 인증서·키와 hostname 검증을 켠 SSL JSON을 Git 제외 경로에 두고 `PALDO_TEST_KAFKA_CONFIG`에 그 파일 경로만 지정한다. 운영 C 발행기의 TLS 검증을 완화하지 않는다.
@@ -72,3 +94,27 @@ python -B server/manage.py test server.tests.mongo_game_sessions --settings=serv
 ## E-07-03 INT-07 웹 자동 재현 준비
 
 `int07_setup.py`(계정 DB 이주·참가자·로그인 세션·Mongo 회차 등록)와 `int07_run_settings.py`(실행용 SQLite 계정 DB + 실제 Mongo)는 `tools/perf/int07_web_run.py`가 하위 프로세스로 쓰는 준비 코드다. 시험 탐색(`test*.py`) 대상이 아니다. 사용법은 [성능 시험 모듈 문서](../../docs/modules/perf.md)에 있다.
+## B-07-05 실제 HTTP·웹소켓 성능 비교
+
+```powershell
+python -B tools/perf/api_bench.py --compare-asgi --users 10 --minutes 3 --result-name compose_10x3
+```
+
+기존 CLI의 `--compare-asgi`는 시험 전용 `asgi_bench.py`를 호출한다. WSGI, Daphne, 정상 광고·비콘, 3초 광고 지연, 광고 실패를 순차로 각 3분 측정한다(기본 약 15분과 준비 시간). 먼저 기존 Compose Mongo의 Replica Set을 준비하고 `PALDO_MONGO_URI`를 환경 또는 기존 `.env`로 전달한다. 게임·진척·콘텐츠는 실제 저장소, 엔진은 B-06-02와 같은 녹화 엔진, 계정은 임시 SQLite다.
+
+`asgi_bench_app.py`·`asgi_bench_settings.py`는 이 도구의 하위 프로세스 전용이며 운영 실행에 지정하지 않는다. 임시 계정·루프백 서버·고유 `b0705_<UUID>_` 컬렉션을 만들고 종료 시 자기 자료만 지운다. 운영 계정·컬렉션·설정은 바꾸지 않는다. 이벤트의 `load_test=true`를 검사한다. 비콘은 사용자별 초당 한 건이며 ping에 pong으로 응답한다.
+
+모든 시나리오의 게임 오류 0건·p95 1초 이하·판 완주, 혼합 부하의 비콘 ack·연결 오류 0건, 장애 중 실제 실패 ack를 검사한다. 장애 p95는 정상 광고·비콘 혼합 부하 대비 50ms 이하여야 한다. 게임 API 지연에는 광고 조각·비콘 지연을 섞지 않는다. 오류 표본은 제외하지 않는다. 공식 결과 저장은 10명 이상·각 3분 이상에서만 허용한다. 짧은 사전 시험은 `--result-name` 없이 실행한다.
+
+표준 결과는 `docs/evidence/perf/B-07-05/<이름>.json`, 상태 코드·중계 지표를 포함한 상세 결과는 무시되는 `out/handoff/b0705-network-report.json`에 쓴다. 측정값·오류 또는 기준 초과는 종료 코드 1이며 실행 실패는 2다. VM·실제 광고 서버·HTTPS·Kafka 성능을 증명하는 시험은 아니다.
+
+B-08-01 버전 회귀는 현재 E 원문과 B 보관본의 일치, 새 버전 배포 후 기존 판의 두 결말·수집 단서가 전체/htmx/반복 조회에서 유지되는지 검사한다. 새 버전은 파일 읽기 대역이며 실제 콘텐츠 파일·DB는 수정하지 않는다. 기존 버전 보관본의 삭제·덮어쓰기는 금지한다.
+
+## B-08-03 HTTP·장애 검증
+
+- 관련 회귀: python -B server/manage.py test server.tests.test_ad_client server.tests.test_ad_slots server.tests.test_ws server.tests.test_asgi_bench --settings=server.paldo_web.test_settings --noinput
+- 짧은 사전 측정: python -B tools/perf/ad_fault_test.py --local-fixture --users 3 --minutes 0.5
+- D 인수 후 정상 측정: PALDO_ADS_INTERNAL_URL을 환경에 주입하고 python -B tools/perf/ad_fault_test.py --scenario normal --users 10 --minutes 5 --output out/handoff/ad-normal.json
+- D가 장애를 주입한 뒤 같은 조건으로 --scenario stopped|unresponsive|delay|error --baseline out/handoff/ad-normal.json을 각각 실행한다. 장애 종류는 외부 운영자가 제어하고 CLI가 별도 제어 API를 호출하지 않는다.
+
+게임 부하는 기존 asgi_bench의 api_bench 명령 경로를 재사용하며 세 지면·웹소켓 비콘·클릭을 동시에 요청한다. 테스트 계정은 임시 SQLite, 게임은 녹화 엔진·실제 격리 Mongo다. 부하 요청에는 load_test가 붙는다. 결과에는 토큰·쿠키·주소·계정 ID를 기록하지 않는다. local-http-fixture 결과나 5분 미만 실행은 공식 D/VM 합격 증빙이 아니다. [인수 항목·수치](../../docs/evidence/B-08-03.md).

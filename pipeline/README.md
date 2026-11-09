@@ -60,3 +60,24 @@ python -m unittest tests.contract.test_pipeline_bronze -v
 검증된 Linux 런처가 `bronze` 인자를 받아 보호 설정으로 spark-submit을 실행하면 `python -m pipeline.install_bronze_service --launcher "$PRIVATE_LAUNCHER" --state "$PRIVATE_STATE" --user "$SPARK_USER"`로 `paldo-bronze.service`를 등록할 수 있다. 서비스 계정은 root가 아니며 기존 RPC/TLS 및 S3 설정을 유지한다. 상태/시작/종료는 `systemctl status/start/stop paldo-bronze`다. 로그는 journal과 audit/batch JSON이다. 기존 데모 서비스나 다른 writer를 동시에 실행하면 안 된다.
 
 silver/label 실행도 같은 writer lock을 사용한다. 운영 갱신은 bronze 서비스 중지 → available-now로 밀린 입력 처리 → build_silver → join_labels → verify → bronze 재시작 순서다. 실패해도 checkpoint를 삭제하지 않고 원인 수정 후 재시작한다. 학습 스냅샷의 경로·Delta 버전·입력 SHA는 비공개 인계와 감사 기록에서 확인한다. S3 객체 경로는 기존 Garage client가 허용한 버킷 안의 PJ4 전용 prefix이며 기존 데모/PJ3 데이터와 분리했다.
+
+## 광고 silver·gold·대사 (C-08-02)
+
+`ads_silver.py`, `ads_gold.py`, `ads_reconcile.py`는 별도 writer lock·driver 포트로 공식 bronze 스트림과 동시에 실행한다. 입력 Delta 버전을 고정하고 최대 100,000행을 넘으면 일부만 계산하지 않고 실패한다. 전량 snapshot을 키·row hash 기반 MERGE하며 사라진 집계 그룹도 지운다. 규모를 넘기기 전 분산 조인으로 전환해야 한다.
+
+귀속은 serve 서버 시각의 Asia/Seoul 날짜·시간이다. 클라이언트 시각은 클릭 인정에 쓰지 않는다. `serve_id`로 serve context를 붙이고 지연 serve는 매 실행 다시 조인한다. 맥락이 없는 행은 학습에서 제외하고 건수를 별도 기록한다. 맥락 조인 자체가 과금을 바꾸지 않는다. 온라인 서명 실패 판정은 보존하며 토큰 서명을 silver에서 재검증했다고 주장하지 않는다.
+
+CTR=유효 click serve 수/유효 impression serve 수(유효 click은 노출 1회 포함), 0노출이면 null이다. 비용은 정수 밀리원, 실현 eCPM=순액×1000/유효 노출, 실현 CPC=순액/유효 클릭, 0분모는 null이다. 무효율은 impression/click 판정 행 중 invalid 비율이며 pending을 별도 센다. 소진율은 캠페인·귀속일·source의 순액/일 예산이다. gold는 캠페인×지면×귀속 시간·source·load_test로, 학습 행은 소재×지면×preset_id×outcome×시간·source로 분리하며 부하·맥락 없음·0유효 노출은 학습에서 제외한다.
+
+잠정 마감=다음 날 서울 자정, 확정 마감=자정+토큰 TTL 30분+판정 유예 2분이다. 잠정·확정 Delta 경로를 분리한다. 같은 silver 관찰 종료 시각으로만 gold를 만든다. 확정된 gold의 변경은 `final_restatement_approved`가 없으면 거절한다. 확정 후 환입 정책 제안은 원 귀속일을 정정하되 Delta 이력과 학습 입력 버전을 보존하는 방식이며, 실제 적용은 PM 확정 뒤에만 한다.
+
+silver는 invalid가 된 온라인 유효 과금만 결정적 ID의 ad.rejudge로 보낸다. SQLite outbox에 먼저 쓰고 Kafka ACK 뒤 published를 기록한다. D의 실제 환입 소비자가 MySQL에 원과금 반대 금액을 1회 추가한 뒤 재대사한다. 수정된 동일 serve의 CPM 과금을 재생성하지 않는다. 원장만/Delta만/중복/금액 차이/고아 환입을 모두 센다.
+
+```sh
+spark-submit <외부 TLS·JAR 옵션> pipeline/spark/ads_silver.py --config "$PRIVATE_AD_CONFIG" --as-of-ms "$CUTOFF" --publish-rejudges
+spark-submit <외부 TLS·JAR 옵션> pipeline/spark/ads_gold.py --config "$PRIVATE_AD_CONFIG" --as-of-ms "$CUTOFF" --phase final
+spark-submit <외부 TLS·JAR 옵션> pipeline/spark/ads_reconcile.py --config "$PRIVATE_AD_CONFIG" --ledger "$PRIVATE_LEDGER_EXPORT"
+python -m unittest tests.contract.test_ads_pipeline -v
+```
+
+`ops/ad_probe.py --execute`는 C가 만든 격리 합성 실행을 실제 내부 HTTP·MySQL로 검증한다. `ads_probe_snapshot.py`는 그 실행 ID/hash 전체를 공식 bronze와 대조한 뒤 별도 검증 Delta만 만든다. missing serve 주입은 이 복사본의 합성 양수 과금 한 건에만 허용한다. 공식 bronze는 바꾸지 않는다. 이 실행은 PM이 지정한 **D-08-02 7번의 D 제공 실행 ID를 대체하지 않는다**. 그 ID를 받은 뒤 같은 대사를 반복해야 C-08-02 3번을 닫을 수 있다.

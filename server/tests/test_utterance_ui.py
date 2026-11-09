@@ -144,13 +144,13 @@ class UtteranceScreens(TestCase):
         self.assertTrue(events[0].payload["fallback"])
         self.assertIn("quantization", events[0].payload)
 
-    def test_kanana_attribution_survives_polling_and_reload(self):
-        """추궁 답변 표기는 최초·모든 렌더 상태·완료 재조회에서 유지된다."""
+    def test_kanana_attribution_absent_from_polling_and_reload(self):
+        """Kanana 표기는 최초·모든 렌더 상태·완료·취소 재조회에서 나오지 않는다."""
         self.assertNotContains(self.client.get(self.base, HTTP_ACCEPT="text/html"), "Powered by Kanana")
         for step in self.service.engine.steps[1:4]:
             response = self.client.post(self.base + "/commands", json.dumps(dict(step["request"],
                 game_id=self.gid, command_id=str(uuid.uuid4()))), content_type="application/json", HTTP_HX_REQUEST="true")
-        self.assertContains(response, "Powered by Kanana", count=1)
+        self.assertNotContains(response, "Powered by Kanana")
         claims = [claim.card.text for claim in response.context["claims"]]
         for status in RenderStatus:
             with self.subTest(status=status):
@@ -159,13 +159,13 @@ class UtteranceScreens(TestCase):
                 result = RenderResult("job_001", status, "완성 문장" if status is RenderStatus.DONE else None)
                 with patch.object(self.service.interactions.renderer, "poll", return_value=result):
                     fragment = self.client.get(self.base + "/renders/job_001", HTTP_HX_REQUEST="true")
-                self.assertContains(fragment, "Powered by Kanana", count=1)
-                self.assertContains(fragment, 'class="line-attribution"')
+                self.assertNotContains(fragment, "Powered by Kanana")
+                self.assertNotContains(fragment, 'class="line-attribution"')
                 final = status not in (RenderStatus.QUEUED, RenderStatus.RUNNING)
                 self.assertEqual('hx-trigger="every 1s"' in fragment.content.decode(), not final)
                 for headers in ({"HTTP_ACCEPT": "text/html"}, {"HTTP_HX_REQUEST": "true"}):
                     page = self.client.get(self.base, **headers)
-                    self.assertContains(page, "Powered by Kanana", count=1)
+                    self.assertNotContains(page, "Powered by Kanana")
                     self.assertEqual([claim.card.text for claim in page.context["claims"]], claims)
         version = self.service.repository.load(self.gid)[0].state_version
         self.assertEqual(version, 3)
@@ -174,9 +174,9 @@ class UtteranceScreens(TestCase):
         response = self.client.post(self.base + "/commands", json.dumps(dict(step["request"],
             game_id=self.gid, command_id=str(uuid.uuid4()))), content_type="application/json", HTTP_HX_REQUEST="true")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Powered by Kanana", count=1)
+        self.assertNotContains(response, "Powered by Kanana")
         cancelled = self.client.get(self.base + "/renders/job_001", HTTP_HX_REQUEST="true")
-        self.assertContains(cancelled, "Powered by Kanana", count=1)
+        self.assertNotContains(cancelled, "Powered by Kanana")
         self.assertNotContains(cancelled, "hx-trigger")
         output = self.client.get(self.base + "/renders/job_001").json()
         self.assertEqual(output["status"], "cancelled")

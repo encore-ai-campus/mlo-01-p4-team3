@@ -204,7 +204,33 @@ class AdHTTPTests(TestCase):
                     self.assertEqual(refund.amount_mw, step["expect_amount_mw"])
         self.assertEqual(self.service.book.committed_mw("cp", "2026-11-06"), case["expect_committed_mw"])
         case = cases[1]
-        self.assertEqual(reconcile(case["ledger"], case["delta"]), case["expect"])
+        self.setUp_service()
+        campaign = Campaign.objects.get(pk="cp")
+        campaign.daily_budget_mw = sum(amount for amount in case["ledger"].values() if amount > 0)
+        charge_ids = {}
+        with patch.object(self.service, "rank_ctr", return_value=.02):
+            for label, amount in case["ledger"].items():
+                if label.endswith(":refund"):
+                    original = charge_ids[label.removesuffix(":refund")]
+                    refund = self.service.book.refund(original, "reconcile-refund")
+                    self.assertIsNotNone(refund)
+                    charge_ids[label] = refund.charge_id
+                else:
+                    campaign.max_bid_mw = amount
+                    campaign.save()
+                    self.service.policies[AdSlot.LOBBY_BANNER] = SlotPolicy(
+                        AdSlot.LOBBY_BANNER, amount * 20, .02)
+                    out = self.serve(request_id=label)
+                    self.assertTrue(out["filled"])
+                    charge_ids[label] = self.event("click", out["serve_token"]).charge_id
+        self.assertEqual(len(self.service.book.rows), len(case["ledger"]))
+        ledger = {}
+        for label, cid in charge_ids.items():
+            row = self.service.book.rows[cid]
+            self.assertEqual(row.state, ChargeState.CONFIRMED)
+            ledger[label] = row.amount_mw
+        self.assertEqual(ledger, case["ledger"])
+        self.assertEqual(reconcile(ledger, case["delta"]), case["expect"])
 
     def test_idempotency_and_request_collision(self):
         self.campaign()

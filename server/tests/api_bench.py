@@ -159,7 +159,18 @@ def main(argv=None):
     parser.add_argument('--users', type=int, default=10)
     parser.add_argument('--minutes', type=float, default=3)
     parser.add_argument('--result-name', help='공식 증빙 JSON 이름. 생략하면 표준 출력만 쓴다.')
+    parser.add_argument('--compare-asgi', action='store_true', help='B-07-05 실제 HTTP·웹소켓 비교 시험')
     args = parser.parse_args(argv)
+    if args.compare_asgi:
+        from .asgi_bench import main as compare
+        forwarded = ['--users', str(args.users), '--minutes', str(args.minutes)]
+        if args.result_name:
+            forwarded += ['--result-name', args.result_name]
+        try:
+            return compare(forwarded)
+        except Exception as error:
+            print(json.dumps({'error': 'network_benchmark_failed', 'error_type': type(error).__name__}), flush=True)
+            return 2
     if not 1 <= args.users <= 100 or not 0 < args.minutes <= 30:
         parser.error('users=1~100, minutes=0 초과 30 이하')
     if args.result_name:

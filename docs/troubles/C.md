@@ -59,3 +59,15 @@
 - 원인: Mongo와 Kafka는 한 분산 트랜잭션이 아니며 load_test는 source 종류가 아닌 별도 태그다.
 - 대응: ack 뒤 표시·실패 재시도, 소비 ID/hash 중복 제거, source=scripted와 load_test=true, 실행별 검증 컬렉션.
 - 결과: 실제 전송 10건·고의 중복 포함 수신 11건·고유 10건·미발행 0건. 증빙 [C-06-02](../evidence/C-06-02.md).
+
+### C-08-02
+- 문제: 지연 serve 재판정으로 환입한 금액이 맥락 복원 후 재생성될 위험.
+- 원인: CPM의 암묵 노출과 클릭이 같은 과금 근거가 될 수 있음.
+- 대응: 원과금과 매칭한 ad.rejudge를 권위 있는 환입으로 보존하고 해당 charge 재생성을 차단.
+- 결과 수치: 실제 환입 1건 -137284mw, 환입 후 원장/Delta 1208456mw, 불일치 0. D 제공 실행은 대기.
+
+### C-08-03
+- 문제: kubelet 사설 bind와 agent tunnel 로그 경로가 맞지 않아 kubectl logs EOF. 호스트 DHCP 주소도 변경됨.
+- 원인: agent tunnel이 kubelet을 0.0.0.0으로 호출하나 kubelet은 지정 사설 주소에서만 수신.
+- 대응: 보안 완화는 적용하지 않고 노드 로컬 CRI 로그의 ACK manifest를 공식 bronze와 전량 대조. 기존 SSH 호스트 키를 유지해 mDNS로 바뀐 주소 확인.
+- 결과: 2노드 Ready, 두 Job 합계 100판·14173건이 bronze 해시 일치·누락/중복 0. 자원 5노트북 실측. 11/9 최신 dev와의 문서 충돌 2개를 두 태스크 내용을 보존해 해결했다.

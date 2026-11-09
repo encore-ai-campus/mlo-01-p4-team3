@@ -1,0 +1,88 @@
+{
+  "task": "C-08-03",
+  "commit": "6960f28ab4dd639c998a521e1a1852f794abe6ad",
+  "generated_at": "2026-11-08T14:29:47Z",
+  "source": "Windows Get-CimInstance Win32_OperatingSystem/Processor/LogicalDisk 및 vmware-vmx 집계, 11/8 23:02·23:29 실측",
+  "metrics": {
+    "notebook1_cpu_percent": {
+      "value": 5.0,
+      "unit": "%"
+    },
+    "notebook1_free_ram_gib": {
+      "value": 4.46,
+      "unit": "GiB"
+    },
+    "notebook1_running_vms": {
+      "value": 4,
+      "unit": "개"
+    },
+    "notebook1_disk_free_gib": {
+      "value": 30.2,
+      "unit": "GiB"
+    },
+    "notebook2_cpu_percent": {
+      "value": 3,
+      "unit": "%"
+    },
+    "notebook2_free_ram_gib": {
+      "value": 9.03,
+      "unit": "GiB"
+    },
+    "notebook2_running_vms": {
+      "value": 4,
+      "unit": "개"
+    },
+    "notebook2_disk_free_gib": {
+      "value": 49.64,
+      "unit": "GiB"
+    },
+    "notebook3_cpu_percent": {
+      "value": 2,
+      "unit": "%"
+    },
+    "notebook3_free_ram_gib": {
+      "value": 3.62,
+      "unit": "GiB"
+    },
+    "notebook3_running_vms": {
+      "value": 3,
+      "unit": "개"
+    },
+    "notebook3_disk_free_gib": {
+      "value": 48.46,
+      "unit": "GiB"
+    },
+    "notebook4_cpu_percent": {
+      "value": 37,
+      "unit": "%"
+    },
+    "notebook4_free_ram_gib": {
+      "value": 0.86,
+      "unit": "GiB"
+    },
+    "notebook4_running_vms": {
+      "value": 5,
+      "unit": "개"
+    },
+    "notebook4_disk_free_gib": {
+      "value": 66.27,
+      "unit": "GiB"
+    },
+    "notebook5_cpu_percent": {
+      "value": 72,
+      "unit": "%"
+    },
+    "notebook5_free_ram_gib": {
+      "value": 3.91,
+      "unit": "GiB"
+    },
+    "notebook5_running_vms": {
+      "value": 4,
+      "unit": "개"
+    },
+    "notebook5_disk_free_gib": {
+      "value": 18.9,
+      "unit": "GiB"
+    }
+  }
+}

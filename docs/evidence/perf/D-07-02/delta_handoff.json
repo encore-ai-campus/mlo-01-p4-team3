@@ -1,0 +1,48 @@
+{
+  "task": "D-07-02",
+  "commit": "fb83f6568c4c12200370564028d09f36017c70f8",
+  "generated_at": "2026-11-08T13:02:42Z",
+  "source": "python -m out.checks.audit_delta1108",
+  "metrics": {
+    "baseline_games": {
+      "value": 200,
+      "unit": ""
+    },
+    "bronze_total": {
+      "value": 17843,
+      "unit": ""
+    },
+    "bronze_matched_events": {
+      "value": 17823,
+      "unit": ""
+    },
+    "silver_rows": {
+      "value": 19191,
+      "unit": ""
+    },
+    "export_rows": {
+      "value": 14460,
+      "unit": ""
+    },
+    "export_label_mismatches": {
+      "value": 0,
+      "unit": ""
+    },
+    "rule_v0_delta_games": {
+      "value": 0,
+      "unit": ""
+    },
+    "rule_v0_source_games": {
+      "value": 200,
+      "unit": ""
+    },
+    "rule_v0_source_events": {
+      "value": 14808,
+      "unit": ""
+    },
+    "rule_v0_source_rows": {
+      "value": 12364,
+      "unit": ""
+    }
+  }
+}

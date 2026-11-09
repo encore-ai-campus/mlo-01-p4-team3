@@ -35,6 +35,7 @@ from engine.domain.content import ContentBundle
 from engine.domain.engine import BaselinePolicy, NpcPolicy, PaldoEngine
 from engine.domain.events import DomainEvent, EventEnvelope, topic_of
 from engine.domain.npc import RuleV0Policy
+from engine.domain.model import ENGINE_VERSION as MODEL_ENGINE_VERSION
 from engine.domain.model import CONTRACT_VERSION, PRESETS, CommandEnvelope, DataSource, GameMeta, GameState
 from engine.ports import EngineDeps, EventSink
 from engine.testing.fakes import FakeSuspicionModel, FixtureContentSource
@@ -43,7 +44,7 @@ from tools.jsonlog import log
 from tools.perf.engine_bench import bench_player_command
 
 COMPONENT = "run_engine_games"
-ENGINE_VERSION = "paldo-engine"                    # 봉투 engine_version. 규칙 재현은 rule_version으로 한다
+ENGINE_VERSION = MODEL_ENGINE_VERSION              # 봉투 engine_version(단일 출처 engine.domain.model, E-08-14)
 EVENTS_FILE = "events.jsonl"
 MANIFEST_FILE = "manifest.json"
 SEED_STRIDE = 1_000_000                            # 판 시드 = seed * SEED_STRIDE + i
