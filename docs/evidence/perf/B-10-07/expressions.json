@@ -1,0 +1,92 @@
+{
+  "task": "B-10-07",
+  "commit": "bd59eec20922e67fa3ffc191560cfcdbd76c7bae",
+  "generated_at": "2026-11-10T12:15:46Z",
+  "source": "Django targeted test_vn_expressions + vn_results + vn_lines_4th + suspect_reaction + tutorial_guide; node out/handoff/browser_expressions.cjs; node out/handoff/guide_edges.cjs; Django server.tests; Node-enabled GameScriptSync supplement; tools.precheck --with-assets --pr-body out/handoff/pr-draft.md",
+  "metrics": {
+    "targeted_tests": {
+      "value": 86,
+      "unit": "건"
+    },
+    "targeted_failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "browser_checks": {
+      "value": 93,
+      "unit": "건"
+    },
+    "browser_actor_checks": {
+      "value": 87,
+      "unit": "건"
+    },
+    "viewport_count": {
+      "value": 3,
+      "unit": "건"
+    },
+    "guide_boundary_checks": {
+      "value": 2,
+      "unit": "건"
+    },
+    "face_clipping_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "horizontal_overflow_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "actor_load_failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "page_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "console_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "http_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "native_advance_passes": {
+      "value": 3,
+      "unit": "건"
+    },
+    "targeted_seconds": {
+      "value": 2.351,
+      "unit": "s"
+    },
+    "precheck_tests": {
+      "value": 652,
+      "unit": "건"
+    },
+    "precheck_failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "server_discovered": {
+      "value": 455,
+      "unit": "건"
+    },
+    "server_passed": {
+      "value": 441,
+      "unit": "건"
+    },
+    "server_skipped": {
+      "value": 14,
+      "unit": "건"
+    },
+    "server_failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "node_supplement_passed": {
+      "value": 1,
+      "unit": "건"
+    }
+  }
+}
