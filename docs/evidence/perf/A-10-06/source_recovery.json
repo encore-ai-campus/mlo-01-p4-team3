@@ -1,8 +1,8 @@
 {
   "task": "A-10-06",
-  "commit": "559a3c4dec5748c5ac89b9823f68630afa9c94c6",
-  "generated_at": "2026-11-10T09:06:47Z",
-  "source": "python out/handoff/pr-preparation-verify.py (selected record SHA, C2PA fields, unchanged original, face-only pixels)",
+  "commit": "5090491324ab84cf4ec46a16be00fa0e5b3578e4",
+  "generated_at": "2026-11-10T09:16:51Z",
+  "source": "python out/handoff/update_committed_evidence.py (selected source fields, final/original SHA, face-only pixels)",
   "metrics": {
     "selected_outputs": {
       "value": 16,
