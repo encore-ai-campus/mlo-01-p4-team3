@@ -18,7 +18,7 @@ from engine.domain import params, serde
 from engine.domain.engine import BaselinePolicy, NpcPolicy, PaldoEngine, _Tx
 from engine.domain.events import EventType, topic_of
 from engine.domain.model import (
-    PLAYER_ID, PRESETS, Claim, ClaimType, CommandEnvelope, CommandKind, DataSource, DisappearanceRecord,
+    PLAYER_ID, PRESETS, PUBLIC_PLACES, Claim, ClaimType, CommandEnvelope, CommandKind, DataSource, DisappearanceRecord,
     EvidenceRef, EvidenceSource, EvidenceType, GameMeta, GameState, GameTruth, ObservationSnapshot, Phase, Place,
     PropositionKind, PublicRecord, Role, Sighting, Slot, alibi_propositions, crime_scene_of,
 )
@@ -301,7 +301,6 @@ class EngineGames(unittest.TestCase):
 
     # ---- 조건 5: 아침 발표에 피해 장소·시간대
     def test_morning_announcement_has_crime_scene(self):
-        homes = 0
         for (m, first, steps, st, tr), evs in zip(self.games, self.all_events):
             announced = [e for e in first.events + evs if e.event_type is EventType.MORNING_ANNOUNCED]
             recs = st.public.disappearances
@@ -314,11 +313,11 @@ class EngineGames(unittest.TestCase):
                 self.assertEqual(e.payload["missing"], [rec.victim])
                 self.assertIs(rec.place, where[rec.night][rec.victim][Slot.MIDNIGHT])
                 self.assertIs(rec.slot, Slot.MIDNIGHT)
-                if rec.place is Place.HOME:
-                    self.assertEqual(crime_scene_of(rec), (Place.HOME, rec.victim))
-                    homes += 1
+                self.assertIn(rec.place, PUBLIC_PLACES)   # rule-0.7 꾀어내기: 피해 장소는 늘 공개 장소
+                self.assertEqual(crime_scene_of(rec), (rec.place, None))
             self.assertEqual(recs[0].night, 0)
-        self.assertGreater(homes, 0)
+        # 이전 규칙 판의 피해자 집 기록은 (HOME, 피해자)로 읽는다
+        self.assertEqual(crime_scene_of(DisappearanceRecord(0, "gwabu", Place.HOME)), (Place.HOME, "gwabu"))
 
 
 def _keys(obj) -> set[str]:

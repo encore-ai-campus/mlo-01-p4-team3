@@ -77,6 +77,8 @@
 | `content_version` | `python -c "import json; print(json.load(open('content/bundle_v1.json', encoding='utf-8'))['content_version'])"` | `content-1.0.1`(11/9 성향 hothead 해명 변형 한 줄 어조 수정으로 올림) |
 
 - 참고 열은 태그 전 값이다. 증빙에는 태그에서 읽은 값을 적는다.
+- 11/10 테스트 중 피해 장소 규칙(A-10-01 5번)을 배포하면 그 뒤 일반 판의 `rule_version`은 `rule-0.7.decision-1`이다. 배포 전에 시작한 판과 `rule-0.6.decision-1`로 등록한 회차의 판은 이전 규칙으로 이어 간다(엔진이 판 메타의 규칙 버전을 따름). 집계에서 `versions`가 두 줄이 되는 것은 이 때문이고, E-09-01은 규칙 버전별로 나눠 본다.
+- 11/10 정식 테스트는 회차를 쓰지 않으므로(8절) 회차 재등록은 보통 필요 없다. 배포 뒤 운영 Mongo `b_test_sessions`에서 회차별 `versions.rule_version`을 읽어(`/admin/sessions` 화면은 버전·명단을 보여 주지 않는다. 조회 명령은 접속 정보와 함께 저장소 밖에 둔다) `rule-0.6.decision-1` 회차가 있으면, 명단을 `tools/ut_metrics.py participants`로 같은 가입 시각 구간으로 다시 뽑아 새 회차 ID·같은 판 목록·`rule-0.7.decision-1`로 `/admin/sessions`에서 다시 등록한다. 기존 회차는 바꾸거나 지울 수 없으므로(`TestSessionService.create`) 그대로 두고, 두 회차에 모두 든 참가자에게는 새 회차로 하라고 안내한다.
 - **콘텐츠 적재 확인.** 운영 게임은 판의 `content_version`으로 Mongo `content` 컬렉션에서 그 버전을 읽는다(`server/infra/content_store.py`). 같은 버전은 다시 적재할 수 없다(`content_version_exists`).
   - `content-1.0`은 C-07-04 운영 인계 때 실제로 읽혔다([`ops/proxy/README.md`](../../ops/proxy/README.md) "운영 인계 범위"). 적재된 내용이 태그의 `content/bundle_v1.json`과 같은지 대조한 기록은 없다. `bundle_v1.json`은 11/7 E-07-05에서도 바뀌었다.
   - 11/9에 `content-1.0.1`로 올렸으므로(대사 어조 한 줄) 운영 Mongo에는 아직 없다. 11/10 09:00 배포 때 후보 커밋으로 `tools.load_content`를 한 번 적재한 뒤 대조하고, 일반 판용 `PALDO_CONTENT_VERSION`도 `content-1.0.1`로 둔다.
