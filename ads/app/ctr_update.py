@@ -6,18 +6,19 @@ from ads.domain.model import AdSlot
 from ads.domain.rules import ctr_posterior
 
 
-def build_ctr(snapshot, policies):
-    """Fold final day/hour cells; reject duplicates, invalid counts and mixed namespaces.
-
-    Input is an explicit adapter boundary, not a claim that C-08-02 gold has
-    this schema. Never pass previous alpha/beta or evaluation truth here.
-    """
+def finalized_rows(snapshot):
+    """Read the shared version envelope for finalized gold exports."""
     if (not isinstance(snapshot, dict) or snapshot.get("finalized") is not True or not isinstance(snapshot.get("source_version"), str)
             or not snapshot["source_version"] or type(snapshot.get("as_of_ms")) is not int
             or snapshot["as_of_ms"] < 0 or not isinstance(snapshot.get("rows"), list)):
         raise ValueError("complete finalized snapshot metadata required")
+    return snapshot["rows"]
+
+
+def build_ctr(snapshot, policies):
+    """Fold final day/hour cells; reject duplicates, invalid counts and mixed namespaces."""
     totals, seen = defaultdict(lambda: [0, 0]), set()
-    for row in snapshot["rows"]:
+    for row in finalized_rows(snapshot):
         required = {"campaign_id", "creative_id", "slot", "source", "attribution_day", "hour",
                     "valid_impressions", "clicked_impressions"}
         if not isinstance(row, dict) or not required <= row.keys():

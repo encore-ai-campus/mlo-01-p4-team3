@@ -28,7 +28,7 @@ B-10-02의 test_village_assets는 전체/htmx의 지도·초상·하단 출처, 
 
 `python tools/perf/api_bench.py --web-processes 2,1 --users 30 --minutes 3`(경우 이름으로는 `python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis --redis-url redis://127.0.0.1:6379/0`)은 B-07-05의 시험 조립(`asgi_bench_app.py`)을 Daphne N개로 띄우고 Caddy(운영 Caddyfile과 같은 분배·상태 확인, `--front docker`는 공식 이미지 `caddy:2.10.2`, `--front binary`는 설치된 caddy)를 앞에 둔 채 같은 부하(사용자당 초당 한 요청 + 웹소켓 비콘 1개)를 준다. 모든 경우가 같은 Caddy 경로를 지나므로 경우끼리 비교하며, Docker Desktop 경유 지연이 포함돼 운영 절대값이 아니다. Mongo는 `PALDO_MONGO_URI`, 결과는 `out/handoff/e0910-multiproc-report.json`. 설정 전환·포트·Caddy·Prometheus 대응 시험은 `tests/ops/test_web_scaling.py`(Redis 통합은 `PALDO_TEST_REDIS_URL`이 있을 때만).
 
-전체 PM UI의 test_ui_review는 게임 에셋 manifest 우선·시안 경로 탈출/외부 URL 대체, 진행 중 복기 403·타인 404·종료 후 HTML/JSON, PM 안내의 로그인 제한, 등록 18/임시 84 구분·확정 v5 원화 연결·manifest 보존·classic/vn 왕복·classic 검토 경로 차단을 검사한다. 원본 전체·후보 갤러리와 계약 차이는 [PM 검토 목록](../../web/PM_UI_REVIEW.md), 새로 준비할 에셋은 [제작 계획](../../web/UI_ASSET_PLAN.md)을 따른다. 원본 시안의 고정 데이터와 실제 판을 혼동하지 않는다.
+전체 PM UI의 test_ui_review는 공식 manifest 참조, 진행 중 복기 403·타인 404·종료 후 HTML/JSON, 검토 페이지 로그인 제한, manifest에서 계산한 정식/임시 수량·확정 v5 원화 연결·manifest 보존·classic/vn 왕복·classic 검토 경로 차단을 검사한다. 현재 로고와 회의/밤 배경을 포함한 정식 21개·임시82개다. 후보 카탈로그는 운영 화면에서 읽지 않는다. 시안과의 차이는 [PM 검토 목록](../../web/PM_UI_REVIEW.md), 에셋 인수는 [인수 계획](../../web/UI_ASSET_PLAN.md)을 따른다. 원본 시안의 고정 데이터와 실제 판을 혼동하지 않는다.
 
 ## B-08-01 결과·진척·결말 선택
 
