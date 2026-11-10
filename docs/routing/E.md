@@ -46,3 +46,7 @@
 ## A-10-06 표정 파일 등록
 
 기존 content/images/sprite → make_placeholders → portrait → manifest → server/api/assets.py 경로로 기쁨·당황 16종을 제공한다. 증빙 docs/evidence/A-10-06.md. 새 URL·선택 로직은 없다.
+
+## A-11-04 표정 파일 등록
+
+기존 content/images/sprite → make_placeholders → portrait → manifest → server/api/assets.py 경로로 슬픔 8종을 제공한다. 증빙 docs/evidence/A-11-04.md. 새 URL·선택 로직은 없다.
