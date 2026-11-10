@@ -41,6 +41,7 @@ class TraceEvent:
 
 @dataclass
 class TraceInput:
+    """review_trace 입력: 판 ID·규칙 버전·시드와 아웃박스 이벤트."""
     game_id: str
     rule_version: str
     seed: int
@@ -50,6 +51,7 @@ class TraceInput:
 
 @dataclass
 class ReviewTraceItem:
+    """복기 항목 하나(NPC 결정 하나). 이유 코드·근거·문구 ID와 이어진 발언."""
     item_id: str                             # "d<seq>"
     day: int
     phase: str
@@ -68,6 +70,7 @@ class ReviewTraceItem:
 
 @dataclass
 class ReviewTrace:
+    """한 판의 복기 항목 목록."""
     game_id: str
     rule_version: str
     items: list[ReviewTraceItem] = field(default_factory=list)

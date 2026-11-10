@@ -162,6 +162,7 @@ class StoredCommand:
 
 @runtime_checkable
 class GameRepository(Protocol):
+    """판 상태·진실·아웃박스 저장소 포트. 응용이 쓰고 인프라(Mongo·메모리)가 구현한다."""
     def create(self, state: GameState, truth: GameTruth, outbox: list[EventEnvelope]) -> None: ...
 
     def load(self, game_id: str) -> tuple[GameState, GameTruth]: ...
