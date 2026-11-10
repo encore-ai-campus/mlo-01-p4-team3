@@ -6,7 +6,7 @@ from engine.ports import PlayerView
 from .viewmodels import PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_meeting_vm
 from .ui_viewmodels import build_ui_vm
 from .tutorial_script import CLUE_DUPLICATE, CLUE_NEW, CLUE_UNLOCK, FIRST_GAME_END, GUIDE_SPEAKER, guide_lines
-from .vn_script import VNLine, announcement_lines, build_vn_lines, claim_card_text
+from .vn_script import VNLine, announcement_lines, build_vn_lines, claim_card_text, reaction_lines
 
 DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
@@ -104,12 +104,14 @@ def _clue_vn_lines(view: PlayerView, notices) -> dict[str, list[VNLine]]:
     return out
 
 
-def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bool = False, clue_notices=()):
+def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bool = False, clue_notices=(),
+                    temperaments=None):
     """공개 진술·투표와 허용 행동, 본인의 점괘를 화면 모델로 전달한다.
 
     guide_k(이번 판 씐 자 수)가 있으면 도움말에 "이번 판에서 안내 보기" 스위치를 두고, first_game이면 대사창 안내 줄을
     서버가 넣는다(기본 켬). 첫 판이 아니면 같은 안내 문장을 숨은 목록으로 내려 주어 스위치를 켰을 때만 보인다.
     clue_notices(server/app/clue_notice.ClueNotice 목록)가 있으면 고백 발언 바로 뒤에 단서 알림 줄을 붙인다.
+    플레이어의 의심 제기·모순 지적 발언 바로 뒤에는 지목된 주민의 반응 줄을 붙인다(temperaments: 주민 ID → 성향 ID).
     """
     vm = build_ui_vm(view)
     claims = []
@@ -167,6 +169,7 @@ def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bo
             "vote_targets": vote_targets, "vn_lines": lead + build_vn_lines(view, DIVINATION_KO) + rest,
             "vn_guide_before": before, "vn_announcements": announcement_lines(view),
             "clue_lines": _clue_vn_lines(view, clue_notices),
+            "reaction_lines": reaction_lines(view, temperaments),
             # 안내 켜기/끄기(11/10 사용자 결정): 첫 판은 서버가 안내 줄을 넣어 기본 켬. 다른 판은 같은 문장을 숨은 목록(guide_pool)으로
             # 내려 주고, 플레이어가 켜면 클라이언트가 켠 시점 기준으로 대사 줄을 만든다. 종료 화면 말풍선도 같은 스위치를 따른다.
             # 첫 판도 숨은 목록을 함께 내려(data-guide-first) 1일째가 지난 뒤 다시 켜면 판 시작 안내부터 다시 만든다.
