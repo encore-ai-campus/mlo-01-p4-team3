@@ -35,6 +35,7 @@ B-09-06 산출물은 [VN 연출 규칙과 UI 적용 범위](../contracts/vn.md)�
 | 발표용 구현·트러블·검증 기록 | [B-10-04 초안](../presentation/B.md). 기존 수치의 측정 환경·SHA·증빙과 최종 인계 전 갱신 항목 |
 | 공개 프리셋·무당 초상·8인 화면 | `server/app/presets_enabled.json` → `open_start.py`·`server/accounts/views.py` → `web/templates/accounts/portrait_choice.html`·`meeting.html`. 공개 녹화 생성 `server/tests/record_large8.py`, HTTP 화면 회귀 `test_preset_screens.py`, 렌더 측정 `preset_render_bench.py` |
 | 화면이나 API 추가 | 표현 `server/api/`, 응용 `server/app/dto.py`, `docs/contracts/api.md` |
+| 진행 판 이어 하기/새로 시작(중단 처리) | 표현 `web/templates/accounts/open_start_actions.html`·`server/accounts/views.py`(`OPEN_GAME_TEXT`)·`server/api/views.py`(409·홈 되돌림) → 응용 `server/app/usecases.py`(`start`·`abandon_game`) → 도메인 `engine/domain/abandon.py`. 회귀 `server/tests/test_abandon_open.py` |
 | 게임 JSON API 경로와 실행 흐름 | `server/api/urls.py`, `server/api/views.py`, `server/api/interactions.py` → `server/app/usecases.py`, `server/app/interactions.py` |
 | 회의 화면과 에셋 연결 | `server/api/views.py`, `server/api/meeting_view.py`, `server/api/assets.py`, [화면 라우팅](../../web/ROUTING.md) |
 | 자유 입력 카드·추궁 답변 폴링 | `server/api/interactions.py`, `interaction_forms.py`, `interaction_view.py` → `server/app/interactions.py`; `web/templates/speech_cards.html`, `speech_line.html` |

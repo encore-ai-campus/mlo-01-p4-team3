@@ -141,6 +141,8 @@ UI_TIPS = {
     "action:vote": "이 인물에게 감금 표를 던집니다",
     "action:divine": "오늘 밤 이 인물을 점칩니다",
     "action:advance": "다음 단계로 넘어갑니다",
+    "open_resume": "중단하지 않고 진행 중인 판으로 돌아갑니다",
+    "open_restart": "진행 중인 판을 중단하고 새 판을 시작합니다",
 }
 
 

@@ -94,7 +94,8 @@ class StoryScreens(TestCase):
         self.assertIn('name="start_token"', html)
         self.assertIn('value="m"', html)
         for from_form in (False, True):
-            data = dict(preset_id='base6', mudang_variant='m', ending_choice='haewon:h1', start_token=str(uuid4()))
+            data = dict(preset_id='base6', mudang_variant='m', ending_choice='haewon:h1', start_token=str(uuid4()),
+                        replace_open='1' if from_form else True)   # 두 번째 판은 앞 판을 중단하고 시작(11/10)
             def send(values):
                 if from_form:
                     return self.client.post('/games', urlencode(values), content_type='application/x-www-form-urlencoded')
@@ -158,7 +159,7 @@ class StoryScreens(TestCase):
         original = self.client.get(f'/games/{gid}', HTTP_ACCEPT='text/html')
         self.assertNotContains(original, 'id="game-result"')
         end = deepcopy(self.service.engine.views[-1])
-        for reason in EndReason:
+        for reason in (r for r in EndReason if r is not EndReason.ABORTED):   # 중단은 아래 completed=false 경우
             winner = Faction.VILLAGE if reason is EndReason.ALL_POSSESSED_LOCKED else Faction.CHANGGWI
             view = replace(end, game_id=gid, result=GameResult(winner, reason, 2))
             for ending in self.endings:

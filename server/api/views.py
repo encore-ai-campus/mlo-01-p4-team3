@@ -5,6 +5,7 @@ from uuid import UUID
 
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
 from django.shortcuts import redirect, render
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_GET, require_http_methods
@@ -13,7 +14,7 @@ from engine.domain.model import CommandKind, EvidenceType, RejectCode
 from engine.domain.serde import SchemaError, to_jsonable
 from server.app.dto import StartGameInput, SubmitCommandInput
 from server.app.interactions import InteractionConflict, InteractionUnavailable
-from server.app.usecases import ConsentRequired, ResourceNotFound, ReviewNotReady, StartUnavailable
+from server.app.usecases import ConsentRequired, OpenGameInProgress, ResourceNotFound, ReviewNotReady, StartUnavailable
 from server.paldo_web.composition import GameServiceUnavailable, get_game_service
 from .consent import player_context
 from .input_validation import parse_game_input
@@ -54,6 +55,9 @@ def game_request(view):
             response = JsonResponse({"error": "invalid_input"}, status=400)
         except StartUnavailable:
             response = JsonResponse({"error": "start_policy_unavailable"}, status=503)
+        except OpenGameInProgress as exc:
+            # 진행 중인 일반 판이 있으면 새 판을 만들지 않는다. 이어 할 판 ID만 알려 준다(11/10 사용자 결정).
+            response = JsonResponse({"error": "open_game_in_progress", "game_id": exc.game_id}, status=409)
         except InteractionUnavailable:
             response = JsonResponse({"error": "interaction_service_unavailable"}, status=503)
         except InteractionConflict:
@@ -154,9 +158,12 @@ def start_game(request):
     from_form = request.content_type == "application/x-www-form-urlencoded"
     if from_form:
         form = request.POST
-        if set(form) - {"csrfmiddlewaretoken", "preset_id", "session_id", "mudang_variant", "seed", "start_token", "ending_choice"}:
+        if set(form) - {"csrfmiddlewaretoken", "preset_id", "session_id", "mudang_variant", "seed", "start_token", "ending_choice",
+                        "replace_open"}:
             raise ValueError("unknown_field")
         body = {key: form.get(key) for key in ("preset_id", "session_id", "mudang_variant", "start_token")}
+        if form.get("replace_open") == "1":
+            body["replace_open"] = True
         if "ending_choice" in form:
             body["ending_choice"] = form["ending_choice"]
         if "seed" in form:
@@ -169,7 +176,13 @@ def start_game(request):
     if body.get("session_id") in (None, ""):
         body["session_id"] = None   # 생략·null·빈 문자열 = 회차 없는 일반 판(E-08-14)
     data = parse_game_input(StartGameInput, body)
-    output = get_game_service().start(data, request.player_pseudonym, request.consented)
+    try:
+        output = get_game_service().start(data, request.player_pseudonym, request.consented)
+    except OpenGameInProgress:
+        if from_form and request.headers.get("HX-Request") != "true":
+            # 홈으로 돌려 이어 하기 / 중단하고 새로 시작을 고르게 한다.
+            return redirect(f"{reverse('home')}?open=choose")
+        raise
     request.game_id = output.view.game_id
     if from_form and request.headers.get("HX-Request") != "true":
         return redirect("game-detail", game_id=output.view.game_id)

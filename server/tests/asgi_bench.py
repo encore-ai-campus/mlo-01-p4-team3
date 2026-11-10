@@ -83,6 +83,7 @@ def measure_game(origin, cookie, steps, minutes, barrier, *, intent_every=0):
                                         mudang_variant="f")
             if actual:
                 body["start_token"] = str(uuid.uuid4())
+                body["replace_open"] = True  # 오류 뒤 재시작은 진행 판을 중단하고 새로 시작한다(11/10 사용자 결정).
         else:
             from .intent_load import probe_intent, should_probe
             command_number += 1

@@ -1,0 +1,12 @@
+{% load meeting %}{# 일반 판 시작 버튼 영역(11/10 사용자 결정). 진행 판이 있으면 이어 하기 / 중단하고 새로 시작 두 버튼. #}
+{% if open_games %}
+  <div class="open-choice">
+    <a class="open-resume" href="{% url 'game-detail' game_id=open_games.0 %}"{% tip "open_resume" %}>{{ open_game_text.resume }}</a>
+    <div class="open-restart">
+      <button class="start-round" name="replace_open" value="1"{% tip "open_restart" %}>{{ open_game_text.restart }}</button>
+      <p class="open-restart-warning">{{ open_game_text.restart_warning }}</p>
+    </div>
+  </div>
+{% else %}
+  <button class="start-round">새 게임 시작 <span aria-hidden="true">→</span></button>
+{% endif %}
