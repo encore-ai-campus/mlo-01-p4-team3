@@ -43,13 +43,36 @@ def preset_choices(preset_ids):
     return base, challenges
 
 
-def review_context(output, content):
+REVIEW_KIND_LABELS = {"night_plan": "밤 계획", "react": "캐묻기 답"}   # 11/10 초안, 승인 대기
+REVIEW_EMPTY = "이 판에는 남은 행동 기록이 없습니다."                      # 11/10 초안, 승인 대기
+REVIEW_TIMELINE_TITLE = "그날 마을 사람들이 한 일과 그 까닭"              # 11/10 초안, 승인 대기
+
+
+def _evidence_label(ref, public, names):
+    """근거 ID를 화면 이름표로 바꾼다(공개 기록의 화자만 쓴다). 11/10 초안, 승인 대기."""
+    from engine.domain.model import EvidenceType
+    from engine.domain.review import evidence_speaker
+    if ref.type is EvidenceType.VOTE:
+        return "투표 기록"
+    if ref.type is EvidenceType.MAJORITY:
+        return "다수 의견"
+    if ref.type is EvidenceType.CONTRADICTION:
+        return "어긋난 두 진술"
+    speaker = evidence_speaker(ref, public)
+    who = names.get(speaker, speaker) if speaker else "누군가"
+    suffix = {EvidenceType.TELL: "기색", EvidenceType.DIVINATION: "점괘 공개"}.get(ref.type, "진술")
+    return f"{who}의 {suffix}"
+
+
+def review_context(output, content, public=None):
     """종료된 판의 복기 DTO를 화면 행으로 바꾼다. 정체·비밀은 판이 끝난 뒤에만 이 함수까지 온다.
 
-    이유 코드가 있는 행동만 '행동의 이유'에 보인다. 행동 시점 이유(review_trace, E-10-10)가 연결되기 전에는
-    비어 있어 그 영역을 숨긴다.
+    행동 목록은 NPC 결정마다 한 행(E-10-10 `review_trace`): 날짜·단계, 행동, 대상, 템플릿 해설, 이유 코드, 근거.
+    승리 확률 그래프는 `win_prob`(D-10-03)가 없으므로 그리지 않는다(11/10 사용자 결정 D3).
     """
+    from .template_tags import ACTION_LABELS, phase_label
     names = {c.npc_id: c.name_ko for c in content.characters}
+    names.setdefault("mudang", "무당")
     secret_titles = {s.secret_id: s.title_ko for s in content.secrets}
     clue_texts = {c.clue_id: c.text_ko for c in content.grudge_clues}
     residents = [{"name": names.get(npc_id, npc_id), "role": ROLE_LABELS.get(role, ""),
@@ -57,9 +80,17 @@ def review_context(output, content):
                   "secret": secret_titles.get(output.secrets.get(npc_id, ""), "")}
                  for npc_id, role in output.roles.items() if role is not Role.MUDANG]
     residents.sort(key=lambda row: (not row["possessed"], row["name"]))
-    reasons = [{"actor": names.get(item.actor, item.actor), "reason_codes": list(item.reason_codes)}
-               for item in output.timeline if item.reason_codes]
+    reasons = []
+    for item in output.timeline:
+        target = item.victim if item.kind == "night_plan" else item.target_npc
+        reasons.append({"item_id": item.item_id, "when": f"{item.day}일째 {phase_label(item.phase)}",
+                        "actor": names.get(item.actor, item.actor),
+                        "action": REVIEW_KIND_LABELS.get(item.kind) or ACTION_LABELS.get(item.kind, item.kind),
+                        "target": names.get(target, target) if target else "",
+                        "text": item.text, "reason_codes": list(item.reason_codes),
+                        "evidence": [_evidence_label(ref, public, names) for ref in item.evidence]})
     return {"review": {"game_id": output.game_id, "residents": residents, "reasons": reasons,
+                       "timeline_title": REVIEW_TIMELINE_TITLE, "empty_text": REVIEW_EMPTY,
                        "clues": [clue_texts.get(clue_id, "이전 콘텐츠 버전의 수집 단서")
                                  for clue_id in output.clues_gained]}}
 

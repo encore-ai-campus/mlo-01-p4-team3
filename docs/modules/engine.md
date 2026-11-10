@@ -23,6 +23,7 @@
 | `tools/check_handoff_a06.py` | 표현·응용 | 판 실행 출력 검사: 종료 1회·`seq` 연속·`serde` 엄격 검증, 11/6 A → D 인수 조건 4개 |
 | `tools/optimize_decision.py` | 표현·응용 | 결정 층 최적화(A-08-03): 플레이어 대역 봇 vs 규칙 v0 판으로 목표 마을 승률 구간(`--target`)에 맞는 결정 파라미터 탐색. 격자 표본·윌슨 구간·후보 선택은 순수 함수 |
 | `engine/domain/progress.py` | 도메인 | 판 밖 진척 규칙(E-09-08): 고백 이벤트 → 원한 단서(`clue_gains`), 같은 가설 세 부분 → 한풀이 해금(`completed_hypotheses`·`ending_unlocks`), 결말 선택 가능 여부(`ending_available`, 퇴마는 항상), 재처리 대상 이벤트(`progress_events`). 반영 순서는 `server/app/progress.py` |
+| `engine/domain/review.py` | 도메인 | 복기용 이유 조회(E-10-10): 아웃박스 `decision` 이벤트 → 결정 단위 항목(`review_trace`, 종류별 발언 연결), 대표 이유 코드·문구 ID(`phrase_id_for`), 템플릿 해설(`review_text`, 괄호 조사 정리 `attach_josa`), 빠진 문구 검사(`missing_phrases`). 문구 파일은 콘텐츠 `content/review_lines_v1.json`, 저장소 읽기는 포트 `GameRepository.events` |
 | `tools/perf/challenge_balance.py` | 표현·응용 | 선택형 도전 3종(`base6_div1`·`base6_secret3`·`base6_sight`)과 base6을 같은 판 시드로 돌려 봇별 마을 승률·윌슨 구간·검사 실패를 재고 P-08 공개 판정 |
 | `tools/perf/npc_rule_check.py` | 표현·응용 | `--events`: jsonl의 결정마다 관측과 맞춰 합법 행동 위반·마을 추론 위반·의심 모델 폴백 결정을 센다. `--bench`: NPC 1명 결정 시간 |
 
@@ -127,3 +128,4 @@ n = fallback_count(res2.events)             # engine.domain.npc.vote. B가 paldo
 | A-08-03 | 11/8 | 결정 파라미터를 `decision_params.json`(decision-1)으로 분리·호출 시점 읽기, `routine_randomness` 추가, `tools/optimize_decision.py`(목표 승률 구간 인자), rule-0.5. 논리 우선 봇 vs 규칙 v0 1000판 마을 승률 49.6% |
 | A-08-03 | 11/7 | 후속 수정: `RULE_PARAMS_VERSION` 연결 문자 `+` → `.`(`rule-0.5.decision-1`). `+`가 B 회차 등록 검증 `[a-zA-Z0-9_.-]`에 걸려 운영자가 회차를 등록할 수 없었다. `DecisionParams.version`도 같은 문자 집합만 받는다 |
 | E-09-08 | 11/9 | `progress.py`(원한 단서 획득·한풀이 해금·결말 선택 규칙), 선택형 도전 프리셋 3종(`Preset.challenge`·`divination_limit`·`witness_scale`, 점 1회 제한은 `divination_available`, 목격 축소는 `draw_sightings(scale)`), `tools/perf/challenge_balance.py`. 기본 프리셋 판은 그대로(배율 1.0·점 제한 없음) |
+| E-10-10 | 11/10 | `review.py`(`review_trace`·`review_text`) 추가, 포트 `GameRepository.events`(가짜 저장소 구현 포함), 문구 파일 `content/review_lines_v1.json`(이유 코드 39개, 사용자 대사 확인 전 "승인 대기"). 엔진 규칙·상태·난수는 바꾸지 않음 |

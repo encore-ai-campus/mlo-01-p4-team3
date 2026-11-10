@@ -80,9 +80,48 @@ class ReviewAPI(TestCase):
         self.assertEqual(output["secrets"], {"jumo": "private-secret"})
         self.assertEqual(output["clues_gained"], ["this-clue"])
         self.assertIsNone(output["explanation_job_id"])
-        self.assertEqual(output["timeline"], [{"speech_id": speech.speech_id, "actor": speech.speaker,
-                                              "reason_codes": [], "evidence": to_jsonable(speech.evidence)}
-                                             for speech in self.document["state"].public.speeches])
+        # 녹화 엔진은 decision 이벤트를 내지 않는다: 발언에서 이유를 추정해 채우지 않고 빈 목록이다.
+        self.assertEqual(output["timeline"], [])
         self.assertNotIn("claim_truths", output)
         self.assertEqual(response["Cache-Control"], "private, no-store")
         self.assertEqual(self.document, before)
+
+    def test_timeline_comes_from_decision_events_with_template_text(self):
+        """아웃박스의 NPC decision 이벤트가 결정 단위 항목이 되고 템플릿 해설 문장이 이름·조사로 채워진다(E-10-10)."""
+        self.finish()
+        speech = self.document["state"].public.speeches[0]
+        version = self.document["state"].state_version
+        template = self.document["outbox"][0]
+
+        def envelope(event_type, payload):
+            return replace(template, event_type=event_type, state_version=version, day=1, phase="round1",
+                           payload=payload)
+        self.service.repository._append(self.document, [
+            envelope("decision", {"actor": "mudang", "snapshot_id": "p", "kind": "suspect", "target": "jumo",
+                                  "reason_codes": ["scripted"], "evidence": [], "policy_version": "player"}),
+            envelope("decision", {"actor": speech.speaker, "snapshot_id": "s1", "kind": speech.kind.value,
+                                  "target": "jumo", "reason_codes": ["max_suspicion"], "evidence": [],
+                                  "policy_version": "rule_v0"}),
+            envelope("speech_made", {"speech_id": speech.speech_id}),
+            envelope("decision", {"actor": "jumo", "snapshot_id": "s2", "kind": "vote", "target": "blacksmith",
+                                  "reason_codes": ["model_estimate"], "evidence": [], "policy_version": "m-fallback"}),
+        ])
+        self.service.review_lines = {"rv_max_suspicion": ["{actor}은(는) {target}을(를) 골랐다"],
+                                     "rv_model_estimate": ["{actor}은(는) {target}에게 표를 던졌다"]}
+        self.addCleanup(setattr, self.service, "review_lines", None)
+        before = deepcopy(self.document)
+        output = self.client.get(self.path, HTTP_ACCEPT="application/json").json()
+        self.assertEqual(self.document, before)
+        talk, vote = output["timeline"]
+        self.assertEqual((talk["actor"], talk["kind"], talk["speech_id"], talk["target_npc"], talk["phrase_id"]),
+                         (speech.speaker, speech.kind.value, speech.speech_id, "jumo", "rv_max_suspicion"))
+        self.assertTrue(talk["text"].endswith("주모를 골랐다"))
+        self.assertEqual((vote["kind"], vote["speech_id"], vote["target_npc"], vote["policy_version"]),
+                         ("vote", None, "blacksmith", "m-fallback"))
+        self.assertIn("표를 던졌다", vote["text"])
+        self.assertIsNone(vote["vote_explain"])
+        html = self.client.get(self.path, HTTP_HX_REQUEST="true").content.decode()
+        self.assertIn("주모를 골랐다", html)
+        self.assertIn("max_suspicion", html)
+        self.assertNotIn("win_prob", html)
+

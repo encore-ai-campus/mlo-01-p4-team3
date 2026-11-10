@@ -180,6 +180,11 @@ class GameRepository(Protocol):
         상태 버전은 올리지 않는다. 같은 dedup_key가 이미 있으면 False(멱등). seq는 commit과 같은 카운터."""
         ...
 
+    def events(self, game_id: str) -> list[EventEnvelope]:
+        """판의 아웃박스 이벤트 전체(발행 여부와 무관)를 seq 순으로 읽는다. 읽기 전용, 복기 `review_trace`용(E-10-10).
+        판이 없으면 KeyError."""
+        ...
+
 
 @runtime_checkable
 class ProgressRepository(Protocol):

@@ -263,5 +263,6 @@ def review(request, game_id):
         from .story_view import review_context
         state, _ = service.owned(game_id, request.player_pseudonym)
         template = "review_panel.html" if request.headers.get("HX-Request") == "true" else "review.html"
-        return render(request, template, review_context(output, service.dependencies(state.meta).content))
+        return render(request, template, review_context(output, service.dependencies(state.meta).content,
+                                                          state.public))
     return JsonResponse(to_jsonable(output))

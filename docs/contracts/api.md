@@ -26,6 +26,11 @@
 | GET `/games/{id}/review` | - | `ReviewOutput`(종료 후만, 그 전에는 403) | `review` |
 | GET `/players/me/progress` | - | `ProgressOutput` | `progress` |
 
+### 2-0. 복기 `ReviewOutput.timeline` (11/10, E-10-10)
+- `timeline`은 NPC 결정 단위 `ReviewItem` 목록이다(엔진 `review_trace`, 아웃박스 `decision` 이벤트를 seq 순으로). 플레이어 결정은 넣지 않는다.
+- `ReviewItem` 필드: `item_id`("d<seq>"), `actor`, `day`, `phase`, `kind`(`suspect`·`defend`·`point_contradiction`·`explain`·`silence`·`vote`·`night_plan`·`react`), `reason_codes`, `evidence`, `phrase_id`(`rv_<대표 이유 코드>`), `text`(템플릿 해설, 문구가 없으면 ""), `speech_id`(회의 말·캐묻기 답만, 없으면 null), `target_npc`, `reaction`(react만), `executor`·`victim`(night_plan만), `policy_version`, `vote_explain`(선택, 지금은 null).
+- 이전 형식(발언마다 한 항목, 이유 코드는 빈 목록)은 11/10에 이 형식으로 바뀌었다. `explanation_job_id`는 쓰지 않고 남겨 둔다.
+
 ### 2-1. 계정 (11/4 PM 결정, B-06-04)
 - 위 표의 모든 엔드포인트와 화면은 **로그인 필수**다. 비로그인 요청은 JSON이면 401, 화면 요청이면 로그인 화면으로 이동한다.
 - `/games/{id}/…`는 그 판을 시작한 가명 ID의 계정만 쓸 수 있다. 다른 계정의 판이나 그 판에 속하지 않은 `attempt_id`·`job_id`는 404다. 이 검사는 3절의 멱등 재요청 응답과 409 판정보다 먼저 한다.
