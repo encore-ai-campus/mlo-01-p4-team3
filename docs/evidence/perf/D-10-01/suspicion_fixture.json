@@ -1,0 +1,44 @@
+{
+  "task": "D-10-01",
+  "commit": "2c4f34183eec07a829328dd39281aabc2a78e4a2",
+  "generated_at": "2026-11-10T00:16:34Z",
+  "source": "python -m ml.suspicion.retrain (fixture, resumed fit after SQLite recovery)",
+  "metrics": {
+    "generated_games": {
+      "value": 450,
+      "unit": "판"
+    },
+    "training_games": {
+      "value": 316,
+      "unit": "판"
+    },
+    "town_observations": {
+      "value": 8072,
+      "unit": "관측"
+    },
+    "benchmark_games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "candidate_log_loss": {
+      "value": 0.8347115774226198,
+      "unit": ""
+    },
+    "reference_log_loss": {
+      "value": 1.006620114789339,
+      "unit": ""
+    },
+    "candidate_ece": {
+      "value": 0.03594647597254018,
+      "unit": ""
+    },
+    "village_win_difference": {
+      "value": 0.05999999999999994,
+      "unit": ""
+    },
+    "resumed_wall": {
+      "value": 56.268,
+      "unit": "s"
+    }
+  }
+}

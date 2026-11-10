@@ -48,6 +48,15 @@ class GateTests(unittest.TestCase):
         self.register.assert_not_called()
         self.client.set_registered_model_alias.assert_called_once_with("suspicion", "candidate", "3")
 
+    def test_checkpoint_artifact_registers_with_its_run_id(self):
+        self.client.create_model_version.return_value = SimpleNamespace(version="4")
+        source = "file:///private/artifacts/model"
+        with patch.dict(sys.modules, {"mlflow.exceptions": SimpleNamespace(MlflowException=ValueError)}):
+            version = gate.register_candidate(self.client, "r1", "intent", "model", source_uri=source)
+        self.assertEqual(version, "4")
+        self.client.create_model_version.assert_called_once_with("intent", source, run_id="r1")
+        self.client.set_registered_model_alias.assert_called_once_with("intent", "candidate", "4")
+
     def test_selector_resolves_an_alias_to_an_exact_version(self):
         self.client.get_model_version_by_alias.return_value = SimpleNamespace(
             version=3, source="mlflow-artifacts:/1/r1/artifacts/model", run_id="r1"

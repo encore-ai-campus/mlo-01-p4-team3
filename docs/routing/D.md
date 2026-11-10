@@ -24,6 +24,7 @@
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 모델 교체·승격·롤백 | `docs/contracts/ml_lifecycle.md` |
+| 사람 의도 재학습·대역 봇 보정·격리 롤백 | `tools/demo_retrain.sh`, `ml/suspicion/player_calibration.py`, `ml/lifecycle_demo.py`, [D-10-01 증빙](../evidence/D-10-01.md) |
 | 평가 관문·전략 밴딧 배치·B/C 연결 | `ml/gate.py`, `ml/bandit.py`, `ml/mongo_bandit.py`, `docs/reports/D-09-02-handoff.md`, 증빙 `docs/evidence/D-09-02.md` |
 | 로컬 BERT IntentParser 주입 | `intent/bert.py`, `intent/README.md`, `docs/reports/D-09-02-handoff.md` |
 | 씐 자 모델 로컬 첫 학습·평가 | `ml/suspicion/features.py`(실제 엔진→TrainingRow), `train.py`(게임 분할·학습·MLflow), `evaluate.py`(softmax·지표), `tests/test_suspicion.py`, `docs/evidence/D-07-02.md` |

@@ -1,0 +1,40 @@
+{
+  "task": "D-10-01",
+  "commit": "2c4f34183eec07a829328dd39281aabc2a78e4a2",
+  "generated_at": "2026-11-10T00:16:33Z",
+  "source": "python -m ml.lifecycle_demo --out ../canary-final",
+  "metrics": {
+    "canary_games": {
+      "value": 30,
+      "unit": "판"
+    },
+    "control_games": {
+      "value": 138,
+      "unit": "판"
+    },
+    "village_win_difference": {
+      "value": 0.02753623188405796,
+      "unit": ""
+    },
+    "inference_p95": {
+      "value": 0.05030026659369469,
+      "unit": "ms"
+    },
+    "healthy_fallback": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "injected_fallback": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "version_pin_verified": {
+      "value": 1,
+      "unit": "회"
+    },
+    "wall": {
+      "value": 26.622,
+      "unit": "s"
+    }
+  }
+}
