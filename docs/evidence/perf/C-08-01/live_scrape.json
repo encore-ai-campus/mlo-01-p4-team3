@@ -1,0 +1,28 @@
+{
+  "task": "C-08-01",
+  "commit": "73ab6f3623c31c4b7f548372c7ac621402ab2da4",
+  "generated_at": "2026-11-10T02:38:31Z",
+  "source": "운영 Prometheus targets/rules/up 및 동시 30판 Grafana capture-timing.json",
+  "metrics": {
+    "nodes": {
+      "value": 20,
+      "unit": "대"
+    },
+    "web_targets": {
+      "value": 2,
+      "unit": "대상"
+    },
+    "dashboards": {
+      "value": 6,
+      "unit": "종"
+    },
+    "alert_rules": {
+      "value": 6,
+      "unit": "개"
+    },
+    "active_games": {
+      "value": 30,
+      "unit": "판"
+    }
+  }
+}
