@@ -1,0 +1,44 @@
+{
+  "task": "D-10-01",
+  "commit": "2c4f34183eec07a829328dd39281aabc2a78e4a2",
+  "generated_at": "2026-11-10T00:16:33Z",
+  "source": "bash tools/demo_retrain.sh (fixture, local SQLite)",
+  "metrics": {
+    "training_rows": {
+      "value": 3,
+      "unit": "문장"
+    },
+    "evaluation_rows": {
+      "value": 8,
+      "unit": "문장"
+    },
+    "candidate_exact": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "reference_exact": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "registered_versions": {
+      "value": 0,
+      "unit": "개"
+    },
+    "rejected_runs": {
+      "value": 1,
+      "unit": "회"
+    },
+    "deleted_rows_remaining": {
+      "value": 0,
+      "unit": "건"
+    },
+    "auto_executed_remaining": {
+      "value": 0,
+      "unit": "건"
+    },
+    "wall": {
+      "value": 179.777,
+      "unit": "s"
+    }
+  }
+}

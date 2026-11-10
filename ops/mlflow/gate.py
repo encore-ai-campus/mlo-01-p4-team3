@@ -22,9 +22,32 @@ def check_run(client, run_id, evaluate):
     return passed
 
 
+def register_candidate(client, run_id, name, artifact, *, source_uri=None):
+    """Reuse a candidate version or register an MLflow model or a native checkpoint."""
+    existing = [version for version in client.search_model_versions(f"name = '{name}'")
+                if version.run_id == run_id and version.source.rstrip("/").endswith("/" + artifact)]
+    if existing:
+        model = min(existing, key=lambda version: int(version.version))
+    elif source_uri is None:
+        from mlflow import register_model
+
+        model = register_model(f"runs:/{run_id}/{artifact}", name)
+    else:
+        from mlflow.exceptions import MlflowException
+
+        try:
+            client.create_registered_model(name)
+        except MlflowException as exc:
+            if exc.error_code != "RESOURCE_ALREADY_EXISTS":
+                raise
+        model = client.create_model_version(name, source_uri, run_id=run_id)
+    client.set_registered_model_alias(name, "candidate", model.version)
+    return str(model.version)
+
+
 def main(argv=None):
     """평가 콜백을 실행하고 통과 실행에만 candidate 별칭을 부여한다."""
-    from mlflow import MlflowClient, register_model
+    from mlflow import MlflowClient
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", required=True)
@@ -43,12 +66,8 @@ def main(argv=None):
     if not check_run(client, args.run_id, getattr(import_module(module), name)):
         print(json.dumps({"registered": False}))
         return 1
-    source = f"runs:/{args.run_id}/{args.artifact}"
-    existing = [version for version in client.search_model_versions(f"name = '{args.model}'")
-                if version.run_id == args.run_id and version.source.rstrip("/").endswith("/" + args.artifact)]
-    model = min(existing, key=lambda version: int(version.version)) if existing else register_model(source, args.model)
-    client.set_registered_model_alias(args.model, "candidate", model.version)
-    print(json.dumps({"registered": True, "version": str(model.version)}))
+    version = register_candidate(client, args.run_id, args.model, args.artifact)
+    print(json.dumps({"registered": True, "version": version}))
     return 0
 
 

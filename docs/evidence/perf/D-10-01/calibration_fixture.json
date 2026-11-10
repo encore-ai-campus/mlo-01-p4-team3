@@ -1,0 +1,32 @@
+{
+  "task": "D-10-01",
+  "commit": "2c4f34183eec07a829328dd39281aabc2a78e4a2",
+  "generated_at": "2026-11-10T01:09:47Z",
+  "source": "python -m ml.suspicion.player_calibration (completed fixture)",
+  "metrics": {
+    "fit_votes": {
+      "value": 4,
+      "unit": "표"
+    },
+    "heldout_votes": {
+      "value": 3,
+      "unit": "표"
+    },
+    "baseline_recall": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "calibrated_recall": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "calibrated_weight": {
+      "value": 0.1,
+      "unit": ""
+    },
+    "wall": {
+      "value": 0.132,
+      "unit": "s"
+    }
+  }
+}
