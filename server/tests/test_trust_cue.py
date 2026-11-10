@@ -102,6 +102,7 @@ class HelpLine(SimpleTestCase):
     """도움말에 신뢰 단서 안내 1줄."""
 
     def test_help_mentions_trust(self):
+        """도움말 창에 승인 문장 그대로."""
         html = render_to_string("ui_help.html", {})
         self.assertIn("주민들이 무당을 의심하면 투표에서 무당이 갇힐 수 있습니다. 아침마다 주민들의 분위기를 알려 드립니다.",
                       html)
