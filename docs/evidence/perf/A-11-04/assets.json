@@ -1,8 +1,8 @@
 {
   "task": "A-11-04",
-  "commit": "559a3c4dec5748c5ac89b9823f68630afa9c94c6",
-  "generated_at": "2026-11-10T09:07:01Z",
-  "source": "python out/handoff/pr-preparation-verify.py (tools.assets.check_assets.check, placeholder_mode=True)",
+  "commit": "acfe8337c79452a76e1523425dbcc880efe4b5be",
+  "generated_at": "2026-11-10T09:17:05Z",
+  "source": "python out/handoff/update_committed_evidence.py (tools.assets.check_assets.check, placeholder_mode=True)",
   "metrics": {
     "expected_total": {
       "value": 103,
