@@ -20,9 +20,11 @@ python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis -
 Mongo는 PALDO_MONGO_URI(api_bench.mongo_uri 규칙)로 받는다. 결과는 out/handoff/e0910-multiproc-report.json에 쓴다.
 """
 import argparse
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import json
+from ipaddress import IPv4Address
 import math
 import os
 import re
@@ -36,6 +38,7 @@ from tempfile import TemporaryDirectory
 from threading import Barrier, Event, Thread
 import time
 import uuid
+from urllib.parse import urlsplit
 from urllib.request import Request, build_opener
 
 from .api_bench import mongo_uri, percentile
@@ -68,19 +71,22 @@ def front_mode(front: str, platform: str = sys.platform) -> str:
     return "docker-host" if platform.startswith("linux") else "docker-desktop"
 
 
-def free_port() -> int:
+def free_port(host="127.0.0.1") -> int:
     """loopback의 빈 포트 하나를 고른다."""
     with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
+        probe.bind((host, 0))
         return probe.getsockname()[1]
 
 
-def caddyfile(ports, front_host, listen=":8080", upstream_host="host.docker.internal") -> str:
+def caddyfile(ports, front_host, listen=":8080", upstream_host="host.docker.internal", client_ip=None) -> str:
     """운영 Caddyfile(ops/proxy/Caddyfile)의 분배·상태 확인 설정을 평문 HTTP로 옮긴다."""
     upstreams = " ".join(f"{upstream_host}:{port}" for port in ports)
     bind_host = listen.rsplit(":", 1)[0]
     bind = f"    bind {bind_host}\n" if bind_host else ""
+    restriction = (f"    @outside not remote_ip {IPv4Address(client_ip)} {IPv4Address(front_host)}\n"
+                   "    respond @outside 403\n") if client_ip else ""
     return (f"{{\n    admin off\n    auto_https off\n}}\n\nhttp://{listen} {{\n{bind}"
+            f"{restriction}"
             f"    reverse_proxy {upstreams} {{\n"
             "        lb_policy least_conn\n        lb_try_duration 2s\n        lb_try_interval 250ms\n"
             "        fail_duration 10s\n        health_uri /healthz\n        health_interval 5s\n        health_timeout 5s\n"
@@ -202,7 +208,7 @@ def recovery_metrics(paths):
     """자체 시험 로그에서 timeout부터 다음 성공까지의 시간과 미복구 건수를 읽는다."""
     result = {}
     for path in paths:
-        events, timeouts = [], 0
+        events, reasons = [], Counter()
         for line in path.read_text(encoding='utf-8', errors='replace').splitlines():
             try:
                 item = json.loads(line)
@@ -210,10 +216,13 @@ def recovery_metrics(paths):
                 continue
             if not isinstance(item, dict) or item.get('component') != 'suspicion_model':
                 continue
-            timeouts += item.get('reason') == 'model timeout'
+            if item.get('reason'):
+                reasons[item['reason']] += 1
             if item.get('msg') == 'timeout 이후 동일 버전 추론 복구':
                 events.append(dict(model_version=item['model_version'], duration_ms=item['duration_ms']))
-        result[path.name] = dict(timeouts=timeouts, recoveries=events, unresolved=timeouts - len(events))
+        timeouts = reasons['model timeout']
+        result[path.name] = dict(timeouts=timeouts, recoveries=events, unresolved=timeouts - len(events),
+                                 fallback_reasons=dict(reasons))
     return result
 
 
@@ -227,21 +236,129 @@ def redis_clients(url):
         client.close()
 
 
+def drive_load(origin, cookies, steps, minutes, intent_every=0, redis_url=None):
+    """격리 서버 주소에 게임·비콘 부하만 보낸다. DB와 서버 프로세스를 다루지 않는다."""
+    opener = build_opener()
+    for cookie in cookies:
+        with opener.open(Request(origin + '/players/me/progress', headers={'Cookie': cookie}), timeout=5) as r:
+            r.read()
+    clients = {'before': redis_clients(redis_url)} if redis_url else {}
+    started, started_at = time.monotonic(), datetime.now(timezone.utc).isoformat()
+    stop = Event()
+    with ThreadPoolExecutor(max_workers=len(cookies) * 2 + 2) as pool:
+        beacons = []
+        try:
+            for cookie in cookies:
+                ready = Event()
+                beacons.append(pool.submit(beacon_load, origin, cookie, stop, ready))
+                if not ready.wait(10):
+                    raise RuntimeError('beacon_start_timeout')
+            if redis_url:
+                def sample_redis():
+                    if not stop.wait(minutes * 30):
+                        clients['during'] = redis_clients(redis_url)
+
+                Thread(target=sample_redis, daemon=True).start()
+            barrier = Barrier(len(cookies))
+            futures = [pool.submit(measure_game, origin, cookie, steps, minutes, barrier,
+                                   intent_every=intent_every) for cookie in cookies]
+            results = [future.result() for future in futures]
+        finally:
+            stop.set()
+        beacon_rows = [future.result() for future in beacons]
+    elapsed = time.monotonic() - started
+    values = [sample for row in results for sample in row['samples']]
+    statuses = {}
+    for row in results:
+        for status, count in row['statuses'].items():
+            statuses[status] = statuses.get(status, 0) + count
+    command, intent, cancel = ([v for row in results for v in row['by_route'][route]]
+                               for route in ('command', 'utterance', 'cancel'))
+    parses = [r['stages']['intent_parse'] for row in results for r in row['request_timings']
+              if r['route'] == 'utterance' and 'intent_parse' in r['stages']]
+    return dict(users=len(cookies), minutes=minutes, started_at=started_at, elapsed_seconds=round(elapsed, 3),
+                requests=len(values), throughput_rps=round(len(values) / elapsed, 2), statuses=statuses,
+                errors=sum(r['errors'] for r in results), finished_games=sum(r['finished_games'] for r in results),
+                p50_ms=round(percentile(values, .5), 3), p95_ms=round(percentile(values, .95), 3),
+                p99_ms=round(percentile(values, .99), 3),
+                command_p95_ms=round(percentile(command, .95), 3) if command else None,
+                beacon_acks=sum(r['acks'] for r in beacon_rows), beacon_errors=sum(r['errors'] for r in beacon_rows),
+                redis_clients=clients or None, intent_requests=len(intent), cancel_requests=len(cancel),
+                intent_http_p95_ms=round(percentile(intent, .95), 3) if intent else None,
+                intent_parse_p95_ms=round(percentile(parses, .95), 3) if parses else None)
+
+
+def external_load(origin, cookies, args):
+    """시험 계정 상태를 비공개 파일로 넘기고 별도 호스트의 결과를 기다린다."""
+    folder = Path(args.serve_dir)
+    folder.mkdir(mode=0o700)
+    result = folder / 'load.json'
+    state = folder / 'client.json'
+    with state.open('x', encoding='utf-8') as stream:
+        json.dump(dict(origin=origin, cookies=cookies, minutes=args.minutes), stream)
+    state.chmod(0o600)
+    print(json.dumps(dict(client_state=str(state), origin=origin)), flush=True)
+    deadline = time.monotonic() + args.minutes * 60 + 120
+    try:
+        while not result.exists() and time.monotonic() < deadline:
+            time.sleep(.2)
+        if not result.exists():
+            raise RuntimeError('external_load_result_timeout')
+        row = json.loads(result.read_text(encoding='utf-8'))
+        if row['users'] != len(cookies) or row['elapsed_seconds'] < args.minutes * 60:
+            raise RuntimeError('external_load_does_not_match_requested_workload')
+        return row
+    finally:
+        state.unlink(missing_ok=True)
+
+
+def private_ipv4(value):
+    """부하 시험의 외부 바인딩과 클라이언트는 RFC1918 주소로 제한한다."""
+    address = IPv4Address(value)
+    a, b, *_ = address.packed
+    if not (a == 10 or (a == 172 and 16 <= b <= 31) or (a == 192 and b == 168)):
+        raise ValueError('expected a private IPv4 address')
+    return str(address)
+
+
+def load_only(folder):
+    """SSH로 받은 시험 전용 세션으로 실제 게임 부하를 실행하고 결과만 기록한다."""
+    state = json.loads((folder / 'client.json').read_text(encoding='utf-8'))
+    origin = urlsplit(state['origin'])
+    if (origin.scheme != 'http' or origin.netloc != f'{private_ipv4(origin.hostname)}:{origin.port}'
+            or not origin.port or origin.path or origin.query or origin.fragment):
+        raise ValueError('invalid benchmark origin')
+    cookies = state['cookies']
+    if not 1 <= len(cookies) <= 60 or not all(re.fullmatch(r'sessionid=[a-z0-9]+', c) for c in cookies):
+        raise ValueError('invalid benchmark sessions')
+    minutes = float(state['minutes'])
+    if not 0 < minutes <= 10:
+        raise ValueError('invalid benchmark duration')
+    row = drive_load(state['origin'], cookies, None, minutes)
+    row['load_generator'] = socket.gethostname()
+    with (folder / 'load.json').open('x', encoding='utf-8') as stream:
+        json.dump(row, stream)
+    print(json.dumps(row), flush=True)
+    return 0
+
+
 def run_case(args, name, processes, layer, uri, users, steps, folder):
     """daphne N개·Caddy·부하를 실행하고 자기 자원만 정리한다."""
     from engine.testing.fakes import FixtureContentSource, ScriptedGameEngine
     from server.paldo_web.mongo import open_mongo_runtime
-    ports, front = [free_port() for _ in range(processes)], free_port()
-    origin = f"http://127.0.0.1:{front}"
+    host = args.listen_host
+    ports, front = [free_port() for _ in range(processes)], free_port(host)
+    origin = f"http://{host}:{front}"
     prefix = "b0705_" + uuid.uuid4().hex + "_"   # asgi_bench_app이 받는 시험 접두어 형식
     runtime = open_mongo_runtime(engine=ScriptedGameEngine(), suspicion=None, uri=uri, collection_prefix=prefix)
-    servers, caddy, stop = [], None, Event()
+    servers, caddy = [], None
     try:
         content = FixtureContentSource().load("*")
         runtime.content.insert(content)
         for port in ports:
             env = dict(os.environ, PALDO_MONGO_URI=uri, PALDO_PUBLIC_ORIGIN=origin, PALDO_BENCH_PREFIX=prefix,
                        PYTHONUNBUFFERED='1',
+                       PALDO_LOG_DIR=str(folder / f'{name}-{port}-structured'),
                        PALDO_BENCH_PORT=str(port), PALDO_BENCH_SCENARIO="normal", PALDO_CHANNEL_LAYER=layer,
                        PALDO_WEB_INSTANCE=str(port), PALDO_CONTENT_VERSION=content.content_version,
                        PALDO_BENCH_MLRUNS=args.mlruns, PALDO_BENCH_SUSPICION_VERSION=args.suspicion_version,
@@ -261,7 +378,7 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
         if mode == "docker-desktop":   # Docker Desktop은 host.docker.internal로 호스트 loopback에 닿는다
             text = caddyfile(ports, "127.0.0.1")
         else:                          # host 네트워크·실행 파일은 같은 loopback에서 바로 붙는다
-            text = caddyfile(ports, "127.0.0.1", listen=f"127.0.0.1:{front}", upstream_host="127.0.0.1")
+            text = caddyfile(ports, host, listen=f"{host}:{front}", upstream_host="127.0.0.1", client_ip=args.client_ip)
         (config / "Caddyfile").write_text(text, encoding="utf-8")
         if mode == "binary":
             caddy_log = (folder / f"{name}-caddy.log").open("wb")
@@ -300,60 +417,15 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
         else:
             raise RuntimeError("proxy_timeout")
         time.sleep(6)   # Caddy 첫 능동 상태 확인(5초 간격)이 끝난 뒤 시작한다
-        for cookie in users:
-            with opener.open(Request(origin + "/players/me/progress", headers={"Cookie": cookie}), timeout=5) as r:
-                if r.status != 200:
-                    raise RuntimeError("warmup_failed")
-                r.read()
-        clients = {}
-        if layer == "redis":
-            clients["before"] = redis_clients(args.redis_url)
-        started, started_at = time.monotonic(), datetime.now(timezone.utc).isoformat()
-        with ThreadPoolExecutor(max_workers=args.users * 2 + 2) as pool:
-            beacons = []
-            try:
-                for cookie in users:
-                    ready = Event()
-                    beacons.append(pool.submit(beacon_load, origin, cookie, stop, ready))
-                    if not ready.wait(10):
-                        raise RuntimeError("beacon_start_timeout")
-                if layer == "redis":
-                    sampler = Thread(target=lambda: (time.sleep(args.minutes * 30),
-                                                     clients.__setitem__("during", redis_clients(args.redis_url))),
-                                     daemon=True)
-                    sampler.start()
-                barrier = Barrier(args.users)
-                futures = [pool.submit(measure_game, origin, cookie, steps, args.minutes, barrier,
-                                       intent_every=args.intent_every) for cookie in users]
-                results = [future.result() for future in futures]
-            finally:
-                stop.set()
-            beacon_rows = [future.result() for future in beacons]
-        elapsed = time.monotonic() - started
+        load = (external_load(origin, users, args) if args.serve_dir else
+                drive_load(origin, users, steps, args.minutes, args.intent_every,
+                           args.redis_url if layer == 'redis' else None))
         scrapes = {}
         for port in ports:
             with opener.open(f"http://127.0.0.1:{port}/metrics", timeout=5) as r:
                 scrapes[str(port)] = r.read().decode()
-        values = [sample for row in results for sample in row["samples"]]
-        statuses = {}
-        for row in results:
-            for status, count in row["statuses"].items():
-                statuses[status] = statuses.get(status, 0) + count
-        command = [v for row in results for v in row["by_route"]["command"]]
-        intent = [v for result in results for v in result['by_route']['utterance']]
-        cancel = [v for result in results for v in result['by_route']['cancel']]
-        parses = [r['stages']['intent_parse'] for result in results for r in result['request_timings']
-                  if r['route'] == 'utterance' and 'intent_parse' in r['stages']]
-        row = dict(case=name, processes=processes, channel_layer=layer, users=args.users, minutes=args.minutes,
-                   started_at=started_at, elapsed_seconds=round(elapsed, 3), requests=len(values),
-                   throughput_rps=round(len(values) / elapsed, 2), statuses=statuses,
-                   errors=sum(r["errors"] for r in results), finished_games=sum(r["finished_games"] for r in results),
-                   p50_ms=round(percentile(values, .5), 3), p95_ms=round(percentile(values, .95), 3),
-                   p99_ms=round(percentile(values, .99), 3),
-                   command_p95_ms=round(percentile(command, .95), 3) if command else None,
-                   beacon_acks=sum(r["acks"] for r in beacon_rows), beacon_errors=sum(r["errors"] for r in beacon_rows),
+        row = dict(load, case=name, processes=processes, channel_layer=layer,
                    per_process_commits={port: stage_counts(scrape) for port, scrape in scrapes.items()},
-                   redis_clients=clients or None,
                    mongo_version=runtime.client.server_info()["version"])
         if args.suspicion_version:
             row.update(inference_metrics(scrapes, args.suspicion_version), model_version=args.suspicion_version)
@@ -365,16 +437,21 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
                                                for m in memories)
             row['worker_count'] = sum(len(m['worker_rss_bytes']) for m in row['memory_by_process'].values())
             row['secondary_model_version'] = args.secondary_suspicion_version or None
-            row['timeout_recovery_by_process'] = recovery_metrics(folder.glob(f'{name}-*.log'))
+            recovery = {}
+            for port in ports:
+                path = folder / f'{name}-{port}-structured' / 'ci.jsonl'
+                if path.exists():
+                    recovery[str(port)] = recovery_metrics([path])[path.name]
+            row['timeout_recovery_by_process'] = recovery
+            reasons = Counter()
+            for item in recovery.values():
+                reasons.update(item['fallback_reasons'])
+            row['fallback_reasons'] = dict(reasons, unattributed=max(0, row['inference_failures'] - sum(reasons.values())))
         row.update(engine='actual' if args.suspicion_version else 'scripted', intent_every=args.intent_every,
-                   intent_parser_factory=args.intent_factory if args.intent_every else None,
-                   intent_requests=len(intent), cancel_requests=len(cancel),
-                   intent_http_p95_ms=round(percentile(intent, .95), 3) if intent else None,
-                   intent_parse_p95_ms=round(percentile(parses, .95), 3) if parses else None)
+                   intent_parser_factory=args.intent_factory if args.intent_every else None)
         print(json.dumps(row), flush=True)
         return row
     finally:
-        stop.set()
         if caddy:
             subprocess.run(["docker", "rm", "-f", caddy], capture_output=True)
         for process, log in servers:
@@ -394,6 +471,8 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
             keep.mkdir(parents=True, exist_ok=True)
             for path in folder.glob(f"{name}-*.log"):
                 (keep / path.name).write_bytes(path.read_bytes())
+            for path in folder.glob(f'{name}-*-structured/ci.jsonl'):
+                (keep / f'{path.parent.name}.jsonl').write_bytes(path.read_bytes())
         try:
             collections = [*runtime.collection_names]
             if args.intent_every:
@@ -429,7 +508,14 @@ def main(argv=None):
                         help='N번째 명령의 말하기 단계마다 해석·취소 추가. 0은 기존 부하')
     parser.add_argument('--intent-factory', default='intent.parser.BaselineIntentParser',
                         help='시험 프로세스에서 한 번 생성할 IntentParser 팩토리. 운영 설정은 변경하지 않음')
+    roles = parser.add_mutually_exclusive_group()
+    roles.add_argument('--serve-dir', help='웹만 실행하고 새 비공개 교환 폴더에 client.json을 기록')
+    roles.add_argument('--load-dir', help='SSH로 받은 client.json으로 부하만 생성하고 load.json을 기록')
+    parser.add_argument('--listen-host', default='127.0.0.1', help='서버 전용 모드의 사설 IPv4 바인딩')
+    parser.add_argument('--client-ip', help='서버 전용 모드에서 허용하는 부하 생성기 사설 IPv4')
     args = parser.parse_args(argv)
+    if args.load_dir:
+        return load_only(Path(args.load_dir))
     if not 0 <= args.intent_every <= 100:
         parser.error('intent-every=0..100')
     if args.intent_every and not re.fullmatch(r'[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+', args.intent_factory):
@@ -446,6 +532,17 @@ def main(argv=None):
     if args.secondary_suspicion_version and (not args.suspicion_version or
                                             args.secondary_suspicion_version == args.suspicion_version):
         parser.error('추가 worker는 주 모델과 다른 등록 버전이 필요하다')
+    if args.serve_dir:
+        try:
+            args.listen_host = private_ipv4(args.listen_host)
+            args.client_ip = private_ipv4(args.client_ip)
+        except ValueError as error:
+            parser.error(str(error))
+        if (args.client_ip == args.listen_host or args.front != 'binary' or len(cases) != 1
+                or not args.suspicion_version or args.intent_every or any(layer != 'memory' for _, layer in cases.values())):
+            parser.error('서버 전용 모드는 외부 호스트, binary, 단일 memory 구성과 실제 모델을 사용한다')
+    elif args.listen_host != '127.0.0.1' or args.client_ip:
+        parser.error('외부 주소는 서버 전용 모드에서만 사용한다')
     if args.result_name:
         from tools.evidence_result import NAME_RE
         from tools.tasks_md import TASK_ID_RE
@@ -501,6 +598,8 @@ def main(argv=None):
                     command += f' --mlruns "{args.mlruns}" --suspicion-version {args.suspicion_version}'
                 if args.secondary_suspicion_version:
                     command += f' --secondary-suspicion-version {args.secondary_suspicion_version}'
+                if args.serve_dir:
+                    command += ' --serve-dir <private-dir> --listen-host <private-ip> --client-ip <generator-ip>'
                 if args.intent_every:
                     command += f' --intent-every {args.intent_every} --intent-factory {args.intent_factory}'
                 command += f' --result-task {args.result_task}'

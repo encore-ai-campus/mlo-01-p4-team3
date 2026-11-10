@@ -66,7 +66,9 @@ python -m ml.suspicion.train --rows out/suspicion/delta1108/aligned/rows.jsonl -
 
 D-08-01의 `ml/adapters/suspicion_model.py`는 지속 worker로 추론 마감을 지키고, 실패를 엔진의 규칙 v0 폴백 예외로 바꾼다. `ml/adapters/run_model_games.py`는 기존 판 실행기를 재사용해 모델 버전·합법성·폴백 수·p95를 기록한다. `tools/`에서 `ml/`을 import하지 않는다.
 
-11/10 PM 정책에 따라 timeout·추론 오류는 해당 호출만 폴백하고 worker는 배경 스레드에서 같은 버전으로 다시 띄운다. 실제 추론·재기동 실패가 연속 3회면 30초 대기하며, 정상 추론 시 연속 실패를 초기화한다. 입력 특징 오류는 worker를 유지하고, 산출물 특징·재로드 모델 ID 불일치와 파일 부재는 해당 버전을 거부한다. 명시적 `close()` 뒤에는 재기동하지 않는다.
+11/10 PM 정책에 따라 90ms 일반 마감은 해당 호출만 폴백한다. 같은 worker의 늦은 응답을 배경에서 요청 번호로 확인해 버리고, 처리 중에는 새 요청을 쌓지 않는다. 프로세스 종료 또는 요청 전송 시각부터 1.5초 동안 응답이 없을 때 같은 버전으로 재기동한다. 강제 한도는 후속 호출 없이도 집행된다. 재기동에 해당하는 연속 실패가 3회면 30초 대기하며 정상 추론 시 계수를 초기화한다. 입력 특징 오류는 worker를 유지하고, 산출물 특징·재로드 모델 ID 불일치와 파일 부재는 해당 버전을 거부한다. 명시적 `close()` 뒤에는 재기동하지 않는다.
+
+동급 VM 재측정은 기존 부하 CLI의 `--serve-dir <비공개 교환 경로> --listen-host <사설 IPv4> --client-ip <생성기 IPv4>`로 웹만 실행한다. SSH로 `client.json`을 측정 VM 밖의 비공개 폴더에 전달하고, 그 호스트에서 같은 CLI에 `--load-dir <폴더>`를 주어 부하를 실행한다. 생성된 `load.json`을 서버 교환 경로에 넘기면 서버가 추론·RSS·원인별 폴백을 회수하고 정리한다. 세션이 든 `client.json`은 로컬 증빙과 Git에 포함하지 않는다.
 
 `SharedModelStore`는 웹 프로세스가 소유한다. `store.get(version, lambda: selector.suspicion_model(version))`은 같은 버전 worker를 빌려주며 반환 포트의 `close()`는 worker를 닫지 않는다. 프로세스 종료 때 `store.close()`로 정리한다. 시험 조립은 이를 사용하고 운영 웹 연결은 B-09-01 담당이다.
 

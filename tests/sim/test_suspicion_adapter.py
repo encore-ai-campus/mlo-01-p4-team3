@@ -24,6 +24,8 @@ class Backend(FakeSuspicionModel):
     def estimate(self, snapshot):
         if self.mode == 'hang':
             time.sleep(60)
+        if snapshot.game_id == 'slow':
+            time.sleep(.25)
         if self.mode == 'error':
             raise ValueError('inference failed')
         if snapshot.game_id == 'bad-feature':
@@ -81,13 +83,41 @@ class AdapterContract(unittest.TestCase):
             self.assertEqual(model.model_version, version)
             self.assertEqual(model._failures, 0)
 
-    def test_timeout_recovers_without_reusing_late_result(self):
+    def test_soft_timeout_keeps_pid_and_discards_the_late_reply(self):
+        model = self.adapter(timeout_s=.06)
+        pid = model._process.pid
+        with self.assertRaises(ModelUnavailable):
+            model.estimate(replace(obs(['a', 'b'], 1), game_id='slow'))
+        with self.assertRaises(ModelUnavailable):
+            model.estimate(obs(['a', 'c'], 1))
+        self.assertTrue(model._idle.wait(3))
+        result = model.estimate(obs(['b', 'c'], 1))
+        self.assertEqual(result.candidates, ['b', 'c'])
+        self.assertEqual(model._process.pid, pid)
+        self.assertEqual(model._failures, 0)
+
+    def test_hard_timeout_restarts_without_another_call(self):
         with tempfile.TemporaryDirectory() as directory:
             model = self.adapter(partial(recovering_loader, str(Path(directory) / 'loaded'), 'hang'), timeout_s=.03)
+            process = model._process
             self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
+            self.assertTrue(process.is_alive())
+            process.join(timeout=5)
+            self.assertFalse(process.is_alive())
             self.wait_ready(model)
             self.assertIsNone(estimate(model, obs(['a', 'b'], 1))[1])
             self.assertEqual(len(model.recovery_ms), 1)
+
+    def test_dead_worker_restarts_same_version(self):
+        model = self.adapter()
+        process = model._process
+        process.terminate()
+        process.join(timeout=2)
+        with self.assertRaises(ModelUnavailable):
+            model.estimate(obs(['a', 'b'], 1))
+        self.wait_ready(model)
+        self.assertNotEqual(model._process.pid, process.pid)
+        self.assertEqual(model.estimate(obs(['a', 'b'], 1)).model_version, 'fake-suspicion-1')
 
     def test_input_feature_error_keeps_healthy_worker(self):
         model = self.adapter(partial(Backend, 'version'))

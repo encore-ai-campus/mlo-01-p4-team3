@@ -22,6 +22,7 @@ from threading import Barrier, Event
 import time
 import uuid
 from urllib.error import HTTPError
+from urllib.parse import urlsplit
 from urllib.request import HTTPCookieProcessor, Request, build_opener
 
 from .api_bench import mongo_uri, percentile
@@ -117,11 +118,11 @@ def measure_game(origin, cookie, steps, minutes, barrier, *, intent_every=0):
 
 def beacon_load(origin, cookie, stop, ready, token=None):
     """사용자별 인증 소켓에서 초당 비콘 한 개를 보내 ack를 확인한다."""
-    host = origin.removeprefix("http://")
-    port = int(host.split(":")[1])
+    endpoint = urlsplit(origin)
+    host, port = endpoint.netloc, endpoint.port
     counts = {"acks": 0, "relayed": 0, "failed": 0, "errors": 0}
     try:
-        with socket.create_connection(("127.0.0.1", port), timeout=5) as sock:
+        with socket.create_connection((endpoint.hostname, port), timeout=5) as sock:
             key = base64.b64encode(secrets.token_bytes(16)).decode()
             sock.sendall((f"GET /ws/game/ HTTP/1.1\r\nHost: {host}\r\nOrigin: {origin}\r\n"
                           "Upgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Version: 13\r\n"

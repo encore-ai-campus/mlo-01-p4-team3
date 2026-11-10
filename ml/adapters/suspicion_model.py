@@ -22,29 +22,36 @@ from tools.jsonlog import log
 
 
 def _worker(connection, loader):
+    request_id = None
     try:
         model = loader()
         connection.send(('ready', (model.model_version, model.feature_version)))
         while True:
-            snapshot = connection.recv()
+            request_id, snapshot = connection.recv()
             try:
-                connection.send(('result', model.estimate(snapshot)))
+                connection.send((request_id, 'result', model.estimate(snapshot)))
             except FeatureVersionMismatch:
-                connection.send(('version', None))
+                connection.send((request_id, 'version', None))
     except FeatureVersionMismatch:
         connection.send(('version', None))
     except (EOFError, BrokenPipeError):
         pass
     except Exception as exc:
-        connection.send(('unavailable', type(exc).__name__))
+        error = ('unavailable', type(exc).__name__)
+        connection.send(error if request_id is None else (request_id, *error))
     finally:
         connection.close()
+
+
+class _RequestTimeout(ModelUnavailable):
+    pass
 
 
 class SuspicionModelAdapter:
     """호출만 폴백하고 동일 버전 worker를 복구한다. close는 소유 보관소가 호출한다."""
 
     COOLDOWN_S = 30
+    HARD_TIMEOUT_S = 1.5
 
     def __init__(self, loader, expected_feature_version: str | None, *,
                  timeout_s: float = .09, load_timeout_s: float = 30):
@@ -63,6 +70,9 @@ class SuspicionModelAdapter:
         self._expected_feature = expected_feature_version
         self._load_timeout = load_timeout_s
         self._ready = threading.Event()
+        self._idle = threading.Event()
+        self._idle.set()
+        self._request_id = 0
         self._stop = threading.Event()
         self._process = self._connection = None
         self._recovery_thread = None
@@ -154,10 +164,42 @@ class SuspicionModelAdapter:
                         model_version=self.model_version, error_type=type(exc).__name__)
             self._dispose(self._process, self._connection)
 
-    def _receive(self, timeout_s):
+    def _receive(self, request_id, timeout_s):
         if not self._connection.poll(max(0, timeout_s)):
-            raise ModelUnavailable('model timeout')
-        return self._connection.recv()
+            raise _RequestTimeout('model timeout')
+        received_id, status, result = self._connection.recv()
+        if received_id != request_id:
+            raise ModelUnavailable('model reply request mismatch')
+        return status, result
+
+    def _failed_worker(self):
+        if not self._stop.is_set():
+            self._failures += 1
+            self._schedule_recovery()
+
+    def _discard_late_reply(self, request_id, sent_at):
+        """A single in-flight call owns the pipe until it replies or the hard deadline expires."""
+        try:
+            with self._lock:
+                while not self._stop.is_set():
+                    remaining = sent_at + self.HARD_TIMEOUT_S - time.monotonic()
+                    if remaining <= 0:
+                        log('suspicion_model', 'warning', '추론 강제 한도 초과; 동일 버전 재기동',
+                            model_version=self.model_version, request_id=request_id)
+                        self._failed_worker()
+                        return
+                    try:
+                        status, _ = self._receive(request_id, min(remaining, .02))
+                    except _RequestTimeout:
+                        continue
+                    except (EOFError, OSError):
+                        self._failed_worker()
+                        return
+                    if status == 'unavailable':
+                        self._failed_worker()
+                    return
+        finally:
+            self._idle.set()
 
     def estimate(self, obs: ObservationSnapshot) -> SuspicionEstimate:
         """추론·IPC·잠금 대기를 한 마감으로 제한하고 실패는 엔진 폴백 예외로 바꾼다."""
@@ -167,15 +209,33 @@ class SuspicionModelAdapter:
         try:
             if self._closed or self._permanent or not self._ready.is_set():
                 raise ModelUnavailable('model closed or recovering')
+            if not self._idle.wait(max(0, self.timeout_s - (time.monotonic() - started))):
+                raise ModelUnavailable('model busy')
             acquired = self._lock.acquire(timeout=max(0, self.timeout_s - (time.monotonic() - started)))
             if not acquired:
                 raise ModelUnavailable('model busy')
             if not self._ready.is_set() or self._closed:
                 raise ModelUnavailable('model recovering')
-            self._connection.send(obs)
-            status, result = self._receive(self.timeout_s - (time.monotonic() - started))
+            if not self._idle.is_set() or time.monotonic() - started >= self.timeout_s:
+                raise ModelUnavailable('model busy')
+            self._request_id += 1
+            request_id = self._request_id
+            sent_at = time.monotonic()
+            try:
+                self._connection.send((request_id, obs))
+                status, result = self._receive(request_id, self.timeout_s - (time.monotonic() - started))
+            except _RequestTimeout:
+                self._timeouts.append(started)
+                self._idle.clear()
+                threading.Thread(target=self._discard_late_reply, args=(request_id, sent_at), daemon=True).start()
+                raise
+            except (EOFError, OSError):
+                self._failed_worker()
+                raise
             if status == 'version':
                 raise FeatureVersionMismatch('inference feature_version mismatch')
+            if status == 'unavailable':
+                self._failed_worker()
             if status != 'result':
                 raise ModelUnavailable(f'model inference failed: {result}')
             if not valid_estimate(result, obs) or result.observer != obs.observer:
@@ -199,11 +259,6 @@ class SuspicionModelAdapter:
                 feature_version=self.feature_version)
             raise
         except Exception as exc:
-            if acquired and self._ready.is_set() and not self._closed:
-                self._failures += 1
-                if str(exc) == 'model timeout':
-                    self._timeouts.append(started)
-                self._schedule_recovery()
             log('suspicion_model', 'warning', '추론 실패; 엔진 규칙 v0 폴백',
                 error_type=type(exc).__name__, reason=str(exc), model_version=self.model_version,
                 game_id=obs.game_id, duration_ms=round((time.monotonic() - started) * 1000, 3))

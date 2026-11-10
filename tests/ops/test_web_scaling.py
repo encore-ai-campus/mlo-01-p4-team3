@@ -264,6 +264,20 @@ class BenchOptions(unittest.TestCase):
             self.assertIn("server.tests.multiproc_bench", call.call_args[0][0])
             cli.main(["--users", "3"])
             self.assertIn("server.tests.api_bench", call.call_args[0][0])
+            cli.main(["--load-dir", "out/test"])
+            self.assertIn("server.tests.multiproc_bench", call.call_args[0][0])
+
+    def test_external_client_uses_only_load_driver(self):
+        from server.tests import multiproc_bench as bench
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            state = dict(origin='http://192.168.0.125:1234', cookies=['sessionid=abc'], minutes=3)
+            (path / 'client.json').write_text(json.dumps(state), encoding='utf-8')
+            with mock.patch.object(bench, 'drive_load', return_value={'users': 1}) as load, \
+                    mock.patch.object(bench, 'mongo_uri', side_effect=AssertionError('client must not use Mongo')):
+                self.assertEqual(bench.main(['--load-dir', directory]), 0)
+                load.assert_called_once_with(state['origin'], state['cookies'], None, 3)
+                self.assertEqual(json.loads((path / 'load.json').read_text())['users'], 1)
 
     def test_memory_and_timeout_recovery_preserve_missing_measurements(self):
         from server.tests.multiproc_bench import memory_metrics, recovery_metrics, resident_bytes
@@ -284,6 +298,7 @@ class BenchOptions(unittest.TestCase):
                      model_version='a', duration_ms=42),
                 dict(component='suspicion_model', reason='model timeout'))), encoding='utf-8')
             self.assertEqual(recovery_metrics([path])['worker.log'], dict(timeouts=2, unresolved=1,
+                fallback_reasons={'model timeout': 2},
                 recoveries=[dict(model_version='a', duration_ms=42)]))
 
 
