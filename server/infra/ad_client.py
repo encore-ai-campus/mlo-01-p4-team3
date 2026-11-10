@@ -2,13 +2,13 @@
 from dataclasses import asdict
 import http.client
 import json
-import re
 import socket
 from threading import Timer
 import time
 from urllib.parse import urlencode, urlsplit
 
 from ads.domain.model import AdCreativeView, AdResponse
+from server.app.ad_events import LANDING_PATH
 
 
 class AdHTTPError(RuntimeError):
@@ -127,15 +127,16 @@ class HTTPAdProvider:
         status, headers, _ = self._request('GET', '/ads/v1/click?' + urlencode({'t': serve_token}),
                                           request_id, connect_timeout_ms, total_timeout_ms)
         target = headers.get('Location', '')
-        if status != 302 or not re.fullmatch(r'/ads/landing/[A-Za-z0-9_-]+', target):
+        if status != 302 or not LANDING_PATH.fullmatch(target):
             raise AdHTTPError('ads_click_status')
         return target
 
     def fetch_landing(self, creative_id, request_id, connect_timeout_ms, total_timeout_ms):
         """가상 소재 ID의 HTML만 읽는다. 실패 시 Gateway가 대체 표시로 전환한다."""
-        if not re.fullmatch(r'[A-Za-z0-9_-]+', creative_id):
+        path = '/ads/landing/' + creative_id
+        if not LANDING_PATH.fullmatch(path):
             raise ValueError('invalid_creative_id')
-        status, headers, raw = self._request('GET', '/ads/landing/' + creative_id, request_id,
+        status, headers, raw = self._request('GET', path, request_id,
                                             connect_timeout_ms, total_timeout_ms)
         if status != 200 or headers.get_content_type() != 'text/html':
             raise AdHTTPError('ads_landing_status')
