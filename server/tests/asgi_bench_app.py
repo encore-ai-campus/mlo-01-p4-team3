@@ -22,11 +22,33 @@ if model_version:
     from server.infra.game_factory import ContentPolicyEngine
     from server.infra.model_selector import LocalModelSelector
     from server.infra.observed_models import ObservedSuspicionModel
+    from ml.adapters.suspicion_model import SharedModelStore
 
     selector = LocalModelSelector(os.environ["PALDO_BENCH_MLRUNS"], suspicion_version=model_version,
                                   intent_version="", feature_version=FEATURE_VERSION)
-    adapter = selector.suspicion_model(model_version)
-    atexit.register(adapter.close)
+    model_store = SharedModelStore()
+    atexit.register(model_store.close)
+    adapter = model_store.get(model_version, lambda: selector.suspicion_model(model_version))
+    if secondary_version := os.environ.get('PALDO_BENCH_SECONDARY_SUSPICION_VERSION'):
+        model_store.get(secondary_version, lambda: selector.suspicion_model(secondary_version))
+
+    from prometheus_client import REGISTRY
+    from prometheus_client.core import GaugeMetricFamily
+    from server.tests.multiproc_bench import resident_bytes
+
+    class WorkerMemory:
+        """등록된 worker별 Linux RSS. 웹 RSS는 기본 process collector가 제공한다."""
+
+        def collect(self):
+            """종료되거나 측정할 수 없는 PID를 0바이트로 위장하지 않는다."""
+            gauge = GaugeMetricFamily('paldo_suspicion_worker_resident_memory_bytes',
+                                      'Current worker RSS including shared pages', labels=['model_version'])
+            for version, pid in model_store.worker_pids().items():
+                if (rss := resident_bytes(pid)) is not None:
+                    gauge.add_metric([version], rss)
+            yield gauge
+
+    REGISTRY.register(WorkerMemory())
     suspicion = ObservedSuspicionModel(adapter)
     engine = ContentPolicyEngine(model_version=model_version)
 else:

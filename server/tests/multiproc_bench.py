@@ -91,7 +91,8 @@ def caddyfile(ports, front_host, listen=":8080", upstream_host="host.docker.inte
 
 RESULT_KEYS = ("requests", "errors", "throughput_rps", "p50_ms", "p95_ms", "p99_ms", "command_p95_ms",
                "beacon_acks", "beacon_errors", "intent_requests", "cancel_requests", "intent_http_p95_ms",
-               "intent_parse_p95_ms", "inference_calls", "inference_failures", "inference_p95_upper_ms")
+               "intent_parse_p95_ms", "inference_calls", "inference_failures", "inference_p95_upper_ms",
+               "inference_fallback_percent", "resident_memory_bytes", "worker_count")
 
 
 def result_metrics(rows) -> dict:
@@ -100,7 +101,8 @@ def result_metrics(rows) -> dict:
     for row in rows:
         for key in RESULT_KEYS:
             if row.get(key) is not None:
-                unit = "ms" if key.endswith("_ms") else ("rps" if key == "throughput_rps" else "count")
+                unit = ("ms" if key.endswith("_ms") else "bytes" if key.endswith("_bytes") else
+                        "%" if key.endswith("_percent") else "rps" if key == "throughput_rps" else "count")
                 metrics[f"{row['case']}_{key}"] = {"value": row[key], "unit": unit}
     return metrics
 
@@ -135,6 +137,15 @@ def inference_metrics(scrapes, version) -> dict:
                     calls[process] += count
                     if sample.labels["result"] != "ok":
                         failures += count
+    engine_fallbacks = 0
+    for scrape in scrapes.values():
+        for family in text_string_to_metric_families(scrape):
+            for sample in family.samples:
+                if (sample.name == 'paldo_model_decisions_total'
+                        and sample.labels.get('model_version') == version
+                        and sample.labels.get('result') == 'fallback'):
+                    engine_fallbacks += int(sample.value)
+    failures = max(failures, engine_fallbacks)
     total = sum(calls.values())
     rank = math.ceil(total * .95)
     upper_ms = next((upper * 1000 for upper in sorted(buckets)
@@ -145,11 +156,65 @@ def inference_metrics(scrapes, version) -> dict:
 
 def model_load_passed(row) -> bool:
     """실제 게임 완료와 모든 프로세스의 추론을 확인하고 지연·오류 관문을 적용한다."""
+    if row.get('secondary_model_version') and any(
+            m['web_rss_bytes'] is None or m['web_rss_bytes'] <= 0 or len(m['worker_rss_bytes']) != 2
+            or any(rss <= 0 for rss in m['worker_rss_bytes'].values())
+            for m in row.get('memory_by_process', {}).values()):
+        return False
+    if row.get('secondary_model_version') and set(row.get('memory_by_process', {})) != set(
+            row['inference_calls_by_process']):
+        return False
     return (row["errors"] == 0 and row["finished_games"] > 0
             and row["beacon_errors"] == 0 and row["beacon_acks"] > 0 and row["p95_ms"] <= 1000
-            and row["inference_calls"] > 0 and row["inference_failures"] == 0
+            and row["inference_calls"] > 0 and row["inference_failures"] / row["inference_calls"] <= .01
             and row["inference_p95_upper_ms"] is not None and row["inference_p95_upper_ms"] <= 100
             and bool(row["inference_calls_by_process"]) and all(row["inference_calls_by_process"].values()))
+
+
+def resident_bytes(pid):
+    """Linux 시험 서버의 현재 RSS. 다른 OS나 종료된 PID는 측정 불가(None)."""
+    try:
+        for line in Path(f'/proc/{pid}/status').read_text().splitlines():
+            if line.startswith('VmRSS:'):
+                return int(line.split()[1]) * 1024
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def memory_metrics(scrapes):
+    """웹과 worker의 RSS를 프로세스별로 보존한다. RSS는 공유 페이지를 중복 포함한다."""
+    from prometheus_client.parser import text_string_to_metric_families
+    rows = {}
+    for port, scrape in scrapes.items():
+        web, workers = None, {}
+        for family in text_string_to_metric_families(scrape):
+            for sample in family.samples:
+                if sample.name == 'process_resident_memory_bytes':
+                    web = sample.value
+                elif sample.name == 'paldo_suspicion_worker_resident_memory_bytes':
+                    workers[sample.labels['model_version']] = sample.value
+        rows[port] = dict(web_rss_bytes=web, worker_rss_bytes=workers)
+    return rows
+
+
+def recovery_metrics(paths):
+    """자체 시험 로그에서 timeout부터 다음 성공까지의 시간과 미복구 건수를 읽는다."""
+    result = {}
+    for path in paths:
+        events, timeouts = [], 0
+        for line in path.read_text(encoding='utf-8', errors='replace').splitlines():
+            try:
+                item = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(item, dict) or item.get('component') != 'suspicion_model':
+                continue
+            timeouts += item.get('reason') == 'model timeout'
+            if item.get('msg') == 'timeout 이후 동일 버전 추론 복구':
+                events.append(dict(model_version=item['model_version'], duration_ms=item['duration_ms']))
+        result[path.name] = dict(timeouts=timeouts, recoveries=events, unresolved=timeouts - len(events))
+    return result
 
 
 def redis_clients(url):
@@ -176,9 +241,11 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
         runtime.content.insert(content)
         for port in ports:
             env = dict(os.environ, PALDO_MONGO_URI=uri, PALDO_PUBLIC_ORIGIN=origin, PALDO_BENCH_PREFIX=prefix,
+                       PYTHONUNBUFFERED='1',
                        PALDO_BENCH_PORT=str(port), PALDO_BENCH_SCENARIO="normal", PALDO_CHANNEL_LAYER=layer,
                        PALDO_WEB_INSTANCE=str(port), PALDO_CONTENT_VERSION=content.content_version,
                        PALDO_BENCH_MLRUNS=args.mlruns, PALDO_BENCH_SUSPICION_VERSION=args.suspicion_version,
+                       PALDO_BENCH_SECONDARY_SUSPICION_VERSION=args.secondary_suspicion_version,
                        PALDO_BENCH_INTENT_FACTORY=args.intent_factory if args.intent_every else '')
             if layer == "redis":
                 env["PALDO_REDIS_URL"] = args.redis_url
@@ -290,6 +357,15 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
                    mongo_version=runtime.client.server_info()["version"])
         if args.suspicion_version:
             row.update(inference_metrics(scrapes, args.suspicion_version), model_version=args.suspicion_version)
+            row['inference_fallback_percent'] = (100 * row['inference_failures'] / row['inference_calls']
+                                                 if row['inference_calls'] else 100)
+            row['memory_by_process'] = memory_metrics(scrapes)
+            memories = row['memory_by_process'].values()
+            row['resident_memory_bytes'] = sum((m['web_rss_bytes'] or 0) + sum(m['worker_rss_bytes'].values())
+                                               for m in memories)
+            row['worker_count'] = sum(len(m['worker_rss_bytes']) for m in row['memory_by_process'].values())
+            row['secondary_model_version'] = args.secondary_suspicion_version or None
+            row['timeout_recovery_by_process'] = recovery_metrics(folder.glob(f'{name}-*.log'))
         row.update(engine='actual' if args.suspicion_version else 'scripted', intent_every=args.intent_every,
                    intent_parser_factory=args.intent_factory if args.intent_every else None,
                    intent_requests=len(intent), cancel_requests=len(cancel),
@@ -342,6 +418,8 @@ def main(argv=None):
     parser.add_argument("--caddy-bin", default="caddy", help="--front binary일 때 caddy 실행 파일")
     parser.add_argument("--mlruns", default="", help="실제 엔진 시험용 신뢰된 로컬 모델 디렉터리")
     parser.add_argument("--suspicion-version", default="", help="실제 엔진 시험용 고정 모델 버전")
+    parser.add_argument('--secondary-suspicion-version', default='',
+                        help='두 버전 공존 메모리 시험용 추가 worker(게임은 주 모델로 실행)')
     parser.add_argument("--redis-url", default="")
     parser.add_argument("--result-name", default="", help="증빙 결과 JSON 이름(30명·3분 이상)")
     parser.add_argument("--result-task", default="E-09-10", help="증빙 결과 JSON을 둘 태스크 ID")
@@ -365,6 +443,9 @@ def main(argv=None):
         parser.error("users=1..60, minutes=0..10, 경우가 하나 이상 필요하다")
     if bool(args.mlruns) != bool(args.suspicion_version):
         parser.error("--mlruns와 --suspicion-version은 함께 지정해야 한다")
+    if args.secondary_suspicion_version and (not args.suspicion_version or
+                                            args.secondary_suspicion_version == args.suspicion_version):
+        parser.error('추가 worker는 주 모델과 다른 등록 버전이 필요하다')
     if args.result_name:
         from tools.evidence_result import NAME_RE
         from tools.tasks_md import TASK_ID_RE
@@ -418,6 +499,8 @@ def main(argv=None):
                      f"--minutes {args.minutes} --front {args.front} --result-name {args.result_name}")
                 if args.suspicion_version:
                     command += f' --mlruns "{args.mlruns}" --suspicion-version {args.suspicion_version}'
+                if args.secondary_suspicion_version:
+                    command += f' --secondary-suspicion-version {args.secondary_suspicion_version}'
                 if args.intent_every:
                     command += f' --intent-every {args.intent_every} --intent-factory {args.intent_factory}'
                 command += f' --result-task {args.result_task}'

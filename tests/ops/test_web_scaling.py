@@ -234,6 +234,16 @@ class BenchOptions(unittest.TestCase):
                    inference_calls=20, inference_failures=0, inference_p95_upper_ms=100,
                    inference_calls_by_process={"8000": 10, "8002": 10})
         self.assertTrue(model_load_passed(row))
+        self.assertTrue(model_load_passed(dict(row, inference_calls=100, inference_failures=1)))
+        self.assertFalse(model_load_passed(dict(row, inference_calls=100, inference_failures=2)))
+        memory = {port: dict(web_rss_bytes=4096, worker_rss_bytes={'v0': 1024, 'v1': 2048})
+                  for port in row['inference_calls_by_process']}
+        secondary = dict(row, secondary_model_version='v1', memory_by_process=memory)
+        self.assertTrue(model_load_passed(secondary))
+        self.assertFalse(model_load_passed(dict(secondary, memory_by_process={})))
+        self.assertFalse(model_load_passed(dict(secondary, memory_by_process={'8000': memory['8000']})))
+        self.assertFalse(model_load_passed(dict(secondary, memory_by_process={
+            **memory, '8002': dict(web_rss_bytes=None, worker_rss_bytes={'v0': 1024})})))
         for change in (dict(errors=1), dict(finished_games=0), dict(inference_calls=0),
                        dict(inference_failures=1), dict(inference_p95_upper_ms=None),
                        dict(inference_p95_upper_ms=250), dict(p95_ms=1000.1),
@@ -254,6 +264,27 @@ class BenchOptions(unittest.TestCase):
             self.assertIn("server.tests.multiproc_bench", call.call_args[0][0])
             cli.main(["--users", "3"])
             self.assertIn("server.tests.api_bench", call.call_args[0][0])
+
+    def test_memory_and_timeout_recovery_preserve_missing_measurements(self):
+        from server.tests.multiproc_bench import memory_metrics, recovery_metrics, resident_bytes
+        scrape = ('# TYPE process_resident_memory_bytes gauge\nprocess_resident_memory_bytes 4096\n'
+                  '# TYPE paldo_suspicion_worker_resident_memory_bytes gauge\n'
+                  'paldo_suspicion_worker_resident_memory_bytes{model_version="a"} 1024\n'
+                  'paldo_suspicion_worker_resident_memory_bytes{model_version="b"} 2048\n')
+        self.assertEqual(memory_metrics({'9000': scrape, '9001': ''}), {
+            '9000': dict(web_rss_bytes=4096, worker_rss_bytes={'a': 1024, 'b': 2048}),
+            '9001': dict(web_rss_bytes=None, worker_rss_bytes={})})
+        with mock.patch('pathlib.Path.read_text', return_value='VmRSS:\t12 kB\n'):
+            self.assertEqual(resident_bytes(123), 12288)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'worker.log'
+            path.write_text('not json\n' + '\n'.join(json.dumps(row, ensure_ascii=False) for row in (
+                dict(component='suspicion_model', reason='model timeout'),
+                dict(component='suspicion_model', msg='timeout 이후 동일 버전 추론 복구',
+                     model_version='a', duration_ms=42),
+                dict(component='suspicion_model', reason='model timeout'))), encoding='utf-8')
+            self.assertEqual(recovery_metrics([path])['worker.log'], dict(timeouts=2, unresolved=1,
+                recoveries=[dict(model_version='a', duration_ms=42)]))
 
 
 @unittest.skipUnless(HAS_REDIS_PACKAGE and TEST_REDIS_URL, "PALDO_TEST_REDIS_URL 없음(로컬 Redis가 없는 환경)")

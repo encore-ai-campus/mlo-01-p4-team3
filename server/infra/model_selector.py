@@ -28,7 +28,8 @@ def _close(model: SuspicionModel) -> None:
 class LocalModelSelector:
     """Resolve explicitly registered artifact versions with no canary assignment.
 
-    Callers own the returned instances and close suspicion adapters after use.
+    Direct CLI callers own returned instances. Web processes lend these through
+    SharedModelStore; games must not close its underlying adapters.
     The root must contain only trusted local pickle and joblib artifacts.
     """
 
