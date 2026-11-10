@@ -11,7 +11,7 @@
 - `pycheck.py`: 필수 Python 패키지 5개의 import·간단한 동작 확인. `spark/delta_rw.py`: Spark 컨테이너 안에서 Delta 쓰기·읽기 확인.
 - 영역별 Python 의존성은 저장소 루트 `requirements/`(web·ml·llm·pipeline)에 둔다.
 
-실제 VM 배포는 기존 보호 Ansible 인벤토리를 저장소 밖에서 사용했다. 공개 코드에는 주소·자격정보가 없다. 중앙 Prometheus 수집 대상·경보·대시보드(C-08-01), k3s(C-08-03)는 후속 작업이다.
+실제 VM 배포는 기존 보호 Ansible 인벤토리를 저장소 밖에서 사용한다. 중앙 Prometheus는 VM 20대와 두 운영 웹 프로세스를 수집하며 6개 대시보드·6개 경보를 제공한다. k3s 두 노드에서 시뮬레이션 Job을 검증했다.
 
 ## 왜
 
@@ -98,3 +98,4 @@ MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/READM
 | C-08-04 | 11/8 | E 태그 archive·4th_private 전용 조회 계정 guard |
 | E-09-10 | 11/9 | 실행 도구 `web --port 8000·8002`, Caddyfile upstream 2개·능동 상태 확인, 로컬 Prometheus `paldo-web` 대상 2개(`process` 라벨), Compose 선택 Redis(profile `redis`), proxy README 웹 프로세스 2개 절차·되돌림·비교 측정(`tools/perf/api_bench.py --web-processes`)·선택 Redis 절 |
 | C-09-04 | 11/9 | 판 아웃박스 기반 진척 재처리 및 실제 Mongo 멱등 검증 |
+| C-11-01 | 11/11 | 네 실제 장애 판·API 60건·380이벤트 대조, 일반 판 적재 정지 진단·복구 |
