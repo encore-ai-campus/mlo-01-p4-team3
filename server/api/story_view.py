@@ -43,13 +43,13 @@ def preset_choices(preset_ids):
     return base, challenges
 
 
-REVIEW_KIND_LABELS = {"night_plan": "밤 계획", "react": "캐묻기 답"}   # 11/10 초안, 승인 대기
-REVIEW_EMPTY = "이 판에는 남은 행동 기록이 없습니다."                      # 11/10 초안, 승인 대기
-REVIEW_TIMELINE_TITLE = "그날 마을 사람들이 한 일과 그 까닭"              # 11/10 초안, 승인 대기
+REVIEW_KIND_LABELS = {"night_plan": "밤 계획", "react": "캐묻기 답"}   # 11/11 사용자 승인
+REVIEW_EMPTY = "이 판에는 남은 행동 기록이 없습니다."                      # 11/11 사용자 승인
+REVIEW_TIMELINE_TITLE = "그날 마을 사람들이 한 일과 그 까닭"              # 11/11 사용자 승인
 
 
 def _evidence_label(ref, public, names):
-    """근거 ID를 화면 이름표로 바꾼다(공개 기록의 화자만 쓴다). 11/10 초안, 승인 대기."""
+    """근거 ID를 화면 이름표로 바꾼다(공개 기록의 화자만 쓴다). 11/11 사용자 승인."""
     from engine.domain.model import EvidenceType
     from engine.domain.review import evidence_speaker
     if ref.type is EvidenceType.VOTE:

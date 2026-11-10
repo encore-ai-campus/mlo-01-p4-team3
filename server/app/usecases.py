@@ -271,8 +271,8 @@ class GameService:
                                          for e in envelopes], state.public))
         try:
             names = {c.npc_id: c.name_ko for c in self.dependencies(meta).content.characters}
-        except Exception:                      # 콘텐츠를 못 읽어도 이유 코드·ID는 보인다
-            names = {}
+        except (LookupError, RuntimeError):    # 판 콘텐츠 버전을 못 읽을 때만(저장소 KeyError, 웹 조립의
+            names = {}                         # GameServiceUnavailable). 이름 대신 ID로 보이고 이유 코드는 그대로
         lines = self.review_lines or {}
         return [ReviewItem(item.item_id, item.actor, item.day, item.phase, item.kind, list(item.reason_codes),
                            list(item.evidence), item.phrase_id, review_text(item, lines, names, meta.seed),

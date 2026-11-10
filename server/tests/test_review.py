@@ -125,3 +125,28 @@ class ReviewAPI(TestCase):
         self.assertIn("max_suspicion", html)
         self.assertNotIn("win_prob", html)
 
+    def test_timeline_survives_only_content_lookup_failure(self):
+        """판 콘텐츠를 못 읽는 실패(KeyError·RuntimeError)는 이름 없이 진행하고, 그 밖의 오류는 숨기지 않는다."""
+        self.finish()
+        template = self.document["outbox"][0]
+        self.service.repository._append(self.document, [replace(
+            template, event_type="decision", state_version=self.document["state"].state_version, day=1,
+            phase="vote", payload={"actor": "jumo", "snapshot_id": "s", "kind": "vote", "target": "blacksmith",
+                                   "reason_codes": ["model_estimate"], "evidence": [], "policy_version": "m"})])
+        self.service.review_lines = {"rv_model_estimate": ["{actor}은(는) {target}에게 표"]}
+        self.addCleanup(setattr, self.service, "review_lines", None)
+        original = self.service.dependencies
+        self.addCleanup(setattr, self.service, "dependencies", original)
+        for error in (KeyError("v9"), RuntimeError("content_version_unavailable")):
+            def broken(meta, error=error):
+                raise error
+            self.service.dependencies = broken
+            items = self.service._review_timeline(self.document["state"])
+            self.assertEqual([i.text for i in items], ["jumo은 blacksmith에게 표"])
+
+        def buggy(meta):
+            raise ValueError("bug")
+        self.service.dependencies = buggy
+        with self.assertRaises(ValueError):
+            self.service._review_timeline(self.document["state"])
+

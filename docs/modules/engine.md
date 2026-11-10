@@ -128,4 +128,4 @@ n = fallback_count(res2.events)             # engine.domain.npc.vote. B가 paldo
 | A-08-03 | 11/8 | 결정 파라미터를 `decision_params.json`(decision-1)으로 분리·호출 시점 읽기, `routine_randomness` 추가, `tools/optimize_decision.py`(목표 승률 구간 인자), rule-0.5. 논리 우선 봇 vs 규칙 v0 1000판 마을 승률 49.6% |
 | A-08-03 | 11/7 | 후속 수정: `RULE_PARAMS_VERSION` 연결 문자 `+` → `.`(`rule-0.5.decision-1`). `+`가 B 회차 등록 검증 `[a-zA-Z0-9_.-]`에 걸려 운영자가 회차를 등록할 수 없었다. `DecisionParams.version`도 같은 문자 집합만 받는다 |
 | E-09-08 | 11/9 | `progress.py`(원한 단서 획득·한풀이 해금·결말 선택 규칙), 선택형 도전 프리셋 3종(`Preset.challenge`·`divination_limit`·`witness_scale`, 점 1회 제한은 `divination_available`, 목격 축소는 `draw_sightings(scale)`), `tools/perf/challenge_balance.py`. 기본 프리셋 판은 그대로(배율 1.0·점 제한 없음) |
-| E-10-10 | 11/10 | `review.py`(`review_trace`·`review_text`) 추가, 포트 `GameRepository.events`(가짜 저장소 구현 포함), 문구 파일 `content/review_lines_v1.json`(이유 코드 39개, 사용자 대사 확인 전 "승인 대기"). 엔진 규칙·상태·난수는 바꾸지 않음 |
+| E-10-10 | 11/10 | `review.py`(`review_trace`·`review_text`) 추가, 포트 `GameRepository.events`(가짜 저장소 구현 포함), 문구 파일 `content/review_lines_v1.json`(이유 코드 39개, 11/11 사용자 승인). 엔진 규칙·상태·난수는 바꾸지 않음 |
