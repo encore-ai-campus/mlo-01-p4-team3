@@ -1,7 +1,7 @@
 {% load meeting %}
 <div id="speech-cards" aria-live="polite" data-attempt-id="{{ attempt_id }}">
   {% if failure == 'unsupported_intent' %}
-    <p>지원하지 않는 행동입니다. “이방이 수상하다”, “지켜보겠소”처럼 입력하거나 아래 행동 버튼을 사용하세요.</p>
+    <p>지금 할 수 없거나 지원하지 않는 행동입니다. “이방이 수상하다”, “지켜보겠소”처럼 입력하거나 아래 행동 버튼을 사용하세요.</p>
   {% elif failure == 'missing_target' %}<p>빠진 대상을 골라 수정 후 실행하세요.</p>
   {% elif failure == 'ambiguous_evidence' %}<p>근거 후보 중 모순을 이루는 주장 두 개를 골라 수정 후 실행하세요.</p>
   {% elif failure == 'unparseable' %}<p>뜻을 해석하지 못했습니다. 문장을 다시 입력하세요.</p>{% endif %}
@@ -9,8 +9,8 @@
   {% for card in cards %}
     <article class="speech-card" x-data="{ editing: false }">
       <h3>{{ card.kind|action_label }}</h3>
-      <p>{% if card.target %}대상: {{ card.target_name|display_name }}{% endif %}{% if card.addressee %} · 질문 상대: {{ card.addressee_name|display_name }}{% endif %}</p>
-      {% if card.missing %}<p>빠진 항목: {{ card.missing|join:', ' }}</p>{% endif %}
+      <p>{% if card.target %}대상: {{ card.target_name|display_name }}{% endif %}{% if card.addressee %}{% if card.target %} · {% endif %}질문 상대: {{ card.addressee_name|display_name }}{% endif %}</p>
+      {% if card.missing %}<p>빠진 항목: {% for slot in card.missing %}{{ slot|slot_label }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
       <form class="command-form" hx-post="/games/{{ vm.game_id }}/utterances/{{ attempt_id }}" hx-target="#speech-cards" hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
         {% csrf_token %}<input type="hidden" name="game_id" value="{{ vm.game_id }}"><input type="hidden" name="attempt_id" value="{{ attempt_id }}">
         <input type="hidden" name="state_version" value="{{ attempt_version }}"><input type="hidden" name="command_id">
