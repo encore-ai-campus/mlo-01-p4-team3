@@ -227,6 +227,12 @@ class TemplateLines(unittest.TestCase):
         self.assertEqual(review_text(item, {"rv_y": ["{actor}은(는) {target}을(를) 봄"]}, {"jumo": "주모"}, 1),
                          "주모는 다른 사람을 봄")
 
+    def test_player_target_uses_player_name(self):
+        from engine.domain.review import ReviewTraceItem
+        item = ReviewTraceItem("d2", 1, "vote", "jumo", "vote", ["max_suspicion"], [], "v", "rv_z", target_npc="mudang")
+        self.assertEqual(review_text(item, {"rv_z": ["{actor}은(는) {target}에게 표"]}, {"jumo": "주모"}, 1),
+                         "주모는 무당에게 표")
+
     def test_attach_josa(self):
         self.assertEqual(attach_josa("훈장은(는) 대장장이을(를) 의심"), "훈장은 대장장이를 의심")
         self.assertEqual(attach_josa("과부이(가) 머슴과(와)"), "과부가 머슴과")

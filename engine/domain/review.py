@@ -18,7 +18,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from .model import CommandKind, EvidenceRef, EvidenceType, PublicRecord
+from .model import PLAYER_ID, CommandKind, EvidenceRef, EvidenceType, PublicRecord
 from .observation import NO_EVIDENCE_CODES, ReasonCode
 
 TALK_KINDS = frozenset(k.value for k in (CommandKind.SUSPECT, CommandKind.DEFEND, CommandKind.POINT_CONTRADICTION,
@@ -175,6 +175,7 @@ def attach_josa(text: str) -> str:
 
 
 SLOT_DEFAULTS = {"actor": "누군가", "target": "다른 사람", "victim": "누군가", "executor": "누군가"}
+PLAYER_NAME = "무당"                          # 플레이어는 콘텐츠 인물 목록에 없다(화면 이름표와 같은 이름)
 
 
 def review_text(item: ReviewTraceItem, lines: dict[str, list[str]], names: dict[str, str], seed: int) -> str:
@@ -187,6 +188,7 @@ def review_text(item: ReviewTraceItem, lines: dict[str, list[str]], names: dict[
         return ""
     template = random.Random(f"{seed}:review:{item.item_id}").choice(variants)
     slots = {"actor": item.actor, "target": item.target_npc, "victim": item.victim, "executor": item.executor}
+    names = {PLAYER_ID: PLAYER_NAME, **names}
     filled = {k: (names.get(v, v) if v else SLOT_DEFAULTS[k]) for k, v in slots.items()}
     return attach_josa(template.format(**filled))
 
