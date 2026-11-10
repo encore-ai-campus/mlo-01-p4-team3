@@ -96,8 +96,9 @@ def _meeting_response(request, view, variant, status=200, previous_interrogation
     from .participant_forms import participant_context
 
     template = "meeting.html" if request.headers.get("HX-Request") == "true" else "game.html"
-    context = meeting_context(view)
     service = get_game_service()
+    first_game, guide_k = service.guide_info(view.game_id, request.player_pseudonym)
+    context = meeting_context(view, guide_k, first_game)
     if view.result is not None:
         from .story_view import result_context
         state, _ = service.owned(view.game_id, request.player_pseudonym)

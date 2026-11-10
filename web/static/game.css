@@ -718,3 +718,22 @@ button { border-radius:2px; }
  .vn-player > .vn-reading { position:absolute; right:0; bottom:44px; width:380px; flex-wrap:wrap; gap:4px 8px; padding:0; }
  .vn-player > .vn-options { position:absolute; right:0; bottom:0; width:380px; justify-content:flex-start; padding:0; }
 }
+/* 버튼 설명(title 문구를 화면 안에 그린다). 한 줄, 클릭을 막지 않는다. */
+.ui-tip { position:absolute; z-index:1000; max-width:min(320px, calc(100vw - 8px)); padding:6px 10px; color:var(--text); background:#0e1a1e; border:1px solid var(--accent); border-radius:4px; font-size:.85rem; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.4); }
+.ui-tip[hidden] { display:none; }
+/* 11/10: 수첩 한 번 누름 표시, 첫 판 안내 건너뛰기, 투표 결과 확인 전 잠금 */
+.people li:has(.notebook-marks) { flex-direction:column; align-items:stretch; }
+.notebook-marks { display:flex; gap:2px; }  /* 버튼은 글자 폭 기준(flex auto)으로 나눠 좁은 밤 카드에서도 '모르겠음'이 잘리지 않게 */
+.notebook-marks button { flex:1 1 auto; min-width:0; min-height:30px; padding:3px 2px; font-size:.72rem; white-space:nowrap; letter-spacing:-.02em; background:#1b2a2f; border:1px solid #526267; color:inherit; }
+.notebook-marks button[aria-pressed=true] { background:#dbc397; color:#242b28; border-color:#704c1a; font-weight:700; }
+.notebook-list { list-style:none; padding:0; margin:12px 0; display:grid; gap:8px; }
+.notebook-list li { display:flex; align-items:center; gap:12px; }
+.notebook-list li > span:first-of-type { min-width:5em; }
+.mark-status { min-height:1.2em; margin:4px 0; font-size:.85rem; }
+.vn-guide-skip { position:absolute; bottom:calc(25% + 8px); right:12px; background:#111c20ed; min-height:36px; padding:6px 12px; }
+.result-lock-notice { border-left:3px solid #dbc397; }
+[data-result-locked] { opacity:.45; cursor:not-allowed; filter:grayscale(.6); }
+.end-guide { display:flex; align-items:flex-start; gap:12px; margin:8px 0 12px; }
+.end-guide img { width:72px; height:72px; object-fit:contain; flex-shrink:0; }
+.end-guide-bubble { position:relative; padding:8px 12px; border:1px solid #9e8555; border-radius:8px; background:#fff8e8; color:#242b28; font-size:.9rem; }
+.end-guide-bubble p { margin:2px 0; }

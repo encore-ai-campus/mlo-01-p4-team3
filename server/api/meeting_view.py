@@ -5,6 +5,8 @@ from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, DivinationRes
 from engine.ports import PlayerView
 from .viewmodels import PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_meeting_vm
 from .ui_viewmodels import build_ui_vm
+from .tutorial_script import FIRST_GAME_END, GUIDE_SPEAKER, guide_lines
+from .vn_script import VNLine, build_vn_lines
 
 DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
@@ -67,8 +69,24 @@ def _place_asset(place):
     return f"place:{place.value}" if place and place.value in PLACE_KO else ""
 
 
-def meeting_context(view: PlayerView):
-    """공개 진술·투표와 허용 행동, 본인의 점괘를 화면 모델로 전달한다."""
+GUIDE_MASCOT = "mascot:jokjebi"
+
+
+def _guide_vn_lines(view: PlayerView, k: int):
+    """그날의 안내 줄을 (실종 발표 앞 줄, 진술 앞 줄, 나머지 줄)로 나눈다. 밤 화면에는 족제비 그림을 세우지 않는다."""
+    before, lead, rest = [], [], []
+    for line in guide_lines(k, day=view.day):
+        sprite = "" if line.phase == Phase.NIGHT.value else GUIDE_MASCOT
+        item = VNLine(line.line_id, line.day, line.phase, GUIDE_SPEAKER, line.text, sprite_id=sprite, guide=True)
+        (before if line.step == "start" else lead if line.step == "morning1" else rest).append(item)
+    return before, lead, rest
+
+
+def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bool = False):
+    """공개 진술·투표와 허용 행동, 본인의 점괘를 화면 모델로 전달한다.
+
+    guide_k(이번 판 씐 자 수)가 있으면 도움말의 "안내 다시 보기" 줄을, first_game이면 대사창 안내 줄을 더한다.
+    """
     vm = build_ui_vm(view)
     claims = []
     for card, record in zip(vm.claims, view.public.claims, strict=True):
@@ -105,6 +123,7 @@ def meeting_context(view: PlayerView):
     vote_targets = active_targets
     if view.phase is Phase.RUNOFF:
         vote_targets = [person for person in active_targets if person.npc_id in vm.runoff_candidates]
+    before, lead, rest = _guide_vn_lines(view, guide_k) if first_game and guide_k is not None else ([], [], [])
     actions = []
     for kind in vm.allowed_actions:
         if kind == CommandKind.VOTE.value:
@@ -116,6 +135,7 @@ def meeting_context(view: PlayerView):
     return {"vm": vm, "claims": claims, "claim_nights": sorted({c.card.night for c in claims if c.card.night is not None}), "disappearances": disappearances,
             "own_divinations": own_divinations, "divination_options": divination_options,
             "published_votes": published_votes, "published_locks": published_locks, "active_targets": active_targets,
-            "vote_targets": vote_targets,
+            "vote_targets": vote_targets, "vn_lines": lead + build_vn_lines(view, DIVINATION_KO) + rest,
+            "vn_guide_before": before, "first_game_end": FIRST_GAME_END if first_game else (), "guide_replay": guide_lines(guide_k) if guide_k is not None else [],
             "actions": actions, "past_nights": list(range(max(0, view.day))),
             "contradiction_ready": sum(item.card.selectable and item.evidence_value.startswith('claim:') for item in claims) >= 2}

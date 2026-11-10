@@ -16,6 +16,7 @@ class NotebookEntryVM:
     npc_id: str
     name: str
     value: int
+    saved: int | None = None   # 저장한 적 없으면 None(모르겠음으로 표시)
 
 
 def participant_context(service, view):
@@ -27,9 +28,11 @@ def participant_context(service, view):
         submitted = records.survey is not None
     return {
         "participant_forms_available": True,
-        "notebook_entries": [NotebookEntryVM(npc, name, view.player.notebook.get(npc, 50))
+        "notebook_entries": [NotebookEntryVM(npc, name, view.player.notebook.get(npc, 50), view.player.notebook.get(npc))
                              for npc, name in view.names.items() if npc != "mudang"],
         "vote_confidence": confidence,
+        # 주민 창·수첩 창의 한 번 누름 표시(11/10 사용자 결정). 값은 기존 0~100 형식에 그대로 저장한다.
+        "notebook_mark_choices": [("100", "수상함"), ("50", "모르겠음"), ("0", "믿음")],
         "confidence_choices": [(0, "전혀 확신하지 않음"), (25, "조금 확신함"),
                                (50, "보통"), (75, "많이 확신함"), (100, "매우 확신함")],
         "survey_submitted": submitted,

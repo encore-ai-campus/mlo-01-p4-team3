@@ -1,5 +1,6 @@
 """B-07-02 화면 입력부터 수첩·확신도·설문 아웃박스까지 검증한다."""
 import json
+import re
 from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
@@ -68,7 +69,8 @@ class ParticipantFormsTests(TestCase):
         npc = next(name for name in self.view()["names"] if name != "mudang")
         self.assertContains(page, f'name="entry:{npc}"')
         self.assertNotContains(page, 'name="entry:mudang"')
-        self.assertContains(page, 'x-model="value"')
+        self.assertNotContains(page, 'type="range"')
+        self.assertContains(page, f'data-mark-person="{npc}" data-mark-value="100" aria-pressed="false"')
         self.assertContains(page, "/static/js/vendor/alpine.min.js")
         version = self.view()["state_version"]
         body = {"game_id": self.gid, f"entry:{npc}": 73, "vote_confidence": ""}
@@ -76,6 +78,9 @@ class ParticipantFormsTests(TestCase):
             self.assertEqual(self.form("PUT", "/notebook", body).status_code, 204)
         self.assertEqual(self.view()["state_version"], version)
         self.assertEqual(self.view()["player"]["notebook"][npc], 73)
+        page = self.client.get(self.url, HTTP_ACCEPT="text/html").content.decode()
+        self.assertIn(f'name="entry:{npc}" value="73"', page)       # 확신도 저장 때 함께 보낼 현재 값
+        self.assertIn(f'data-mark-person="{npc}" data-mark-value="100" aria-pressed="true"', page)
         self.play_until("vote")
         self.assertContains(self.client.get(self.url, HTTP_ACCEPT="text/html"), "투표 직전 확신도")
         body["vote_confidence"] = 75
@@ -88,6 +93,30 @@ class ParticipantFormsTests(TestCase):
         self.assertEqual(events[0].payload["vote_confidence"], None)
         self.assertEqual(events[1].payload["vote_confidence"], 75)
         self.assertTrue(all(event.topic == "paldo.player" for event in events))
+
+    def test_people_panel_marks_only_for_active_and_keep_saved_values(self):
+        """주민 창 수첩 버튼은 활동 중인 주민만. 실종·감금 주민 값은 숨은 입력으로 그대로 보낸다."""
+        view = self.view()
+        gone = sorted(set(view["missing"]) | set(view["locked"]))
+        self.assertTrue(gone, "첫 아침에는 실종자가 있어야 한다")
+        npc = gone[0]
+        active = next(n for n in view["names"] if n not in gone and n not in ("mudang", PLAYER_ID))
+        body = {"game_id": self.gid, f"entry:{npc}": 100, f"entry:{active}": 0, "vote_confidence": ""}
+        self.assertEqual(self.form("PUT", "/notebook", body).status_code, 204)
+        page = self.client.get(self.url, HTTP_ACCEPT="text/html").content.decode()
+        start = page.index('id="stage-people"')
+        people = page[start:page.index("</section>", start)]
+        self.assertNotIn(f'data-mark-person="{npc}"', people)            # 실종·감금: 주민 창 버튼 없음
+        self.assertIn(f'data-mark-person="{active}" data-mark-value="0" aria-pressed="true"', people)
+        self.assertIn(f'name="entry:{npc}" value="100"', page)           # 덮어쓰기 저장 때 값이 사라지지 않음
+        self.assertEqual(self.view()["player"]["notebook"][npc], 100)
+        # 다음 표시 저장은 화면의 숨은 입력 전체를 다시 보낸다(덮어쓰기). 실종·감금 주민 값이 남아야 한다.
+        resend = {"game_id": self.gid, "vote_confidence": "",
+                  **dict(re.findall(r'name="(entry:[^"]+)" value="(\d+)"', page))}
+        resend[f"entry:{active}"] = 100
+        self.assertEqual(self.form("PUT", "/notebook", resend).status_code, 204)
+        notebook = self.view()["player"]["notebook"]
+        self.assertEqual((notebook[npc], notebook[active]), (100, 100))
 
     def test_survey_matches_final_questions_masking_and_htmx_completion(self):
         """확정 문항·선택 자유 의견을 표시하고 완료 조각과 중복 방지를 확인한다."""
