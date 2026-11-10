@@ -27,4 +27,4 @@ python -m ops.web_concurrency --profile "$PRIVATE_VALIDATION_PROFILE" --out "$PR
 
 6개 JSON은 `ops/grafana/dashboards/`에 있다. Prometheus datasource 선택 변수로 환경에 맞추며 재import할 수 있다. P-31에 따라 runtime LLM은 꺼져 있고 큐 대기·생성 지연은 N/A로 표시한다. 값이 없을 때 0 성공값을 만들어 넣지 않는다.
 
-30 활성 판 검증은 load_test=true인 새 합성 계정만 사용한다. HTTP 요청 상한 12를 명시하며 30개 HTTP 요청 동시 실행과 구별한다. 최초 burst는 MySQL 연결 상한 40 소진으로 실패했다. 영구 상한 변경은 적용하지 않았다. 최종 완주와 p95 실측은 증빙을 본다. MySQL 세 번째 VM이 꺼져 있어 node 19/20 수집이며 전부 정상 완료로 처리하지 않는다.
+30 활성 판 검증은 load_test=true인 새 합성 계정만 사용한다. HTTP 요청 상한 12를 명시하며 30개 HTTP 요청 동시 실행과 구별한다. 최초 burst는 MySQL 연결 상한 40 소진으로 실패했다. 영구 상한 변경은 적용하지 않았다. 최종 완주와 p95 실측은 증빙을 본다. 11/10에는 MySQL 세 번째 VM을 포함해 `paldo-nodes` 20대의 수집을 확인했다.
