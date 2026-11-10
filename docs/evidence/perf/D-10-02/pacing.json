@@ -1,0 +1,24 @@
+{
+  "task": "D-10-02",
+  "commit": "68887b9bc04b1b59f38b185469e60b1f103425c2",
+  "generated_at": "2026-11-10T00:27:28Z",
+  "source": "python -m tools.ad_ctr_scenario pacing --out out\\d1002 --requests 12000",
+  "metrics": {
+    "budget_error_max": {
+      "value": 0.0034999999999999476,
+      "unit": ""
+    },
+    "invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "curve_mae_before": {
+      "value": 0.006674414866255145,
+      "unit": ""
+    },
+    "curve_mae_after": {
+      "value": 0.005899450231481481,
+      "unit": ""
+    }
+  }
+}

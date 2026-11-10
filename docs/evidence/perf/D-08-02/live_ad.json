@@ -1,0 +1,250 @@
+{
+  "task": "D-08-02",
+  "commit": "8706ec056650e82b21405b06c4e2d195d3f81857",
+  "generated_at": "2026-11-09T02:33:43Z",
+  "source": "ad-01 real-server synthetic HTTP and run-scoped MySQL outbox/ledger export; uncommitted D task tree; Spark Master C-08-02 official bronze check and isolated Delta baseline",
+  "run_id": "c08_d0802_20261109b",
+  "request_prefix": "syn:c08_d0802_20261109b",
+  "truth_sha256": "40656016fae14ee64f49fc5152908a24c32dc39d0e710e8c49cb452eb354eb79",
+  "source_events_sha256": "9839dc7296a7f2b70d2da62a822cef0cfd3283e3880c3511593ffaba1f00d705",
+  "metrics": {
+    "requests": {
+      "value": 1000,
+      "unit": "건"
+    },
+    "filled": {
+      "value": 1000,
+      "unit": "건"
+    },
+    "source_events": {
+      "value": 1960,
+      "unit": "건"
+    },
+    "unique_source_ids": {
+      "value": 1960,
+      "unit": "건"
+    },
+    "outbox_pending": {
+      "value": 0,
+      "unit": "건"
+    },
+    "ledger_rows": {
+      "value": 1000,
+      "unit": "행"
+    },
+    "ledger_confirmed": {
+      "value": 625,
+      "unit": "행"
+    },
+    "ledger_reserved_at_export": {
+      "value": 375,
+      "unit": "행"
+    },
+    "confirmed_net_mw": {
+      "value": 7339683,
+      "unit": "밀리원"
+    },
+    "replayed_requests": {
+      "value": 1948,
+      "unit": "건"
+    },
+    "paused_campaigns": {
+      "value": 3,
+      "unit": "개"
+    },
+    "official_bronze_unique": {
+      "value": 1960,
+      "unit": "건"
+    },
+    "source_hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "c_silver_rows": {
+      "value": 960,
+      "unit": "행"
+    },
+    "c_silver_pending": {
+      "value": 0,
+      "unit": "건"
+    },
+    "c_gold_rows": {
+      "value": 3,
+      "unit": "행"
+    },
+    "c_training_rows": {
+      "value": 5,
+      "unit": "행"
+    },
+    "c_delta_net_mw": {
+      "value": 7339683,
+      "unit": "밀리원"
+    },
+    "c_baseline_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "c_rejudge_acked": {
+      "value": 1,
+      "unit": "건"
+    },
+    "mysql_refund_rows": {
+      "value": 1,
+      "unit": "행"
+    },
+    "mysql_refund_mw": {
+      "value": -524590,
+      "unit": "밀리원"
+    },
+    "mysql_after_refund_mw": {
+      "value": 6815093,
+      "unit": "밀리원"
+    },
+    "c_official_rejudge_events": {
+      "value": 1,
+      "unit": "건"
+    },
+    "c_after_refund_bronze_rows": {
+      "value": 1961,
+      "unit": "행"
+    },
+    "c_after_refund_gold_impressions": {
+      "value": 913,
+      "unit": "건"
+    },
+    "c_after_refund_gold_clicks": {
+      "value": 43,
+      "unit": "건"
+    },
+    "c_after_refund_delta_mw": {
+      "value": 6815093,
+      "unit": "밀리원"
+    },
+    "c_after_refund_mismatches": {
+      "value": 0,
+      "unit": "건"
+    }
+  },
+  "c_baseline": {
+    "cutoff_ms": 1794238320000,
+    "simulated_final_cutoff": true,
+    "snapshot": {
+      "source_unique": 1960,
+      "official_bronze_unique": 1960,
+      "source_hash_mismatches": 0,
+      "withheld_serves": 0,
+      "rejudge_events": 0,
+      "validation_bronze_rows": 1960
+    },
+    "silver": {
+      "bronze_version": 0,
+      "input_ad_events": 1960,
+      "silver_rows": 960,
+      "silver_version": 0,
+      "rejudge_candidates": 0,
+      "rejudge_acked": 0,
+      "observation_cutoff_ms": 1794238320000,
+      "valid": 958,
+      "invalid": 2,
+      "pending": 0
+    },
+    "gold": {
+      "phase": "final",
+      "gold_rows": 3,
+      "gold_version": 0,
+      "training_rows": 5,
+      "training_version": 0,
+      "valid_impressions": 914,
+      "valid_clicks": 44,
+      "cost_mw": 7339683,
+      "context_missing_events": 0,
+      "observation_cutoff_ms": 1794238320000
+    },
+    "reconcile": {
+      "mismatches": 0,
+      "differences": {
+        "ledger_only": [],
+        "delta_only": [],
+        "duplicate": [],
+        "amount_mismatch": [],
+        "orphan_refund": []
+      },
+      "ledger_net_mw": 7339683,
+      "delta_mw": 7339683
+    }
+  },
+  "mysql_refund": {
+    "run_id": "c08_d0802_20261109b",
+    "same_attribution_day": true,
+    "same_slot": true,
+    "ledger_sha256": "608283164e4d36d4cb7ada3cd5d9545164ce65539b7bb591aa99dbc0740e28ab",
+    "rejudge_observation_cutoff_ms": 1794201012126
+  },
+  "c_refund_reconciliation": {
+    "cutoff_ms": 1794238320000,
+    "snapshot": {
+      "source_unique": 1960,
+      "official_bronze_unique": 1960,
+      "source_hash_mismatches": 0,
+      "withheld_serves": 0,
+      "rejudge_events": 1,
+      "validation_bronze_rows": 1961
+    },
+    "silver": {
+      "bronze_version": 0,
+      "input_ad_events": 1961,
+      "silver_rows": 960,
+      "silver_version": 0,
+      "rejudge_candidates": 0,
+      "rejudge_acked": 0,
+      "observation_cutoff_ms": 1794238320000,
+      "valid": 956,
+      "invalid": 4,
+      "pending": 0
+    },
+    "gold": {
+      "phase": "final",
+      "gold_rows": 3,
+      "gold_version": 0,
+      "training_rows": 5,
+      "training_version": 0,
+      "valid_impressions": 913,
+      "valid_clicks": 43,
+      "cost_mw": 6815093,
+      "context_missing_events": 0,
+      "observation_cutoff_ms": 1794238320000
+    },
+    "reconcile": {
+      "mismatches": 0,
+      "differences": {
+        "ledger_only": [],
+        "delta_only": [],
+        "duplicate": [],
+        "amount_mismatch": [],
+        "orphan_refund": []
+      },
+      "ledger_net_mw": 6815093,
+      "delta_mw": 6815093
+    },
+    "refund_rows": 1,
+    "refund_mw": -524590,
+    "report_sha256": "866f1ecaa738836dd1abdce1e525de67542e38fbe047c0c230fd3129c59b1c78"
+  },
+  "ctr_export": {
+    "source_version": "c08:c08_d0802_20261109b:silver-0:gold-0:training-0",
+    "sha256": "1b6b3a21b4ce8bf8c09528431b9792345a832a35577e8508c800b460f6f764c0",
+    "cells": 3,
+    "valid_impressions": 913,
+    "valid_clicks": 43,
+    "simulated_final_cutoff": true,
+    "copied_to_ad01": true,
+    "version_verification_pending": false
+  },
+  "optimization_verification": {
+    "passed": true,
+    "ctr_version": "ctr-75766d30e46941d2cab7ec3a6a4f5b4887bfa45fc0c11ef6feca8ce8efa320ef",
+    "policy_version": "pacing-f4f491fe271d68c66458b1d502caf51ad0ab5ba684a21bd8eeaef165429c1bb9",
+    "verified_slots": 3,
+    "report_sha256": "04a9c8a35a1f3422de3b7f944d5c4dc99a8037a0ce6343134f3b9c121673a653"
+  }
+}

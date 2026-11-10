@@ -6,6 +6,7 @@ D-07-02 특징/학습 코드는 지연 import하며, 신뢰된 로컬 models.pkl
 from __future__ import annotations
 
 from functools import partial
+from collections import deque
 import hashlib
 import math
 import multiprocessing
@@ -26,7 +27,10 @@ def _worker(connection, loader):
         connection.send(('ready', (model.model_version, model.feature_version)))
         while True:
             snapshot = connection.recv()
-            connection.send(('result', model.estimate(snapshot)))
+            try:
+                connection.send(('result', model.estimate(snapshot)))
+            except FeatureVersionMismatch:
+                connection.send(('version', None))
     except FeatureVersionMismatch:
         connection.send(('version', None))
     except (EOFError, BrokenPipeError):
@@ -38,11 +42,9 @@ def _worker(connection, loader):
 
 
 class SuspicionModelAdapter:
-    """포트 구현. 로드 실패는 호출 때 ModelUnavailable, 버전 불일치는 즉시 거부한다.
+    """호출만 폴백하고 동일 버전 worker를 복구한다. close는 소유 보관소가 호출한다."""
 
-    timeout 후 worker를 종료하고 이 인스턴스는 다시 로드하지 않는다. 판 중 모델 교체나
-    자동 재시도는 하지 않는다. Selector는 판 종료 후 close()로 수명을 관리해야 한다.
-    """
+    COOLDOWN_S = 30
 
     def __init__(self, loader, expected_feature_version: str | None, *,
                  timeout_s: float = .09, load_timeout_s: float = 30):
@@ -54,23 +56,23 @@ class SuspicionModelAdapter:
         self.feature_version = expected_feature_version or 'unavailable'
         self.timeout_s = timeout_s
         self.calls = self.successes = 0
-        self.latencies_ms = []
+        self.latencies_ms = deque(maxlen=10000)
         self._lock = threading.Lock()
         self._closed = False
-        context = multiprocessing.get_context('spawn')
-        self._connection, child = context.Pipe()
-        self._process = context.Process(target=_worker, args=(child, loader), daemon=True)
+        self._loader = loader
+        self._expected_feature = expected_feature_version
+        self._load_timeout = load_timeout_s
+        self._ready = threading.Event()
+        self._stop = threading.Event()
+        self._process = self._connection = None
+        self._recovery_thread = None
+        self._permanent = False
+        self._failures = 0
+        self._timeouts = []
+        self.recovery_ms = deque(maxlen=10000)
+        self._cooldown_until = 0
         try:
-            self._process.start()
-            child.close()
-            status, value = self._receive(load_timeout_s)
-            if status == 'version':
-                raise FeatureVersionMismatch('artifact feature_version mismatch')
-            if status != 'ready':
-                raise ModelUnavailable(f'model load failed: {value}')
-            self.model_version, self.feature_version = value
-            if expected_feature_version is not None and self.feature_version != expected_feature_version:
-                raise FeatureVersionMismatch('selected feature_version mismatch')
+            self._start_worker()
         except FeatureVersionMismatch:
             self.close()
             log('suspicion_model', 'warning', '특징 버전 불일치; 모델 사용 거부',
@@ -78,11 +80,79 @@ class SuspicionModelAdapter:
                 feature_version=self.feature_version)
             raise
         except Exception as exc:
-            self.close()
+            self._dispose(self._process, self._connection)
+            self._failures = 1
+            if not self._permanent:
+                self._schedule_recovery()
             log('suspicion_model', 'warning', '모델 로드 실패; 엔진 폴백 대기',
                 error_type=type(exc).__name__, model_version=self.model_version)
+
+    @staticmethod
+    def _dispose(process, connection):
+        if connection is not None:
+            connection.close()
+        if process is not None and process.pid is not None:
+            if process.is_alive():
+                process.terminate()
+            process.join(timeout=1)
+            if process.is_alive():
+                process.kill()
+                process.join(timeout=1)
+
+    def _start_worker(self):
+        context = multiprocessing.get_context('spawn')
+        self._connection, child = context.Pipe()
+        self._process = context.Process(target=_worker, args=(child, self._loader), daemon=True)
+        try:
+            self._process.start()
         finally:
             child.close()
+        deadline = time.monotonic() + self._load_timeout
+        while not self._connection.poll(.02):
+            if self._stop.is_set() or time.monotonic() >= deadline:
+                raise ModelUnavailable('model load timeout or closed')
+        status, value = self._connection.recv()
+        if status == 'version':
+            self._permanent = True
+            raise FeatureVersionMismatch('artifact feature_version mismatch')
+        if status != 'ready':
+            self._permanent = value in ('FileNotFoundError', 'NotADirectoryError')
+            raise ModelUnavailable(f'model load failed: {value}')
+        version, feature = value
+        if ((self._expected_feature is not None and feature != self._expected_feature)
+                or (self.model_version != 'unavailable' and version != self.model_version)
+                or (self.model_version != 'unavailable' and feature != self.feature_version)):
+            self._permanent = True
+            raise FeatureVersionMismatch('reloaded model identity or feature_version mismatch')
+        self.model_version, self.feature_version = version, feature
+        self._ready.set()
+
+    def _schedule_recovery(self):
+        self._ready.clear()
+        self._recovery_thread = threading.Thread(target=self._recover, daemon=True)
+        self._recovery_thread.start()
+
+    def _recover(self):
+        with self._lock:
+            while not self._stop.is_set() and not self._permanent:
+                self._dispose(self._process, self._connection)
+                if self._failures >= 3:
+                    self._cooldown_until = time.monotonic() + self.COOLDOWN_S
+                    log('suspicion_model', 'warning', '연속 worker 실패; 30초 복구 대기',
+                        model_version=self.model_version, failures=self._failures)
+                    if self._stop.wait(self.COOLDOWN_S):
+                        return
+                if self._stop.is_set():
+                    return
+                try:
+                    self._start_worker()
+                    return
+                except Exception as exc:
+                    self._ready.clear()
+                    self._failures += 1
+                    log('suspicion_model', 'warning', '동일 버전 worker 재기동 실패',
+                        model_version=self.model_version, error_type=type(exc).__name__)
+            self._dispose(self._process, self._connection)
 
     def _receive(self, timeout_s):
         if not self._connection.poll(max(0, timeout_s)):
@@ -93,11 +163,15 @@ class SuspicionModelAdapter:
         """추론·IPC·잠금 대기를 한 마감으로 제한하고 실패는 엔진 폴백 예외로 바꾼다."""
         started = time.monotonic()
         self.calls += 1
-        if not self._lock.acquire(timeout=self.timeout_s):
-            raise ModelUnavailable('model busy')
+        acquired = False
         try:
-            if self._closed:
-                raise ModelUnavailable('model unavailable or closed')
+            if self._closed or self._permanent or not self._ready.is_set():
+                raise ModelUnavailable('model closed or recovering')
+            acquired = self._lock.acquire(timeout=max(0, self.timeout_s - (time.monotonic() - started)))
+            if not acquired:
+                raise ModelUnavailable('model busy')
+            if not self._ready.is_set() or self._closed:
+                raise ModelUnavailable('model recovering')
             self._connection.send(obs)
             status, result = self._receive(self.timeout_s - (time.monotonic() - started))
             if status == 'version':
@@ -111,31 +185,88 @@ class SuspicionModelAdapter:
             if result.model_version != self.model_version:
                 raise ModelUnavailable('output model_version mismatch')
             self.successes += 1
+            self._failures = 0
+            for failed_at in self._timeouts:
+                duration = (time.monotonic() - failed_at) * 1000
+                self.recovery_ms.append(duration)
+                log('suspicion_model', 'info', 'timeout 이후 동일 버전 추론 복구',
+                    model_version=self.model_version, duration_ms=round(duration, 3))
+            self._timeouts.clear()
             return result
         except FeatureVersionMismatch:
-            self.close()
-            log('suspicion_model', 'warning', '특징 버전 불일치; 모델 사용 거부',
+            log('suspicion_model', 'warning', '입력 특징 불일치; 해당 결정 폴백',
                 error_type='FeatureVersionMismatch', model_version=self.model_version,
                 feature_version=self.feature_version)
             raise
         except Exception as exc:
-            self.close()
+            if acquired and self._ready.is_set() and not self._closed:
+                self._failures += 1
+                if str(exc) == 'model timeout':
+                    self._timeouts.append(started)
+                self._schedule_recovery()
             log('suspicion_model', 'warning', '추론 실패; 엔진 규칙 v0 폴백',
                 error_type=type(exc).__name__, reason=str(exc), model_version=self.model_version,
                 game_id=obs.game_id, duration_ms=round((time.monotonic() - started) * 1000, 3))
             raise ModelUnavailable('suspicion inference unavailable') from exc
         finally:
             self.latencies_ms.append((time.monotonic() - started) * 1000)
-            self._lock.release()
+            if acquired:
+                self._lock.release()
 
     def close(self) -> None:
         """worker를 종료한다. 여러 번 호출해도 안전하며 늦은 결과는 재사용하지 않는다."""
         self._closed = True
-        if self._process.pid is not None:
-            if self._process.is_alive():
-                self._process.terminate()
-            self._process.join(timeout=.01)
-        self._connection.close()
+        self._ready.clear()
+        self._stop.set()
+        with self._lock:
+            self._dispose(self._process, self._connection)
+
+
+class _BorrowedModel:
+    def __init__(self, model):
+        self.model_version, self.feature_version = model.model_version, model.feature_version
+        self._model = model
+
+    def estimate(self, obs):
+        return self._model.estimate(obs)
+
+    def close(self):
+        """판 종료는 프로세스 공유 worker를 닫지 않는다."""
+
+
+class SharedModelStore:
+    """웹 프로세스가 소유한다. 버전별 worker 하나를 빌려주고 종료 때만 닫는다."""
+
+    def __init__(self):
+        self._models = {}
+        self._lock = threading.Lock()
+        self._closed = False
+
+    def get(self, version, loader):
+        """첫 호출만 로드한다. 판은 반환된 포트를 빌려 쓰며 버전을 바꾸지 않는다."""
+        with self._lock:
+            if self._closed:
+                raise ModelUnavailable('model store closed')
+            if version not in self._models:
+                model = loader()
+                if model.model_version != version:
+                    model.close()
+                    raise ModelUnavailable('shared model version mismatch')
+                self._models[version] = model
+            return _BorrowedModel(self._models[version])
+
+    def close(self):
+        """프로세스 종료 시 소유 worker를 모두 닫는다."""
+        with self._lock:
+            self._closed = True
+            for model in self._models.values():
+                model.close()
+
+    def worker_pids(self):
+        """시험 계측용으로 현재 살아 있는 버전별 worker PID를 돌려준다."""
+        with self._lock:
+            return {version: model._process.pid for version, model in self._models.items()
+                    if model._process is not None and model._process.is_alive()}
 
 
 class _ArtifactModel:

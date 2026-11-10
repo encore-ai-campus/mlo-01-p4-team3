@@ -33,6 +33,7 @@ def _process_event(service, kind, token, visible_ratio, visible_ms, event_id=Non
             first = now
             claims, reason = verify_token(token, service.key, first)
         load_test = bool(claims and service.load_tests.get(claims.serve_id, False))
+        was_impressed = bool(claims and claims.serve_id in service.state.impressed)
         if kind == "click":
             j = judge_click(service.state, claims, reason, first, now, load_test)
         else:
@@ -42,6 +43,12 @@ def _process_event(service, kind, token, visible_ratio, visible_ms, event_id=Non
         record = service.state.serves.get(claims.serve_id) if claims else None
         result = EventResult(j, record)
         if record:
+            if not was_impressed and claims.serve_id in service.state.impressed:
+                counts = service.exposure_counts.setdefault((record.campaign_id, record.attribution_day),
+                    dict(impressions=0, explorations=0, creatives={}))
+                counts["impressions"] += 1
+                counts["explorations"] += int(record.exploration)
+                counts["creatives"][record.creative_id] = counts["creatives"].get(record.creative_id, 0) + 1
             result.redirect_path = "/ads/landing/" + record.creative_id
             if j.status is JudgeStatus.VALID and (
                 (record.billing is BillingType.CPC and kind == "click")

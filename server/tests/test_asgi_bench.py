@@ -4,6 +4,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from unittest import TestCase
 from unittest.mock import patch
+from unittest.mock import MagicMock
 from server.tests.asgi_bench import assess, main
 
 
@@ -58,3 +59,44 @@ class NetworkBenchVerdict(TestCase):
             self.assertEqual(entry(["--compare-asgi"]), 2)
         self.assertNotIn("private-connection-detail", output.getvalue())
         self.assertIn("network_benchmark_failed", output.getvalue())
+
+    def test_actual_command_uses_public_state_and_runoff_targets(self):
+        """실제 명령은 API 공개 상태의 버전과 결선 후보를 따른다."""
+        from dataclasses import replace
+        from random import Random
+        from engine.domain.model import CommandKind
+        from engine.domain.serde import to_jsonable
+        from engine.testing.fakes import ScriptedGameEngine
+        from server.tests.asgi_bench import actual_command
+
+        view = ScriptedGameEngine().views[0]
+        runoff = replace(view, active=["mudang", "other", "target"], runoff_candidates=["target"],
+                         legal_kinds=[CommandKind.VOTE], state_version=23)
+        request = actual_command(to_jsonable(runoff), Random(1))
+        self.assertEqual(request["expected_state_version"], 23)
+        self.assertEqual(request["command"]["kind"], CommandKind.VOTE.value)
+        self.assertEqual(request["command"]["target"], "target")
+
+    def test_actual_load_starts_an_idempotent_open_game(self):
+        """일반 판 시작에 회차 대신 고유한 시작 UUID를 보낸다."""
+        import json
+        from threading import Barrier
+        from uuid import UUID
+        from server.tests.asgi_bench import measure_game
+
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.status = 400
+        response.headers = {}
+        response.read.return_value = b'{}'
+        opener = MagicMock()
+        opener.open.return_value = response
+        with patch("server.tests.asgi_bench.build_opener", return_value=opener), \
+                patch("server.tests.asgi_bench.time") as clock:
+            clock.monotonic.return_value = 0
+            clock.sleep.side_effect = lambda _: setattr(clock.monotonic, "return_value", 99)
+            measure_game("http://localhost", "sessionid=test", None, 1, Barrier(1))
+        request = opener.open.call_args.args[0]
+        body = json.loads(request.data)
+        self.assertIsNone(body["session_id"])
+        UUID(body["start_token"])

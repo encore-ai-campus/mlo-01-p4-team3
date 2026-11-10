@@ -1,7 +1,7 @@
-"""D-06-03: hidden CTR dice against an isolated real Django HTTP ad server.
+"""Hidden CTR dice for isolated HTTP tests and operator-provisioned real servers.
 
-Only the client reads/writes evaluation truth. No DB, existing service, or
-production HTTP contract is changed by the synthetic test control plane.
+Truth is client-only. Real-server mode sends source=synthetic through the
+normal endpoints and requires an explicit synthetic campaign manifest.
 """
 import argparse
 import hashlib
@@ -15,11 +15,13 @@ import re
 import subprocess
 import sys
 import threading
+import time
 from collections import Counter
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
-from ads.domain.model import AdSlot, GameOutcome
+from ads.domain.model import AdSlot, Campaign, GameOutcome
+from engine.domain.serde import from_jsonable
 from ads.domain.rules import TOKEN_TTL_MS, VIEWABLE_MS, VIEWABLE_RATIO
 from tools.gen_synthetic_ads import hidden_ctrs, synthetic_campaigns
 from tools.jsonlog import log
@@ -264,6 +266,115 @@ def run_traffic(*, run_id, seed=17, requests=10000, invalid_rate=.05,
     return report
 
 
+class _RemoteServer(_Server):
+    """Use the existing HTTP wire checks without a test control plane."""
+
+    def __init__(self, origin):
+        parts = urlsplit(origin)
+        if (parts.scheme not in ('http', 'https') or not parts.hostname or parts.username or parts.password
+                or parts.path not in ('', '/') or parts.query or parts.fragment):
+            raise ValueError('base-url must be a bare HTTP(S) origin without credentials')
+        super().__init__(None)
+        connection = http.client.HTTPSConnection if parts.scheme == 'https' else http.client.HTTPConnection
+        self.http = connection(parts.hostname, parts.port, timeout=10)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.http.close()
+
+
+def run_live_traffic(*, base_url, campaigns_manifest, run_id, seed=17, requests=1000,
+                     invalid_rate=.05, fatigue_decay=.2, replay=False, root=ROOT):
+    """Send synthetic HTTP traffic to a provisioned server; ledger verification belongs to C.
+
+    The manifest names the operator-provisioned synthetic campaigns. Truth is
+    client-only. No clock/signing control is available on the real server.
+    """
+    if (not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,47}', run_id)
+            or type(requests) is not int or not 1 <= requests <= 10000
+            or not 0 <= invalid_rate <= .2 or not 0 <= fatigue_decay <= 1):
+        raise ValueError('invalid live traffic run parameters')
+    manifest = json.loads(Path(campaigns_manifest).read_text(encoding='utf-8'))
+    if not isinstance(manifest, dict) or manifest.get('run_id') != run_id or not manifest.get('campaigns'):
+        raise ValueError('campaign manifest must belong to this run')
+    campaigns = [from_jsonable(Campaign, row) for row in manifest['campaigns']]
+    allowed = set()
+    for campaign in campaigns:
+        if not campaign.campaign_id.startswith('syn:') or not campaign.creatives:
+            raise ValueError('synthetic campaign manifest required')
+        for creative in campaign.creatives:
+            if not creative.creative_id.startswith('syn:') or creative.campaign_id != campaign.campaign_id:
+                raise ValueError('synthetic creative manifest mismatch')
+            allowed.add(creative.creative_id)
+    root, rng = Path(root), random.Random(seed)
+    hidden = hidden_ctrs(campaigns, rng)
+    truth = dict(run_id=run_id, seed=seed, fatigue_decay=fatigue_decay, mode='real-server',
+        ctr={f'{cr}|{slot.value}|{outcome.value if outcome else "-"}': value
+             for (cr, slot, outcome), value in hidden.items()})
+    truth_path = root / 'out/ad_truth' / (run_id + '.json')
+    truth_path.parent.mkdir(parents=True, exist_ok=True)
+    with _RemoteServer(base_url) as server:
+        with truth_path.open('x', encoding='utf-8') as stream:
+            json.dump(truth, stream, indent=2)
+        outdir = root / 'out/ad_traffic' / run_id
+        outdir.mkdir(parents=True, exist_ok=False)
+        exposures, observations, clicked = Counter(), [], []
+        slots = sorted({slot for campaign in campaigns for slot in campaign.slots})
+        prefix = 'syn:' + run_id
+        with (outdir / 'http.jsonl').open('x', encoding='utf-8') as stream:
+            for index in range(requests):
+                slot = slots[index % len(slots)]
+                outcome = rng.choice(list(GameOutcome)) if slot is not AdSlot.LOBBY_BANNER else None
+                rid, session = f'{prefix}:request:{index}', f'{prefix}:session:{index // 5}'
+                payload = dict(request_id=rid, slot=slot.value, session_pseudonym=session, source='synthetic',
+                    load_test=False, context=dict(preset_id='base6', outcome=outcome.value if outcome else None,
+                                                returning=False, hour=12))
+                response = server.request('POST', '/ads/v1/serve', rid + ':serve-event', payload)
+                row = dict(request_id=rid, filled=response['filled'], slot=slot.value,
+                           policy_version=response['policy_version'], ctr_version=response['ctr_version'])
+                if response['filled']:
+                    creative = response['creative']['creative_id']
+                    if creative not in allowed or (creative, slot, outcome) not in hidden:
+                        raise RuntimeError('server selected a creative outside the provisioned manifest')
+                    token = response['serve_token']
+                    prior = exposures[session, creative]
+                    probability = click_probability(hidden[creative, slot, outcome], prior, fatigue_decay)
+                    seen, lost, first = rng.random() >= .05, rng.random() < .05, rng.random() < .2
+                    did_click = seen and rng.random() < probability
+                    if seen:
+                        exposures[session, creative] += 1
+                    if seen and not lost and not (did_click and first):
+                        server.request('POST', '/ads/v1/impression', rid + ':impression', dict(token=token,
+                            visible_ratio=.75, visible_ms=1500, occurred_at_ms=time.time_ns() // 1_000_000))
+                    if did_click:
+                        server.request('GET', '/ads/v1/click?' + urlencode({'t': token}), rid + ':click')
+                        clicked.append(token)
+                    row.update(creative_id=creative, visible=seen, lost_beacon=lost, clicked=did_click)
+                observations.append(row)
+                stream.write(json.dumps(row) + '\n')
+                stream.flush()
+            attacks = Counter(duplicate=0)
+            count = math.floor(len(clicked) * invalid_rate / (1-invalid_rate) + .5)
+            for index in range(count):
+                token = clicked[index % len(clicked)]
+                server.request('GET', '/ads/v1/click?' + urlencode({'t': token}), f'{prefix}:attack:{index}')
+                attacks['duplicate'] += 1
+            if replay:
+                for method, path, eid, payload, expected in list(server.journal):
+                    actual = server.request(method, path, eid, payload, remember=False)
+                    if actual != expected:
+                        raise RuntimeError('persistent HTTP replay mismatch')
+        report = dict(mode='real-server', run_id=run_id, request_prefix=prefix, requests=requests,
+            filled=sum(row['filled'] for row in observations), clicks_sent=len(clicked), invalid_types=dict(attacks),
+            replayed_requests=len(server.journal) if replay else 0, ledger_verified=False,
+            unsupported_invalid_types=['bad_signature', 'expired', 'no_serve'], truth_file=str(truth_path.relative_to(root)),
+            http_file=str((outdir / 'http.jsonl').relative_to(root)))
+        (outdir / 'summary.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+        return report
+
+
 def main(argv=None):
     """CLI. Nonzero exit for invalid billing, isolation, replay or judgement failures."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -273,9 +384,19 @@ def main(argv=None):
     parser.add_argument('--invalid-rate', type=float, default=.05)
     parser.add_argument('--fatigue-decay', type=float, default=.2)
     parser.add_argument('--replay', action='store_true')
+    parser.add_argument('--base-url')
+    parser.add_argument('--campaigns-manifest', type=Path)
     args = parser.parse_args(argv)
     try:
-        report = run_traffic(**vars(args))
+        options = vars(args).copy()
+        origin, manifest = options.pop('base_url'), options.pop('campaigns_manifest')
+        if bool(origin) != bool(manifest):
+            raise ValueError('base-url and campaigns-manifest must be supplied together')
+        if origin:
+            report = run_live_traffic(base_url=origin, campaigns_manifest=manifest, **options)
+            log('ad_traffic_sim', 'info', 'real-server HTTP run completed; C ledger verification pending', **report)
+            return 0 if report['filled'] else 1
+        report = run_traffic(**options)
     except ValueError as exc:
         parser.error(str(exc))
     except Exception as exc:

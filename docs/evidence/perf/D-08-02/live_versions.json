@@ -1,0 +1,101 @@
+{
+  "task": "D-08-02",
+  "commit": "44a62065ae3e2274b5c1e5e2788d0ad2f2b78977",
+  "generated_at": "2026-11-09T13:07:27.424926+00:00",
+  "source": "Actual ad-01 HTTP and MySQL against the verified C isolated Delta export, operator-run d0802-verify-live-versions.py; uncommitted D implementation",
+  "scope": "synthetic run; explicitly simulated final observation cutoff",
+  "report_sha256": "04a9c8a35a1f3422de3b7f944d5c4dc99a8037a0ce6343134f3b9c121673a653",
+  "ctr_input_sha256": "1b6b3a21b4ce8bf8c09528431b9792345a832a35577e8508c800b460f6f764c0",
+  "metrics": {
+    "ctr_rows": {
+      "value": 3,
+      "unit": "행"
+    },
+    "pacing_rows": {
+      "value": 11,
+      "unit": "행"
+    },
+    "verified_slots": {
+      "value": 3,
+      "unit": "개"
+    },
+    "pinned_events": {
+      "value": 9,
+      "unit": "건"
+    },
+    "outbox_pending": {
+      "value": 0,
+      "unit": "건"
+    },
+    "confirmed_probe_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "ctr_replay_single_row": {
+      "value": 1,
+      "unit": "개"
+    },
+    "pacing_same_bucket_single_row": {
+      "value": 1,
+      "unit": "개"
+    },
+    "campaign_statuses_restored": {
+      "value": 1,
+      "unit": "개"
+    },
+    "no_service_restart": {
+      "value": 1,
+      "unit": "개"
+    }
+  },
+  "result": {
+    "run_id": "c08_d0802_20261109b",
+    "passed": true,
+    "simulated_final_cutoff": true,
+    "request_prefix": "syn:d0802ver_fba64257721444",
+    "ctr_version": "ctr-75766d30e46941d2cab7ec3a6a4f5b4887bfa45fc0c11ef6feca8ce8efa320ef",
+    "policy_version": "pacing-f4f491fe271d68c66458b1d502caf51ad0ab5ba684a21bd8eeaef165429c1bb9",
+    "ctr_rows": 3,
+    "pacing_rows": 11,
+    "ctr_replay_single_row": true,
+    "pacing_same_bucket_single_row": true,
+    "immediate_versions": {
+      "ctr": "beta-prior-v0.1",
+      "policy": "auction-v0.1"
+    },
+    "before_versions": {
+      "ctr": "beta-prior-v0.1",
+      "policy": "auction-v0.1"
+    },
+    "probes": [
+      {
+        "slot": "lobby_banner",
+        "request_id": "syn:d0802ver_fba64257721444:after-lobby_banner",
+        "serve_id": "syn:d0802ver_fba64257721444:after-lobby_banner:1cac9d3ca8c6bbf117690153f0a831b0",
+        "ctr_mean": 0.02610441767068273,
+        "events": 3
+      },
+      {
+        "slot": "result_banner",
+        "request_id": "syn:d0802ver_fba64257721444:after-result_banner",
+        "serve_id": "syn:d0802ver_fba64257721444:after-result_banner:a6d591c55b11f3ad0efd8bc2800d9ca5",
+        "ctr_mean": 0.03937007874015748,
+        "events": 3
+      },
+      {
+        "slot": "review_side",
+        "request_id": "syn:d0802ver_fba64257721444:after-review_side",
+        "serve_id": "syn:d0802ver_fba64257721444:after-review_side:5f12b0989d9dd5f0c31271ec291a235b",
+        "ctr_mean": 0.04339250493096647,
+        "events": 3
+      }
+    ],
+    "version_pin_verified": true,
+    "posterior_used": true,
+    "outbox_pending": 0,
+    "no_service_restart": true,
+    "load_test": true,
+    "confirmed_probe_charges": 0,
+    "campaign_statuses_restored": true
+  }
+}

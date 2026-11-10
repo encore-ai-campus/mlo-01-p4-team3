@@ -1,0 +1,24 @@
+{
+  "task": "D-09-02",
+  "commit": "4058df7200395fb569375ca9b6470ca52346f590",
+  "generated_at": "2026-11-09T07:29:06Z",
+  "source": "python C:/mlo-01-p4-team3/out/d09_02/verify_bert_port.py",
+  "metrics": {
+    "implements_intent_parser": {
+      "value": 1,
+      "unit": ""
+    },
+    "bert_runtime_available": {
+      "value": 1,
+      "unit": ""
+    },
+    "target_resolved": {
+      "value": 1,
+      "unit": ""
+    },
+    "confirmation_required": {
+      "value": 1,
+      "unit": ""
+    }
+  }
+}

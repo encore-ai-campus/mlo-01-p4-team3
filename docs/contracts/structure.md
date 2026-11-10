@@ -58,7 +58,7 @@ paldo/
 │  │                               expire_reservations.py, refund_consumer.py [D-06-02]
 │  │                               ctr_update.py, pacing_update.py [D-08-02]
 │  │                               bid_update.py [D-10-02]
-│  ├─ infra/                       mysql_ledger.py, outbox.py, schema.sql [D-06-02]
+│  ├─ infra/                       mysql_ledger.py, mysql_store.py, outbox.py, schema.sql [D-06-02], optimization.py [D-08-02]
 │  ├─ web/                         Django 앱(내부 API, 비콘, 클릭, 가상 랜딩, admin) [D-05-03]
 │  └─ testing/                     fakes.py(FakeAdProvider), traffic_server.py(D-06-03 격리 HTTP 시험 호스트)
 │
@@ -69,7 +69,9 @@ paldo/
 │  ├─ suspicion/                   features.py, train.py, evaluate.py [D-07-02]
 │  ├─ adapters/suspicion_model.py  SuspicionModel 구현 [D-08-01]
 │  ├─ adapters/run_model_games.py  모델 v0 판 실행 진입점 [D-08-01]
-│  ├─ gate.py, bandit.py           [D-09-02]
+│  ├─ adapters/reproduce_model_games.py  같은 모델·시드 두 실행 재현 비교 [D-08-04]
+│  ├─ gate.py, bandit.py           평가 관문·P-16 보상·버전 고정 공급자 [D-09-02]
+│  ├─ mongo_bandit.py              전체 이벤트 export 배치·Mongo CAS·C 삭제 인계 [D-09-02]
 │  └─ ad_ctr.py                    광고 CTR LightGBM [D-10-02]
 ├─ llm/                            LLM · E
 │  ├─ bench/run_bench.py           [E-06-07]
@@ -112,6 +114,7 @@ paldo/
 │  ├─ load_content.py [C-06-01] 결정 #8, replay_progress.py [C-09-04] 결정 #19
 │  ├─ reconcile_game_events.py [C-07-02], ml_gate.py [C-09-01], privacy_delete.py, privacy_retention.py [C-09-02]
 │  ├─ ad_traffic_sim.py [D-06-03], ad_scenarios.py [D-08-02], demo_retrain.sh [D-10-01]
+│  ├─ ad_ctr_scenario.py [D-10-02]   시나리오 6 이벤트 재생 입력과 정답 채점
 │  ├─ build_llm_bundle.py [E-07-06] LLM MVP 제출 묶음 zip(out/llm_mvp/, 커밋 제외)
 │  ├─ perf/                        engine_bench.py [A-05-01], vm_probe.sh [C-05-01], api_bench.py [B-06-02], ad_fault_test.py [B-08-03]
 │  └─ assets/                      make_placeholders.py [E-05-05], check_assets.py [E-08-07], cutout.py [A-08-04]
@@ -245,6 +248,7 @@ ops/prometheus/**
 ops/grafana/**
 ops/k3s/**
 ops/mlflow/**
+ops/privacy/**
 ops/aws/**
 ops/runbook/**
 content/**

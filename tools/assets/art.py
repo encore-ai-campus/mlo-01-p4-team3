@@ -73,6 +73,13 @@ def render_rows(kind: str, cid: str, width: int, height: int, name: str | None =
         return 4, portrait_art.render_sprite(cid, width, height, name, expression)
     if kind == "mascot":
         return 4, mascot_art.render(cid, width, height)
+    if kind == "branding":
+        rows = [bytearray(width * 4) for _ in range(height)]
+        for y, row in enumerate(rows):
+            for x in range(width):
+                if (x - width / 2) ** 2 + (y - height / 2) ** 2 < (min(width, height) / 3) ** 2:
+                    row[x * 4:x * 4 + 4] = bytes((*FOREGROUND, 255))
+        return 4, rows
     return 3, render(kind, cid, width, height, name, expression).rows
 
 

@@ -1,5 +1,5 @@
 -- D-06-02 MySQL 8.4 DDL reference. Deploy with ads/manage.py migrate.
--- Generated from ads_web migration 0002_mysql_ledger.
+-- Reference for ads_web migrations 0002 through 0005 (ledger, pending, optimization and bid settings).
 --
 -- Create model AdReceipt
 --
@@ -38,3 +38,11 @@ ALTER TABLE `ads_web_adreceipt` ALTER COLUMN `pending_after_ms` DROP DEFAULT;
 --
 ALTER TABLE `ads_web_adreceipt` ADD COLUMN `pending_input` json NULL;
 CREATE INDEX `ads_web_adreceipt_pending_after_ms_53d652a9` ON `ads_web_adreceipt` (`pending_after_ms`);
+--
+-- Create model AdOptimizationVersion
+--
+CREATE TABLE `ads_web_adoptimizationversion` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `kind` varchar(6) NOT NULL, `version` varchar(80) COLLATE `utf8mb4_0900_bin` NOT NULL UNIQUE, `source_version` varchar(200) COLLATE `utf8mb4_0900_bin` NOT NULL, `as_of_ms` bigint UNSIGNED NOT NULL CHECK (`as_of_ms` >= 0), `payload` json NOT NULL, CONSTRAINT `ad_optimization_revision` UNIQUE (`kind`, `source_version`, `as_of_ms`));
+CREATE INDEX `ad_optimization_latest` ON `ads_web_adoptimizationversion` (`kind`, `as_of_ms`);
+-- CPC automation is opt-in. NULL minimum uses one milliwon in the domain.
+ALTER TABLE `ads_web_campaign` ADD COLUMN `target_cpc_mw` bigint UNSIGNED NULL;
+ALTER TABLE `ads_web_campaign` ADD COLUMN `min_bid_mw` bigint UNSIGNED NULL;

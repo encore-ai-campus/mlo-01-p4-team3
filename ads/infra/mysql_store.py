@@ -18,6 +18,7 @@ from ads.domain.model import (
 from ads.domain.rules import GRACE_MS, JUDGE_VERSION, Judgement, ValidityState, charge_id, verify_token
 from ads.infra.outbox import enqueue
 from ads.web.models import AdReceipt, AdSession, AdStoredRequest
+from ads.web.telemetry import LOGGER
 from engine.domain.model import PRESETS
 
 
@@ -86,7 +87,19 @@ class MySQLAdStore:
         frequencies = dict(AdStoredRequest.objects.filter(session_id=req.session_pseudonym, creative_id__isnull=False)
                            .values("creative_id").annotate(total=Count("pk")).values_list("creative_id", "total"))
         service.responses.pop(req.request_id, None)
-        response = service._serve(req, lambda creative_id: frequencies.get(creative_id, 0))
+        def exposures(campaign_id, day):
+            # Sorted campaign order in _serve keeps these cross-session locks consistent.
+            _lock_session("exploration:" + campaign_id + ":" + day, campaign_id.startswith("syn:"))
+            counts = dict(impressions=0, explorations=0, creatives={})
+            rows = AdStoredRequest.objects.filter(impressed=True,
+                serve_data__record__campaign_id=campaign_id, serve_data__record__attribution_day=day)
+            for row in rows.values("creative_id", "serve_data__record__exploration").annotate(total=Count("pk")):
+                count, cr = row["total"], row["creative_id"]
+                counts["impressions"] += count
+                counts["explorations"] += count if row["serve_data__record__exploration"] is True else 0
+                counts["creatives"][cr] = counts["creatives"].get(cr, 0) + count
+            return counts
+        response = service._serve(req, lambda creative_id: frequencies.get(creative_id, 0), exposures)
         claims, _ = verify_token(response.serve_token, service.key, started) if response.filled else (None, None)
         record = service.state.serves[claims.serve_id] if claims else None
         auction = service.auctions[req.request_id]
@@ -101,7 +114,8 @@ class MySQLAdStore:
         event_id = "serve:" + _digest(req.request_id)
         fields = _event_fields(event_id, req.request_id, record, snapshot, started,
                                record.served_at_ms if record else started)
-        fields.update(slot=req.slot, session_pseudonym=req.session_pseudonym, source=req.source)
+        fields.update(slot=req.slot, session_pseudonym=req.session_pseudonym, source=req.source,
+                      bid_version=service.auction_bid_version)
         cid = charge_id(record.serve_id, record.billing) if record else None
         context = asdict(req.context)
         if context["preset_id"] not in PRESETS:
@@ -111,6 +125,10 @@ class MySQLAdStore:
             rank_ctr=record.rank_ctr if record else 0.0, capped=auction.capped, reserved_charge_id=cid,
             reserved_mw=service.book.get(cid).amount_mw if cid else 0, context=context,
             latency_ms=max(0, service.clock() - started)))
+        if service.ctr_lookup_count:
+            LOGGER.info("ad_ctr_canary", extra={"fields": dict(component="ctr_canary", request_id=req.request_id,
+                version=service.ctr_canary_version, fallback=bool(service.ctr_lookup_misses),
+                lookup_ms=service.ctr_lookup_ns / 1_000_000)})
         return response
 
     @transaction.atomic

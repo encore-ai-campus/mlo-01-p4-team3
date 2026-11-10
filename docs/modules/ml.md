@@ -1,12 +1,18 @@
 # ML 모델
 
 ## 무엇을
+`gate.py`는 수명주기 평가 판정, `bandit.py`는 P-16 보상·상한·버전 고정 전략 공급자,
+`mongo_bandit.py`는 전체 이벤트 export 배치·Mongo CAS와 C의 판 ID별 삭제 연결을 제공한다.
+`ad_ctr.py`는 확정 광고 집계로 맥락별 CTR 모델을 학습하고 베타 기준선과 같은 평가를 수행한다.
+구체적인 입력·B/C 책임·실행과 미충족 범위는 [D-09-02 인계](../reports/D-09-02-handoff.md)를 따른다.
+
 `ml/suspicion/`은 씐 자 1명 판의 마을 NPC 관측을 학습·평가하는 인프라 모듈이다.
 `features.py`는 실제 엔진 bot JSONL을 `TrainingRow` JSONL과 provenance manifest로 변환한다.
 `train.py`는 게임 분할·로지스틱 회귀·LightGBM·로컬 MLflow 추적을 수행한다.
 `evaluate.py`는 관측별 softmax, 다중분류 로그 손실·상위1 적중률·후보별 ECE를 계산한다.
 `strategies.py`는 기존 `RuleV0Policy`와 `MixSource`로 거짓 행적 유형을 고정한 실제 엔진 판을 만든다.
 `server/infra/model_selector.py`는 로컬에 등록한 모델을 정확한 버전으로 조회하고 의심 모델의 특징 버전을 검사한다.
+`ml/adapters/reproduce_model_games.py`는 Selector로 고른 같은 모델·시드로 판 실행을 두 번 돌려 결과가 같은지 비교한다(D-08-04 재현).
 의도 기준선은 [intent.md](intent.md), 광고 서버는 [ads.md](ads.md)를 따른다.
 
 ## 왜
@@ -60,25 +66,52 @@ python -m ml.suspicion.train --rows out/suspicion/delta1108/aligned/rows.jsonl -
 
 D-08-01의 `ml/adapters/suspicion_model.py`는 지속 worker로 추론 마감을 지키고, 실패를 엔진의 규칙 v0 폴백 예외로 바꾼다. `ml/adapters/run_model_games.py`는 기존 판 실행기를 재사용해 모델 버전·합법성·폴백 수·p95를 기록한다. `tools/`에서 `ml/`을 import하지 않는다.
 
+11/10 PM 정책에 따라 timeout·추론 오류는 해당 호출만 폴백하고 worker는 배경 스레드에서 같은 버전으로 다시 띄운다. 실제 추론·재기동 실패가 연속 3회면 30초 대기하며, 정상 추론 시 연속 실패를 초기화한다. 입력 특징 오류는 worker를 유지하고, 산출물 특징·재로드 모델 ID 불일치와 파일 부재는 해당 버전을 거부한다. 명시적 `close()` 뒤에는 재기동하지 않는다.
+
+`SharedModelStore`는 웹 프로세스가 소유한다. `store.get(version, lambda: selector.suspicion_model(version))`은 같은 버전 worker를 빌려주며 반환 포트의 `close()`는 worker를 닫지 않는다. 프로세스 종료 때 `store.close()`로 정리한다. 시험 조립은 이를 사용하고 운영 웹 연결은 B-09-01 담당이다.
+
 ```sh
 python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --model out/suspicion/run1/models.pkl --out out/model_games
 ```
 
 `--preset/--games/--seed/--out/--policy/--record`는 기존 도구와 같다. 기본 정책은 모델을 호출하는 `rule-v0`다. 파일 경로 모드는 `--model`, `PALDO_SUSPICION_MODEL_PATH`, 위 로컬 경로 순으로 읽는다. 신뢰된 학습 산출물 `models.pkl`과 그 의존 패키지가 필요하다. 없으면 종료 코드 1이며 모델 실행 성공 manifest를 만들지 않는다. `--policy min-legal`은 모델을 사용하지 않아 성공으로 판정하지 않는다.
 
+웹 부하 시험은 `tools/perf/api_bench.py --web-processes 2 --mlruns <로컬 디렉터리> --suspicion-version <고정 버전>`으로 실제 엔진과 어댑터를 조립한다. 기본 녹화 엔진 모드와 같은 계정·Caddy·Mongo 접두어 격리를 사용하고, 시험 이벤트에는 `load_test=true`를 기록한다. 공개 PlayerView에서 명령을 만들어 일반 판을 끝까지 진행한다. 각 웹 프로세스의 모델 호출·실패와 히스토그램을 합산해 추론 p95 버킷 상한을 기록한다. 미호출·미완주·오류, 모델 p95 상한 100ms 초과 또는 게임 API p95 1초 초과면 종료 코드 1이다. 최종 검증은 적격 모델로 사용자 테스트 서버 또는 동급 VM에서 `--users 30 --minutes 3 --front binary --result-task D-08-01 --result-name model_web_load`를 붙인다.
+
 ### 로컬 모델 인계 (D-08-04)
 
-1. 수명주기 1·2절을 통과한 씐 자 모델의 D-07-02 `models.pkl`과 `report.json`을 함께 `mlruns/suspicion-v0/<suspicion_version>/`에 둔다. D-08-01의 버전은 `suspicion-logistic-` 뒤에 `models.pkl`의 SHA-256 앞 12자리를 붙인 값이다. 같은 버전의 파일을 덮어쓰지 않는다.
+1. D-07-02의 `models.pkl`과 `report.json`을 함께 `mlruns/suspicion-v0/<suspicion_version>/`에 둔다. D-08-01의 버전은 `suspicion-logistic-` 뒤에 `models.pkl`의 SHA-256 앞 12자리를 붙인 값이다. 같은 버전의 파일을 덮어쓰지 않는다. 11/9 사용자 결정에 따라 D-08-04는 로컬 인계·50판 재현으로 완료하며, 레지스트리 후보 등록·운영 적용은 A-10-01 3번과 수명주기 평가 관문을 통과한 뒤 연결한다.
 2. 사용할 TF-IDF 기준선은 기존 `mlruns/intent-v0/<intent_version>/model.joblib` 경로에 둔다. `<intent_version>`은 저장된 `IntentBaseline.model_version`과 같아야 한다. 두 파일 형식 모두 신뢰하는 로컬 산출물만 사용한다.
 3. A·B는 동일 커밋·콘텐츠·모델 파일에서 아래 명령으로 각 50판을 실행한다. 각자 다른 `--out`을 사용하고, `manifest.json`의 두 모델 버전과 위반·폴백 0건, `events.jsonl`의 SHA-256을 대조한다. 벤치마크는 의도 아티팩트도 불러 버전을 검사하며, 봇 판의 이벤트에는 추론에 사용한 의심 모델 버전이 기록된다.
-4. B 조립에서는 `LocalModelSelector(Path("mlruns"), suspicion_version=suspicion_version, intent_version=intent_version, feature_version=FEATURE_VERSION)`을 만든다. `FEATURE_VERSION`은 `ml.suspicion.features`에서 가져온다. `select(game_id, player_pseudonym)`의 버전을 판 메타에 고정하고 그 값으로 두 모델을 조회한다. 실제 `ParseResult.versions["model"]`도 판 메타와 비교한다. 반환된 의심 어댑터의 `close()`는 사용을 끝낸 호출자가 실행한다.
+4. B 조립에서는 `LocalModelSelector(Path("mlruns"), suspicion_version=suspicion_version, intent_version=intent_version, feature_version=FEATURE_VERSION)`을 만든다. `FEATURE_VERSION`은 `ml.suspicion.features`에서 가져온다. `select(game_id, player_pseudonym)`의 버전을 판 메타에 고정하고 그 값으로 두 모델을 조회한다. 실제 `ParseResult.versions["model"]`도 판 메타와 비교한다. 운영의 의심 모델은 프로세스별 `SharedModelStore`에서 빌려 쓰며 판이 닫지 않는다. 독립 CLI가 직접 로드한 어댑터는 해당 CLI 종료 때 닫는다.
 
 ```powershell
 python -m ml.adapters.run_model_games --preset base6 --games 50 --seed 1 --mlruns mlruns --suspicion-version $suspicionVersion --intent-version $intentVersion --out out/d08-04/bench-a
 Get-FileHash out/d08-04/bench-a/events.jsonl -Algorithm SHA256
 ```
 
+같은 PC에서 두 번 돌려 바로 비교하려면 재현 명령을 쓴다(11/9, E가 A 쪽으로 준비). 두 실행의 판 ID·모델·특징·규칙 버전, `events.jsonl` SHA-256, 판별 이벤트 수, 판별 종료 결과(승자·사유)를 비교하고, 실행 시간·추론 지연·커밋·출력 경로는 비교하지 않는다. 같고 두 실행이 모두 통과(위반·폴백 0, p95 100ms 이하)하면 종료 코드 0이다. 보고는 `<out>/reproduce.json`.
+
+```powershell
+python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version $suspicionVersion --intent-version $intentVersion --games 50 --seed 1 --out out/d08-04/repro
+```
+
+11/9 로컬 인계 버전은 `suspicion-logistic-1afb8f051c4e`와 `tfidf-lr-v0-2a678588557c`다. 원본 SHA-256과 검증 범위는 `mlruns/handoff-v0.json`, 증빙은 `docs/evidence/D-08-04.md`에 있다. A CLI 두 번과 B의 `ContentPolicyEngine` 조립 한 번을 D 환경에서 실행해 각 50판, 총 추론 960건 성공, 이벤트 해시 일치를 확인했다. 확인 절차는 저장소 루트에서 위 두 버전으로 재현 명령 실행 → `<out>/reproduce.json`의 `passed=true`·`reproduced=true`·`games=50` 확인 → 아래 기대 해시와 대조 순서다.
+
+```text
+848dbdd20f02fefccda9bdbf4438830e844181949412bac7a5a70704bb58f8ca
+```
+
 `select`는 고정 설정의 모델을 실제로 열어 검증한 뒤 버전 두 개와 `False`를 반환한다. 파일·로더·모델 ID 오류는 `ModelUnavailable`, 의심 특징 불일치는 `FeatureVersionMismatch`다. 조회는 로컬 경로와 버전만 사용한다. 판별 인스턴스 수명·버전 고정과 카나리아는 B-09-01, 원격 레지스트리는 C-09-01에서 연결한다. BERT 해석기 연결은 D-09-01 범위다.
+
+### 광고 CTR (D-10-02)
+
+```powershell
+python -m ml.ad_ctr --input <확정-Delta-export>/ctr.json --source synthetic --eval-from 2026-11-04 --out out/ctr-report.json --register
+python -m tools.ad_ctr_scenario score --out out/d1002/scenario --report out/ctr-report.json
+```
+
+`--register` 실행 전에 격리 `MLFLOW_TRACKING_URI`를 지정한다. 학습은 지면·소재·판 결과·프리셋·귀속 시간대를 사용한다. 모델 파일과 범주 인코딩, 학습 Delta 버전, 코드 SHA, 같은 보류 노출의 베타/LightGBM 로그 손실 및 ECE를 기록한다. 기준은 로그 손실 증가 0.01 이하와 ECE 0.05 이하다. 평가 노출이 모두 베타 폴백이면 거부한다. 거부한 실행은 레지스트리 후보를 만들지 않는다. 카나리아는 학습에서 본 특징 조합만 적용하고 다른 조합은 베타로 폴백한다. 시나리오 6에서는 별도의 평가 시드와 숨긴 확률을 사용해 승리·패배별 CTR 오차를 잰다. [D-10-02 증빙](../evidence/D-10-02.md)
 
 ## 설정값
 
@@ -95,6 +128,10 @@ Get-FileHash out/d08-04/bench-a/events.jsonl -Algorithm SHA256
 어댑터의 추론 응답 대기 마감은 90ms, native 초기화·워밍업을 포함한 로드 마감은 30초다. 고정 주민 수의 로컬 순차 IPC에서 검증했으며 웹 동시성·큰 메시지의 절대 wall-clock 상한은 별도 검증이 필요하다. 특징 버전·열 순서·보정 온도는 D-07-02 산출물과 기존 특징 모듈로 검증한다.
 
 ## 한계
+관문 통과는 별도 candidate 등록·카나리아·승격을 자동 실행하지 않는다. 실제 사람 성능은 미측정이다.
+밴딧은 클래스룸 파일럿용 단일 Mongo 문서(16 MiB 한계)다. B의 실제 판 시작 주입과 종료 이벤트 연결은 수신 검증 대기다.
+삭제 필터를 등록한 C가 `MongoBanditStore.forget_games`를 호출해야 후속 전체 이력 갱신이 정상 동작한다.
+
 
 모델 비교와 Delta 연결 검증은 별도 실행이다. 다른 프리셋의 최소 판 수와 모델 합격선은 D-08-01부터 적용한다.
 형식용 synthetic/scripted와 사람 데이터는 현재 경계에서 거부한다. 현재 데이터는 실제 bot 판이다.
@@ -109,11 +146,16 @@ Get-FileHash out/d08-04/bench-a/events.jsonl -Algorithm SHA256
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | D-05-03 | 11/5 | 하루 일괄 문서화로 ML 패키지의 미구현 범위와 후속 작업 위치를 명시 |
+| D-09-02 | 11/9 | 수명주기 관문·P-16 밴딧·동시성/재시도/삭제 처리·BERT/B/C 인계. 사람·운영 검증은 별도 |
 | D-07-02 | 11/7 | 로컬 TrainingRow 변환·게임 분할·두 추정기·규칙 비교·MLflow·경계 테스트 |
 | D-07-02 | 11/8 | 최신 dev 규칙 반영, 거짓말 전략 고정 생성·별도 평가·판/seed 중복 거부·실제 선택 이후 관측 분리 |
 | D-07-02 | 11/8 | C Delta 행의 원본 관측 대조와 학습 코드 연결 실행 추가 |
 | D-07-03 | 11/7 | intent/의 CPU 미세조정·동일 기준선 평가와 모델·계보 저장 경로를 연결 |
-| D-08-01 | 11/8 | 중단 가능한 모델 포트·판 실행, 버전 고정·폴백·특징 경보 검증. dev2ed4a53 반영 후 50판 연결 회귀와 승률 관문 실패 기록 |
+| D-08-01 | 11/9 | 병합된 Selector와 실제 후보 50판 반복 재현. 격리 웹 부하의 실제 엔진·모델 모드 및 프로세스별 추론 집계 추가 |
+| D-08-01 | 11/10 | PM 장애 정책에 따른 버전별 공유 worker·동일 버전 복구·연속 실패 대기. 부하 도구의 1% 폴백률·복구 시간·추가 worker RSS 계측. 서버 재측정 대기 |
 | D-08-04 | 11/8 | 로컬 Selector의 고정 버전 조회·특징 버전 검사와 A·B 재현 절차 추가 |
+| D-08-04 | 11/9 | A 쪽 재현 명령 `reproduce_model_games`(같은 모델·시드 두 실행 비교, 실제 v0 수령 전 가짜 모델 시험, E) |
+| D-08-04 | 11/9 | 사용자 변경 기준 적용, 실제 로컬 모델 인계와 A CLI·B 조립 50판 비교 완료 |
+| D-10-02 | 11/9 | 확정 Delta 맥락 CTR 학습, 동일 베타 평가, LightGBM 관문·MLflow 후보·시나리오 6 채점 |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.

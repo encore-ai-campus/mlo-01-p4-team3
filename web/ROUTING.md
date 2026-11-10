@@ -1,8 +1,10 @@
 # 웹 라우팅
 
+B-09-02 D 어댑터 수신은 서버의 해석기 팩토리 조립만 추가한다. 기존 자유 입력·카드·폴링 URL과 템플릿 연결은 그대로이며 화면 계약 회귀 결과와 실물 모델 대기는 [증빙](../docs/evidence/B-09-02.md)에 기록한다.
+
 B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
 
-공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 공식 18개·임시 배경 상태만 표시하고 classic은 404다. 시안 원화/글꼴 카탈로그는 읽지 않는다. 전체 시안은 별도 보존 worktree다.
+공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 manifest의 정식 그림(현재 로고·회의/밤 배경 포함 21개)과 임시 자원 상태를 표시하고 classic은 404다. 수량은 manifest에서 계산한다. 시안 후보 카탈로그는 읽지 않는다. 보존한 전체 HTML 시안과 실제 화면의 적용 범위는 UI_APPLY.md에서 구분한다.
 
 종료 탭은 같은 판 URL에서 결과·복기·단서를 표시한다. GET review의 htmx는 review_panel.html, 일반 HTML은 review.html, JSON DTO·소유권·진행 중 403은 유지한다. 서버·웹 디자인 및 web/PM_UI_REVIEW.md·UI_ASSET_PLAN.md·UI_APPLY.md를 함께 갱신한다.
 
@@ -16,7 +18,7 @@ B-09-06의 [VN 규칙](../docs/contracts/vn.md)은 PR #304에서 확정됐다. B
 
 B-07-05 네트워크 부하는 화면 조작 대신 실제 HTTP 게임 API·로비 광고 조각·인증 광고 웹소켓을 호출한다. 광고 지면·비콘의 기존 경로와 응답을 유지하며 UI 템플릿·브라우저 스크립트는 변경하지 않는다. 실행 경로와 조건은 [서버 시험 안내](../server/tests/README.md#b-07-05-실제-http웹소켓-성능-비교)를 참조한다.
 
-B-06-04의 가입·로그인·로비·판 종료 URL은 유지한다. 광고 지면 GET은 서버에서 광고용 UUID를 붙이며 로그인 ID·계정 가명·판 ID를 광고 포트로 옮기지 않는지 계정 시나리오 시험으로 확인한다. 실제 HTTP 광고 서버 연결은 B-08-03 검증 범위다.
+B-06-04의 가입·로그인·로비·판 종료 URL은 유지한다. 광고 지면 GET은 서버에서 광고용 UUID를 붙인다. 같은 계정 시나리오를 D Django 광고 API에 실제 HTTP로 보내 로그인 ID·계정 가명·판 ID의 수신·로그 비노출까지 로컬 검증했다. VM 운영 배치·브라우저 네트워크 확인은 B-08-03(E)의 별도 범위다.
 
 B-06-02의 실제 Mongo 검증은 기존 `POST /games`·`POST /games/{id}/commands`를 사용한다. 새 화면·URL은 추가하지 않는다. 측정 도구와 범위는 [서버 시험 안내](../server/tests/README.md#b-06-02-로컬-시험)와 [성능 모듈](../docs/modules/perf.md)에 둔다.
 
@@ -86,3 +88,19 @@ B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story
 ## B-08-03 광고 내부 HTTP
 
 브라우저 경로는 기존 /ads/slot/{slot}·/ws/game/·/ads/click·/ads/landing/{creative_id}를 유지한다. 게임 서버 내부에서만 AdGateway → server/infra/ad_client.py가 광고 서버로 중계한다. 세 지면과 실패 화면을 로컬 HTTP 대역으로 검사하며 실제 배치에서 직접 광고 출처 요청 0건을 확인하는 것은 D 인수 후 범위다.
+
+## B-10-08 계정 디자인·로고·글꼴
+
+기존 `/`·`/accounts/login`·`/accounts/signup`·로그아웃·게임 시작 URL과 POST 필드는 그대로다. `accounts/base.html` → `site_header.html(show_branding=True)`·`css/accounts.css`; `accounts/scene_intro.html` → `assets.asset_url('background:night')`로 정식 그림을 읽는다. 게임 헤더에는 `show_branding`을 전달하지 않는다.
+
+| 파일·경로 | 책임·직접 연결 |
+|---|---|
+| `static/css/theme.css` → `static/fonts/fonts.css` | 공통 제목·본문 글꼴 토큰. 게임·계정 기본 UI에서 같은 토큰 사용 |
+| `static/fonts/pretendard-subset.css` → `woff2-dynamic-subset/` | 공식 문자 범위별 로컬 WOFF2. 외부 CDN 요청 없음 |
+| `static/css/accounts.css` | 판 시작 전 계정 화면의 시안 배치·버튼·오류·반응형. 무당 모습 안내는 두 열 전체 폭, 그림 위 제목은 시안 줄높이·기본 자간. 게임 무대 배치는 수정하지 않음 |
+| `accounts/home.html` → `static/js/account-start.js` | 일반/배정 테스트의 details를 하나씩 펼침. 서버의 `test_round_pending`으로 기본 영역 결정. 두 기존 시작 양식 보존 |
+| `content/images/branding/tiger_emblem.png` | manifest `branding:tiger_emblem` → 기존 정적 파일 경로. 원화 정규화·등록은 `tools/assets/branding.py` |
+| `server/tests/ui_theme_preview.py --font-probe` → `ui_font_probe.py` | 명시적 시험 모드의 로그인 응답에만 Navigation/Resource Timing 표본 추가 |
+| `tools/perf/account_assets.py` | 시험 DOM 표본과 디스크 글꼴 합계를 공통 증빙 JSON으로 기록 |
+
+로드 측정용 숨김 출력은 시험 미들웨어에서만 넣으며 운영 `MIDDLEWARE`·URL·템플릿에는 넣지 않는다. [웹 디자인](DESIGN.md#b-10-08-로그인홈-시안-적용) · [증빙](../docs/evidence/B-10-08.md)

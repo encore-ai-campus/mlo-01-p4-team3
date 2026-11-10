@@ -32,6 +32,7 @@ B-09-06 산출물은 [VN 연출 규칙과 UI 적용 범위](../contracts/vn.md)�
 
 | 하려는 일 | 볼 곳 |
 |---|---|
+| 발표용 구현·트러블·검증 기록 | [B-10-04 초안](../presentation/B.md). 기존 수치의 측정 환경·SHA·증빙과 최종 인계 전 갱신 항목 |
 | 공개 프리셋·무당 초상·8인 화면 | `server/app/presets_enabled.json` → `open_start.py`·`server/accounts/views.py` → `web/templates/accounts/portrait_choice.html`·`meeting.html`. 공개 녹화 생성 `server/tests/record_large8.py`, HTTP 화면 회귀 `test_preset_screens.py`, 렌더 측정 `preset_render_bench.py` |
 | 화면이나 API 추가 | 표현 `server/api/`, 응용 `server/app/dto.py`, `docs/contracts/api.md` |
 | 게임 JSON API 경로와 실행 흐름 | `server/api/urls.py`, `server/api/views.py`, `server/api/interactions.py` → `server/app/usecases.py`, `server/app/interactions.py` |

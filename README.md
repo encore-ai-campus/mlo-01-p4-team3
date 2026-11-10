@@ -52,6 +52,7 @@ server/infra (인프라) → engine (포트 구현)
 | `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화·임시 운영 흐름은 임시 git 저장소와 임시 폴더로) |
 | `docs/evidence/` | 문서(증빙) | 각 흐름 | 태스크 증빙 `<ID>.md`, 측정 결과 JSON `perf/<ID>/<이름>.json`(`tools/evidence_result.py`로만 쓴다) |
 | `docs/modules/`, `docs/troubles/` | 문서 | 각 흐름 | 모듈 문서, 흐름별 트러블 기록(양식 `_template.md`) |
+| `ops/privacy/` | 운영 설정 | C | 보존 대상 목록을 생성하는 systemd 단위 |
 
 "예정"인 폴더는 담당 흐름이 처음 코드를 넣을 때 만든다.
 
@@ -61,7 +62,7 @@ server/infra (인프라) → engine (포트 구현)
 |---|---|
 | 이벤트나 학습 데이터 형식 변경 | `engine/domain/events.py`, `contracts/datasets.py`, `docs/contracts/events.md` |
 | 개인정보 처리 | `docs/contracts/privacy.md` |
-| 삭제·보존 운영 | `ops/runbook/privacy.md`, `tools/privacy_delete.py`, `tools/privacy_retention.py` |
+| 삭제·보존 운영 | `ops/runbook/privacy.md`, `ops/privacy/`, `tools/privacy_delete.py`, `tools/privacy_retention.py` |
 | 서버와 버전 | `docs/contracts/tech_stack.md`, `ops/runbook/vm_roles.md` |
 | 모델 추적과 등록 관문 | `ops/mlflow/`, `tools/ml_gate.py`, `docs/modules/ml_ops.md` |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |

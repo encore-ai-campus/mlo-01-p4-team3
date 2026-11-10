@@ -52,6 +52,18 @@ class HTTPAdWire(SimpleTestCase):
             self.assertLessEqual({k.lower() for k in call['headers']},
                                  {'host', 'content-length', 'x-request-id', 'content-type'})
 
+    def test_synthetic_creative_click_and_landing(self):
+        """합성 소재의 클릭·랜딩은 실제 HTTP에서도 같은 내부 경로로 이어진다."""
+        self.host.location = '/ads/landing/syn:cr-a'
+        with self.subTest(path='click'):
+            self.assertEqual(self.gateway.click('token', 'click'), (self.host.location, 'ok'))
+        with self.subTest(path='landing'):
+            body, result = self.gateway.landing('syn:cr-a', 'landing')
+            self.assertEqual(result, 'ok')
+            self.assertIn('가상 랜딩', body)
+        self.assertEqual([call['path'] for call in self.host.calls],
+                         ['/ads/v1/click?t=token', self.host.location])
+
     def test_invalid_http_responses_are_empty_and_not_retried(self):
         """형식 오류·잘못된 ID·HTML·리다이렉트·오류 상태는 빈 광고다."""
         cases = [(200, 'text/html', b'<html>bad</html>'), (200, 'application/json', b'{'),
@@ -210,10 +222,13 @@ class AdHTTPRoutes(TestCase):
             self.assertNotIn(secret, serialized)
 
     def test_failed_server_has_empty_slot_safe_click_and_landing(self):
-        """장애는 빈 지면·홈 이동·돌아가기 안내이며 게임 진척은 계속 응답한다."""
+        """장애는 빈 지면·홈으로 보내지 않는 안내·돌아가기이며 게임 진척은 계속 응답한다."""
         self.host.mode = 'error'
         self.assertEqual(self.client.get('/ads/slot/lobby_banner').content.strip(), b'')
-        self.assertEqual(self.client.get('/ads/click', {'t': 'token'})['Location'], '/')
+        click = self.client.get('/ads/click', {'t': 'token'})
+        self.assertEqual(click.status_code, 200)
+        self.assertNotIn('Location', click)
+        self.assertContains(click, '광고를 불러오지 못했습니다')
         self.assertContains(self.client.get('/ads/landing/sample'), '돌아가기')
         self.assertEqual(self.client.get('/players/me/progress').status_code, 200)
 
