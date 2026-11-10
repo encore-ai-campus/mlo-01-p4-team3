@@ -173,7 +173,7 @@ def reaction_text(kind, speech_id: str, temperament_id) -> str:
     return variants[zlib.crc32(speech_id.encode("utf-8")) % len(variants)]
 
 
-def _pointed_resident(view: PlayerView, speech):
+def reaction_target(public, speech):
     """반응할 주민. 의심은 대상, 모순 지적은 대상이 없으면 근거 두 진술에서 고른다.
 
     화면의 모순 지적 양식은 대상 칸 없이 진술 두 개(또는 모순 기록 1개)만 보낸다. 두 진술의 화자가 같으면 그 사람,
@@ -190,7 +190,7 @@ def _pointed_resident(view: PlayerView, speech):
             break
         if ref.type.value == "claim":
             ids.append(ref.record_id)
-    claims = {c.claim_id: c for c in view.public.claims}
+    claims = {c.claim_id: c for c in public.claims}
     pair = [claims[i] for i in ids[:2] if i in claims]
     if len(pair) != 2:
         return None
@@ -205,14 +205,14 @@ def reaction_lines(view: PlayerView, temperaments=None) -> dict[str, list[VNLine
     """플레이어의 의심 제기·모순 지적 발언 ID → 그 바로 뒤 지목된 주민의 반응 줄.
 
     공개 발언·진술 기록만으로 만들므로 새로 고침·기록 보기에서도 같은 줄이 나온다. 주민끼리의 발언, 지목된 주민을
-    고를 수 없거나(`_pointed_resident`) 무당인 발언에는 붙이지 않는다. 대상의 지금 상태(감금·실종)와 무관하게 발언 당시 기록 그대로 보인다.
+    고를 수 없거나(reaction_target) 무당인 발언에는 붙이지 않는다. 대상의 지금 상태(감금·실종)와 무관하게 발언 당시 기록 그대로 보인다.
     """
     temperaments = temperaments or {}
     out: dict[str, list[VNLine]] = {}
     for speech in view.public.speeches:
         if speech.speaker != PLAYER_ID or speech.kind not in REACTIONS:
             continue
-        target = _pointed_resident(view, speech)
+        target = reaction_target(view.public, speech)
         if not target or target == PLAYER_ID:
             continue
         text = reaction_text(speech.kind, speech.speech_id, temperaments.get(target))

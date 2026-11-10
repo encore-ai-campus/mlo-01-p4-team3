@@ -1,0 +1,24 @@
+{
+  "task": "A-10-06",
+  "commit": "5090491324ab84cf4ec46a16be00fa0e5b3578e4",
+  "generated_at": "2026-11-10T09:16:51Z",
+  "source": "python out/handoff/update_committed_evidence.py (selected source fields, final/original SHA, face-only pixels)",
+  "metrics": {
+    "selected_outputs": {
+      "value": 16,
+      "unit": "개"
+    },
+    "recovered_generation_stages": {
+      "value": 19,
+      "unit": "개"
+    },
+    "missing_generation_fields": {
+      "value": 0,
+      "unit": "건"
+    },
+    "outside_face_violations": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
