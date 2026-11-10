@@ -18,7 +18,7 @@ class MlflowModelRegistry:
             try:
                 model = self.client.get_model_version_by_alias(name, alias)
             except MlflowException as error:
-                if alias == "canary" and error.error_code == "RESOURCE_DOES_NOT_EXIST":
+                if alias == "canary" and alias not in self.client.get_registered_model(name).aliases:
                     continue
                 raise
             version = model.tags.get("paldo.artifact_version")
@@ -45,7 +45,7 @@ class MlflowModelRegistry:
                 try:
                     model = self.client.get_model_version_by_alias(name, alias)
                 except MlflowException as error:
-                    if error.error_code == "RESOURCE_DOES_NOT_EXIST":
+                    if alias not in self.client.get_registered_model(name).aliases:
                         continue
                     raise
                 at = model.tags.get("paldo.lifecycle.at")

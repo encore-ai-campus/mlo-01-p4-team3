@@ -33,12 +33,15 @@ spec:
               image: "${RETRAIN_IMAGE}"
               imagePullPolicy: IfNotPresent
               command: ["python", "-m", "ops.mlflow.retrain"]
+              workingDir: /inputs/repository
               args: ["--config", "/run/retrain/config.json", "--out", "/work/run"]
               env:
                 - name: PYTHONDONTWRITEBYTECODE
                   value: "1"
                 - name: PYTHONUNBUFFERED
                   value: "1"
+                - name: PYTHONPATH
+                  value: /inputs/repository
               envFrom:
                 - secretRef:
                     name: paldo-mlflow-client

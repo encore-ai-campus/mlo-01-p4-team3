@@ -44,6 +44,9 @@ def validate(config):
             raise ValueError("invalid_training_arguments")
         if "--register" in command or "--registry-dir" in command:
             raise ValueError("candidate_registration_owned_by_runner")
+        if family == "intent":
+            if "--tombstones" not in command or command[command.index("--tombstones") + 1] != config["tombstones"]:
+                raise ValueError("current_privacy_registry_required")
         for field in ("report", "artifact"):
             path = Path(spec[field])
             if path.is_absolute() or not path.parts or ".." in path.parts or path.drive:
@@ -59,7 +62,12 @@ def record_candidate(family, spec, report, artifact, config):
     decision = evaluate(family, report)
     provenance = report.get("versions", report)
     actual = provenance.get("data_version")
-    passed = decision.accepted and actual == spec["data_version"]
+    metadata_match = actual == spec["data_version"] and provenance.get("feature_version") == spec["feature_version"]
+    if family != "ad_ctr":
+        metadata_match = metadata_match and provenance.get("code_commit") == config["code_commit"]
+    elif spec["model"] != "paldo-ad-ctr-" + report["source"]:
+        raise ValueError("ctr_source_model_mismatch")
+    passed = decision.accepted and metadata_match
     if load_tombstones(config["tombstones"]) != config["_tombstones"]:
         raise ValueError("privacy_registry_changed_during_training")
     tags = {"data_version": actual or "missing", "feature_version": spec["feature_version"],
@@ -71,11 +79,13 @@ def record_candidate(family, spec, report, artifact, config):
         raise ValueError("artifact_version_required")
     if passed and (not artifact.exists() or artifact.is_symlink()):
         raise ValueError("trained_artifact_required")
-    reason = "accepted" if passed else ("provenance" if actual != spec["data_version"] else "d_gate")
+    reason = "accepted" if passed else ("provenance" if not metadata_match else "d_gate")
     experiment = mlflow.set_experiment("paldo-retrain")
     with mlflow.start_run(experiment_id=experiment.experiment_id, tags=tags) as active:
         run_id = active.info.run_id
         mlflow.log_dict(report, "decision.json")
+        if family == "ad_ctr":
+            mlflow.log_dict(report, "ad_ctr.json")
         mlflow.set_tag("paldo.gate.reasons", json.dumps(decision.reasons))
         if passed:
             if artifact.is_dir():
@@ -98,6 +108,9 @@ def record_candidate(family, spec, report, artifact, config):
 def run(config, output):
     """세 모델을 차례로 실행하며 관문 거부는 등록 없이 결과로 남긴다."""
     validate(config)
+    current = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    if current != config["code_commit"]:
+        raise ValueError("training_source_commit_mismatch")
     if datetime.fromisoformat(DEFAULT_OPEN) <= datetime.now(KST) < datetime.fromisoformat(DEFAULT_CUTOFF):
         raise ValueError("training_paused_during_formal_test")
     config["_tombstones"] = load_tombstones(config["tombstones"])

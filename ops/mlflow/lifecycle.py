@@ -36,7 +36,7 @@ def transition(client, name, action, expected, reason):
         try:
             client.delete_registered_model_alias(name, "canary")
         except MlflowException as error:
-            if error.error_code != "RESOURCE_DOES_NOT_EXIST":
+            if "canary" in client.get_registered_model(name).aliases:
                 raise
     return {"action": action, "model": name, "previous_production": str(current.version),
             "selected_version": str(target.version)}
