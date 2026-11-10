@@ -120,3 +120,7 @@ A-10-06·A-11-04의 확정 그림을 공개 사건에 연결했다. 앞 절의 �
 | `vn_expressions.py` | 표시 순서로 한 줄 표정·공개 기색 ID 계산. 도메인/DB/별도 HTTP 호출 없음 |
 | `vn_script.reaction_target` | 공개 대상·근거 진술에서 모순 지적/의심 대상 선택, 기존 즉시 반응과 공유 |
 | `ui_assets.vn_sprite_url` → 템플릿 `vn_sprite` | 공식 manifest 조회, 실제 표정 없으면 기본 sprite, 무당 선택 보존 |
+
+### B-11-01 캐릭터·도움말 표시 보완 (2026-11-11)
+
+기존 게임 조회 → 회의 템플릿 → `web/static/game.css` 경로를 그대로 쓴다. 캐릭터 hover/active 투명 배경과 모바일 도움말 배치만 보완한다. 서버 URL·API·DTO·명령 처리·응답은 변경하지 않았다. [검증](../docs/evidence/B-11-01.md).
