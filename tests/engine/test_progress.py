@@ -39,11 +39,11 @@ CONTENT = load_bundle(ROOT / "content/bundle_v1.json")
 CLUES = CONTENT.grudge_clues
 PLAYER = "player-e0908"
 
-# 실제 콘텐츠·규칙 엔진·LogicBot으로 고백이 나오는 base6 시드(이 커밋에서 확인).
-# 시드 6: 곡식(grain) 고백 → clue_famine(identity), 노름(gambling) 고백 → clue_debt(death)
-# 시드 4: 술(drinking) 고백 → clue_gate(target). 두 판을 이어 하면 가설 h1의 세 부분이 모인다.
-SEED_TWO_CLUES = 6
-SEED_TARGET_CLUE = 4
+# 실제 콘텐츠·규칙 엔진·LogicBot으로 고백이 나오는 base6 시드(이 커밋에서 확인, rule-0.7 꾀어내기 규칙으로 다시 찾음).
+# 시드 655: 곡식(grain) 고백 → clue_famine(identity), 노름(gambling) 고백 → clue_debt(death)
+# 시드 15: 술(drinking) 고백 → clue_gate(target). 두 판을 이어 하면 가설 h1의 세 부분이 모인다.
+SEED_TWO_CLUES = 655
+SEED_TARGET_CLUE = 15
 
 PROGRESS_FACTORY = InMemoryProgressRepository
 GAME_FACTORY = InMemoryGameRepository

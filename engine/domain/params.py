@@ -20,7 +20,7 @@ from pathlib import Path
 VERSION_PATTERN = re.compile(r"[a-zA-Z0-9_.-]{1,80}")
 VERSION_JOIN = "."   # 규칙 버전 + 결정 파라미터 버전 연결 문자(11/7: `+`가 회차 등록 검증에 걸려 `.`으로 바꿈)
 
-RULE_BASE_VERSION = "rule-0.6"   # 0.2: 실행자 거짓 행적 공공장소 무작위. 0.3: TELL_PROB. 0.4: Q_MAX. 0.5: 결정 파라미터를 json으로 분리·동선 무작위성 추가(A-08-03). 0.6: 모델 경로 무당 투표 문턱·1일째 의심 문턱·발언 변형 돌려쓰기(A-09-06)
+RULE_BASE_VERSION = "rule-0.7"   # 0.2: 실행자 거짓 행적 공공장소 무작위. 0.3: TELL_PROB. 0.4: Q_MAX. 0.5: 결정 파라미터를 json으로 분리·동선 무작위성 추가(A-08-03). 0.6: 모델 경로 무당 투표 문턱·1일째 의심 문턱·발언 변형 돌려쓰기(A-09-06). 0.7: 꾀어내기 — 피해 장소를 공개 장소에서 뽑음(A-10-01 5번)
 
 DECISION_PARAMS_FILE = Path(__file__).with_name("decision_params.json")
 

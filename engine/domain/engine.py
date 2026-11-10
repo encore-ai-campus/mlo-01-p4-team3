@@ -52,12 +52,14 @@ class Setup:
 
 
 # ---------------------------------------------------------------- 배정
-def make_setup(preset: Preset, content: ContentBundle, seed: int, game_id: str) -> Setup:
-    """시드로 배정을 만들고 검증기를 통과할 때까지 파생 시드로 다시 뽑는다(domain.md 10절)."""
+def make_setup(preset: Preset, content: ContentBundle, seed: int, game_id: str, lure: bool = True) -> Setup:
+    """시드로 배정을 만들고 검증기를 통과할 때까지 파생 시드로 다시 뽑는다(domain.md 10절).
+
+    `lure`가 거짓이면 이전 규칙(`rule-0.6` 이하: 피해 장소 = 피해자의 한밤 장소)으로 뽑는다(`lures`)."""
     _check_content(preset, content)
     for attempt in range(params.ASSIGNMENT_MAX_ATTEMPTS):
         rng = random.Random(f"{seed}:{attempt}")
-        a = _draw_assignment(rng, preset, content, game_id)
+        a = _draw_assignment(rng, preset, content, game_id, lure)
         if a is None:
             continue
         sightings = _draw_sightings(rng, a, preset.witness_scale)
@@ -80,7 +82,8 @@ def _check_content(preset: Preset, content: ContentBundle) -> None:
         raise AssignmentError(f"{preset.preset_id}: 콘텐츠 부족 {short}")
 
 
-def _draw_assignment(rng: random.Random, preset: Preset, content: ContentBundle, game_id: str) -> Optional[Assignment]:
+def _draw_assignment(rng: random.Random, preset: Preset, content: ContentBundle, game_id: str,
+                     lure: bool = True) -> Optional[Assignment]:
     chars = {c.npc_id: c for c in content.characters}
     residents = rng.sample(sorted(chars), preset.n_resident_pool_needed)
     possessed = rng.sample(residents, preset.n_possessed)
@@ -98,8 +101,7 @@ def _draw_assignment(rng: random.Random, preset: Preset, content: ContentBundle,
         s = by_id[sid]
         where[npc][s.slot] = s.actual_place
     executor = rng.choice(sorted(possessed))
-    crime = where[victim][Slot.MIDNIGHT]
-    where[executor][Slot.MIDNIGHT] = crime                # 실행자는 한밤에 피해자의 장소로 간다
+    crime = _crime_place(rng, where, victim, executor, lure)   # 실행자가 피해자를 공개 장소로 꾀어낸다
     if crime in PUBLIC_PLACES:                            # 범행 장소 동석 금지: 다른 마을 주민은 비킨다
         fixed = {npc for npc, sid in secrets.items() if by_id[sid].slot is Slot.MIDNIGHT}
         for r in villagers:                               # 한밤 비밀 장소와 겹치면 검증기가 걸러 다시 뽑는다
@@ -142,6 +144,28 @@ def _draw_secrets(rng: random.Random, holders_pool: list[str], secrets: list[Sec
         return go(i + 1, chosen)
 
     return go(0, {})
+
+
+LEGACY_CRIME_RULES = ("rule-0.1", "rule-0.2", "rule-0.3", "rule-0.4", "rule-0.5", "rule-0.6")
+
+
+def lures(rule_version: str) -> bool:
+    """판 메타의 규칙 버전이 꾀어내기 규칙(`rule-0.7`~)을 쓰는가. 이전 버전(`LEGACY_CRIME_RULES`)으로 시작한 판·회차는
+    배포 뒤에도 이전 규칙으로 이어 가 판 메타 버전과 실제 규칙이 어긋나지 않게 한다. 모르는 버전은 현재 규칙이다."""
+    return rule_version.split(params.VERSION_JOIN + "decision")[0] not in LEGACY_CRIME_RULES
+
+
+def _crime_place(rng: random.Random, where: dict[str, dict[Slot, Place]], victim: str, executor: str,
+                 lure: bool = True) -> Place:
+    """피해 장소를 정하고 실행자를 그곳에 둔다. 0일째 배정과 이후 밤이 같이 쓴다.
+
+    꾀어내기 규칙(A-10-01 5번, `rule-0.7`): 공개 장소(`PUBLIC_PLACES`) 중 판 시드 난수로 뽑아 피해자와 실행자의
+    한밤 장소를 그곳으로 둔다. `lure`가 거짓(이전 규칙)이면 피해자의 한밤 장소를 그대로 쓴다(난수를 쓰지 않음).
+    """
+    crime = rng.choice(PUBLIC_PLACES) if lure else where[victim][Slot.MIDNIGHT]
+    where[victim][Slot.MIDNIGHT] = crime
+    where[executor][Slot.MIDNIGHT] = crime
+    return crime
 
 
 def _routine_place(rng: random.Random, ch: Character, slot: Slot, exclude: Optional[Place] = None) -> Place:
@@ -833,7 +857,8 @@ class _Tx:
         result = night_divination(st, tr, target)                                              # 1
         plan = tr.night_plans[night]
         participants = [n for n in st.active if n != PLAYER_ID]
-        where = _night_whereabouts(self.rng("whereabouts"), participants, self.chars, plan)   # 2
+        where = _night_whereabouts(self.rng("whereabouts"), participants, self.chars, plan,
+                                   lures(st.meta.rule_version))                               # 2
         tr.whereabouts[night] = where
         sightings = draw_sightings(self.rng("sightings"), night, participants, where,
                                    st.meta.preset.witness_scale)                               # 3
@@ -980,11 +1005,10 @@ def can_confess(state: GameState, truth: GameTruth, npc_id: str) -> bool:
 
 
 def _night_whereabouts(rng: random.Random, participants: list[str], chars: dict[str, Character],
-                       plan: NightPlan) -> dict[str, dict[Slot, Place]]:
-    """밤 시작 참가자의 행적. 동선 가중치로 뽑고, 실행자는 한밤에 피해자의 장소로 간다(0일째와 같은 규칙)."""
+                       plan: NightPlan, lure: bool = True) -> dict[str, dict[Slot, Place]]:
+    """밤 시작 참가자의 행적. 동선 가중치로 뽑고, 실행자가 피해자를 공개 장소로 꾀어낸다(0일째와 같은 규칙)."""
     where = {r: {s: _routine_place(rng, chars[r], s) for s in SLOTS} for r in participants}
-    crime = where[plan.victim][Slot.MIDNIGHT]
-    where[plan.executor][Slot.MIDNIGHT] = crime
+    crime = _crime_place(rng, where, plan.victim, plan.executor, lure)
     if crime in PUBLIC_PLACES:   # 범행 장소 동석 금지
         for r in participants:
             if r not in (plan.victim, plan.executor) and where[r][Slot.MIDNIGHT] is crime:
@@ -1004,7 +1028,8 @@ class PaldoEngine:
 
     def new_game(self, meta: GameMeta, deps: EngineDeps) -> TransitionResult:
         """판을 만든다: 배정(검증기 통과) → 0일째 밤 행적·목격·홀림 → 1일째 아침 실종 발표와 진술."""
-        return self.new_game_from_setup(meta, deps, make_setup(meta.preset, deps.content, meta.seed, meta.game_id))
+        return self.new_game_from_setup(meta, deps, make_setup(meta.preset, deps.content, meta.seed, meta.game_id,
+                                                                 lures(meta.rule_version)))
 
     def new_game_from_setup(self, meta: GameMeta, deps: EngineDeps, setup: Setup) -> TransitionResult:
         """정해진 배정(`Setup`)으로 1일째 아침 상태를 만든다. `new_game`과 고정 배정 재현이 같이 쓴다."""
