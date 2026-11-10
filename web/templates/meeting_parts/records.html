@@ -63,12 +63,16 @@
   {% endif %}
 {% else %}
 {% load meeting %}
+  {% if vn_guide_before %}<div class="vn-script" hidden>{% for line in vn_guide_before %}{% include "meeting_parts/vn_line.html" %}{% endfor %}</div>{% endif %}
   {% for event in disappearances %}
     <p class="vn-source" data-line-id="announcement-{{ vm.day }}-{{ forloop.counter }}" data-day="{{ event.record.night|add:'1' }}" data-phase="morning" data-speaker="아침 발표" data-full="true" data-actor-name="{{ event.record.victim_name }}" data-speaker-id="{{ event.record.npc_id }}" data-sprite="{% with sprite_id='sprite:'|add:event.record.npc_id %}{% review_asset sprite_id %}{% endwith %}">
       {% if event.place_asset_id %}<img src="{% asset_url event.place_asset_id %}" alt="" width="20" height="20">{% endif %}
       <span class="vn-source-text">{{ event.record.text }}</span>
     </p>
   {% endfor %}
+  {% if vn_lines %}
+    <div class="vn-script" hidden>{% for line in vn_lines %}{% include "meeting_parts/vn_line.html" %}{% endfor %}</div>
+  {% endif %}
   {% if claims %}
     <section class="record-panel" aria-labelledby="claim-list-title">
       <h2 id="claim-list-title">진술표</h2>
@@ -88,7 +92,7 @@
           </li>
         {% endfor %}
       </ul>
-      <div class="record-compare-tools"><span data-record-selection-count>선택한 진술 0개</span><button type="button" data-record-compare disabled>두 진술 비교</button><button type="button" data-record-clear>선택 해제</button></div>
+      <div class="record-compare-tools"><span data-record-selection-count>선택한 진술 0개</span><button type="button" data-record-compare{% tip "record_compare" %} disabled>두 진술 비교</button><button type="button" data-record-clear{% tip "record_clear" %}>선택 해제</button></div>
       <div class="record-comparison" data-record-comparison hidden><h3>선택한 두 진술</h3><div data-record-comparison-lines></div><p class="section-guide">공개된 문장을 나란히 보여 줍니다. 진위나 모순 여부는 직접 판단하세요.</p></div>
     </section>
   {% endif %}

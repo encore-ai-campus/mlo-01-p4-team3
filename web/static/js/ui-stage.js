@@ -29,7 +29,7 @@ function mountStage(){
   const dialog=document.createElement('dialog');dialog.className='stage-overlay';dialog.dataset.panelId=node.id;
   const bar=document.createElement('div');bar.className='stage-overlay-heading';
   const title=document.createElement('h2');title.id=node.id+'-dialog-title';title.textContent=node.dataset.stagePanel;
-  const button=document.createElement('button');button.type='button';button.textContent='닫기';button.addEventListener('click',()=>dialog.close());
+  const button=document.createElement('button');button.type='button';button.textContent='닫기';if(stage.dataset.overlayCloseTip)button.title=stage.dataset.overlayCloseTip;button.addEventListener('click',()=>dialog.close());
   bar.append(title,button);dialog.setAttribute('aria-labelledby',title.id);dialog.append(bar,node);stage.append(dialog);panels.set(node.id,dialog);
   dialog.addEventListener('close',()=>{if(openDialog===dialog){openDialog=null;if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});}});
  }
@@ -37,7 +37,8 @@ function mountStage(){
  root.addEventListener('click',event=>{
   const button=event.target.closest('[data-stage-open]');if(button){show(button.dataset.stageOpen,button);return;}
   const person=event.target.closest('[data-person]');if(!person)return;
-  if(person.matches('[data-vn-actor]'))show('stage-people',person);
+  // 무대의 인물 그림은 대사 넘김이다(ui-vn.js). 행동 메뉴는 주민 창의 인물 버튼에서만 연다.
+  if(person.matches('[data-vn-actor]'))return;
   const target=root.querySelector('[data-person-actions]');target.replaceChildren();
   const heading=document.createElement('h3');
   heading.textContent=(person.textContent.trim()||person.querySelector('img')?.alt||'현재 인물')+' · 가능한 행동';target.append(heading);
@@ -46,7 +47,7 @@ function mountStage(){
    if(!['suspect','defend','interrogate','vote','divine'].includes(kind))continue;
    const field=form.elements.target||form.elements.addressee;
    if(!field || (field.tagName==='SELECT'?![...field.options].some(x=>x.value===person.dataset.person):field.value!==person.dataset.person))continue;
-   const choice=document.createElement('button');choice.type='button';choice.textContent=form.querySelector('button[type=submit]').textContent.trim();
+   const choice=document.createElement('button');choice.type='button';choice.textContent=form.querySelector('button[type=submit]').textContent.trim();choice.title=form.querySelector('button[type=submit]').title;
    choice.addEventListener('click',()=>{field.value=person.dataset.person;field.dispatchEvent(new Event('change',{bubbles:true}));show('stage-actions',root.querySelector('[data-stage-open="stage-actions"]'));const details=form.closest('details');if(details)details.open=true;form.scrollIntoView({block:'nearest'});form.querySelector('select,button[type=submit]')?.focus({preventScroll:true});});target.append(choice);
   }
   if(target.children.length===1){const p=document.createElement('p');p.textContent='현재 이 인물에게 할 수 있는 행동이 없습니다.';target.append(p);}

@@ -129,6 +129,12 @@ class GameService:
         """로그인 계정 자신의 진척만 조회한다."""
         return ProgressOutput(self.progress.load(player_pseudonym))
 
+    def guide_info(self, game_id, player_pseudonym):
+        """첫 판 안내 판단: (이 판이 계정의 첫 판인지, 이번 판 씐 자 수). 씐 자 수는 프리셋 공개 값이다."""
+        state, _ = self.owned(game_id, player_pseudonym)
+        game_ids = self.progress.load(player_pseudonym).game_ids
+        return bool(game_ids) and game_ids[0] == state.meta.game_id, state.meta.preset.n_possessed
+
     def review(self, game_id, player_pseudonym):
         """종료된 자기 판의 DTO 허용 정보만 복기로 반환한다."""
         state, truth = self.owned(game_id, player_pseudonym)

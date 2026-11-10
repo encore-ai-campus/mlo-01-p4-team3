@@ -1,26 +1,27 @@
 {% load meeting %}
 <section class="vn-player" tabindex="0" aria-label="{% if vm.phase == 'night' %}밤{% else %}회의{% endif %} 장면"{% if vm.phase != 'night' %} data-default-sprite="{% with key=mudang_portrait_id|default:'portrait:mudang_f'|cut:'portrait:' %}{% with sprite='sprite:'|add:key %}{% review_asset sprite %}{% endwith %}{% endwith %}"{% endif %}>
-  <div class="vn-stage" data-vn-stage>
+  <div class="vn-stage" data-vn-stage data-overlay-close-tip="{% tip_text "overlay_close" %}">
     {% if vm.phase == 'night' %}<img class="vn-background" src="{% review_asset 'background:night' %}" alt="" width="1280" height="720">
     {% else %}<img class="vn-background" src="{% review_asset 'background:meeting' %}" alt="" width="1280" height="720">{% endif %}
-    <button type="button" class="vn-actor" data-vn-actor aria-label="현재 화자의 행동 보기" hidden></button>
+    <button type="button" class="vn-actor" data-vn-actor aria-label="{% tip_text "actor" %}"{% tip "actor" %} hidden></button>
     <nav class="stage-toolbar" aria-label="게임 메뉴">
-      <button type="button" data-stage-open="stage-actions">행동하기</button>
-      <button type="button" data-stage-open="stage-people">주민</button>
-      <button type="button" data-stage-open="meeting-records">기록</button>
-      {% if participant_forms_available %}<button type="button" data-stage-open="stage-notebook">수첩</button>{% endif %}
-      {% if vm.phase != 'night' %}<button type="button" data-stage-open="stage-map">지도</button>{% endif %}
+      <button type="button" data-stage-open="stage-actions"{% tip "stage_actions" %}>행동하기</button>
+      <button type="button" data-stage-open="stage-people"{% tip "stage_people" %}>주민</button>
+      <button type="button" data-stage-open="meeting-records"{% tip "stage_records" %}>기록</button>
+      {% if participant_forms_available %}<button type="button" data-stage-open="stage-notebook"{% tip "stage_notebook" %}>수첩</button>{% endif %}
+      {% if vm.phase != 'night' %}<button type="button" data-stage-open="stage-map"{% tip "stage_map" %}>지도</button>{% endif %}
     </nav>
     {% if vm.phase == 'morning' %}<img class="vn-mascot" src="{% review_asset 'mascot:kkachi' %}" alt="아침 소식을 전하는 까치" width="256" height="256">{% endif %}
     <div class="vn-dialogue"><strong data-vn-speaker>무당</strong><p data-vn-text aria-hidden="true">{% if vm.phase == 'night' %}점칠 대상을 골라 주세요. 점괘는 나에게만 표시됩니다.{% else %}공개된 기록을 읽고 행동을 선택하세요.{% endif %}</p><span data-vn-attribution hidden></span></div>
-    <button class="vn-full-close" data-vn-full-close type="button" hidden>대사로 돌아가기</button>
+    <button class="vn-full-close" data-vn-full-close type="button"{% tip "vn_full_close" %} hidden>대사로 돌아가기</button>
+    <button class="vn-guide-skip" data-vn-guide-skip type="button"{% tip "vn_guide_skip" %} hidden>안내 건너뛰기</button>
   </div>
   <p class="vn-mobile-text" data-vn-mobile-text hidden></p>
   <span class="vn-mobile-attribution" data-vn-mobile-attribution hidden></span>
   <p class="sr-only" role="status" aria-live="polite" data-vn-announcement></p>
   <div class="vn-reading">
     <span class="reading-note">대사 읽기는 행동을 소비하지 않습니다.</span>
-    <div class="vn-reading-buttons"><button type="button" data-vn-prev>이전 대사</button><span data-vn-position>1 / 1</span><button type="button" data-vn-next>다음 대사</button></div>
+    <div class="vn-reading-buttons"><button type="button" data-vn-prev{% tip "vn_prev" %}>이전 대사</button><span data-vn-position>1 / 1</span><button type="button" data-vn-next{% tip "vn_next" %}>다음 대사</button></div>
   </div>
-  <div class="vn-options"><label><input type="checkbox" data-vn-instant checked>대사 바로 표시</label><button type="button" data-vn-show-all>모두 보기</button><button type="button" data-vn-skip>연출 건너뛰기</button></div>
+  <div class="vn-options"><label{% tip "vn_instant" %}><input type="checkbox" data-vn-instant checked>대사 바로 표시</label><button type="button" data-vn-show-all{% tip "vn_show_all" %}>모두 보기</button><button type="button" data-vn-skip{% tip "vn_skip" %}>연출 건너뛰기</button></div>
 </section>

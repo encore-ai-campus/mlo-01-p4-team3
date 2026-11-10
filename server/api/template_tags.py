@@ -1,5 +1,6 @@
 """템플릿에서 공개 ID와 화면 문구만 변환하는 도우미."""
 from django import template
+from django.utils.html import format_html
 from .assets import asset_url
 
 register = template.Library()
@@ -85,3 +86,79 @@ def display_name(value):
 def action_icon(kind):
     """UI manifest에 공통 아이콘이 있는 행동의 ID를 고른다."""
     return f"ui:{kind}" if kind in {"suspect", "defend", "interrogate", "vote"} else ""
+
+
+# 게임 화면 버튼의 마우스 올림 설명(기능 안내 UI 문구, 대사 아님). 문구는 이 사전 한 곳에서만 고친다.
+# aria-label이 있는 버튼은 같은 문구를 쓴다. {name}은 공개된 인물 이름이다.
+UI_TIPS = {
+    "records_open": "공개 기록 창을 엽니다",
+    "notebook_open": "내 수첩을 엽니다",
+    "help_open": "게임 방법 도움말을 엽니다",
+    "help_close": "도움말 닫기",
+    "actor": "다음 대사로 넘깁니다",
+    "person": "{name} 행동 보기",
+    "stage_actions": "지금 할 수 있는 행동을 고릅니다",
+    "stage_people": "마을 사람 현황을 봅니다",
+    "stage_records": "진술·발언·투표 기록을 봅니다",
+    "stage_notebook": "내 수첩을 엽니다",
+    "stage_map": "마을 지도와 인물 안내를 봅니다",
+    "vn_full_close": "전신 그림을 닫고 대사로 돌아갑니다",
+    "vn_prev": "이전 대사를 다시 봅니다",
+    "vn_next": "다음 대사로 넘깁니다(무대를 눌러도 됩니다)",
+    "vn_show_all": "지금까지의 공개 발언을 모두 봅니다",
+    "vn_skip": "연출을 건너뛰고 발언 기록을 엽니다",
+    "vn_instant": "켜면 대사를 한 번에 표시합니다",
+    "vn_guide_skip": "이번 판의 남은 안내를 건너뜁니다",
+    "mark:100": "{name} · 수상함으로 수첩에 적습니다",
+    "mark:50": "{name} · 모르겠음으로 수첩에 적습니다",
+    "mark:0": "{name} · 믿음으로 수첩에 적습니다",
+    "record_compare": "선택한 두 진술을 나란히 봅니다",
+    "record_clear": "진술 선택을 모두 풉니다",
+    "overlay_close": "이 창을 닫습니다",
+    "confirm_cancel": "행동을 보내지 않고 닫습니다",
+    "confirm_submit": "선택한 행동을 보냅니다",
+    "utterance_submit": "입력한 말을 행동 카드로 바꿔 확인합니다",
+    "notebook_save": "투표 직전 확신도를 저장합니다",
+    "card_run": "이 카드의 행동을 실행합니다",
+    "card_edit_run": "고친 카드로 행동을 실행합니다",
+    "reaction_retry": "입력한 말을 다시 해석합니다",
+    "reaction_cancel": "이번 입력을 취소합니다",
+    "reaction_switch_to_buttons": "버튼으로 행동을 고릅니다",
+    "reaction_none_of_these": "맞는 카드가 없다고 알립니다",
+    "end_tab_result": "판 결과를 봅니다",
+    "end_tab_review": "그날의 선택을 돌아봅니다",
+    "end_tab_clues": "원한 단서를 봅니다",
+    "survey_submit": "설문 응답을 보냅니다",
+    "survey_skip": "설문을 건너뜁니다",
+    "action:suspect": "이 인물을 의심한다고 말합니다",
+    "action:defend": "이 인물을 감싸 줍니다",
+    "action:interrogate": "이 인물에게 행적이나 이유를 따져 묻습니다",
+    "action:point_contradiction": "두 진술이 서로 어긋난다고 지적합니다",
+    "action:explain": "내 행동을 해명합니다",
+    "action:silence": "이번 차례에는 말하지 않습니다",
+    "action:reveal_divination": "내 점괘를 모두에게 공개합니다",
+    "action:vote": "이 인물에게 감금 표를 던집니다",
+    "action:divine": "오늘 밤 이 인물을 점칩니다",
+    "action:advance": "다음 단계로 넘어갑니다",
+}
+
+
+@register.simple_tag
+def tip_text(key, **values):
+    """버튼 설명 문구만 돌려준다(JS가 읽는 data 속성용)."""
+    return UI_TIPS[key].format(**values)
+
+
+@register.filter
+def notebook_mark(value):
+    """저장된 수첩 값(0~100)을 버튼 값으로 묶는다. 저장한 적 없으면 기본값 50과 같이 '모르겠음'."""
+    if value is None or value == "":
+        return "50"
+    value = int(value)
+    return "100" if value >= 67 else "0" if value <= 33 else "50"
+
+
+@register.simple_tag
+def tip(key, **values):
+    """버튼에 붙일 ` title="…"` 속성을 만든다. 사전에 없는 키는 오류로 드러낸다."""
+    return format_html(' title="{}"', tip_text(key, **values))

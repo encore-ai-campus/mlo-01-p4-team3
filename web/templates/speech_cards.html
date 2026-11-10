@@ -15,7 +15,7 @@
         {% csrf_token %}<input type="hidden" name="game_id" value="{{ vm.game_id }}"><input type="hidden" name="attempt_id" value="{{ attempt_id }}">
         <input type="hidden" name="state_version" value="{{ attempt_version }}"><input type="hidden" name="command_id">
         <input type="hidden" name="reaction" value="confirm"><input type="hidden" name="chosen_index" value="{{ card.index }}">
-        <button type="submit" {% if card.missing or card.ambiguous_evidence %}disabled{% endif %}>이 카드 하나 실행</button>
+        <button type="submit"{% tip "card_run" %} {% if card.missing or card.ambiguous_evidence %}disabled{% endif %}>이 카드 하나 실행</button>
       </form>
       <details><summary @click="editing = !editing">카드 수정</summary>
         <form class="command-form" hx-post="/games/{{ vm.game_id }}/utterances/{{ attempt_id }}" hx-target="#speech-cards" hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
@@ -39,7 +39,7 @@
             </fieldset></details>
           {% endif %}
           {% if card.kind == 'reveal_divination' %}<label>점괘 <select name="divination" required>{% for option in divination_options %}<option value="{{ option.value }}" {% if option.value == card.divination %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select></label>{% endif %}
-          <button type="submit">수정한 카드 실행</button>
+          <button type="submit"{% tip "card_edit_run" %}>수정한 카드 실행</button>
         </form>
       </details>
     </article>
@@ -48,8 +48,8 @@
     <form hx-post="/games/{{ vm.game_id }}/utterances/{{ attempt_id }}" hx-target="#speech-cards" hx-swap="outerHTML" hx-sync="#meeting:drop">
       {% csrf_token %}<input type="hidden" name="game_id" value="{{ vm.game_id }}"><input type="hidden" name="attempt_id" value="{{ attempt_id }}">
       <label>다시 할 말 <textarea name="retry_text" maxlength="4000"></textarea></label>
-      <button name="reaction" value="retry">다시 해석</button><button name="reaction" value="cancel">취소</button>
-      <button name="reaction" value="switch_to_buttons">버튼 입력으로 전환</button><button name="reaction" value="none_of_these">해당 카드 없음</button>
+      <button name="reaction" value="retry"{% tip "reaction_retry" %}>다시 해석</button><button name="reaction" value="cancel"{% tip "reaction_cancel" %}>취소</button>
+      <button name="reaction" value="switch_to_buttons"{% tip "reaction_switch_to_buttons" %}>버튼 입력으로 전환</button><button name="reaction" value="none_of_these"{% tip "reaction_none_of_these" %}>해당 카드 없음</button>
     </form>
   {% endif %}
 </div>

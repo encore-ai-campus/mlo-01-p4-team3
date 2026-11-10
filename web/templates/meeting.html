@@ -11,12 +11,13 @@
       <section id="stage-actions" data-stage-panel="행동 선택">
         {% if vm.phase == 'vote' or vm.phase == 'runoff' %}<p class="phase-notice">이번 투표는 비공개이며, 투표가 끝나면 모두의 표가 함께 공개됩니다.</p>{% endif %}
         {% if vm.phase == 'night' %}<p class="phase-notice player-notice">밤의 점치기입니다. 점괘는 나에게만 표시됩니다.</p>{% endif %}
+        <p class="phase-notice result-lock-notice" data-result-lock-notice role="status" hidden>투표 결과를 먼저 확인하세요. 대사를 끝까지 넘기거나 모두 보기를 누르면 행동할 수 있습니다.</p>
         <div class="command-bar" role="region" aria-label="명령">{% include "meeting_actions.html" %}{% include "utterance_input.html" %}</div>
       </section>
       <section id="stage-notebook" data-stage-panel="수첩">{% if participant_forms_available %}{% include "notebook.html" %}{% endif %}</section>
       <section id="stage-people" data-stage-panel="마을 사람">  <div class="meeting-tools"><h3>마을 사람 현황</h3><ul class="people" aria-label="인물">
     {% for person in vm.people %}
-      <li><button type="button" data-person="{{ person.npc_id }}" class="person-menu-button" aria-label="{{ person.name|display_name }} 행동 보기">
+      <li><button type="button" data-person="{{ person.npc_id }}" class="person-menu-button" aria-label="{% tip_text "person" name=person.name|display_name %}"{% tip "person" name=person.name|display_name %}>
         {% if vm.phase != 'night' %}
         {% if person.npc_id == 'mudang' %}
           <img class="review-portrait" src="{% review_asset mudang_portrait_id %}" alt="" width="64" height="64">
@@ -27,9 +28,9 @@
         {% endif %}
         {% endif %}
         <span class="person-caption"><strong>{{ person.name|display_name }}</strong><span>{{ person.status|status_label }}</span></span>
-      </button></li>
+      </button>{% if participant_forms_available and person.npc_id != 'mudang' and person.status == 'active' %}{% include "notebook_marks.html" with mark_npc=person.npc_id mark_name=person.name mark_value=person.notebook_value %}{% endif %}</li>
     {% endfor %}
-  </ul></div>
+  </ul>{% if participant_forms_available %}<p class="mark-status" role="status" data-mark-status></p>{% endif %}</div>
 <div data-person-actions></div></section>
       <section id="meeting-records" class="meeting-records" data-stage-panel="공개 기록" tabindex="-1">{% include "meeting_records.html" %}</section>
       {% if vm.phase != 'night' %}<section id="stage-map" data-stage-panel="지도·인물 안내">{% village_guide %}</section>{% endif %}

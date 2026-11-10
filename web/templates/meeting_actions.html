@@ -79,7 +79,7 @@
           </select>
         </label>
       {% endif %}
-      <button type="submit">
+      <button type="submit"{% tip "action:"|add:kind %}>
         {% with icon=kind|action_icon %}
           {% if icon %}<img src="{% asset_url icon %}" alt="" width="20" height="20">{% endif %}
         {% endwith %}

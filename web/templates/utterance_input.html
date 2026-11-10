@@ -12,7 +12,7 @@
     <label>대화 상대 <select name="selected_npc"><option value="">선택 안 함</option>
       {% for person in active_targets %}<option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>{% endfor %}
     </select></label>
-    <button type="submit">뜻 확인하기</button>
+    <button type="submit"{% tip "utterance_submit" %}>뜻 확인하기</button>
     </fieldset>
   </form>
   <div id="speech-cards" aria-live="polite"></div>
