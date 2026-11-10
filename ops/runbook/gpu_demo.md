@@ -1,6 +1,6 @@
 # GPU LLM NPC 대화 시연 실행 절차 (E-08-13, E-11-12)
 
-E-11-12(11/11) GPU 시연에서 E가 B·C·D·E 네 RunPod 계정의 Pod를 한 노트북에서 띄우고 지울 때 따르는 절차와 사용량 제한 체크리스트다. 11/8 사용자 결정으로 계정별 Pod 실행 태스크(B·C·D)를 없애고 E가 맡는다. B·C·D는 자기 계정 결제 설정과 API 키 전달만 한다(2절 0번, 각 흐름 태스크 B-11-01·C-11-01·D-11-02). 측정 설계·판정 기준의 원본은 [E-11-12](../../docs/tasks/E_pm.md)이고, 코드 사용법은 모듈 문서 [`llm`](../../docs/modules/llm.md)에 있다. 이 문서는 게임 런타임 LLM 재도입이 아니다(P-31 (나) 유지). 계정·주소·키·Pod ID는 이 문서와 저장소에 적지 않는다.
+E-11-12(11/11, 11/9 사용자 승인으로 이동) GPU 시연에서 E가 B·C·D·E 네 RunPod 계정의 Pod를 한 노트북에서 띄우고 지울 때 따르는 절차와 사용량 제한 체크리스트다. 11/8 사용자 결정으로 계정별 Pod 실행 태스크(B·C·D)를 없애고 E가 맡는다. B·C·D는 자기 계정 결제 설정과 API 키 전달만 한다(2절 0번, 각 흐름 태스크 B-11-01·C-11-01·D-11-02). 측정 설계·판정 기준의 원본은 [E-11-12](../../docs/tasks/E_pm.md)이고, 코드 사용법은 모듈 문서 [`llm`](../../docs/modules/llm.md)에 있다. 이 문서는 게임 런타임 LLM 재도입이 아니다(P-31 (나) 유지). 계정·주소·키·Pod ID는 이 문서와 저장소에 적지 않는다.
 
 ## 1. 역할과 단계
 
@@ -31,6 +31,7 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<결과 반출 명령>' bash llm/bench/run_p
 - 작업이 끝나거나 시간이 다 되면 반출(60초 제한) → `runpodctl pod delete $RUNPOD_POD_ID`(정지가 아니라 삭제, 3회 재시도). 자기 삭제가 실패하면 `watch_pods.py`가 첫 관측 + `MAX_MINUTES` + 10분에 지운다.
 - 로그는 `key|token|authkey` 값이 지워진 채 나온다. 환경 변수 값을 직접 출력하는 명령을 작업에 넣지 않는다.
 - 부하 측정: `python -m llm.bench.free_answer_load --base-url <사설망 주소> --model <이름> --sessions <N> --think 5 15 --warmup 120 --duration 600 --seed 1 --label <단계_이름> --server-version … --image … --revision … --options …`. 결과는 `out/perf/E-11-12/`에 쓰고 반출한다.
+- 사람 자유 대화 10분(E-11-12 5번): 노트북에서 사설망 경유로 `python -m llm.bench.free_chat --base-url <사설망 주소> --model <이름> --npc <npc_id> --seed 1 --minutes 10 --label <이름>`. 화면 녹화를 켜고 시작하며, `/끝` 또는 10분이 지나면 끝난다. 턴 기록·요약은 `out/perf/E-11-12/<이름>.turns.jsonl`·`<이름>.json`(주소 없음).
 - 중단 조건(즉시 반출·삭제): 15분 안에 서버 준비 응답 없음(1회 재시도 뒤), 1단계 첫 20건 자동 통과율 < 70 % 또는 세션 1개 첫 표시 p95 > 4초, 비용 80 % 도달(`watch_pods.py`가 자동 삭제).
 
 ## 4. 미확인, 0단계 확인

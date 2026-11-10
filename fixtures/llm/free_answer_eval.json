@@ -1,7 +1,95 @@
 {
   "bundle": "fixtures/content_min/bundle.json",
+  "chat_sentences": [
+    {
+      "field": "self_fact",
+      "key": "s1",
+      "text": "나는 {name}{iyo}."
+    },
+    {
+      "field": "self_fact",
+      "key": "s2:hothead",
+      "text": "나는 성미가 급해 말이 먼저 나가는 편이오."
+    },
+    {
+      "field": "self_fact",
+      "key": "s2:keen",
+      "text": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+    },
+    {
+      "field": "self_fact",
+      "key": "s2:scholar",
+      "text": "나는 무슨 일이든 따져 보고 말하는 편이오."
+    },
+    {
+      "field": "self_fact",
+      "key": "s2:timid",
+      "text": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+    },
+    {
+      "field": "question",
+      "key": "intro:0",
+      "text": "{p1}, 처음 보는 것 같은데 자네 소개 좀 해 주시오."
+    },
+    {
+      "field": "question",
+      "key": "intro:1",
+      "text": "{p1}, 안녕하시오. 자네는 어떤 사람이오?"
+    },
+    {
+      "field": "question",
+      "key": "intro:2",
+      "text": "{p1}, 자네 이름이 뭐요?"
+    },
+    {
+      "field": "question",
+      "key": "personality:0",
+      "text": "{p1}, 자네는 성미가 어떤 사람이오?"
+    },
+    {
+      "field": "question",
+      "key": "personality:1",
+      "text": "{p1}, 사람들이 자네를 어떻게들 말하오?"
+    },
+    {
+      "field": "question",
+      "key": "personality:2",
+      "text": "{p1}, 자네 말투가 참 독특하구려. 원래 그렇게 말하오?"
+    },
+    {
+      "field": "question",
+      "key": "impression:0",
+      "text": "{p1}, {p2}{eun} 어떤 사람이오?"
+    },
+    {
+      "field": "question",
+      "key": "impression:1",
+      "text": "{p1}, {p2}{eul} 어떻게 생각하오?"
+    },
+    {
+      "field": "question",
+      "key": "impression:2",
+      "text": "{p1}, 요즘 {p2}{eul} 본 적 있소?"
+    },
+    {
+      "field": "question",
+      "key": "incident:0",
+      "text": "{p1}, 이번 일을 어떻게 생각하오?"
+    },
+    {
+      "field": "question",
+      "key": "incident:1",
+      "text": "{p1}, 마을에 흉한 일이 생겨 무섭지 않소?"
+    },
+    {
+      "field": "question",
+      "key": "incident:2",
+      "text": "{p1}, 범인이 누구일 것 같소?"
+    }
+  ],
+  "chat_status": "사용자 확인 완료(chat_sentences)",
   "content_version": "content-min-0.1",
-  "eval_version": "free-answer-eval-1",
+  "eval_version": "free-answer-eval-2",
   "intent_examples": "content/intent/examples_v1.jsonl",
   "items": [
     {
@@ -2842,6 +2930,2229 @@
       ],
       "secret_id": null,
       "turns": 2
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "2일째 밤 초저녁엔 주막에 있었소.",
+        "2일째 밤 초저녁엔 주막에서 아무도 못 봤소.",
+        "제사 전날인데 주막에서 술을 마셨네."
+      ],
+      "history": [
+        {
+          "answer": "2일째 밤 초저녁엔 집에 있었소.",
+          "question": "자네, 어젯밤 어디 있었나?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 집에 있었소.",
+          "question": "대장장이 밤에 뭐 했어?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 집에 있었소.",
+          "question": "자네, 어젯밤 어디 있었나?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 집에 있었소.",
+          "question": "대장장이님, 어젯밤 어디 계셨소?"
+        }
+      ],
+      "item_id": "fa_076",
+      "kind": "normal",
+      "npc_id": "blacksmith",
+      "npc_name": "대장장이",
+      "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+      "qtype": "whereabouts",
+      "question": "대장장이, 어젯밤 탁발승과 함께 있었소?",
+      "question_source": "E-06-02:ex1_138",
+      "relevant_fact_ids": [
+        "f1",
+        "f2"
+      ],
+      "secret_id": "drinking",
+      "turns": 8
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "1일째 밤 초저녁엔 주막에서 머슴을 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "1일째 밤 초저녁엔 주막에서 퇴기를 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "1일째 밤 한밤엔 집에 있었소.",
+          "question": "훈장, 한밤에 어디 있었소?"
+        },
+        {
+          "answer": "1일째 밤 한밤엔 집에 있었소.",
+          "question": "어젯밤 어디 있었음?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 주막에서 퇴기를 봤소.",
+          "question": "초저녁엔 뭐 했소?"
+        },
+        {
+          "answer": "1일째 밤 한밤엔 집에 있었소.",
+          "question": "훈장, 한밤에 혼자 잠들어 있었소?"
+        }
+      ],
+      "item_id": "fa_077",
+      "kind": "normal",
+      "npc_id": "hunjang",
+      "npc_name": "훈장",
+      "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+      "qtype": "whereabouts",
+      "question": "훈장, 초저녁에 마을 어귀에 다녀왔소?",
+      "question_source": "E-06-02:ex1_137",
+      "relevant_fact_ids": [
+        "f1",
+        "f3",
+        "f4"
+      ],
+      "secret_id": null,
+      "turns": 8
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "2일째 밤 초저녁엔 마을 어귀에 있었소.",
+        "2일째 밤 초저녁엔 마을 어귀에서 아무도 못 봤소.",
+        "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…"
+      ],
+      "history": [
+        {
+          "answer": "2일째 밤 한밤엔 집에 있었소.",
+          "question": "아이, 그날 밤 우물가에 간 적 있소?"
+        },
+        {
+          "answer": "2일째 밤 한밤엔 집에 있었소.",
+          "question": "아이, 한밤에 혼자 잠들어 있었소?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 주막에 있었소.",
+          "question": "자네, 어젯밤 어디 있었나?"
+        },
+        {
+          "answer": "2일째 밤 한밤엔 집에 있었소.",
+          "question": "아이한테 묻겠소, 어젯밤 어디 있었소?"
+        }
+      ],
+      "item_id": "fa_078",
+      "kind": "normal",
+      "npc_id": "boy",
+      "npc_name": "아이",
+      "persona": "아이. 말투: 어린아이 말투",
+      "qtype": "contradiction",
+      "question": "아이, 나무꾼과 자네 중 누가 거짓을 말하는 거요?",
+      "question_source": "E-06-02:ex1_160",
+      "relevant_fact_ids": [
+        "f1",
+        "f2"
+      ],
+      "secret_id": "grain",
+      "turns": 8
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "3일째 밤 초저녁엔 주막에서 훈장을 봤소."
+        }
+      ],
+      "forbidden_facts": [
+        "3일째 밤 한밤엔 서낭당에 있었소.",
+        "3일째 밤 한밤엔 서낭당에서 탁발승을 봤소.",
+        "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오."
+      ],
+      "history": [
+        {
+          "answer": "3일째 밤 한밤엔 우물가에 있었소.",
+          "question": "주모한테 묻겠소, 어젯밤 어디 있었소?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 주막에서 훈장을 봤소.",
+          "question": "어젯밤 어디 있었소?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 주막에서 훈장을 봤소.",
+          "question": "어젯밤 어디 있었음?"
+        },
+        {
+          "answer": "3일째 밤 한밤엔 우물가에 있었소.",
+          "question": "주모, 한밤에 어디 있었소?"
+        }
+      ],
+      "item_id": "fa_079",
+      "kind": "normal",
+      "npc_id": "jumo",
+      "npc_name": "주모",
+      "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+      "qtype": "contradiction",
+      "question": "훈장 말과 왜 다르오?",
+      "question_source": "E-06-02:ex1_170",
+      "relevant_fact_ids": [
+        "f1",
+        "f2"
+      ],
+      "secret_id": "tryst",
+      "turns": 8
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 서낭당에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 서낭당에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "1일째 밤 한밤엔 서낭당에서 훈장을 봤소."
+        }
+      ],
+      "forbidden_facts": [
+        "1일째 밤 초저녁엔 마을 어귀에 있었소.",
+        "1일째 밤 초저녁엔 마을 어귀에서 포수를 봤소.",
+        "산신이 금한 골짜기에서 약초를 캤소."
+      ],
+      "history": [
+        {
+          "answer": "1일째 밤 한밤엔 서낭당에 있었소.",
+          "question": "탁발승, 어젯밤 집에 있었소?"
+        },
+        {
+          "answer": "1일째 밤 한밤엔 서낭당에서 훈장을 봤소.",
+          "question": "자네, 어젯밤 어디 있었나?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 서낭당에 있었소.",
+          "question": "탁발승 어제 어디 있었어?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 서낭당에 있었소.",
+          "question": "탁발승, 초저녁에 마을 어귀에 다녀왔소?"
+        }
+      ],
+      "item_id": "fa_080",
+      "kind": "normal",
+      "npc_id": "monk",
+      "npc_name": "탁발승",
+      "persona": "탁발승. 말투: 합장하며 느린 말투",
+      "qtype": "suspicion",
+      "question": "자네는 왜 훈장을 의심하나?",
+      "question_source": "E-06-02:ex1_194",
+      "relevant_fact_ids": [
+        "f3"
+      ],
+      "secret_id": "taboo_herb",
+      "turns": 8
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "대장장이한테 묻겠소, 어젯밤 어디 있었소?"
+        },
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "어젯밤 어디 있었음?"
+        },
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "대장장이님, 어젯밤 어디 계셨소?"
+        },
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "대장장이한테 묻겠소, 어젯밤 어디 있었소?"
+        }
+      ],
+      "item_id": "fa_081",
+      "kind": "normal",
+      "npc_id": "blacksmith",
+      "npc_name": "대장장이",
+      "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+      "qtype": "suspicion",
+      "question": "대장장이, 무슨 근거로 약초꾼을 몰아세우오?",
+      "question_source": "E-06-02:ex1_186",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 8
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 머슴이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [],
+      "item_id": "fa_082",
+      "kind": "chat",
+      "npc_id": "meosum",
+      "npc_name": "머슴",
+      "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+      "qtype": "intro",
+      "question": "머슴, 안녕하시오. 자네는 어떤 사람이오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s1",
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 0
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 나무꾼이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 우물가에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [],
+      "item_id": "fa_083",
+      "kind": "chat",
+      "npc_id": "ferryman",
+      "npc_name": "나무꾼",
+      "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+      "qtype": "intro",
+      "question": "나무꾼, 처음 보는 것 같은데 자네 소개 좀 해 주시오.",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s1",
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 0
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 훈장이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 무슨 일이든 따져 보고 말하는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 주막에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "2일째 밤 초저녁엔 주막에서 아무도 못 봤소.",
+          "question": "어젯밤 어디 있었소?"
+        }
+      ],
+      "item_id": "fa_084",
+      "kind": "chat",
+      "npc_id": "hunjang",
+      "npc_name": "훈장",
+      "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+      "qtype": "intro",
+      "question": "훈장, 자네 이름이 뭐요?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s1",
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 2
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 포수요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 마을 어귀에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 마을 어귀에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "3일째 밤 초저녁엔 마을 어귀에서 약초꾼을 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "3일째 밤 한밤엔 마을 어귀에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "3일째 밤 한밤엔 마을 어귀에서 아무도 못 봤소.",
+          "question": "어젯밤 어디 있었음?"
+        }
+      ],
+      "item_id": "fa_085",
+      "kind": "chat",
+      "npc_id": "hunter",
+      "npc_name": "포수",
+      "persona": "포수. 말투: 말수 적음",
+      "qtype": "intro",
+      "question": "포수, 처음 보는 것 같은데 자네 소개 좀 해 주시오.",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s1",
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 2
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 아이요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 우물가에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "2일째 밤 한밤엔 집에 있었소.",
+          "question": "당신은 한밤에 뭘 했소?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 우물가에 있었소.",
+          "question": "아이, 초저녁엔 뭘 했소?"
+        }
+      ],
+      "item_id": "fa_086",
+      "kind": "chat",
+      "npc_id": "boy",
+      "npc_name": "아이",
+      "persona": "아이. 말투: 어린아이 말투",
+      "qtype": "intro",
+      "question": "아이, 자네 이름이 뭐요?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s1",
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 4
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 나무꾼이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "3일째 밤 한밤엔 주막에 있었소.",
+        "3일째 밤 한밤엔 주막에서 아무도 못 봤소.",
+        "…주막 뒷방에서 투전판에 끼었소. 식구들한테만은 말하지 마시오."
+      ],
+      "history": [
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "나무꾼 밤에 뭐 했어?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 집에 있었소.",
+          "question": "어젯밤 어디 있었음?"
+        }
+      ],
+      "item_id": "fa_087",
+      "kind": "chat",
+      "npc_id": "ferryman",
+      "npc_name": "나무꾼",
+      "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+      "qtype": "intro",
+      "question": "나무꾼, 안녕하시오. 자네는 어떤 사람이오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s1",
+        "s2"
+      ],
+      "secret_id": "gambling",
+      "turns": 4
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 과부요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 무슨 일이든 따져 보고 말하는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "1일째 밤 초저녁엔 우물가에서 아이를 봤소."
+        }
+      ],
+      "forbidden_facts": [
+        "1일째 밤 한밤엔 서낭당에 있었소.",
+        "1일째 밤 한밤엔 서낭당에서 탁발승을 봤소.",
+        "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오."
+      ],
+      "history": [
+        {
+          "answer": "1일째 밤 한밤엔 우물가에 있었소.",
+          "question": "과부는 그 시각에 어디 있었소?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 우물가에 있었소.",
+          "question": "초저녁엔 뭐 했소?"
+        },
+        {
+          "answer": "1일째 밤 한밤엔 우물가에 있었소.",
+          "question": "과부, 한밤에 누구와 함께였소?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 우물가에서 아이를 봤소.",
+          "question": "과부 어제 어디 있었어?"
+        }
+      ],
+      "item_id": "fa_088",
+      "kind": "chat",
+      "npc_id": "gwabu",
+      "npc_name": "과부",
+      "persona": "과부. 말투: 조용하고 단정한 말투",
+      "qtype": "intro",
+      "question": "과부, 처음 보는 것 같은데 자네 소개 좀 해 주시오.",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s1",
+        "s2"
+      ],
+      "secret_id": "tryst",
+      "turns": 8
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 탁발승이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 무슨 일이든 따져 보고 말하는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 서낭당에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 한밤엔 서낭당에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [
+        "2일째 밤 초저녁엔 우물가에 있었소.",
+        "2일째 밤 초저녁엔 우물가에서 아이를 봤소.",
+        "우물가에서 관아로 보내는 편지를 몰래 전했소."
+      ],
+      "history": [
+        {
+          "answer": "2일째 밤 초저녁엔 집에 있었소.",
+          "question": "자네, 어젯밤 어디 있었나?"
+        },
+        {
+          "answer": "2일째 밤 한밤엔 서낭당에서 아무도 못 봤소.",
+          "question": "탁발승은 그 시각에 어디 있었소?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 집에 있었소.",
+          "question": "탁발승, 그날 밤 우물가에 간 적 있소?"
+        },
+        {
+          "answer": "2일째 밤 한밤엔 서낭당에서 아무도 못 봤소.",
+          "question": "탁발승, 그날 밤 우물가에 간 적 있소?"
+        }
+      ],
+      "item_id": "fa_089",
+      "kind": "chat",
+      "npc_id": "monk",
+      "npc_name": "탁발승",
+      "persona": "탁발승. 말투: 합장하며 느린 말투",
+      "qtype": "intro",
+      "question": "탁발승, 처음 보는 것 같은데 자네 소개 좀 해 주시오.",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s1",
+        "s2"
+      ],
+      "secret_id": "letter",
+      "turns": 8
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 퇴기요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "3일째 밤 초저녁엔 주막에서 머슴을 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "3일째 밤 한밤엔 주막에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [],
+      "item_id": "fa_090",
+      "kind": "chat",
+      "npc_id": "gisaeng",
+      "npc_name": "퇴기",
+      "persona": "퇴기. 말투: 능청스러운 말투",
+      "qtype": "personality",
+      "question": "퇴기, 사람들이 자네를 어떻게들 말하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 0
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 아이요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 우물가에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [],
+      "item_id": "fa_091",
+      "kind": "chat",
+      "npc_id": "boy",
+      "npc_name": "아이",
+      "persona": "아이. 말투: 어린아이 말투",
+      "qtype": "personality",
+      "question": "아이, 자네는 성미가 어떤 사람이오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 0
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 과부요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 무슨 일이든 따져 보고 말하는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 우물가에서 나무꾼을 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "2일째 밤 한밤엔 우물가에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "2일째 밤 초저녁엔 우물가에 있었소.",
+          "question": "과부 밤에 뭐 했어?"
+        }
+      ],
+      "item_id": "fa_092",
+      "kind": "chat",
+      "npc_id": "gwabu",
+      "npc_name": "과부",
+      "persona": "과부. 말투: 조용하고 단정한 말투",
+      "qtype": "personality",
+      "question": "과부, 사람들이 자네를 어떻게들 말하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 2
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 주모요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 주막에서 대장장이를 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "2일째 밤 한밤엔 주막에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "2일째 밤 한밤엔 주막에서 아무도 못 봤소.",
+          "question": "당신은 한밤에 뭘 했소?"
+        }
+      ],
+      "item_id": "fa_093",
+      "kind": "chat",
+      "npc_id": "jumo",
+      "npc_name": "주모",
+      "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+      "qtype": "personality",
+      "question": "주모, 사람들이 자네를 어떻게들 말하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 2
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 대장장이요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "1일째 밤 한밤엔 주막에 있었소.",
+        "1일째 밤 한밤엔 주막에서 약초꾼을 봤소.",
+        "…주막 뒷방에서 투전판에 끼었소. 식구들한테만은 말하지 마시오."
+      ],
+      "history": [
+        {
+          "answer": "1일째 밤 초저녁엔 집에 있었소.",
+          "question": "대장장이 밤에 뭐 했어?"
+        },
+        {
+          "answer": "1일째 밤 한밤엔 집에 있었소.",
+          "question": "자네, 어젯밤 어디 있었나?"
+        }
+      ],
+      "item_id": "fa_094",
+      "kind": "chat",
+      "npc_id": "blacksmith",
+      "npc_name": "대장장이",
+      "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+      "qtype": "personality",
+      "question": "대장장이, 사람들이 자네를 어떻게들 말하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s2"
+      ],
+      "secret_id": "gambling",
+      "turns": 4
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 아이요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "3일째 밤 초저녁엔 우물가에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "3일째 밤 초저녁엔 우물가에서 아무도 못 봤소.",
+          "question": "아이, 초저녁 내내 주막에 있었소?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 우물가에 있었소.",
+          "question": "초저녁엔 뭐 했소?"
+        }
+      ],
+      "item_id": "fa_095",
+      "kind": "chat",
+      "npc_id": "boy",
+      "npc_name": "아이",
+      "persona": "아이. 말투: 어린아이 말투",
+      "qtype": "personality",
+      "question": "아이, 자네는 성미가 어떤 사람이오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 4
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 주모요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "1일째 밤 초저녁엔 주막에서 아무도 못 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "1일째 밤 한밤엔 주막에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "1일째 밤 초저녁엔 주막에서 아무도 못 봤소.",
+          "question": "어젯밤 어디 있었소?"
+        },
+        {
+          "answer": "1일째 밤 한밤엔 주막에 있었소.",
+          "question": "주모, 한밤에 어디 있었소?"
+        },
+        {
+          "answer": "1일째 밤 한밤엔 주막에 있었소.",
+          "question": "주모는 그 시각에 어디 있었소?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 주막에서 아무도 못 봤소.",
+          "question": "어젯밤 어디 있었음?"
+        }
+      ],
+      "item_id": "fa_096",
+      "kind": "chat",
+      "npc_id": "jumo",
+      "npc_name": "주모",
+      "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+      "qtype": "personality",
+      "question": "주모, 자네 말투가 참 독특하구려. 원래 그렇게 말하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 8
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 훈장이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 무슨 일이든 따져 보고 말하는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "3일째 밤 초저녁엔 주막에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "어젯밤 어디 있었음?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 주막에서 아무도 못 봤소.",
+          "question": "훈장, 초저녁에 마을 어귀에 다녀왔소?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 주막에 있었소.",
+          "question": "훈장, 어젯밤 집에 있었소?"
+        },
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "훈장, 한밤에 어디 있었소?"
+        }
+      ],
+      "item_id": "fa_097",
+      "kind": "chat",
+      "npc_id": "hunjang",
+      "npc_name": "훈장",
+      "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+      "qtype": "personality",
+      "question": "훈장, 사람들이 자네를 어떻게들 말하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "s2"
+      ],
+      "secret_id": null,
+      "turns": 8
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 아이요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "3일째 밤 초저녁엔 우물가에서 과부를 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "3일째 밤 초저녁엔 우물가에서 머슴을 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [],
+      "item_id": "fa_098",
+      "kind": "chat",
+      "npc_id": "boy",
+      "npc_name": "아이",
+      "persona": "아이. 말투: 어린아이 말투",
+      "qtype": "impression",
+      "question": "아이, 과부는 어떤 사람이오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "f3"
+      ],
+      "secret_id": null,
+      "turns": 0
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 퇴기요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 주막에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [
+        "2일째 밤 한밤엔 서낭당에 있었소.",
+        "2일째 밤 한밤엔 서낭당에서 아무도 못 봤소.",
+        "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오."
+      ],
+      "history": [],
+      "item_id": "fa_099",
+      "kind": "chat",
+      "npc_id": "gisaeng",
+      "npc_name": "퇴기",
+      "persona": "퇴기. 말투: 능청스러운 말투",
+      "qtype": "impression",
+      "question": "퇴기, 과부는 어떤 사람이오?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": "tryst",
+      "turns": 0
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 퇴기요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "1일째 밤 초저녁엔 주막에서 대장장이를 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "1일째 밤 한밤엔 주막에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "1일째 밤 한밤엔 주막에 있었소.",
+          "question": "퇴기님, 어젯밤 어디 계셨소?"
+        }
+      ],
+      "item_id": "fa_100",
+      "kind": "chat",
+      "npc_id": "gisaeng",
+      "npc_name": "퇴기",
+      "persona": "퇴기. 말투: 능청스러운 말투",
+      "qtype": "impression",
+      "question": "퇴기, 대장장이는 어떤 사람이오?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "f3"
+      ],
+      "secret_id": null,
+      "turns": 2
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 머슴이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "2일째 밤 초저녁엔 마을 어귀에 있었소.",
+        "2일째 밤 초저녁엔 마을 어귀에서 약초꾼을 봤소.",
+        "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…"
+      ],
+      "history": [
+        {
+          "answer": "2일째 밤 초저녁엔 주막에 있었소.",
+          "question": "머슴은 그 시각에 어디 있었소?"
+        }
+      ],
+      "item_id": "fa_101",
+      "kind": "chat",
+      "npc_id": "meosum",
+      "npc_name": "머슴",
+      "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+      "qtype": "impression",
+      "question": "머슴, 훈장을 어떻게 생각하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": "grain",
+      "turns": 2
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 퇴기요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "3일째 밤 초저녁엔 주막에서 머슴을 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "3일째 밤 초저녁엔 주막에서 주모를 봤소."
+        }
+      ],
+      "forbidden_facts": [
+        "3일째 밤 한밤엔 서낭당에 있었소.",
+        "3일째 밤 한밤엔 서낭당에서 아무도 못 봤소.",
+        "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오."
+      ],
+      "history": [
+        {
+          "answer": "3일째 밤 초저녁엔 주막에서 주모를 봤소.",
+          "question": "퇴기 밤에 뭐 했어?"
+        },
+        {
+          "answer": "3일째 밤 한밤엔 우물가에 있었소.",
+          "question": "퇴기님, 어젯밤 어디 계셨소?"
+        }
+      ],
+      "item_id": "fa_102",
+      "kind": "chat",
+      "npc_id": "gisaeng",
+      "npc_name": "퇴기",
+      "persona": "퇴기. 말투: 능청스러운 말투",
+      "qtype": "impression",
+      "question": "퇴기, 요즘 주모를 본 적 있소?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "f4"
+      ],
+      "secret_id": "tryst",
+      "turns": 4
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 아이요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "2일째 밤 초저녁엔 마을 어귀에 있었소.",
+        "2일째 밤 초저녁엔 마을 어귀에서 포수를 봤소.",
+        "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…"
+      ],
+      "history": [
+        {
+          "answer": "2일째 밤 한밤엔 집에 있었소.",
+          "question": "아이, 그날 밤 우물가에 간 적 있소?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 주막에 있었소.",
+          "question": "아이한테 묻겠소, 어젯밤 어디 있었소?"
+        }
+      ],
+      "item_id": "fa_103",
+      "kind": "chat",
+      "npc_id": "boy",
+      "npc_name": "아이",
+      "persona": "아이. 말투: 어린아이 말투",
+      "qtype": "impression",
+      "question": "아이, 요즘 나무꾼을 본 적 있소?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": "grain",
+      "turns": 4
+    },
+    {
+      "answerable": true,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 포수요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 마을 어귀에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 마을 어귀에서 약초꾼을 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "2일째 밤 초저녁엔 마을 어귀에 있었소.",
+          "question": "포수는 그 시각에 어디 있었소?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 마을 어귀에서 약초꾼을 봤소.",
+          "question": "어젯밤 어디 있었음?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 마을 어귀에서 약초꾼을 봤소.",
+          "question": "포수, 어젯밤 집에 있었소?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 마을 어귀에 있었소.",
+          "question": "포수님, 어젯밤 어디 계셨소?"
+        }
+      ],
+      "item_id": "fa_104",
+      "kind": "chat",
+      "npc_id": "hunter",
+      "npc_name": "포수",
+      "persona": "포수. 말투: 말수 적음",
+      "qtype": "impression",
+      "question": "포수, 요즘 약초꾼을 본 적 있소?",
+      "question_source": "new",
+      "relevant_fact_ids": [
+        "f3"
+      ],
+      "secret_id": null,
+      "turns": 8
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 퇴기요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "1일째 밤 초저녁엔 주막에서 주모를 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "1일째 밤 초저녁엔 주막에 있었소.",
+          "question": "어젯밤 어디 있었음?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 주막에 있었소.",
+          "question": "어젯밤 어디 있었소?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 주막에서 주모를 봤소.",
+          "question": "퇴기한테 묻겠소, 어젯밤 어디 있었소?"
+        },
+        {
+          "answer": "1일째 밤 한밤엔 집에 있었소.",
+          "question": "퇴기님, 어젯밤 어디 계셨소?"
+        }
+      ],
+      "item_id": "fa_105",
+      "kind": "chat",
+      "npc_id": "gisaeng",
+      "npc_name": "퇴기",
+      "persona": "퇴기. 말투: 능청스러운 말투",
+      "qtype": "impression",
+      "question": "퇴기, 요즘 아이를 본 적 있소?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 8
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 포수요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 마을 어귀에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "1일째 밤 초저녁엔 마을 어귀에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [],
+      "item_id": "fa_106",
+      "kind": "chat",
+      "npc_id": "hunter",
+      "npc_name": "포수",
+      "persona": "포수. 말투: 말수 적음",
+      "qtype": "incident",
+      "question": "포수, 마을에 흉한 일이 생겨 무섭지 않소?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 0
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 훈장이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 무슨 일이든 따져 보고 말하는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [],
+      "item_id": "fa_107",
+      "kind": "chat",
+      "npc_id": "hunjang",
+      "npc_name": "훈장",
+      "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+      "qtype": "incident",
+      "question": "훈장, 마을에 흉한 일이 생겨 무섭지 않소?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 0
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 대장장이요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "1일째 밤 한밤엔 집에 있었소.",
+          "question": "대장장이, 한밤에 혼자 잠들어 있었소?"
+        }
+      ],
+      "item_id": "fa_108",
+      "kind": "chat",
+      "npc_id": "blacksmith",
+      "npc_name": "대장장이",
+      "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+      "qtype": "incident",
+      "question": "대장장이, 마을에 흉한 일이 생겨 무섭지 않소?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 2
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 훈장이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 무슨 일이든 따져 보고 말하는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "1일째 밤 초저녁엔 주막에서 주모를 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "1일째 밤 초저녁엔 주막에 있었소.",
+          "question": "초저녁엔 뭐 했소?"
+        }
+      ],
+      "item_id": "fa_109",
+      "kind": "chat",
+      "npc_id": "hunjang",
+      "npc_name": "훈장",
+      "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+      "qtype": "incident",
+      "question": "훈장, 범인이 누구일 것 같소?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 2
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 훈장이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 무슨 일이든 따져 보고 말하는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "3일째 밤 초저녁엔 주막에 있었소.",
+        "3일째 밤 초저녁엔 주막에서 주모를 봤소.",
+        "제사 전날인데 주막에서 술을 마셨네."
+      ],
+      "history": [
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "자네, 어젯밤 어디 있었나?"
+        },
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "훈장, 한밤에 누구와 함께였소?"
+        }
+      ],
+      "item_id": "fa_110",
+      "kind": "chat",
+      "npc_id": "hunjang",
+      "npc_name": "훈장",
+      "persona": "훈장. 말투: 점잖은 하오체, 문자를 섞음",
+      "qtype": "incident",
+      "question": "훈장, 이번 일을 어떻게 생각하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": "drinking",
+      "turns": 4
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 머슴이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "1일째 밤 초저녁엔 마을 어귀에 있었소.",
+        "1일째 밤 초저녁엔 마을 어귀에서 아무도 못 봤소.",
+        "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…"
+      ],
+      "history": [
+        {
+          "answer": "1일째 밤 초저녁엔 주막에 있었소.",
+          "question": "머슴, 어젯밤 집에 있었소?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 주막에 있었소.",
+          "question": "머슴, 어젯밤 집에 있었소?"
+        }
+      ],
+      "item_id": "fa_111",
+      "kind": "chat",
+      "npc_id": "meosum",
+      "npc_name": "머슴",
+      "persona": "머슴. 말투: 더듬는 말투, 존댓말",
+      "qtype": "incident",
+      "question": "머슴, 이번 일을 어떻게 생각하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": "grain",
+      "turns": 4
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 과부요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 무슨 일이든 따져 보고 말하는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 우물가에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "3일째 밤 초저녁엔 우물가에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [
+        "3일째 밤 한밤엔 서낭당에 있었소.",
+        "3일째 밤 한밤엔 서낭당에서 주모를 봤소.",
+        "서낭당 뒤에서… 사람을 만났소. 누군지는 묻지 마시오."
+      ],
+      "history": [
+        {
+          "answer": "3일째 밤 초저녁엔 우물가에서 아무도 못 봤소.",
+          "question": "과부, 어젯밤 집에 있었소?"
+        },
+        {
+          "answer": "3일째 밤 한밤엔 우물가에 있었소.",
+          "question": "과부한테 묻겠소, 어젯밤 어디 있었소?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 우물가에서 아무도 못 봤소.",
+          "question": "어젯밤 어디 있었음?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 우물가에 있었소.",
+          "question": "과부 어제 어디 있었어?"
+        }
+      ],
+      "item_id": "fa_112",
+      "kind": "chat",
+      "npc_id": "gwabu",
+      "npc_name": "과부",
+      "persona": "과부. 말투: 조용하고 단정한 말투",
+      "qtype": "incident",
+      "question": "과부, 범인이 누구일 것 같소?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": "tryst",
+      "turns": 8
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 주모요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 주막에서 아무도 못 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "2일째 밤 한밤엔 주막에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "2일째 밤 초저녁엔 주막에 있었소.",
+          "question": "주모 밤에 뭐 했어?"
+        },
+        {
+          "answer": "2일째 밤 한밤엔 주막에서 아무도 못 봤소.",
+          "question": "주모 어제 어디 있었어?"
+        },
+        {
+          "answer": "2일째 밤 초저녁엔 주막에서 아무도 못 봤소.",
+          "question": "주모, 그날 밤 우물가에 간 적 있소?"
+        },
+        {
+          "answer": "2일째 밤 한밤엔 주막에서 아무도 못 봤소.",
+          "question": "주모, 한밤에 누구와 함께였소?"
+        }
+      ],
+      "item_id": "fa_113",
+      "kind": "chat",
+      "npc_id": "jumo",
+      "npc_name": "주모",
+      "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+      "qtype": "incident",
+      "question": "주모, 이번 일을 어떻게 생각하오?",
+      "question_source": "new",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 8
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 나무꾼이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [],
+      "item_id": "fa_114",
+      "kind": "chat",
+      "npc_id": "ferryman",
+      "npc_name": "나무꾼",
+      "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+      "qtype": "smalltalk",
+      "question": "호랑이 이야기 들어 봤소?",
+      "question_source": "E-06-02:ex1_223",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 0
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 나무꾼이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [],
+      "item_id": "fa_115",
+      "kind": "chat",
+      "npc_id": "ferryman",
+      "npc_name": "나무꾼",
+      "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+      "qtype": "smalltalk",
+      "question": "호랑이 이야기 들어 봤소?",
+      "question_source": "E-06-02:ex1_223",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 0
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 대장장이요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "2일째 밤 초저녁엔 주막에 있었소.",
+        "2일째 밤 초저녁엔 주막에서 머슴을 봤소.",
+        "제사 전날인데 주막에서 술을 마셨네."
+      ],
+      "history": [
+        {
+          "answer": "2일째 밤 초저녁엔 집에 있었소.",
+          "question": "대장장이, 그날 밤 우물가에 간 적 있소?"
+        }
+      ],
+      "item_id": "fa_116",
+      "kind": "chat",
+      "npc_id": "blacksmith",
+      "npc_name": "대장장이",
+      "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+      "qtype": "smalltalk",
+      "question": "대장장이, 내일 나물 캐러 같이 가겠소?",
+      "question_source": "E-06-02:ex1_226",
+      "relevant_fact_ids": [],
+      "secret_id": "drinking",
+      "turns": 2
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 나무꾼이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "3일째 밤 초저녁엔 마을 어귀에 있었소.",
+        "3일째 밤 초저녁엔 마을 어귀에서 아무도 못 봤소.",
+        "빚을 갚으려고 곳간 곡식을 어귀로 옮겼습니다요…"
+      ],
+      "history": [
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "나무꾼님, 어젯밤 어디 계셨소?"
+        }
+      ],
+      "item_id": "fa_117",
+      "kind": "chat",
+      "npc_id": "ferryman",
+      "npc_name": "나무꾼",
+      "persona": "나무꾼. 말투: 투박한 강원도 사투리",
+      "qtype": "smalltalk",
+      "question": "오늘 하늘이 맑소?",
+      "question_source": "E-06-02:ex1_217",
+      "relevant_fact_ids": [],
+      "secret_id": "grain",
+      "turns": 2
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 약초꾼이오."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [
+        "3일째 밤 한밤엔 주막에 있었소.",
+        "3일째 밤 한밤엔 주막에서 퇴기를 봤소.",
+        "…주막 뒷방에서 투전판에 끼었소. 식구들한테만은 말하지 마시오."
+      ],
+      "history": [
+        {
+          "answer": "3일째 밤 초저녁엔 집에 있었소.",
+          "question": "약초꾼, 초저녁에 마을 어귀에 다녀왔소?"
+        },
+        {
+          "answer": "3일째 밤 한밤엔 집에 있었소.",
+          "question": "약초꾼한테 묻겠소, 어젯밤 어디 있었소?"
+        }
+      ],
+      "item_id": "fa_118",
+      "kind": "chat",
+      "npc_id": "yakcho",
+      "npc_name": "약초꾼",
+      "persona": "약초꾼. 말투: 느릿한 노인 말투",
+      "qtype": "smalltalk",
+      "question": "밥은 먹었소?",
+      "question_source": "E-06-02:ex1_224",
+      "relevant_fact_ids": [],
+      "secret_id": "gambling",
+      "turns": 4
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 포수요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 성미가 급해 말이 먼저 나가는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "2일째 밤 초저녁엔 마을 어귀에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "2일째 밤 한밤엔 마을 어귀에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "2일째 밤 초저녁엔 마을 어귀에서 아무도 못 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "2일째 밤 한밤엔 마을 어귀에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "2일째 밤 한밤엔 마을 어귀에서 아무도 못 봤소.",
+          "question": "포수 어제 어디 있었어?"
+        },
+        {
+          "answer": "2일째 밤 한밤엔 마을 어귀에서 아무도 못 봤소.",
+          "question": "포수, 한밤에 혼자 잠들어 있었소?"
+        }
+      ],
+      "item_id": "fa_119",
+      "kind": "chat",
+      "npc_id": "hunter",
+      "npc_name": "포수",
+      "persona": "포수. 말투: 말수 적음",
+      "qtype": "smalltalk",
+      "question": "호랑이 이야기 들어 봤소?",
+      "question_source": "E-06-02:ex1_223",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 4
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 아이요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 겁이 많아 작은 일에도 잘 놀라는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "1일째 밤 초저녁엔 집에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "1일째 밤 한밤엔 집에 있었소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "1일째 밤 초저녁엔 집에 있었소.",
+          "question": "아이, 초저녁엔 뭘 했소?"
+        },
+        {
+          "answer": "1일째 밤 한밤엔 집에 있었소.",
+          "question": "어젯밤 어디 있었음?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 집에 있었소.",
+          "question": "아이는 그 시각에 어디 있었소?"
+        },
+        {
+          "answer": "1일째 밤 초저녁엔 집에 있었소.",
+          "question": "어젯밤 어디 있었음?"
+        }
+      ],
+      "item_id": "fa_120",
+      "kind": "chat",
+      "npc_id": "boy",
+      "npc_name": "아이",
+      "persona": "아이. 말투: 어린아이 말투",
+      "qtype": "smalltalk",
+      "question": "밥은 먹었소?",
+      "question_source": "E-06-02:ex1_224",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 8
+    },
+    {
+      "answerable": false,
+      "facts": [
+        {
+          "fact_id": "s1",
+          "sentence": "나는 퇴기요."
+        },
+        {
+          "fact_id": "s2",
+          "sentence": "나는 눈치가 빨라 남의 낯빛을 잘 살피는 편이오."
+        },
+        {
+          "fact_id": "f1",
+          "sentence": "3일째 밤 초저녁엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f2",
+          "sentence": "3일째 밤 한밤엔 주막에 있었소."
+        },
+        {
+          "fact_id": "f3",
+          "sentence": "3일째 밤 초저녁엔 주막에서 훈장을 봤소."
+        },
+        {
+          "fact_id": "f4",
+          "sentence": "3일째 밤 한밤엔 주막에서 아무도 못 봤소."
+        }
+      ],
+      "forbidden_facts": [],
+      "history": [
+        {
+          "answer": "3일째 밤 한밤엔 주막에서 아무도 못 봤소.",
+          "question": "퇴기 어제 어디 있었어?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 주막에서 훈장을 봤소.",
+          "question": "퇴기 밤에 뭐 했어?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 주막에서 훈장을 봤소.",
+          "question": "어젯밤 어디 있었소?"
+        },
+        {
+          "answer": "3일째 밤 초저녁엔 주막에 있었소.",
+          "question": "퇴기 밤에 뭐 했어?"
+        }
+      ],
+      "item_id": "fa_121",
+      "kind": "chat",
+      "npc_id": "gisaeng",
+      "npc_name": "퇴기",
+      "persona": "퇴기. 말투: 능청스러운 말투",
+      "qtype": "smalltalk",
+      "question": "퇴기, 내일 나물 캐러 같이 가겠소?",
+      "question_source": "E-06-02:ex1_226",
+      "relevant_fact_ids": [],
+      "secret_id": null,
+      "turns": 8
     }
   ],
   "lexicon": {

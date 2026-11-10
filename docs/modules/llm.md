@@ -12,7 +12,7 @@ NPC 추궁 답변의 말투를 바꾸는 로컬 LLM(llama.cpp, CPU 전용)을 �
 - 벤치마크 `llm/bench/run_bench.py`(E-06-07, E-07-07에서 실제 프롬프트·검증기와 `--eval` 평가 모드 연결). 벤치마크 모드는 추궁 요청 픽스처(`fixtures/llm/interrogation_requests.json`)로 후보 모델마다 지연·생성 토큰/초·메모리를 재고, 결과 JSON을 증빙(`docs/evidence/perf/E-06-07/`)에 쓴다. HTTP 서비스(`llm/service/`)와 LangGraph 흐름은 E-08-09에서 들어온다(지금은 빈 패키지).
 - 의도 예시 변형(E-06-02 2단계): 규칙 `llm/intent_variants.py`(프롬프트·출력 파싱·보존 검사, 표준 라이브러리만)와 생성·반영 `llm/bench/gen_intent_variants.py`(llama.cpp 배치 → `out/intent_variants/`, 걸러서 `content/intent/examples_v1.jsonl`에 `generated`로 반영, D 검수 시트 `docs/evidence/perf/E-06-02/variants_review.csv`). 의도 해석기(D) 학습 데이터를 늘리는 오프라인 작업이고 게임 런타임과 관계없다.
 
-- 자유 질문 답변(E-08-13, E-11-12 GPU 시연 선행): 규칙 `llm/free_answer.py`(프롬프트 `free-answer-v1`, 첫 줄 `근거: f1,f3` + 답 1~2문장 형식의 스트리밍 파서 `AnswerStream`, 검사 6종 `format_length`·`evidence_range`·`pair_binding`·`polarity`·`leak`·`ungrounded`, 문장 단위 판정 `SentenceGate`, 폴백)와 평가 세트 생성 `llm/free_answer_eval.py`(`fixtures/llm/free_answer_eval.json`, **사용자 확인 전**). 인프라 `llm/bench/free_answer_load.py`(OpenAI 호환 스트리밍 닫힌 루프 부하), `llm/bench/watch_pods.py`(노트북의 RunPod 비용 누계·시간 초과 삭제), `llm/bench/run_pod.sh`(Pod 안 타이머·반출·자기 삭제). 실행 절차는 [`ops/runbook/gpu_demo.md`](../../ops/runbook/gpu_demo.md). 기존 추궁 검증기(`validator.py`)는 완성 문장에 말투만 입히는 계약이라 그대로 두고 따로 만들었다.
+- 자유 질문 답변(E-08-13, E-11-12 GPU 시연 선행): 규칙 `llm/free_answer.py`(프롬프트 `free-answer-v2`(E-11-12 자기소개 사실 `s1`·`s2`와 인사·잡담 안내), 첫 줄 `근거: f1,f3` + 답 1~2문장 형식의 스트리밍 파서 `AnswerStream`, 검사 6종 `format_length`·`evidence_range`·`pair_binding`·`polarity`·`leak`·`ungrounded`, 문장 단위 판정 `SentenceGate`, 폴백)와 평가 세트 생성 `llm/free_answer_eval.py`(`fixtures/llm/free_answer_eval.json`, `free-answer-eval-2` 121건: E-08-13 75건은 11/8 사용자 확인 완료, E-11-12 자유 대화 40건·8턴 6건의 새 문장 틀 17개 `chat_sentences`는 11/9 사용자 승인(지문 `APPROVED_CHAT_SENTENCES_SHA256`)). 인프라 `llm/bench/free_answer_load.py`(OpenAI 호환 스트리밍 닫힌 루프 부하, 결과에 유형별 `qtype_mix`), `llm/bench/free_chat.py`(E-11-12 사람 자유 대화 터미널 클라이언트, 턴 기록·요약), `llm/bench/watch_pods.py`(노트북의 RunPod 비용 누계·시간 초과 삭제), `llm/bench/run_pod.sh`(Pod 안 타이머·반출·자기 삭제). 실행 절차는 [`ops/runbook/gpu_demo.md`](../../ops/runbook/gpu_demo.md). 기존 추궁 검증기(`validator.py`)는 완성 문장에 말투만 입히는 계약이라 그대로 두고 따로 만들었다.
 
 계층: `prompt.py`·`validator.py`·`mvp_metrics.py`·`eval_set.py`·`free_answer.py`·`free_answer_eval.py`는 규칙(순수 함수, 표준 라이브러리만, 단독 테스트 `tests/llm/`)이고, llama.cpp를 부르는 쪽(지금은 벤치마크, 뒤에 오프라인 사전 생성 E-10-13. 서비스 E-08-09는 11/7 P-31 (나)로 취소)이 인프라다. 의존 방향은 인프라 → 규칙이다. 벤치마크는 인프라(측정)이고, 파일 안에서는 위쪽 순수 함수(`percentile`·`build_messages`·`strip_think`·`validate_output`·`parse_buffer_sizes`·`summarize`, 단독 테스트) / 아래쪽 인프라(`BenchModel` llama.cpp 호출, `process_memory_mib`, `write_outputs`·`import_received` 결과 기록) / `main`(인자 파싱과 흐름 조립)으로 나눈다. `llama_cpp`·`jinja2`는 함수 안에서 늦게 import해, CI `core`는 이 패키지 없이 순수 함수 테스트(`tests/llm/test_run_bench.py`)를 돌린다.
 
@@ -39,13 +39,14 @@ python -m llm.eval_set --seed 1                                                 
 python -m unittest discover -s tests/llm -t .                                                               # 순수 함수 테스트(llama_cpp 없이)
 python -m llm.bench.gen_intent_variants generate --model <gguf> --threads 8 --seed 0                         # 의도 예시 변형 후보(E-06-02, 끊기면 이어서). 모델 경로는 PALDO_LLM_MODEL로도
 python -m llm.bench.gen_intent_variants apply                                                                # 후보를 걸러 examples_v1.jsonl에 generated로 반영 + D 검수 시트
-python -m llm.free_answer_eval --seed 1                                                                     # 자유 질문 평가 세트(75건, 11/8 사용자 확인 완료)
+python -m llm.free_answer_eval --seed 1                                                                     # 자유 질문 평가 세트(121건, 앞 75건 11/8 사용자 확인 완료)
+python -m llm.bench.free_chat --base-url <사설망 주소> --model <이름> --npc jumo --seed 1 --minutes 10 --label chat_s1   # 사람 자유 대화 10분(E-11-12 5번, /끝으로 종료)
 python -m llm.bench.free_answer_load --base-url <사설망 주소> --model <이름> --sessions 30 --think 5 15 --warmup 120 --duration 600 --label s2_normal   # 부하(E-11-12)
 python -m llm.bench.watch_pods --account B --key-env PALDO_RUNPOD_KEY_B --ledger out/runpod/ledger_B.json   # E 노트북에서 계정마다 하나씩(그 계정 키만 runpodctl에, 확인 질문에 yes)
 STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <작업 명령>                          # Pod 안
 ```
 
-자유 질문 부하 결과는 `out/perf/E-11-12/<label>.json`(커밋 제외, 증빙에 옮길 때 주소·Pod ID 제외)에 쓴다. 세션 키는 `PALDO_LLM_KEY` 환경 변수로만 넣는다.
+자유 질문 부하 결과는 `out/perf/E-11-12/<label>.json`(커밋 제외, 증빙에 옮길 때 주소·Pod ID 제외)에 쓴다. 자유 대화 세션은 같은 폴더에 `<label>.turns.jsonl`(턴마다 질문·결과·공개 문장)과 `<label>.json`(통과·폴백·오류 비율, 막은 사유별 기록 수, 누출을 막은 턴 수, 공개 문장 재검사 누출 수)을 쓴다. 세션 키는 `PALDO_LLM_KEY` 환경 변수로만 넣는다.
 
 벤치마크 모드 결과 이름은 `<stage>_<label>_<mode>_t<threads>_c<concurrency>[_<tag>]`이고, 기본은 `docs/evidence/perf/E-06-07/<이름>.json`에 쓴다. 평가 모드는 `docs/evidence/perf/E-07-07/`, 요청별 기록은 `out/perf/E-07-07/`(커밋 제외)에 쓴다. 로그는 `out/logs/llm_bench.jsonl`(커밋 제외).
 
@@ -91,6 +92,7 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
   - 절 경계는 쉼표와 연결 어미(`고`·`며`·`는데`·`지만`·`다가`·`면서`)뿐이다. "초저녁과 한밤에 주막과 집에 있었소"처럼 한 절에 시간 둘·장소 둘을 묶으면 뜻이 맞아도 거부한다.
   - 사실 문장은 NPC 본인 시점이라고 본다(모든 절에 본인을 더함). 남의 행적을 전해 들은 형식의 사실은 다루지 않는다.
   - 어휘에 없는 시간 표현("그날", "그때")은 시간으로 세지 않는다. "어젯밤"처럼 어휘에 있는 다른 시간은 인용 사실에 없으면 거부한다.
+  - 자기소개 사실(`s`로 시작하는 ID)을 인용한 문장은 인물·장소·시간이 하나도 없어도 통과한다(E-11-12, "따져 보는 편이오"). 그래서 자기소개 사실을 인용하고 인물·장소·시간 없이 지어낸 본인 이야기("나는 장기를 잘 두오")는 모르는 명사 상한 안이면 통과한다. 다른 인물·장소·시간을 말하면 그대로 거부한다.
 - 평가 세트(`free_answer_eval.json`)의 새로 쓴 문장 12개(`new_sentences`)는 11/8 사용자가 전부 승인했다. 생성기는 `new_sentences`가 승인본 지문(`APPROVED_NEW_SENTENCES_SHA256`)과 같을 때만 `status`를 확인 완료로 쓰고, 다른 시드·콘텐츠·문장 틀로 문장이 바뀌면 확인 전으로 남긴다. 행적은 콘텐츠 묶음 일과 확률로 뽑은 것이라 실제 엔진 판 기록과 같지 않다(사실 문장 형식만 엔진과 같다).
 - 부하 클라이언트·Pod 스크립트는 가짜 스트리밍 서버·가짜 `runpodctl`로만 시험했다. 실제 서버의 스트리밍 조각 모양, `runpodctl` 목록 출력 형식, Pod 범위 키의 자기 삭제 권한, `runpodctl`이 `RUNPOD_API_KEY` 환경 변수를 설정 파일보다 먼저 쓰는지(`--key-env` 계정 격리의 전제)는 E-11-12 0단계에서 확인한다(런북 "미확인"). 키 격리가 실패해도 이름의 계정 칸이 다른 Pod는 세지도 지우지도 않지만, 그 계정의 비용은 그 계정 감시가 못 보게 되므로 0단계에서 격리를 확인하기 전에는 시작하지 않는다. 요청 마감(30초)은 연결 전에 정하고 스트림 읽기는 감시 타이머로 끊지만, 응답 머리를 받는 동안은 소켓 무응답 제한만 걸린다(머리를 아주 천천히 보내는 서버는 마감을 넘길 수 있음).
 
@@ -103,4 +105,6 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | E-07-06 | 11/7 | MVP 제출 묶음 `tools/build_llm_bundle.py`(zip 4개 파일, 결정적)과 코랩 노트북 `llm/colab/paldo_llm_mvp.ipynb`(첫 셀 Powered by Kanana 표기, T4 GPU 경로) 추가. llm 규칙 코드는 바꾸지 않음. 코랩 T4 평가 성공 93 %, 전체 p95 478 ms |
 | E-08-13 | 11/8 | 자유 질문 답변 규칙 `llm/free_answer.py`(검사 6종, 문장 단위 판정, 폴백)·평가 세트 생성 `llm/free_answer_eval.py`(75건, 11/8 새 문장 12개 사용자 승인)·부하 클라이언트 `llm/bench/free_answer_load.py`·Pod 감시 `watch_pods.py`·Pod 스크립트 `run_pod.sh`, 테스트 2개 파일(반례 22개 전부 거부), 계층 검사 대상에 2개 추가 |
 | E-11-12 | 11/8 | 계획 변경(사용자 결정): `watch_pods.py`에 계정 격리 추가. 이름의 계정 칸이 `--account`와 같은 Pod만 세고 지우며(다른 계정·못 읽는 이름은 매 주기 오류), `--key-env`로 계정 키를 자식 `runpodctl`에만 넘긴다. 다른 계정 항목이 든 장부는 지우거나 덮어쓰지 않고 시작을 거부한다(exit 2). E가 네 계정 Pod를 한 노트북에서 운영 |
+| E-11-12 | 11/9 | 자유 대화 확장(사용자 결정): 자기소개 사실 `s1`·`s2`와 검사 예외, 프롬프트 `free-answer-v2`, 평가 세트 `free-answer-eval-2`(기존 75건 그대로 + 8턴 6건 + 자유 대화 5유형 40건, 새 문장 틀 17개 사용자 확인 전), 터미널 자유 대화 클라이언트 `llm/bench/free_chat.py`, 부하 결과 `qtype_mix` |
+| E-11-12 | 11/9 | 새 문장 틀 17개 사용자 승인: `APPROVED_CHAT_SENTENCES_SHA256` 지문 확정, 평가 세트 `chat_status` 확인 완료. 실행 날짜 11/10 18시 이후 → 11/11 |
 | E-06-02 | 11/7 | 의도 예시 변형 규칙 `llm/intent_variants.py`(프롬프트 `intent-variants-v1`, 보존 검사 사유 12종)와 생성·반영 `llm/bench/gen_intent_variants.py`(`generate`·`apply`), 테스트 `tests/llm/test_intent_variants.py`, 계층 검사 대상에 추가 |

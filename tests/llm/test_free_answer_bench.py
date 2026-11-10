@@ -187,6 +187,16 @@ class PureTest(unittest.TestCase):
         self.assertIsNone(s["complete_s"]["p95"])
         self.assertEqual(s["error_rate"], 1.0)
 
+    def test_eval_mix_includes_chat_types(self):
+        # E-11-12: 부하 클라이언트는 평가 세트에서 고르게 뽑으므로 자유 대화 유형이 섞이고, 결과에 유형별 수가 남는다
+        qtypes = fl.item_qtypes(ROOT / "fixtures" / "llm" / "free_answer_eval.json")
+        self.assertTrue({"intro", "personality", "impression", "incident", "smalltalk"} <= set(qtypes.values()))
+        recs = [fl.Record(0, "fa_001", 0.0, outcome="ok"), fl.Record(0, "fa_082", 0.0, outcome="fallback"),
+                fl.Record(0, "fa_083", 0.0, outcome="ok")]
+        mix = fl.qtype_mix(recs, qtypes)
+        self.assertEqual(mix["intro"], {"n": 2, "fallback": 1})
+        self.assertEqual(mix[qtypes["fa_001"]], {"n": 1, "fallback": 0})
+
     def test_parse_sse(self):
         self.assertEqual(fl.parse_sse_line('data: {"choices":[{"delta":{"content":"가"}}]}'), "가")
         self.assertEqual(fl.parse_sse_line("data: [DONE]"), "")

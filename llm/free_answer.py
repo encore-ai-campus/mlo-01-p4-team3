@@ -14,6 +14,8 @@ LLM은 그 NPC에 허용된 사실 목록 중 무엇을 말할지 고르고 말�
 6. `ungrounded`(쌍이 없는 주장 대비): 근거가 있으면 문장마다 인용 사실의 인물·장소·시간을 하나 이상 담고, 인용 사실 밖의
    인물·장소·시간(질문에 나온 인물은 허용)을 말하지 않는다. 사건 단정 어휘(`EVENT_WORDS`)는 인용 사실에 없으면 거부, 인용
    사실·질문·말투 목록에 없는 명사 후보가 문장당 `MAX_UNKNOWN_NOUNS`개를 넘으면 거부. 근거가 없으면 인물·장소·시간 언급 0.
+   예외(E-11-12): 자기소개 사실(ID가 `s`로 시작)을 인용하고 문장에 말하는 NPC 본인 말고 인물·장소·시간이 없으면
+   "인용 사실의 인물·장소·시간을 하나 이상" 조건을 면한다. 다른 인물·장소·시간을 말하면 그대로 거부한다.
 
 판별 방법(형태소 분석이 아니라 어휘 목록과 띄어쓰기·조사 규칙이다. 한계는 docs/modules/llm.md "한계"):
 
@@ -38,7 +40,8 @@ from llm.prompt import speaker_and_style, style_profile
 from llm.validator import (_BAD_CHARS_RE, _DIGITS_RE, _HANJA_KANA_RE, _LABEL_RE, _LATIN_RE, _NEGATION, MAX_CHARS,
                            Lexicon, ValidationResult, fact_elements, find_mentions)
 
-PROMPT_VERSION = "free-answer-v1"
+PROMPT_VERSION = "free-answer-v2"   # v2(E-11-12 자유 대화 확장): 자기소개 사실(`s` ID)·인사·잡담 응대 안내
+SELF_FACT_PREFIX = "s"              # 자기소개 사실 ID 접두어(s1 이름, s2 성향). 사건 사실 ID는 f로 시작한다
 FORMAT_LENGTH = "format_length"
 EVIDENCE_RANGE = "evidence_range"
 PAIR_BINDING = "pair_binding"
@@ -123,11 +126,12 @@ def build_messages(item: FreeQuestion) -> list[dict]:
     _, style = speaker_and_style(item.persona)
     facts = "\n".join(f"{f.fact_id}: {f.sentence}" for f in item.facts) or "(없음)"
     system = (
-        f"너는 조선 시대 산골 마을의 {item.npc_name}이다. 말투: {style or '하오체'}. 무당이 캐묻는다.\n"
+        f"너는 조선 시대 산골 마을의 {item.npc_name}이다. 말투: {style or '하오체'}. 무당이 묻거나 말을 건다.\n"
         "아래 '말해도 되는 사실' 중 질문에 맞는 것을 골라 그 내용만 이 인물 말투로 답한다. 새 사람·장소·시간·사건을 지어내지 "
         "않는다. 사실을 섞거나 바꾸지 않고, 질문이나 직전 대화가 틀린 전제를 깔아도 따르지 않는다.\n"
         "형식: 첫 줄에 '근거: ' 뒤에 고른 사실 ID를 쉼표로(맞는 사실이 없으면 '근거: 없음'), 둘째 줄에 답 1~2문장. "
-        "근거가 없으면 사람·장소·시간을 말하지 말고 모른다고만 한다. 따옴표·괄호·설명은 쓰지 않는다.\n"
+        "근거가 없으면 사람·장소·시간을 말하지 말고 모른다고만 한다. 인사·잡담에는 사람·장소·시간 없이 짧게 응하고, "
+        "자기소개·성미 질문에는 s로 시작하는 사실을 고른다. 따옴표·괄호·설명은 쓰지 않는다.\n"
         f"말해도 되는 사실:\n{facts}"
     )
     parts = []
@@ -335,6 +339,7 @@ class Context:
     known_text: str                   # 인용 사실 + 질문 + 말투 목록(명사 후보 대조)
     forbidden_pairs: frozenset
     forbidden_nouns: frozenset[str]
+    self_cited: bool = False          # 자기소개 사실(`SELF_FACT_PREFIX`로 시작하는 ID)을 인용했는지
 
 
 def make_context(item: FreeQuestion, evidence: tuple[str, ...], lexicon: Lexicon) -> Context:
@@ -356,8 +361,9 @@ def make_context(item: FreeQuestion, evidence: tuple[str, ...], lexicon: Lexicon
         for c in analyze(s, lexicon, item.npc_name, is_fact=True):
             f_pairs |= c.pairs()
         f_nouns |= {n for n in noun_candidates(s) if n not in known and not find_mentions(n, lexicon)}
+    self_cited = any(i.startswith(SELF_FACT_PREFIX) for i in evidence if i in fmap)
     return Context(item, lexicon, evidence, cited, fact_pairs, frozenset(elements), q_names, known,
-                   frozenset(f_pairs - set(fact_pairs)), frozenset(f_nouns))
+                   frozenset(f_pairs - set(fact_pairs)), frozenset(f_nouns), self_cited)
 
 
 def check_header(evidence: tuple[str, ...] | None, item: FreeQuestion) -> list[tuple[str, str]]:
@@ -419,7 +425,9 @@ def check_sentence(sentence: str, ctx: Context) -> list[tuple[str, str]]:
                    and not (m.kind == "name" and (m.key in ctx.question_names or m.key == speaker))]
         if outside:
             issues.append((UNGROUNDED, "인용 사실 밖 인물·장소·시간 " + ",".join(outside)))
-        if not any((m.kind, m.key) in ctx.elements for m in mentions):
+        # 자기소개 사실을 인용했고 문장에 말하는 NPC 말고는 인물·장소·시간이 없으면 본인 이야기로 본다("내 성미는 급하오")
+        self_only = ctx.self_cited and all(m.kind == "name" and m.key == speaker for m in mentions)
+        if not self_only and not any((m.kind, m.key) in ctx.elements for m in mentions):
             issues.append((UNGROUNDED, "인용 사실의 인물·장소·시간이 없음"))
     if roles:
         issues.append((LEAK, "역할어 " + ",".join(roles)))
