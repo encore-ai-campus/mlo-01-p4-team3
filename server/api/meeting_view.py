@@ -7,6 +7,7 @@ from .viewmodels import PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_
 from .ui_viewmodels import build_ui_vm
 from .tutorial_script import CLUE_DUPLICATE, CLUE_NEW, CLUE_UNLOCK, FIRST_GAME_END, GUIDE_SPEAKER, guide_lines
 from .vn_script import VNLine, announcement_lines, build_vn_lines, claim_card_text, reaction_lines
+from .vn_expressions import TELL_NOTICE, expression_cues
 
 DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
@@ -163,13 +164,25 @@ def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bo
             actions.extend(MeetingAction(kind, target) for target in active_targets)
         else:
             actions.append(MeetingAction(kind))
+    announcements = announcement_lines(view)
+    vn_lines = lead + build_vn_lines(view, DIVINATION_KO) + rest
+    reactions = reaction_lines(view, temperaments)
+    # records.html의 DOM 순서를 그대로 조립한 뒤 단계 순으로 계산한다(ui-vn.js collect와 동일).
+    # 같은 기록을 다시 그려도 뒤 사건이 앞 대사의 표정을 바꾸지 않는다.
+    expression_lines = announcements + vn_lines
+    for speech in vm.speeches:
+        expression_lines.append(VNLine(speech.speech_id, speech.day, speech.phase, speech.speaker_name,
+                                       speech.text, speech.speaker_id, f"sprite:{speech.speaker_id}"))
+        expression_lines.extend(reactions.get(speech.speech_id, ()))
+    expressions, tell_lines = expression_cues(view.public, expression_lines)
     return {"vm": vm, "claims": claims, "claim_nights": sorted({c.card.night for c in claims if c.card.night is not None}), "disappearances": disappearances,
             "own_divinations": own_divinations, "divination_options": divination_options,
             "published_votes": published_votes, "published_locks": published_locks, "active_targets": active_targets,
-            "vote_targets": vote_targets, "vn_lines": lead + build_vn_lines(view, DIVINATION_KO) + rest,
-            "vn_guide_before": before, "vn_announcements": announcement_lines(view),
+            "vote_targets": vote_targets, "vn_lines": vn_lines,
+            "vn_guide_before": before, "vn_announcements": announcements,
+            "vn_expressions": expressions, "vn_tell_lines": tell_lines, "vn_tell_notice": TELL_NOTICE,
             "clue_lines": _clue_vn_lines(view, clue_notices),
-            "reaction_lines": reaction_lines(view, temperaments),
+            "reaction_lines": reactions,
             # 안내 켜기/끄기(11/10 사용자 결정): 첫 판은 서버가 안내 줄을 넣어 기본 켬. 다른 판은 같은 문장을 숨은 목록(guide_pool)으로
             # 내려 주고, 플레이어가 켜면 클라이언트가 켠 시점 기준으로 대사 줄을 만든다. 종료 화면 말풍선도 같은 스위치를 따른다.
             # 첫 판도 숨은 목록을 함께 내려(data-guide-first) 1일째가 지난 뒤 다시 켜면 판 시작 안내부터 다시 만든다.

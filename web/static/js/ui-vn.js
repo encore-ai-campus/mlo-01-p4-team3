@@ -160,7 +160,10 @@ function mountScene(root) {
     const source=sources[index];
     const span=source?.querySelector('.vn-source-text');
     const copy=span?.cloneNode(true); copy?.querySelector('.line-attribution')?.remove();
-    const line=copy?.textContent.trim() || (root.dataset.phase==='night'?'점칠 대상을 골라 주세요. 점괘는 나에게만 표시됩니다.':'공개된 기록을 읽고 행동을 선택하세요.');
+    const body=copy?.textContent.trim() || (root.dataset.phase==='night'?'점칠 대상을 골라 주세요. 점괘는 나에게만 표시됩니다.':'공개된 기록을 읽고 행동을 선택하세요.');
+    // 공개된「보인 기색」만 문장과 함께 표시한다. 폴링이 본문 span을 교체해도 이 표시는 보존된다.
+    const tell=source?.querySelector('[data-vn-tell]')?.textContent.trim();
+    const line=tell ? body + ' ' + tell : body;
     if(!announce && !force && line===lastText)return;
     lastText=line;
     clearTimeout(timer);

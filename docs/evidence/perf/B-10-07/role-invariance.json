@@ -1,0 +1,40 @@
+{
+  "task": "B-10-07",
+  "commit": "bd59eec20922e67fa3ffc191560cfcdbd76c7bae",
+  "generated_at": "2026-11-10T13:51:24Z",
+  "source": "python -B -m django test server.tests.test_vn_expressions server.tests.test_vn_results server.tests.test_vn_lines_4th server.tests.test_suspect_reaction server.tests.test_tutorial_guide --settings=server.paldo_web.test_settings --noinput; python -B -u -m tools.precheck --with-assets --pr-body out/handoff/pr-draft.md",
+  "metrics": {
+    "event_cases": {
+      "value": 4,
+      "unit": "건"
+    },
+    "role_http_cases": {
+      "value": 8,
+      "unit": "건"
+    },
+    "targeted_tests": {
+      "value": 90,
+      "unit": "건"
+    },
+    "targeted_failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "targeted_seconds": {
+      "value": 2.564,
+      "unit": "s"
+    },
+    "precheck_tests": {
+      "value": 652,
+      "unit": "건"
+    },
+    "precheck_failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "precheck_seconds": {
+      "value": 203,
+      "unit": "s"
+    }
+  }
+}

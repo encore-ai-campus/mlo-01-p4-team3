@@ -729,6 +729,13 @@ button { border-radius:2px; }
 .notebook-list li > span:first-of-type { min-width:5em; }
 .mark-status { min-height:1.2em; margin:4px 0; font-size:.85rem; }
 .vn-guide-skip { position:absolute; bottom:calc(25% + 8px); right:12px; background:#111c20ed; min-height:36px; padding:6px 12px; }
+/* 무대 안 행동 패널이 있는 PC에서는 대사창 오른쪽 경계 안에 둔다. */
+@media(min-width:900px) {
+ .vn-guide-skip { right:calc(33.8125% + 12px); }
+}
+@media(min-width:900px) and (min-aspect-ratio:1.95) {
+ .vn-guide-skip { right:12px; }
+}
 .result-lock-notice { border-left:3px solid #dbc397; }
 [data-result-locked] { opacity:.45; cursor:not-allowed; filter:grayscale(.6); }
 .end-guide { display:flex; align-items:flex-start; gap:12px; margin:8px 0 12px; }
