@@ -1,5 +1,5 @@
 {
-  "commit": "d02c0de25e817a4693628a2ebd4f23f752964566",
+  "commit": "0edbe4b201f0b6885e827a0a40d0e1b68a37bb11",
   "environment": "Windows; Python 3.14.6; Django 6.1.2; temporary SQLite; Daphne; Chrome/Playwright; recorded game",
   "source_sha256": "12dca551d12090cfa4cdb1993c4b452157892a25a0656e3d8d140e48adb5ab64",
   "browser_checks": 44,
