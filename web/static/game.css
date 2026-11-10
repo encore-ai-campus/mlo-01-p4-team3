@@ -683,3 +683,38 @@ button { border-radius:2px; }
  .vn-stage.show-full #stage-actions { display:block; }
  .vn-reading,.vn-options { margin-top:8px; }
 }
+
+/* PM 11/9 (user request): larger desktop stage; action panel beside the dialogue so no command sits under it. */
+@media(min-width:900px) {
+ body.game-page:has(#meeting) { max-width:1840px; }
+ .vn-player { max-width:min(100%,calc((100svh - 190px)*16/9)); display:flex; flex-wrap:wrap; align-items:center; column-gap:16px; }
+ .vn-player > .vn-stage { flex:0 0 100%; }
+ .vn-player > .vn-reading { flex:1 1 auto; margin:0; padding:6px 0; }
+ .vn-player > .vn-options { flex:0 1 auto; margin:0; padding:6px 0; border:0; }
+ .vn-dialogue { right:33.8125%; }
+ #stage-actions { bottom:1.5%; }
+ #stage-actions .action-sheet > summary { min-height:48px; flex-direction:row; padding:8px 12px; }
+}
+
+/* PM 11/9 option A (user decision): one-line top bar; on screens clearly wider than 16:9 (ratio >= 1.95) the action panel sits outside the stage and the stage shrinks to fit beside it. */
+@media(min-width:1200px) {
+ body.game-page:has(#meeting .vn-player) { position:relative; max-width:none; padding-bottom:8px; }
+ .game-page:has(.vn-player) .app-header { min-height:52px; margin-bottom:8px; }
+ .game-page:has(.vn-player) .header-rule { visibility:hidden; }
+ .game-page #meeting:has(.vn-player) > h1 { position:absolute; top:0; right:calc(50% + 153px); height:52px; display:flex; align-items:center; float:none; margin:0; min-height:0; font-size:1.1rem; white-space:nowrap; }
+ .game-page #meeting:has(.vn-player) > .vn-rail { position:absolute; top:0; left:50%; transform:translateX(-50%); height:52px; min-height:0; display:flex; align-items:center; gap:6px; margin:0; padding:0; border:0; }
+ .game-page #meeting:has(.vn-player) > .vn-rail span { width:64px; min-width:0; padding:4px 0; font-size:.9rem; }
+ .vn-player { max-width:min(100%,calc((100svh - 152px)*16/9)); }
+ .vn-reading .reading-note { font-size:12px; }
+ #meeting:has(.vn-player) > .asset-credits { margin:4px 0 0; padding:0; border:0; font-size:11px; line-height:15px; }
+ #meeting:has(.vn-player) > .asset-credits p { margin:0; }
+}
+@media(min-width:1200px) and (min-aspect-ratio:195/100) {
+ .vn-player { box-sizing:border-box; max-width:calc(min(100% - 396px,(100svh - 104px)*16/9) + 396px); padding-right:396px; }
+ .vn-stage { overflow:visible; }
+ .vn-background { border-radius:inherit; }
+ .vn-dialogue { right:0; }
+ #stage-actions { left:calc(100% + 16px); right:auto; width:380px; top:0; bottom:112px; box-sizing:border-box; }
+ .vn-player > .vn-reading { position:absolute; right:0; bottom:44px; width:380px; flex-wrap:wrap; gap:4px 8px; padding:0; }
+ .vn-player > .vn-options { position:absolute; right:0; bottom:0; width:380px; justify-content:flex-start; padding:0; }
+}

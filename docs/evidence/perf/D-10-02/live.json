@@ -1,0 +1,40 @@
+{
+  "task": "D-10-02",
+  "commit": "68887b9bc04b1b59f38b185469e60b1f103425c2",
+  "generated_at": "2026-11-10T00:29:16Z",
+  "source": "pwsh -NoProfile -File out/d1002-mysql.ps1 -Probe",
+  "metrics": {
+    "canary_serves": {
+      "value": 30,
+      "unit": "건"
+    },
+    "control_serves": {
+      "value": 30,
+      "unit": "건"
+    },
+    "fallback_rate": {
+      "value": 0.0625,
+      "unit": ""
+    },
+    "observed_cpc_mw": {
+      "value": 29759.52564102564,
+      "unit": "밀리원"
+    },
+    "target_cpc_mw": {
+      "value": 4000,
+      "unit": "밀리원"
+    },
+    "bid_mw": {
+      "value": 16129,
+      "unit": "밀리원"
+    },
+    "lookup_p95_ms": {
+      "value": 0.0132,
+      "unit": "ms"
+    },
+    "post_click_cpc_mw": {
+      "value": 2798,
+      "unit": "밀리원"
+    }
+  }
+}

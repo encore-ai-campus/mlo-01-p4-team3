@@ -18,7 +18,7 @@ def checkpoint_record(run_dir: Path | str) -> tuple[dict, list[str], str]:
         record = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
         model_dir = run_dir / "model"
         weights_sha = _sha(model_dir / "model.safetensors")
-        if (record["task"] != "D-07-03" or record["training_complete"] is not True or
+        if (record["task"] not in {"D-07-03", "D-10-01"} or record["training_complete"] is not True or
                 record["weights_sha256"] != weights_sha or
                 record["model_version"] != "koelectra-intent-v0-" + weights_sha[:12] or
                 record["feature_version"] != TOKENIZER_VERSION):

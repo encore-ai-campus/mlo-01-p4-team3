@@ -124,6 +124,22 @@ app-01에서는 별도 Daphne·임시 SQLite·loopback Mongo replica set으로 1
 
 실제 서버 모드의 공격은 원래 합성 serve에 연결되는 중복 클릭이다. 위조 토큰은 원래 source를 판정할 수 없어 실제 지표에 섞일 수 있으므로 `unsupported_invalid_types`에 위조·만료·serve 없음을 표시한다. 자체 서버의 시계·서명 제어는 실제 서버에 제공하지 않는다. HTTP 성공은 원장 검증과 별도이고 `ledger_verified=false`를 기록한다. 운영자는 해당 실행의 원본 아웃박스·원장·예산을 내보내 C의 실제 bronze 전량 대조·silver/gold·건별 대사에 사용해야 한다. 자체 서버 모드는 기존 CLI로 실행한다.
 
+### 맥락 CTR과 자동 입찰 (D-10-02)
+
+`ads_gold.py --phase final --export-optimization <폴더>`는 고정 Delta 버전에서 `ctr.json`과 `bid.json`을 내보낸다. 학습·등록은 [ML 사용법](ml.md#광고-ctr-d-10-02)을 따르고 운영자에게 등록된 후보 보고서를 전달한다.
+
+```powershell
+python ads/manage.py migrate ads_web 0005 --noinput
+python ads/manage.py ad_update bid --input <확정-Delta-export>/bid.json
+python ads/manage.py ad_update ctrml --input <등록된-후보-보고서>.json
+python ads/manage.py ad_update rollback-ctr --expected-version <활성-CTR-버전> --signal fallback_rate --value 0.0625
+```
+
+- `ad_ctr_canary` 로그의 `fallback`과 `lookup_ms`로 악화 신호를 확인한다. 조회를 시도한 요청에서 일부라도 베타로 내려가면 폴백이다. 롤백은 운영자가 실행하며 60초 캐시로 반영된다. 그동안 이미 발행된 토큰은 원래 경매 버전을 보존한다.
+- 자동 입찰은 CPC `target_cpc_mw`로 활성화하고 `min_bid_mw`~`max_bid_mw`에서만 갱신한다. 최신 확정일에 과금 방식이 섞인 캠페인은 입력에서 제외한다. 동일 입력의 재시도는 같은 MySQL 버전을 반환한다. 새 값은 경매 아웃박스 `candidates[].bid_mw`와 `bid_version`에서 확인한다. 실현 CPC는 다음 경매의 2등 가격과 트래픽에 따라서도 달라진다.
+- `ctrml`을 실행하는 운영자 프로세스는 MLflow 접속 설정과 ML 패키지를 사용해 후보 보고서를 레지스트리의 원본과 대조한다. 광고 요청 처리와 `rollback-ctr`은 MySQL만 읽는다.
+- 5분 페이싱은 시간대별 소진 오차를 줄이기 위해 이득 8.0을 쓴다. 하루 소진 오차·카나리아·실현 CPC 실측은 [D-10-02 증빙](../evidence/D-10-02.md)을 참조한다.
+
 ## 설정값
 | 이름 | 값·의미 |
 |---|---|
@@ -166,3 +182,4 @@ app-01에서는 별도 Daphne·임시 SQLite·loopback Mongo replica set으로 1
 | D-06-03 | 11/6 | 실제 Django HTTP 합성 트래픽·정답 격리·피로·4종 무효 클릭·재전송·재현 검증. D-05-03 조건 2의 최신 판정은 해당 증빙 참조, D-06-02 외부 저장 범위 유지 |
 | D-08-02 | 11/8 | 전체 확정 Beta·MySQL 버전·60초 재적재·5분 페이싱·탐색·독립 평가. 11/9 실제 C 집계·환입 재대사·ad-01 새 버전 반영과 B 로그·장애 재시험 통과. 병목에 따른 인계 지연을 기록하고 사용자 승인으로 완료 판정 |
 | D-08-04 | 11/8 | 일괄 문서화 대상으로 D-08-02의 실행·설정·실측·한계와 변경 이력 6개 절 확인 |
+| D-10-02 | 11/9 | 맥락 CTR 카나리아·롤백, CPC 상하한·버전 갱신, 페이싱 제어 이득 보정 |

@@ -1,0 +1,28 @@
+{
+  "task": "D-10-02",
+  "commit": "68887b9bc04b1b59f38b185469e60b1f103425c2",
+  "generated_at": "2026-11-10T00:26:42Z",
+  "source": "python -m tools.ad_ctr_scenario score --out out\\d1002\\scenario --report out\\d1002\\ctr-report.json",
+  "metrics": {
+    "ctr_relative_error_max": {
+      "value": 0.031589939379737426,
+      "unit": ""
+    },
+    "correct_outcome_order": {
+      "value": 3,
+      "unit": "건"
+    },
+    "beta_log_loss": {
+      "value": 0.41647789789565304,
+      "unit": ""
+    },
+    "lightgbm_log_loss": {
+      "value": 0.3894708437378487,
+      "unit": ""
+    },
+    "lightgbm_ece": {
+      "value": 0.002808771467922165,
+      "unit": ""
+    }
+  }
+}

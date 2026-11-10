@@ -108,7 +108,7 @@ class BertClassifier:
         return select_label(self.probabilities(text), self.threshold)
 
 
-def main(argv=None) -> int:
+def main(argv=None, *, human_train=(), run_dir=None, data_version=None) -> int:
     """선택한 사전학습 모델 전체를 CPU로 미세조정하고 결과·모델·계보 기록을 저장한다."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data", default="content/intent/examples_v1.jsonl")
@@ -138,11 +138,17 @@ def main(argv=None) -> int:
     generated_rows = sum(row.label_source is LabelSource.GENERATED for row in rows)
     unreviewed_excluded = 0 if args.include_generated else generated_rows
     unreviewed_included = generated_rows - unreviewed_excluded
+    if any(r.split is not Split.TRAIN or r.label_source not in
+           {LabelSource.HUMAN_ANNOTATION, LabelSource.PLAYER_EDITED} for r in human_train):
+        raise ValueError("expected reviewed human training rows")
+    seed_train = train
+    train = seed_train + list(human_train)
     labels = sorted({row.label for row in train})
     if len(labels) != 10:
         raise ValueError("expected the ten intent labels")
     label2id = {label: i for i, label in enumerate(labels)}
-    run_dir = ROOT / "mlruns/intent_bert" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    run_dir = Path(run_dir) if run_dir is not None else (
+        ROOT / "mlruns/intent_bert" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
     run_dir.mkdir(parents=True, exist_ok=False)
     log("intent_finetune", "info", "분할 완료", train_rows=len(train), dev_rows=len(dev), seed=args.seed,
         unreviewed_excluded=unreviewed_excluded, unreviewed_included=unreviewed_included,
@@ -235,20 +241,24 @@ def main(argv=None) -> int:
     for path in sorted((ROOT / "intent").glob("*.py")) + [ROOT / "tools/perf/intent_finetune.py"]:
         digest.update(path.relative_to(ROOT).as_posix().encode())
         digest.update(path.read_bytes())
-    run = dict(task="D-07-03", commit=GitRepo(ROOT).head(), source_sha256=digest.hexdigest(),
+    run = dict(task="D-10-01" if human_train else "D-07-03",
+        commit=GitRepo(ROOT).head(), source_sha256=digest.hexdigest(),
         command=source, include_generated=args.include_generated,
-        data_version=_sha(data_path), feature_version=TOKENIZER_VERSION,
+        data_version=data_version or _sha(data_path), seed_data_sha256=_sha(data_path),
+        feature_version=TOKENIZER_VERSION,
         model_id=MODEL_ID, revision=REVISION, model_version=model_version, weights_sha256=weights_sha,
         license="Apache-2.0 (D-05-02 evidence)", python=platform.python_version(),
         packages={name: version(name) for name in ("torch", "transformers", "scikit-learn")},
         device="cpu", dtype="float32", length=args.length, threads=args.threads, interop_threads=1,
         optimizer="AdamW(lr=2e-5, foreach=False)", seed=args.seed, threshold=.20,
-        train_ids=[r.example_id for r in train], dev_ids=[r.example_id for r in dev],
-        train_lineages=sorted({r.split_key.lineage_root for r in train}),
+        train_ids=[r.example_id for r in seed_train], dev_ids=[r.example_id for r in dev],
+        train_lineages=sorted({r.split_key.lineage_root for r in seed_train}),
         dev_lineages=sorted({r.split_key.lineage_root for r in dev}),
         epoch_losses=losses, model_load_s=load_s, preprocessing_s=preprocess_s, metrics=metrics,
         baseline=baseline_report, bert=bert_report, training_complete=True)
     (run_dir / "run.json").write_text(json.dumps(run, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if human_train:
+        return 0
     result_name = "finetune" if args.epochs == 1 else f"finetune_{args.epochs}epochs"
     if args.include_generated:
         result_name += "_with_generated"

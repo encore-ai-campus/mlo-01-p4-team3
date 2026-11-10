@@ -8,6 +8,7 @@ import json
 from contextlib import redirect_stdout
 import time
 import unittest
+from unittest import mock
 
 from engine.domain.npc.vote import FallbackReason, estimate
 from engine.ports import FeatureVersionMismatch, ModelUnavailable, SuspicionModel
@@ -25,6 +26,8 @@ class Backend(FakeSuspicionModel):
             time.sleep(60)
         if self.mode == 'error':
             raise ValueError('inference failed')
+        if snapshot.game_id == 'bad-feature':
+            raise FeatureVersionMismatch('input feature mismatch')
         result = super().estimate(snapshot)
         if self.mode == 'invalid':
             result.probs['a'] = float('nan')
@@ -41,12 +44,69 @@ def broken_loader():
     raise OSError('model missing')
 
 
+def recovering_loader(marker, mode='error'):
+    path = Path(marker)
+    first = not path.exists()
+    path.touch()
+    return Backend(mode if first else 'ok')
+
+
+def changed_identity_loader(marker):
+    path = Path(marker)
+    first = not path.exists()
+    path.touch()
+    model = Backend('error' if first else 'ok')
+    if not first:
+        model.model_version = 'different-model'
+    return model
+
+
 class AdapterContract(unittest.TestCase):
     def adapter(self, loader=Backend, **kwargs):
         from ml.adapters.suspicion_model import SuspicionModelAdapter
         model = SuspicionModelAdapter(loader, 'fake-1', **kwargs)
         self.addCleanup(model.close)
         return model
+
+    def wait_ready(self, model):
+        self.assertTrue(model._ready.wait(10), 'worker did not recover')
+
+    def test_failed_call_recovers_same_version_for_next_game(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = self.adapter(partial(recovering_loader, str(Path(directory) / 'loaded')))
+            version = model.model_version
+            self.assertEqual(estimate(model, obs(['a', 'b'], 1))[1], FallbackReason.UNAVAILABLE)
+            self.wait_ready(model)
+            self.assertIsNone(estimate(model, replace(obs(['a', 'b'], 1), game_id='next-game'))[1])
+            self.assertEqual(model.model_version, version)
+            self.assertEqual(model._failures, 0)
+
+    def test_timeout_recovers_without_reusing_late_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = self.adapter(partial(recovering_loader, str(Path(directory) / 'loaded'), 'hang'), timeout_s=.03)
+            self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
+            self.wait_ready(model)
+            self.assertIsNone(estimate(model, obs(['a', 'b'], 1))[1])
+            self.assertEqual(len(model.recovery_ms), 1)
+
+    def test_input_feature_error_keeps_healthy_worker(self):
+        model = self.adapter(partial(Backend, 'version'))
+        pid = model._process.pid
+        self.assertEqual(estimate(model, obs(['a', 'b'], 1))[1], FallbackReason.VERSION)
+        self.assertEqual(estimate(model, obs(['a', 'b'], 1))[1], FallbackReason.VERSION)
+        self.assertEqual(model._process.pid, pid)
+        self.assertTrue(model._process.is_alive())
+        self.assertEqual(model._failures, 0)
+
+    def test_busy_and_restarting_calls_do_not_count_as_worker_failures(self):
+        model = self.adapter(timeout_s=.01)
+        with model._lock:
+            self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
+        model._ready.clear()
+        self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
+        self.assertEqual(model._failures, 0)
+        self.assertEqual(model.calls, 2)
+        self.assertEqual(len(model.latencies_ms), 2)
 
     def test_port_preserves_output_and_reuses_worker(self):
         model = self.adapter()
@@ -83,14 +143,77 @@ class AdapterContract(unittest.TestCase):
 
     def test_hanging_inference_is_killed_and_no_late_result_is_reused(self):
         model = self.adapter(partial(Backend, 'hang'), timeout_s=.03)
+        process = model._process
         started = time.monotonic()
         self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
         self.assertLess(time.monotonic() - started, 1)
-        self.assertFalse(model._process.is_alive())
+        process.join(timeout=2)
+        self.assertFalse(process.is_alive())
         started = time.monotonic()
         with self.assertRaises(ModelUnavailable):
             model.estimate(obs(['a', 'b'], 1))
         self.assertLess(time.monotonic() - started, .1)
+
+    def test_worker_input_feature_exception_does_not_end_worker_loop(self):
+        model = self.adapter()
+        pid = model._process.pid
+        self.assertEqual(estimate(model, replace(obs(['a', 'b'], 1), game_id='bad-feature'))[1],
+                         FallbackReason.VERSION)
+        self.assertIsNone(estimate(model, obs(['a', 'b'], 1))[1])
+        self.assertEqual(model._process.pid, pid)
+
+    def test_three_actual_failures_open_30_second_circuit_and_close_cancels_restart(self):
+        model = self.adapter(partial(Backend, 'error'))
+        for _ in range(2):
+            self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
+            self.wait_ready(model)
+        self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
+        deadline = time.monotonic() + 5
+        while not model._cooldown_until and time.monotonic() < deadline:
+            time.sleep(.01)
+        self.assertGreater(model._cooldown_until - time.monotonic(), 29)
+        for _ in range(5):
+            self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
+        self.assertEqual(model._failures, 3)
+        model.close()
+        model._recovery_thread.join(timeout=2)
+        self.assertFalse(model._recovery_thread.is_alive())
+        self.assertFalse(model._process.is_alive())
+
+    def test_shared_store_lends_one_worker_and_only_owner_closes_it(self):
+        from ml.adapters.suspicion_model import SharedModelStore
+        model = self.adapter()
+        store = SharedModelStore()
+        self.addCleanup(store.close)
+        loader = mock.Mock(return_value=model)
+        first = store.get(model.model_version, loader)
+        second = store.get(model.model_version, loader)
+        first.close()
+        self.assertIsNone(estimate(second, obs(['a', 'b'], 1))[1])
+        loader.assert_called_once()
+        store.close()
+        self.assertFalse(model._process.is_alive())
+        with self.assertRaises(ModelUnavailable):
+            store.get(model.model_version, loader)
+
+    def test_restart_load_failures_also_open_the_circuit(self):
+        model = self.adapter(broken_loader)
+        deadline = time.monotonic() + 5
+        while not model._cooldown_until and time.monotonic() < deadline:
+            time.sleep(.01)
+        self.assertGreater(model._cooldown_until - time.monotonic(), 29)
+        self.assertEqual(model._failures, 3)
+        model.close()
+
+    def test_restart_cannot_change_the_pinned_model_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = self.adapter(partial(changed_identity_loader, str(Path(directory) / 'loaded')))
+            self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
+            model._recovery_thread.join(timeout=5)
+            self.assertTrue(model._permanent)
+            self.assertEqual(model.model_version, 'fake-suspicion-1')
+            self.assertFalse(model._process.is_alive())
+            self.assertIsNotNone(estimate(model, obs(['a', 'b'], 1))[1])
 
     def test_invalid_output_becomes_fallback(self):
         model = self.adapter(partial(Backend, 'invalid'))
@@ -115,6 +238,8 @@ class AdapterContract(unittest.TestCase):
             self.addCleanup(model.close)
             with self.assertRaises(ModelUnavailable):
                 model.estimate(obs(['a', 'b'], 1))
+            self.assertTrue(model._permanent)
+            self.assertIsNone(model._recovery_thread)
 
 
 class ModelGames(unittest.TestCase):

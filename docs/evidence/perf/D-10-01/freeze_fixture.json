@@ -1,0 +1,24 @@
+{
+  "task": "D-10-01",
+  "commit": "2c4f34183eec07a829328dd39281aabc2a78e4a2",
+  "generated_at": "2026-11-10T00:16:33Z",
+  "source": "python -m tools.ut_freeze (fixture)",
+  "metrics": {
+    "eval_users": {
+      "value": 4,
+      "unit": "명"
+    },
+    "train_users": {
+      "value": 4,
+      "unit": "명"
+    },
+    "user_overlap": {
+      "value": 0,
+      "unit": "건"
+    },
+    "sentence_overlap": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "task": "D-08-01",
+  "commit": "55ae536256056e63b8b4c34021f55807ec42e661",
+  "generated_at": "2026-11-09T10:36:42Z",
+  "source": "paired base6 seed 1 benchmark, 200 games, new official-3900 logistic versus rule-v0; two 50-game fixed-version Selector replays; delta:official-bronze@117:d0801-rule06; C-09-01 check_run on local MLflow run 1a9cf04a20224a3195e23b060b46348b; rejected: village_win_rate,human_evaluation_missing",
+  "metrics": {
+    "benchmark_games": {
+      "value": 200,
+      "unit": "games"
+    },
+    "model_village_rate": {
+      "value": 79.0,
+      "unit": "%"
+    },
+    "rule_v0_village_rate": {
+      "value": 65.0,
+      "unit": "%"
+    },
+    "village_rate_difference": {
+      "value": 14.0,
+      "unit": "%p"
+    },
+    "reproduction_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "model50_games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "human_evaluation_games": {
+      "value": 0,
+      "unit": "games"
+    },
+    "model50_model_calls": {
+      "value": 310,
+      "unit": "건"
+    },
+    "model50_model_successes": {
+      "value": 310,
+      "unit": "건"
+    },
+    "model50_inference_p95": {
+      "value": 2.999700140208006,
+      "unit": "ms"
+    },
+    "model50_legal_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "model50_inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "model50_suspicion_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "wsgi_p95": {
+      "value": 1.4247000217437744,
+      "unit": "ms"
+    },
+    "wsgi_calls": {
+      "value": 100,
+      "unit": "count"
+    }
+  }
+}

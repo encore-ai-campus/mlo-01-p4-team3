@@ -114,6 +114,7 @@ paldo/
 │  ├─ load_content.py [C-06-01] 결정 #8, replay_progress.py [C-09-04] 결정 #19
 │  ├─ reconcile_game_events.py [C-07-02], ml_gate.py [C-09-01], privacy_delete.py, privacy_retention.py [C-09-02]
 │  ├─ ad_traffic_sim.py [D-06-03], ad_scenarios.py [D-08-02], demo_retrain.sh [D-10-01]
+│  ├─ ad_ctr_scenario.py [D-10-02]   시나리오 6 이벤트 재생 입력과 정답 채점
 │  ├─ build_llm_bundle.py [E-07-06] LLM MVP 제출 묶음 zip(out/llm_mvp/, 커밋 제외)
 │  ├─ perf/                        engine_bench.py [A-05-01], vm_probe.sh [C-05-01], api_bench.py [B-06-02], ad_fault_test.py [B-08-03]
 │  └─ assets/                      make_placeholders.py [E-05-05], check_assets.py [E-08-07], cutout.py [A-08-04]

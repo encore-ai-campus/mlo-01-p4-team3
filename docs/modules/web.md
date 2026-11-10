@@ -55,7 +55,7 @@ python -B server/preview.py --port 8769
 6. 참가자로 가입해 홈의 가명 ID를 확인하고, 운영자로 `/admin/sessions`에서 회차를 등록한다. 버전은 규칙 `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"`가 출력하는 값(`engine/domain/params.py`의 `RULE_PARAMS_VERSION`, 결정 층 파라미터가 바뀌면 함께 바뀐다), 엔진 `paldo-engine`, 콘텐츠 `content-1.0.1`(3번에서 적재한 버전과 같아야 한다)이다. 고정 판은 `[{"preset_id": "base6", "seed": 1}]`처럼 넣는다.
 7. 참가자로 로그인해 홈에서 판을 시작한다. 회차 없이 "새 게임"으로 하려면 서버를 띄우기 전에 `PALDO_CONTENT_VERSION=content-1.0.1`을 설정한다(이 경우 6의 회차 등록은 필요 없다).
 
-웹소켓 실행은 환경을 준비한 뒤 `python -m daphne -b 127.0.0.1 -p 8769 server.paldo_web.asgi:application`을 사용한다. 프로세스는 하나로 유지하고 외부 연결은 C 프록시를 거친다. `configure_ad_gateway`로 실제 광고 제공자를 조립하기 전에는 중계가 실패 응답과 대체 화면으로 끝난다. `server/preview.py`는 HTTP 화면용이며 웹소켓 실행 명령을 대신하지 않는다.
+웹소켓 실행은 환경을 준비한 뒤 `python -m daphne -b 127.0.0.1 -p 8769 server.paldo_web.asgi:application`을 사용한다. 운영은 프로세스 2개(8000·8002)를 C 프록시(Caddy) 뒤에 둔다(E-09-10, [`ops/proxy/README.md`](../../ops/proxy/README.md) "웹 프로세스 2개"). 로컬 Windows에서 `PALDO_PUBLIC_ORIGIN`을 `http://localhost:…`로 두면 Python 도구의 새 연결이 IPv6(::1)를 먼저 시도해 요청마다 약 2초 늦으므로 `http://127.0.0.1:…`을 쓴다. `configure_ad_gateway`로 실제 광고 제공자를 조립하기 전에는 중계가 실패 응답과 대체 화면으로 끝난다. `server/preview.py`는 HTTP 화면용이며 웹소켓 실행 명령을 대신하지 않는다.
 
 로컬 통신 검증: `python -m server.tests.ws_smoke`. 임시 SQLite·가짜 광고를 별도 Daphne 프로세스에 연결한 뒤 정리한다. 클라이언트 검증: `node server/tests/ws_client_test.cjs`.
 
@@ -142,3 +142,5 @@ B-08-01 콘텐츠 문안은 `server/story_catalog.json`에 버전별로 보관�
 B-08-03은 PALDO_ADS_INTERNAL_URL을 주입하면 기존 광고 Gateway에 내부 HTTP 제공자를 연결한다. 상세 운영/시험 및 D 인수 범위는 [서버 설계](../../server/DESIGN.md#b-08-03-내부-광고-http-연결)와 [증빙](../evidence/B-08-03.md)을 따른다. 루트 .env.example의 기존 키를 사용하며 실제 접속값은 기록하지 않는다.
 
 C-08-01은 모델 계측과 서버 예외 종류를 기록하며 검증 부하 도구를 제공한다.
+
+PM(11/9 사용자 요청)은 폭 900px 이상에서 무대 최대 폭을 `(화면 높이 − 190px) × 16/9`로 넓히고, 선택지 패널을 대사창 오른쪽 옆에 무대 아래 끝까지 두었다. 대사 넘김·읽기 옵션은 무대 아래 한 줄로 합쳤다. 900px 미만 배치는 그대로다([VN 계약](../contracts/vn.md) 5절). 이어서(11/9 사용자 결정) 폭 1200px 이상은 머리글·진행 단계를 한 줄로 합쳐 무대를 키우고, 가로/세로 1.95 이상 화면에서는 선택지 패널과 대사 넘김을 무대 오른쪽 바깥에 두고 무대 폭을 그 옆에 맞춘다.

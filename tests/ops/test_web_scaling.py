@@ -206,6 +206,51 @@ class BenchOptions(unittest.TestCase):
                                    "p2_memory_p95_ms": {"value": 700.5, "unit": "ms"},
                                    "p2_memory_throughput_rps": {"value": 3.0, "unit": "rps"}})
 
+    def test_model_inference_uses_weighted_buckets_and_counts_failures(self):
+        """두 프로세스의 누적 버킷과 실패를 같은 표본 집합으로 합산한다."""
+        from server.tests.multiproc_bench import inference_metrics
+
+        def scrape(version, result, fast, slow):
+            labels = f'model_version="{version}",result="{result}"'
+            return ('# TYPE paldo_model_inference_duration_seconds histogram\n'
+                    f'paldo_model_inference_duration_seconds_bucket{{{labels},le="0.1"}} {fast}\n'
+                    f'paldo_model_inference_duration_seconds_bucket{{{labels},le="0.25"}} {slow}\n'
+                    f'paldo_model_inference_duration_seconds_bucket{{{labels},le="+Inf"}} {slow}\n')
+
+        version = "model-v0"
+        rows = {"8001": scrape(version, "ok", 100, 100),
+                "8002": scrape(version, "fallback", 0, 4) + scrape("other", "ok", 0, 100)}
+        self.assertEqual(inference_metrics(rows, version), {
+            "inference_calls": 104, "inference_failures": 4, "inference_p95_upper_ms": 100,
+            "inference_calls_by_process": {"8001": 100, "8002": 4},
+        })
+        self.assertIsNone(inference_metrics({"8001": ""}, version)["inference_p95_upper_ms"])
+
+    def test_real_model_verdict_requires_games_and_inference_on_every_process(self):
+        """미호출·오류·미완주를 빠른 응답으로 위장할 수 없다."""
+        from server.tests.multiproc_bench import model_load_passed
+
+        row = dict(errors=0, finished_games=1, beacon_errors=0, beacon_acks=30, p95_ms=1000,
+                   inference_calls=20, inference_failures=0, inference_p95_upper_ms=100,
+                   inference_calls_by_process={"8000": 10, "8002": 10})
+        self.assertTrue(model_load_passed(row))
+        self.assertTrue(model_load_passed(dict(row, inference_calls=100, inference_failures=1)))
+        self.assertFalse(model_load_passed(dict(row, inference_calls=100, inference_failures=2)))
+        memory = {port: dict(web_rss_bytes=4096, worker_rss_bytes={'v0': 1024, 'v1': 2048})
+                  for port in row['inference_calls_by_process']}
+        secondary = dict(row, secondary_model_version='v1', memory_by_process=memory)
+        self.assertTrue(model_load_passed(secondary))
+        self.assertFalse(model_load_passed(dict(secondary, memory_by_process={})))
+        self.assertFalse(model_load_passed(dict(secondary, memory_by_process={'8000': memory['8000']})))
+        self.assertFalse(model_load_passed(dict(secondary, memory_by_process={
+            **memory, '8002': dict(web_rss_bytes=None, worker_rss_bytes={'v0': 1024})})))
+        for change in (dict(errors=1), dict(finished_games=0), dict(inference_calls=0),
+                       dict(inference_failures=1), dict(inference_p95_upper_ms=None),
+                       dict(inference_p95_upper_ms=250), dict(p95_ms=1000.1),
+                       dict(inference_calls_by_process={"8000": 20, "8002": 0})):
+            with self.subTest(change=change):
+                self.assertFalse(model_load_passed(dict(row, **change)))
+
     def test_api_bench_delegates_process_comparison(self):
         sys.path.insert(0, str(ROOT / "tools" / "perf"))
         try:
@@ -219,6 +264,27 @@ class BenchOptions(unittest.TestCase):
             self.assertIn("server.tests.multiproc_bench", call.call_args[0][0])
             cli.main(["--users", "3"])
             self.assertIn("server.tests.api_bench", call.call_args[0][0])
+
+    def test_memory_and_timeout_recovery_preserve_missing_measurements(self):
+        from server.tests.multiproc_bench import memory_metrics, recovery_metrics, resident_bytes
+        scrape = ('# TYPE process_resident_memory_bytes gauge\nprocess_resident_memory_bytes 4096\n'
+                  '# TYPE paldo_suspicion_worker_resident_memory_bytes gauge\n'
+                  'paldo_suspicion_worker_resident_memory_bytes{model_version="a"} 1024\n'
+                  'paldo_suspicion_worker_resident_memory_bytes{model_version="b"} 2048\n')
+        self.assertEqual(memory_metrics({'9000': scrape, '9001': ''}), {
+            '9000': dict(web_rss_bytes=4096, worker_rss_bytes={'a': 1024, 'b': 2048}),
+            '9001': dict(web_rss_bytes=None, worker_rss_bytes={})})
+        with mock.patch('pathlib.Path.read_text', return_value='VmRSS:\t12 kB\n'):
+            self.assertEqual(resident_bytes(123), 12288)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'worker.log'
+            path.write_text('not json\n' + '\n'.join(json.dumps(row, ensure_ascii=False) for row in (
+                dict(component='suspicion_model', reason='model timeout'),
+                dict(component='suspicion_model', msg='timeout 이후 동일 버전 추론 복구',
+                     model_version='a', duration_ms=42),
+                dict(component='suspicion_model', reason='model timeout'))), encoding='utf-8')
+            self.assertEqual(recovery_metrics([path])['worker.log'], dict(timeouts=2, unresolved=1,
+                recoveries=[dict(model_version='a', duration_ms=42)]))
 
 
 @unittest.skipUnless(HAS_REDIS_PACKAGE and TEST_REDIS_URL, "PALDO_TEST_REDIS_URL 없음(로컬 Redis가 없는 환경)")

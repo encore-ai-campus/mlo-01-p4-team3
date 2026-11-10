@@ -97,7 +97,7 @@ class _OracleService(AdService):
         return self.evaluation_probabilities[creative.creative_id]
 
 
-def run_policy(scenario, seed, requests, policy_name):
+def run_policy(scenario, seed, requests, policy_name, *, pacing_gain=None):
     """Run one simulated day through the actual service, judges and BudgetBook.
 
     random is independent Uniform(0,1) CTR ranking/creative selection; fixed
@@ -121,6 +121,7 @@ def run_policy(scenario, seed, requests, policy_name):
     winner_counts, invalid_types = Counter(), Counter({k: 0 for k in ("duplicate", "bad_signature", "no_serve", "expired")})
     before, after = [], []
     last_bucket = None
+    curve_error = []
 
     def click(token):
         result = handle_click(service, token)
@@ -154,7 +155,12 @@ def run_policy(scenario, seed, requests, policy_name):
                 service.ctr = {(r["creative_id"], AdSlot(r["slot"])): (r["alpha"], r["beta"]) for r in rows}
             service.ctr_version = "local-beta:" + str(bucket) if policy_name == "thompson" else policy_name
             previous = {cid: p for (cid, day), p in service.pacing.items() if day == DAY}
-            pacing = build_pacing(campaigns, service.book, DAY, bucket * 5, previous)
+            pacing = build_pacing(campaigns, service.book, DAY, bucket * 5, previous,
+                                  **({"gain": pacing_gain} if pacing_gain is not None else {}))
+            if scenario == 1:
+                c = campaigns[0]
+                curve_error.append(abs(service.book.committed_mw(c.campaign_id, DAY) / c.daily_budget_mw
+                                       - bucket * 5 / 1440))
             service.pacing = {(r["campaign_id"], DAY): r["probability"] for r in pacing}
             service.policy_version = "local-pacing:" + str(bucket)
             last_bucket = bucket
@@ -240,6 +246,7 @@ def run_policy(scenario, seed, requests, policy_name):
         posterior=final)
     if scenario == 1:
         metrics["budget_error"] = abs(metrics["settled_mw"] / campaigns[0].daily_budget_mw - 1)
+        metrics["budget_curve_mae"] = sum(curve_error) / len(curve_error)
     if scenario == 2:
         metrics["high_ctr_low_bid_wins"] = winner_counts["syn:quality"] > winner_counts["syn:bidder"]
     if scenario == 3:
