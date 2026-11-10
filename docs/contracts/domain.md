@@ -67,6 +67,8 @@
 
 종료 판정 순서(`check_end`): ① G=0이면 마을 승리 → ② 무당이 갇혔으면 창귀 승리 → ③ G ≥ V+M이면 창귀 승리.
 
+**중단(11/10 사용자 결정)**: 진행 중인 일반 판을 두고 새로 시작하면 응용 계층이 `engine/domain/abandon.py` `abandon`으로 기존 판을 끝낸다. 결과는 `GameResult(winner=None, reason=aborted, completed=False)`, 단계는 `ended`, 버전 +1이다. `game_ended` 본문은 `{"winner": null, "reason": "aborted", "completed": false}`이고 `truth_revealed`는 내지 않는다. 이미 끝난 판은 중단하지 않는다. 중단 전에 모은 원한 단서는 그대로 남는다(9절, 승패와 무관).
+
 ## 6. 창귀 2명 규칙
 - 공유 지식은 짝 ID, 밤마다의 `NightPlan`(실행자, 피해자), 합의 알리바이(`agreed_alibis`)뿐이다.
 - 피해자는 활동 마을 주민 NPC만 될 수 있다(자신, 짝, 무당 제외). 거짓말 의무는 실행자에게만 있다.

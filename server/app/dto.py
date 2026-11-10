@@ -28,6 +28,7 @@ class StartGameInput:
     seed: Optional[int] = None          # 회차 판만. None이면 배정된 고정 시드. 일반 판은 서버가 랜덤으로 정하고 이 값을 받지 않는다
     ending_choice: str = "exorcism"     # 열린 결말 중 선택(PlayerProgress.endings_unlocked)
     start_token: Optional[str] = None   # 일반 판 시작 요청 UUID. 같은 값을 다시 보내면 같은 판을 돌려준다(중복 시작 방지, E-08-14)
+    replace_open: bool = False          # 진행 중인 일반 판을 중단하고 새로 시작하는 데 동의(11/10 사용자 결정). 없으면 진행 판이 있을 때 409
 
 
 @dataclass

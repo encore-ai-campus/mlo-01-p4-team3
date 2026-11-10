@@ -152,7 +152,7 @@ class OpenStartAPI(TestCase):
         from engine.domain import params
         for session in ({}, {"session_id": None}, {"session_id": ""}):
             with self.subTest(session=session):
-                response = self.start(**session)
+                response = self.start(replace_open=True, **session)   # 앞 판은 중단하고 새로 시작(11/10)
                 self.assertEqual(response.status_code, 200, response.content)
                 state, _ = self.service.repository.load(response.json()["view"]["game_id"])
                 self.assertIsNone(state.meta.session_id)
@@ -165,7 +165,7 @@ class OpenStartAPI(TestCase):
         """서버 난수 시드라 판마다 시드가 달라진다(2^63 범위에서 충돌 확률 무시)."""
         seeds = set()
         for _ in range(3):
-            game_id = self.start().json()["view"]["game_id"]
+            game_id = self.start(replace_open=True).json()["view"]["game_id"]
             seeds.add(self.service.repository.load(game_id)[0].meta.seed)
         self.assertEqual(len(seeds), 3)
 

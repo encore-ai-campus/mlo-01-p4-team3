@@ -204,6 +204,8 @@ def games_from_events(events, consented_users):
             continue
         # Only fields needed for reward; comments and private/free text never persist.
         payload = e['payload']
+        if kind == 'game_ended' and payload.get('completed', True) is False:
+            continue  # 중단 판(11/10 사용자 결정)은 승패가 없어 보상 계산에 쓰지 않는다.
         g = dict(game_id=e['game_id'], player_pseudonym=e['player_pseudonym'],
                  ended_at=e['occurred_at'], arm=e['model_versions']['bandit_arm'],
                  bandit_version=e['model_versions']['bandit'])

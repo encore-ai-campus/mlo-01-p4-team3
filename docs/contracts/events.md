@@ -32,7 +32,7 @@
 - **진실은 판이 끝난 뒤 따로 들어온다**:
   - `truth_revealed`는 `phase=ended` 뒤에만 `paldo.truth`로 발행한다.
   - 라벨은 C의 배치가 `game_id`로 조인해 `TrainingRow.label`과 `label_joined_at`을 채운다.
-  - 중단된 판(`completed=false`)에는 라벨을 붙이지 않는다.
+  - 중단된 판(`completed=false`)에는 라벨을 붙이지 않는다. 플레이어가 새로 시작하며 중단한 판(11/10 사용자 결정, domain.md 5절 끝)은 `game_ended`에 `winner=null`, `reason=aborted`, `completed=false`를 싣고 `truth_revealed`를 내지 않는다. 학습·보상·승률 집계는 이 판을 뺀다.
 - **학습 대상 관찰자**: 씐 자 확률 모델은 마을 주민 관찰자의 행만 쓴다. 씐 자 관찰자는 정답을 알고 있기 때문이다. 이 필터는 학습 쪽(D)에서 건다.
   - 마을 주민 관찰자 필터는 `decision`에도 같은 `snapshot_id` 기준으로 적용한다. 씐 자 결정(밤 명령, `avoid_partner` 등)은 판 도중 `paldo.game`에 싣지 않는다. 플레이어·봇 결정도 같은 토픽(`paldo.observations`)으로 간다(11/6 PM 결정).
 - **생성 문장의 계보**: LLM이 만든 의도 예시는 `lineage_root`에 원본 예시 ID를 담는다. 분할할 때 같은 계보를 같은 쪽에 넣는다.

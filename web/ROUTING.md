@@ -26,6 +26,8 @@ dev `f24f6a8`의 엔진·에셋 갱신을 반영한 재검증도 같은 경로�
 
 11/8 PM 결정(B-08-02)에 따라 회의 최초·재조회 화면(`meeting.html`)과 추궁 답변 폴링 조각(`speech_line.html`)에서 Kanana 표기를 제거했다. 완료·실패·취소 뒤 재조회에도 표기가 없고, 폴링의 `outerHTML` 교체·종료 조건은 유지한다.
 
+진행 판 양자택일(11/10 사용자 결정): 홈 시작 폼 → `accounts/open_start_actions.html`(나란한 두 버튼 "진행 중인 판 이어 하기"·"중단하고 새로 시작"과 경고 한 줄, 문구는 `server/accounts/views.py` `OPEN_GAME_TEXT`, 버튼 설명은 `UI_TIPS`) → `POST /games`(`replace_open=1`) → 응용 `server/app/usecases.py` `start`·`abandon_game` → 도메인 `engine/domain/abandon.py`(중단 규칙). `replace_open` 없이 진행 판이 있으면 폼은 `/?open=choose`로 돌아오고 JSON은 409다. 의존 방향: 템플릿·뷰(표현) → 응용 → 도메인.
+
 홈 시작 폼 → `accounts/portrait_choice.html`은 여성·남성 무당 초상을 라디오 버튼으로 선택한다. `mudang_variant`를 기존 시작 API로 보내며 `meeting.html`은 응답 값으로 무당 초상을 표시한다. 오래된 녹화 판의 값 없음은 여성 기본 초상이다. 선택지는 서버의 `presets_enabled.json`을 따르며 초기에는 `base6`만 보인다. 8인 녹화 화면은 시험에서만 임시 설정으로 공개한다.
 
 B-08-02 공동 확인은 현재 dev 빌드의 홈 → 6인 게임 시작 → 진행 → 종료를 함께 확인하고 E가 재확인한다. 후보 태그를 선행 조건으로 두지 않으며, 11/10 테스트 서버 리허설 화면 확인은 B-09-03이다.

@@ -11,9 +11,8 @@
     <section id="open-game">
       <h2>새 게임</h2>
       {% if open_unavailable %}<p>지금은 게임을 시작할 수 없습니다.</p>{% else %}
-        {% for game_id in open_games %}
-          <p><a href="{% url 'game-detail' game_id=game_id %}">진행 중인 판 이어 하기</a></p>
-        {% endfor %}
+        {% if open_games %}<p class="open-notice"{% if open_blocked %} role="status"{% endif %}>{{ open_game_text.notice }}</p>{% endif %}
+        {% if open_games and not open_presets %}<p><a href="{% url 'game-detail' game_id=open_games.0 %}">{{ open_game_text.resume }}</a></p>{% endif %}
         {% if open_presets %}
         <form method="post" action="{% url 'game-start' %}">
           {% csrf_token %}
@@ -24,7 +23,7 @@
           </select></label>{% endif %}
           {% include 'accounts/portrait_choice.html' %}
           {% include "ending_choice.html" %}
-          <button>새 게임 시작</button>
+          {% include "accounts/open_start_actions.html" %}
         </form>
         {% endif %}
       {% endif %}

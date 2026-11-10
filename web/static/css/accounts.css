@@ -58,6 +58,12 @@
 .start-mode[open] > summary { border-bottom:1px solid #726b59; background:#283530; }
 .account-page .start-mode .session-card { margin:0; padding:20px 16px; border:0; }
 .account-page .start-mode .session-card + .session-card { border-top:1px solid #70654d; }
+.account-page .open-notice { margin:0 0 12px; color:#e5e0d2; font-size:.95rem; word-break:keep-all; }
+.account-page .open-choice { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; align-items:start; margin:16px 0 0; }
+.account-page .open-choice .open-resume { display:flex; align-items:center; justify-content:center; min-height:44px; padding:10px 18px; text-align:center; text-decoration:none; background:#2b3a36; color:#fff0dc; border:1px solid #9d9077; border-radius:2px; font:500 1rem/1.4 var(--pd-sans); }
+.account-page .open-choice .open-resume:hover { background:#36483f; }
+.account-page .open-choice .start-round { margin:0; }
+.account-page .open-restart-warning { margin:8px 0 0; color:#e8c9a4; font-size:.85rem; line-height:1.6; word-break:keep-all; }
 .start-mode > p { padding:16px; }
 @media(max-width:899px) {
  .account-page { padding:0 24px 28px; }
@@ -78,5 +84,6 @@
 }
 @media(max-width:599px) {
  .account-page .welcome-actions { grid-template-columns:minmax(0,1fr); gap:10px; }
+ .account-page .open-choice { grid-template-columns:minmax(0,1fr); }
 }
 @media(prefers-reduced-motion:reduce) { .account-page * { scroll-behavior:auto; } }

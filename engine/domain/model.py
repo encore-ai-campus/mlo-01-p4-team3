@@ -135,9 +135,11 @@ class EvidenceSource(str, enum.Enum):
 
 
 class EndReason(str, enum.Enum):
+    """판 종료 사유. 앞의 셋은 check_end 판정, ABORTED는 새로 시작에 따른 중단(completed=False)."""
     ALL_POSSESSED_LOCKED = "all_possessed_locked"   # 1. G = 0
     MUDANG_LOCKED = "mudang_locked"                 # 2. 무당 감금
     POSSESSED_PARITY = "possessed_parity"           # 3. G >= V + M
+    ABORTED = "aborted"                             # 플레이어가 새 판을 시작하며 중단(11/10 사용자 결정, completed=False)
 
 
 class DataSource(str, enum.Enum):
@@ -447,6 +449,9 @@ def night_runs(after_lock_end: Optional[EndReason]) -> bool:
 
 
 def winner_of(reason: EndReason) -> Faction:
+    """종료 사유의 승리 진영. 중단(ABORTED)에는 승자가 없어 ValueError."""
+    if reason is EndReason.ABORTED:
+        raise ValueError("중단된 판에는 승자가 없다")
     return Faction.VILLAGE if reason is EndReason.ALL_POSSESSED_LOCKED else Faction.CHANGGWI
 
 
@@ -684,7 +689,8 @@ class GameMeta:
 
 @dataclass
 class GameResult:
-    winner: Faction
+    """판 결과. completed=False(중단)면 승자 없음·라벨 없음."""
+    winner: Optional[Faction]   # 중단(ABORTED)이면 None
     reason: EndReason
     day: int
     completed: bool = True      # False = 중단
