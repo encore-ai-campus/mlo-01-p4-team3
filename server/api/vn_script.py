@@ -34,6 +34,12 @@ SPEAKER_DIVINATION = "무당"
 VOTE_SUMMARY = {"main": "투표 결과 — {tally}", "runoff": "결선 결과 — {tally}"}
 VOTE_TALLY_ITEM = "{name} {count}표"
 RUNOFF_NOTICE = "{names}의 표가 같아 결선 투표로 넘어갑니다."
+# 아침 실종 발표는 까치가 말한다(11/10 사용자 승인). 발표 줄은 밤 화면이 아니면 단계와 상관없이 까치 그림을 세운다.
+SPEAKER_KKACHI = "까치"
+KKACHI_MASCOT = "mascot:kkachi"
+ANNOUNCE_MISSING = "깍깍! 간밤 {slot}에 {name}이(가) 사라졌어요. {name}의 짚신이 {place}에서 발견됐대요!"
+ANNOUNCE_NONE = "깍깍! 간밤엔 아무도 사라지지 않았어요."
+HOME_PLACE = "{name}의 집"   # 피해 장소가 집이면 기존 기록 문구처럼 누구의 집인지 밝힌다
 
 
 @dataclass(frozen=True)
@@ -50,6 +56,9 @@ class VNLine:
     full: bool = False      # 전신 컷(첫 등장·추방 결과·엔딩·밤 습격 결과만)
     result: bool = False    # 투표 결과 발표 줄. 다 읽기 전에는 그 단계 행동을 잠근다
     guide: bool = False     # 첫 판 안내(족제비) 줄
+    mascot: bool = False    # 마스코트(까치·족제비) 줄: 인물 자리 대신 무대 왼쪽 마스코트 자리에 세운다(밤 화면은 글만)
+    actor_name: str = ""    # 전신 컷 인물 이름(화자와 다를 때, 그림 대체 글)
+    beat: bool = False      # 그림만 보여 주는 한 박자 컷(앞 줄 문장 반복): 늘 전신 컷으로만 보이고 닫으면 다음 줄로, 밤 화면에서는 뺀다
 
 
 def _name(view: PlayerView, npc_id: str) -> str:
@@ -58,7 +67,7 @@ def _name(view: PlayerView, npc_id: str) -> str:
 
 
 # 받침 유무로 고르는 조사: 표기 → (받침 있음, 받침 없음)
-_PARTICLES = {"을(를)": ("을", "를"), "와(과)": ("과", "와"), "은(는)": ("은", "는"), "(이)라": ("이라", "라")}
+_PARTICLES = {"이(가)": ("이", "가"), "을(를)": ("을", "를"), "와(과)": ("과", "와"), "은(는)": ("은", "는"), "(이)라": ("이라", "라")}
 _PARTICLE_RE = re.compile("|".join(re.escape(k) for k in _PARTICLES))
 _DIGIT_BATCHIM = set("013678")   # 영·일·삼·육·칠·팔은 받침이 있다
 
@@ -105,6 +114,37 @@ def statement_text(claim, names: list[str]) -> str:
     if not names:
         return STATEMENT_NOBODY.format(**common)
     return attach_particles(STATEMENT_NOT_SEEN.format(**common, names=join_names(names)))
+
+
+def claim_card_text(view: PlayerView, claim) -> str:
+    """진술표 카드 문장. 대사창 진술 줄과 같은 승인 문장 틀을 쓴다(11/10 사용자 승인)."""
+    return statement_text(claim, [_name(view, n) for n in claim.seen])
+
+
+def announcement_lines(view: PlayerView) -> list[VNLine]:
+    """그날 아침 실종 발표를 까치 줄로 만든다. 공개 실종 기록이 없는 아침은 '아무도 사라지지 않았다'로 알린다.
+
+    실종이 있으면 발표 줄 바로 다음에 피해자 전신 컷 줄을 한 박자 둔다(밤 습격 결과 전신 컷, spec 7절).
+    전신 컷 동안 대사창은 숨으므로 새 문장 없이 발표 문장을 그대로 단다.
+    """
+    by_night = {record.night: record for record in view.public.disappearances}
+    lines = []
+    for day in range(1, view.day + 1):
+        record = by_night.get(day - 1)
+        if record is None:
+            lines.append(VNLine(f"announcement-none-{day}", day, Phase.MORNING.value, SPEAKER_KKACHI, ANNOUNCE_NONE,
+                                sprite_id=KKACHI_MASCOT, mascot=True))
+            continue
+        name = _name(view, record.victim)
+        place = (HOME_PLACE.format(name=name) if record.place.value == "home"
+                 else PLACE_KO.get(record.place.value, record.place.value))
+        text = attach_particles(ANNOUNCE_MISSING.format(slot=SLOT_KO.get(record.slot.value, ""), name=name, place=place))
+        lines.append(VNLine(f"announcement-{record.night}", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
+                            sprite_id=KKACHI_MASCOT, mascot=True))
+        if record.victim != "mudang":
+            lines.append(VNLine(f"announcement-{record.night}-full", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
+                                record.victim, f"sprite:{record.victim}", full=True, actor_name=name, beat=True))
+    return lines
 
 
 def _tally(view: PlayerView, votes) -> list[tuple[str, int]]:

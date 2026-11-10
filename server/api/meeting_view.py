@@ -1,12 +1,12 @@
 """공통 MeetingVM에 회의 템플릿의 이미지 ID와 폼 선택지를 더한다."""
 from dataclasses import dataclass, replace
 
-from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, DivinationResult, Phase
+from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, DivinationResult, Phase, ReactionIntent
 from engine.ports import PlayerView
 from .viewmodels import PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_meeting_vm
 from .ui_viewmodels import build_ui_vm
-from .tutorial_script import FIRST_GAME_END, GUIDE_SPEAKER, guide_lines
-from .vn_script import VNLine, build_vn_lines
+from .tutorial_script import CLUE_DUPLICATE, CLUE_NEW, CLUE_UNLOCK, FIRST_GAME_END, GUIDE_SPEAKER, guide_lines
+from .vn_script import VNLine, announcement_lines, build_vn_lines, claim_card_text
 
 DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
@@ -83,11 +83,33 @@ def _guide_vn_lines(view: PlayerView, k: int):
     return before, lead, rest
 
 
-def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bool = False):
+# 고백 뒤 단서 알림 종류(server/app/clue_notice.py의 값) → 족제비 줄. 새 단서·한풀이 열림은 단서 문장 해설 줄을 먼저 둔다.
+CLUE_LINES = {"new": CLUE_NEW, "duplicate": CLUE_DUPLICATE, "unlock": CLUE_UNLOCK}
+
+
+def _clue_vn_lines(view: PlayerView, notices) -> dict[str, list[VNLine]]:
+    """고백 발언 ID → 그 뒤에 붙일 단서 알림 줄. 안내 스위치와 무관하게 늘 나온다(guide 아님, 마스코트 줄)."""
+    confess = {(s.day, s.speaker): s for s in view.public.speeches if s.reaction is ReactionIntent.CONFESS}
+    out: dict[str, list[VNLine]] = {}
+    for notice in notices or ():
+        speech = confess.get((notice.day, notice.npc_id))
+        if speech is None:
+            continue
+        phase, base = speech.phase.value, f"clue-{speech.speech_id}"
+        lines = [] if notice.kind == "duplicate" else [VNLine(f"{base}-text", speech.day, phase, "", notice.clue_text)]
+        sprite = "" if phase == Phase.NIGHT.value else GUIDE_MASCOT
+        lines += [VNLine(f"{base}-{i}", speech.day, phase, GUIDE_SPEAKER, text, sprite_id=sprite, mascot=bool(sprite))
+                  for i, text in enumerate(CLUE_LINES[notice.kind])]
+        out[speech.speech_id] = lines
+    return out
+
+
+def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bool = False, clue_notices=()):
     """공개 진술·투표와 허용 행동, 본인의 점괘를 화면 모델로 전달한다.
 
     guide_k(이번 판 씐 자 수)가 있으면 도움말에 "이번 판에서 안내 보기" 스위치를 두고, first_game이면 대사창 안내 줄을
     서버가 넣는다(기본 켬). 첫 판이 아니면 같은 안내 문장을 숨은 목록으로 내려 주어 스위치를 켰을 때만 보인다.
+    clue_notices(server/app/clue_notice.ClueNotice 목록)가 있으면 고백 발언 바로 뒤에 단서 알림 줄을 붙인다.
     """
     vm = build_ui_vm(view)
     claims = []
@@ -97,6 +119,8 @@ def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bo
             subject = view.names.get(record.subject, record.subject)
             result = DIVINATION_KO.get(record.divination_result, "")
             card = replace(card, text=f"점괘 공개 · {subject} · {result}")
+        else:
+            card = replace(card, text=claim_card_text(view, record))   # 대사창 진술 줄과 같은 문장 틀(11/10 사용자 승인)
         claims.append(MeetingClaim(card, _place_asset(record.place), f"{kind}:{card.claim_id}",
                                    record.night if record.slot else None, record.slot.value if record.slot else ""))
     # 진술표 정정 표시(11/10 사용자 승인): 내부 진술 번호는 글로 보이지 않고, 정정 진술 배지의 설명에 고치기 전 문장을 둔다.
@@ -141,7 +165,8 @@ def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bo
             "own_divinations": own_divinations, "divination_options": divination_options,
             "published_votes": published_votes, "published_locks": published_locks, "active_targets": active_targets,
             "vote_targets": vote_targets, "vn_lines": lead + build_vn_lines(view, DIVINATION_KO) + rest,
-            "vn_guide_before": before,
+            "vn_guide_before": before, "vn_announcements": announcement_lines(view),
+            "clue_lines": _clue_vn_lines(view, clue_notices),
             # 안내 켜기/끄기(11/10 사용자 결정): 첫 판은 서버가 안내 줄을 넣어 기본 켬. 다른 판은 같은 문장을 숨은 목록(guide_pool)으로
             # 내려 주고, 플레이어가 켜면 클라이언트가 켠 시점 기준으로 대사 줄을 만든다. 종료 화면 말풍선도 같은 스위치를 따른다.
             # 첫 판도 숨은 목록을 함께 내려(data-guide-first) 1일째가 지난 뒤 다시 켜면 판 시작 안내부터 다시 만든다.

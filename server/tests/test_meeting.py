@@ -144,7 +144,7 @@ class Meeting(TestCase):
                         self.assertNotContains(response, "약초꾼 점치기")
                     if index == 0:
                         self.assertContains(response, "진술표")
-                        self.assertContains(response, "훈장·주모을(를) 봤다")
+                        self.assertRegex(html, r"훈장과 주모를 보았소\.")   # 진술표 카드도 대사창 문장 틀(11/10 사용자 승인)
                         self.assertNotContains(response, 'id="published-locks"')
                     if index == 6:
                         self.assertRegex(html, r"약초꾼 감금\s*· 금줄 반응으로 씐 자가 아님이 밝혀졌습니다")

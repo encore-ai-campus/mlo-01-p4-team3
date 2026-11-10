@@ -53,7 +53,7 @@ class StatementTemplates(SimpleTestCase):
         lines = build_vn_lines(fake_view([truth, lie]), RESULT_KO)
         self.assertEqual([STATEMENT.match(line.text) is not None for line in lines], [True, True])
         self.assertEqual(set(vars(lines[0])), {"line_id", "day", "phase", "speaker", "text", "speaker_id", "sprite_id",
-                                                "full", "result", "guide"})
+                                                "full", "result", "guide", "mascot", "actor_name", "beat"})
         for line in lines:
             self.assertNotRegex(line.text, "거짓|사실|진위|lie|true")
 

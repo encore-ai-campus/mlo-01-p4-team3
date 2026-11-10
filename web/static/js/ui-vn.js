@@ -126,7 +126,8 @@ function mountScene(root) {
       const i=Number(n.dataset.slotIndex)/100;
       nodes.push(n); order.set(n,n.dataset.slot==='start' ? -1000+i : n.dataset.slot==='lead' ? leadAt-0.4+i : restAt+i);
     }
-    return nodes.filter(n=>n.dataset.day===root.dataset.day && rank(n.dataset.phase)>=0 && rank(n.dataset.phase)<=current)
+    // 한 박자 컷(실종 발표 뒤 피해자 전신 컷)은 그림만 보여 주는 줄이라 밤 화면(인물 금지)에서는 뺀다.
+    return nodes.filter(n=>n.dataset.day===root.dataset.day && rank(n.dataset.phase)>=0 && rank(n.dataset.phase)<=current && !(root.dataset.phase==='night' && n.dataset.beat==='true'))
       .sort((a,b)=>rank(a.dataset.phase)-rank(b.dataset.phase)||order.get(a)-order.get(b));
   }
   const sources=collect();
@@ -163,27 +164,28 @@ function mountScene(root) {
     if(!announce && !force && line===lastText)return;
     lastText=line;
     clearTimeout(timer);
-    const name=source?.dataset.speaker || '무당';
+    // 해설 줄(화자 없음, data-speaker="")은 이름표를 비운다. 화자 칸이 아예 없는 줄만 무당으로 읽는다.
+    const name=source ? (source.dataset.speaker ?? '무당') : '무당';
     const sprite=source?.dataset.sprite || (!source ? player.dataset.defaultSprite : '') || '';
     const guide=source?.dataset.guide==='true';
+    // 마스코트 줄: 족제비 안내·단서 알림, 까치 실종 발표. 인물 자리 대신 무대 왼쪽 마스코트 자리에 세운다.
+    const mascot=guide || source?.dataset.mascot==='true';
     // 밤 화면은 인물을 세우지 않는다. 예외: 그날 밤 감금 결과 전신 컷(추방 결과, spec 7절).
     const nightCut=source?.dataset.phase==='night' && source?.dataset.full==='true';
-    const canActor=!guide && (root.dataset.phase!=='night' || nightCut) && !!sprite;
-    const full=canActor && source?.dataset.full==='true' && !closed.has(source.dataset.lineId);
+    const canActor=!mascot && (root.dataset.phase!=='night' || nightCut) && !!sprite;
+    const full=canActor && source?.dataset.full==='true' && (source.dataset.beat==='true' || !closed.has(source.dataset.lineId));
     const stage=player.querySelector('[data-vn-stage]'); stage.classList.toggle('show-full',full);
     const actor=player.querySelector('[data-vn-actor]'); actor.hidden=!canActor;
     if(source?.dataset.speakerId)actor.dataset.person=source.dataset.speakerId;else delete actor.dataset.person;
     let image=actor.querySelector('img');
     if(canActor) { if(!image){image=new Image();image.dataset.vnSprite='';actor.append(image);} if(image.getAttribute('src')!==sprite)image.src=sprite; image.alt=source?.dataset.actorName || name; } else actor.replaceChildren();
-    // 족제비 안내 줄: 무대 왼쪽 마스코트 자리에 세우고(아침 까치는 잠시 숨김), 밤에는 그림 없이 글만.
-    const kkachi=stage.querySelector('.vn-mascot:not([data-vn-guide-mascot])');
+    // 마스코트 줄(족제비 안내·단서 알림, 까치 실종 발표)만 무대 왼쪽 마스코트 자리에 그 줄의 그림을 세운다. 밤에는 그림 없이 글만.
     let guideArt=stage.querySelector('[data-vn-guide-mascot]');
-    // 아침 안내를 밤 화면에서 늦게 읽어도 족제비는 세우지 않는다(밤 화면 마스코트 금지).
-    if(guide && sprite && root.dataset.phase!=='night') {
-      if(!guideArt){guideArt=new Image(256,256);guideArt.className='vn-mascot';guideArt.dataset.vnGuideMascot='';guideArt.alt='안내하는 족제비';stage.append(guideArt);}
-      if(guideArt.getAttribute('src')!==sprite)guideArt.src=sprite; guideArt.hidden=false;
+    // 아침 줄을 밤 화면에서 늦게 읽어도 마스코트는 세우지 않는다(밤 화면 마스코트 금지).
+    if(mascot && sprite && root.dataset.phase!=='night') {
+      if(!guideArt){guideArt=new Image(256,256);guideArt.className='vn-mascot';guideArt.dataset.vnGuideMascot='';stage.append(guideArt);}
+      if(guideArt.getAttribute('src')!==sprite)guideArt.src=sprite; guideArt.alt=name; guideArt.hidden=false;
     } else if(guideArt) guideArt.hidden=true;
-    if(kkachi)kkachi.hidden=guide;
     player.querySelector('[data-vn-guide-skip]')?.toggleAttribute('hidden',!guide);
     player.querySelector('[data-vn-speaker]').textContent=full ? (source?.dataset.actorName || name) : name;
     player.querySelector('[data-vn-mobile-text]').textContent=line;
@@ -206,7 +208,11 @@ function mountScene(root) {
   }
   function next() {
     const source=sources[index];
-    if(player.querySelector('[data-vn-stage]').classList.contains('show-full')) { if(source)closed.add(source.dataset.lineId); }
+    // 한 박자 컷은 대사로 다시 그리지 않는다(앞 줄 문장 반복 방지). 닫으면 다음 줄로, 마지막 줄이면 앞 줄로 간다.
+    if(player.querySelector('[data-vn-stage]').classList.contains('show-full')) {
+      if(source?.dataset.beat==='true') { persist(true); index=index<sources.length-1 ? index+1 : index-1; }
+      else if(source) closed.add(source.dataset.lineId);
+    }
     else if(text.textContent!==lastText) {clearTimeout(timer);text.textContent=lastText;persist(true);return;}
     else index=Math.min(sources.length-1,index+1);
     index=Math.max(0,index); render();
