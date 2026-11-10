@@ -43,6 +43,14 @@ class GameService:
         self.prepare_start = prepare_start
         self.interactions = None
         self.load_test = False
+        # 판 시작 때 모델 버전을 고정하는 정책(B-09-01, `model_versions.VersionPinning`). None이면 고정하지 않는다.
+        self.pin_versions = None
+        # 저장에 성공한 엔진 결과 이벤트를 받는 관측 함수(B-09-01 폴백 지표). None이면 부르지 않는다.
+        self.observe_events = None
+        # 업데이트 내역 화면이 읽는 모델 레지스트리(B-09-01, `model_versions.ModelRegistry`). None이면 빈 내역.
+        self.model_registry = None
+        # 판 종료를 받는 함수(B-09-01 1번 의심 모델 보관소 `release`). None이면 부르지 않는다.
+        self.release_game = None
 
     def owned(self, game_id, player_pseudonym):
         """멱등 응답·버전 확인보다 먼저 판 소유권을 확인한다."""
@@ -98,6 +106,9 @@ class GameService:
         meta = replace(meta, game_id=fixed_id or str(uuid.uuid4()), source=DataSource.HUMAN,
                        player_pseudonym=player_pseudonym, mudang_variant=data.mudang_variant,
                        ending_choice=data.ending_choice)
+        if self.pin_versions is not None:
+            # 새로 만드는 판에만 버전을 고른다. 이미 저장된 판은 위에서 그대로 반환했다.
+            meta = self.pin_versions(meta)
         deps = self.dependencies(meta)
         result = self.engine.new_game(meta, deps)
         if not result.accepted or result.state is None or result.truth is None:
@@ -109,6 +120,8 @@ class GameService:
                 raise
             # 같은 순번의 동시 시작에서 먼저 저장된 판만 반환한다.
             self.owned(fixed_id, player_pseudonym)
+        else:
+            self._observe(result.events)
         self.progress.add_game(meta.player_pseudonym, meta.game_id)
         return self._detail(meta.game_id, player_pseudonym, deps)
 
@@ -166,12 +179,14 @@ class GameService:
         if self.interactions is not None:
             self.interactions.prepare_command_effects(data.command_id, args[-1].response_json,
                                                        state, result.state, result.render_requests)
+        committed = False
         try:
             try:
                 self.repository.commit(*args)
             except (ConnectionError, TimeoutError):
                 # 결과가 불명확한 전송 오류에만 같은 commit을 한 번 재전송한다.
                 self.repository.commit(*args)
+            committed = True
         except VersionConflict:
             current, _ = self.owned(data.game_id, player_pseudonym)
             saved = self.repository.find_command(data.game_id, data.command_id)
@@ -183,15 +198,36 @@ class GameService:
                 return self.replay_command(data.game_id, saved, player_pseudonym)
             # 저장 성공 후 확인 응답만 유실된 경우에도 아래 후속 처리를 마친다.
             output = replay
+        if committed:
+            # 경합 경로는 이 요청의 저장인지 같은 명령의 동시 요청인지 가릴 수 없어 세지 않는다(중복 집계 방지).
+            self._observe(result.events)
         if result.state.result is not None:
             # 판 종료: 이 판의 모든 고백을 다시 맞춘다(앞 명령에서 실패한 반영 복구 포함, 이번 전이 고백도 포함).
             self._progress_guard(sweep_game, player_pseudonym, result.state, deps.content)
+            self._release(data.game_id)
         else:
             self._progress_guard(apply_progress, player_pseudonym, args[4], deps.content.grudge_clues)
         if self.interactions is not None:
             self.interactions.complete_command_effects(data.game_id, args[-1], player_pseudonym)
         return output
 
+    def _release(self, game_id):
+        """끝난 판을 의심 모델 보관소 사용 판에서 뺀다. 실패해도 저장된 명령 응답은 바꾸지 않는다."""
+        if self.release_game is None:
+            return
+        try:
+            self.release_game(game_id)
+        except Exception:  # noqa: BLE001 - 보관소 정리 실패로 판 종료 응답을 막지 않는다
+            LOGGER.exception("model store release failed")
+
+    def _observe(self, events):
+        """이 요청이 저장한 엔진 결과 이벤트를 관측 함수에 넘긴다. 관측 실패는 게임 응답을 막지 않는다."""
+        if self.observe_events is None:
+            return
+        try:
+            self.observe_events(events)
+        except Exception:  # noqa: BLE001 - 지표 실패로 저장된 명령 응답을 바꾸지 않는다.
+            pass
     def _progress_guard(self, apply, player_pseudonym, *args):
         """고백 단서·결말 해금을 진척에 반영한다(E-09-08). 판 상태는 이미 저장됐으므로 진척 저장 실패는
         명령 응답을 바꾸지 않고 기록만 남긴다. 판 종료·같은 명령 재요청·복기 때 `sweep_game`이 따라잡고,

@@ -15,6 +15,25 @@ def village_guide():
     return village_assets()
 
 
+MODEL_LABELS = {"intent": "의도 해석", "suspicion": "의심 판단", "bandit": "광고 배치"}
+STAGE_LABELS = {"canary": "시험 적용", "previous": "이전 버전"}
+
+
+@register.inclusion_tag('update_history.html')
+def update_history():
+    """게임 화면 안 업데이트 내역 패널(B-09-01 3번). 레지스트리 승격 기록만 읽고, 없으면 빈 내역을 보인다."""
+    from server.app.model_versions import update_history as history
+    from server.paldo_web.composition import GameServiceUnavailable, get_game_service
+    try:
+        registry = getattr(get_game_service(), "model_registry", None)
+    except GameServiceUnavailable:
+        registry = None
+    records = [{"at": r.at, "model": r.model, "version": r.version, "stage": r.stage,
+                "label": MODEL_LABELS.get(r.model, r.model), "stage_label": STAGE_LABELS.get(r.stage, "")}
+               for r in history(registry)]
+    return {"records": records}
+
+
 @register.inclusion_tag('asset_credits.html')
 def asset_attribution():
     """게임 화면 하단에 출처 파일의 공개 요약을 표시한다."""

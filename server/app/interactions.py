@@ -16,6 +16,7 @@ from engine.domain.serde import to_jsonable
 from engine.ports import CommandCandidate, ParseContext, ParseFailure, RenderStatus
 from .dto import (CommandOutput, ParseUtteranceInput, ParseUtteranceOutput, RenderOutput, ResolveUtteranceInput,
                   SubmitCommandInput, UtteranceReaction)
+from .model_versions import warn_parse_version_mismatch
 from .usecases import ResourceNotFound
 
 
@@ -184,6 +185,7 @@ class InteractionService:
         ctx = ParseContext(data.game_id, state.state_version, state.phase, copy.deepcopy(view.public), aliases,
                            data.selected_npc, data.selected_cards, last_addressee)
         result = self.parser.parse(data.text, ctx)
+        warn_parse_version_mismatch(state.meta, result.versions)
         # 화면 카드만 현재 단계로 거른다. 시도 기록(payload)에는 해석기 원래 후보·실패를 남긴다.
         cards = phase_cards(result.candidates, state.phase, state.runoff_candidates)
         failure, suggestions = result.failure, []
