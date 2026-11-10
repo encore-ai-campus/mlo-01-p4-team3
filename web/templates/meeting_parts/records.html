@@ -64,6 +64,7 @@
 {% else %}
 {% load meeting %}
   {% if vn_guide_before %}<div class="vn-script" hidden>{% for line in vn_guide_before %}{% include "meeting_parts/vn_line.html" %}{% endfor %}</div>{% endif %}
+  {% if guide_pool %}<div class="vn-guide-pool" data-guide-pool{% if first_game %} data-guide-first{% endif %} hidden>{% for line in guide_pool %}<p class="vn-guide-opt" data-guide-step="{{ line.step }}" data-guide-phase="{{ line.phase }}" data-guide-index="{{ line.index }}" data-speaker="{{ guide_speaker }}"{% if line.phase != 'night' %} data-sprite="{% review_asset guide_mascot %}"{% endif %}><span class="vn-source-text">{{ line.text }}</span></p>{% endfor %}</div>{% endif %}
   {% for event in disappearances %}
     <p class="vn-source" data-line-id="announcement-{{ vm.day }}-{{ forloop.counter }}" data-day="{{ event.record.night|add:'1' }}" data-phase="morning" data-speaker="아침 발표" data-full="true" data-actor-name="{{ event.record.victim_name }}" data-speaker-id="{{ event.record.npc_id }}" data-sprite="{% with sprite_id='sprite:'|add:event.record.npc_id %}{% review_asset sprite_id %}{% endwith %}">
       {% if event.place_asset_id %}<img src="{% asset_url event.place_asset_id %}" alt="" width="20" height="20">{% endif %}
@@ -83,12 +84,12 @@
         {% for claim in claims %}
           <li data-record-speaker="{{ claim.card.speaker_id }}" data-record-night="{{ claim.card.night }}" data-record-slot="{{ claim.card.slot }}" data-record-id="{{ claim.card.claim_id }}">
             <div class="claim-speaker">
-              <label class="record-selection"><input type="checkbox" data-record-select value="{{ claim.evidence_value }}" aria-label="{{ claim.card.claim_id }} 진술 선택"></label>
+              <label class="record-selection"><input type="checkbox" data-record-select value="{{ claim.evidence_value }}" aria-label="{{ claim.card.speaker_name|display_name }} 진술 선택"></label>
               {% if vm.phase != 'night' %}{% if claim.card.speaker_id == 'mudang' %}<img class="review-portrait" src="{% review_asset mudang_portrait_id|default:'portrait:mudang_f' %}" alt="" width="32" height="32">{% else %}{% with key='portrait:'|add:claim.card.speaker_id %}<img class="review-portrait" src="{% review_asset key %}" alt="" width="32" height="32">{% endwith %}{% endif %}{% endif %}
               <strong>{{ claim.card.speaker_name|display_name }}</strong>
-              <span class="claim-number">{{ claim.card.claim_id }}</span>
+              {% if claim.card.corrects %}<span class="claim-corrected"{% if claim.corrected_text %} title="고치기 전: {{ claim.corrected_text }}"{% endif %}>정정한 진술</span>{% endif %}
             </div>
-            <span class="claim-meta">{{ claim.card.night }}일째 밤 · {% if claim.card.slot == 'evening' %}초저녁{% elif claim.card.slot == 'midnight' %}한밤{% endif %} · {{ claim.card.place }}</span><p>{{ claim.card.text }}</p><details class="record-details"><summary>기록 상세</summary><p>진술 번호 {{ claim.card.claim_id }}{% if claim.card.corrects %} · 정정 대상 {{ claim.card.corrects }}{% endif %}</p></details>
+            <span class="claim-meta">{{ claim.card.night }}일째 밤 · {% if claim.card.slot == 'evening' %}초저녁{% elif claim.card.slot == 'midnight' %}한밤{% endif %} · {{ claim.card.place }}</span><p>{{ claim.card.text }}</p>
           </li>
         {% endfor %}
       </ul>

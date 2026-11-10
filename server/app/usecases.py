@@ -1,6 +1,7 @@
 """B 게임 응용 흐름. Django와 저장소 구현을 모르며 주입한 포트만 호출한다."""
 import json
 import logging
+import threading
 import uuid
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -9,6 +10,7 @@ from engine.domain.events import EventEnvelope, topic_of
 from engine.domain.model import CONTRACT_VERSION, CommandEnvelope, DataSource, RejectCode
 from engine.domain.serde import dumps, from_jsonable
 from engine.ports import StoredCommand, VersionConflict
+from engine.domain.abandon import AlreadyEnded, abandon
 from engine.domain.progress import ending_available
 from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewOutput
 from .progress import apply_progress, sweep_game
@@ -32,6 +34,14 @@ class ReviewNotReady(Exception):
     """종료 전에는 역할·비밀을 공개하는 복기를 열 수 없다."""
 
 
+class OpenGameInProgress(Exception):
+    """진행 중인 일반 판이 있는데 중단 동의 없이 새 일반 판을 시작하려 했다(11/10 사용자 결정)."""
+
+    def __init__(self, game_id):
+        super().__init__(game_id)
+        self.game_id = game_id   # 이어 할 가장 최근 진행 판
+
+
 class GameService:
     """조회·시작·명령 처리의 공통 계약을 실행한다."""
 
@@ -49,6 +59,9 @@ class GameService:
         self.observe_events = None
         # 업데이트 내역 화면이 읽는 모델 레지스트리(B-09-01, `model_versions.ModelRegistry`). None이면 빈 내역.
         self.model_registry = None
+        # 계정별 일반 판 시작 잠금(11/10 진행 판 양자택일). 같은 프로세스 안의 동시 시작을 줄 세운다.
+        self._start_locks = {}
+        self._start_locks_guard = threading.Lock()
         # 판 종료를 받는 함수(B-09-01 1번 의심 모델 보관소 `release`). None이면 부르지 않는다.
         self.release_game = None
 
@@ -95,14 +108,59 @@ class GameService:
         meta = self.prepare_start(data, player_pseudonym)
         # HTTP 입력으로 소유자·출처·판 ID를 선택할 수 없다.
         fixed_id = meta.game_id
-        if fixed_id:
-            try:
-                output = self.detail(fixed_id, player_pseudonym)
-            except ResourceNotFound:
-                pass
-            else:
-                self.progress.add_game(player_pseudonym, fixed_id)
-                return output
+        replay = self._replay_start(fixed_id, player_pseudonym)
+        if replay is not None:
+            if meta.session_id is None and data.replace_open:
+                with self._start_lock(player_pseudonym):
+                    self._abandon_older(fixed_id, player_pseudonym)   # 앞 요청이 중단 도중 실패했으면 마저 한다
+            return replay
+        if meta.session_id is not None:
+            return self._create(meta, data, fixed_id, player_pseudonym, ())
+        # 일반 판: 진행 중인 일반 판이 있으면 이어 하기 / 중단하고 새로 시작 중 하나만(11/10 사용자 결정).
+        # 확인·중단·생성을 계정별로 줄 세워 같은 프로세스 안의 동시 시작이 진행 판을 둘 만들지 않게 한다.
+        with self._start_lock(player_pseudonym):
+            replay = self._replay_start(fixed_id, player_pseudonym)   # 잠금을 기다리는 사이 같은 시작 UUID 판이 생김
+            if replay is not None:
+                if data.replace_open:
+                    self._abandon_older(fixed_id, player_pseudonym)
+                return replay
+            others = [gid for gid in self.unfinished_open_games(player_pseudonym) if gid != fixed_id]
+            if others and not data.replace_open:
+                raise OpenGameInProgress(others[-1])
+            return self._create(meta, data, fixed_id, player_pseudonym, others)
+
+    def _replay_start(self, fixed_id, player_pseudonym):
+        """같은 시작 UUID·회차 순번의 판이 이미 있으면 그 판 화면, 없으면 None."""
+        if not fixed_id:
+            return None
+        try:
+            output = self.detail(fixed_id, player_pseudonym)
+        except ResourceNotFound:
+            return None
+        self.progress.add_game(player_pseudonym, fixed_id)
+        return output
+
+    def _abandon_older(self, game_id, player_pseudonym):
+        """같은 시작 UUID 재요청: 이 판보다 먼저 시작한 진행 중 일반 판을 중단한다(뒤에 시작한 판은 두고)."""
+        game_ids = self.progress.load(player_pseudonym).game_ids
+        if game_id not in game_ids:
+            return
+        older = set(game_ids[:game_ids.index(game_id)])
+        self._abandon_each([gid for gid in self.unfinished_open_games(player_pseudonym) if gid in older],
+                           player_pseudonym)
+
+    def _abandon_each(self, game_ids, player_pseudonym):
+        for gid in game_ids:
+            if not self.abandon_game(gid, player_pseudonym) and gid in self.unfinished_open_games(player_pseudonym):
+                # 충돌로 중단하지 못한 판은 진행 중으로 남는다(지우지 않음). 다음 새로 시작·재요청 때 다시 중단한다.
+                LOGGER.warning("open game abandon conflict; left unfinished: %s", gid)
+
+    def _start_lock(self, player_pseudonym):
+        with self._start_locks_guard:
+            return self._start_locks.setdefault(player_pseudonym, threading.Lock())
+
+    def _create(self, meta, data, fixed_id, player_pseudonym, replaced):
+        """새 판을 준비·저장한 뒤 replaced(중단할 진행 판)를 중단한다."""
         meta = replace(meta, game_id=fixed_id or str(uuid.uuid4()), source=DataSource.HUMAN,
                        player_pseudonym=player_pseudonym, mudang_variant=data.mudang_variant,
                        ending_choice=data.ending_choice)
@@ -123,7 +181,44 @@ class GameService:
         else:
             self._observe(result.events)
         self.progress.add_game(meta.player_pseudonym, meta.game_id)
+        # 새 판이 저장된 뒤에만 기존 판을 중단한다. 준비·저장이 실패하면 기존 판은 그대로 이어 할 수 있다.
+        self._abandon_each(replaced, player_pseudonym)
         return self._detail(meta.game_id, player_pseudonym, deps)
+
+    def unfinished_open_games(self, player_pseudonym):
+        """계정의 진행 중인 일반 판(회차 없음) ID를 시작 순서대로."""
+        from .open_start import unfinished_open_games   # open_start가 이 모듈을 import하므로 늦게 불러온다
+        return unfinished_open_games(self.progress.load(player_pseudonym).game_ids, self.repository.load)
+
+    def abandon_game(self, game_id, player_pseudonym):
+        """진행 중인 일반 판을 중단 처리한다(삭제하지 않음). 이번 호출로 중단했으면 True, 아니면 False.
+
+        False는 이미 끝난 판이거나 버전 충돌이 두 번 이어진 경우다. 호출자는 판이 아직 진행 중인지 다시 확인한다.
+
+        같은 판에는 같은 명령 ID(`abandon:<판 ID>`)를 써서 재요청·동시 요청이 이벤트를 두 번 남기지 않는다.
+        """
+        command_id = f"abandon:{game_id}"
+        for _ in range(2):
+            state, truth = self.owned(game_id, player_pseudonym)
+            if state.meta.session_id is not None:
+                raise ValueError("session_game_not_abandonable")
+            if state.result is not None or self.repository.find_command(game_id, command_id):
+                return False
+            try:
+                new_state, events = abandon(state)
+            except AlreadyEnded:
+                return False
+            envelopes = self._events(new_state, events, command_id)
+            stored = StoredCommand(command_id, json.dumps({"abandoned": game_id}))
+            try:
+                self.repository.commit(game_id, state.state_version, new_state, truth, envelopes, stored)
+            except VersionConflict:
+                continue   # 그사이 바뀐 판을 다시 읽어 한 번 더 판단한다
+            self._observe(events)
+            self._sweep_saved(player_pseudonym, new_state)   # 중단 전 고백 단서는 승패 무관 규칙대로 남긴다
+            self._release(game_id)
+            return True
+        return False
 
     def player_progress(self, player_pseudonym):
         """로그인 계정 자신의 진척만 조회한다."""

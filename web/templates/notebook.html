@@ -11,7 +11,7 @@
     <input type="hidden" name="game_id" value="{{ vm.game_id }}">
     <ul class="notebook-list">
     {% for entry in notebook_entries %}
-      <li><input type="hidden" name="entry:{{ entry.npc_id }}" value="{{ entry.value }}" data-notebook-entry="{{ entry.npc_id }}"><span>{{ entry.name|display_name }}</span>{% include "notebook_marks.html" with mark_npc=entry.npc_id mark_name=entry.name mark_value=entry.saved %}</li>
+      <li><input type="hidden" name="entry:{{ entry.npc_id }}" value="{{ entry.value }}" data-notebook-entry="{{ entry.npc_id }}"><span>{{ entry.name|display_name }}</span>{% if entry.active %}{% include "notebook_marks.html" with mark_npc=entry.npc_id mark_name=entry.name mark_value=entry.saved %}{% endif %}</li>
     {% endfor %}
     </ul>
     <p class="mark-status" role="status" data-mark-status></p>

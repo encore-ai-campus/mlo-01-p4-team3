@@ -146,5 +146,15 @@ class BanditTests(unittest.TestCase):
             bandit.games_from_events(events + [conflict], consent)
 
 
+    def test_aborted_games_are_not_rewarded(self):
+        """새로 시작으로 중단한 판(completed=false, winner=null)은 오류 없이 보상 조인에서 빠진다(11/10 사용자 결정)."""
+        common = dict(game_id='g-aborted', player_pseudonym='u1', source='human', load_test=False,
+                      model_versions={'bandit': 'bandit-0', 'bandit_arm': 'uniform'}, occurred_at='2026-11-10T05:00:00+00:00')
+        events = [dict(common, event_id='g-aborted:1', topic='paldo.game', event_type='game_ended', phase='ended',
+                       payload={'winner': None, 'reason': 'aborted', 'completed': False}),
+                  dict(common, event_id='g-aborted:2', topic='paldo.player', event_type='survey_submitted',
+                       payload={'skipped': True, 'fun': None, 'unfair': None, 'npc_plausible': None})]
+        self.assertEqual(bandit.games_from_events(events, {'u1'}), [])
+
 if __name__ == '__main__':
     unittest.main()

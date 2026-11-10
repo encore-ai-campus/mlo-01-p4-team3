@@ -81,11 +81,13 @@ def result_context(view, ending_choice, content_version):
         return {}
     reasons = {EndReason.ALL_POSSESSED_LOCKED: "씐 자를 모두 감금했습니다.",
                EndReason.MUDANG_LOCKED: "무당이 감금됐습니다.",
-               EndReason.POSSESSED_PARITY: "씐 자가 남은 마을 사람과 무당 이상으로 늘었습니다."}
+               EndReason.POSSESSED_PARITY: "씐 자가 남은 마을 사람과 무당 이상으로 늘었습니다.",
+               EndReason.ABORTED: "새 판을 시작하며 중단했습니다."}
     _, endings = story_catalog(content_version)
     selected = next((item for item in endings if item["ending_id"] == ending_choice), None)
     lines = selected["lines_ko"] if selected and result.completed and result.winner is Faction.VILLAGE else []
-    return {"game_result": {"winner": "마을 승리" if result.winner is Faction.VILLAGE else "창귀 승리",
+    return {"game_result": {"winner": ("" if result.winner is None else
+                                       "마을 승리" if result.winner is Faction.VILLAGE else "창귀 승리"),
                             "reason": reasons[result.reason], "day": result.day,
                             "completed": result.completed,
                             "ending_title": selected["title_ko"] if selected else "",

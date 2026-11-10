@@ -10,7 +10,7 @@
     <button type="button" role="tab" id="end-tab-clues"{% tip "end_tab_clues" %} aria-controls="end-panel-clues" aria-selected="false" tabindex="-1">원한 단서</button>
   </div>
   <div id="end-panel-result" class="end-panel" role="tabpanel" aria-labelledby="end-tab-result">
-    {% if first_game_end %}<aside class="end-guide" aria-label="족제비 안내"><img src="{% review_asset 'mascot:jokjebi' %}" alt="안내하는 족제비" width="96" height="96"><div class="end-guide-bubble">{% for text in first_game_end %}<p>{{ text }}</p>{% endfor %}</div></aside>{% endif %}
+    {% if guide_end %}<aside class="end-guide" aria-label="족제비 안내" data-guide-end{% if not first_game %} hidden{% endif %}><img src="{% review_asset 'mascot:jokjebi' %}" alt="안내하는 족제비" width="96" height="96"><div class="end-guide-bubble">{% for text in guide_end %}<p>{{ text }}</p>{% endfor %}</div></aside>{% endif %}
     {% include "game_result.html" %}
     <details class="end-public-records"><summary>이번 판의 공개 기록·투표·감금 결과</summary>{% include "meeting_records.html" %}</details>
     {% ad_slot 'result_banner' %}

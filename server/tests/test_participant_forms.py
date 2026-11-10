@@ -118,6 +118,19 @@ class ParticipantFormsTests(TestCase):
         notebook = self.view()["player"]["notebook"]
         self.assertEqual((notebook[npc], notebook[active]), (100, 100))
 
+    def test_notebook_window_marks_only_for_active(self):
+        """수첩 창도 활동 중인 주민만 버튼을 보이고, 실종·감금 주민은 숨은 값만 남긴다(11/10 사용자 결정)."""
+        view = self.view()
+        gone = sorted(set(view["missing"]) | set(view["locked"]))
+        npc = gone[0]
+        active = next(n for n in view["names"] if n not in gone and n not in ("mudang", PLAYER_ID))
+        page = self.client.get(self.url, HTTP_ACCEPT="text/html").content.decode()
+        start = page.index('id="notebook"')
+        notebook = page[start:page.index("</section>", start)]
+        self.assertNotIn(f'data-mark-person="{npc}"', notebook)
+        self.assertIn(f'data-mark-person="{active}"', notebook)
+        self.assertIn(f'name="entry:{npc}"', notebook)
+
     def test_survey_matches_final_questions_masking_and_htmx_completion(self):
         """확정 문항·선택 자유 의견을 표시하고 완료 조각과 중복 방지를 확인한다."""
         self.assertNotContains(self.client.get(self.url, HTTP_ACCEPT="text/html"), 'id="survey-title"')

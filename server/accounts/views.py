@@ -21,11 +21,21 @@ from .validators import normalize_login_id
 CONSENT_TEXT = "플레이 기록(선택, 입력한 문장, 수첩 값, 설문)을 이름 없이 저장하고, 게임 속 인물의 행동과 입력 해석 모델을 개선하는 데 씁니다. 단, 설문 점수는 개인별이 아니라 여러 판을 모은 값으로만 분석과 게임 속 인물의 전략 조정에 씁니다. 로그인 ID와 비밀번호(복원할 수 없는 형태로 변환)는 로그인에만 쓰고 플레이 기록과 따로 보관합니다. 로그인 ID에도 이름이나 연락처를 쓰지 마세요. 개인정보(이름, 연락처 등)는 입력하지 마세요. 입력하더라도 자동으로 가립니다. 기록은 2026년 12월 12일까지 보관하며, 화면 아래의 ID로 삭제를 요청할 수 있습니다."
 
 
+# 진행 중인 일반 판이 있을 때 홈 문구(11/10 사용자 결정: 이어 하기 / 중단하고 새로 시작 양자택일).
+OPEN_GAME_TEXT = {
+    "notice": "진행 중인 판이 있습니다.",
+    "resume": "진행 중인 판 이어 하기",
+    "restart": "중단하고 새로 시작",
+    "restart_warning": "지금 진행 중인 판은 다시 이어 할 수 없습니다. 모은 원한 단서는 그대로 남습니다.",
+}
+
+
 @require_GET
 def home(request):
     """계정의 가명 ID, 동의한 사용자의 새 게임(일반 판)·이어 하기와 배정된 고정 판을 표시한다."""
     player = player_context(request.user)
-    context = {"player_id": player[0] if player else None, "assignments": None}
+    context = {"player_id": player[0] if player else None, "assignments": None,
+               "open_game_text": OPEN_GAME_TEXT, "open_blocked": request.GET.get("open") == "choose"}
     if player and player[1]:
         loaded = {}
         def load_game(game_id):
@@ -67,7 +77,9 @@ def _open_game_context(player, load_game=None):
         backfill_surveys(service, player, progress.game_ids, load_game or service.repository.load)
         if not isinstance(service.prepare_start, StartPolicy):
             context["open_presets"] = []
-        context["open_games"] = unfinished_open_games(progress.game_ids, load_game or service.repository.load)
+        unfinished = unfinished_open_games(progress.game_ids, load_game or service.repository.load)
+        # 진행 판은 가장 최근 것 하나만 이어 하기로 보인다. 나머지는 새로 시작할 때 함께 중단된다.
+        context["open_games"] = unfinished[-1:]
     except (GameServiceUnavailable, StartUnavailable):
         context["open_unavailable"] = True
     return context

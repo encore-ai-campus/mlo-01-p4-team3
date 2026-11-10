@@ -48,7 +48,7 @@ class PresetScreens(TestCase):
     def start(self, **values):
         """새 시작 UUID로 공개 일반 판을 시작한다."""
         return self.client.post('/games', {'preset_id':'base6', 'mudang_variant':'f',
-            'start_token':str(uuid4()), **values}, content_type='application/json', HTTP_ACCEPT='application/json')
+            'start_token':str(uuid4()), 'replace_open':True, **values}, content_type='application/json', HTTP_ACCEPT='application/json')
 
     def test_config_file_changes_home_and_start_without_code_change(self):
         """설정 파일만 바꾸면 홈 선택지와 시작 허용이 함께 바뀐다."""

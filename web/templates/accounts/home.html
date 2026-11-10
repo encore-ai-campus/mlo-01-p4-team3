@@ -9,14 +9,13 @@
 {% if request.user.is_authenticated %}
   {% if request.user.is_staff %}<p><a href="{% url 'admin:index' %}">운영자 화면</a> · <a href="{% url 'test-sessions' %}">테스트 세션 관리</a></p>{% endif %}
   {% if open_presets or open_games or open_unavailable %}
-    <details class="start-mode" name="account-start" data-start-mode{% if not test_round_pending %} open{% endif %}>
+    <details class="start-mode" name="account-start" data-start-mode{% if not test_round_pending or open_blocked %} open{% endif %}>
     <summary>일반 게임<span>원할 때 새 판을 시작하거나 이어 하기</span></summary>
     <section id="open-game" class="session-card">
       <h2>일반 게임</h2>
       {% if open_unavailable %}<p>지금은 게임을 시작할 수 없습니다.</p>{% else %}
-        {% for game_id in open_games %}
-          <p><a href="{% url 'game-detail' game_id=game_id %}">진행 중인 판 이어 하기</a></p>
-        {% endfor %}
+        {% if open_games %}<p class="open-notice"{% if open_blocked %} role="status"{% endif %}>{{ open_game_text.notice }}</p>{% endif %}
+        {% if open_games and not open_presets %}<p><a href="{% url 'game-detail' game_id=open_games.0 %}">{{ open_game_text.resume }}</a></p>{% endif %}
         {% if open_presets %}
         <form method="post" action="{% url 'game-start' %}">
           {% csrf_token %}
@@ -27,7 +26,7 @@
           </select></label>{% endif %}
           {% include 'accounts/portrait_choice.html' %}
           {% include "ending_choice.html" %}
-          <button class="start-round">새 게임 시작 <span aria-hidden="true">→</span></button>
+          {% include "accounts/open_start_actions.html" %}
         </form>
         {% endif %}
       {% endif %}
@@ -47,7 +46,7 @@
   </ol>
 {% endif %}
 {% if request.user.is_authenticated %}<div class="session-list">
-  {% if assignments or assignments_unavailable %}<details class="start-mode" name="account-start" data-start-mode{% if test_round_pending %} open{% endif %}>
+  {% if assignments or assignments_unavailable %}<details class="start-mode" name="account-start" data-start-mode{% if test_round_pending and not open_blocked %} open{% endif %}>
   <summary>배정된 테스트 참여<span>운영자가 배정한 순서대로 진행</span></summary>
   {% if assignments_unavailable %}<p>지금은 테스트 회차를 조회할 수 없습니다.</p>{% endif %}
   {% for assignment in assignments %}
