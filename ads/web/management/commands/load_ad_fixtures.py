@@ -19,7 +19,7 @@ class Command(BaseCommand):
         data = json.loads((Path(settings.BASE_DIR) / "fixtures/ads/campaigns.json").read_text(encoding="utf-8"))
         created = 0
         for row in data["campaigns"]:
-            defaults = {k: v for k, v in row.items() if k not in ("campaign_id", "creatives", "target_cpc_mw")}
+            defaults = {k: v for k, v in row.items() if k not in ("campaign_id", "creatives")}
             c, new = Campaign.objects.get_or_create(pk=row["campaign_id"], defaults=defaults)
             created += int(new)
             c.full_clean()
