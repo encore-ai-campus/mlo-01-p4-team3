@@ -52,6 +52,18 @@ class HTTPAdWire(SimpleTestCase):
             self.assertLessEqual({k.lower() for k in call['headers']},
                                  {'host', 'content-length', 'x-request-id', 'content-type'})
 
+    def test_synthetic_creative_click_and_landing(self):
+        """합성 소재의 클릭·랜딩은 실제 HTTP에서도 같은 내부 경로로 이어진다."""
+        self.host.location = '/ads/landing/syn:cr-a'
+        with self.subTest(path='click'):
+            self.assertEqual(self.gateway.click('token', 'click'), (self.host.location, 'ok'))
+        with self.subTest(path='landing'):
+            body, result = self.gateway.landing('syn:cr-a', 'landing')
+            self.assertEqual(result, 'ok')
+            self.assertIn('가상 랜딩', body)
+        self.assertEqual([call['path'] for call in self.host.calls],
+                         ['/ads/v1/click?t=token', self.host.location])
+
     def test_invalid_http_responses_are_empty_and_not_retried(self):
         """형식 오류·잘못된 ID·HTML·리다이렉트·오류 상태는 빈 광고다."""
         cases = [(200, 'text/html', b'<html>bad</html>'), (200, 'application/json', b'{'),

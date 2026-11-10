@@ -1,5 +1,23 @@
 # 게임 명령 시험
 
+## B-09-03 리허설·버그 재현 준비
+
+[리허설 점검·재현 기록 양식](REHEARSAL.md)에 후보 SHA·실행 환경 확인, 6인 판 점검 순서, 결함 분류·인계·재확인 절차를 정리했다. 로컬 회귀와 테스트 서버의 사람 리허설은 별도로 기록한다. [사전 증빙](../../docs/evidence/B-09-03.md)
+
+## B-09-02 해석 혼합 부하 사전 준비
+
+D 어댑터 수신 회귀는 `python -B server/manage.py test server.tests.test_bert_receive --settings=server.paldo_web.test_settings --noinput`다. 로더 대역을 쓰는 조립·HTTP 시험과 실물 시험을 구분한다. 실제 D 체크포인트를 보호 경로로 인수한 뒤 환경 변수 `PALDO_BERT_RECEIVE_RUN_DIR`에 그 폴더를 지정하고 같은 명령을 실행하면 실물 HTTP 시험도 실행한다. 실제 모델 경로는 Git에 넣지 않는다. D torch 경계 실물 시험은 별도 ML 의존 환경에서 `PALDO_BERT_TESTS=1`로 실행한다. 두 플래그를 지정하는 것만으로 모델·패키지가 준비되는 것은 아니다.
+
+서비스 조립 설정은 `INTENT_PARSER_FACTORY = "server.paldo_web.intent.make_bert_parser"`, 아티팩트 경로는 `PALDO_INTENT_BERT_RUN_DIR`다. 이번 변경은 운영 기본값을 바꾸지 않는다. 실제 엔진·VM 성능과 B-09-01의 판별 버전 고정 검증 전 사용자 테스트 서버를 전환하지 않는다.
+
+`python -B tools/perf/api_bench.py --web-processes 2 --users 2 --minutes 0.3 --intent-every 1`로 짧게 확인한다. Mongo 접속은 기존 `PALDO_MONGO_URI`를 환경에 주입한다. 임시 계정 DB·고유 접두어 Mongo·시험 Daphne·Caddy만 만들며 운영 서버로 부하를 보내지 않는다. Docker가 없으면 기존 `--front binary --caddy-bin <실행 파일>`을 쓴다. 해석기는 `--intent-factory`로 바꾸고 기본은 `intent.parser.BaselineIntentParser`다. 옵션을 빼거나 `--intent-every 0`이면 기존 부하다.
+
+해석·취소는 전체 API 표본에 포함하고 상태 버전·확인 상태를 검사한다. `intent_http_p95_ms`는 DB·HTTP 포함, `intent_parse_p95_ms`는 시험 헤더의 순수 parse 표본이다. 각 프로세스의 해석 호출 수도 결과에 남긴다. 해석 요청 0건·취소 누락·오류는 혼합 시험 성공으로 처리하지 않는다. 30명·3분 이상이어야 기존 `--result-name`을 쓸 수 있으나 녹화 결과로 B-09-02 전체 완료를 판정하지 않는다.
+
+회귀: `python -B server/manage.py test server.tests.test_intent_load server.tests.test_interactions server.tests.test_utterance_ui server.tests.test_phase_filter --settings=server.paldo_web.test_settings --noinput`.
+
+[사전 결과와 D 인수 목록](../../docs/evidence/B-09-02.md). 실제 BERT·실제 엔진 혼합·동급 VM 검증은 별도다.
+
 ## 공통 UI 미리보기
 
 저장소 루트에서 `python -B -m server.tests.ui_theme_preview --port 8783`을 실행한다. 루프백 주소·시험 계정과 임시 DB·녹화 판으로만 동작한다. 운영 설정·실제 DB·광고와 분리된 검수 환경이며 실행·시험 범위는 [UI 적용 검증](../../web/UI_APPLY.md)을 따른다. 운영 계정 또는 실제 엔진·모델 성능 검증에 사용하지 않는다.
@@ -73,9 +91,11 @@ python -B server/tests/bench.py --memory --users 10 --minutes 3
 
 메모리 부하 시험은 임시 SQLite 세션과 녹화 엔진·원자 저장 대역으로 사용자마다 독립 판을 진행한다. 응답 p50·p95와 오류 건수를 출력한다.
 
-## B-06-04 계정과 광고 포트 비노출
+## B-06-04 계정과 광고 HTTP 비노출
 
-B-06-04의 `test_accounts.Accounts.test_credentials_absent_from_logs_outbox_and_metrics`는 가입·로그인·실패·잠금·녹화 판 완주를 거쳐 파일 로그·아웃박스·지표와 광고 포트 DTO의 인증 입력 비노출을 함께 검사한다. 광고 요청은 세 지면과 판 종료를 포함한 4건이다. 계정 가명·로그인 세션 키·판 ID·쿼리 위조값도 전달하지 않는다. 이 시험의 `FakeAdProvider`·메모리 회차 조립은 테스트 전용이며 실제 HTTP 광고 서버 수신 검증은 B-08-03 연결 뒤 별도로 한다.
+`python -B server/manage.py test server.tests.test_account_http_privacy --settings=server.paldo_web.test_settings --noinput`은 같은 전체 인증 시나리오를 B의 `HTTPAdProvider` → 별도 루프백 프로세스의 D 원본 Django WSGI·API·AdService로 실행한다. `ad_privacy_host.py`는 시험 전용이며 D의 메모리 광고 저장소·가상 캠페인을 사용한다. 실제 수신 본문4건·헤더와 D 파일 로그를 검사하며 Cookie·Authorization·계정 정보·판 ID가 없는지 확인한다. VM 운영 배치·광고 MySQL 검증은 아니다. 실제 수신 원자료와 인증 입력은 메모리에서만 대조하고 종료 시 제거한다. MySQL 계정 회귀는 같은 명령의 설정을 `server.paldo_web.mysql_test_settings`로 바꾼다(시험 전용 접속 정보 필요).
+
+B-06-04의 `test_accounts.Accounts.test_credentials_absent_from_logs_outbox_and_metrics`는 가입·로그인·실패·잠금·녹화 판 완주를 거쳐 파일 로그·아웃박스·지표와 광고 포트 DTO의 인증 입력 비노출을 함께 검사한다. 광고 요청은 세 지면과 판 종료를 포함한 4건이다. 계정 가명·로그인 세션 키·판 ID·쿼리 위조값도 전달하지 않는다. 기본 시험의 `FakeAdProvider`·메모리 회차 조립은 테스트 전용이며, 위 별도 HTTP 시험이 D 실제 API 수신 경계까지 확장한다.
 
 ## B-06-03 고정 회차와 광고 가명
 
@@ -136,3 +156,9 @@ B-08-01 버전 회귀는 현재 E 원문과 B 보관본의 일치, 새 버전 �
 - D가 장애를 주입한 뒤 같은 조건으로 --scenario stopped|unresponsive|delay|error --baseline out/handoff/ad-normal.json을 각각 실행한다. 장애 종류는 외부 운영자가 제어하고 CLI가 별도 제어 API를 호출하지 않는다.
 
 게임 부하는 기존 asgi_bench의 api_bench 명령 경로를 재사용하며 세 지면·웹소켓 비콘·클릭을 동시에 요청한다. 테스트 계정은 임시 SQLite, 게임은 녹화 엔진·실제 격리 Mongo다. 부하 요청에는 load_test가 붙는다. 결과에는 토큰·쿠키·주소·계정 ID를 기록하지 않는다. local-http-fixture 결과나 5분 미만 실행은 공식 D/VM 합격 증빙이 아니다. [인수 항목·수치](../../docs/evidence/B-08-03.md).
+
+## B-10-08 계정 화면·글꼴 계측
+
+첫 화면 확인은 `python -B -m server.tests.ui_theme_preview --port 8794` 뒤 자기 PC의 `/`에서 시작한다. 비로그인 소개/시작 안내, 로그인 뒤 일반 게임/배정 테스트 단일 펼침과 이어 하기를 확인한다. 배경은 PR #323 공식 manifest 그림이다. 새 시험은 `test_account_design.py`의 공개 홈·시작 모드·공식 자원/게임 로고 경계다. 포트별 시험 쿠키로 다른 미리보기 로그인과 분리한다. [PM/E 전달 항목](../../web/PM_UI_REVIEW.md).
+
+`python -B -m server.tests.ui_theme_preview --font-probe --port 8792`는 임시 SQLite·기존 녹화 판의 로그인 GET에만 숨김 `#font-probe`의 `data-sample` JSON을 남긴다. 실제 Navigation/Resource Timing·글꼴 준비 시점·뷰포트·그림 실패만 포함하고 입력·쿠키·토큰은 담지 않는다. 1280·360px에서 새로고침 뒤 DOM 표본을 각각 시험 파일로 보관하고 `python -B -m tools.perf.account_assets --browser-sample <표본 파일>`로 기록한다. 운영과 기본 미리보기에는 계측이 없다.

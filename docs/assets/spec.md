@@ -30,6 +30,7 @@
 | sprite | 인물 전신 그림 | 512×1280 | portrait와 같은 인물 13종 | `content/images/sprite/<id>.png` | `/static/assets/sprite/<id>.png` |
 | background | 장면 배경 | 1280×720 | `meeting`·`night` 2장 | `content/images/background/<id>.png` | `/static/assets/background/<id>.png` |
 | mascot | 마스코트 | 512×512 | `kkachi`(까치)·`jokjebi`(족제비) 2장 | `content/images/mascot/<id>.png` | `/static/assets/mascot/<id>.png` |
+| branding | 판 시작 전 로고 | 512×512 | `tiger_emblem` 1장, RGBA | `content/images/branding/<id>.png` | `/static/assets/branding/<id>.png` |
 | place | 장소 아이콘 | 128×128 | `engine.domain.model.Place` 값 5개 | `content/images/place/<id>.png` | `/static/assets/place/<id>.png` |
 | ui | UI 아이콘 | 128×128 | 아래 3절 목록 10개 | `content/images/ui/<id>.png` | `/static/assets/ui/<id>.png` |
 | map | 마을 지도 | 1280×720 | `village` 1장 | `content/images/map/<id>.png` | `/static/assets/map/<id>.png` |

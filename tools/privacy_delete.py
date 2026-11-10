@@ -7,6 +7,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from uuid import UUID, uuid4
 
+from tools.privacy_scope import read_plan
+
 
 FIELDS = ("players", "ad_sessions", "ad_event_ids", "ad_charge_ids")
 
@@ -41,14 +43,25 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--register", action="store_true", required=True)
     parser.add_argument("--directory", type=Path, required=True)
-    parser.add_argument("--player", required=True)
+    subject = parser.add_mutually_exclusive_group(required=True)
+    subject.add_argument("--player")
+    subject.add_argument("--scope", type=Path)
     parser.add_argument("--ad-session", action="append", default=[])
     parser.add_argument("--ad-event-id", action="append", default=[])
     parser.add_argument("--ad-charge-id", action="append", default=[])
     parser.add_argument("--model-version", required=True)
     args = parser.parse_args(argv)
-    counts = register(args.directory, args.player, args.ad_session, args.ad_event_id,
-                      args.ad_charge_id, args.model_version)
+    if args.scope:
+        if args.ad_session or args.ad_event_id or args.ad_charge_id:
+            parser.error("privacy_scope_cannot_be_combined_with_manual_ids")
+        scope = read_plan(args.scope)
+        if len(scope["players"]) != 1:
+            parser.error("privacy_single_player_required")
+        counts = register(args.directory, scope["players"][0], scope["ad_sessions"], scope["ad_event_ids"],
+                          scope["ad_charge_ids"], args.model_version)
+    else:
+        counts = register(args.directory, args.player, args.ad_session, args.ad_event_id,
+                          args.ad_charge_id, args.model_version)
     print(json.dumps({"tombstone_registered": True, **counts}))
 
 

@@ -1,0 +1,44 @@
+{
+  "task": "B-10-08",
+  "commit": "fcf8752e3d8571dfc6666a310f0862420b872e74",
+  "generated_at": "2026-11-09T08:57:10Z",
+  "source": "python -B -m tools.perf.account_assets --browser-sample out/handoff/login-1280-sample.json",
+  "metrics": {
+    "font_total_bytes": {
+      "value": 3985872,
+      "unit": "bytes"
+    },
+    "font_file_count": {
+      "value": 94,
+      "unit": "개"
+    },
+    "initial_font_bytes": {
+      "value": 712500,
+      "unit": "bytes"
+    },
+    "initial_font_requests": {
+      "value": 9,
+      "unit": "개"
+    },
+    "initial_load_ms": {
+      "value": 1370.6,
+      "unit": "ms"
+    },
+    "font_ready_ms": {
+      "value": 1395.3,
+      "unit": "ms"
+    },
+    "viewport_width": {
+      "value": 1280,
+      "unit": "px"
+    },
+    "horizontal_overflow": {
+      "value": 0,
+      "unit": "건"
+    },
+    "broken_images": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "task": "D-08-04",
+  "commit": "fc75e6e8cdb994ba40073116324b8ffe4300c3d2",
+  "generated_at": "2026-11-09T13:50:51Z",
+  "source": "python out/d08-04/check_completion.py",
+  "metrics": {
+    "local_artifacts": {
+      "value": 3,
+      "unit": "개"
+    },
+    "games_per_run": {
+      "value": 50,
+      "unit": "판"
+    },
+    "runs": {
+      "value": 3,
+      "unit": "회"
+    },
+    "reproduction_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "successful_inferences": {
+      "value": 960,
+      "unit": "건"
+    },
+    "legal_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "suspicion_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
