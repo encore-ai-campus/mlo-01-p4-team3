@@ -98,3 +98,12 @@ B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story
 계정 GET/POST·홈·게임 시작 URL과 시작 정책은 유지한다. `accounts/views.py`는 배정된 미완료 판 여부를 `test_round_pending`으로 전달하고 계정의 `account-start.js`가 일반/테스트 영역을 하나씩 펼친다. `accounts/base.html`이 판 시작 전 로고와 계정 전용 CSS를 연결하고 게임 기본 템플릿은 로고를 연결하지 않는다. 배경은 `api/assets.py`의 기존 `asset_url`로 공식 manifest의 정식 night를 읽는다. 자원은 기존 공식 manifest·`web/static/` 허용 경로로 제공한다.
 
 `tests/ui_theme_preview.py --font-probe`는 `tests/ui_font_probe.py`를 시험 미들웨어에만 주입한다. 로그인 GET에만 글꼴 Timing 표본을 추가하며 운영 설정·URL은 바꾸지 않는다. 기록 도구는 `tools/perf/account_assets.py`다. [웹 라우팅](../web/ROUTING.md#b-10-08-계정-디자인로고글꼴)
+
+
+## 확정 표정 에셋 교체 (2026-11-10)
+
+A-11-04의 슬픔 8종 전신과 같은 수의 파생 초상을 기존 manifest ID·경로에 등록했다. 기본 인물 파일·API·공개 사건 선택 로직은 변경하지 않았다. 복구한 출처 기록과 제출 상태는 docs/evidence/A-11-04.md를 따른다.
+
+### UI 검수와 미연결 범위 (2026-11-10)
+
+기본·기쁨·당황·슬픔의 192개 PC/모바일 표시 조합에서 얼굴 가림·가로 넘침·이미지 실패·브라우저 오류는 0건이다. 이는 시험 전용 에셋 지정 검사이며 운영 자동 선택 통과를 뜻하지 않는다. 현재 `server/api/vn_script.py` → 대사 소스 → `web/static/js/ui-vn.js`는 기본 sprite를 전달·표시한다. 희생자 발표 뒤 첫 주민 대사에도 기본 그림이 나와 spec 7절의 sad 기대와 다르다. 공개 사건별 전환은 E 담당 B-10-07에서 연결·재검증할 사항이다. 운영 URL·DTO·선택 코드는 이번에 바꾸지 않았다. 상세 범위·스크린샷: [검수 증빙](../docs/evidence/A-11-04.md#pc모바일-ui-검수-2026-11-10).

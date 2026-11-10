@@ -42,3 +42,7 @@
 | 사용자 테스트 일정·설문 문항·고정 시드 판 바꾸기 | `docs/user_test/plan.md`(동의 문구·수집 항목의 원본은 `docs/contracts/privacy.md`) |
 | 사용자 테스트 중 웹 장애 대처 | `ops/runbook/user_test_incident.md`(회차 등록·버전 값·동결은 `docs/user_test/plan.md` 4절) |
 | 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/A_engine.md` `[에셋]`, 남은 일 담당 B) |
+
+## A-11-04 표정 파일 등록
+
+기존 content/images/sprite → make_placeholders → portrait → manifest → server/api/assets.py 경로로 슬픔 8종을 제공한다. 증빙 docs/evidence/A-11-04.md. 새 URL·선택 로직은 없다.
