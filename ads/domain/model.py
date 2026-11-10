@@ -101,6 +101,8 @@ class Creative:
 
 @dataclass
 class Campaign:
+    """Campaign policy, creatives and optional CPC automation settings."""
+
     campaign_id: str                # 합성 트래픽 전용 복제본은 "syn:" 접두어(실제 상태와 격리)
     advertiser_id: str
     name: str
@@ -114,6 +116,7 @@ class Campaign:
     status: CampaignStatus
     creatives: list[Creative]
     target_cpc_mw: Optional[int] = None   # 자동 입찰(CPC만, 선택)
+    min_bid_mw: int = 1                  # 자동 입찰 하한(밀리원)
 
 
 @dataclass

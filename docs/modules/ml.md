@@ -3,6 +3,7 @@
 ## 무엇을
 `gate.py`는 수명주기 평가 판정, `bandit.py`는 P-16 보상·상한·버전 고정 전략 공급자,
 `mongo_bandit.py`는 전체 이벤트 export 배치·Mongo CAS와 C의 판 ID별 삭제 연결을 제공한다.
+`ad_ctr.py`는 확정 광고 집계로 맥락별 CTR 모델을 학습하고 베타 기준선과 같은 평가를 수행한다.
 구체적인 입력·B/C 책임·실행과 미충족 범위는 [D-09-02 인계](../reports/D-09-02-handoff.md)를 따른다.
 
 `ml/suspicion/`은 씐 자 1명 판의 마을 NPC 관측을 학습·평가하는 인프라 모듈이다.
@@ -97,6 +98,15 @@ python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version 
 
 `select`는 고정 설정의 모델을 실제로 열어 검증한 뒤 버전 두 개와 `False`를 반환한다. 파일·로더·모델 ID 오류는 `ModelUnavailable`, 의심 특징 불일치는 `FeatureVersionMismatch`다. 조회는 로컬 경로와 버전만 사용한다. 판별 인스턴스 수명·버전 고정과 카나리아는 B-09-01, 원격 레지스트리는 C-09-01에서 연결한다. BERT 해석기 연결은 D-09-01 범위다.
 
+### 광고 CTR (D-10-02)
+
+```powershell
+python -m ml.ad_ctr --input <확정-Delta-export>/ctr.json --source synthetic --eval-from 2026-11-04 --out out/ctr-report.json --register
+python -m tools.ad_ctr_scenario score --out out/d1002/scenario --report out/ctr-report.json
+```
+
+`--register` 실행 전에 격리 `MLFLOW_TRACKING_URI`를 지정한다. 학습은 지면·소재·판 결과·프리셋·귀속 시간대를 사용한다. 모델 파일과 범주 인코딩, 학습 Delta 버전, 코드 SHA, 같은 보류 노출의 베타/LightGBM 로그 손실 및 ECE를 기록한다. 기준은 로그 손실 증가 0.01 이하와 ECE 0.05 이하다. 평가 노출이 모두 베타 폴백이면 거부한다. 거부한 실행은 레지스트리 후보를 만들지 않는다. 카나리아는 학습에서 본 특징 조합만 적용하고 다른 조합은 베타로 폴백한다. 시나리오 6에서는 별도의 평가 시드와 숨긴 확률을 사용해 승리·패배별 CTR 오차를 잰다. [D-10-02 증빙](../evidence/D-10-02.md)
+
 ## 설정값
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
@@ -139,5 +149,6 @@ python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version 
 | D-08-04 | 11/8 | 로컬 Selector의 고정 버전 조회·특징 버전 검사와 A·B 재현 절차 추가 |
 | D-08-04 | 11/9 | A 쪽 재현 명령 `reproduce_model_games`(같은 모델·시드 두 실행 비교, 실제 v0 수령 전 가짜 모델 시험, E) |
 | D-08-04 | 11/9 | 사용자 변경 기준 적용, 실제 로컬 모델 인계와 A CLI·B 조립 50판 비교 완료 |
+| D-10-02 | 11/9 | 확정 Delta 맥락 CTR 학습, 동일 베타 평가, LightGBM 관문·MLflow 후보·시나리오 6 채점 |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.

@@ -18,6 +18,7 @@ from ads.domain.model import (
 from ads.domain.rules import GRACE_MS, JUDGE_VERSION, Judgement, ValidityState, charge_id, verify_token
 from ads.infra.outbox import enqueue
 from ads.web.models import AdReceipt, AdSession, AdStoredRequest
+from ads.web.telemetry import LOGGER
 from engine.domain.model import PRESETS
 
 
@@ -113,7 +114,8 @@ class MySQLAdStore:
         event_id = "serve:" + _digest(req.request_id)
         fields = _event_fields(event_id, req.request_id, record, snapshot, started,
                                record.served_at_ms if record else started)
-        fields.update(slot=req.slot, session_pseudonym=req.session_pseudonym, source=req.source)
+        fields.update(slot=req.slot, session_pseudonym=req.session_pseudonym, source=req.source,
+                      bid_version=service.auction_bid_version)
         cid = charge_id(record.serve_id, record.billing) if record else None
         context = asdict(req.context)
         if context["preset_id"] not in PRESETS:
@@ -123,6 +125,10 @@ class MySQLAdStore:
             rank_ctr=record.rank_ctr if record else 0.0, capped=auction.capped, reserved_charge_id=cid,
             reserved_mw=service.book.get(cid).amount_mw if cid else 0, context=context,
             latency_ms=max(0, service.clock() - started)))
+        if service.ctr_lookup_count:
+            LOGGER.info("ad_ctr_canary", extra={"fields": dict(component="ctr_canary", request_id=req.request_id,
+                version=service.ctr_canary_version, fallback=bool(service.ctr_lookup_misses),
+                lookup_ms=service.ctr_lookup_ns / 1_000_000)})
         return response
 
     @transaction.atomic

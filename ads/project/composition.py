@@ -5,7 +5,7 @@ from pathlib import Path
 
 from django.conf import settings
 
-from ads.app.serve import AdService
+from ads.app.serve import AdService, CTR_VERSION
 from ads.domain.model import AdSlot, SlotPolicy
 from ads.infra.mysql_ledger import MySQLLedger
 from ads.infra.mysql_store import MySQLAdStore
@@ -40,4 +40,18 @@ def get_service():
     if row := versions.get("pacing"):
         service.policy_version = row.version
         service.pacing = {(r["campaign_id"], r["attribution_day"]): r["probability"] for r in row.payload}
+    if row := versions.get("bid"):
+        service.bid_version = row.version
+        service.bids = {r["campaign_id"]: r for r in row.payload["bids"]}
+    if row := versions.get("ctrml"):
+        source = row.payload["source"]
+        if getattr(row, "holds_beta", False):
+            baseline = row.baseline
+            service.ctr_baseline = (source, baseline.version if baseline else CTR_VERSION,
+                {(r["creative_id"], AdSlot(r["slot"])): (r["alpha"], r["beta"]) for r in baseline.payload}
+                if baseline else {})
+        if row.payload.get("predictions"):
+            service.ctr_canary_version = row.version
+            service.ctr_canary_source = source
+            service.ctr_canary = row.predictions
     return service

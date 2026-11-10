@@ -1,11 +1,40 @@
 """광고 gold·CTR 학습 행을 잠정/확정 마감별로 별도 보존한다."""
 import argparse
+import hashlib
 import json
+from collections import defaultdict
 from pathlib import Path
-from pipeline.spark.ads_contract import campaign_daily_rows,gold_rows,reconcile_rows
+from pipeline.spark.ads_contract import campaign_daily_rows,closing_times,gold_rows,reconcile_rows
 from pipeline.spark.ads_job import session,merge_rows,CAMPAIGN_DAILY_SCHEMA,GOLD_SCHEMA,TRAINING_SCHEMA
 from pipeline.spark.ingest_bronze import write_audit
 from tools.jsonlog import log
+
+
+def cpc_bid_days(silver, as_of_ms):
+    """Allow only the latest finalized day for each campaign if all valid events are CPC."""
+    latest, billings = {}, defaultdict(set)
+    for row in silver:
+        day, cid = row['attribution_day'], row['campaign_id']
+        if not day or not cid or row['load_test'] or row['status'] != 'valid' or closing_times(day)[1] > as_of_ms:
+            continue
+        key = cid, row['source']
+        latest[key] = max(day, latest.get(key, day))
+        billings[(*key, day)].add(row['billing'])
+    return {(*key, day) for key, day in latest.items() if billings[(*key, day)] == {'cpc'}}
+
+
+def export_optimization(spark, directory, as_of_ms, training_path, training_version, gold_path, gold_version, bid_days):
+    """Export finalized rows from the committed Delta versions for CTR training and CPC bids."""
+    for name, path, version in (("ctr", training_path, training_version), ("bid", gold_path, gold_version)):
+        table = spark.read.format("delta").option("versionAsOf", version).load(path)
+        rows = [row.asDict() for row in table.toLocalIterator() if row.attribution_day
+                and closing_times(row.attribution_day)[1] <= as_of_ms]
+        if name == "bid":
+            rows = [row | {"billing": "cpc"} for row in rows if not row["load_test"]
+                    and (row["campaign_id"], row["source"], row["attribution_day"]) in bid_days]
+        revision = hashlib.sha256(str(path).encode()).hexdigest()[:16]
+        write_audit(directory / f"{name}.json", dict(finalized=True, as_of_ms=as_of_ms, rows=rows,
+            source_version=f"delta:ads-{name}:{revision}:{version}"))
 
 
 def main(argv=None):
@@ -14,7 +43,10 @@ def main(argv=None):
     parser.add_argument('--phase',choices=['provisional','final'],required=True)
     parser.add_argument('--ledger',type=Path,required=True)
     parser.add_argument('--budgets',type=Path,required=True,help='귀속일 → 캠페인 → 일 예산(밀리원) JSON')
+    parser.add_argument('--export-optimization', type=Path, help='확정 Delta에서 CTR·CPC 입력 내보내기')
     args=parser.parse_args(argv)
+    if args.export_optimization and args.phase != 'final':
+        parser.error('--export-optimization requires --phase final')
     ledger=json.loads(args.ledger.read_text(encoding='utf-8'))
     budgets=json.loads(args.budgets.read_text(encoding='utf-8'))
     with session(args.config,'paldo-ads-gold') as (spark,config):
@@ -58,6 +90,9 @@ def main(argv=None):
                 counts[key]=counts.get(key,0)+row[key]
         write_audit(audit/('gold-p25-'+args.phase+'.json'),result|{
             'fill':silver_audit['fill'],'campaign_daily':daily,'by_source':by_source})
+        if args.export_optimization:
+            export_optimization(spark, args.export_optimization, args.as_of_ms,
+                                training_path, training_version, path, version, cpc_bid_days(rows, args.as_of_ms))
         log('ads_gold','info','ads_gold_committed',**result)
 
 

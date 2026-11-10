@@ -71,6 +71,7 @@
   - 대상: `slot`, `campaign_id`, `creative_id`, `session_pseudonym`
   - 출처: `source`(human, synthetic), `load_test`
   - 버전: `policy_version`, `ctr_version`, `bid_version`(자동 입찰 입찰가 버전, 없으면 빈 문자열), `contract_version`(`ads-0.4`부터). 노출·클릭 이벤트의 버전은 그때의 캐시 값이 아니라 serve 기록(`ServeRecord`)에 고정된 경매 시점 값을 복사한다
+    - D-10-02 `candidates[].bid_mw`는 실제 순위 계산에 사용한 입찰가다. 평가 후보 중 자동 입찰값이 하나라도 있으면 경매의 공통 `bid_version`에 기록한다. 맥락 CTR을 사용한 경매의 `ctr_version`은 후보 버전이며, 대조 또는 전체 폴백 요청은 베타 버전을 기록한다.
   - 경매 당시 값: `billing`, `price_mw`
 - **serve 이벤트**:
   - 요청 맥락 `context`(`AdRequest.context` 복사: `preset_id`, `outcome`(win, lose, 없음), `returning`, `hour`). 노출·클릭 이벤트에는 싣지 않고, silver가 `serve_id`로 serve에 조인해 붙인다(11/5 PM 결정, `ads-0.4`). 맥락 조인은 분석·학습용이고 판정·과금을 바꾸지 않는다
