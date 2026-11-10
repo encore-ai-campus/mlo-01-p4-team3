@@ -107,7 +107,7 @@
 6. 단계 거르기(B-09-07): 응답 카드(`cards`)에는 현재 단계에서 플레이어가 낼 수 있는 명령만 남는다(`is_legal_kind`). 투표·결선 단계의 `suspect` 후보는 같은 대상의 `vote` 카드로 바꾸고(결선이면 결선 후보 대상만), 뜻이 뒤집히는 후보(`defend` 등)는 버린다. 거른 뒤 카드가 0장이면 `unsupported_intent`로 안내하고 `suggestions`에 현재 단계의 플레이어 행동 종류를 담는다. `intent_attempt` 이벤트의 `candidates`·`failure`는 해석기 원래 결과 그대로다. 아침·밤 화면은 입력 칸을 비활성으로 둔다.
 
 ## 5. LLM 답변 폴링
-- 게임 추궁 답변에는 `Powered by Kanana`를 표시하지 않는다(11/8 PM 결정, B-08-02 ③). 게임 문장은 템플릿·Claude Code 사전 작성 변형을 사용한다. 최초 화면·폴링 조각·완료·취소 재조회 모두 동일하며, 별도 Kanana 실험의 표기 의무와 구분한다.
+- 게임 추궁 답변에는 `Powered by Kanana`를 사용자가 쉽게 알아보게 표시한다(11/10 사용자 결정으로 11/8 "표시하지 않음"(B-08-02 ③)을 바꿈, E-10-13 5번). 게임 문장은 템플릿과 Kanana 서버로 미리 생성·검수한 변형을 사용한다(런타임 호출 없음). 최초 화면·폴링 조각·완료·취소 재조회 모두 동일하다.
 - 캐묻기가 수락되면, 응답 화면의 해당 발언 자리에 폴백 문장이 먼저 표시된다. 그 자리에 `hx-get="/games/{id}/renders/{job_id}" hx-trigger="every 1s"` 조각이 붙는다.
 - `RenderOutput.final`이 true이면(done, timeout, failed, cancelled, discarded) 폴링 속성이 없는 조각으로 바꿔 폴링을 멈춘다. done이 아니면 `text`는 폴백 문장이다.
 - 판이 다음 단계로 넘어가면 응용 계층이 미완료 작업을 취소한다. 그 뒤의 폴링 응답은 `final=true`(폴백)다.

@@ -243,6 +243,11 @@ class GameService:
                                    content.grudge_clues, progress.clues, game_ids)
         return bool(game_ids) and game_ids[0] == state.meta.game_id, state.meta.preset.n_possessed, notices
 
+    def temperaments(self, game_id, player_pseudonym):
+        """판 콘텐츠의 주민 ID → 성향 ID. 대사창 반응 줄의 말투를 고를 때만 쓴다(공개 콘텐츠 값)."""
+        state, _ = self.owned(game_id, player_pseudonym)
+        return {c.npc_id: c.temperament_id for c in self.dependencies(state.meta).content.characters}
+
     def review(self, game_id, player_pseudonym):
         """종료된 자기 판의 DTO 허용 정보만 복기로 반환한다."""
         state, truth = self.owned(game_id, player_pseudonym)
