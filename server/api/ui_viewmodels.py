@@ -1,6 +1,7 @@
 """공통 화면 계약을 바꾸지 않고 PM 시안의 공개 표시 정보만 조립한다."""
 from dataclasses import asdict, dataclass
 from .viewmodels import ClaimCardVM, DisappearanceVM, SpeechVM, PLACE_KO, build_meeting_vm
+from .vn_script import speech_display_text
 
 
 @dataclass
@@ -34,7 +35,9 @@ def build_ui_vm(view):
         slot=record.slot.value if record.slot else '',
         place=PLACE_KO.get(record.place.value, '') if record.place else '', corrects=record.corrects)
         for card, record in zip(vm.claims, view.public.claims, strict=True)]
-    vm.speeches = [UISpeech(**asdict(speech), speaker_id=record.speaker, day=record.day, phase=record.phase.value)
+    # 발언 문장은 보일 때만 고친다(무당 승인 문장, 괄호 조사). 저장된 공개 기록은 그대로다.
+    vm.speeches = [UISpeech(**{**asdict(speech), "text": speech_display_text(view, record, speech.text)},
+                            speaker_id=record.speaker, day=record.day, phase=record.phase.value)
                    for speech, record in zip(vm.speeches, view.public.speeches, strict=True)]
     vm.disappearances = [UIDisappearance(**asdict(item), npc_id=record.victim)
         for item, record in zip(vm.disappearances, view.public.disappearances, strict=True)]

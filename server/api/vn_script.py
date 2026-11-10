@@ -7,7 +7,7 @@ import re
 import zlib
 from dataclasses import dataclass
 
-from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, Phase, Polarity
+from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, DivinationResult, Phase, Polarity
 from engine.ports import PlayerView
 from server.app.trust_cue import trust_cue
 from .viewmodels import PLACE_KO, SLOT_KO
@@ -60,6 +60,16 @@ REACTION_CONTRADICTED = {
     "timid": ("제, 제 말이 다르다고요…?", "어, 어디가 다르다는 건지… 모르겠습니다요."),
 }
 REACTIONS = {CommandKind.SUSPECT: REACTION_SUSPECTED, CommandKind.POINT_CONTRADICTION: REACTION_CONTRADICTED}
+# 무당(플레이어) 회의 발언 문장(11/11 사용자 승인, 하오체). 엔진은 플레이어 발언에 문장을 두지 않으므로
+# 공개 발언 기록(종류·대상·점괘 공개 주장)으로 만든다. 점괘 공개는 공개된 값(거짓 공개 포함)을 그대로 읽는다.
+MUDANG_LINES = {
+    CommandKind.SUSPECT: "{target}, 아무래도 수상하오.",
+    CommandKind.DEFEND: "{target}은(는) 의심할 사람이 아니오.",
+    CommandKind.POINT_CONTRADICTION: "앞서 나온 말과 지금 말이 서로 어긋나오.",
+    CommandKind.SILENCE: "……좀 더 지켜보겠소.",
+    CommandKind.REVEAL_DIVINATION: "간밤 {target}을(를) 점쳤더니 {result}이 나왔소.",
+}
+DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
 
 @dataclass(frozen=True)
@@ -228,6 +238,37 @@ def reaction_lines(view: PlayerView, temperaments=None) -> dict[str, list[VNLine
         out[speech.speech_id] = [VNLine(f"reaction-{speech.speech_id}", speech.day, speech.phase.value,
                                         _name(view, target), text, target, f"sprite:{target}")]
     return out
+
+
+def mudang_line_text(view: PlayerView, speech) -> str:
+    """무당 발언 한 개의 승인 문장. 종류·대상·공개 주장만 읽으므로 같은 기록이면 늘 같은 문장이다.
+
+    문장이 없는 종류이거나 채울 대상이 없으면 빈 문자열(화면은 기존처럼 비운다).
+    """
+    template = MUDANG_LINES.get(speech.kind)
+    if template is None:
+        return ""
+    target, result = speech.target, ""
+    if speech.kind is CommandKind.REVEAL_DIVINATION:
+        claims = {c.claim_id: c for c in view.public.claims}
+        reveal = next((claims[cid] for cid in speech.claim_ids if cid in claims
+                       and claims[cid].claim_type is ClaimType.DIVINATION_REVEAL), None)
+        if reveal is None or reveal.divination_result is None:
+            return ""
+        target, result = reveal.subject, DIVINATION_KO.get(reveal.divination_result, "")
+    if "{target}" in template and not target:
+        return ""
+    return attach_particles(template.format(target=_name(view, target) if target else "", result=result))
+
+
+def speech_display_text(view: PlayerView, speech, stored: str) -> str:
+    """대사창·발언 기록에 보일 발언 문장. 저장된 문장은 바꾸지 않고 보일 때만 괄호 조사를 고른다.
+
+    무당 발언은 저장된 문장이 없으면 승인 문장(`mudang_line_text`)을 쓴다. 옛 판의 저장 문장에도 그대로 적용된다.
+    """
+    if speech.speaker == PLAYER_ID and not stored:
+        return mudang_line_text(view, speech)
+    return attach_particles(stored)
 
 
 def _tally(view: PlayerView, votes) -> list[tuple[str, int]]:
