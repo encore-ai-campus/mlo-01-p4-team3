@@ -17,6 +17,7 @@ class NotebookEntryVM:
     name: str
     value: int
     saved: int | None = None   # 저장한 적 없으면 None(모르겠음으로 표시)
+    active: bool = True        # 실종·감금이면 False: 수첩 창에서도 버튼을 숨기고 값만 보존
 
 
 def participant_context(service, view):
@@ -28,7 +29,8 @@ def participant_context(service, view):
         submitted = records.survey is not None
     return {
         "participant_forms_available": True,
-        "notebook_entries": [NotebookEntryVM(npc, name, view.player.notebook.get(npc, 50), view.player.notebook.get(npc))
+        "notebook_entries": [NotebookEntryVM(npc, name, view.player.notebook.get(npc, 50), view.player.notebook.get(npc),
+                                         npc not in view.locked and npc not in view.missing)
                              for npc, name in view.names.items() if npc != "mudang"],
         "vote_confidence": confidence,
         # 주민 창·수첩 창의 한 번 누름 표시(11/10 사용자 결정). 값은 기존 0~100 형식에 그대로 저장한다.

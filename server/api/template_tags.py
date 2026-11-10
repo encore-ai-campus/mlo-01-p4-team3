@@ -118,6 +118,7 @@ UI_TIPS = {
     "confirm_cancel": "행동을 보내지 않고 닫습니다",
     "confirm_submit": "선택한 행동을 보냅니다",
     "utterance_submit": "입력한 말을 행동 카드로 바꿔 확인합니다",
+    "guide_toggle": "켜면 이번 판에서 족제비 안내를 첫 판처럼 무대에 띄웁니다",
     "notebook_save": "투표 직전 확신도를 저장합니다",
     "card_run": "이 카드의 행동을 실행합니다",
     "card_edit_run": "고친 카드로 행동을 실행합니다",

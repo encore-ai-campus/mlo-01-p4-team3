@@ -7,6 +7,9 @@ from dataclasses import dataclass
 
 GUIDE_SPEAKER = "족제비"
 
+# 두 번째 판부터 도움말 스위치로 안내를 다시 켤 때 첫 줄만 바꾼다(11/10 사용자 승인).
+REPLAY_FIRST_LINE = "무당님, 또 만났네요! 처음부터 다시 알려 드릴게요!"
+
 # 단계 키 → (몇째 날, 단계 값, 대사들). 단계 값은 엔진 Phase 값과 같다.
 GUIDE_STEPS = (
     ("start", 1, "morning", (
@@ -15,7 +18,7 @@ GUIDE_STEPS = (
         "근데 무당님이 갇히면 져요. 그리고 남은 씐 사람 수가, 아직 안 갇히고 안 사라진 나머지 사람 수(무당님까지 쳐서)만큼 되면 그때도 져요.",
     )),
     ("morning1", 1, "morning", (
-        "아침마다 누가 밤중에 사라졌는지, 짚신이 어디서 나왔는지 알려 줘요. 오늘은 0일째 밤에 생긴 일이에요.",
+        "아침마다 누가 밤중에 사라졌는지, 짚신이 어디서 나왔는지 알려 줘요. 오늘은 간밤에 생긴 일이에요.",
         "그다음엔 다들 어젯밤에 어디 있었는지, 누구를 봤는지 말해요. 말이 서로 안 맞는 데를 잘 찾아보세요!",
     )),
     ("meeting1", 1, "round1", (
@@ -66,8 +69,10 @@ class GuideLine:
         return f"guide-{self.step}-{self.index}"
 
 
-def guide_lines(k: int, day: int | None = None, phase: str | None = None) -> list[GuideLine]:
+def guide_lines(k: int, day: int | None = None, phase: str | None = None,
+                replay: bool = False) -> list[GuideLine]:
     """씐 자 수 k를 채운 안내 줄. day·phase를 주면 그 날짜·단계까지(그 단계 포함) 나온 줄만 돌려준다.
+    replay면 첫 판이 아닌 판에서 다시 켠 안내라 판 시작 첫 줄을 REPLAY_FIRST_LINE으로 바꾼다.
 
     지난 단계 줄도 함께 돌려주는 이유: 대사창은 그날 줄을 단계 순서로 잇고 본 줄을 건너뛰므로,
     행동 뒤 단계가 바로 바뀌어도 앞 단계 안내를 놓치지 않는다.
@@ -76,7 +81,9 @@ def guide_lines(k: int, day: int | None = None, phase: str | None = None) -> lis
     for step, step_day, step_phase, texts in GUIDE_STEPS:
         if day is not None and step_day > day:
             continue
-        lines.extend(GuideLine(step, step_day, step_phase, i, text.format(k=k)) for i, text in enumerate(texts))
+        lines.extend(GuideLine(step, step_day, step_phase, i,
+                               REPLAY_FIRST_LINE if replay and step == "start" and i == 0 else text.format(k=k))
+                     for i, text in enumerate(texts))
     if day is not None:
         lines = [line for line in lines if line.day == day]
     return lines

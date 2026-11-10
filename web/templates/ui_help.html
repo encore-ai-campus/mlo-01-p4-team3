@@ -11,5 +11,5 @@
   <p>대사 이동: <kbd>Space</kbd>·<kbd>Enter</kbd>. 입력창·버튼·카드·펼침 메뉴를 조작할 때는 대사가 넘어가지 않습니다.</p>
   <p>글자 출력이 불편하면 ‘대사 바로 표시’를 켜세요. 기록·수첩·지도는 무대 위 창에서 확인합니다. 닫기나 Esc로 원래 화면에 돌아옵니다.</p>
   <p>이름·전화번호·이메일 등 개인정보는 입력하지 마세요.</p>
-  {% if guide_replay %}<details class="guide-replay"><summary>안내 다시 보기</summary><ol>{% for line in guide_replay %}<li data-guide-step="{{ line.step }}">{{ line.text }}</li>{% endfor %}</ol></details>{% endif %}
+  {% if guide_available %}<label class="guide-toggle"><input type="checkbox" data-guide-toggle{% if first_game %} checked{% endif %}{% tip "guide_toggle" %}> 이번 판에서 안내 보기</label>{% endif %}
 </dialog>

@@ -315,7 +315,7 @@ body { max-width: 1440px; padding-right: 24px; padding-left: 24px; background: r
 .review-workspace .record-panel { padding: 20px; }
 .review-workspace .claim-cards { max-height: 620px; overflow-y: auto; scrollbar-color: #b39a68 #122127; }
 .review-workspace .claim-cards li { padding: 14px 12px; }
-.claim-number { margin-left: auto; color: var(--muted); font-size: .75rem; }
+.claim-corrected { margin-left: auto; padding: 1px 6px; border: 1px solid #9e8555; border-radius: 4px; color: #e9d29c; font-size: .72rem; cursor: help; }
 .claim-speaker { flex-wrap: wrap; gap: 8px; }
 .record-selection { margin: 0; }
 .record-compare-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 18px; border-top: 1px solid #766c55; margin-top: 18px; }
@@ -478,9 +478,6 @@ button { border-radius:2px; }
 .side-tabs { display:flex; border-bottom:1px solid #655d4c; }
 .side-tabs button { flex:1; border:0; padding:14px 8px; font:700 1rem/1.5 var(--pd-serif); background:transparent; }
 .side-tabs [aria-pressed=true] { color:#eee5d0; background:#c6ae7620; box-shadow:inset 0 -2px #a45240; }
-.record-details { margin:8px 0 0; font-size:.8rem; }
-.record-details summary { min-height:32px; padding:4px 0; }
-.record-details p { font-size:.8rem; }
 .review-workspace .claim-cards { scrollbar-color:#a18f6a #152022; }
 .review-workspace .claim-cards li { border-left:0; border-bottom:1px solid #70654d; background:transparent; }
 .record-compare-tools { padding-bottom:12px; }
@@ -737,3 +734,5 @@ button { border-radius:2px; }
 .end-guide img { width:72px; height:72px; object-fit:contain; flex-shrink:0; }
 .end-guide-bubble { position:relative; padding:8px 12px; border:1px solid #9e8555; border-radius:8px; background:#fff8e8; color:#242b28; font-size:.9rem; }
 .end-guide-bubble p { margin:2px 0; }
+.end-guide[hidden] { display:none; }
+.guide-toggle { display:flex; align-items:center; gap:8px; margin-top:12px; min-height:36px; font-weight:600; }

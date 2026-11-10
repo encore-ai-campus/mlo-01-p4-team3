@@ -20,6 +20,7 @@ class MeetingClaim:
     evidence_value: str
     night: int | None = None   # 행적 질문 시간 칸을 맞출 진술의 밤(점괘 공개는 없음)
     slot: str = ""             # 진술의 시간 값(evening|midnight)
+    corrected_text: str = ""   # 정정 진술이면 고치기 전 진술 문장(화면 기록에 그 진술이 있을 때만)
 
 
 @dataclass(frozen=True)
@@ -85,7 +86,8 @@ def _guide_vn_lines(view: PlayerView, k: int):
 def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bool = False):
     """공개 진술·투표와 허용 행동, 본인의 점괘를 화면 모델로 전달한다.
 
-    guide_k(이번 판 씐 자 수)가 있으면 도움말의 "안내 다시 보기" 줄을, first_game이면 대사창 안내 줄을 더한다.
+    guide_k(이번 판 씐 자 수)가 있으면 도움말에 "이번 판에서 안내 보기" 스위치를 두고, first_game이면 대사창 안내 줄을
+    서버가 넣는다(기본 켬). 첫 판이 아니면 같은 안내 문장을 숨은 목록으로 내려 주어 스위치를 켰을 때만 보인다.
     """
     vm = build_ui_vm(view)
     claims = []
@@ -97,6 +99,9 @@ def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bo
             card = replace(card, text=f"점괘 공개 · {subject} · {result}")
         claims.append(MeetingClaim(card, _place_asset(record.place), f"{kind}:{card.claim_id}",
                                    record.night if record.slot else None, record.slot.value if record.slot else ""))
+    # 진술표 정정 표시(11/10 사용자 승인): 내부 진술 번호는 글로 보이지 않고, 정정 진술 배지의 설명에 고치기 전 문장을 둔다.
+    texts = {item.card.claim_id: item.card.text for item in claims}
+    claims = [replace(item, corrected_text=texts.get(getattr(item.card, "corrects", None) or "", "")) for item in claims]
     disappearances = [MeetingDisappearance(item, _place_asset(record.place))
                       for item, record in zip(vm.disappearances, view.public.disappearances, strict=True)]
     own_divinations = []
@@ -136,6 +141,12 @@ def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bo
             "own_divinations": own_divinations, "divination_options": divination_options,
             "published_votes": published_votes, "published_locks": published_locks, "active_targets": active_targets,
             "vote_targets": vote_targets, "vn_lines": lead + build_vn_lines(view, DIVINATION_KO) + rest,
-            "vn_guide_before": before, "first_game_end": FIRST_GAME_END if first_game else (), "guide_replay": guide_lines(guide_k) if guide_k is not None else [],
+            "vn_guide_before": before,
+            # 안내 켜기/끄기(11/10 사용자 결정): 첫 판은 서버가 안내 줄을 넣어 기본 켬. 다른 판은 같은 문장을 숨은 목록(guide_pool)으로
+            # 내려 주고, 플레이어가 켜면 클라이언트가 켠 시점 기준으로 대사 줄을 만든다. 종료 화면 말풍선도 같은 스위치를 따른다.
+            # 첫 판도 숨은 목록을 함께 내려(data-guide-first) 1일째가 지난 뒤 다시 켜면 판 시작 안내부터 다시 만든다.
+            "first_game": first_game, "guide_pool": guide_lines(guide_k, replay=True) if guide_k is not None else [],
+            "guide_end": FIRST_GAME_END if guide_k is not None else (), "guide_available": guide_k is not None,
+            "guide_speaker": GUIDE_SPEAKER, "guide_mascot": GUIDE_MASCOT,
             "actions": actions, "past_nights": list(range(max(0, view.day))),
             "contradiction_ready": sum(item.card.selectable and item.evidence_value.startswith('claim:') for item in claims) >= 2}
