@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: paldo-retrain
+  namespace: paldo-ml
+spec:
+  schedule: "0 2 * * *"
+  timeZone: Asia/Seoul
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 1800
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 21600
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          nodeSelector:
+            paldo-role: simulation
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: retrain
+              image: "${RETRAIN_IMAGE}"
+              imagePullPolicy: IfNotPresent
+              command: ["python", "-m", "ops.mlflow.retrain"]
+              args: ["--config", "/run/retrain/config.json", "--out", "/work/run"]
+              env:
+                - name: PYTHONDONTWRITEBYTECODE
+                  value: "1"
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              envFrom:
+                - secretRef:
+                    name: paldo-mlflow-client
+              resources:
+                requests: {cpu: "500m", memory: 1Gi}
+                limits: {cpu: "2", memory: 3Gi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - {name: config, mountPath: /run/retrain, readOnly: true}
+                - {name: inputs, mountPath: /inputs, readOnly: true}
+                - {name: output, mountPath: /work}
+                - {name: temporary, mountPath: /tmp}
+          volumes:
+            - name: config
+              secret: {secretName: paldo-retrain-config, defaultMode: 288}
+            - name: inputs
+              persistentVolumeClaim: {claimName: paldo-reviewed-training}
+            - name: output
+              emptyDir: {}
+            - name: temporary
+              emptyDir: {}
