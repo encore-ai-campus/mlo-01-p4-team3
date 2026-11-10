@@ -1,8 +1,8 @@
 {
   "task": "A-11-04",
-  "commit": "acfe8337c79452a76e1523425dbcc880efe4b5be",
-  "generated_at": "2026-11-10T09:17:05Z",
-  "source": "python out/handoff/update_committed_evidence.py (tools.assets.check_assets.check, placeholder_mode=True)",
+  "commit": "4f2b8f2d2feef0a65ba5a83c56b68a60c2b35df4",
+  "generated_at": "2026-11-10T11:05:50Z",
+  "source": "python out/handoff/pr364-conflict/update_evidence.py (check_assets after merging PR 363)",
   "metrics": {
     "expected_total": {
       "value": 103,
@@ -41,11 +41,11 @@
       "unit": "건"
     },
     "real_count": {
-      "value": 37,
+      "value": 69,
       "unit": "개"
     },
     "placeholder_count": {
-      "value": 66,
+      "value": 34,
       "unit": "개"
     },
     "max_file_bytes": {
