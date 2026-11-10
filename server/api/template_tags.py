@@ -83,6 +83,12 @@ def display_name(value):
 
 
 @register.filter
+def get_item(mapping, key):
+    """사전에서 키 값을 꺼낸다(없으면 빈 목록). 발언 ID별 단서 알림 줄처럼 템플릿 반복 안에서 쓴다."""
+    return (mapping or {}).get(key, ())
+
+
+@register.filter
 def action_icon(kind):
     """UI manifest에 공통 아이콘이 있는 행동의 ID를 고른다."""
     return f"ui:{kind}" if kind in {"suspect", "defend", "interrogate", "vote"} else ""

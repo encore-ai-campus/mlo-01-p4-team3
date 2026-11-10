@@ -13,6 +13,7 @@ from engine.ports import StoredCommand, VersionConflict
 from engine.domain.abandon import AlreadyEnded, abandon
 from engine.domain.progress import ending_available
 from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewOutput
+from .clue_notice import clue_notices
 from .progress import apply_progress, sweep_game
 
 LOGGER = logging.getLogger("paldo.progress")
@@ -225,10 +226,19 @@ class GameService:
         return ProgressOutput(self.progress.load(player_pseudonym))
 
     def guide_info(self, game_id, player_pseudonym):
-        """첫 판 안내 판단: (이 판이 계정의 첫 판인지, 이번 판 씐 자 수). 씐 자 수는 프리셋 공개 값이다."""
+        """대사창 안내 판단: (이 판이 계정의 첫 판인지, 이번 판 씐 자 수, 고백 뒤 단서 알림 목록).
+
+        씐 자 수는 프리셋 공개 값이다. 단서 알림은 판의 공개 고백과 판 밖 진척으로 고른다(`clue_notice`).
+        """
         state, _ = self.owned(game_id, player_pseudonym)
-        game_ids = self.progress.load(player_pseudonym).game_ids
-        return bool(game_ids) and game_ids[0] == state.meta.game_id, state.meta.preset.n_possessed
+        progress = self.progress.load(player_pseudonym)
+        game_ids = progress.game_ids
+        notices = []
+        if state.public.confessions:
+            content = self.dependencies(state.meta).content
+            notices = clue_notices(state.meta.game_id, state.public.confessions, content.secrets,
+                                   content.grudge_clues, progress.clues, game_ids)
+        return bool(game_ids) and game_ids[0] == state.meta.game_id, state.meta.preset.n_possessed, notices
 
     def review(self, game_id, player_pseudonym):
         """종료된 자기 판의 DTO 허용 정보만 복기로 반환한다."""

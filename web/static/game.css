@@ -291,6 +291,7 @@ body { max-width: 1440px; padding-right: 24px; padding-left: 24px; background: r
 .vn-mascot { position: absolute; left: 5%; top: 36.11%; width: 20%; height: 35.55%; object-fit: contain; }
 .vn-dialogue { position: absolute; bottom: 0; left: 0; right: 0; height: 25%; padding: 1.2% 2.4%; border-top: 1px solid #b6a37d; background: #0b171bf2; }
 .vn-dialogue strong { display: inline-block; padding: 2px 16px; color: #172125; background: #ddc9a3; font: 400 clamp(15px,2cqw,24px)/1.5 var(--pd-serif); }
+.vn-dialogue strong:empty { display: none; }   /* 해설 줄(화자 없음)은 이름표를 숨긴다 */
 .vn-dialogue p { font: 400 clamp(14px,1.9cqw,23px)/1.55 var(--pd-serif); margin: 6px 0 0; max-height: 55%; overflow: hidden; }
 .vn-dialogue [data-vn-attribution] { font-size: 1rem; font-weight: 600; color: var(--text); }
 .vn-stage.show-full .vn-actor { left: 40%; top: 5.56%; width: 20%; height: 88.89%; }
