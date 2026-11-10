@@ -58,10 +58,32 @@ function mountRecords(root) {
   root.querySelector('[data-record-compare]')?.addEventListener('click',()=>{
     const target=root.querySelector('[data-record-comparison-lines]'); if(!target)return;
     target.replaceChildren();
-    for(const card of selected()) { const p=document.createElement('p'); p.textContent=`${card.dataset.recordId} · ${card.querySelector('strong').textContent} — ${card.querySelector('p').textContent}`; target.append(p); }
+    for(const card of selected()) { const p=document.createElement('p'); p.textContent=`${card.querySelector('strong').textContent} · ${card.querySelector('.claim-meta')?.textContent.trim() || ''} — ${card.querySelector('.claim-meta + p').textContent}`; target.append(p); }
     root.querySelector('[data-record-comparison]').hidden=false;
   });
   filter();
+}
+// 안내 상태: 첫 판은 건너뛰기 표시가 없으면 켬, 다른 판은 켠 시점({day, phase, at})이 저장돼 있으면 켬. 저장이 막히면 탭 메모리.
+// 첫 판도 1일째가 지난 뒤 다시 켜면(켠 시점 day > 1) 서버 안내 줄 대신 숨은 목록으로 판 시작 안내부터 만든다(pool 방식).
+function guideState(root) {
+  const gid=root.dataset.gameId, pool=root.querySelector('[data-guide-pool]');
+  const first=!pool || pool.dataset.guideFirst!==undefined, skipped=readStore(`changgui:guide-skip:${gid}`)===true;
+  const stored=pool ? readStore(`changgui:guide-on:${gid}`) : null, on=stored && !skipped ? stored : null;
+  const usePool=!!on && (!first || Number(on.day)>1);
+  return {first, skipped, on, usePool, active: first ? !skipped : !!on};
+}
+function saveGuide(root,on) {
+  const gid=root.dataset.gameId;
+  saveStore(`changgui:guide-skip:${gid}`,!on);
+  if(root.querySelector('[data-guide-pool]')) saveStore(`changgui:guide-on:${gid}`,on ? {day:Number(root.dataset.day),phase:root.dataset.phase,at:Date.now()} : null);
+  syncGuide(root);
+}
+// 도움말 스위치와 판 종료 말풍선을 지금 상태에 맞춘다. 도움말 창은 #meeting 밖에 있어 화면 조각이 바뀔 때마다 다시 맞춘다.
+function syncGuide(root) {
+  const toggle=document.querySelector('[data-guide-toggle]'); if(!root || !toggle)return;
+  const {active}=guideState(root);
+  toggle.checked=active;
+  for(const bubble of root.querySelectorAll('[data-guide-end]')) bubble.hidden=!active;
 }
 function mountScene(root) {
   const player=root.querySelector('.vn-player'); if(!player)return;
@@ -69,13 +91,45 @@ function mountScene(root) {
   const key=`changgui:reading:${root.dataset.gameId}:${root.dataset.day}`;
   const rank=phase=>PHASE_ORDER.indexOf(phase);
   const current=rank(root.dataset.phase);
-  // 첫 판 안내를 건너뛰었으면 그 판의 안내 줄을 뺀다(저장소가 막히면 탭 메모리로 유지).
-  const guideKey=`changgui:guide-skip:${root.dataset.gameId}`;
-  const guideSkipped=readStore(guideKey)===true;
-  const sources=[...root.querySelectorAll('.vn-source')]
-    .filter(n=>n.dataset.day===root.dataset.day && rank(n.dataset.phase)>=0 && rank(n.dataset.phase)<=current)
-    .filter(n=>!(guideSkipped && n.dataset.guide==='true'))
-    .map((node,order)=>({node,order})).sort((a,b)=>rank(a.node.dataset.phase)-rank(b.node.dataset.phase)||a.order-b.order).map(x=>x.node);
+  // 안내 켜기/끄기(11/10 사용자 결정). 첫 판은 서버가 안내 줄을 넣어 기본 켬이고, 끄면(건너뛰기 포함) 그 판의 안내 줄을 뺀다.
+  // 첫 판이 아니면 숨은 안내 목록으로 줄을 만든다. 켠 순간 판 시작 안내부터, 이후 단계 안내는 그 단계에 처음 들어갈 때 나온다.
+  const guideCfg=guideState(root);
+  function guideLines() {
+    if(!guideCfg.usePool) return [];
+    const on=guideCfg.on, day=Number(root.dataset.day), made=[];
+    for(const opt of root.querySelectorAll('[data-guide-pool] [data-guide-step]')) {
+      const step=opt.dataset.guideStep, i=Number(opt.dataset.guideIndex);
+      // 정렬 자리는 첫 판과 같게: 판 시작 안내는 그 단계 맨 앞, 첫 아침 안내는 대사 줄 묶음(.vn-script) 앞, 나머지는 그 묶음 끝(대화 기록 앞).
+      let lineDay=on.day, phase=opt.dataset.guidePhase, slot='rest';
+      // 켠 단계보다 앞 단계 안내는 버리지 않고 다음 날 그 단계에 처음 들어갈 때 나온다.
+      if(step==='start') { phase=on.phase; slot='start'; }
+      else {
+        if(step==='morning2' || rank(phase)<rank(on.phase)) lineDay=on.day+1;
+        if(step==='morning1') slot='lead';
+      }
+      if(lineDay!==day) continue;
+      const node=document.createElement('p'); node.className='vn-source';
+      Object.assign(node.dataset,{lineId:`guide-opt-${on.at}-${step}-${i}`,day:String(lineDay),phase,speaker:opt.dataset.speaker,guide:'true',slot,slotIndex:String(i)});
+      if(opt.dataset.sprite) node.dataset.sprite=opt.dataset.sprite;
+      node.append(opt.querySelector('.vn-source-text').cloneNode(true)); made.push(node);
+    }
+    return made;
+  }
+  function collect() {
+    const order=new Map();
+    // 꺼져 있거나 숨은 목록으로 만드는 중이면 서버가 넣은 첫 판 안내 줄은 뺀다.
+    const nodes=[...root.querySelectorAll('.vn-source')].filter(n=>!((guideCfg.skipped || guideCfg.usePool) && n.dataset.guide==='true'));
+    nodes.forEach((n,i)=>order.set(n,i));
+    const script=[...root.querySelectorAll('.vn-script .vn-source')].filter(n=>order.has(n));
+    const leadAt=script.length ? order.get(script[0])-0.5 : -0.5, restAt=script.length ? order.get(script.at(-1))+0.5 : nodes.length;
+    for(const n of guideLines()) {
+      const i=Number(n.dataset.slotIndex)/100;
+      nodes.push(n); order.set(n,n.dataset.slot==='start' ? -1000+i : n.dataset.slot==='lead' ? leadAt-0.4+i : restAt+i);
+    }
+    return nodes.filter(n=>n.dataset.day===root.dataset.day && rank(n.dataset.phase)>=0 && rank(n.dataset.phase)<=current)
+      .sort((a,b)=>rank(a.dataset.phase)-rank(b.dataset.phase)||order.get(a)-order.get(b));
+  }
+  const sources=collect();
   const stored=readStore(key);
   const seen=new Set(stored?.seen || []);
   // 새로고침·재연결은 이미 본 줄을 다시 강요하지 않고, 행동 뒤 새로 생긴 줄은 그 첫 줄에서 멈춘다.
@@ -166,14 +220,20 @@ function mountScene(root) {
     if(!e.target.closest('[data-vn-actor]') && e.target.closest('button,a,input,select,textarea,label,summary,details,dialog,form,[data-stage-panel],[data-person],.speech-card'))return;
     next();
   });
-  player.querySelector('[data-vn-guide-skip]')?.addEventListener('click',()=>{
-    saveStore(guideKey,true);
-    const rest=sources.filter(n=>n.dataset.guide!=='true');
+  // 안내를 다시 모은다. 켰을 때는 새 안내 첫 줄로, 껐을 때는 보던 자리(안내였으면 그 뒤 첫 줄)로 간다.
+  function setGuide(on) {
+    const before=sources[index];
     const after=sources.slice(index).find(n=>n.dataset.guide!=='true');
-    sources.splice(0,sources.length,...rest);
-    index=after ? sources.indexOf(after) : Math.max(0,sources.length-1);
+    saveGuide(root,on); Object.assign(guideCfg,guideState(root));
+    sources.splice(0,sources.length,...collect());
+    // 다시 켜면 읽은 안내도 처음부터 다시 보여 준다(첫 판도 판 시작 안내부터).
+    if(on) for(const n of sources) if(n.dataset.guide==='true') seen.delete(n.dataset.lineId);
+    const firstGuide=sources.findIndex(n=>n.dataset.guide==='true');
+    if(on && firstGuide>=0) index=firstGuide;
+    else { const keep=sources.find(n=>n.dataset.lineId===before?.dataset.lineId) || sources.find(n=>n.dataset.lineId===after?.dataset.lineId); index=keep ? sources.indexOf(keep) : Math.max(0,sources.length-1); }
     render();
-  });
+  }
+  player.querySelector('[data-vn-guide-skip]')?.addEventListener('click',()=>setGuide(false));
   function showTranscript() {
     markAllSeen();
     root.querySelector('[data-stage-open="meeting-records"]')?.click();
@@ -188,12 +248,12 @@ function mountScene(root) {
   player.querySelector('[data-vn-instant]').addEventListener('change',e=>{instant=e.target.checked;saveStore('changgui:instant',instant);render();});
   const observer=new MutationObserver(()=>render(false));
   for(const source of sources) observer.observe(source,{childList:true,subtree:true,characterData:true});
-  const controller={next,dispose(){clearTimeout(timer);observer.disconnect();}};
+  const controller={next,setGuide,dispose(){clearTimeout(timer);observer.disconnect();}};
   scenes.set(root,controller); currentScene=controller; render();
 }
 function mount() {
   const root=document.querySelector('#meeting');
-  updateChrome(root); decorate();
+  updateChrome(root); decorate(); syncGuide(root);
   if(root && !mounted.has(root)) { mounted.add(root); mountRecords(root); mountScene(root); }
 }
 document.addEventListener('DOMContentLoaded',mount);
@@ -211,6 +271,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[data-help-close]')) document.querySelector('#ui-help')?.close();
 });
 document.addEventListener('change',e=>{
+  if(e.target.matches('[data-guide-toggle]')) { const root=document.querySelector('#meeting'); if(root) { if(currentScene?.setGuide) currentScene.setGuide(e.target.checked); else saveGuide(root,e.target.checked); } }
   if(e.target.matches('[data-avatar-src]')) { const image=document.querySelector('[data-lobby-actor]'); if(image){image.src=e.target.dataset.avatarSrc;image.alt=e.target.value==='m'?'남성 무당':'여성 무당';} }
 });
 
