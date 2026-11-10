@@ -27,8 +27,9 @@ class RuleV0Policy:
 
     version = "rule-v0"
 
-    def __init__(self, content: Optional[ContentBundle] = None, mix_source: Optional[MixSource] = None):
-        self.villager = VillagerPolicy(content)
+    def __init__(self, content: Optional[ContentBundle] = None, mix_source: Optional[MixSource] = None,
+                 q_max: Optional[float] = None):
+        self.villager = VillagerPolicy(content, q_max)
         self.possessed = PossessedPolicy(content, mix_source)
 
     def _for(self, obs: ObservationSnapshot):
