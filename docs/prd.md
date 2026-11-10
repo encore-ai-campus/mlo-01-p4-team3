@@ -51,10 +51,10 @@
 
 | 역할 ID | 흐름 | 담당 범위(코드 위치) | 태스크 파일 | PRD 검토자(제안) |
 |---|---|---|---|---|
-| `STK-ENGINE-001` | A 엔진(담당 PM, 11/5 PM 결정으로 담당 변경) | `engine/domain` 규칙·NPC·결정 층, 실제 이미지 에셋 제작(초상·장면 배경, `content/images/`·`tools/assets/cutout.py`, 11/5 PM 결정으로 B에서 이전. A 흐름 `[에셋]` 태스크는 D 담당) | `tasks/A_engine.md` | `STK-MLAD-001`(의심 모델 포트·시뮬레이터 사용) |
+| `STK-ENGINE-001` | A 엔진(담당 PM, 11/5 PM 결정으로 담당 변경) | `engine/domain` 규칙·NPC·결정 층, 실제 이미지 에셋 제작(초상·장면 배경, `content/images/`·`tools/assets/cutout.py`, 11/5 PM 결정으로 B에서 이전. A 흐름 `[에셋]` 태스크는 D 담당이었고 남은 일은 11/10 사용자 결정으로 B) | `tasks/A_engine.md` | `STK-MLAD-001`(의심 모델 포트·시뮬레이터 사용) |
 | `STK-WEB-001` | B 웹·API | `server/`, `web/`, 광고 지면 연동·웹소켓 중계, 회의·밤 VN 연출과 VN 연출 규칙(`contracts/vn.md`), 사용자 테스트 리허설 지원·버그 분류, A 흐름 `[에셋]` 제출 검토(11/5 PM 결정) | `tasks/B_web.md` | `STK-INFRA-001`(저장소·로그·배포) |
 | `STK-INFRA-001` | C 인프라/파이프라인 | `server/infra`, `pipeline/`, `ops/`, 광고 인프라, AWS | `tasks/C_infra.md` | `STK-WEB-001`(저장소·아웃박스 사용) |
-| `STK-MLAD-001` | D ML·광고 | `intent/`, `ml/`, `engine/sim`, `ads/`, A 흐름 `[에셋]` 태스크 제작(11/5 PM 결정으로 담당 변경) | `tasks/D_ml_ads.md` | `STK-ENGINE-001`(엔진·관측 경계) |
+| `STK-MLAD-001` | D ML·광고 | `intent/`, `ml/`, `engine/sim`, `ads/`, 끝난 A 흐름 `[에셋]` A-07-04·A-08-04 제작(11/5 PM 결정으로 담당 변경, 남은 에셋은 11/10 B), E-11-10 외부 검수 | `tasks/D_ml_ads.md` | `STK-ENGINE-001`(엔진·관측 경계) |
 | `STK-PM-001` | E PM | `content/`, `llm/`, 에셋 규격·임시 에셋·검사·검수, 사용자 테스트, 프리셋 반례 테스트·최종 파라미터 재실행·원한 단서 해금·복기용 이유 조회(11/5 PM 결정으로 A에서 이전, 코드는 `engine/`), 첫 초상 화풍 사전 확인, 통합 주관 | `tasks/E_pm.md`(INT 포함) | `STK-WEB-001`(LLM 폴링·설문 화면) |
 | `STK-PRES-001` | S 데모 자료 트랙 | `docs/presentation/` | `tasks/P_presentation.md` | `STK-PM-001` |
 
@@ -253,7 +253,7 @@
 | `FR-AUTH-003` | planned | 5회 연속 실패 15분 잠금(없는 ID와 같은 오류 문구), 세션 유효 기간 1,209,600초 명시, 복구는 관리자 초기화(`changepassword`)만 | `BR-OBJ-008` | `AC-AUTH-003` | B-06-04, E-06-04 | `STK-WEB-001` | 11/6 |
 | `FR-AUTH-004` | planned | 가명 분리: 로그인 ID·비밀번호 해시는 계정 전용 MySQL 스키마에만, 게임 데이터·이벤트·로그·지표는 `player_pseudonym`만(광고는 기존대로 세션 가명만, 로그인 ID 0건). 판과 하위 객체는 소유 계정만 접근(다른 계정 404). `StartGameInput.player_pseudonym`은 서버가 채움(본문에 있으면 400). 삭제 요청 시 계정 행 삭제 | `BR-OBJ-008` | `AC-AUTH-004` | B-06-04, C-06-03, C-09-02 | `STK-WEB-001` | 11/11 |
 
-### 4.10 콘텐츠·에셋 (E, 실제 에셋 제작은 A 흐름 `[에셋]` 태스크·담당 D)
+### 4.10 콘텐츠·에셋 (E, 실제 에셋 제작은 A 흐름 `[에셋]` 태스크·남은 일 담당 B)
 
 | ID | 상태 | 요구사항 | BRD 목표 | AC | 태스크 | owner | due |
 |---|---|---|---|---|---|---|---|
@@ -651,4 +651,4 @@
 | 결정 대기 | 설문 응답률 목표 | BRD `BR-OQ-002`. 태스크(E-09-01)는 응답률을 표로 보고만 한다 | 목표가 정해지면 `AC-UT-001`에 기준 추가 |
 | 환경 | 기술 버전 | `contracts/tech_stack.md`는 기록값이다. ML·LLM Python 3.14 단일과 Delta 좌표 `io.delta:delta-spark_4.1_2.13:4.4.1`은 C-05-03 실측(기준 PC)으로 11/5 확정. Ubuntu VM 확인은 남음(D-07-02 6번·E-06-07 3번 ② 완료 조건, 11/5 PM 결정) | 두 조건에서 import 실패가 나오면 이슈로 대응하고 계약 갱신 |
 | 환경 | LLM 지연 가정 | 3~4B Q4로 p95 15초 가능은 실측 전 가설(`BR-ASM-002`) | E-06-07 결과로 확인, 없으면 차선을 PM이 결정 |
-| 일정 | 시간 배분 | 흐름별 날짜별 시간은 team_plan 전체 시간표. 실제 에셋은 11/5 결정으로 A 흐름 `[에셋]` 태스크(담당 D)가 맡고 범위는 초상·장면 배경으로 줄였다 | 11/6 스탠드업 구두 보고로 P-23 결정 |
+| 일정 | 시간 배분 | 흐름별 날짜별 시간은 team_plan 전체 시간표. 실제 에셋은 11/5 결정으로 A 흐름 `[에셋]` 태스크(담당 D, 11/10 사용자 결정으로 남은 일은 B)가 맡고 범위는 초상·장면 배경으로 줄였다 | 11/6 스탠드업 구두 보고로 P-23 결정 |
