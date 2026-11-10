@@ -41,3 +41,9 @@ class ObservedSuspicionModel:
         finally:
             DURATION.labels(self.model_version,result).observe(perf_counter()-started)
             CALLS.labels(self.model_version,result).inc()
+
+    def close(self):
+        """감싼 모델이 worker를 가지면 닫는다(프로세스 보관소가 부른다)."""
+        close=getattr(self.model,'close',None)
+        if close is not None:
+            close()

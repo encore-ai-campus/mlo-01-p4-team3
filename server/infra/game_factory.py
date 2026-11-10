@@ -4,7 +4,8 @@
 (B-06-03)을 그대로 쓰고, 여기서는 그 위에 A 몫만 끼운다. 규칙은 두지 않는다.
 
 - 엔진: 판의 콘텐츠 버전마다 `PaldoEngine(RuleV0Policy(content))`(`ContentPolicyEngine`).
-- 의심 모델: 규칙 의심도를 확률로 바꾸는 `FakeSuspicionModel`(통합 판 구성, 실제 모델은 D-08-01 뒤 교체).
+- 의심 모델: 기본은 규칙 의심도를 확률로 바꾸는 `FakeSuspicionModel`. `PALDO_SUSPICION_MODEL_VERSION`을 주면
+  프로세스 보관소(`ProcessSuspicionModels`)가 그 실제 모델 버전을 버전당 worker 하나로 띄워 판들이 빌려 쓴다.
 - 보조 기록: `MongoInteractionStore`, 컬렉션은 B 규칙대로 `<접두어>b_interactions`.
 - 해석기: 프로세스마다 한 번 만든 D-07-01 기준선. 웹 조립이 관측 래퍼를 씌운다.
 - 렌더러: 런타임 LLM 없이(P-31 (나)) 엔진의 템플릿 문장(`fallback_text`)을 쓰게 하는 `TemplateLineRenderer`.
@@ -124,23 +125,55 @@ def attach_model_versions(service, registry, suspicion_models=None, canary_ratio
     return service
 
 
-def deployed_registry(parser, suspicion):
-    """배포 코드가 가진 해석기·의심 모델 버전을 운영 버전으로 하는 임시 레지스트리(C-09-01 전)."""
-    from server.app.model_versions import INTENT_KEY, SUSPICION_KEY
-    from server.infra.model_registry import StaticModelRegistry
-    intent_version = getattr(getattr(parser, "model", None), "model_version", "")
-    return StaticModelRegistry({INTENT_KEY: intent_version, SUSPICION_KEY: getattr(suspicion, "model_version", "")})
+def suspicion_models(fake, version: str = "", root: str = "mlruns"):
+    """프로세스 의심 모델 보관소와 운영(새 판 고정) 버전을 만든다(B-09-01 1번).
+
+    `version`이 비면 규칙 의심도 `fake`만 쓴다. 값이 있으면 `LocalModelSelector`로 그 버전을 시작 때 미리 띄우고,
+    못 띄우면 경고를 남기고 `fake`를 운영 버전으로 쓴다. 값이 비어도 이미 실제 버전을 고정한
+    판은 산출물이 남아 있으면 그 버전을 계속 쓴다. 판 진행 중 장애는 보관소·어댑터가 그 결정만 폴백한다.
+    """
+    from server.infra.model_selector import LocalModelSelector, ProcessSuspicionModels
+    from server.infra.observed_models import ObservedSuspicionModel
+    from tools.jsonlog import log
+    from ml.suspicion.features import FEATURE_VERSION
+    # 운영 설정을 비워 되돌려도(롤백) 이미 실제 버전을 고정한 판이 그 버전을 계속 쓰도록 선택기는 늘 만든다.
+    selector = LocalModelSelector(root, suspicion_version=version, intent_version="", feature_version=FEATURE_VERSION)
+
+    def load(v):
+        if v == fake.model_version:
+            return fake
+        return ObservedSuspicionModel(selector.suspicion_model(v))
+
+    production = {"value": fake.model_version}
+    store = ProcessSuspicionModels(load, lambda: {production["value"]}, feature_version=fake.feature_version)
+    if version:
+        if store.preload(version):
+            production["value"] = version
+        else:
+            log("model_store", "warning", "실제 의심 모델을 띄우지 못해 규칙 의심도로 시작", model_version=version)
+    return store, production["value"]
 
 
 def build_game_service():
-    """`PALDO_GAME_SERVICE_FACTORY`가 부르는 운영 조립. 연결 실패·미설정은 B의 `GameServiceUnavailable`."""
+    """`PALDO_GAME_SERVICE_FACTORY`가 부르는 운영 조립. 연결 실패·미설정은 B의 `GameServiceUnavailable`.
+
+    `PALDO_SUSPICION_MODEL_VERSION`이 있으면 실제 의심 모델을 새 판에 고정한다(`suspicion_models`).
+    """
+    import atexit
     from django.conf import settings
     from intent.parser import BaselineIntentParser
-    from server.infra.model_registry import LoadedSuspicionModels
+    from server.app.model_versions import INTENT_KEY, SUSPICION_KEY
+    from server.infra.model_registry import StaticModelRegistry
     from server.paldo_web.mongo import open_mongo_runtime
-    engine, suspicion = engine_parts()
-    runtime = open_mongo_runtime(engine=engine, suspicion=suspicion)
+    engine, fake = engine_parts()
+    store, production = suspicion_models(fake, getattr(settings, "SUSPICION_MODEL_VERSION", ""),
+                                         getattr(settings, "SUSPICION_MODEL_ROOT", "mlruns"))
+    atexit.register(store.close)
+    runtime = open_mongo_runtime(engine=engine, suspicion=fake)
     parser = BaselineIntentParser()
     service = build_from_runtime(runtime, parser)
-    return attach_model_versions(service, deployed_registry(parser, suspicion), LoadedSuspicionModels(suspicion),
+    intent_version = getattr(getattr(parser, "model", None), "model_version", "")
+    registry = StaticModelRegistry({INTENT_KEY: intent_version, SUSPICION_KEY: production})
+    service.release_game = store.release
+    return attach_model_versions(service, registry, store,
                                  lambda: getattr(settings, "MODEL_CANARY_RATIO", 0.0))

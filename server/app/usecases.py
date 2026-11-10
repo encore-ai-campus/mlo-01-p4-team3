@@ -49,6 +49,8 @@ class GameService:
         self.observe_events = None
         # 업데이트 내역 화면이 읽는 모델 레지스트리(B-09-01, `model_versions.ModelRegistry`). None이면 빈 내역.
         self.model_registry = None
+        # 판 종료를 받는 함수(B-09-01 1번 의심 모델 보관소 `release`). None이면 부르지 않는다.
+        self.release_game = None
 
     def owned(self, game_id, player_pseudonym):
         """멱등 응답·버전 확인보다 먼저 판 소유권을 확인한다."""
@@ -202,11 +204,21 @@ class GameService:
         if result.state.result is not None:
             # 판 종료: 이 판의 모든 고백을 다시 맞춘다(앞 명령에서 실패한 반영 복구 포함, 이번 전이 고백도 포함).
             self._progress_guard(sweep_game, player_pseudonym, result.state, deps.content)
+            self._release(data.game_id)
         else:
             self._progress_guard(apply_progress, player_pseudonym, args[4], deps.content.grudge_clues)
         if self.interactions is not None:
             self.interactions.complete_command_effects(data.game_id, args[-1], player_pseudonym)
         return output
+
+    def _release(self, game_id):
+        """끝난 판을 의심 모델 보관소 사용 판에서 뺀다. 실패해도 저장된 명령 응답은 바꾸지 않는다."""
+        if self.release_game is None:
+            return
+        try:
+            self.release_game(game_id)
+        except Exception:  # noqa: BLE001 - 보관소 정리 실패로 판 종료 응답을 막지 않는다
+            LOGGER.exception("model store release failed")
 
     def _observe(self, events):
         """이 요청이 저장한 엔진 결과 이벤트를 관측 함수에 넘긴다. 관측 실패는 게임 응답을 막지 않는다."""

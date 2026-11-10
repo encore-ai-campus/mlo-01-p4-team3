@@ -88,14 +88,19 @@ def pinned_dependencies(dependencies: Callable, suspicion_model: Optional[Callab
     """판 메타에 고정한 의심 모델 버전으로 엔진 의존성을 만든다.
 
     `suspicion_model`이 None이거나 메타에 의심 모델 버전이 없으면 원래 의존성을 그대로 쓴다.
+    `suspicion_model`에 `for_game(game_id, version)`이 있으면(프로세스 보관소) 판 ID와 함께 빌려 판 수를 세게 한다.
     """
     if suspicion_model is None:
         return dependencies
+    for_game = getattr(suspicion_model, "for_game", None)
 
     def resolve(meta):
         deps = dependencies(meta)
         version = meta.model_versions.get(SUSPICION_KEY)
-        return replace(deps, suspicion=suspicion_model(version)) if version else deps
+        if not version:
+            return deps
+        model = for_game(meta.game_id, version) if for_game is not None else suspicion_model(version)
+        return replace(deps, suspicion=model)
     resolve.__doc__ = "판 메타의 의심 모델 버전으로 바꾼 엔진 의존성."
     return resolve
 
