@@ -142,7 +142,7 @@ paldo/
 | `pipeline/` | 인프라(배치) | C | spark-master-01, spark-worker-01 |
 | `ops/` | 배포·관측 설정 | C | 각 VM |
 | `content/` | 데이터 | E | `tools/load_content.py`로 Mongo에 적재해 사용(결정 #8) |
-| `content/images/` 실제 파일, `tools/assets/cutout.py` | 데이터(에셋) | A 흐름 `[에셋]` 태스크(실제 에셋 제작, 11/5 B에서 이전. 담당 D, 11/5 PM 결정으로 담당 변경). 규격·임시·검사는 E | 정적 파일 |
+| `content/images/` 실제 파일, `tools/assets/cutout.py` | 데이터(에셋) | A 흐름 `[에셋]` 태스크(실제 에셋 제작, 11/5 B에서 이전. 담당 D, 11/5 PM 결정으로 담당 변경. 남은 표정·추가 주민·재생성은 11/10 사용자 결정으로 B). 규격·임시·검사는 E | 정적 파일 |
 | `contracts/`, `fixtures/` | 계약·생성물 | 공용 | - |
 | `tools/` | 도구 | 공용 | 개발 PC, Bastion |
 

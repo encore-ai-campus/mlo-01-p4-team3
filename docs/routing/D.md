@@ -5,7 +5,7 @@
 - 위치와 역할만 적는다. 상세는 모듈 문서 `docs/modules/sim.md`, `docs/modules/intent.md`, `docs/modules/ml.md`, `docs/modules/ads.md`(아직 없는 문서는 그 모듈을 처음 바꾸는 날 생긴다. 색인 [`docs/modules/README.md`](../modules/README.md)), 오늘 할 일은 `docs/tasks/D_ml_ads.md`.
 - 계층 규칙과 의존 방향은 루트 README "계층과 의존 방향", 파일 위치 원본은 [`docs/contracts/structure.md`](../contracts/structure.md).
 - 이 문서는 D 흐름이 관리한다. 다른 흐름이 이 영역에서 작업하며 안내가 필요하면 직접 행을 넣고, D 흐름이 PR에서 확인한다. 행은 기존 분류와 순서를 지켜 관련 항목 근처에 넣는다(`docs/tasks/README.md` 3절 "여럿이 고치는 파일").
-- 다른 영역 문서에 있는 D 작업: 광고 비콘·클릭 중계(진입점 B, [`B.md`](B.md)), 실제 에셋 파일·생성 기록(규격·검사와 함께 E, [`E.md`](E.md)).
+- 다른 영역 문서에 있는 D 작업: 광고 비콘·클릭 중계(진입점 B, [`B.md`](B.md)), 끝난 실제 에셋 파일·생성 기록 A-07-04·A-08-04(규격·검사와 함께 E, [`E.md`](E.md). 남은 에셋은 11/10 B), E-11-10 외부 검수.
 
 ## 폴더 안내
 

@@ -12,7 +12,7 @@
 |---|---|---|---|
 | `content/` | 데이터 | E | 인물, 비밀, 단서, 템플릿(예정) |
 | `content/intent/` | 데이터 | E | 의도 해석 학습 예시 `examples_v1.jsonl`(사람 작성 원본 + LLM 변형, 계보 `lineage_root`). 검사 규칙 `tools/intent_examples.py`, 테스트 `tests/intent/test_examples_v1.py`. 형식은 `docs/contracts/intent.md` |
-| `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E(규격·스타일 가이드·임시 파일·검사), D(실제 파일·생성 기록·`cutout.py`, A 흐름 `[에셋]` 태스크, 11/5 결정) | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
+| `content/images/`, `docs/assets/`, `tools/assets/` | 데이터(에셋) | E(규격·스타일 가이드·임시 파일·검사), B(남은 실제 파일·생성 기록, A 흐름 `[에셋]` 태스크, 11/10 결정. 그 전 D, `cutout.py`) | 이미지 실제·임시 파일, `manifest.json`(콘텐츠 ID → 파일), 생성 기록, 스타일 가이드·규격, ID 1:1 검사(예정) |
 | `llm/` | 인프라 | E | 벤치마크, 오프라인 템플릿 변형 사전 생성(E-10-13), 자유 질문 답변 검증기·평가 세트·부하 클라이언트·Pod 스크립트(E-08-13), GPU 서비스 시연(E-11-12, 게임 미연결). 런타임 LLM 서비스·LangGraph(E-08-09)는 11/7 P-31 (나)로 취소 |
 | `llm/prompt.py`, `validator.py`, `eval_set.py`, `mvp_metrics.py` | 도메인(규칙) | E | 추궁 프롬프트·생성 설정 `GEN_SETTINGS`, 검증기(사유 4종)와 폴백, 평가 세트 생성, `run_eval`과 MVP 지표. 표준 라이브러리와 `llm`만 import(`test_layers.py`). 서비스(E-08-09)·MVP 노트북(E-07-06)이 그대로 부른다 |
 | `llm/colab/` | 표현(MVP 제출) | E | 코랩 노트북 `paldo_llm_mvp.ipynb`(설치·드라이브 다운로드·llama.cpp 생성 어댑터·표 출력만, 지표는 zip 안 `llm/mvp_metrics.py`). 커밋본은 출력·파일 ID를 비운다(E-07-06) |
@@ -40,4 +40,4 @@
 | LLM MVP 제출 묶음·코랩 노트북 고치기 | 표현·응용 `tools/build_llm_bundle.py`(zip, `python -m tools.build_llm_bundle --out out/llm_mvp/`), 표현 `llm/colab/paldo_llm_mvp.ipynb`, 테스트 `tests/tools/test_build_llm_bundle.py`. zip·실행한 사본은 `out/`에만 |
 | 사용자 테스트 일정·설문 문항·고정 시드 판 바꾸기 | `docs/user_test/plan.md`(동의 문구·수집 항목의 원본은 `docs/contracts/privacy.md`) |
 | 사용자 테스트 중 웹 장애 대처 | `ops/runbook/user_test_incident.md`(회차 등록·버전 값·동결은 `docs/user_test/plan.md` 4절) |
-| 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/A_engine.md` `[에셋]`, 담당 D) |
+| 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/A_engine.md` `[에셋]`, 남은 일 담당 B) |
