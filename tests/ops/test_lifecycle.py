@@ -39,6 +39,18 @@ class LifecycleTests(unittest.TestCase):
             transition(client, "suspicion", "canary", "2", "test")
         client.set_registered_model_alias.assert_not_called()
 
+    def test_missing_canary_after_rollback_returns_no_candidate(self):
+        """MLflow에서 canary 미설정 오류 코드가 달라도 실제 별칭 부재를 확인한다."""
+        client = Mock()
+        client.get_model_version_by_alias.side_effect = RuntimeError("alias absent")
+        client.get_registered_model.return_value = SimpleNamespace(aliases={})
+        registry = MlflowModelRegistry(client, {"suspicion": "paldo-suspicion"})
+        with patch.dict(sys.modules, {"mlflow.exceptions": SimpleNamespace(MlflowException=RuntimeError)}):
+            self.assertEqual(registry.canary_versions(), {})
+            client.get_registered_model.return_value = SimpleNamespace(aliases={"canary": "2"})
+            with self.assertRaises(RuntimeError):
+                registry.canary_versions()
+
     def test_cohort_minimum_and_adverse_signal_override_promotion(self):
         """표본 부족·즉시 롤백·검토 신호가 있는 관측은 승격하지 않는다."""
         report = dict(canary_games=30, control_games=30, canary_win=.7, control_win=.7,
