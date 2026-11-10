@@ -40,16 +40,19 @@ python manage.py changepassword <로그인 ID>     # 비밀번호 초기화. 본
 
 ```
 # 1) 내보내기(접속 정보는 환경 변수로만. 저장소·대화에 쓰지 않는다)
-PALDO_MONGO_URI=<읽기 전용 URI> python -m server.infra.ut_export games --out games.json [--session-id <실험 회차 ID>]
-DJANGO_SETTINGS_MODULE=<운영 설정> python -m server.infra.ut_export accounts --out accounts.json
+PALDO_MONGO_URI=<읽기 전용 URI> python -m server.infra.ut_export games --out "<NAS>/5. 테스트 데이터/user_test/export_1110/games.json" [--session-id <실험 회차 ID>]
+DJANGO_SETTINGS_MODULE=<운영 설정> python -m server.infra.ut_export accounts --out "<NAS>/5. 테스트 데이터/user_test/export_1110/accounts.json"
 # 2) (실험 회차를 열 때만) 회차 등록용 가명 ID: 가입 시각 [시작, 끝] 경계 포함, 동의·활성·비운영자만
-python -m tools.ut_metrics participants --accounts accounts.json --from <시작> --to <끝>
+python -m tools.ut_metrics participants --accounts "<NAS>/5. 테스트 데이터/user_test/export_1110/accounts.json" --from <시작> --to <끝>
 # 3) 지표(18:00 스냅숏): 13:00 오픈 전에 시작한 판(리허설 등)과 마감 뒤 시작한 판·종료·입력·명령·설문은 세지 않고, 그때 진행 중이던 판은 games_unfinished. PM 가명은 빼서 한 번, 넣어서 한 번
-python -m tools.ut_metrics metrics --games games.json [--preset base6] --exclude-pseudonym <PM 가명> --out metrics.json
+python -m tools.ut_metrics metrics --games "<NAS>/5. 테스트 데이터/user_test/export_1110/games.json" [--preset base6] --exclude-pseudonym <PM 가명> --out metrics.json
 # 4) test_human 동결(18:00~19:30): 같은 스냅숏(13:00~18:00)으로 자른 뒤 분할. 검수 결과·학습·개발 세트는 필수(없으면 {"exclude": []}·빈 파일). 실패면 종료 코드 1, 묶음은 쓰지 않고 report_failed.json만
-python -m tools.ut_freeze --games games.json --pretest-games pretest.json --pm-pseudonym <PM 가명> --seed <분할 시드> \
-    --exclude-set <학습 세트.jsonl> --exclude-set <개발 세트.jsonl> --privacy-review review.json --out-dir <동결 폴더>
+python -m tools.ut_freeze --games "<NAS>/5. 테스트 데이터/user_test/export_1110/games.json" --pretest-games "<NAS>/5. 테스트 데이터/user_test/games.json" --pm-pseudonym <PM 가명> --seed <분할 시드> \
+    --exclude-set <학습 세트.jsonl> --exclude-set <개발 세트.jsonl> --privacy-review "<NAS>/5. 테스트 데이터/user_test/review_1110/review.json" --out-dir <로컬 임시 폴더>
+# 5) 동결 묶음 공개: 종료 코드 0이면 <로컬 임시 폴더>를 "<NAS>/5. 테스트 데이터/user_test/freeze_1110.part/"로 복사한 뒤 freeze_1110/으로 이름을 바꾼다(<NAS>는 PM이 따로 알린 공유 폴더, 저장소에 적지 않음. 폴더 이름에 공백이 있어 경로는 따옴표로 감싼다)
 ```
+
+보관 위치: 사전 테스트 내보내기·18:00 스냅숏 내보내기·동결 폴더는 저장소가 아니라 NAS 팀 공유 폴더의 `5. 테스트 데이터/user_test/` 아래 정해진 위치에 둔다([계획서](../user_test/plan.md) 10절 "데이터 보관 위치", 11/10 사용자 결정).
 
 동결 폴더: `test_human.jsonl`(시도 ID·가명·`pm` 표시·마스킹 문장), `train_candidates.jsonl`(학습 쪽 사용자 문장), `assignment.json`(시드·정렬된 참가자·평가/학습 사용자), `report.json`(수·제외 사유·충돌), `manifest.json`(앞 네 파일의 바이트 수·sha256, Delta 버전 대신 쓰는 동결 기록, 11/8 사용자 결정). 개인정보 검수 제외는 학습 쪽 문장에도 적용한다. 검수 결과 형식은 `{"exclude": [{"attempt_id": ..., "reason": ...}]}`.
 
@@ -91,3 +94,4 @@ python -m tools.ut_freeze --games games.json --pretest-games pretest.json --pm-p
 | P-29 | 11/6 | 설문 전체 건너뛰기 형식(`skipped=true`·점수 `null`)과 응답률·평균 집계 규칙 추가 |
 | E-08-10 | 11/8 | 집계 도구 추가: 읽기 전용 내보내기 `server/infra/ut_export.py`, 지표·회차 등록 가명 ID `tools/ut_metrics.py`, `test_human` 분할·동결 `tools/ut_freeze.py`, 계획서 10절 지표 산출 방법. 같은 날 사용자 확정: 정의 버전 `ut-metrics-1.0`(설문 분모 끝난 판 전부, `give_up_rate`), 동결 `ut-freeze-1.0`(Delta 버전 대신 `manifest.json`) |
 | E-08-10 | 11/8 | (일정 변경 반영) 정식 테스트 11/10 13:00~18:00·18:00 스냅숏·일반 판 진행. 집계 도구 `ut-metrics-1.1`(마감 기본값 11/10 18:00, 시작 하한 기본값 13:00, 마감 뒤 종료·설문 제외, 미종료 판, `--preset`, 버전 조합별 판 수), `ut-freeze-1.1`(같은 스냅숏으로 자른 뒤 분할), `ut-export-2`(`engine_version`). 고정 시드 회차는 실험 회차(선택)로 |
+| E-09-02 | 11/10 | 사용자 테스트 데이터(사전 테스트 내보내기·18:00 스냅숏·동결 폴더) NAS `5. 테스트 데이터/user_test/` 보관 위치 안내(11/10 사용자 결정) |
