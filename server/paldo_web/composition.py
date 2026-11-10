@@ -51,6 +51,7 @@ def get_game_service():
             if _game_service is None:
                 service = import_string(settings.GAME_SERVICE_FACTORY)()
                 _configure_parser(service)
+                _configure_engine_metrics(service)
                 _game_service = service
     if _game_service is None:
         raise GameServiceUnavailable("game_service_not_configured")
@@ -84,7 +85,15 @@ def configure_game_service(service):
     with _lock:
         if service is not None:
             _configure_parser(service)
+            _configure_engine_metrics(service)
         _game_service = service
+
+
+def _configure_engine_metrics(service):
+    """저장된 엔진 결과 이벤트로 폴백 지표를 올리게 한다(B-09-01). 이미 관측 함수가 있으면 두고 간다."""
+    if hasattr(service, "observe_events") and service.observe_events is None:
+        from .engine_metrics import observe_engine_events
+        service.observe_events = observe_engine_events
 
 
 def _configure_parser(service):

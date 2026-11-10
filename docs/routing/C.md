@@ -26,7 +26,7 @@
 | 광고·계정 MySQL 생성·권한 분리·PJ4 복제·앱 실행 | `ops/mysql/README.md`, `provision.py`, `verify.py`, `pj4_channel.py`, `replication_check.py --channel pj4`, `service_runtime.py` |
 | 공식 토픽·게임 Outbox 발행 | `pipeline/topics.yaml`, `pipeline/apply_topics.py`, `server/infra/outbox_publisher.py`, `pipeline/consumers/dedup.py`, `tests/infra/` |
 | 저장소나 Kafka 교체·장애 후 대조 | 인프라 `server/infra/`, `docs/contracts/ports.md` 2절, `tools/reconcile_game_events.py`, `pipeline/spark/export_faults.py`, `server/tests/live_stack.py` |
-| 웹 운영 조립(엔진·의심 모델·해석기·렌더러·보조 기록 연결) 바꾸기 | 인프라 `server/infra/game_factory.py`. Mongo 연결·컬렉션은 B 실행 자원 `server/paldo_web/mongo.py`, 웹 조립 경계 `server/paldo_web/composition.py`, 로컬 실행 순서 [`docs/modules/web.md`](../modules/web.md) 사용법 |
+| 웹 운영 조립(엔진·의심 모델·해석기·렌더러·보조 기록 연결) 바꾸기 | 인프라 `server/infra/game_factory.py`. 모델 버전 고정·카나리아 규칙은 응용 `server/app/model_versions.py`, 레지스트리 조회 교체(C-09-01)는 인프라 `server/infra/model_registry.py`. Mongo 연결·컬렉션은 B 실행 자원 `server/paldo_web/mongo.py`, 웹 조립 경계 `server/paldo_web/composition.py`, 로컬 실행 순서 [`docs/modules/web.md`](../modules/web.md) 사용법 |
 | Mongo 계약·CAS·콘텐츠·전용 DB 운영 전환 | `tests/infra/test_mongo_repo.py`, `tools/perf/mongo_repo_bench.py`, `tools/load_content.py`, `ops/provision_mongo.py`, `ops/mongo.md` |
 | 공식 게임·광고 bronze·silver·학습 export·재처리 | `pipeline/README.md`, `pipeline/spark/{ingest_bronze,build_silver,join_labels,verify_run}.py`, `pipeline/install_bronze_service.py`, 계약 테스트 `test_pipeline_bronze.py`·`test_pipeline_silver.py` |
 | 로컬 개발 환경 띄우기·Python 패키지 설치 | `ops/compose/README.md`, `requirements/` |

@@ -49,6 +49,13 @@ ADS_INTERNAL_URL = os.environ.get("PALDO_ADS_INTERNAL_URL", "")
 SESSION_MONGO_URI = os.environ.get("PALDO_MONGO_URI", "")
 # 회차 없는 일반 판의 content_version(운영 Mongo에 적재된 활성 버전, E-08-14). 비어 있으면 일반 판 시작은 503
 ACTIVE_CONTENT_VERSION = os.environ.get("PALDO_CONTENT_VERSION", "")
+# 일반 판 카나리아 배정 비율(B-09-01, ml_lifecycle.md 4절). 0이면 끔. 사용자 테스트 회차 판은 비율과 무관하게 끈다.
+MODEL_CANARY_RATIO = float(os.environ.get("PALDO_MODEL_CANARY_RATIO", "0") or 0)
+# 실제 의심 모델 사용(B-09-01). 비어 있으면 끔(규칙 의심도 `FakeSuspicionModel`). 값은 `<mlruns>/suspicion-v0/<버전>/`의
+# 버전 이름. 시작 때 못 띄우면 끔과 같게 동작하고, 판 진행 중 장애는 그 결정만 규칙 v0로 대신한다.
+SUSPICION_MODEL_VERSION = os.environ.get("PALDO_SUSPICION_MODEL_VERSION", "").strip()
+# 신뢰된 로컬 모델 산출물 폴더(`models.pkl`·`report.json`, D-08-04 인계 형식). 상대 경로는 웹 작업 폴더 기준.
+SUSPICION_MODEL_ROOT = os.environ.get("PALDO_MLRUNS_ROOT", "mlruns")
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
