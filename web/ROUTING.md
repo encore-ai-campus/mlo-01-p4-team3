@@ -1,5 +1,7 @@
 # 웹 라우팅
 
+B-09-02 D 어댑터 수신은 서버의 해석기 팩토리 조립만 추가한다. 기존 자유 입력·카드·폴링 URL과 템플릿 연결은 그대로이며 화면 계약 회귀 결과와 실물 모델 대기는 [증빙](../docs/evidence/B-09-02.md)에 기록한다.
+
 B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
 
 공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 manifest의 정식 그림(현재 로고·회의/밤 배경 포함 21개)과 임시 자원 상태를 표시하고 classic은 404다. 수량은 manifest에서 계산한다. 시안 후보 카탈로그는 읽지 않는다. 보존한 전체 HTML 시안과 실제 화면의 적용 범위는 UI_APPLY.md에서 구분한다.
@@ -16,7 +18,7 @@ B-09-06의 [VN 규칙](../docs/contracts/vn.md)은 PR #304에서 확정됐다. B
 
 B-07-05 네트워크 부하는 화면 조작 대신 실제 HTTP 게임 API·로비 광고 조각·인증 광고 웹소켓을 호출한다. 광고 지면·비콘의 기존 경로와 응답을 유지하며 UI 템플릿·브라우저 스크립트는 변경하지 않는다. 실행 경로와 조건은 [서버 시험 안내](../server/tests/README.md#b-07-05-실제-http웹소켓-성능-비교)를 참조한다.
 
-B-06-04의 가입·로그인·로비·판 종료 URL은 유지한다. 광고 지면 GET은 서버에서 광고용 UUID를 붙이며 로그인 ID·계정 가명·판 ID를 광고 포트로 옮기지 않는지 계정 시나리오 시험으로 확인한다. 실제 HTTP 광고 서버 연결은 B-08-03 검증 범위다.
+B-06-04의 가입·로그인·로비·판 종료 URL은 유지한다. 광고 지면 GET은 서버에서 광고용 UUID를 붙인다. 같은 계정 시나리오를 D Django 광고 API에 실제 HTTP로 보내 로그인 ID·계정 가명·판 ID의 수신·로그 비노출까지 로컬 검증했다. VM 운영 배치·브라우저 네트워크 확인은 B-08-03(E)의 별도 범위다.
 
 B-06-02의 실제 Mongo 검증은 기존 `POST /games`·`POST /games/{id}/commands`를 사용한다. 새 화면·URL은 추가하지 않는다. 측정 도구와 범위는 [서버 시험 안내](../server/tests/README.md#b-06-02-로컬-시험)와 [성능 모듈](../docs/modules/perf.md)에 둔다.
 
@@ -95,7 +97,7 @@ B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story
 |---|---|
 | `static/css/theme.css` → `static/fonts/fonts.css` | 공통 제목·본문 글꼴 토큰. 게임·계정 기본 UI에서 같은 토큰 사용 |
 | `static/fonts/pretendard-subset.css` → `woff2-dynamic-subset/` | 공식 문자 범위별 로컬 WOFF2. 외부 CDN 요청 없음 |
-| `static/css/accounts.css` | 판 시작 전 계정 화면의 시안 배치·버튼·오류·반응형. 게임 무대 배치는 수정하지 않음 |
+| `static/css/accounts.css` | 판 시작 전 계정 화면의 시안 배치·버튼·오류·반응형. 무당 모습 안내는 두 열 전체 폭, 그림 위 제목은 시안 줄높이·기본 자간. 게임 무대 배치는 수정하지 않음 |
 | `accounts/home.html` → `static/js/account-start.js` | 일반/배정 테스트의 details를 하나씩 펼침. 서버의 `test_round_pending`으로 기본 영역 결정. 두 기존 시작 양식 보존 |
 | `content/images/branding/tiger_emblem.png` | manifest `branding:tiger_emblem` → 기존 정적 파일 경로. 원화 정규화·등록은 `tools/assets/branding.py` |
 | `server/tests/ui_theme_preview.py --font-probe` → `ui_font_probe.py` | 명시적 시험 모드의 로그인 응답에만 Navigation/Resource Timing 표본 추가 |

@@ -48,6 +48,24 @@ def _decision(reasons, current, fallback):
     return GateDecision(not reasons, tuple(reasons), version, version)
 
 
+def ad_ctr_gate(candidate, reference, *, current_version=None):
+    """Keep Beta unless the same held-out impressions satisfy loss +.01 and ECE <=.05."""
+    reasons = []
+    try:
+        impressions = _count(candidate, 'impressions')
+        if impressions != _count(reference, 'impressions') or _count(candidate, 'model_impressions') > impressions:
+            raise ValueError('different evaluation sizes')
+        loss = _number(candidate, 'log_loss', math.inf)
+        if loss > _number(reference, 'log_loss', math.inf) + .01 + 1e-12:
+            reasons.append('log_loss')
+        if _number(candidate, 'ece') > .05:
+            reasons.append('ece')
+        _number(reference, 'ece')
+    except (KeyError, TypeError, ValueError):
+        reasons.append('invalid_or_missing_measurement')
+    return _decision(reasons, current_version, 'beta')
+
+
 def suspicion_gate(candidate, reference, *, current_version=None):
     """Require benchmark AND human: loss +.01, ECE <=.05, win rate ±.05.
 

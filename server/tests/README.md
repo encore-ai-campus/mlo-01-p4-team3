@@ -6,6 +6,10 @@
 
 ## B-09-02 해석 혼합 부하 사전 준비
 
+D 어댑터 수신 회귀는 `python -B server/manage.py test server.tests.test_bert_receive --settings=server.paldo_web.test_settings --noinput`다. 로더 대역을 쓰는 조립·HTTP 시험과 실물 시험을 구분한다. 실제 D 체크포인트를 보호 경로로 인수한 뒤 환경 변수 `PALDO_BERT_RECEIVE_RUN_DIR`에 그 폴더를 지정하고 같은 명령을 실행하면 실물 HTTP 시험도 실행한다. 실제 모델 경로는 Git에 넣지 않는다. D torch 경계 실물 시험은 별도 ML 의존 환경에서 `PALDO_BERT_TESTS=1`로 실행한다. 두 플래그를 지정하는 것만으로 모델·패키지가 준비되는 것은 아니다.
+
+서비스 조립 설정은 `INTENT_PARSER_FACTORY = "server.paldo_web.intent.make_bert_parser"`, 아티팩트 경로는 `PALDO_INTENT_BERT_RUN_DIR`다. 이번 변경은 운영 기본값을 바꾸지 않는다. 실제 엔진·VM 성능과 B-09-01의 판별 버전 고정 검증 전 사용자 테스트 서버를 전환하지 않는다.
+
 `python -B tools/perf/api_bench.py --web-processes 2 --users 2 --minutes 0.3 --intent-every 1`로 짧게 확인한다. Mongo 접속은 기존 `PALDO_MONGO_URI`를 환경에 주입한다. 임시 계정 DB·고유 접두어 Mongo·시험 Daphne·Caddy만 만들며 운영 서버로 부하를 보내지 않는다. Docker가 없으면 기존 `--front binary --caddy-bin <실행 파일>`을 쓴다. 해석기는 `--intent-factory`로 바꾸고 기본은 `intent.parser.BaselineIntentParser`다. 옵션을 빼거나 `--intent-every 0`이면 기존 부하다.
 
 해석·취소는 전체 API 표본에 포함하고 상태 버전·확인 상태를 검사한다. `intent_http_p95_ms`는 DB·HTTP 포함, `intent_parse_p95_ms`는 시험 헤더의 순수 parse 표본이다. 각 프로세스의 해석 호출 수도 결과에 남긴다. 해석 요청 0건·취소 누락·오류는 혼합 시험 성공으로 처리하지 않는다. 30명·3분 이상이어야 기존 `--result-name`을 쓸 수 있으나 녹화 결과로 B-09-02 전체 완료를 판정하지 않는다.
@@ -24,7 +28,7 @@ B-10-02의 test_village_assets는 전체/htmx의 지도·초상·하단 출처, 
 
 `python tools/perf/api_bench.py --web-processes 2,1 --users 30 --minutes 3`(경우 이름으로는 `python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis --redis-url redis://127.0.0.1:6379/0`)은 B-07-05의 시험 조립(`asgi_bench_app.py`)을 Daphne N개로 띄우고 Caddy(운영 Caddyfile과 같은 분배·상태 확인, `--front docker`는 공식 이미지 `caddy:2.10.2`, `--front binary`는 설치된 caddy)를 앞에 둔 채 같은 부하(사용자당 초당 한 요청 + 웹소켓 비콘 1개)를 준다. 모든 경우가 같은 Caddy 경로를 지나므로 경우끼리 비교하며, Docker Desktop 경유 지연이 포함돼 운영 절대값이 아니다. Mongo는 `PALDO_MONGO_URI`, 결과는 `out/handoff/e0910-multiproc-report.json`. 설정 전환·포트·Caddy·Prometheus 대응 시험은 `tests/ops/test_web_scaling.py`(Redis 통합은 `PALDO_TEST_REDIS_URL`이 있을 때만).
 
-전체 PM UI의 test_ui_review는 게임 에셋 manifest 우선·시안 경로 탈출/외부 URL 대체, 진행 중 복기 403·타인 404·종료 후 HTML/JSON, PM 안내의 로그인 제한, 등록 18/임시 84 구분·확정 v5 원화 연결·manifest 보존·classic/vn 왕복·classic 검토 경로 차단을 검사한다. 원본 전체·후보 갤러리와 계약 차이는 [PM 검토 목록](../../web/PM_UI_REVIEW.md), 새로 준비할 에셋은 [제작 계획](../../web/UI_ASSET_PLAN.md)을 따른다. 원본 시안의 고정 데이터와 실제 판을 혼동하지 않는다.
+전체 PM UI의 test_ui_review는 공식 manifest 참조, 진행 중 복기 403·타인 404·종료 후 HTML/JSON, 검토 페이지 로그인 제한, manifest에서 계산한 정식/임시 수량·확정 v5 원화 연결·manifest 보존·classic/vn 왕복·classic 검토 경로 차단을 검사한다. 현재 로고와 회의/밤 배경을 포함한 정식 21개·임시82개다. 후보 카탈로그는 운영 화면에서 읽지 않는다. 시안과의 차이는 [PM 검토 목록](../../web/PM_UI_REVIEW.md), 에셋 인수는 [인수 계획](../../web/UI_ASSET_PLAN.md)을 따른다. 원본 시안의 고정 데이터와 실제 판을 혼동하지 않는다.
 
 ## B-08-01 결과·진척·결말 선택
 
@@ -87,9 +91,11 @@ python -B server/tests/bench.py --memory --users 10 --minutes 3
 
 메모리 부하 시험은 임시 SQLite 세션과 녹화 엔진·원자 저장 대역으로 사용자마다 독립 판을 진행한다. 응답 p50·p95와 오류 건수를 출력한다.
 
-## B-06-04 계정과 광고 포트 비노출
+## B-06-04 계정과 광고 HTTP 비노출
 
-B-06-04의 `test_accounts.Accounts.test_credentials_absent_from_logs_outbox_and_metrics`는 가입·로그인·실패·잠금·녹화 판 완주를 거쳐 파일 로그·아웃박스·지표와 광고 포트 DTO의 인증 입력 비노출을 함께 검사한다. 광고 요청은 세 지면과 판 종료를 포함한 4건이다. 계정 가명·로그인 세션 키·판 ID·쿼리 위조값도 전달하지 않는다. 이 시험의 `FakeAdProvider`·메모리 회차 조립은 테스트 전용이며 실제 HTTP 광고 서버 수신 검증은 B-08-03 연결 뒤 별도로 한다.
+`python -B server/manage.py test server.tests.test_account_http_privacy --settings=server.paldo_web.test_settings --noinput`은 같은 전체 인증 시나리오를 B의 `HTTPAdProvider` → 별도 루프백 프로세스의 D 원본 Django WSGI·API·AdService로 실행한다. `ad_privacy_host.py`는 시험 전용이며 D의 메모리 광고 저장소·가상 캠페인을 사용한다. 실제 수신 본문4건·헤더와 D 파일 로그를 검사하며 Cookie·Authorization·계정 정보·판 ID가 없는지 확인한다. VM 운영 배치·광고 MySQL 검증은 아니다. 실제 수신 원자료와 인증 입력은 메모리에서만 대조하고 종료 시 제거한다. MySQL 계정 회귀는 같은 명령의 설정을 `server.paldo_web.mysql_test_settings`로 바꾼다(시험 전용 접속 정보 필요).
+
+B-06-04의 `test_accounts.Accounts.test_credentials_absent_from_logs_outbox_and_metrics`는 가입·로그인·실패·잠금·녹화 판 완주를 거쳐 파일 로그·아웃박스·지표와 광고 포트 DTO의 인증 입력 비노출을 함께 검사한다. 광고 요청은 세 지면과 판 종료를 포함한 4건이다. 계정 가명·로그인 세션 키·판 ID·쿼리 위조값도 전달하지 않는다. 기본 시험의 `FakeAdProvider`·메모리 회차 조립은 테스트 전용이며, 위 별도 HTTP 시험이 D 실제 API 수신 경계까지 확장한다.
 
 ## B-06-03 고정 회차와 광고 가명
 

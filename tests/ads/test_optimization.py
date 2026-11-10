@@ -1,4 +1,5 @@
 """D-08-02 persistent versions, reload and auction-time event pinning."""
+import hashlib
 import json
 import tempfile
 from pathlib import Path
@@ -9,7 +10,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 
 from ads.infra.optimization import OptimizationCache, save_version
-from ads.web.models import AdOptimizationVersion, AdOutbox
+from ads.web.models import AdOptimizationVersion, AdOutbox, Campaign, Creative
 from ads.project import composition
 from tests.ads.test_persistent_http import PersistentHTTPTests
 
@@ -74,6 +75,93 @@ class VersionTests(TestCase):
         clock[0] = 60.
         with patch.object(AdOptimizationVersion.objects, "filter", side_effect=RuntimeError("offline")):
             self.assertEqual(cache.get()["ctr"].version, row.version)
+
+
+class ContextAndBidHTTPTests(TestCase):
+    """Observe bids, rollout and rollback through HTTP and the MySQL outbox."""
+
+    def test_context_canary_rollback_and_bid_reload(self):
+        campaign = Campaign.objects.create(campaign_id="syn:cpc", advertiser_id="syn:adv", name="CTR experiment",
+            slots=["result_banner"], billing="cpc", min_bid_mw=10_000, max_bid_mw=100_000,
+            target_cpc_mw=40_000, daily_budget_mw=10_000_000, start_date="2026-11-01", end_date="2026-12-01")
+        Creative.objects.create(creative_id="syn:cr", campaign=campaign, title="ad", body="ad",
+                                image_path="/static/ads/example.png")
+        now = [0.]
+        cache = OptimizationCache(clock=lambda: now[0])
+        actual_service = composition.get_service
+
+        def service():
+            instance = actual_service()
+            instance.clock = lambda: 1794092400000  # 08:00 KST
+            return instance
+
+        def serve(index, canary):
+            for i in range(100):
+                rid = f"syn:probe:{index}:{i}"
+                assigned = int.from_bytes(hashlib.sha256(rid.encode()).digest()[:8], "big") % 5 == 0
+                if assigned == canary:
+                    break
+            response = self.client.post("/ads/v1/serve", json.dumps(dict(request_id=rid, slot="result_banner",
+                source="synthetic", session_pseudonym=rid, context=dict(preset_id="base6", outcome="win", hour=8))),
+                content_type="application/json").json()
+            return response, AdOutbox.objects.get(topic="ad.serve", payload__request_id=rid).payload
+
+        with (tempfile.TemporaryDirectory() as directory, patch.object(composition, "_optimization", cache),
+              patch("ads.web.views.get_service", side_effect=service),
+              patch("ads.web.management.commands.ad_update.registered_report") as registered):
+            path = Path(directory) / "gold.json"
+            gold = dict(finalized=True, source_version="delta:ads-gold:1", as_of_ms=3_600_000, rows=[dict(
+                campaign_id=campaign.pk, source="synthetic", attribution_day="2026-11-08", hour=8,
+                slot="result_banner", billing="cpc", load_test=False, clicks=2, cost_mw=100_000)])
+            path.write_text(json.dumps(gold), encoding="utf-8")
+            beta = save_version("ctr", [], 100, "beta-test")
+            _, initial = serve("initial", True)
+            self.assertEqual(initial["candidates"][0]["bid_mw"], 100_000)
+            call_command("ad_update", "bid", input=path)
+            call_command("ad_update", "bid", input=path)
+            bid = AdOptimizationVersion.objects.get(kind="bid")
+            self.assertEqual(bid.payload["bids"][0]["bid_mw"], 80_000)
+            path.write_text(json.dumps(gold | {"rows": []}), encoding="utf-8")
+            with self.assertRaisesMessage(CommandError, "bid source revision content conflict"):
+                call_command("ad_update", "bid", input=path)
+
+            report = dict(source="synthetic", registry_version="paldo-ad-ctr-synthetic:1", feature_version="ad-context-v1",
+                          gate=dict(accepted=True), beta=dict(impressions=500, log_loss=.4, ece=.02),
+                          lightgbm=dict(impressions=500, model_impressions=500, log_loss=.3, ece=.02),
+                          predictions=[["result_banner", "syn:cr", "win", "base6", 8, .3]])
+            registered.return_value = {key: value for key, value in report.items() if key != "registry_version"}
+            path.write_text(json.dumps(report | {"gate": {"accepted": False}}), encoding="utf-8")
+            with self.assertRaises(CommandError):
+                call_command("ad_update", "ctrml", input=path)
+            self.assertEqual(serve("rejected", True)[1]["ctr_version"], beta.version)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            call_command("ad_update", "ctrml", input=path)
+            candidate = AdOptimizationVersion.objects.get(kind="ctrml")
+            now[0] = 59.999
+            self.assertEqual(serve("before-ttl", True)[1]["ctr_version"], beta.version)
+            now[0] = 60.
+            result, auction = serve("canary", True)
+            self.assertEqual(auction["ctr_version"], candidate.version)
+            self.assertEqual(auction["bid_version"], bid.version)
+            self.assertAlmostEqual(auction["candidates"][0]["ctr_mean"], .3)
+            self.assertEqual(auction["candidates"][0]["bid_mw"], 80_000)
+            self.assertEqual(serve("control", False)[1]["ctr_version"], beta.version)
+            save_version("ctr", [], 200, "beta-during-canary")
+            with self.assertRaises(CommandError):
+                call_command("ad_update", "rollback-ctr", expected_version=candidate.version,
+                             signal="fallback_rate", value=.05)
+            call_command("ad_update", "rollback-ctr", expected_version=candidate.version,
+                         signal="fallback_rate", value=.06)
+            now[0] = 120.
+            self.assertEqual(serve("after-rollback", True)[1]["ctr_version"], beta.version)
+            self.assertEqual(self.client.get("/ads/v1/click", {"t": result["serve_token"]}).status_code, 302)
+            click = AdOutbox.objects.get(topic="ad.click").payload
+            self.assertEqual((click["ctr_version"], click["bid_version"]), (candidate.version, bid.version))
+            fresh = save_version("ctr", [], 300, "beta-after-rollback")
+            now[0] = 180.
+            self.assertEqual(serve("fresh-beta", True)[1]["ctr_version"], fresh.version)
+            with self.assertRaises(CommandError):
+                call_command("ad_update", "ctrml", input=path)
 
 
 class UpdatedHTTPTests(PersistentHTTPTests):

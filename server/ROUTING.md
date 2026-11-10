@@ -1,5 +1,7 @@
 # 서버 라우팅
 
+B-09-02 어댑터 수신: `composition._configure_parser` → 설정 `INTENT_PARSER_FACTORY` → `paldo_web.intent.make_bert_parser()` → D의 `intent.bert.BertIntentParser(run_dir)` → 기존 `ObservedIntentParser` → `InteractionService`다. 로컬 아티팩트 경로는 `INTENT_BERT_RUN_DIR`(환경 `PALDO_INTENT_BERT_RUN_DIR`)로 받는다. 기본 팩토리는 빈 문자열로 유지한다. 운영 URL·DTO 변경은 없으며 인수 범위와 실제 가중치 미검증은 [증빙](../docs/evidence/B-09-02.md)에 구분한다.
+
 B-09-02 사전 부하: 기존 `tools/perf/api_bench.py --web-processes 2 --intent-every 1` → `tests/multiproc_bench.py` → 시험 전용 `asgi_bench_app.py` → `asgi_bench.py`·`intent_load.py`다. 시험 해석기는 `--intent-factory`로 고르고 기존 해석기 포트·계측을 사용한다. 공개 화면 버전으로 기존 `POST /games/<id>/utterances` 해석 후 같은 시도를 `cancel`하며 명령은 실행하지 않는다. 보조 기록은 시험 접두어의 Mongo `b_interactions`에 저장하고 종료 때 삭제한다. 운영 URL·DTO·화면·설정 기본값은 변경하지 않는다. 실제 엔진 부하 옵션은 D-08-01과 연결 대기다. [증빙](../docs/evidence/B-09-02.md)
 
 B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
@@ -26,7 +28,7 @@ B-08-02: 홈 `accounts/views.py`와 일반 판 시작 `app/open_start.py`의 `op
 
 B-07-05 성능 시험은 `tools/perf/api_bench.py --compare-asgi` → `server/tests/api_bench.py` → `asgi_bench.py` → 시험 전용 `asgi_bench_app.py`·`asgi_bench_settings.py` 순서다. 하위 프로세스의 WSGI 또는 실제 Daphne에 루프백 HTTP로 기존 `POST /games`·명령을 보내며, 혼합 부하에서는 `GET /ads/slot/lobby_banner`와 인증 `/ws/game/` 비콘을 함께 보낸다. 운영 URL·조립은 바꾸지 않는다.
 
-B-06-04 비노출 검증: 가입·로그인 → 기존 `/games`·명령 → `GET /ads/slot/{slot}` → `api/ad_slots.py` → `ensure_ad_identity` → `AdGateway.fetch`. `server/tests/test_accounts.py`가 인증 실패 경로까지 로그·이벤트·지표·광고 DTO를 대조한다. HTTP 광고 서버 연결은 B-08-03에서 이어 검증한다. URL 변경은 없다.
+B-06-04 비노출 검증: 가입·로그인 → 기존 `/games`·명령 → `GET /ads/slot/{slot}` → `api/ad_slots.py` → `ensure_ad_identity` → `AdGateway.fetch` → `HTTPAdProvider` → D Django 광고 API다. `test_accounts.py`의 같은 인증 시나리오를 `test_account_http_privacy.py`가 재사용하고 `ad_privacy_host.py`의 별도 루프백 D WSGI 프로세스가 수신 본문·헤더·D 로그를 검사한다. 광고 저장소만 메모리인 시험 전용 호스트이며 운영 조립·URL 변경은 없다.
 
 B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_bench.py` → 기존 `/games`·`/games/{id}/commands` → 실제 Mongo 조립이다. URL·운영 핸들러는 바꾸지 않는다. `server/tests/mongo_commands.py`는 같은 API의 실제 저장·20개 경합을 검사한다.
 

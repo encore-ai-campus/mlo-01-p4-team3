@@ -1,0 +1,32 @@
+{
+  "task": "D-10-02",
+  "commit": "68887b9bc04b1b59f38b185469e60b1f103425c2",
+  "generated_at": "2026-11-10T00:26:31Z",
+  "source": "pipeline/spark/ads_gold.py --phase final --export-optimization /data/exports",
+  "metrics": {
+    "training_rows": {
+      "value": 576,
+      "unit": "건"
+    },
+    "reconciliation_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "context_missing_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "valid_impressions": {
+      "value": 71788,
+      "unit": "건"
+    },
+    "valid_clicks": {
+      "value": 10424,
+      "unit": "건"
+    },
+    "cpc_input_rows": {
+      "value": 24,
+      "unit": "건"
+    }
+  }
+}
