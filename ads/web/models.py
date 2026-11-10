@@ -1,6 +1,6 @@
 """admin에서 관리하는 캠페인·소재. 금액 단위는 정수 밀리원."""
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
 from ads.domain import model as domain
@@ -17,6 +17,9 @@ class Campaign(models.Model):
     slots = models.JSONField()
     billing = models.CharField(max_length=3, choices=[(v.value, v.value) for v in domain.BillingType])
     max_bid_mw = models.PositiveBigIntegerField()
+    target_cpc_mw = models.PositiveBigIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
+    min_bid_mw = models.PositiveBigIntegerField(null=True, blank=True, validators=[MinValueValidator(1)],
+                                              help_text="비우면 1밀리원")
     daily_budget_mw = models.PositiveBigIntegerField(help_text="1원 = 1000밀리원")
     targeting = models.JSONField(default=dict, blank=True)
     start_date = models.DateField()
@@ -43,6 +46,11 @@ class Campaign(models.Model):
             raise ValidationError({"targeting": "타기팅 값의 타입·범위를 확인하세요."})
         if self.start_date and self.end_date and self.start_date > self.end_date:
             raise ValidationError({"end_date": "시작일 이후여야 합니다."})
+        if self.target_cpc_mw is not None:
+            if self.billing != domain.BillingType.CPC:
+                raise ValidationError({"target_cpc_mw": "CPC 캠페인만 자동 입찰을 사용할 수 있습니다."})
+            if self.max_bid_mw is None or (self.min_bid_mw or 1) > self.max_bid_mw:
+                raise ValidationError({"min_bid_mw": "입찰 하한은 상한 이하여야 합니다."})
         if (self.billing in {v.value for v in domain.BillingType}
                 and self.max_bid_mw is not None and self.daily_budget_mw is not None):
             try:
@@ -58,7 +66,7 @@ class Campaign(models.Model):
             domain.Targeting(**{**self.targeting,
                 "outcomes": [domain.GameOutcome(o) for o in self.targeting.get("outcomes", [])]}),
             self.start_date.isoformat(), self.end_date.isoformat(), domain.CampaignStatus(self.status),
-            [cr.to_domain() for cr in self.creatives.all()])
+            [cr.to_domain() for cr in self.creatives.all()], self.target_cpc_mw, self.min_bid_mw or 1)
 
     def __str__(self):
         return self.name
@@ -173,7 +181,7 @@ class AdReceipt(models.Model):
 
 
 class AdOptimizationVersion(models.Model):
-    """Immutable complete CTR/pacing snapshots; newest as-of wins, replay never promotes."""
+    """Immutable optimization snapshots; newest as-of wins, replay never promotes."""
 
     kind = models.CharField(max_length=6)
     version = models.CharField(max_length=80, unique=True, db_collation="utf8mb4_0900_bin")

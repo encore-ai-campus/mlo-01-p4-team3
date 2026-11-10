@@ -1,0 +1,48 @@
+{
+  "task": "D-08-01",
+  "commit": "3fdfdad36f174d234a94383d170ba42a69f3f287",
+  "generated_at": "2026-11-10T01:03:20Z",
+  "source": "python -B out/d08-01/record_worker_verification.py; local tests and official model 50-game replay x2 only; server 30x3 and two-version RSS pending after 18:00 KST",
+  "metrics": {
+    "tests": {
+      "value": 67,
+      "unit": "개"
+    },
+    "runs": {
+      "value": 2,
+      "unit": "회"
+    },
+    "games_per_run": {
+      "value": 50,
+      "unit": "판"
+    },
+    "reproduction_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "model_calls": {
+      "value": 620,
+      "unit": "건"
+    },
+    "model_successes": {
+      "value": 620,
+      "unit": "건"
+    },
+    "legal_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "suspicion_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "inference_p95_max": {
+      "value": 2.2350000217556953,
+      "unit": "ms"
+    }
+  }
+}

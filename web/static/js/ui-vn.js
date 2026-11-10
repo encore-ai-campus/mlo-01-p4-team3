@@ -124,7 +124,7 @@ function mountScene(root) {
   player.querySelector('[data-vn-full-close]').addEventListener('click',next);
   function showTranscript() {
     root.querySelector('[data-stage-open="meeting-records"]')?.click();
-    const transcript=root.querySelector('.speech-transcript');if(transcript)transcript.open=true;
+    const transcript=root.querySelector('.speech-transcript');if(transcript){transcript.open=true;transcript.scrollIntoView({block:'start'});}
   }
   player.querySelector('[data-vn-show-all]').addEventListener('click',showTranscript);
   player.querySelector('[data-vn-skip]').addEventListener('click',()=>{

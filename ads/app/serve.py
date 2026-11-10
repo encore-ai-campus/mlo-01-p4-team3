@@ -10,6 +10,7 @@ import uuid
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 
+from ads.app.bid_update import effective_bid
 from ads.domain.events import ServeCandidate
 from ads.domain.model import (
     AdCreativeView, AdRequest, AdResponse, Bidder, BillingType, ServeClaims, ServeRecord,
@@ -43,16 +44,27 @@ class AdService:
         self.last_result = None
         self.ctr, self.pacing, self.exposure_counts = {}, {}, {}
         self.ctr_version, self.policy_version = CTR_VERSION, POLICY_VERSION
+        self.ctr_canary, self.ctr_canary_version, self.ctr_canary_source = {}, "", ""
+        self.ctr_baseline = ("", "", {})
+        self.ctr_lookup_ns = self.ctr_lookup_count = self.ctr_lookup_misses = 0
+        self.bids, self.bid_version = {}, ""
+        self.auction_bid_version = ""
 
-    def estimate(self, creative, policy):
+    def estimate(self, creative, policy, posterior=None):
         """Return a loaded posterior or the slot prior for an unseen creative."""
-        params = self.ctr.get((creative.creative_id, policy.slot))
+        params = (self.ctr if posterior is None else posterior).get((creative.creative_id, policy.slot))
         return CtrEstimate(*params) if params else ctr_posterior(policy, 0, 0)
 
-    def rank_ctr(self, campaign, creative, policy, rng):
+    def rank_ctr(self, campaign, creative, policy, rng, estimate=None):
         """Sample learned CTR for CPC ranking and within-campaign CPM selection."""
-        sample = thompson_ctr(self.estimate(creative, policy), rng)
+        sample = thompson_ctr(estimate or self.estimate(creative, policy), rng)
         return max(sample, MIN_RANK_CTR) if campaign.billing is BillingType.CPC else sample
+
+    def in_ctr_canary(self, req):
+        """Assign 20% of one source's non-load-test requests to the contextual model."""
+        if req.load_test or req.source != self.ctr_canary_source:
+            return False
+        return int.from_bytes(hashlib.sha256(req.request_id.encode()).digest()[:8], "big") % 5 == 0
 
     def serve(self, req: AdRequest) -> AdResponse:
         """동일 입력은 동일 응답을 반환하고 예산을 한 번만 예약한다."""
@@ -69,10 +81,19 @@ class AdService:
             now = self.clock()
             if self.store is None:
                 self.book.release_expired(now)
-            day = datetime.fromtimestamp(now / 1000, ATTRIBUTION_TZ).date().isoformat()
+            attributed = datetime.fromtimestamp(now / 1000, ATTRIBUTION_TZ)
+            day = attributed.date().isoformat()
             policy = self.policies[req.slot]
             request_hash = hashlib.sha256(req.request_id.encode())
             rng = random.Random(int.from_bytes(request_hash.digest(), "big"))
+            ctr_version = self.ctr_version
+            posterior = self.ctr
+            pinned = req.source == self.ctr_baseline[0]
+            if pinned:
+                _, ctr_version, posterior = self.ctr_baseline
+            contextual = self.ctr_canary if self.in_ctr_canary(req) else {}
+            self.ctr_lookup_ns = self.ctr_lookup_count = self.ctr_lookup_misses = 0
+            self.auction_bid_version = ""
             campaigns, creatives, bidders, exploring = {}, {}, [], {}
             candidates = []
             self.candidates[req.request_id] = candidates
@@ -92,18 +113,36 @@ class AdService:
                     count = (frequency(cr.creative_id) if frequency is not None
                              else self.frequencies.get((req.session_pseudonym, cr.creative_id), 0))
                     if frequency_ok(count, policy):
-                        choices.append((self.rank_ctr(c, cr, policy, rng), cr))
+                        p = None
+                        if contextual:
+                            started = time.perf_counter_ns()
+                            p = contextual.get((req.slot.value, cr.creative_id, req.context.outcome,
+                                                req.context.preset_id, attributed.hour))
+                            self.ctr_lookup_ns += time.perf_counter_ns() - started
+                            self.ctr_lookup_count += 1
+                            self.ctr_lookup_misses += p is None
+                        estimate = self.estimate(cr, policy, posterior) if pinned else self.estimate(cr, policy)
+                        if p is not None:
+                            strength = estimate.alpha + estimate.beta
+                            estimate = CtrEstimate(p * strength, (1 - p) * strength)
+                            ctr_version = self.ctr_canary_version
+                        rank = (self.rank_ctr(c, cr, policy, rng, estimate) if pinned or p is not None
+                                else self.rank_ctr(c, cr, policy, rng))
+                        choices.append((rank, cr, estimate.mean))
                 if not choices:
                     continue
                 if explore:
-                    rank, cr = min(choices, key=lambda item: (
+                    rank, cr, mean = min(choices, key=lambda item: (
                         counts.get("creatives", {}).get(item[1].creative_id, 0), item[1].creative_id))
                 else:
-                    rank, cr = max(choices, key=lambda item: (item[0], item[1].creative_id))
+                    rank, cr, mean = max(choices, key=lambda item: (item[0], item[1].creative_id))
                 exploring[c.campaign_id] = explore
-                bidder = Bidder(c.campaign_id, cr.creative_id, c.billing, c.max_bid_mw, rank)
-                candidate = ServeCandidate(c.campaign_id, cr.creative_id, c.billing, c.max_bid_mw,
-                                          rank, self.estimate(cr, policy).mean, ecpm_mw(bidder))
+                updated_bid = effective_bid(c, self.bids.get(c.campaign_id))
+                if updated_bid is not None:
+                    self.auction_bid_version = self.bid_version
+                bid = c.max_bid_mw if updated_bid is None else updated_bid
+                bidder = Bidder(c.campaign_id, cr.creative_id, c.billing, bid, rank)
+                candidate = ServeCandidate(c.campaign_id, cr.creative_id, c.billing, bid, rank, mean, ecpm_mw(bidder))
                 candidates.append(candidate)
                 if not self.book.can_reserve(c, day, charge_amount_mw(c.billing, c.max_bid_mw)):
                     candidate.filtered = "budget"
@@ -117,7 +156,7 @@ class AdService:
                 bidders.append(bidder)
             auction = run_auction(bidders, policy.reserve_ecpm_mw, req.request_id)
             self.auctions[req.request_id] = auction
-            out = AdResponse(req.request_id, False, policy_version=self.policy_version, ctr_version=self.ctr_version)
+            out = AdResponse(req.request_id, False, policy_version=self.policy_version, ctr_version=ctr_version)
             if auction.winner:
                 winner = auction.winner
                 c, cr = campaigns[winner.campaign_id], creatives[winner.creative_id]
@@ -126,7 +165,8 @@ class AdService:
                             if req.source == "synthetic" else str(uuid.uuid4()))
                 record = ServeRecord(serve_id, req.request_id, c.campaign_id, cr.creative_id,
                     req.slot, c.billing, auction.price_mw, winner.rank_ctr, req.session_pseudonym, now, day,
-                    req.source, exploration=exploring[c.campaign_id])
+                    req.source, bid_version=self.auction_bid_version,
+                    exploration=exploring[c.campaign_id])
                 if self.book.reserve(c, record):
                     claims = ServeClaims(record.serve_id, req.session_pseudonym, req.slot, now, now + TOKEN_TTL_MS)
                     token = sign_token(claims, self.key)
@@ -136,7 +176,7 @@ class AdService:
                     self.frequencies[key] = self.frequencies.get(key, 0) + 1
                     out = AdResponse(req.request_id, True,
                         AdCreativeView(cr.creative_id, cr.title, cr.body, slot_image_path(cr.image_path, req.slot)),
-                        token, "/ads/v1/impression", f"/ads/v1/click?t={token}", self.policy_version, self.ctr_version)
+                        token, "/ads/v1/impression", f"/ads/v1/click?t={token}", self.policy_version, ctr_version)
                 else:
                     next(candidate for candidate in candidates
                          if candidate.campaign_id == c.campaign_id).filtered = "budget"

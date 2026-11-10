@@ -97,7 +97,7 @@ B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story
 |---|---|
 | `static/css/theme.css` → `static/fonts/fonts.css` | 공통 제목·본문 글꼴 토큰. 게임·계정 기본 UI에서 같은 토큰 사용 |
 | `static/fonts/pretendard-subset.css` → `woff2-dynamic-subset/` | 공식 문자 범위별 로컬 WOFF2. 외부 CDN 요청 없음 |
-| `static/css/accounts.css` | 판 시작 전 계정 화면의 시안 배치·버튼·오류·반응형. 게임 무대 배치는 수정하지 않음 |
+| `static/css/accounts.css` | 판 시작 전 계정 화면의 시안 배치·버튼·오류·반응형. 무당 모습 안내는 두 열 전체 폭, 그림 위 제목은 시안 줄높이·기본 자간. 게임 무대 배치는 수정하지 않음 |
 | `accounts/home.html` → `static/js/account-start.js` | 일반/배정 테스트의 details를 하나씩 펼침. 서버의 `test_round_pending`으로 기본 영역 결정. 두 기존 시작 양식 보존 |
 | `content/images/branding/tiger_emblem.png` | manifest `branding:tiger_emblem` → 기존 정적 파일 경로. 원화 정규화·등록은 `tools/assets/branding.py` |
 | `server/tests/ui_theme_preview.py --font-probe` → `ui_font_probe.py` | 명시적 시험 모드의 로그인 응답에만 Navigation/Resource Timing 표본 추가 |

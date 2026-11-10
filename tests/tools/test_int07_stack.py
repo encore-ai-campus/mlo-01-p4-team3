@@ -1,7 +1,7 @@
 """`server.tests.int07_stack` 판정 규칙: 필수 컨테이너·지표·화면 상태가 빠지면 확인 완료로 적지 않는다."""
 import unittest
 
-from server.tests.int07_stack import GOALS, non_local_endpoints, port_mismatches, python_info, required_present, scenario_holds, summarize
+from server.tests.int07_stack import BUNDLE, GOALS, bundle_version, non_local_endpoints, port_mismatches, python_info, required_present, scenario_holds, summarize
 
 
 def result(**over):
@@ -70,6 +70,12 @@ class Verdicts(unittest.TestCase):
         self.assertTrue(scenario_holds("false_reveal", view, "gwabu"))
         view["player"]["divinations"]["1"]["gwabu"] = "clear"
         self.assertFalse(scenario_holds("false_reveal", view, "gwabu"))
+
+    def test_content_version_comes_from_bundle(self):
+        """웹 설정의 콘텐츠 버전은 저장소 묶음 값(고정 문자열 아님)."""
+        import json
+        self.assertEqual(bundle_version(), json.loads(BUNDLE.read_text(encoding="utf-8"))["content_version"])
+        self.assertTrue(bundle_version().startswith("content-"))
 
 
 if __name__ == "__main__":
