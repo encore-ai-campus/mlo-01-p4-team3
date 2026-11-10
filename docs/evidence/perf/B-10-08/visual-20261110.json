@@ -1,0 +1,237 @@
+{
+  "date": "2026-11-10",
+  "base_sha": "2c4f34183eec07a829328dd39281aabc2a78e4a2",
+  "scope": "B-10-08 account UI; temporary SQLite and recorded engine",
+  "interactions": {
+    "mobileLoginSuccess": true,
+    "pcLoginSuccess": true,
+    "wrongPasswordAlertVerified": true,
+    "helpOpenCloseAndFocusRestore": true,
+    "generalMode": {
+      "generalStartVisible": true,
+      "testStartVisible": false
+    },
+    "assignedMode": {
+      "generalStartVisible": false,
+      "testStartVisible": true
+    },
+    "assignedGameStart": true,
+    "resumeSameAssignedGame": true,
+    "logout": true,
+    "gameHeaderLogoImages": 0
+  },
+  "console": [],
+  "extraWidthObservations": [
+    {
+      "actions": "289.438px 192.95px",
+      "columns": "536px",
+      "overflow": 0,
+      "width": 599
+    },
+    {
+      "actions": "289.913px 193.288px",
+      "columns": "536.8px",
+      "overflow": 0,
+      "width": 600
+    },
+    {
+      "actions": "175.438px 116.95px",
+      "columns": "378px 378px",
+      "overflow": 0,
+      "width": 899
+    },
+    {
+      "actions": "175.675px 117.113px",
+      "columns": "378.4px 378.4px",
+      "overflow": 0,
+      "width": 900
+    }
+  ],
+  "limits": [
+    "Viewport screenshots; full-page capture API was unavailable. Mobile upper/lower captures saved separately.",
+    "Signup form and consent display inspected; a new account was not submitted through the browser.",
+    "599/899 width requests did not match the respective max-width queries; 598/898 did. Fractional viewport/scale effects require care when interpreting the extra boundary observations.",
+    "Game image loading audit excluded from account layout measures; lazy images in collapsed panels were not counted as broken.",
+    "Background original and paper texture decisions remain pending; no full-game visual approval.",
+    "The measurementSamples array contains four retained raw DOM samples. Other live DOM observations are summarized separately; captureFiles are viewport captures, not one full-page image per state."
+  ],
+  "measurementSamples": [
+    {
+      "name": "login-1280",
+      "file": "screens/B-10-08/login-1280-20261110.jpg",
+      "documentHeight": 689,
+      "fonts": {
+        "body": true,
+        "title": true
+      },
+      "heading": {
+        "fontSize": "66px",
+        "height": 92.4000015258789,
+        "letterSpacing": "normal",
+        "lineHeight": "92.4px",
+        "width": 422.3999938964844,
+        "x": 152.8000030517578,
+        "y": 327.20001220703125
+      },
+      "horizontalOverflow": 0,
+      "startModes": [],
+      "url": "/accounts/login",
+      "viewport": {
+        "height": 900,
+        "width": 1280
+      },
+      "unreadyImageCount": 0,
+      "openPortraitNotes": [],
+      "visibleStarts": []
+    },
+    {
+      "name": "login-360",
+      "file": "screens/B-10-08/login-360-20261110.jpg",
+      "documentHeight": 849,
+      "fonts": {
+        "body": true,
+        "title": true
+      },
+      "heading": {
+        "fontSize": "46px",
+        "height": 64.4000015258789,
+        "letterSpacing": "normal",
+        "lineHeight": "64.4px",
+        "width": 262.3999938964844,
+        "x": 48.79999923706055,
+        "y": 127.8000030517578
+      },
+      "horizontalOverflow": 0,
+      "scrollY": 0,
+      "startModes": [],
+      "url": "/accounts/login",
+      "viewport": {
+        "height": 800,
+        "width": 360
+      },
+      "unreadyImageCount": 0,
+      "openPortraitNotes": [],
+      "visibleStarts": []
+    },
+    {
+      "name": "login-360-bottom",
+      "file": "screens/B-10-08/login-360-bottom-20261110.jpg",
+      "documentHeight": 849,
+      "fonts": {
+        "body": true,
+        "title": true
+      },
+      "heading": {
+        "fontSize": "46px",
+        "height": 64.4000015258789,
+        "letterSpacing": "normal",
+        "lineHeight": "64.4px",
+        "width": 262.3999938964844,
+        "x": 48.79999923706055,
+        "y": 98.20000457763672
+      },
+      "horizontalOverflow": 0,
+      "scrollY": 29.600000381469727,
+      "startModes": [],
+      "url": "/accounts/login",
+      "viewport": {
+        "height": 800,
+        "width": 360
+      },
+      "unreadyImageCount": 0,
+      "openPortraitNotes": [],
+      "visibleStarts": []
+    },
+    {
+      "name": "signup-360-bottom",
+      "file": "screens/B-10-08/signup-360-bottom-20261110.jpg",
+      "documentHeight": 1358,
+      "fonts": {
+        "body": true,
+        "title": true
+      },
+      "heading": {
+        "fontSize": "46px",
+        "height": 64.4000015258789,
+        "letterSpacing": "normal",
+        "lineHeight": "64.4px",
+        "width": 247.1999969482422,
+        "x": 48.79999923706055,
+        "y": -430.6000061035156
+      },
+      "horizontalOverflow": 0,
+      "scrollY": 558.4000244140625,
+      "startModes": [],
+      "url": "/accounts/signup",
+      "viewport": {
+        "height": 800,
+        "width": 360
+      },
+      "unreadyImageCount": 0,
+      "openPortraitNotes": [],
+      "visibleStarts": []
+    }
+  ],
+  "captures": [
+    "screens/B-10-08/continue-1280-20261110.jpg",
+    "screens/B-10-08/continue-360-20261110.jpg",
+    "screens/B-10-08/game-entry-1280-20261110.jpg",
+    "screens/B-10-08/general-mode-1280-20261110.jpg",
+    "screens/B-10-08/general-mode-360-20261110.jpg",
+    "screens/B-10-08/help-1280-20261110.jpg",
+    "screens/B-10-08/help-360-20261110.jpg",
+    "screens/B-10-08/home-1280-20261110.jpg",
+    "screens/B-10-08/home-360-20261110.jpg",
+    "screens/B-10-08/home-360-bottom-20261110.jpg",
+    "screens/B-10-08/login-1280-20261110.jpg",
+    "screens/B-10-08/login-360-20261110.jpg",
+    "screens/B-10-08/login-360-bottom-20261110.jpg",
+    "screens/B-10-08/login-error-360-20261110.jpg",
+    "screens/B-10-08/signup-1280-20261110.jpg",
+    "screens/B-10-08/signup-360-20261110.jpg",
+    "screens/B-10-08/signup-360-bottom-20261110.jpg",
+    "screens/B-10-08/test-mode-1280-20261110.jpg",
+    "screens/B-10-08/test-mode-360-20261110.jpg",
+    "screens/B-10-08/test-mode-360-controls-20261110.jpg"
+  ],
+  "liveLayoutObservations": {
+    "portraitNote": {
+      "pc": {
+        "noteWidth": 380.8000183105469,
+        "gridWidth": 380.8000183105469
+      },
+      "mobile": {
+        "noteWidth": 221.6000061035156,
+        "gridWidth": 221.6000061035156
+      },
+      "gridColumn": "1 / -1",
+      "verifiedModes": [
+        "general",
+        "assigned"
+      ]
+    },
+    "sceneTitle": {
+      "pc": {
+        "fontSize": 66,
+        "lineHeight": 92.4
+      },
+      "mobile": {
+        "fontSize": 46,
+        "lineHeight": 64.4
+      },
+      "letterSpacing": "normal"
+    },
+    "accountPages": [
+      "login",
+      "signup",
+      "public-home",
+      "general-mode",
+      "assigned-mode",
+      "continue",
+      "help"
+    ],
+    "accountHorizontalOverflowObserved": 0
+  },
+  "css_sha256": "c0c737caa74fc87a334859d94b17dd80176be99e4dfa4d1eca245b4a7ecc60b3",
+  "captures_total_bytes": 992831
+}
