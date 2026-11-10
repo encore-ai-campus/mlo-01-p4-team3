@@ -55,7 +55,7 @@ python -B server/preview.py --port 8769
 6. 참가자로 가입해 홈의 가명 ID를 확인하고, 운영자로 `/admin/sessions`에서 회차를 등록한다. 버전은 규칙 `python -c "from engine.domain import params; print(params.RULE_PARAMS_VERSION)"`가 출력하는 값(`engine/domain/params.py`의 `RULE_PARAMS_VERSION`, 결정 층 파라미터가 바뀌면 함께 바뀐다), 엔진 `paldo-engine`, 콘텐츠 `content-1.0.1`(3번에서 적재한 버전과 같아야 한다)이다. 고정 판은 `[{"preset_id": "base6", "seed": 1}]`처럼 넣는다.
 7. 참가자로 로그인해 홈에서 판을 시작한다. 회차 없이 "새 게임"으로 하려면 서버를 띄우기 전에 `PALDO_CONTENT_VERSION=content-1.0.1`을 설정한다(이 경우 6의 회차 등록은 필요 없다).
 
-웹소켓 실행은 환경을 준비한 뒤 `python -m daphne -b 127.0.0.1 -p 8769 server.paldo_web.asgi:application`을 사용한다. 프로세스는 하나로 유지하고 외부 연결은 C 프록시를 거친다. `configure_ad_gateway`로 실제 광고 제공자를 조립하기 전에는 중계가 실패 응답과 대체 화면으로 끝난다. `server/preview.py`는 HTTP 화면용이며 웹소켓 실행 명령을 대신하지 않는다.
+웹소켓 실행은 환경을 준비한 뒤 `python -m daphne -b 127.0.0.1 -p 8769 server.paldo_web.asgi:application`을 사용한다. 운영은 프로세스 2개(8000·8002)를 C 프록시(Caddy) 뒤에 둔다(E-09-10, [`ops/proxy/README.md`](../../ops/proxy/README.md) "웹 프로세스 2개"). 로컬 Windows에서 `PALDO_PUBLIC_ORIGIN`을 `http://localhost:…`로 두면 Python 도구의 새 연결이 IPv6(::1)를 먼저 시도해 요청마다 약 2초 늦으므로 `http://127.0.0.1:…`을 쓴다. `configure_ad_gateway`로 실제 광고 제공자를 조립하기 전에는 중계가 실패 응답과 대체 화면으로 끝난다. `server/preview.py`는 HTTP 화면용이며 웹소켓 실행 명령을 대신하지 않는다.
 
 로컬 통신 검증: `python -m server.tests.ws_smoke`. 임시 SQLite·가짜 광고를 별도 Daphne 프로세스에 연결한 뒤 정리한다. 클라이언트 검증: `node server/tests/ws_client_test.cjs`.
 

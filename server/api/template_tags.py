@@ -32,6 +32,16 @@ def action_label(kind):
     return ACTION_LABELS.get(kind, kind)
 
 
+SLOT_LABELS = {"target": "대상", "addressee": "질문 상대", "interrogation_kind": "질문", "evidence": "관련 진술",
+               "divination": "점괘", "night": "밤", "slot": "시간", "night_plan": "밤 계획"}
+
+
+@register.filter
+def slot_label(slot):
+    """카드의 빠진 항목(명령 칸 이름)을 카드 수정 칸과 같은 화면 문구로 바꾼다."""
+    return SLOT_LABELS.get(slot, slot)
+
+
 @register.filter
 def phase_label(value):
     """엔진 단계 값을 화면용 한국어로 표시한다."""
