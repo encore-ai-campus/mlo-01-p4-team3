@@ -94,4 +94,5 @@ python -m unittest tests.assets.test_make_placeholders tests.assets.test_portrai
 | E-05-05 | 11/6 | (11/6 PM 결정) sprite 키 등급: 눈높이·허리선 통일을 없애고 같은 축척에 인물별 머리 꼭대기·등신(`HEIGHT_GRADES`·`CHARACTER_GRADE`). 얼굴 영역(`face_box`)·초상 크롭 위 y(`portrait_top`, 등급별 초상 안 눈 위치)를 등급에서 계산, 임시 실루엣을 등급별로 다시 그림. 마스코트 가로 가운데·아래 여백 자동 검사(sprite와 같은 판정)와 임시 마스코트 위치 조정 |
 | E-05-05 | 11/6 | 임시 그림 생성 가속(판정·생성 결과는 그대로, 바이트 동일): `portrait_art.render_sprite`·`mascot_art.render`는 그린 결과를 기억하고 복사본을 돌려줌(키에 키 등급·머리 장식·마스코트 위치 포함), `crop_portrait`는 알파 0·255를 바이트 마스크로 한 번에 합성, `make_placeholders`는 임시 PNG 바이트를 프로세스 안에서 기억 |
 | E-05-05 | 11/6 | 임시 에셋 동일성을 해상도·채널·디코드 픽셀로(`png.same_image`): zlib 구현(표준 zlib·Windows 공식 Python zlib-ng)마다 압축 바이트가 달라도 생성기가 기존 임시 PNG를 보존(용량 상한 이내일 때). 용량 상한·실제 에셋 SHA-256은 파일 바이트 기준 그대로 |
+| A-10-06 | 11/10 | 확정 기쁨·당황 16종 전신·파생 초상 등록. 기본 sprite 보존. 선택 결과 16장·생성 19단계 기록 복구. E 일괄 검수 별도 |
 | A-11-04 | 11/10 | 확정 슬픔 8종 전신·파생 초상 등록. 기본 sprite 보존. 선택 결과 8장·생성 20단계 기록 복구. E 일괄 검수 별도 |
