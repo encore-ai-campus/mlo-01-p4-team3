@@ -1,0 +1,104 @@
+{
+  "task": "D-08-01",
+  "commit": "9d822afa3e0b46e6174f60dad629bc94c6f02c53",
+  "generated_at": "2026-11-09T06:49:17Z",
+  "source": "Local Windows, candidate suspicion-logistic-1afb8f051c4e, Caddy Docker 2.10.2, isolated Mongo 8.3.7. python -B tools/perf/api_bench.py --web-processes 2 --users 30 --minutes 3 --mlruns <trusted local mlruns> --suspicion-version suspicion-logistic-1afb8f051c4e; first run overlaps precheck, second runs alone. HEAD 9d822af plus uncommitted D-08-01 actual-engine benchmark changes. Both runs failed. Raw reports in out/d08-01/dev-9d822af/web-30x3*-report.json",
+  "metrics": {
+    "concurrent_checks_p2_memory_requests": {
+      "value": 4878,
+      "unit": "count"
+    },
+    "concurrent_checks_p2_memory_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "concurrent_checks_p2_memory_throughput_rps": {
+      "value": 26.81,
+      "unit": "rps"
+    },
+    "concurrent_checks_p2_memory_p50_ms": {
+      "value": 687.476,
+      "unit": "ms"
+    },
+    "concurrent_checks_p2_memory_p95_ms": {
+      "value": 1572.175,
+      "unit": "ms"
+    },
+    "concurrent_checks_p2_memory_p99_ms": {
+      "value": 1871.106,
+      "unit": "ms"
+    },
+    "concurrent_checks_p2_memory_command_p95_ms": {
+      "value": 1578.182,
+      "unit": "ms"
+    },
+    "concurrent_checks_p2_memory_beacon_acks": {
+      "value": 3941,
+      "unit": "count"
+    },
+    "concurrent_checks_p2_memory_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "concurrent_checks_p2_memory_inference_calls": {
+      "value": 2257,
+      "unit": "count"
+    },
+    "concurrent_checks_p2_memory_inference_failures": {
+      "value": 2200,
+      "unit": "count"
+    },
+    "concurrent_checks_p2_memory_inference_p95_upper_ms": {
+      "value": 250.0,
+      "unit": "ms"
+    },
+    "isolated_p2_memory_requests": {
+      "value": 4893,
+      "unit": "count"
+    },
+    "isolated_p2_memory_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "isolated_p2_memory_throughput_rps": {
+      "value": 26.85,
+      "unit": "rps"
+    },
+    "isolated_p2_memory_p50_ms": {
+      "value": 971.522,
+      "unit": "ms"
+    },
+    "isolated_p2_memory_p95_ms": {
+      "value": 1446.669,
+      "unit": "ms"
+    },
+    "isolated_p2_memory_p99_ms": {
+      "value": 1677.236,
+      "unit": "ms"
+    },
+    "isolated_p2_memory_command_p95_ms": {
+      "value": 1448.757,
+      "unit": "ms"
+    },
+    "isolated_p2_memory_beacon_acks": {
+      "value": 3455,
+      "unit": "count"
+    },
+    "isolated_p2_memory_beacon_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "isolated_p2_memory_inference_calls": {
+      "value": 2238,
+      "unit": "count"
+    },
+    "isolated_p2_memory_inference_failures": {
+      "value": 2179,
+      "unit": "count"
+    },
+    "isolated_p2_memory_inference_p95_upper_ms": {
+      "value": 250.0,
+      "unit": "ms"
+    }
+  }
+}
