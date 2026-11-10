@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, Phase, Polarity
 from engine.ports import PlayerView
+from server.app.trust_cue import trust_cue
 from .viewmodels import PLACE_KO, SLOT_KO
 
 # 자기 행적 진술 문장 틀(11/10 사용자 승인).
@@ -145,24 +146,32 @@ def announcement_lines(view: PlayerView) -> list[VNLine]:
 
     실종이 있으면 발표 줄 바로 다음에 피해자 전신 컷 줄을 한 박자 둔다(밤 습격 결과 전신 컷, spec 7절).
     전신 컷 동안 대사창은 숨으므로 새 문장 없이 발표 문장을 그대로 단다.
+    2일째 아침부터는 그 뒤에 주민 신뢰 단서 해설 줄(화자 없음)을 하나 더 단다(`server.app.trust_cue`).
     """
     by_night = {record.night: record for record in view.public.disappearances}
     lines = []
     for day in range(1, view.day + 1):
-        record = by_night.get(day - 1)
-        if record is None:
-            lines.append(VNLine(f"announcement-none-{day}", day, Phase.MORNING.value, SPEAKER_KKACHI, ANNOUNCE_NONE,
-                                sprite_id=KKACHI_MASCOT, mascot=True))
-            continue
-        name = _name(view, record.victim)
-        place = (HOME_PLACE.format(name=name) if record.place.value == "home"
-                 else PLACE_KO.get(record.place.value, record.place.value))
-        text = attach_particles(ANNOUNCE_MISSING.format(slot=SLOT_KO.get(record.slot.value, ""), name=name, place=place))
-        lines.append(VNLine(f"announcement-{record.night}", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
-                            sprite_id=KKACHI_MASCOT, mascot=True))
-        if record.victim != "mudang":
-            lines.append(VNLine(f"announcement-{record.night}-full", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
-                                record.victim, f"sprite:{record.victim}", full=True, actor_name=name, beat=True))
+        lines.extend(_announcement(view, day, by_night.get(day - 1)))
+        cue = trust_cue(day, view.public.votes, view.public.speeches)
+        if cue:
+            lines.append(VNLine(f"trust-cue-{day}", day, Phase.MORNING.value, "", cue))
+    return lines
+
+
+def _announcement(view: PlayerView, day: int, record) -> list[VNLine]:
+    """day일째 아침 까치 발표 줄과 (실종이 있으면) 피해자 전신 컷 줄."""
+    if record is None:
+        return [VNLine(f"announcement-none-{day}", day, Phase.MORNING.value, SPEAKER_KKACHI, ANNOUNCE_NONE,
+                       sprite_id=KKACHI_MASCOT, mascot=True)]
+    name = _name(view, record.victim)
+    place = (HOME_PLACE.format(name=name) if record.place.value == "home"
+             else PLACE_KO.get(record.place.value, record.place.value))
+    text = attach_particles(ANNOUNCE_MISSING.format(slot=SLOT_KO.get(record.slot.value, ""), name=name, place=place))
+    lines = [VNLine(f"announcement-{record.night}", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
+                    sprite_id=KKACHI_MASCOT, mascot=True)]
+    if record.victim != "mudang":
+        lines.append(VNLine(f"announcement-{record.night}-full", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
+                            record.victim, f"sprite:{record.victim}", full=True, actor_name=name, beat=True))
     return lines
 
 
