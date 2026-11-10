@@ -32,6 +32,7 @@
 | 하려는 일 | 볼 곳 |
 |---|---|
 | 콘텐츠 추가 | `docs/contracts/content.md` |
+| 복기 템플릿 해설 문구 바꾸기 | 데이터 `content/review_lines_v1.json`(키 `rv_<이유 코드>`, 변형 목록), 문장 만들기·빠진 문구 검사는 도메인 `engine/domain/review.py`(`review_text`·`missing_phrases`, 테스트 `tests/engine/test_review.py`), 읽기는 인프라 `server/infra/review_lines.py`. 화면은 `server/api/story_view.py`·`web/templates/review_panel.html` |
 | 결말 문안 바꾸기 | 데이터 `content/endings_v1.json`, 검사 `python -m tools.check_endings`(규칙·조립 `tools/check_endings.py`), 형식 `docs/contracts/content.md` 1절 `Ending` |
 | 의도 예시 추가·검사 | 데이터 `content/intent/examples_v1.jsonl`, 규칙 `tools/intent_examples.py`(집계 `python -m tools.intent_examples`), 형식 `docs/contracts/intent.md`. LLM 변형 규칙은 도메인 `llm/intent_variants.py`, 생성·반영은 인프라 `llm/bench/gen_intent_variants.py` |
 | LLM 모델·스레드·실행 방식 다시 재기 | 인프라 `llm/bench/run_bench.py`(`--help`), 결과·결정 `docs/reports/llm_bench.md` |

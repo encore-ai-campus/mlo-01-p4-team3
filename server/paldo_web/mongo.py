@@ -54,6 +54,8 @@ class MongoRuntime:
         self.game = GameService(engine, WebMongoGameRepository(database[self.collection_names[0]]),
                                 MongoProgressRepository(database[self.collection_names[1]]),
                                 dependencies)
+        from server.infra.review_lines import load_review_lines
+        self.game.review_lines = load_review_lines()
         from .composition import start_policy
         self.game.prepare_start = start_policy(partial(self.sessions.prepare, load_game=self.game.repository.load),
                                                self.game.repository.load)
