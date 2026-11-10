@@ -1,8 +1,8 @@
 {
   "task": "B-10-07",
-  "commit": "bd59eec20922e67fa3ffc191560cfcdbd76c7bae",
-  "generated_at": "2026-11-10T13:51:24Z",
-  "source": "python -B -m django test server.tests.test_vn_expressions server.tests.test_vn_results server.tests.test_vn_lines_4th server.tests.test_suspect_reaction server.tests.test_tutorial_guide --settings=server.paldo_web.test_settings --noinput; python -B -u -m tools.precheck --with-assets --pr-body out/handoff/pr-draft.md",
+  "commit": "cd308b9a18677a27a90f9aa22bc97b4b30687b24",
+  "generated_at": "2026-11-10T14:16:50Z",
+  "source": "python -B -m django test server.tests.test_vn_expressions server.tests.test_vn_results server.tests.test_vn_lines_4th server.tests.test_suspect_reaction server.tests.test_tutorial_guide --settings=server.paldo_web.test_settings --noinput",
   "metrics": {
     "event_cases": {
       "value": 4,
@@ -21,19 +21,7 @@
       "unit": "건"
     },
     "targeted_seconds": {
-      "value": 2.564,
-      "unit": "s"
-    },
-    "precheck_tests": {
-      "value": 652,
-      "unit": "건"
-    },
-    "precheck_failures": {
-      "value": 0,
-      "unit": "건"
-    },
-    "precheck_seconds": {
-      "value": 203,
+      "value": 2.49,
       "unit": "s"
     }
   }
