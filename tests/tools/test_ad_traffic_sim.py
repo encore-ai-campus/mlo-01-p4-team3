@@ -1,6 +1,8 @@
 """D-06-03: real HTTP, hidden truth, fatigue and replay regressions."""
 import ast
+import io
 import json
+import queue
 import tempfile
 import unittest
 from pathlib import Path
@@ -89,6 +91,40 @@ class TrafficTests(unittest.TestCase):
             right = json.loads((Path(tmp) / 'out/ad_truth/another-run.json').read_text())
             self.assertEqual(left['ctr'], right['ctr'])
             self.assertNotEqual(left['run_id'], right['run_id'])
+
+    def test_host_wait_limits_split_startup_from_control(self):
+        # Startup imports Django in a new process and slows ~20x when every core is busy; control replies stay fast.
+        self.assertGreaterEqual(sim.STARTUP_TIMEOUT_S, 120)
+        self.assertEqual(sim.CONTROL_TIMEOUT_S, 30)
+        waits = []
+
+        class Stop(Exception):
+            pass
+
+        def fake_read(server, timeout=sim.CONTROL_TIMEOUT_S, message=''):
+            waits.append(timeout)
+            raise Stop
+
+        class FakeProcess:
+            def __init__(self, *args, **kwargs):
+                self.stdin, self.stdout = io.StringIO(), io.StringIO('')
+
+            def wait(self, timeout=None):
+                return 0
+
+        with tempfile.TemporaryDirectory() as tmp, patch.object(sim.subprocess, 'Popen', FakeProcess), \
+                patch.object(sim._Server, '_read', fake_read), self.assertRaises(Stop):
+            sim._Server(Path(tmp) / 'host').__enter__()
+        self.assertEqual(waits, [sim.STARTUP_TIMEOUT_S])
+
+    def test_host_read_timeout_and_stop_are_distinct(self):
+        server = sim._Server(None)
+        server.replies = queue.Queue()
+        with self.assertRaisesRegex(TimeoutError, 'control timed out'):
+            server._read(.01)
+        server.replies.put(None)
+        with self.assertRaisesRegex(RuntimeError, 'stopped'):
+            server._read(.01)
 
     def test_reject_invalid_config_before_starting_server(self):
         for kwargs in ({'run_id': '../escape'}, {'invalid_rate': 1.},
