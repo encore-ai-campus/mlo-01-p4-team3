@@ -1,0 +1,28 @@
+{
+  "task": "C-11-01",
+  "commit": "ac6a4f8e327044bf9055e9c0b4a463f0ea8f480b",
+  "generated_at": "2026-11-11T05:10:41Z",
+  "source": "actual primary max_connections + counters + Linux free; backup, runtime trial, protected checks, SET PERSIST without service restart; max-connection error delta0 after burst",
+  "metrics": {
+    "before": {
+      "value": 40,
+      "unit": "연결"
+    },
+    "after": {
+      "value": 64,
+      "unit": "연결"
+    },
+    "capacity_errors_before": {
+      "value": 525,
+      "unit": "건"
+    },
+    "capacity_errors_after_burst": {
+      "value": 525,
+      "unit": "건"
+    },
+    "memory_available_after_mib": {
+      "value": 2112,
+      "unit": "MiB"
+    }
+  }
+}

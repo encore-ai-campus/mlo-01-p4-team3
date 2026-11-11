@@ -1,0 +1,96 @@
+{
+  "task": "C-11-01",
+  "commit": "79da6f13f1e096b80d52c5a674f5cd8533f46f9c",
+  "generated_at": "2026-11-11T00:04:57Z",
+  "source": "11/11 source 38abc0d; real engine/Mongo/MySQL/HTTP ads, marked data, 4 users x 180s; same actors reused across cases, confounded history growth; one-loopback-web diagnostic only",
+  "metrics": {
+    "normal_p95_ms": {
+      "value": 445.011,
+      "unit": "ms"
+    },
+    "normal_requests": {
+      "value": 719,
+      "unit": "건"
+    },
+    "normal_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "normal_ads_requests": {
+      "value": 173,
+      "unit": "건"
+    },
+    "db_delay_p95_ms": {
+      "value": 696.336,
+      "unit": "ms"
+    },
+    "db_delay_requests": {
+      "value": 720,
+      "unit": "건"
+    },
+    "db_delay_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "db_delay_ads_requests": {
+      "value": 180,
+      "unit": "건"
+    },
+    "db_delay_p95_increase_ms": {
+      "value": 251.325,
+      "unit": "ms"
+    },
+    "db_delay_ads_request_ratio": {
+      "value": 1.04,
+      "unit": "배"
+    },
+    "burst10_p95_ms": {
+      "value": 1283.064,
+      "unit": "ms"
+    },
+    "burst10_requests": {
+      "value": 694,
+      "unit": "건"
+    },
+    "burst10_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "burst10_ads_requests": {
+      "value": 1628,
+      "unit": "건"
+    },
+    "burst10_p95_increase_ms": {
+      "value": 838.053,
+      "unit": "ms"
+    },
+    "burst10_ads_request_ratio": {
+      "value": 9.41,
+      "unit": "배"
+    },
+    "notebook3_cpu_p95_ms": {
+      "value": 1230.32,
+      "unit": "ms"
+    },
+    "notebook3_cpu_requests": {
+      "value": 694,
+      "unit": "건"
+    },
+    "notebook3_cpu_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "notebook3_cpu_ads_requests": {
+      "value": 167,
+      "unit": "건"
+    },
+    "notebook3_cpu_p95_increase_ms": {
+      "value": 785.309,
+      "unit": "ms"
+    },
+    "notebook3_cpu_ads_request_ratio": {
+      "value": 0.965,
+      "unit": "배"
+    }
+  }
+}
