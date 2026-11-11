@@ -7,25 +7,58 @@ function mountStage(){
  const dialogue=stage.querySelector('.vn-dialogue');
  const toolbar=stage.querySelector('.stage-toolbar');
  const menuToggle=root.querySelector('[data-stage-menu-toggle]');
+ const rail=root.querySelector('.vn-rail');
+ const history=document.querySelector('#update-history');
+ const historyAnchor=document.createComment('update-history position');
+ history?.before(historyAnchor);
+ const menu=document.createElement('div');
+ menu.id='stage-menu-panel';
+ menu.className='stage-menu-panel';
+ menu.hidden=true;
+ stage.before(menu);
+ menuToggle.setAttribute('aria-controls',menu.id);
  menuToggle.hidden=false;
  function closeMenu(){
-  const restoreFocus=toolbar.contains(document.activeElement);
+  const restoreFocus=menu.contains(document.activeElement);
   menuToggle.setAttribute('aria-expanded','false');
+  menu.hidden=true;
   if(restoreFocus)menuToggle.focus();
  }
  menuToggle.addEventListener('click',()=>{
   if(menuToggle.getAttribute('aria-expanded')==='true')closeMenu();
-  else menuToggle.setAttribute('aria-expanded','true');
+  else {menu.hidden=false;menuToggle.setAttribute('aria-expanded','true');}
  });
- toolbar.addEventListener('keydown',event=>{
-  if(event.key==='Escape' && innerWidth>=900){
+ function onMenuKey(event){
+  if(event.key==='Escape' && !menu.hidden && !document.querySelector('dialog[open]')){
    event.preventDefault();
    closeMenu();
   }
- });
+ }
+ document.addEventListener('keydown',onMenuKey);
+ const toggleAnchor=document.createComment('stage-menu-toggle position');
+ menuToggle.before(toggleAnchor);
  function layout(){
-  if(innerWidth<900){if(actions.parentElement!==stage.parentElement){stage.before(toolbar);stage.after(dialogue);dialogue.after(actions);}}
-  else if(actions.parentElement!==stage){stage.prepend(toolbar);stage.append(dialogue,actions);}
+  if(innerWidth<900){
+   if(toolbar.parentElement===menu){
+    closeMenu();
+    stage.before(toolbar);
+    root.querySelector('.vn-player').before(rail);
+    if(history)historyAnchor.after(history);
+    toggleAnchor.after(menuToggle);
+   }
+   if(actions.parentElement!==stage.parentElement){
+    stage.before(toolbar);
+    stage.after(dialogue);
+    stage.parentElement.append(actions);
+   }
+  } else {
+   if(toolbar.parentElement!==menu){
+    menu.append(toolbar,rail);
+    if(history)menu.append(history);
+    document.querySelector('.app-header .wordmark')?.after(menuToggle);
+   }
+   if(actions.parentElement!==stage)stage.append(dialogue,actions);
+  }
  }
  layout();
  let openDialog=null,returnFocus=null;
@@ -68,6 +101,7 @@ function mountStage(){
  function show(id,trigger){
   if(id==='stage-actions'){
    close();
+   closeMenu();
    root.querySelector('[data-vn-full-close]:not([hidden])')?.click();
    const controls=actions.querySelectorAll('summary, button:not(:disabled), select:not(:disabled), textarea:not(:disabled)');
    const firstControl=Array.from(controls).find(control=>control.getClientRects().length);
@@ -112,7 +146,15 @@ function mountStage(){
   if(target.children.length===1){const p=document.createElement('p');p.textContent='현재 이 인물에게 할 수 있는 행동이 없습니다.';target.append(p);}
  });
  const resize=()=>{layout();if(openDialog)fit(openDialog)};window.addEventListener('resize',resize);
- root.addEventListener('htmx:beforeCleanupElement',event=>{if(event.detail.elt===root){close();window.removeEventListener('resize',resize);}});
+ root.addEventListener('htmx:beforeCleanupElement',event=>{
+  if(event.detail.elt!==root)return;
+  close();
+  if(history)historyAnchor.after(history);
+  historyAnchor.remove();
+  menuToggle.remove();
+  document.removeEventListener('keydown',onMenuKey);
+  window.removeEventListener('resize',resize);
+ });
  root.dataset.stageReady='true';
  if(document.activeElement===document.body)root.querySelector('h1')?.focus({preventScroll:true});
 }

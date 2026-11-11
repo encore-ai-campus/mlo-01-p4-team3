@@ -456,11 +456,7 @@
 @media (min-width: 900px) {
  .account-home-page:has(.start-mode[open] :is(.start-preferences[open], .open-start-form--new)) {
   grid-template-rows: 64px minmax(0, 1fr);
-  height: auto;
-  min-height: 100svh;
-  max-height: none;
   padding-bottom: 16px;
-  overflow: visible;
  }
  .account-home-page:has(.start-mode[open] :is(.start-preferences[open], .open-start-form--new))::after {
   background-size: 22px 22px;
@@ -473,20 +469,12 @@
   line-height: 1.2;
  }
  .account-page .account-home--signed-in:has(.start-mode[open] :is(.start-preferences[open], .open-start-form--new)) {
-  height: auto;
-  min-height: 100%;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr);
   column-gap: clamp(20px, 3vw, 48px);
   padding-block: 10px;
  }
  .account-home--signed-in .auth-content:has(.start-mode[open] :is(.start-preferences[open], .open-start-form--new)) {
-  height: auto;
-  max-height: none;
-  overflow: visible;
   padding-block: 16px;
- }
- .account-home--signed-in .auth-content:has(.start-mode[open] :is(.start-preferences[open], .open-start-form--new)) .home-start-content {
-  overflow: visible;
  }
  .account-home--signed-in .auth-content:has(.start-mode[open] :is(.start-preferences[open], .open-start-form--new)) h1 {
   margin-bottom: 12px;
@@ -656,5 +644,14 @@
  }
  .account-home--signed-in .start-preferences[open] + .open-choice .open-restart-warning {
   margin: 0;
+ }
+}
+@media (min-width:900px) and (max-height:560px) {
+ .account-home--signed-in .auth-content:has(.open-start-form--new) { padding-block:8px; }
+ .account-home--signed-in .auth-content:has(.open-start-form--new) .account-instructions { margin-bottom:6px; }
+ .account-home--signed-in .home-start-content .session-card:has(.open-start-form--new) { padding-block:4px; }
+ .account-home--signed-in .open-start-form--new .start-preferences-fields { padding-bottom:4px; }
+ .account-home--signed-in:not(:has(.session-list .start-mode)) .start-mode[open]:has(.open-start-form--new) > summary {
+  display:none;
  }
 }
