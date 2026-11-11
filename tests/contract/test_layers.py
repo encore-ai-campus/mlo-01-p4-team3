@@ -52,8 +52,9 @@ class Layers(unittest.TestCase):
         # E-07-07: 서비스(E-08-09)와 MVP 노트북(E-07-06)이 그대로 쓰는 순수 규칙 4개 + E-06-02 변형 규칙.
         # llm/bench·llm/service는 대상 아님
         # E-08-13: 자유 질문 답변 규칙·평가 세트 생성기도 같은 계약
+        # E-11-13: 회의 발언 다듬기 규칙도 같은 계약
         for name in ("prompt.py", "validator.py", "eval_set.py", "mvp_metrics.py", "intent_variants.py",
-                     "free_answer.py", "free_answer_eval.py", "review_narration.py"):
+                     "free_answer.py", "free_answer_eval.py", "review_narration.py", "npc_polish.py"):
             f = ROOT / "llm" / name
             self.assertTrue(f.exists(), str(f))
             for mod, level in imports(f):

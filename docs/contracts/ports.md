@@ -77,6 +77,7 @@
 - 작업 기록은 `render_job` 이벤트(`paldo.llm`)로 남긴다. 상태, 지연, 대기 시간, 모델·프롬프트·양자화 버전, 폴백 여부가 포함된다. 값은 `RenderResult`(`quantization`, `fallback` 필드는 contract-0.3에서 추가)로 응용에 오고, 기록은 응용이 `poll` 결과의 상태 변화와 단계 전환 때 `cancel`한 작업의 최종 상태를 `append_events`로 남긴다(11/4 PM 결정 #18).
 - **전송**(11/4 PM 결정 #3): 실제 렌더러 `server/infra/llm_renderer.py`는 LLM 서비스 HTTP로 옮긴다. `POST /v1/renders`(`RenderRequest` JSON → 202), `GET /v1/renders/{job_id}`(`RenderResult` JSON), `POST /v1/renders/{job_id}/cancel`(→ 204). 서비스에 작업이 없으면(404) `failed`로 본다. 주소는 `PALDO_LLM_URL`([integration.md](integration.md) G7).
 - **복기 해설**도 같은 포트·같은 폴링을 우선순위 1로 쓴다(11/4 PM 결정 #17).
+- **NPC 대사 LLM**(11/11 사용자 결정, E-11-13): 실제 렌더러는 위 HTTP 서비스 대신 `server/infra/kanana_line_renderer.py`다. 모드가 `live`일 때만 `submit`이 작업 저장소 `npc_line_jobs`에 줄을 넣고, 작업 프로세스(`npc_line_worker`)가 생성 서버를 부른다. 마감은 운영 설정 값(기본 3000ms, 11/11 실측으로 확정)이고, 생성 완료 시각이 마감 안이면 마감 뒤 폴링이어도 `done`이다(`finished_at ≤ deadline_at`. 이 렌더러는 `enforces_deadline = True`이고, 이 표시가 없는 다른 렌더러는 기존대로 마감 뒤 결과를 시간 초과로 본다). 아직 대기·처리 중인데 마감이 지났을 때만 `timeout`이다. 모드가 `live`가 아니거나 대기 줄이 이미 있으면 바로 `failed`(폴백). 큐 우선순위는 이 작업 저장소 안에서 0 = 캐묻기 실시간, 1 = 회의 발언 다듬기다. 복기 해설은 위 #17과 달리 판 단위 요약(`review_jobs`, `review_worker`)이라 별도 프로세스이고, 생성 서버 슬롯 2개를 복기·NPC 대사가 하나씩 쓴다. `render_job` 이벤트에는 생성 본문(`text`)을 넣지 않는다.
 
 ## 5. 광고 포트 (`AdProvider`, 게임 경로 보호)
 - 게임 화면은 광고 없이 먼저 그리고, 저장도 먼저 끝낸다. 광고 칸은 페이지가 그려진 뒤 htmx가 별도 요청(`GET /ads/slot/{slot}`, `hx-trigger="load"`)으로 채운다. 게임 명령 처리 경로에서는 광고를 부르지 않는다.
