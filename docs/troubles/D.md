@@ -111,3 +111,9 @@
 - 원인: 네트워크를 끈 Docker의 임의 호스트 이름과 Windows 애플리케이션 제어 정책이 각각 Spark·SQLAlchemy 초기화를 막았다. 새 입찰 하한을 필수 필드로 두었고 기존 `rank_ctr` 대체 함수에 새 인수를 넘겼다.
 - 대응: 컨테이너 호스트 이름을 루프백으로 고정하고 같은 버전의 순수 Python SQLAlchemy를 해당 실행의 `PYTHONPATH`에만 넣었다. 입찰 하한 미입력은 1밀리원으로 처리하고 기존 경매 호출 인수를 복원했다.
 - 결과: Spark는 확정 CTR 학습 576행과 대사 불일치 0건을 기록했다. 시나리오 6 최대 CTR 상대오차는 3.16%이며 MLflow에 후보를 등록했다. 재시험과 버전 전환은 [D-10-02 증빙](../evidence/D-10-02.md)에 기록했다.
+
+### D-11-02
+- 문제: 밴딧 보상 조인 `ml/bandit.py` `games_from_events`가 창귀 승리 판을 `invalid winner`로 거부했다.
+- 원인: 조인은 승자 값을 `'possessed'`로 검사했지만 엔진 `game_ended`는 `Faction` 값 `'changgwi'`를 낸다(`pipeline/spark`는 이미 `'village'`·`'changgwi'`로 검사).
+- 대응: 허용 값을 `'village'`·`'changgwi'`로 맞추고, 창귀 승리 조인과 엔진에 없는 값(`possessed`·`draw`·`null`) 거부 테스트를 더했다. Mongo 시험 픽스처도 `'changgwi'`로 고쳤다. 11/11 사용자 결정(운영에 필요한 D 작업 중 D-08-01 부하 측정과 겹치지 않는 것은 E가 대신 함)으로 E가 처리했다.
+- 결과: 11/10 운영 내보내기(비공개 사본)의 `game_ended` 승자 값은 `village` 413·`changgwi` 191·중단 40판(`completed=false`)이었다. 내보내기에는 `topic`·`model_versions`가 없어 조인 자체를 그 자료로 돌리지는 못했고, 같은 승자 값으로 만든 테스트로 확인했다. `tests.test_bandit` 12개 통과.
