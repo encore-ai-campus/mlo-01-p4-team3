@@ -2,6 +2,7 @@
 import json
 import uuid
 import importlib.util
+from pathlib import Path
 from dataclasses import replace
 from unittest.mock import patch
 from unittest import skipUnless
@@ -186,6 +187,29 @@ class UtteranceScreens(TestCase):
         output = self.client.get(self.base + "/renders/job_001").json()
         self.assertEqual(output["status"], "cancelled")
         self.assertNotIn("Powered by Kanana", json.dumps(output))
+
+    def test_pending_line_keeps_vn_hold_contract(self):
+        """생성 중인 줄은 대사창 원본 span에 폴링 속성(hx-get)이 붙고, 끝난 조각에는 없다.
+
+        ui-vn.js는 `.vn-source-text[hx-get]`인 줄을 넘기지 않고 본 줄로 세지 않는다(11/11 캐묻기 고백 답이 "…"로 지나간 문제).
+        """
+        for step in self.service.engine.steps[1:4]:
+            self.client.post(self.base + "/commands", json.dumps(dict(step["request"],
+                game_id=self.gid, command_id=str(uuid.uuid4()))), content_type="application/json", HTTP_HX_REQUEST="true")
+        record = self.service.interactions.store.records[self.gid].renders["job_001"]
+        record["final"] = None
+        speech = record["request"].speech_id
+        pending_span = f'<span class="vn-source-text" id="speech-{speech}" data-job-id="job_001" hx-get="{self.base}/renders/job_001"'
+        with patch.object(self.service.interactions.renderer, "poll", return_value=RenderResult("job_001", RenderStatus.QUEUED, None)):
+            self.assertContains(self.client.get(self.base, HTTP_ACCEPT="text/html"), pending_span)
+            self.assertContains(self.client.get(self.base + "/renders/job_001", HTTP_HX_REQUEST="true"), "hx-get=")
+        with patch.object(self.service.interactions.renderer, "poll", return_value=RenderResult("job_001", RenderStatus.DONE, "완성 문장")):
+            fragment = self.client.get(self.base + "/renders/job_001", HTTP_HX_REQUEST="true")
+            self.assertContains(fragment, 'class="vn-source-text"')
+            self.assertNotContains(fragment, "hx-get=")
+            self.assertNotContains(self.client.get(self.base, HTTP_ACCEPT="text/html"), pending_span)
+        script = (Path(__file__).resolve().parents[2] / "web/static/js/ui-vn.js").read_text(encoding="utf-8")
+        self.assertIn(".vn-source-text[hx-get]", script)
 
     def test_metric_examples_and_unknown_form_field(self):
         """입력 예시·해석 지표와 엄격한 화면 입력을 확인한다."""
