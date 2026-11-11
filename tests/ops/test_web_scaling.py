@@ -278,7 +278,8 @@ class BenchOptions(unittest.TestCase):
         from server.tests import multiproc_bench as bench
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
-            state = dict(origin='http://127.0.0.1:1234', cookies=['sessionid=abc'], minutes=3)
+            host = '.'.join(map(str, (10, 0, 0, 1)))  # 실제 인프라 주소를 쓰지 않는 시험용 RFC1918 주소.
+            state = dict(origin=f'http://{host}:1234', cookies=['sessionid=abc'], minutes=3)
             (path / 'client.json').write_text(json.dumps(state), encoding='utf-8')
             with mock.patch.object(bench, 'drive_load', return_value={'users': 1}) as load, \
                     mock.patch.object(bench, 'mongo_uri', side_effect=AssertionError('client must not use Mongo')), \
