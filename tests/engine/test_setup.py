@@ -11,7 +11,7 @@ from engine.domain.engine import AssignmentError, PaldoEngine, assignment_of, ma
 from engine.domain.events import DomainEvent, EventType
 from engine.domain.model import (
     PLAYER_ID, PRESETS, PUBLIC_PLACES, ClaimType, DataSource, GameMeta, GameState, GameTruth,
-    Phase, Polarity, Preset, Role, Slot,
+    Phase, Place, Polarity, Preset, Role, Slot,
 )
 from engine.ports import EngineDeps
 from engine.testing.fakes import FakeSuspicionModel, FixtureContentSource
@@ -135,7 +135,7 @@ class AllPresets(unittest.TestCase):
                 self.assertEqual(liars, expect)
 
     def test_executor_alibi_not_refutable_by_own_sightings(self):
-        """PM 결정(11/5): 실행자 거짓 행적은 범행 장소·자기 한밤 목격 장소가 아닌 공공장소."""
+        """PM 결정(11/5): 실행자 거짓 행적은 범행 장소·자기 한밤 목격 장소가 아닌 곳. rule-0.8(A-10-01 1번)부터 집도 포함."""
         places = Counter()
         for (p, s), r in self.games.items():
             st, tr = r.state, r.truth
@@ -144,13 +144,14 @@ class AllPresets(unittest.TestCase):
                 claim = next(c for c in st.public.claims if c.speaker == ex
                              and c.claim_type is ClaimType.WHEREABOUTS and c.slot is Slot.MIDNIGHT)
                 own = {w.place for w in st.npcs[ex].private.witnessed if w.slot is Slot.MIDNIGHT}
-                self.assertIn(claim.place, PUBLIC_PLACES)
+                self.assertIn(claim.place, (Place.HOME,) + tuple(PUBLIC_PLACES))
                 self.assertIsNot(claim.place, st.public.disappearances[0].place)
                 self.assertNotIn(claim.place, own)
                 if PRESETS[p].n_possessed == 2:
                     self.assertEqual(tr.night_plans[0].agreed_alibis, {ex: claim.place.value})
                 places[claim.place] += 1
-        self.assertEqual(len(places), len(PUBLIC_PLACES))   # 시드로 고르므로 네 곳 모두 나온다
+        self.assertIn(Place.HOME, places)                     # rule-0.8: 집 진술이 결백의 증거가 아니다
+        self.assertEqual(len(places), len(PUBLIC_PLACES) + 1)   # 동선 비례로 고르므로 집과 네 곳 모두 나온다
 
     def test_confession_threshold_only_for_secret_holders(self):
         """A-07-01: 비밀 보유자만 비밀의 기본 고백 문턱값을 받는다(성향 보정은 정책). 나머지는 None.
