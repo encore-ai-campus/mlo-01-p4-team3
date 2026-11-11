@@ -2,6 +2,7 @@
 import json
 import math
 import secrets
+from dataclasses import replace
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
@@ -247,9 +248,11 @@ class AdHTTPTests(TestCase):
         self.campaign(cid="syn:cp")
         out = self.serve(source="synthetic")
         self.assertTrue(out["creative"]["creative_id"].startswith("syn:"))
-        for _ in range(3):
-            self.assertTrue(self.serve(session="capped")["filled"])
-        self.assertFalse(self.serve(session="capped")["filled"])
+        capped = {k: replace(v, frequency_cap=3) for k, v in load_policies().items()}
+        with patch("ads.project.composition._policies", lambda: capped):
+            for _ in range(3):
+                self.assertTrue(self.serve(session="capped")["filled"])
+            self.assertFalse(self.serve(session="capped")["filled"])
         out = self.serve(load_test=True)
         result = self.event("click", out["serve_token"])
         self.assertEqual(result.judgement.reason.value, "load_test")

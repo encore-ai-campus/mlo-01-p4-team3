@@ -155,21 +155,21 @@
       "reserve_ecpm_mw": 500000,
       "prior_ctr": 0.02,
       "prior_strength": 200.0,
-      "frequency_cap": 3
+      "frequency_cap": 1000
     },
     {
       "slot": "result_banner",
       "reserve_ecpm_mw": 600000,
       "prior_ctr": 0.025,
       "prior_strength": 200.0,
-      "frequency_cap": 3
+      "frequency_cap": 1000
     },
     {
       "slot": "review_side",
       "reserve_ecpm_mw": 400000,
       "prior_ctr": 0.015,
       "prior_strength": 200.0,
-      "frequency_cap": 3
+      "frequency_cap": 1000
     }
   ],
   "slot_sizes": {
