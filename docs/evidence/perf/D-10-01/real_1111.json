@@ -1,0 +1,96 @@
+{
+  "task": "D-10-01",
+  "commit": "d9af0d6cedaa633eccb83408054750e813d60af9",
+  "generated_at": "2026-11-11T06:56:00Z",
+  "source": "tools/demo_retrain.sh·ml.suspicion.player_calibration·ml.suspicion.retrain on 11/10 freeze (user_test); production model balance: tools/perf/abstain_balance.py functions, alibi bot, rule-0.8, seed 41, 6p 500 games",
+  "metrics": {
+    "calibration_users": {
+      "value": 2,
+      "unit": "명"
+    },
+    "calibration_recall_before": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "calibration_recall_after": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "intent_training_rows": {
+      "value": 9,
+      "unit": "문장"
+    },
+    "intent_eval_rows": {
+      "value": 7,
+      "unit": "문장"
+    },
+    "intent_candidate_exact_match": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "intent_reference_exact_match": {
+      "value": 0.8571428571428571,
+      "unit": ""
+    },
+    "intent_rejected_runs": {
+      "value": 1,
+      "unit": "회"
+    },
+    "intent_seconds": {
+      "value": 330,
+      "unit": "s"
+    },
+    "suspicion_training_games": {
+      "value": 316,
+      "unit": "판"
+    },
+    "suspicion_benchmark_games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "suspicion_candidate_village_win": {
+      "value": 0.62,
+      "unit": ""
+    },
+    "suspicion_reference_village_win": {
+      "value": 0.54,
+      "unit": ""
+    },
+    "suspicion_village_win_difference": {
+      "value": 0.08,
+      "unit": ""
+    },
+    "suspicion_candidate_log_loss": {
+      "value": 0.7839655243576142,
+      "unit": ""
+    },
+    "suspicion_reference_log_loss": {
+      "value": 1.0620018579049932,
+      "unit": ""
+    },
+    "suspicion_rejected_runs": {
+      "value": 1,
+      "unit": "회"
+    },
+    "suspicion_seconds": {
+      "value": 312,
+      "unit": "s"
+    },
+    "registered_versions": {
+      "value": 0,
+      "unit": "개"
+    },
+    "deleted_rows_remaining": {
+      "value": 0,
+      "unit": "건"
+    },
+    "production_model_village_win": {
+      "value": 0.676,
+      "unit": ""
+    },
+    "fake_model_village_win": {
+      "value": 0.582,
+      "unit": ""
+    }
+  }
+}
