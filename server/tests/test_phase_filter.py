@@ -340,6 +340,7 @@ class RealEngineSeed6(TestCase):
         configure_game_service(service)
         self.addCleanup(configure_game_service, None)
         self.service = service
+        self.content = content
         response = self.client.post("/games", json.dumps({"preset_id": "base6", "session_id": "test-session",
                                     "mudang_variant": "f"}), content_type="application/json", HTTP_ACCEPT="application/json")
         self.assertEqual(response.status_code, 200, response.content[:300])
@@ -385,10 +386,12 @@ class RealEngineSeed6(TestCase):
         """아침 비활성 → 1라운드 의심 카드 → 심문 행적 질문(한밤 진술)·직전 대상 유지 → 투표 카드 실행, 422 0건."""
         self.assertContains(self.client.get(self.base, HTTP_HX_REQUEST="true"), 'class="utterance-fields" disabled')
         self.until("round1")
-        round1 = self.utter(SENTENCE)
-        self.assertIn(("suspect", "blacksmith"), [(c.kind, c.target) for c in round1.context["cards"]])
+        # 주민 풀이 6명보다 많으면(E-08-02) 시드 6 판의 출연자가 바뀌므로 살아 있는 주민 중 하나를 고른다
+        target, sentence = self.sentence_target()
+        round1 = self.utter(sentence)
+        self.assertIn(("suspect", target), [(c.kind, c.target) for c in round1.context["cards"]])
         self.until("interrogation")
-        asked = self.utter(SENTENCE)
+        asked = self.utter(sentence)
         self.assertTrue(all(card.kind == "interrogate" for card in asked.context["cards"]))
         if not asked.context["cards"]:
             self.assertEqual(asked.context["failure"], "unsupported_intent")
@@ -408,8 +411,8 @@ class RealEngineSeed6(TestCase):
         if self.view()["phase"] == "interrogation":
             self.assertContains(response, f'<option value="{midnight.speaker}" selected>')
         self.until("vote")
-        vote = self.utter(SENTENCE)
-        self.assertEqual([(c.kind, c.target) for c in vote.context["cards"]], [("vote", "blacksmith")])
+        vote = self.utter(sentence)
+        self.assertEqual([(c.kind, c.target) for c in vote.context["cards"]], [("vote", target)])
         executed = self.client.post(self.base + "/utterances/" + vote.context["attempt_id"], urlencode({
             "game_id": self.gid, "attempt_id": vote.context["attempt_id"], "reaction": "confirm",
             "command_id": str(uuid.uuid4()), "state_version": str(vote.context["attempt_version"]), "chosen_index": "0"}),
@@ -417,6 +420,18 @@ class RealEngineSeed6(TestCase):
         self.assertEqual(executed.status_code, 200)
         self.assertNotContains(executed, "행동을 적용하지 못했습니다")
         self.assertEqual(self.rejects, 0)
+
+    def sentence_target(self):
+        """살아 있는 주민 중 대장장이(없으면 묶음 순서상 첫 주민)와 그를 의심하는 문장."""
+        view = self.service.detail(self.gid, self.view_owner()).view
+        names = {c.npc_id: c.name_ko for c in self.content.characters}
+        alive = [npc for npc in names if npc in view.active and npc != "mudang"]
+        target = "blacksmith" if "blacksmith" in alive else alive[0]
+        if target == "blacksmith":
+            return target, SENTENCE
+        name = names[target]
+        josa = "이" if (ord(name[-1]) - 0xAC00) % 28 else "가"
+        return target, f"{name}{josa} 수상하다"
 
     def view_owner(self):
         """판 주인 가명."""
