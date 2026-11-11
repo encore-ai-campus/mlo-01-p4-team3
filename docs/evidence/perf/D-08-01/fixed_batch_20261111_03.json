@@ -1,0 +1,188 @@
+{
+  "task": "D-08-01",
+  "commit": "92ddbad3cb1f65e8f4266c62450547465511e8f6",
+  "generated_at": "2026-11-11T01:56:10.014893Z",
+  "source": "Pre-registered official batch D-08-01-20261111-03 after user-approved WSL full restart. Same measured source92ddbad, logistic9bbee626f29b and co-resident actual1afb8f051c4e, nifi-01 2vCPU/3398MiB + external Ubuntu WSL2; app/inference load only with isolated DB. Baseline completed and model1 measured30users>=180s but fallback116/2703=4.291528%, so fixed stop rule prevented model2. Raw report unattributed9 resolved by NPC traces as successful port returns discarded after engine deadline;103busy+4adaptertimeout+9engine deadline. RSS is end-of-load sum of two web processes and four workers, not peak. All4timeouts recovered. Batch RPC reduction is a theoretical call-count opportunity, not measured performance. Raw out/d08-01/1111-batch03 manifest SHA256 f3b05f2c1b0018266b18843e70bdba30705a1d5136b1d326470dda717e8c4978.",
+  "metrics": {
+    "baseline_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "baseline_elapsed_seconds": {
+      "value": 180.32,
+      "unit": "s"
+    },
+    "baseline_requests": {
+      "value": 5388,
+      "unit": "count"
+    },
+    "baseline_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_finished_games": {
+      "value": 380,
+      "unit": "count"
+    },
+    "baseline_p95_ms": {
+      "value": 571.347,
+      "unit": "ms"
+    },
+    "baseline_caddy_p95_ms": {
+      "value": 537.831,
+      "unit": "ms"
+    },
+    "baseline_django_p95_ms": {
+      "value": 474.664,
+      "unit": "ms"
+    },
+    "baseline_rtt_p95_ms": {
+      "value": 1.78,
+      "unit": "ms"
+    },
+    "baseline_host_cpu_percent": {
+      "value": 58.253,
+      "unit": "%"
+    },
+    "baseline_warmup_seconds": {
+      "value": 6.791,
+      "unit": "s"
+    },
+    "baseline_inference_calls": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_inference_failures": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_engine_fallback_decisions": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model1_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "model1_elapsed_seconds": {
+      "value": 180.342,
+      "unit": "s"
+    },
+    "model1_requests": {
+      "value": 5400,
+      "unit": "count"
+    },
+    "model1_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model1_finished_games": {
+      "value": 462,
+      "unit": "count"
+    },
+    "model1_p95_ms": {
+      "value": 497.678,
+      "unit": "ms"
+    },
+    "model1_caddy_p95_ms": {
+      "value": 486.844,
+      "unit": "ms"
+    },
+    "model1_django_p95_ms": {
+      "value": 451.59,
+      "unit": "ms"
+    },
+    "model1_rtt_p95_ms": {
+      "value": 1.75,
+      "unit": "ms"
+    },
+    "model1_host_cpu_percent": {
+      "value": 51.682,
+      "unit": "%"
+    },
+    "model1_warmup_seconds": {
+      "value": 21.506,
+      "unit": "s"
+    },
+    "model1_inference_calls": {
+      "value": 2703,
+      "unit": "count"
+    },
+    "model1_inference_failures": {
+      "value": 107,
+      "unit": "count"
+    },
+    "model1_engine_fallback_decisions": {
+      "value": 116,
+      "unit": "count"
+    },
+    "model1_fallback_percent": {
+      "value": 4.291527931927488,
+      "unit": "%"
+    },
+    "model1_inference_p95_upper_ms": {
+      "value": 100.0,
+      "unit": "ms"
+    },
+    "model1_rss_mib": {
+      "value": 1011.046875,
+      "unit": "MiB"
+    },
+    "model1_worker_count": {
+      "value": 4,
+      "unit": "count"
+    },
+    "model1_busy": {
+      "value": 103,
+      "unit": "count"
+    },
+    "model1_adapter_timeout": {
+      "value": 4,
+      "unit": "count"
+    },
+    "model1_port_ok_engine_timeout": {
+      "value": 9,
+      "unit": "count"
+    },
+    "model1_vote_fallbacks": {
+      "value": 111,
+      "unit": "count"
+    },
+    "model1_runoff_fallbacks": {
+      "value": 5,
+      "unit": "count"
+    },
+    "model1_unresolved_timeouts": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model1_timeout_recovery_min_ms": {
+      "value": 135.377,
+      "unit": "ms"
+    },
+    "model1_timeout_recovery_max_ms": {
+      "value": 259.677,
+      "unit": "ms"
+    },
+    "completed_model_rounds": {
+      "value": 1,
+      "unit": "count"
+    },
+    "passing_model_rounds": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model2_started": {
+      "value": 0,
+      "unit": "count"
+    },
+    "timeline_requests": {
+      "value": 836,
+      "unit": "count"
+    },
+    "batch_rpc_reduction_potential_percent": {
+      "value": 69.07140214576397,
+      "unit": "%"
+    }
+  }
+}
