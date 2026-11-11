@@ -225,6 +225,7 @@ function mountScene(root) {
     const name=source ? (source.dataset.speaker ?? '무당') : '무당';
     const sprite=source?.dataset.sprite || (!source ? player.dataset.defaultSprite : '') || '';
     const guide=source?.dataset.guide==='true';
+    player.toggleAttribute('data-guide',guide);
     // 마스코트 줄: 족제비 안내·단서 알림, 까치 실종 발표. 인물 자리 대신 무대 왼쪽 마스코트 자리에 세운다.
     const mascot=guide || source?.dataset.mascot==='true';
     // 밤 화면은 인물을 세우지 않는다. 예외: 그날 밤 감금 결과 전신 컷(추방 결과, spec 7절).

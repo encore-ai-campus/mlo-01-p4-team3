@@ -1,5 +1,13 @@
 # 웹 라우팅
 
+## 좁은 가용 폭·확대 표시
+
+`game.css`의 `vn-reading` 컨테이너 쿼리는 이전·다음·위치 표시의 배치를 조절하고, `record-paper` 쿼리는 판 중 진술표 필터와 레이블을 배치한다. 동작은 기존 `ui-vn.js`·`record_tools.js`로 연결된다. `server/tests/test_vn_lines_4th.py`는 진술 목록의 추가 HTML 속성을 허용하면서 기존 발표·진술 문장을 검사한다. [웹 디자인](DESIGN.md#좁은-가용-폭확대-표시-보완).
+
+같은 CSS의 `.record-count`·`.record-compare-tools`는 진술 건수와 선택 수 안내의 간격·서체를 정한다. 건수·선택값 계산과 비교 동작은 기존 `record_tools.js`가 담당한다.
+
+`ui-vn.js`는 현재 줄이 안내인지 `.vn-player[data-guide]`에 반영한다. `game.css`가 안내 중 PC 대사창 높이를 조절하며 안내 문구·순서·읽기 키는 기존 경로를 따른다.
+
 ## PR #422 후속 화면 보완
 
 `meeting.html`의 `command-feedback`은 기존 명령 거부 응답과 `game.js`의 전송 실패 안내를 표시한다. `vn-stage-slot`·`game.css`는 머리글·안내·무대·출처 높이를 분리한다. PC 게임 메뉴 버튼은 머리글에 두며, `ui-stage.js`는 화면 교체 때 이전 버튼과 이벤트를 정리한다. 모바일은 무대 → 대사 → 읽기 조작 → 행동판 순서다.
