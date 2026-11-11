@@ -136,6 +136,7 @@ class DivinationNight(SimpleTestCase):
 
     @staticmethod
     def said_on(day, claim):
+        """claim 점괘를 day 낮에 공개하는 보기와 발언을 만든다."""
         view = fake_view(claims=[claim])
         speech = Speech("sp9", day, Phase.ROUND1, "mudang", CommandKind.REVEAL_DIVINATION,
                         target=claim.subject, claim_ids=[claim.claim_id])
