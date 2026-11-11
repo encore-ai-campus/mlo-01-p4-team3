@@ -16,7 +16,7 @@ from typing import Callable, Optional, Protocol, runtime_checkable
 from ads.domain.model import AdRequest, AdResponse
 
 CONNECT_TIMEOUT_MS = 100     # 실제 HTTP 구현이 연결 단계에 적용
-TOTAL_TIMEOUT_MS = 300
+TOTAL_TIMEOUT_MS = 800       # 11/11: 300 → 800(광고 서버 처리 0.17~0.28초 + 연결로 300을 자주 넘음)
 MAX_CONCURRENT = 8
 BREAKER_FAILURES = 5
 BREAKER_OPEN_MS = 30_000
