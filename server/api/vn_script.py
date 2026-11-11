@@ -69,6 +69,9 @@ MUDANG_LINES = {
     CommandKind.SILENCE: "……좀 더 지켜보겠소.",
     CommandKind.REVEAL_DIVINATION: "간밤 {target}을(를) 점쳤더니 {result}이 나왔소.",
 }
+# 직전 밤보다 앞선 밤의 점괘를 공개할 때(11/11 사용자 승인). 밤 번호는 진술표·기록 화면과 같은
+# "{N}일째 밤"(N일째 낮 뒤의 밤 = 밤 N)이고, N일째 낮의 직전 밤은 밤 N-1이다.
+MUDANG_DIVINATION_EARLIER = "{night}일째 밤 {target}을(를) 점쳤더니 {result}이 나왔소."
 DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
 
@@ -256,6 +259,8 @@ def mudang_line_text(view: PlayerView, speech) -> str:
         if reveal is None or reveal.divination_result is None:
             return ""
         target, result = reveal.subject, DIVINATION_KO.get(reveal.divination_result, "")
+        if reveal.night is not None and reveal.night < speech.day - 1:
+            template = MUDANG_DIVINATION_EARLIER.replace("{night}", str(reveal.night))
     if "{target}" in template and not target:
         return ""
     return attach_particles(template.format(target=_name(view, target) if target else "", result=result))

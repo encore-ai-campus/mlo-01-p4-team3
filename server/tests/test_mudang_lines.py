@@ -10,7 +10,7 @@ from engine.domain.model import Claim, ClaimType, CommandKind, DivinationResult,
 from server.api.interaction_view import line_context
 from server.api.meeting_view import meeting_context
 from server.api.ui_viewmodels import build_ui_vm
-from server.api.vn_script import MUDANG_LINES, mudang_line_text, speech_display_text
+from server.api.vn_script import MUDANG_DIVINATION_EARLIER, MUDANG_LINES, mudang_line_text, speech_display_text
 from .support import make_service
 from .test_vn_results import fake_view
 
@@ -129,3 +129,37 @@ class RecordedGame(SimpleTestCase):
         view, _ = self.view()
         first = [s.text for s in build_ui_vm(view).speeches]
         self.assertEqual([s.text for s in build_ui_vm(view).speeches], first)
+
+
+class DivinationNight(SimpleTestCase):
+    """점괘 공개 문장의 밤 표기(11/11 사용자 승인): 직전 밤이면 '간밤', 그 전이면 'N일째 밤'."""
+
+    @staticmethod
+    def said_on(day, claim):
+        view = fake_view(claims=[claim])
+        speech = Speech("sp9", day, Phase.ROUND1, "mudang", CommandKind.REVEAL_DIVINATION,
+                        target=claim.subject, claim_ids=[claim.claim_id])
+        return view, speech
+
+    def test_earlier_template_is_approved_sentence(self):
+        """승인 원문."""
+        self.assertEqual(MUDANG_DIVINATION_EARLIER, "{night}일째 밤 {target}을(를) 점쳤더니 {result}이 나왔소.")
+
+    def test_previous_night_is_ganbam(self):
+        """3일째에 2일째 밤 점괘를 공개하면 '간밤'."""
+        claim = Claim("cl1", "mudang", ClaimType.DIVINATION_REVEAL, "jumo", 2,
+                      divination_result=DivinationResult.MURKY, day=3)
+        self.assertEqual(mudang_line_text(*self.said_on(3, claim)), "간밤 주모를 점쳤더니 탁함이 나왔소.")
+
+    def test_earlier_night_uses_number(self):
+        """3일째에 1일째 밤 점괘를 공개하면 '1일째 밤', 공개한 값을 쓴다."""
+        claim = Claim("cl2", "mudang", ClaimType.DIVINATION_REVEAL, "yakcho", 1,
+                      divination_result=DivinationResult.CLEAR, day=3)
+        self.assertEqual(mudang_line_text(*self.said_on(3, claim)), "1일째 밤 약초꾼을 점쳤더니 맑음이 나왔소.")
+
+    def test_same_record_same_sentence(self):
+        """같은 기록이면 늘 같은 문장."""
+        claim = Claim("cl3", "mudang", ClaimType.DIVINATION_REVEAL, "yakcho", 1,
+                      divination_result=DivinationResult.MURKY, day=4)
+        view, speech = self.said_on(4, claim)
+        self.assertEqual(mudang_line_text(view, speech), mudang_line_text(copy.deepcopy(view), copy.deepcopy(speech)))
