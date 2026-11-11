@@ -7,6 +7,26 @@ import sys
 
 # 게임 웹 daphne 포트. 8001은 광고 서버다. Caddy(ops/proxy/Caddyfile) upstream과 같아야 한다.
 WEB_PORTS=(8000,8002)
+# 광고 서버(11/11): daphne(ASGI)는 요청마다 작업 스레드를 새로 만들어 DB 연결을 재사용하지 못한다(CONN_MAX_AGE 무효).
+# gunicorn gthread(고정 스레드)로 띄워 스레드별 영속 연결을 쓴다. 프로세스 1개: Prometheus 지표 레지스트리와 AdService 상태가
+# 프로세스 안에만 있어(ads/web/telemetry.py) 여러 프로세스면 /metrics가 한 프로세스 값만 보인다. 스레드 16: 게임 웹
+# 2프로세스 × 동시 serve 8(server/app/ads_port.py MAX_CONCURRENT)과 중계 호출을 받을 여유. 되돌리기: 프로필 ads_server="daphne"
+# 또는 환경 변수 PALDO_ADS_SERVER=daphne.
+ADS_SERVERS=('gunicorn','daphne')
+ADS_THREADS=16
+
+
+def ads_command(config):
+    """광고 서버 실행 인자(gunicorn 기본, daphne로 되돌릴 수 있음)."""
+    server=os.environ.get('PALDO_ADS_SERVER') or config.get('ads_server','gunicorn')
+    if server not in ADS_SERVERS:
+        raise SystemExit('ads_server는 '+'·'.join(ADS_SERVERS)+' 중 하나다')
+    bind=config.get('bind','127.0.0.1')
+    if server=='daphne':
+        return ['-m','daphne','-b',bind,'-p','8001','ads.project.asgi:application']
+    return ['-m','gunicorn','--worker-class','gthread','--workers','1','--threads',str(ADS_THREADS),
+            '--bind',f'{bind}:8001','--timeout','30','--graceful-timeout','20','--keep-alive','5',
+            '--error-logfile','-','ads.project.wsgi:application']
 
 
 def main(argv=None):
@@ -22,7 +42,7 @@ def main(argv=None):
     os.environ['PYTHONDONTWRITEBYTECODE']='1';os.chdir(source)
     if args.role=='web':os.environ['PALDO_WEB_INSTANCE']=str(args.port)  # 프로세스별 로그 파일(settings.WEB_LOG_FILE)
     web=['-m','daphne','-b','127.0.0.1','-p',str(args.port),'server.paldo_web.asgi:application']
-    ads=['-m','daphne','-b',config.get('bind','127.0.0.1'),'-p','8001','ads.project.asgi:application']
+    ads=ads_command(config) if args.role=='ads' else None
     commands={'web':web,'ads':ads,'migrate-web':['server/manage.py','migrate','--noinput'],
         'migrate-ads':['ads/manage.py','migrate','--noinput'],
         'load-content':['-m','tools.load_content','content/bundle_v1.json'],
