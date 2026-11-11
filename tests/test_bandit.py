@@ -156,5 +156,19 @@ class BanditTests(unittest.TestCase):
                        payload={'skipped': True, 'fun': None, 'unfair': None, 'npc_plausible': None})]
         self.assertEqual(bandit.games_from_events(events, {'u1'}), [])
 
+    def test_changgwi_win_is_joined_and_unknown_winner_fails_closed(self):
+        """엔진이 내는 창귀 승리 'changgwi'는 마을 패배로 조인되고, 엔진에 없는 값은 거부한다(11/10 사용자 결정, D-11-02)."""
+        common = dict(game_id='g-c', player_pseudonym='u1', source='human', load_test=False,
+                      model_versions={'bandit': 'bandit-0', 'bandit_arm': 'uniform'}, occurred_at='2026-11-10T05:00:00+00:00')
+        end = dict(common, event_id='g-c:1', topic='paldo.game', event_type='game_ended', phase='ended',
+                   payload={'winner': 'changgwi', 'reason': 'changgwi_majority'})
+        joined = bandit.games_from_events([end], {'u1'})
+        self.assertEqual([(g['game_id'], g['village_win']) for g in joined], [('g-c', False)])
+        for bad in ('possessed', 'draw', None):
+            wrong = copy.deepcopy(end)
+            wrong['payload']['winner'] = bad
+            with self.assertRaises(ValueError):
+                bandit.games_from_events([wrong], {'u1'})
+
 if __name__ == '__main__':
     unittest.main()
