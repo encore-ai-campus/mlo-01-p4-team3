@@ -16,10 +16,11 @@
 | 용량 상한(바이트) portrait | 3145728 |
 | 용량 상한(바이트) background | 10485760 |
 | 용량 상한(바이트) mascot | 3145728 |
+| 용량 상한(바이트) map | 1048576 |
 | 저장 루트 | content/images |
 | manifest | content/images/manifest.json |
 
-- 용량 상한은 kind별 행이 있으면 그 값, 없으면 공통 값(500KB = 512,000바이트, P-15)이다. 반실사 실제 그림을 위해 sprite 8MB, 초상 3MB, 장면 배경 10MB, 마스코트 3MB로 크게 잡았다(11/5 PM 결정, 저장소·번들이 조금 무거워지는 것은 감수). 임시 유지 유형(장소·UI 아이콘, 지도, 광고)은 공통 값이다. 넘으면 크기·형식은 그대로 두고 6절의 허용 방법(무손실 재압축)으로 줄인다.
+- 용량 상한은 kind별 행이 있으면 그 값, 없으면 공통 값(500KB = 512,000바이트, P-15)이다. 반실사 실제 그림을 위해 sprite 8MB, 초상 3MB, 장면 배경 10MB, 마스코트 3MB로 크게 잡았다(11/5 PM 결정, 저장소·번들이 조금 무거워지는 것은 감수). 지도는 실제 그림을 쓰게 되어 1MB(1,048,576바이트)이고, 지도만 PNG 색 양자화 같은 손실 압축을 허용한다(11/11 사용자 결정, 화질은 1528×730 화면에서 확인). 임시 유지 유형(장소·UI 아이콘, 광고)은 공통 값이다. 넘으면 크기·형식은 그대로 두고 6절의 허용 방법(무손실 재압축, 지도는 손실 압축도)으로 줄인다.
 - 이미지 안에 글자(한글·한자·영문·숫자), 실존 인물, 상표·로고를 넣지 않는다. 글자가 필요하면 화면(HTML)이 쓴다. 예외: 임시 sprite·초상·장면 배경의 "임시" 이름표(5절).
 
 ## 2. 유형별 규격
@@ -33,7 +34,7 @@
 | branding | 판 시작 전 로고 | 512×512 | `tiger_emblem` 1장, RGBA | `content/images/branding/<id>.png` | `/static/assets/branding/<id>.png` |
 | place | 장소 아이콘 | 128×128 | `engine.domain.model.Place` 값 5개 | `content/images/place/<id>.png` | `/static/assets/place/<id>.png` |
 | ui | UI 아이콘 | 128×128 | 아래 3절 목록 10개 | `content/images/ui/<id>.png` | `/static/assets/ui/<id>.png` |
-| map | 마을 지도 | 1280×720 | `village` 1장 | `content/images/map/<id>.png` | `/static/assets/map/<id>.png` |
+| map | 마을 지도 | 1728×720 | `village` 1장 | `content/images/map/<id>.png` | `/static/assets/map/<id>.png` |
 | ad | 광고 소재 | SLOT_SIZES | `fixtures/ads/campaigns.json`의 모든 소재(캠페인 상태 무관) × 그 캠페인 지면의 규격 | `content/images/ad/<slot_image_path의 파일명>` | `slot_image_path(image_path, slot)` |
 
 - **무당**: 주인공 초상은 여 `mudang_f`, 남 `mudang_m` 2종이다(11/4 PM 결정). 화면은 판 메타 `mudang_variant`(`f`|`m`)로 고른다(B-08-02). 엔진의 참가자 ID `mudang`(PLAYER_ID)에는 파일을 두지 않는다.
@@ -44,7 +45,7 @@
 - **장면 배경**: 회의 `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), 밤 `night`(밤 마을 공통 1장). 장소별 배경은 만들지 않는다(7절).
 - **로고**(11/9 사용자 결정): 판 시작 전 로그인·홈 화면에만 쓰는 호랑이 로고다. 원본은 B의 시안 공유 폴더 `branding/`의 호랑이 엠블럼(시안 로그인 화면 머리에 쓴 파일, B-10-08이 정해 `SOURCES.md`에 적음)이고, 게임 장면(회의·밤)에는 쓰지 않는다(기획서 1.4 세계관). 이미지 안 글자 금지는 다른 유형과 같다. ID는 `branding:tiger_emblem`, 크기 512×512 RGBA, 파일 `content/images/branding/tiger_emblem.png`, url `/static/assets/branding/tiger_emblem.png`이다. 위 표의 `branding` 행은 표를 읽는 도구가 그 유형을 알게 되는 B-10-08에서 `tools/assets/spec.py` `KINDS`·검사와 함께 더한다(그 전에 행만 넣으면 에셋 도구가 알 수 없는 유형으로 멈춤).
 - **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
-- **지도**: ID는 `village`다. 11/5 PM 결정으로 지도는 **시연까지 임시 에셋**이다. 장소 5곳의 영역 좌표는 E-08-07이 임시 지도용 안내 고정값(정보가 없는 균등 배치)으로 manifest 지도 항목의 `regions`에 넣었다(B-10-02 아이콘 배치용). 계약 `Place` 순서대로 지도 가로를 장소 수로 나눈 칸의 가운데, 세로 가운데에 장소 아이콘 크기(128×128) 상자다(`spec.map_regions`). 위치는 장소 사이 거리·방향을 뜻하지 않는다.
+- **지도**: ID는 `village`다. 11/5 PM 결정(시연까지 임시)을 11/11 사용자 결정으로 바꿔 외부 기증 실제 그림(장소 이름 글자 없는 판, `SOURCES.md`)을 쓴다. 크기는 그 그림 비율(약 2.4:1)인 1728×720이다. 장소 이름은 지금처럼 화면이 덧씌운다. 장소 5곳의 영역 좌표는 manifest 지도 항목의 `regions`에 그림 속 장소(우물, 서낭당 큰 나무와 돌탑, 주막 건물, 장승, 오른쪽 집) 위 장소 아이콘 크기(128×128) 상자로 둔다(B-10-02 아이콘·이름 배치용). 그림도 장소를 계약 `Place` 순서대로 왼쪽에서 오른쪽으로 놓았고, 위치는 장소 사이 거리·방향을 뜻하지 않는다. 임시 지도를 다시 만들 때 쓰는 정보 없는 균등 배치(`spec.map_regions`)는 실제 지도 항목의 `regions`를 덮어쓰지 않는다(실제 파일 항목은 생성기가 그대로 둔다).
 - **정적 파일 연결**(B-05-03 5번): `/static/assets/<kind>/…` → `content/images/<kind>/…`, `/static/ads/…` → `content/images/ad/…`.
 
 ## 3. UI 아이콘 목록
