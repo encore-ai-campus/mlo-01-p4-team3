@@ -20,7 +20,7 @@ from pathlib import Path
 VERSION_PATTERN = re.compile(r"[a-zA-Z0-9_.-]{1,80}")
 VERSION_JOIN = "."   # 규칙 버전 + 결정 파라미터 버전 연결 문자(11/7: `+`가 회차 등록 검증에 걸려 `.`으로 바꿈)
 
-RULE_BASE_VERSION = "rule-0.7"   # 0.2: 실행자 거짓 행적 공공장소 무작위. 0.3: TELL_PROB. 0.4: Q_MAX. 0.5: 결정 파라미터를 json으로 분리·동선 무작위성 추가(A-08-03). 0.6: 모델 경로 무당 투표 문턱·1일째 의심 문턱·발언 변형 돌려쓰기(A-09-06). 0.7: 꾀어내기 — 피해 장소를 공개 장소에서 뽑음(A-10-01 5번)
+RULE_BASE_VERSION = "rule-0.8"   # 0.2: 실행자 거짓 행적 공공장소 무작위. 0.3: TELL_PROB. 0.4: Q_MAX. 0.5: 결정 파라미터를 json으로 분리·동선 무작위성 추가(A-08-03). 0.6: 모델 경로 무당 투표 문턱·1일째 의심 문턱·발언 변형 돌려쓰기(A-09-06). 0.7: 꾀어내기 — 피해 장소를 공개 장소에서 뽑음(A-10-01 5번). 0.8: 실행자 거짓 알리바이에 집 포함·한밤 동선 가중치 비례, 한밤 집 가중치 ×0.25, 결정 파라미터 decision-2(A-10-01 1번, 11/10 사용자 결정)
 
 DECISION_PARAMS_FILE = Path(__file__).with_name("decision_params.json")
 
@@ -84,6 +84,12 @@ Q_MAX = DEFAULT.q_max
 WITNESS_PROB = DEFAULT.witness_prob
 TELL_PROB = DEFAULT.tell_prob
 ROUTINE_RANDOMNESS = DEFAULT.routine_randomness
+
+
+# rule-0.7 이하로 시작한 판·회차가 쓰는 결정 파라미터(decision-1, A-08-03). rule-0.8 배포 뒤에도 이전 판은 이 값으로
+# 이어 간다(엔진 `engine.decision_of`). 프로세스 값(`apply`)과 무관한 고정값이다.
+LEGACY_DECISION = DecisionParams(version="decision-1", conformity_scale=0.1, vote_noise=0.02, q_max=0.7,
+                                 witness_prob=0.5, tell_prob=0.4, routine_randomness=0.0)
 
 
 def current() -> DecisionParams:
