@@ -1,0 +1,228 @@
+{
+  "task": "D-08-01",
+  "commit": "87fddf970869f89fd2d7553e981089c86741ba70",
+  "generated_at": "2026-11-10T07:38:06Z",
+  "source": "nifi-01 isolated app and inference; Caddy 2.10.2, Daphne 2, loopback Mongo 8.0.34. WSL2 Ubuntu separate load VM, direct private-IP HTTP/WS, 30 users, 3 minutes. tools/perf/api_bench.py --serve-dir and --load-dir. Primary logistic 9bbee626f29b; co-resident version 1afb8f051c4e. RSS at end of load.",
+  "metrics": {
+    "one_elapsed_seconds": {
+      "value": 181.483,
+      "unit": "s"
+    },
+    "one_requests": {
+      "value": 5056,
+      "unit": "count"
+    },
+    "one_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "one_p95_ms": {
+      "value": 1494.989,
+      "unit": "ms"
+    },
+    "one_inference_p95_upper_ms": {
+      "value": 100.0,
+      "unit": "ms"
+    },
+    "one_inference_calls": {
+      "value": 2419,
+      "unit": "count"
+    },
+    "one_inference_failures": {
+      "value": 51,
+      "unit": "count"
+    },
+    "one_inference_fallback_percent": {
+      "value": 2.1083092186854073,
+      "unit": "%"
+    },
+    "one_finished_games": {
+      "value": 403,
+      "unit": "games"
+    },
+    "one_worker_count": {
+      "value": 2,
+      "unit": "count"
+    },
+    "one_rss": {
+      "value": 543.37890625,
+      "unit": "MiB"
+    },
+    "one_min_available": {
+      "value": 834,
+      "unit": "MiB"
+    },
+    "one_fallback_model_busy": {
+      "value": 39,
+      "unit": "count"
+    },
+    "one_fallback_model_timeout": {
+      "value": 4,
+      "unit": "count"
+    },
+    "one_fallback_unattributed": {
+      "value": 8,
+      "unit": "count"
+    },
+    "one_web_1_rss": {
+      "value": 114.59375,
+      "unit": "MiB"
+    },
+    "one_web_1_9bbee626f29b_rss": {
+      "value": 159.16796875,
+      "unit": "MiB"
+    },
+    "one_web_2_rss": {
+      "value": 113.796875,
+      "unit": "MiB"
+    },
+    "one_web_2_9bbee626f29b_rss": {
+      "value": 155.8203125,
+      "unit": "MiB"
+    },
+    "one_web_1_unresolved_timeouts": {
+      "value": 0,
+      "unit": "count"
+    },
+    "one_web_1_recovery_1": {
+      "value": 378.737,
+      "unit": "ms"
+    },
+    "one_web_1_recovery_2": {
+      "value": 179.661,
+      "unit": "ms"
+    },
+    "one_web_2_unresolved_timeouts": {
+      "value": 0,
+      "unit": "count"
+    },
+    "one_web_2_recovery_1": {
+      "value": 172.189,
+      "unit": "ms"
+    },
+    "one_web_2_recovery_2": {
+      "value": 139.668,
+      "unit": "ms"
+    },
+    "two_elapsed_seconds": {
+      "value": 181.104,
+      "unit": "s"
+    },
+    "two_requests": {
+      "value": 4931,
+      "unit": "count"
+    },
+    "two_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "two_p95_ms": {
+      "value": 1550.633,
+      "unit": "ms"
+    },
+    "two_inference_p95_upper_ms": {
+      "value": 100.0,
+      "unit": "ms"
+    },
+    "two_inference_calls": {
+      "value": 2393,
+      "unit": "count"
+    },
+    "two_inference_failures": {
+      "value": 54,
+      "unit": "count"
+    },
+    "two_inference_fallback_percent": {
+      "value": 2.2565816966151275,
+      "unit": "%"
+    },
+    "two_finished_games": {
+      "value": 402,
+      "unit": "games"
+    },
+    "two_worker_count": {
+      "value": 4,
+      "unit": "count"
+    },
+    "two_rss": {
+      "value": 1114.37890625,
+      "unit": "MiB"
+    },
+    "two_min_available": {
+      "value": 837,
+      "unit": "MiB"
+    },
+    "two_fallback_model_busy": {
+      "value": 42,
+      "unit": "count"
+    },
+    "two_fallback_model_timeout": {
+      "value": 1,
+      "unit": "count"
+    },
+    "two_fallback_unattributed": {
+      "value": 11,
+      "unit": "count"
+    },
+    "two_web_1_rss": {
+      "value": 127.75390625,
+      "unit": "MiB"
+    },
+    "two_web_1_9bbee626f29b_rss": {
+      "value": 214.81640625,
+      "unit": "MiB"
+    },
+    "two_web_1_1afb8f051c4e_rss": {
+      "value": 214.6015625,
+      "unit": "MiB"
+    },
+    "two_web_2_rss": {
+      "value": 127.54296875,
+      "unit": "MiB"
+    },
+    "two_web_2_9bbee626f29b_rss": {
+      "value": 214.7578125,
+      "unit": "MiB"
+    },
+    "two_web_2_1afb8f051c4e_rss": {
+      "value": 214.90625,
+      "unit": "MiB"
+    },
+    "two_web_1_unresolved_timeouts": {
+      "value": 0,
+      "unit": "count"
+    },
+    "two_web_1_recovery_1": {
+      "value": 210.264,
+      "unit": "ms"
+    },
+    "two_web_2_unresolved_timeouts": {
+      "value": 0,
+      "unit": "count"
+    },
+    "app_vcpu": {
+      "value": 2,
+      "unit": "count"
+    },
+    "app_ram": {
+      "value": 3398,
+      "unit": "MiB"
+    },
+    "nifi_vcpu": {
+      "value": 2,
+      "unit": "count"
+    },
+    "nifi_ram": {
+      "value": 3398,
+      "unit": "MiB"
+    },
+    "soft_timeout": {
+      "value": 90,
+      "unit": "ms"
+    },
+    "hard_timeout": {
+      "value": 1500,
+      "unit": "ms"
+    }
+  }
+}
