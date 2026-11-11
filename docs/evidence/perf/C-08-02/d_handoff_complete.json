@@ -1,0 +1,64 @@
+{
+  "task": "C-08-02",
+  "commit": "4780db2cedb84a056897b13be8aa8ecec1a401c7",
+  "generated_at": "2026-11-11T11:02:26Z",
+  "source": "D-08-02 live_ad.json run syn:c08_d0802_20261109b baseline/refund evidence; baseline server retained reconciliation and official source hash rechecked 11/11; current daily closed-day campaign net independently matches 6815093mw; historical logical cutoff, not a new D-11-01 scenario run",
+  "metrics": {
+    "source_events": {
+      "value": 1960,
+      "unit": "건"
+    },
+    "source_hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "baseline_ledger_net_mw": {
+      "value": 7339683,
+      "unit": "밀리원"
+    },
+    "baseline_delta_mw": {
+      "value": 7339683,
+      "unit": "밀리원"
+    },
+    "refund_net_mw": {
+      "value": -524590,
+      "unit": "밀리원"
+    },
+    "refund_ledger_net_mw": {
+      "value": 6815093,
+      "unit": "밀리원"
+    },
+    "refund_delta_mw": {
+      "value": 6815093,
+      "unit": "밀리원"
+    },
+    "refund_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "verified_slots": {
+      "value": 3,
+      "unit": "지면"
+    },
+    "ledger_only": {
+      "value": 0,
+      "unit": "건"
+    },
+    "delta_only": {
+      "value": 0,
+      "unit": "건"
+    },
+    "duplicate": {
+      "value": 0,
+      "unit": "건"
+    },
+    "amount_mismatch": {
+      "value": 0,
+      "unit": "건"
+    },
+    "orphan_refund": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
