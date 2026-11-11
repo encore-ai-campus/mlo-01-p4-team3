@@ -3,6 +3,7 @@
 판 종료 뒤 복기 화면에서 NPC마다 "이 사람은 왜 그렇게 움직였나"를 1~3문장으로 요약한다(설계 D1 A안).
 요약할 항목은 서버가 고르고(4.1), LLM은 고른 항목마다 한 문장을 인용 번호와 함께 쓴다(JSON 강제, 4.2).
 검사에 걸린 NPC는 그 NPC 전체를 템플릿 요약으로 두고, JSON이 깨지거나 잘리면 판 전체를 템플릿으로 둔다.
+의심 근거 풀이(승인 문구, `NarrationItem.basis`)는 LLM에 보내지 않고, 최종 문장(LLM·템플릿) 뒤에 그대로 붙인다(`with_basis`).
 
 입력은 판 종료 뒤 공개되는 정보만이다(3.2): NPC 이름·성향, 진짜 역할(종료 뒤 공개), 복기 항목(날짜·단계·행동·
 대상 이름·대표 이유 코드의 한국어 뜻·근거 진술의 공개 문장), 판 결과. 가명·세션·명령 ID, 믿음 수치, 플레이어
@@ -146,6 +147,7 @@ class NarrationItem:
     reaction: Optional[str] = None
     evidence: tuple[str, ...] = ()        # 근거 진술의 공개 문장
     template: str = ""                    # 그 항목의 템플릿 해설(대체 요약용, LLM에는 보내지 않음)
+    basis: str = ""                       # 의심 근거 풀이(승인 문구). LLM에는 보내지 않고 최종 문장 뒤에 그대로 붙인다
 
 
 @dataclass
@@ -536,9 +538,17 @@ def check_sentence(text: str, item: NarrationItem, block: NpcBlock, lexicon: Lex
 
 
 # ---------------------------------------------------------------- 결과 조립
+def with_basis(item: NarrationItem, text: str) -> str:
+    """최종 문장 뒤에 의심 근거 풀이를 고치지 않고 붙인다(11/11). 문장 글자 수 상한은 LLM 문장에만 적용된다."""
+    if not item.basis:
+        return text
+    return f"{text} {item.basis}" if text else item.basis
+
+
 def template_summary(block: NpcBlock) -> NpcNarration:
-    """고른 항목들의 템플릿 해설을 이어 붙인 대체 요약."""
-    return NpcNarration(block.npc_id, SOURCE_TEMPLATE, [(i.item_id, i.template) for i in block.items if i.template])
+    """고른 항목들의 템플릿 해설(풀이를 붙인)을 이어 붙인 대체 요약."""
+    return NpcNarration(block.npc_id, SOURCE_TEMPLATE,
+                        [(i.item_id, with_basis(i, i.template)) for i in block.items if i.template or i.basis])
 
 
 def all_template(blocks: list[NpcBlock], parse_failed: bool = False) -> NarrationResult:
@@ -577,8 +587,10 @@ def narrate(blocks: list[NpcBlock], text: str, finish_reason: Optional[str], lex
             out.append(fallback)
         else:
             order = {i.item_id: n for n, i in enumerate(block.items)}
+            items = {i.item_id: i for i in block.items}
             out.append(NpcNarration(block.npc_id, SOURCE_LLM,
-                                    sorted(((c, t.strip()) for c, t in sentences), key=lambda p: order[p[0]])))
+                                    sorted(((c, with_basis(items[c], t.strip())) for c, t in sentences),
+                                           key=lambda p: order[p[0]])))
     return NarrationResult(out, rejects)
 
 

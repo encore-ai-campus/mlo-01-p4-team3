@@ -216,3 +216,37 @@ class ViolationTable(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SuspectBasis(unittest.TestCase):
+    """11/11: 의심 근거 풀이(승인 문구)는 LLM에 보내지 않고, LLM·템플릿 문장 뒤에 서버가 그대로 붙인다."""
+    basis = "머슴은 약초꾼이 사라진 그때 그 자리에 자기도 있었다고 말했습니다."
+    sus = rn.NarrationItem("d5", 2, "round1", "hunjang", "suspect", "rule_suspect", target="머슴",
+                           evidence=("머슴의 말: 1일째 밤 한밤에 우물가에 있었다",),
+                           template="훈장은 근거를 들어 머슴을 의심했습니다.", basis=basis)
+
+    def test_prompt_does_not_carry_basis(self):
+        b = block([self.sus], name="훈장", npc="hunjang")
+        text = json.dumps(rn.request_body([b], "마을 승리", 1)["messages"], ensure_ascii=False)
+        self.assertNotIn("약초꾼", text)
+        self.assertNotIn("풀이:", text)
+        self.assertEqual(rn.PROMPT_VERSION, "review-v1")
+
+    def test_llm_sentence_gets_basis_appended_verbatim(self):
+        b = block([self.sus], name="훈장", npc="hunjang")
+        sentence = "훈장은 한밤에 우물가에 있었다는 머슴의 말을 근거로 머슴을 의심했습니다."
+        self.assertGreater(len(sentence + " " + self.basis), rn.MAX_SENTENCE_CHARS)   # 합쳐도 상한에 걸리지 않는다
+        result = rn.narrate([b], reply([("hunjang", [("d5", sentence)])]), "stop", LEX)
+        self.assertEqual(result.npcs[0].source, rn.SOURCE_LLM)
+        self.assertEqual(result.npcs[0].sentences, [("d5", sentence + " " + self.basis)])
+
+    def test_template_fallback_appends_basis_once(self):
+        b = block([self.sus], name="훈장", npc="hunjang")
+        self.assertEqual(rn.template_summary(b).sentences, [("d5", self.sus.template + " " + self.basis)])
+        rejected = rn.narrate([b], reply([("hunjang", [("d5", "훈장은 돈을 훔쳐서 머슴을 의심했습니다.")])]), "stop", LEX)
+        self.assertEqual(rejected.npcs[0].sentences, [("d5", self.sus.template + " " + self.basis)])
+
+    def test_other_items_unchanged(self):
+        it = rn.NarrationItem(**{**self.sus.__dict__, "basis": ""})
+        self.assertEqual(rn.template_summary(block([it], name="훈장", npc="hunjang")).sentences,
+                         [("d5", it.template)])
