@@ -1,36 +1,53 @@
 {% load meeting %}
 {% if survey_submitted %}{% include "survey_done.html" %}{% else %}
-<section class="paper-page" id="survey" aria-labelledby="survey-title">
-  <h2 id="survey-title">판 종료 설문</h2>
-  <p>설문 참여는 선택입니다.</p>
-  <form class="participant-form" method="post" action="{% url 'game-survey' vm.game_id %}"
+<section class="paper-page" id="survey" aria-labelledby="survey-title"{% if not classic_mode %} data-survey-wizard{% endif %}>
+  <form class="participant-form" id="survey-answer-form" method="post" action="{% url 'game-survey' vm.game_id %}"
         hx-post="{% url 'game-survey' vm.game_id %}" hx-target="#survey" hx-swap="outerHTML"
-        hx-sync="#survey:drop" hx-disabled-elt="#survey button" x-data="{ failed: false }"
+        hx-sync="#survey:drop" hx-disabled-elt="#survey button:not([hidden])" x-data="{ failed: false }"
         @htmx:after-request.camel="failed = !$event.detail.successful">
     {% csrf_token %}
     <input type="hidden" name="game_id" value="{{ vm.game_id }}">
-    {% for field, question in survey_questions %}
-      <fieldset><legend>{{ question }}</legend><div class="survey-scale">
-        {% for value, label in survey_choices %}
-          <label><input type="radio" name="{{ field }}" value="{{ value }}" required>{{ value }} {{ label }}</label>
-        {% endfor %}
-      </div></fieldset>
-    {% endfor %}
-    <label>더 하고 싶은 말이 있으면 적어 주세요. 이름·연락처는 쓰지 마세요.
-      <textarea name="comment" maxlength="4000"></textarea>
-    </label>
-    <button type="submit"{% tip "survey_submit" %}>설문 제출</button>
+    <div class="survey-sheet">
+      {% if not classic_mode %}
+        <div class="survey-landscape" aria-hidden="true"></div>
+      {% endif %}
+      <h2 id="survey-title">이번 판은 어떠셨나요?</h2>
+      <p class="survey-intro">설문 참여는 선택입니다.</p>
+      <div class="survey-divider">
+        <p class="survey-progress" data-survey-progress role="status" hidden><span class="sr-only">문항 </span><span data-survey-count></span></p>
+      </div>
+      {% for field, question in survey_questions %}
+        <fieldset data-survey-step><legend tabindex="-1">{{ question }}</legend><div class="survey-scale">
+          {% for value, label in survey_choices %}
+            <label><input type="radio" name="{{ field }}" value="{{ value }}" required>
+              <span class="survey-rating"><strong>{{ value }}</strong> <span>{{ label }}</span></span>
+            </label>
+          {% endfor %}
+        </div></fieldset>
+      {% endfor %}
+      <fieldset class="survey-opinion" data-survey-step>
+        <legend tabindex="-1">자유 의견 (선택)</legend>
+        <label for="survey-opinion">더 하고 싶은 말이 있으면 적어 주세요. 이름·연락처는 쓰지 마세요.</label>
+        <textarea id="survey-opinion" name="comment" maxlength="4000"></textarea>
+      </fieldset>
+    </div>
     <p role="alert" x-show="failed" style="display: none">저장 결과를 확인하지 못했습니다. 화면을 새로고침해 제출 상태를 확인해 주세요.</p>
   </form>
-  <form class="participant-form" method="post" action="{% url 'game-survey' vm.game_id %}"
+  <form class="participant-form" id="survey-skip-form" method="post" action="{% url 'game-survey' vm.game_id %}"
         hx-post="{% url 'game-survey' vm.game_id %}" hx-target="#survey" hx-swap="outerHTML"
-        hx-sync="#survey:drop" hx-disabled-elt="#survey button" x-data="{ failed: false }"
+        hx-sync="#survey:drop" hx-disabled-elt="#survey button:not([hidden])" x-data="{ failed: false }"
         @htmx:after-request.camel="failed = !$event.detail.successful">
     {% csrf_token %}
     <input type="hidden" name="game_id" value="{{ vm.game_id }}">
     <input type="hidden" name="skipped" value="true">
-    <button type="submit"{% tip "survey_skip" %}>건너뛰기</button>
     <p role="alert" x-show="failed" style="display: none">저장 결과를 확인하지 못했습니다. 화면을 새로고침해 제출 상태를 확인해 주세요.</p>
   </form>
+  <div class="survey-actions">
+    <button type="submit" form="survey-skip-form"{% tip "survey_skip" %}>건너뛰기</button>
+    <button type="button" data-survey-previous hidden>이전 문항</button>
+    <p data-survey-note hidden>마지막 화면에서 제출합니다.</p>
+    <button type="button" data-survey-next hidden>다음 문항</button>
+    <button type="submit" form="survey-answer-form"{% tip "survey_submit" %}>설문 제출</button>
+  </div>
 </section>
 {% endif %}

@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-11",
+  "tool": "Codex 내장 image_gen",
+  "design_reference": "dev d9af0d6 및 직전 검토 시안",
+  "generations": [
+    {
+      "id": "hunter",
+      "input": "exec-b4c74011-c698-4595-b11a-bb6274d70319.png",
+      "raw": "exec-7ce72356-5cb5-45e4-bc08-866a7d0e6c90.png",
+      "transparent": true,
+      "prompt": "Create the actual neutral, centered full-body PNG game sprite cutout for the middle-aged hunter. Retain his particular eyes, nose, cheekbones, stubble and fur-lined short Korean beonggeoji, the fur-edged brown vest, cotton baji and jeogori, leg wrappings and shoes. Retain the bow and quiver slung behind the shoulders as part of his silhouette. Make the full-body silhouette pleasantly narrow and tall, legs and torso anatomically natural. Reference image: the LEFT full-body figure is the exact same person and clothing to isolate, the RIGHT large portrait specifies the face identity and matte semi-realistic digital paint. Remove the beige paper and omit the right portrait altogether. Preserve the original full-body painting and proportions closely, same front-facing full height stance, neutral closed mouth with eyes open, both hands down. Show complete headwear, toes and all carried objects with enough blank margin. Transparent alpha throughout the surrounding canvas and negative spaces, no tint matte, no checkerboard printed into the image, no floor, no shadows in empty space. Single figure only, no words or layout. Use a portrait canvas. Body width approximately 34% of the full character height, vertically elongated naturally and not stretched. Produce crisp edge alpha, retain cloth texture, natural dark-warm lighting. This is to be pixel-registered with face variants for a Joseon Korean historical mystery visual novel."
+    },
+    {
+      "id": "monk",
+      "input": "exec-2e06e495-9cbe-4668-aa61-3714a94c6d59.png",
+      "raw": "exec-9734effe-a466-4388-96aa-c5d9ab9ca0ea.png",
+      "transparent": true,
+      "prompt": "Create the actual neutral, centered full-body PNG game sprite cutout for the adult wandering monk. Retain his particular shaved head, eye shape, nose, mouth and light gray jangsam and seungbok, beads and gray cloth barang worn behind his shoulder. Full-body proportions of an ordinary Korean man in his thirties. Reference image: the LEFT full-body figure is the exact same person and clothing to isolate, the RIGHT large portrait specifies the face identity and matte semi-realistic digital paint. Remove the beige paper and omit the right portrait altogether. Preserve the original full-body painting and proportions closely, same front-facing full height stance, neutral closed mouth with eyes open, both hands down. Show complete headwear, toes and all carried objects with enough blank margin. Transparent alpha throughout the surrounding canvas and negative spaces, no tint matte, no checkerboard printed into the image, no floor, no shadows in empty space. Single figure only, no words or layout. Use a portrait canvas. Body width approximately 34% of the full character height, vertically elongated naturally and not stretched. Produce crisp edge alpha, retain cloth texture, natural dark-warm lighting. This is to be pixel-registered with face variants for a Joseon Korean historical mystery visual novel."
+    }
+  ],
+  "processing": "규격에 맞춰 전신을 정규화하고 초상을 파생한 뒤 PNG를 Zopfli로 무손실 압축했다.",
+  "files": [
+    {
+      "path": "content/images/sprite/hunter.png",
+      "bytes": 749346,
+      "sha256": "afc6f090b2dd9ed5eb0673d56b0b3c3c8e8ab0167e20ee5594c6e6dc106e177b"
+    },
+    {
+      "path": "content/images/portrait/hunter.png",
+      "bytes": 262099,
+      "sha256": "8a70dd82ca19c0338ee5c138a3f75e0b5aaabcd380478ff26e97ebe4875d8004"
+    },
+    {
+      "path": "content/images/sprite/monk.png",
+      "bytes": 759733,
+      "sha256": "9e1c3d328814b7103f6e9262dc428bb6a53eadff8b38c110189f5eb44e231601"
+    },
+    {
+      "path": "content/images/portrait/monk.png",
+      "bytes": 189333,
+      "sha256": "a6bf4a6586e737335b511c176845d561561797207d26492977ce9e88eb3ca96a"
+    }
+  ]
+}

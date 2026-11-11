@@ -124,7 +124,7 @@
     "id": "hunter",
     "path": "content/images/portrait/hunter.png",
     "url": "/static/assets/portrait/hunter.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:hunter"
   },
   {
@@ -196,7 +196,7 @@
     "id": "monk",
     "path": "content/images/portrait/monk.png",
     "url": "/static/assets/portrait/monk.png",
-    "placeholder": true,
+    "placeholder": false,
     "derived_from": "sprite:monk"
   },
   {
@@ -423,7 +423,7 @@
     "id": "hunter",
     "path": "content/images/sprite/hunter.png",
     "url": "/static/assets/sprite/hunter.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
@@ -498,7 +498,7 @@
     "id": "monk",
     "path": "content/images/sprite/monk.png",
     "url": "/static/assets/sprite/monk.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "sprite",
