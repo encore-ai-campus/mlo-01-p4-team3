@@ -36,6 +36,8 @@ function decorate(root=document) {
 // 안내 상태: 첫 판은 건너뛰기 표시가 없으면 켬, 다른 판은 켠 시점({day, phase, at})이 저장돼 있으면 켬. 저장이 막히면 탭 메모리.
 // 첫 판도 1일째가 지난 뒤 다시 켜면(켠 시점 day > 1) 서버 안내 줄 대신 숨은 목록으로 판 시작 안내부터 만든다(pool 방식).
 function guideState(root) {
+  // 튜토리얼 판(data-tutorial): 족제비 줄은 단계 대본이라 끄거나 건너뛸 수 없다. 첫 판 안내·숨은 목록은 쓰지 않는다.
+  if(root.dataset.tutorial!==undefined) return {first:false, skipped:false, on:null, usePool:false, active:false};
   const gid=root.dataset.gameId, pool=root.querySelector('[data-guide-pool]');
   const first=!pool || pool.dataset.guideFirst!==undefined, skipped=readStore(`changgui:guide-skip:${gid}`)===true;
   const stored=pool ? readStore(`changgui:guide-on:${gid}`) : null, on=stored && !skipped ? stored : null;
@@ -161,7 +163,8 @@ function mountScene(root) {
   let lastText='';
   const text=player.querySelector('[data-vn-text]');
   // 줄은 문장이 끝까지 보였을 때만 '본 줄'이 된다. 글자 출력 중에 화면을 다시 그리면 그 줄에서 다시 시작한다.
-  function persist(done=false) { const id=sources[index]?.dataset.lineId; if(id&&done)seen.add(id); saveStore(key,{line:id,closed:[...closed],seen:[...seen]}); updateResultLock(); }
+  // 읽은 줄이 바뀔 때마다 vn:read를 낸다(튜토리얼 강조는 그 단계 족제비 줄을 다 읽은 뒤 켠다, ui-tutorial.js).
+  function persist(done=false) { const id=sources[index]?.dataset.lineId; if(id&&done)seen.add(id); saveStore(key,{line:id,closed:[...closed],seen:[...seen]}); updateResultLock(); root.vnSeen=seen; root.dispatchEvent(new CustomEvent('vn:read',{bubbles:true,detail:{seen:[...seen]}})); }
   // 투표 결과 발표 줄을 다 읽기 전에는 그 단계 행동(결선 투표·밤 점치기)을 잠근다. 서버 명령은 바꾸지 않는다.
   function updateResultLock() {
     const pending=sources.some(n=>n.dataset.result==='true' && !seen.has(n.dataset.lineId));
@@ -209,7 +212,7 @@ function mountScene(root) {
       if(!guideArt){guideArt=new Image(256,256);guideArt.className='vn-mascot';guideArt.dataset.vnGuideMascot='';stage.append(guideArt);}
       if(guideArt.getAttribute('src')!==sprite)guideArt.src=sprite; guideArt.alt=name; guideArt.hidden=false;
     } else if(guideArt) guideArt.hidden=true;
-    player.querySelector('[data-vn-guide-skip]')?.toggleAttribute('hidden',!guide);
+    player.querySelector('[data-vn-guide-skip]')?.toggleAttribute('hidden',!guide || root.dataset.tutorial!==undefined);
     player.querySelector('[data-vn-speaker]').textContent=full ? (source?.dataset.actorName || name) : name;
     player.querySelector('[data-vn-mobile-text]').textContent=line;
     player.querySelector('[data-vn-full-close]').hidden=!full;

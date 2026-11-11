@@ -8,8 +8,8 @@
   <div class="action-grid">
   {% for action in actions %}
     {% with kind=action.kind %}
-    {% if kind == 'suspect' or kind == 'defend' or kind == 'interrogate' or kind == 'point_contradiction' or kind == 'reveal_divination' %}<details class="action-sheet"><summary><span data-action-symbol="{{ kind }}"></span>{{ kind|action_label }}</summary>{% endif %}
-    <form class="command-form{% if action.target %} target-form{% endif %}" method="post"
+    {% if kind == 'suspect' or kind == 'defend' or kind == 'interrogate' or kind == 'point_contradiction' or kind == 'reveal_divination' %}<details class="action-sheet" data-action-sheet="{{ kind }}"><summary><span data-action-symbol="{{ kind }}"></span>{{ kind|action_label }}</summary>{% endif %}
+    <form class="command-form{% if action.target %} target-form{% endif %}" data-command-kind="{{ kind }}"{% if action.target %} data-command-target="{{ action.target.npc_id }}"{% endif %} method="post"
           action="{{ command_url }}" hx-post="{{ command_url }}" hx-target="#meeting"
           hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
       {% csrf_token %}

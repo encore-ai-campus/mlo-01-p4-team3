@@ -7,28 +7,30 @@
   <div class="end-tabs" role="tablist" aria-label="판 종료 화면 보기" hidden>
     <button type="button" role="tab" id="end-tab-result"{% if not classic_mode %}{% tip "end_tab_result" %}{% endif %} aria-controls="end-panel-result" aria-selected="true">결과</button>
     <button type="button" role="tab" id="end-tab-review"{% if not classic_mode %}{% tip "end_tab_review" %}{% endif %} aria-controls="end-panel-review" aria-selected="false" tabindex="-1">복기</button>
-    <button type="button" role="tab" id="end-tab-clues"{% if not classic_mode %}{% tip "end_tab_clues" %}{% endif %} aria-controls="end-panel-clues" aria-selected="false" tabindex="-1">원한 단서</button>
+    {% if not tutorial_mode %}<button type="button" role="tab" id="end-tab-clues"{% if not classic_mode %}{% tip "end_tab_clues" %}{% endif %} aria-controls="end-panel-clues" aria-selected="false" tabindex="-1">원한 단서</button>{% endif %}
     <button type="button" role="tab" id="end-tab-records"{% tip "end_tab_records" %} aria-controls="end-panel-records" aria-selected="false" tabindex="-1">공개 기록</button>
-    <button type="button" role="tab" id="end-tab-survey"{% tip "end_tab_survey" %} aria-controls="end-panel-survey" aria-selected="false" tabindex="-1">설문</button>
+    {% if not tutorial_mode %}<button type="button" role="tab" id="end-tab-survey"{% tip "end_tab_survey" %} aria-controls="end-panel-survey" aria-selected="false" tabindex="-1">설문</button>{% endif %}
   </div>
   <div id="end-panel-result" class="end-panel">
+    {% if tutorial_mode and tutorial %}{% include "meeting_parts/tutorial_end.html" %}{% endif %}
     {% if guide_end and not classic_mode %}<aside class="end-guide" aria-label="족제비 안내" data-guide-end{% if not first_game %} hidden{% endif %}><img src="{% review_asset 'mascot:jokjebi' %}" alt="안내하는 족제비" width="96" height="96"><div class="end-guide-bubble">{% for text in guide_end %}<p>{{ text }}</p>{% endfor %}</div></aside>{% endif %}
     {% include "game_result.html" %}
-    {% ad_slot 'result_banner' %}
+    {% if not tutorial_mode %}{% ad_slot 'result_banner' %}{% endif %}
   </div>
   {% url 'game-review' vm.game_id as review_url %}
   {% url 'player-progress' as progress_url %}
   {% include "end_lookup.html" with panel="review" lookup_url=review_url label="복기" %}
-  {% include "end_lookup.html" with panel="clues" lookup_url=progress_url label="원한 단서" %}
+  {% if not tutorial_mode %}{% include "end_lookup.html" with panel="clues" lookup_url=progress_url label="원한 단서" %}{% endif %}
   <div id="end-panel-records" class="end-panel">
     {% if not classic_mode %}{% include "meeting_parts/alibi_grid.html" %}{% endif %}
     {% include "meeting_records.html" with end_records=True %}
   </div>
-  <div id="end-panel-survey" class="end-panel">
+  {% if not tutorial_mode %}<div id="end-panel-survey" class="end-panel">
     {% if participant_forms_available %}{% include "survey.html" %}{% else %}<p>설문을 이용할 수 없습니다.</p>{% endif %}
-  </div>
+  </div>{% endif %}
   <div class="end-home">
+    {% if tutorial_mode %}<a href="{% url 'home' %}">홈으로</a>{% else %}
     {% if participant_forms_available and not survey_submitted %}<p id="end-home-note">홈으로 이동하면 설문은 건너뛰기로 기록됩니다.</p>{% endif %}
-    <a href="{% url 'home' %}"{% if participant_forms_available and not survey_submitted %} aria-describedby="end-home-note"{% endif %}>새 판을 시작하러 홈으로</a>
+    <a href="{% url 'home' %}"{% if participant_forms_available and not survey_submitted %} aria-describedby="end-home-note"{% endif %}>새 판을 시작하러 홈으로</a>{% endif %}
   </div>
 </section>

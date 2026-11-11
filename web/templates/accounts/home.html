@@ -8,6 +8,21 @@
 <div class="home-content auth-content">
 {% if request.user.is_authenticated %}
   {% if request.user.is_staff %}<p><a href="{% url 'admin:index' %}">운영자 화면</a> · <a href="{% url 'test-sessions' %}">테스트 세션 관리</a></p>{% endif %}
+  {% if tutorial_start_token %}
+    <details class="start-mode" name="account-start" data-start-mode data-tutorial-card>
+    <summary>튜토리얼<span>처음이라면 족제비와 함께 정해진 판을 따라 해 보기</span></summary>
+    <section id="tutorial-start" class="session-card">
+      <h2>튜토리얼</h2>
+      <p>족제비가 반짝이게 표시한 버튼을 차례로 누르며 진술 비교, 캐묻기, 점치기, 투표를 익힙니다. 언제든 그만두거나 처음부터 다시 할 수 있고, 기록과 원한 단서에는 남지 않습니다.</p>
+      <form method="post" action="{{ tutorial_start_url }}">
+        {% csrf_token %}
+        <input type="hidden" name="start_token" value="{{ tutorial_start_token }}">
+        {% include 'accounts/portrait_choice.html' %}
+        <button class="start-round" title="족제비 안내를 따라 하는 연습 판을 시작합니다">튜토리얼 시작</button>
+      </form>
+    </section>
+    </details>
+  {% endif %}
   {% if open_presets or open_games or open_unavailable %}
     <details class="start-mode" name="account-start" data-start-mode{% if not test_round_pending or open_blocked %} open{% endif %}>
     <summary>일반 게임<span>원할 때 새 판을 시작하거나 이어 하기</span></summary>

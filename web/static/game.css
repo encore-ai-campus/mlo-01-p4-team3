@@ -752,3 +752,23 @@ button { border-radius:2px; }
 .end-guide-bubble p { margin:2px 0; }
 .end-guide[hidden] { display:none; }
 .guide-toggle { display:flex; align-items:center; gap:8px; margin-top:12px; min-height:36px; font-weight:600; }
+
+/* 튜토리얼 판(11/11): 강조(가운데가 뚫린 막)·말풍선·잠금 표시·머리 막대. 막은 pointer-events:none이고 실제 잠금은 inert다(ui-tutorial.js). */
+.tutorial-spot { position:fixed; z-index:900; pointer-events:none; border-radius:8px; box-shadow:0 0 0 200vmax #02080bad; outline:3px solid #f2c96b; outline-offset:0; animation:tutorial-pulse 1.4s ease-in-out infinite; }
+@keyframes tutorial-pulse { 50% { outline-color:#fff3c4; outline-offset:3px; } }
+@media (prefers-reduced-motion:reduce) { .tutorial-spot { animation:none; } }
+.tutorial-bubble { position:fixed; z-index:901; max-width:min(340px, calc(100vw - 16px)); padding:10px 14px; color:#1c1710; background:#f6ead0; border:2px solid #b8913f; border-radius:10px; box-shadow:0 4px 14px #0009; font-size:15px; line-height:1.5; }
+.tutorial-bubble p { margin:0; }
+.tutorial-bubble-exit { display:inline-block; margin-top:6px; color:#6b2a1f; font-size:13px; }
+[data-tutorial-locked] { opacity:.55; cursor:not-allowed; }
+label[data-tutorial-locked] { opacity:.5; }
+#meeting[data-tutorial] .vn-guide-skip, #meeting[data-tutorial] [data-vn-show-all], #meeting[data-tutorial] [data-vn-skip] { display:none; }
+.tutorial-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 8px; font-size:14px; }
+.tutorial-bar form { margin:0; }
+.tutorial-bar a, .tutorial-bar button { min-height:36px; padding:4px 12px; display:inline-flex; align-items:center; }
+.tutorial-progress { color:#f2c96b; font-weight:700; }
+@media(min-width:1200px) {
+ .game-page #meeting:has(.vn-player) > .tutorial-bar { position:absolute; top:0; left:calc(50% + 150px); height:52px; margin:0; flex-wrap:nowrap; white-space:nowrap; z-index:5; }
+}
+.tutorial-end-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+.tutorial-end-actions form { margin:0; }

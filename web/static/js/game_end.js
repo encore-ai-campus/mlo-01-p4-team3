@@ -40,7 +40,7 @@
       panel.tabIndex = 0;
     }
     const initial = location.hash === "#survey" ? "#end-tab-survey" : "#end-tab-result";
-    select(list.querySelector(initial), false);
+    select(list.querySelector(initial) || list.querySelector("#end-tab-result"), false);
     list.hidden = false;
   }
   function mountAll() {

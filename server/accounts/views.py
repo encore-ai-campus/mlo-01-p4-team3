@@ -43,6 +43,8 @@ def home(request):
                 loaded[game_id] = get_game_service().repository.load(game_id)
             return loaded[game_id]
         context.update(_open_game_context(player[0], load_game))
+        # 튜토리얼 카드(표현만): 시작 주소와 새 시작 UUID. 판 생성·시드는 서버 튜토리얼 시작 경로(POST /tutorial)가 정한다.
+        context.update(tutorial_start_url="/tutorial", tutorial_start_token=str(uuid.uuid4()))
         try:
             service = get_session_service()
             context["assignments"] = service.assigned(player[0], load_game)
