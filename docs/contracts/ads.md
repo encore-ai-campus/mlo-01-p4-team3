@@ -30,6 +30,7 @@
   - **등록 검증**(11/7 PM 결정): `daily_budget_mw`가 1건 최대 청구액보다 작은 캠페인은 저장을 거부한다(admin 폼의 `daily_budget_mw` 오류, 도메인 `rules.validate_campaign_budget(billing, max_bid_mw, daily_budget_mw)`의 `ValueError`). 받아 주면 예산 필터에 항상 걸려 한 번도 나가지 않는 캠페인이 생기기 때문이다. 자동 입찰(`target_cpc_mw`)이 입찰가를 바꿔도 기준은 `max_bid_mw`다.
   - 소재의 랜딩은 사이트 안 가상 경로다. 화면에는 "광고"로 표시한다.
 - **지면(`AdSlot`)**: `lobby_banner`, `result_banner`, `review_side` 세 곳이다. 회의, 투표, 밤 화면에는 예외 없이 광고를 넣지 않는다(추궁 답변 대기 지면 `llm_wait`은 11/6 PM 결정으로 삭제, `ads-0.5`).
+  - 판 종료 화면을 탭으로 나눈 뒤에도 `result_banner`는 결과 탭, `review_side`는 복기 탭에만 둔다(11/11 사용자·PM 결정, B-11-01). 지면 ID·노출 조건은 유지한다.
 - **지면 규격(`SLOT_SIZES`, P-19, 11/5 PM 잠정 확정, `ads-0.3`)**:
 
   | 지면 | 규격(가로×세로 px) |
