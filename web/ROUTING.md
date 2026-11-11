@@ -132,3 +132,7 @@ A-10-06·A-11-04의 확정 그림을 공개 사건에 연결했다. 앞 절의 �
 ### B-11-01 캐릭터·도움말 표시 보완 (2026-11-11)
 
 기존 `vn_scene.html`의 캐릭터 버튼과 `ui_help.html`의 도움말 대화상자가 `web/static/game.css`를 사용한다. 기존 `ui-vn.js`의 캐릭터 읽기·도움말 열기/닫기 처리는 그대로이며 새 URL·탭·스크립트는 추가하지 않았다. [검증](../docs/evidence/B-11-01.md).
+
+### 행적표 (B-10-07, 2026-11-11)
+
+기록 창 진술표 앞 행적표: `server/api/alibi_grid.py`(표현, 순수 함수 `build_alibi_grid`, PlayerView 공개 진술·실종·감금만 읽음) → `meeting_view.py`의 `alibi_grid`·`alibi_grid_duo` → `meeting_parts/alibi_grid.html`. VN은 무대 버튼(`vn_scene.html`, 기록 다음 `data-stage-open="meeting-alibi-grid"`) → `meeting.html`의 무대 패널 `#meeting-alibi-grid`(ui-stage.js가 다른 패널과 같은 창으로 만듦, 명령 뒤 `#meeting` 교체 때 함께 갱신). classic은 무대 버튼이 없어 records.html 진술표 앞에서 include. CSS는 `css/theme.css`(VN)와 `classic-game.css`(classic)에 같은 규칙. JS 없음(밤마다 `<details>`). 문구·칸 규칙은 alibi_grid.py, 배치는 템플릿을 고친다. 격자에는 진술 카드 속성(`data-record-*`, `.vn-source`)을 쓰지 않는다(ui-vn.js가 진술 카드로 모음).

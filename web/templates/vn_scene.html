@@ -8,6 +8,7 @@
       <button type="button" data-stage-open="stage-actions"{% tip "stage_actions" %}>행동하기</button>
       <button type="button" data-stage-open="stage-people"{% tip "stage_people" %}>주민</button>
       <button type="button" data-stage-open="meeting-records"{% tip "stage_records" %}>기록</button>
+      {% if alibi_grid %}<button type="button" data-stage-open="meeting-alibi-grid"{% tip "stage_alibi_grid" %}>행적표</button>{% endif %}
       {% if participant_forms_available %}<button type="button" data-stage-open="stage-notebook"{% tip "stage_notebook" %}>수첩</button>{% endif %}
       {% if vm.phase != 'night' %}<button type="button" data-stage-open="stage-map"{% tip "stage_map" %}>지도</button>{% endif %}
     </nav>

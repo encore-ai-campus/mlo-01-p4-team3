@@ -107,6 +107,7 @@ UI_TIPS = {
     "stage_actions": "지금 할 수 있는 행동을 고릅니다",
     "stage_people": "마을 사람 현황을 봅니다",
     "stage_records": "진술·발언·투표 기록을 봅니다",
+    "stage_alibi_grid": "진술을 밤·시간대·장소별로 모아 봅니다",
     "stage_notebook": "내 수첩을 엽니다",
     "stage_map": "마을 지도와 인물 안내를 봅니다",
     "vn_full_close": "전신 그림을 닫고 대사로 돌아갑니다",
