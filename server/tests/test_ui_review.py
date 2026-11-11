@@ -89,6 +89,7 @@ class ReviewRepresentation(TestCase):
                 self.assertEqual(response.status_code, 200)
                 if mode == 'vn':
                     self.assertContains(response, 'data-vn-show-all')
+                    self.assertNotContains(response, 'data-vn-skip')  # 11/11 모두 보기로 통합
                     self.assertContains(response, '/static/game.css')
                 else:
                     self.assertNotContains(response, 'data-vn-stage')
