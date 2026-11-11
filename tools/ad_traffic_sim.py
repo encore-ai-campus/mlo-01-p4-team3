@@ -29,7 +29,7 @@ from tools.jsonlog import log
 ROOT = Path(__file__).resolve().parents[1]
 STEP_MS = 10
 # 시험 호스트 대기 한도(초). 시작은 새 프로세스가 Django를 불러오므로 CPU가 꽉 찬 병렬 검사 중에는 평소 약 2초가
-# 30초를 넘는다(11/11 16코어 전부 점유 상태에서 28~35초). 제어 응답은 부하 중에도 1ms 미만이라 짧게 둔다.
+# 30초를 넘는다(11/11 16코어 전부 점유 상태에서 28~61초). 제어 응답은 부하 중에도 1ms 미만이라 짧게 둔다.
 # 호스트가 죽으면 대기 한도와 상관없이 stdout 종료로 바로 실패한다.
 STARTUP_TIMEOUT_S = 180
 CONTROL_TIMEOUT_S = 30
