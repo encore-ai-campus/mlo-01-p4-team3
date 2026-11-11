@@ -5,21 +5,31 @@ import json
 import re
 
 
-def transition(client, name, action, expected, reason):
-    """현재 버전을 대조한 뒤 별칭을 바꾸고 재시도 가능한 감사 태그를 남긴다."""
+def transition(client, name, action, expected, reason, *, expected_canary=None):
+    """기대 운영·평가 후보 버전을 대조하고 그 명시한 버전만 전환한다."""
     if not re.fullmatch(r"[A-Za-z0-9_.-]+", name) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", reason):
         raise ValueError("invalid_model_or_reason")
     if action not in {"canary", "promote", "rollback"}:
         raise ValueError("invalid_lifecycle_action")
+    if action == "promote" and (expected_canary is None or not str(expected_canary)):
+        raise ValueError("expected_canary_required")
     current = client.get_model_version_by_alias(name, "production")
     if str(current.version) != str(expected):
         raise ValueError("production_version_changed")
     alias = {"canary": "candidate", "promote": "canary", "rollback": "previous"}[action]
     target = client.get_model_version_by_alias(name, alias)
+    if action == "promote" and str(target.version) != str(expected_canary):
+        raise ValueError("canary_version_changed")
     if action != "rollback":
         run = client.get_run(target.run_id)
         if run.info.status != "FINISHED" or run.data.tags.get("paldo.gate.status") != "passed":
             raise ValueError("candidate_gate_not_passed")
+    if action == "promote":
+        # 관측 검사와 관문 조회 동안 별칭이 바뀌었으면 첫 쓰기 전에 중단한다.
+        if str(client.get_model_version_by_alias(name, "canary").version) != str(expected_canary):
+            raise ValueError("canary_version_changed")
+        if str(client.get_model_version_by_alias(name, "production").version) != str(expected):
+            raise ValueError("production_version_changed")
     # previous를 먼저 저장해 production 변경 뒤 실패해도 복구 대상을 잃지 않는다.
     if action == "promote" and str(current.version) != str(target.version):
         client.set_registered_model_alias(name, "previous", current.version)
