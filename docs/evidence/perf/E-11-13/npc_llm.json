@@ -1,0 +1,121 @@
+{
+ "task": "E-11-13",
+ "date": "2026-11-11",
+ "server": "Kanana-2-3B Q4_K_M llama-server, slots 2, ctx 4096/slot, SSH tunnel",
+ "prompt_version": "meeting-polish-v3",
+ "validator_version": "meeting-polish-check-v1",
+ "cache_prompt": true,
+ "meeting": {
+  "n": 20,
+  "p50_ms": 1678,
+  "p95_ms": 2055,
+  "pass": 16,
+  "reject_reasons": {
+   "fact_changed": 4
+  }
+ },
+ "live_idle": {
+  "n": 10,
+  "p50_ms": 1639,
+  "p95_ms": 2238,
+  "pass": 8,
+  "within_ms": {
+   "2000": 6,
+   "3000": 10
+  }
+ },
+ "live_with_long_generation_on_other_slot": {
+  "n": 10,
+  "completed": 4,
+  "errors": 6,
+  "within_ms": {
+   "2000": 3,
+   "3000": 4
+  }
+ },
+ "live_with_long_generation_rerun_6": {
+  "ms": [
+   1645,
+   1813,
+   3118,
+   3601,
+   4257,
+   3945
+  ],
+  "within_3000": 2
+ },
+ "read_path_polished_ratio_10_lines_per_game": [
+  {
+   "path": "2.5s per line",
+   "games": 1,
+   "lines_per_game": 10,
+   "gap_s": 2.5,
+   "start_delay_s": 0.5,
+   "polished_ratio": 0.6
+  },
+  {
+   "path": "instant 0.3s",
+   "games": 1,
+   "lines_per_game": 10,
+   "gap_s": 0.3,
+   "start_delay_s": 0.3,
+   "polished_ratio": 0.0
+  },
+  {
+   "path": "reconnect direct",
+   "games": 1,
+   "lines_per_game": 10,
+   "gap_s": 0.0,
+   "start_delay_s": 0.0,
+   "polished_ratio": 0.0
+  },
+  {
+   "path": "2.5s per line",
+   "games": 5,
+   "lines_per_game": 10,
+   "gap_s": 2.5,
+   "start_delay_s": 0.5,
+   "polished_ratio": 0.12
+  },
+  {
+   "path": "instant 0.3s",
+   "games": 5,
+   "lines_per_game": 10,
+   "gap_s": 0.3,
+   "start_delay_s": 0.3,
+   "polished_ratio": 0.0
+  },
+  {
+   "path": "reconnect direct",
+   "games": 5,
+   "lines_per_game": 10,
+   "gap_s": 0.0,
+   "start_delay_s": 0.0,
+   "polished_ratio": 0.0
+  },
+  {
+   "path": "2.5s per line",
+   "games": 10,
+   "lines_per_game": 10,
+   "gap_s": 2.5,
+   "start_delay_s": 0.5,
+   "polished_ratio": 0.04
+  },
+  {
+   "path": "instant 0.3s",
+   "games": 10,
+   "lines_per_game": 10,
+   "gap_s": 0.3,
+   "start_delay_s": 0.3,
+   "polished_ratio": 0.0
+  },
+  {
+   "path": "reconnect direct",
+   "games": 10,
+   "lines_per_game": 10,
+   "gap_s": 0.0,
+   "start_delay_s": 0.0,
+   "polished_ratio": 0.0
+  }
+ ]
+}

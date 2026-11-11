@@ -82,7 +82,9 @@ def poll_render(request, game_id, job_id):
         view = get_game_service().detail(game_id, request.player_pseudonym).view
         answer = any(s.speech_id == output.speech_id and s.render_job_id == output.job_id
                      and is_interrogation_answer(s) for s in view.public.speeches)
-        return render(request, "speech_line.html", line_context(game_id, output, is_interrogation_answer=answer))
+        lines = getattr(get_game_service(), "npc_lines", None)
+        live = bool(lines is not None and lines.live_on())
+        return render(request, "speech_line.html", line_context(game_id, output, is_interrogation_answer=answer, live=live))
     return JsonResponse(to_jsonable(output))
 
 
