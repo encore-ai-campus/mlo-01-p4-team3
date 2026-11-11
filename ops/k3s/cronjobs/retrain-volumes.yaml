@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: paldo-ml
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: paldo-reviewed-training
+spec:
+  capacity: {storage: 4Gi}
+  volumeMode: Filesystem
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef: {namespace: paldo-ml, name: paldo-reviewed-training}
+  local: {path: "${RETRAIN_INPUT_DIR}"}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - {key: kubernetes.io/hostname, operator: In, values: ["${RETRAIN_NODE}"]}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paldo-reviewed-training
+  namespace: paldo-ml
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: paldo-reviewed-training
+  resources: {requests: {storage: 4Gi}}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: paldo-retrain-runs
+spec:
+  capacity: {storage: 8Gi}
+  volumeMode: Filesystem
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef: {namespace: paldo-ml, name: paldo-retrain-runs}
+  local: {path: "${RETRAIN_OUTPUT_DIR}"}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - {key: kubernetes.io/hostname, operator: In, values: ["${RETRAIN_NODE}"]}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paldo-retrain-runs
+  namespace: paldo-ml
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: paldo-retrain-runs
+  resources: {requests: {storage: 8Gi}}

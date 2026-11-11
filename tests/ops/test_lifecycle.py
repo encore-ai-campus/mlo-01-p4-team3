@@ -67,3 +67,26 @@ class LifecycleTests(unittest.TestCase):
         decision = evaluate("suspicion", {"candidate": {}, "reference": {}})
         self.assertFalse(decision.accepted)
         self.assertIn("human:invalid_or_missing_measurement", decision.reasons)
+
+    def test_artifact_preparation_failure_cannot_pin_a_new_registry_version(self):
+        """다운로드가 실패했는데 레지스트리 이름만 판에 고정하는 일을 막는다."""
+        client = Mock()
+        client.get_model_version_by_alias.return_value = SimpleNamespace(
+            version='3', tags={'paldo.artifact_version': 'new-v3'})
+        prepare = Mock(side_effect=RuntimeError('unavailable'))
+        registry = MlflowModelRegistry(client, {'suspicion': 'suspicion'}, prepare)
+        with patch.dict(sys.modules, {'mlflow.exceptions': SimpleNamespace(MlflowException=ValueError)}):
+            with self.assertRaises(RuntimeError):
+                registry.production_versions()
+        prepare.assert_called_once()
+
+    def test_game_release_can_use_cached_versions_during_registry_outage(self):
+        """판 종료 정리는 마지막 확인한 버전만 읽고 추가 네트워크 조회를 하지 않는다."""
+        client = Mock()
+        client.get_model_version_by_alias.return_value = SimpleNamespace(tags={'paldo.artifact_version': 'v1'})
+        registry = MlflowModelRegistry(client, {'suspicion': 'suspicion'})
+        with patch.dict(sys.modules, {'mlflow.exceptions': SimpleNamespace(MlflowException=ValueError)}):
+            registry.production_versions()
+        client.get_model_version_by_alias.side_effect = RuntimeError('offline')
+        self.assertEqual(registry.cached_versions(), {'v1'})
+        self.assertEqual(client.get_model_version_by_alias.call_count, 1)

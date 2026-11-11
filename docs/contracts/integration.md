@@ -97,6 +97,9 @@
 
 | 변수 | 쓰는 곳 | 뜻 |
 |---|---|---|
+| `PALDO_MLFLOW_MODELS` | 게임 웹 | 선택 JSON 매핑, intent·suspicion의 MLflow 모델명(실제 값은 보호 설정) |
+| `PALDO_MLFLOW_MODEL_CACHE` | 게임 웹 | 검증한 버전별 가중치의 영속 로컬 캐시 |
+| `MLFLOW_TRACKING_URI` | 게임 웹·재학습 | 승인된 SSH 포워딩의 추적 서버 주소 |
 | `PALDO_MONGO_URI` | 게임 웹, 발행기, 삭제 도구 | Mongo 레플리카셋 연결 문자열 |
 | `PALDO_KAFKA_BOOTSTRAP` | 발행기, 광고 발행, Spark, 소비자 | Kafka 부트스트랩 서버 목록 |
 | `PALDO_S3_ENDPOINT`, `PALDO_S3_ACCESS_KEY`, `PALDO_S3_SECRET_KEY` | Spark, 학습, MLflow, 조회 | Garage(S3 호환) |
