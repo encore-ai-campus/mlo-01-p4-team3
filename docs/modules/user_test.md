@@ -42,6 +42,8 @@ python manage.py changepassword <로그인 ID>     # 비밀번호 초기화. 본
 # 1) 내보내기(접속 정보는 환경 변수로만. 저장소·대화에 쓰지 않는다)
 PALDO_MONGO_URI=<읽기 전용 URI> python -m server.infra.ut_export games --out "<NAS>/5. 테스트 데이터/user_test/export_1110/games.json" [--session-id <실험 회차 ID>]
 DJANGO_SETTINGS_MODULE=<운영 설정> python -m server.infra.ut_export accounts --out "<NAS>/5. 테스트 데이터/user_test/export_1110/accounts.json"
+# (매일 밤 재학습이 자동 실행) 학습용 사람 판: NPC 관측·결정·종료·진실만, 세션·명령 ID 제외. 필드 목록은 docs/modules/ml.md "사람 판 학습·시험"
+PALDO_MONGO_URI=<읽기 전용 URI> python -m server.infra.ut_export training --out training.json
 # 2) (실험 회차를 열 때만) 회차 등록용 가명 ID: 가입 시각 [시작, 끝] 경계 포함, 동의·활성·비운영자만
 python -m tools.ut_metrics participants --accounts "<NAS>/5. 테스트 데이터/user_test/export_1110/accounts.json" --from <시작> --to <끝>
 # 3) 지표(18:00 스냅숏): 13:00 오픈 전에 시작한 판(리허설 등)과 마감 뒤 시작한 판·종료·입력·명령·설문은 세지 않고, 그때 진행 중이던 판은 games_unfinished. PM 가명은 빼서 한 번, 넣어서 한 번

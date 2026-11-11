@@ -63,14 +63,37 @@ def engine_rows(events: list[dict]) -> tuple[list[TrainingRow], dict]:
         games[env.game_id].append(raw)
     if len(policies) != 1:
         raise ValueError('정책 버전이 다른 판을 섞을 수 없음')
-    audit = dict(games=len(games), completed_games=0, excluded_incomplete_games=0,
-                 observations=0, town_observations=0, decisions_checked=0,
-                 town_decisions_checked=0, town_votes_checked=0,
-                 legal_action_violations=0, town_inference_violations=0, knowledge_boundary_violations=0)
+    audit = _new_audit(len(games))
     rows = []
     for gid, es in games.items():
-        if [e['seq'] for e in es] != list(range(len(es))):
-            raise ValueError('판별 seq 중복·누락·역순')
+        rows.extend(_game_rows(gid, es, audit, 'bot', None, contiguous=True))
+    if rows:
+        validate_rows(rows)
+    return rows, audit
+
+
+def _new_audit(games: int) -> dict:
+    return dict(games=games, completed_games=0, excluded_incomplete_games=0,
+                observations=0, town_observations=0, decisions_checked=0,
+                town_decisions_checked=0, town_votes_checked=0,
+                legal_action_violations=0, town_inference_violations=0, knowledge_boundary_violations=0)
+
+
+def _game_rows(gid: str, es: list[dict], audit: dict, source: str, user: str | None,
+               contiguous: bool) -> list[TrainingRow]:
+    """한 판의 이벤트를 학습 행으로 바꾼다(봇·사람 공용 검사).
+
+    contiguous=False는 학습용 내보내기(관측·결정·종료·진실만)라 seq 빈틈을 허용하되,
+    증가 순서와 '결정 바로 앞 seq가 그 관측'이라는 조건은 그대로 요구한다.
+    """
+    rows = []
+    seqs = [e['seq'] for e in es]
+    if contiguous and seqs != list(range(len(es))):
+        raise ValueError('판별 seq 중복·누락·역순')
+    if not contiguous and (len(set(seqs)) != len(seqs) or seqs != sorted(seqs)):
+        raise ValueError('판별 seq 중복·역순')
+    previous = {e['seq']: e for e in es}
+    if True:
         times = [datetime.fromisoformat(e['occurred_at'].replace('Z', '+00:00')) for e in es]
         if any(t.tzinfo is None for t in times) or times != sorted(times):
             raise ValueError('관측·종료·진실 시각 역순/시간대 누락')
@@ -78,7 +101,7 @@ def engine_rows(events: list[dict]) -> tuple[list[TrainingRow], dict]:
         truths = [e for e in es if e['event_type'] == 'truth_revealed']
         if not truths:
             audit['excluded_incomplete_games'] += 1
-            continue
+            return rows
         if (len(ends) != 1 or len(truths) != 1 or truths[0] is not es[-1]
                 or truths[0]['seq'] != ends[0]['seq'] + 1
                 or truths[0]['phase'] != 'ended' or truths[0]['topic'] != 'paldo.truth'):
@@ -86,7 +109,7 @@ def engine_rows(events: list[dict]) -> tuple[list[TrainingRow], dict]:
         # 현 엔진 finish는 completed 필드를 발행하지 않는다. 종료+진실 쌍이 완료 증거다.
         if ends[0]['payload'].get('completed', True) is not True:
             audit['excluded_incomplete_games'] += 1
-            continue
+            return rows
         roles = truths[0]['payload']['roles']
         if (set(roles) != set(es[0]['npc_policy_versions']) | {PLAYER_ID}
                 or roles[PLAYER_ID] != Role.MUDANG.value
@@ -127,14 +150,15 @@ def engine_rows(events: list[dict]) -> tuple[list[TrainingRow], dict]:
                         f'{obs.snapshot_id}:{c}', gid, obs.snapshot_id, obs.observer, c,
                         obs.day, obs.phase.value, obs.preset_id, preset.n_active,
                         preset.n_possessed, obs.n_possessed_remaining, len(obs.candidates),
-                        FEATURE_VERSION, f, 'bot', SplitKey(None, gid, e['occurred_at'][:10]),
+                        FEATURE_VERSION, f, source, SplitKey(user, gid, e['occurred_at'][:10]),
                         int(roles[c] == Role.POSSESSED.value), truths[0]['occurred_at']))
             elif e['event_type'] == 'decision':
                 p = e['payload']
                 obs = observations.get(p['snapshot_id'])
-                if (obs is None or obs.observer != p['actor'] or e['seq'] == 0
-                        or es[e['seq']-1]['event_type'] != 'observation'
-                        or es[e['seq']-1]['payload']['snapshot_id'] != p['snapshot_id']):
+                before = previous.get(e['seq'] - 1)
+                if (obs is None or obs.observer != p['actor'] or e['seq'] == 0 or before is None
+                        or before['event_type'] != 'observation'
+                        or before['payload']['snapshot_id'] != p['snapshot_id']):
                     raise ValueError('결정의 앞 관측 누락')
                 version = e['npc_policy_versions'][p['actor']]
                 if p['policy_version'] not in (version, version + '-fallback'):
@@ -155,20 +179,78 @@ def engine_rows(events: list[dict]) -> tuple[list[TrainingRow], dict]:
                     if p['kind'] == 'vote':
                         audit['town_votes_checked'] += 1
                         audit['town_inference_violations'] += int(vote_conflicts(obs.beliefs, p['target']))
+    return rows
+
+
+def human_rows(games: list[dict], consent: set[str], deleted: set[str]) -> tuple[list[TrainingRow], dict]:
+    """학습용 내보내기(`ut_export training`)의 사람 판을 학습 행으로 바꾼다.
+
+    동의한 가명만 쓰고 삭제 요청 가명·부하 시험·봇 판은 뺀다. 운영 자료라 한 판이 검사에 걸려도
+    밤 재학습 전체를 멈추지 않고 그 판만 사유별로 뺀다. 정책 버전은 판마다 하나여야 하고 판끼리는 달라도 된다.
+    `results`는 쓴 판의 실제 승자(시험 세트 마을 승률 계산용).
+    """
+    audit = dict(games=len(games), used_games=0, excluded={}, policy_versions={}, results={})
+    rows = []
+
+    def skip(reason):
+        audit['excluded'][reason] = audit['excluded'].get(reason, 0) + 1
+
+    for game in games:
+        user, es = game.get('player_pseudonym'), game.get('events') or []
+        if not isinstance(user, str) or not user:
+            skip('no_pseudonym')
+            continue
+        if user in deleted:
+            skip('deletion_request')
+            continue
+        if user not in consent:
+            skip('no_consent')
+            continue
+        if any(e.get('source') != 'human' for e in es):
+            skip('not_human')
+            continue
+        if any(e.get('load_test') for e in es):
+            skip('load_test')
+            continue
+        try:
+            if not es or any(e.get('game_id') != game.get('game_id') for e in es):
+                raise ValueError('판 ID 불일치')
+            for raw in es:
+                serde.from_jsonable(EventEnvelope, raw)
+            version = policy_signature(es[0])
+            if any(policy_signature(e) != version for e in es):
+                raise ValueError('판 안 정책 버전 혼합')
+            game_audit = _new_audit(1)
+            converted = _game_rows(game['game_id'], es, game_audit, 'human', user, contiguous=False)
+            if converted:
+                validate_rows(converted)
+        except (ValueError, KeyError, TypeError, AttributeError):
+            skip('invalid')
+            continue
+        if not converted:
+            skip('incomplete' if game_audit['excluded_incomplete_games'] else 'no_town_rows')
+            continue
+        winner = next(e['payload'].get('winner') for e in es if e['event_type'] == 'game_ended')
+        audit['used_games'] += 1
+        audit['policy_versions'][version] = audit['policy_versions'].get(version, 0) + 1
+        audit['results'][game['game_id']] = winner
+        rows.extend(converted)
     if rows:
         validate_rows(rows)
     return rows, audit
 
 
 def validate_rows(rows: list[TrainingRow]) -> None:
-    """C export에도 적용하는 특징·라벨·후보 완전성 검사. 합성/사람 입력은 별도 작업까지 거부."""
+    """C export에도 적용하는 특징·라벨·후보 완전성 검사. 봇 행과 사람 행(가명 필수)만 받고 합성 입력은 거부."""
     if not rows:
         raise ValueError('학습 행 없음')
     groups = defaultdict(list)
     ids = set()
     for r in rows:
         if (r.row_id in ids or not all((r.game_id, r.snapshot_id, r.observer, r.candidate))
-                or r.source != 'bot' or r.split_key.game_id != r.game_id or r.split_key.user is not None
+                or r.source not in ('bot', 'human') or r.split_key.game_id != r.game_id
+                or (r.source == 'bot') != (r.split_key.user is None)
+                or (r.source == 'human' and not (isinstance(r.split_key.user, str) and r.split_key.user))
                 or r.feature_version != FEATURE_VERSION or set(r.features) != set(FEATURE_NAMES)
                 or not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
                            for v in r.features.values())

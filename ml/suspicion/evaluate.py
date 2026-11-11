@@ -1,6 +1,7 @@
 """창귀 1명 관측별 softmax와 게임 단위 평가(행동 실행 평가는 D-08-01)."""
 from __future__ import annotations
 
+import hashlib
 import math
 import random
 from collections import defaultdict
@@ -19,15 +20,51 @@ def softmax(scores: list[float]) -> list[float]:
 
 
 def split_games(rows: list[TrainingRow], seed: int) -> dict[str, str]:
-    """정렬된 게임 ID를 seed로 섞어 70/15/15 분할한다. 행 순서에는 불변."""
-    games = sorted({r.game_id for r in rows})
-    if len(games) < 7:
-        raise ValueError('게임 분할에 최소 7판 필요')
-    random.Random(seed).shuffle(games)
-    n_test = max(1, int(len(games) * .15))
-    n_dev = max(1, int(len(games) * .15))
-    return {g: 'test' if i < n_test else 'dev' if i < n_test + n_dev else 'train'
-            for i, g in enumerate(games)}
+    """묶음을 seed로 섞어 70/15/15 분할하고 게임 ID별 분할을 돌려준다. 행 순서에는 불변.
+
+    묶음은 봇 판이면 게임 하나, 사람 판이면 그 사람(가명)의 판 전부다(사람 단위 분할, events.md 3절).
+    봇 판만 있으면 묶음 = 게임이라 예전 게임 단위 분할과 결과가 같다.
+    """
+    groups = defaultdict(set)
+    for r in rows:
+        groups[('user:' + r.split_key.user) if r.split_key.user else r.game_id].add(r.game_id)
+    keys = sorted(groups)
+    if len(keys) < 7:
+        raise ValueError('게임 분할에 최소 7묶음 필요')
+    random.Random(seed).shuffle(keys)
+    n_test = max(1, int(len(keys) * .15))
+    n_dev = max(1, int(len(keys) * .15))
+    result = {}
+    for i, key in enumerate(keys):
+        part = 'test' if i < n_test else 'dev' if i < n_test + n_dev else 'train'
+        for game in groups[key]:
+            if result.setdefault(game, part) != part:
+                raise ValueError('한 게임이 두 묶음에 속함')
+    return result
+
+
+# 사람 판 분할(D-10-01, docs/contracts/events.md 3절 사람 단위 분할). 고정 문자열이라 실행 seed와 무관하게
+# 한 번 배정된 사람은 다음 밤에도 같은 쪽에 남는다. 비율을 바꾸면 배정이 바뀌므로 바꿀 때는 버전을 올린다.
+HUMAN_SPLIT_SALT = 'suspicion-human-split-v1'
+HUMAN_TEST_RATIO = 0.3
+
+
+def human_side(user: str, salt: str = HUMAN_SPLIT_SALT, test_ratio: float = HUMAN_TEST_RATIO) -> str:
+    """가명 하나를 sha256(salt||가명) 앞 8바이트로 'test' 또는 'train'에 배정한다(사람 단위, 결정적)."""
+    if not isinstance(user, str) or not user or not 0 < test_ratio < 1:
+        raise ValueError('가명 또는 시험 비율 오류')
+    value = int.from_bytes(hashlib.sha256(f'{salt}||{user}'.encode('utf-8')).digest()[:8], 'big') / 2 ** 64
+    return 'test' if value < test_ratio else 'train'
+
+
+def split_human_rows(rows: list[TrainingRow]) -> tuple[list[TrainingRow], list[TrainingRow]]:
+    """사람 행을 (학습, 시험)으로 나눈다. 한 사람의 판은 모두 한쪽에만 들어간다."""
+    train, test = [], []
+    for row in rows:
+        if row.source != 'human':
+            raise ValueError('사람 행만 분할')
+        (test if human_side(row.split_key.user) == 'test' else train).append(row)
+    return train, test
 
 
 def metrics(labels: list[list[int]], probs: list[list[float]]) -> dict[str, float]:

@@ -85,5 +85,42 @@ class ExportTests(unittest.TestCase):
                                             "consented_at": None, "is_staff": False, "is_active": True}])
 
 
+
+def training_doc(gid, source="human", load_test=False, kinds=("observation", "decision", "game_ended", "truth_revealed")):
+    outbox = [{"envelope": {"event_id": f"{gid}-{i}", "seq": i, "event_type": k, "source": source,
+                            "occurred_at": datetime(2026, 11, 10, 5, i, tzinfo=timezone.utc), "payload": {"i": i},
+                            "player_pseudonym": "p-" + gid, "session_id": "sess", "command_id": f"c{i}",
+                            "load_test": load_test}}
+              for i, k in enumerate(("game_started", "player_spoke") + tuple(kinds))]
+    return {"_id": gid, "state": {"meta": {"player_pseudonym": "p-" + gid, "source": source}}, "outbox": outbox}
+
+
+class TrainingExportTests(unittest.TestCase):
+    def test_training_record_keeps_learning_events_and_drops_session_ids(self):
+        rec, reason = x.training_record(training_doc("g1"))
+        self.assertIsNone(reason)
+        self.assertEqual([e["event_type"] for e in rec["events"]], list(x.TRAINING_EVENT_TYPES))
+        self.assertEqual(rec["player_pseudonym"], "p-g1")
+        text = json.dumps(rec)
+        self.assertNotIn("sess", text)
+        self.assertNotIn("command_id", text)
+        self.assertNotIn("player_spoke", text)  # 플레이어 입력이 담기는 이벤트는 넣지 않는다
+        self.assertEqual(rec["events"][0]["occurred_at"], "2026-11-10T05:02:00+00:00")
+
+    def test_training_record_excludes_bot_load_test_and_incomplete_games(self):
+        self.assertEqual(x.training_record(training_doc("g", source="bot"))[1], "not_human")
+        self.assertEqual(x.training_record(training_doc("g", load_test=True))[1], "load_test")
+        self.assertEqual(x.training_record(training_doc("g", kinds=("observation",)))[1], "incomplete")
+
+    def test_export_training_reads_human_games_only_and_counts_exclusions(self):
+        collection = FakeCollection([training_doc("g2"), training_doc("g1"), training_doc("g3", load_test=True)])
+        collection.find = lambda query, projection: (collection.calls.append((query, projection)) or collection.docs)
+        out = x.export_training(collection)
+        self.assertEqual(collection.calls[0][0], {"state.meta.source": "human"})
+        self.assertEqual([g["game_id"] for g in out["games"]], ["g1", "g2"])
+        self.assertEqual(out["excluded"], {"load_test": 1})
+        self.assertEqual(out["kind"], "training")
+
+
 if __name__ == "__main__":
     unittest.main()
