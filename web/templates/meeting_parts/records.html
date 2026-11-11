@@ -6,6 +6,7 @@
       {{ event.record.text }}
     </p>
   {% endfor %}
+  {% include "meeting_parts/alibi_grid.html" %}
   {% if claims %}
     <section aria-labelledby="claim-list-title">
       <h2 id="claim-list-title">진술표</h2>

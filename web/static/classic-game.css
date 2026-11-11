@@ -47,3 +47,21 @@ fieldset { min-width: 0; }
 .confidence-choice input:checked + span { background: #23344a; color: #fff; border-color: #23344a; }
 .confidence-choice input:focus-visible + span { outline: 3px solid #b45309; outline-offset: 2px; }
 .confidence-choice input:disabled + span { opacity: .5; cursor: wait; }
+/* 행적표(B-10-07, 11/10 사용자 결정). theme.css와 같은 규칙(결정 9). */
+.alibi-grid details { margin: .4rem 0; }
+.alibi-grid-scroll { overflow-x: auto; max-width: 100%; }
+.alibi-grid-scroll:focus-visible { outline: 3px solid #b45309; outline-offset: 2px; }
+.alibi-grid-table { width: 100%; min-width: 300px; border-collapse: collapse; table-layout: fixed; line-height: 1.45; font-size: .9rem; }
+.alibi-grid-table caption { text-align: left; padding: .2rem 0 .4rem; color: #4b524d; }
+.alibi-grid-table th, .alibi-grid-table td { border: 1px solid #c6cbc5; padding: .3rem .45rem; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+.alibi-grid-table thead td, .alibi-grid-table th[scope=row] { width: 6.5em; }
+.alibi-grid-people { list-style: none; margin: 0; padding: 0; }
+.alibi-grid-people li { margin: 0 0 .25rem; }
+.alibi-grid-sources { color: #4b524d; }
+.alibi-grid-other, .alibi-grid-crime-label, .alibi-grid-no-claim { margin: 0 0 .25rem; }
+.alibi-grid-no-claim { font-size: .9rem; }
+.alibi-grid-table td.alibi-grid-crime { outline: 2px solid #9b3024; outline-offset: -2px; }
+.alibi-grid-crime-label { font-weight: 600; }
+.alibi-grid-before { opacity: .6; }
+.alibi-grid-before .alibi-grid-before { opacity: 1; }
+@media (max-width: 480px) { .alibi-grid-sources { display: block; } }

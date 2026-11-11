@@ -33,6 +33,8 @@
   </ul>{% if participant_forms_available %}<p class="mark-status" role="status" data-mark-status></p>{% endif %}</div>
 <div data-person-actions></div></section>
       <section id="meeting-records" class="meeting-records" data-stage-panel="공개 기록" tabindex="-1">{% include "meeting_records.html" %}</section>
+      {# 행적표 창(11/11 사용자 결정): 공개 기록 창과 같은 무대 패널 경로(ui-stage.js). 명령 뒤 #meeting 교체 때 함께 다시 그려진다. #}
+      {% if alibi_grid %}<section id="meeting-alibi-grid" class="meeting-records" data-stage-panel="행적표" tabindex="-1">{% include "meeting_parts/alibi_grid.html" with in_panel=True %}</section>{% endif %}
       {% if vm.phase != 'night' %}<section id="stage-map" data-stage-panel="지도·인물 안내">{% village_guide %}</section>{% endif %}
     </div>
   {% endif %}
