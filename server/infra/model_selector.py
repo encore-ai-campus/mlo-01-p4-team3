@@ -66,7 +66,7 @@ class LocalModelSelector:
         self.intent_parser(self.intent_version)
         return {"suspicion": self.suspicion_version, "intent": self.intent_version}, False
 
-    def suspicion_model(self, version: str) -> SuspicionModel:
+    def suspicion_model(self, version: str, *, in_process_logistic: bool = False) -> SuspicionModel:
         """Load only the requested model after checking its declared feature version."""
         report_path = self._file("suspicion-v0", version, "report.json")
         try:
@@ -82,9 +82,10 @@ class LocalModelSelector:
         try:
             loader = self._suspicion_loader
             if loader is None:
-                from ml.adapters.suspicion_model import load_model
+                from ml.adapters.suspicion_model import InProcessSuspicionModelAdapter, load_model
 
-                loader = load_model
+                loader = (InProcessSuspicionModelAdapter
+                          if in_process_logistic and version.startswith('suspicion-logistic-') else load_model)
             model = loader(path)
         except (FeatureVersionMismatch, ModelUnavailable):
             raise

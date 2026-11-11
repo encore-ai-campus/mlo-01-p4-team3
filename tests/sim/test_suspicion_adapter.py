@@ -6,6 +6,8 @@ import tempfile
 import io
 import json
 from contextlib import redirect_stdout
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 import time
 import unittest
 from unittest import mock
@@ -270,6 +272,46 @@ class AdapterContract(unittest.TestCase):
                 model.estimate(obs(['a', 'b'], 1))
             self.assertTrue(model._permanent)
             self.assertIsNone(model._recovery_thread)
+
+
+class InProcessAdapterContract(unittest.TestCase):
+    def test_shared_direct_model_allows_concurrent_calls(self):
+        from ml.adapters.suspicion_model import InProcessSuspicionModelAdapter, SharedModelStore
+
+        ready = Barrier(2, timeout=5)
+
+        class ConcurrentBackend(Backend):
+            def estimate(self, snapshot):
+                ready.wait()
+                return super().estimate(snapshot)
+
+        with mock.patch('ml.adapters.suspicion_model._ArtifactModel', return_value=ConcurrentBackend()):
+            adapter = InProcessSuspicionModelAdapter(Path('trusted-model.pkl'))
+        store = SharedModelStore()
+        self.addCleanup(store.close)
+        borrowed = store.get(adapter.model_version, lambda: adapter)
+        snapshot = obs(['a', 'b'], 1)
+        borrowed.close()
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(borrowed.estimate, [snapshot, snapshot]))
+        self.assertEqual([result.model_version for result in results], [adapter.model_version] * 2)
+        self.assertEqual(store.worker_pids(), {})
+
+    def test_direct_model_uses_existing_deadline_and_fallback_reasons(self):
+        from ml.adapters.suspicion_model import InProcessSuspicionModelAdapter
+
+        backend = Backend()
+        with mock.patch('ml.adapters.suspicion_model._ArtifactModel', return_value=backend):
+            adapter = InProcessSuspicionModelAdapter(Path('trusted-model.pkl'))
+        snapshot = obs(['a', 'b'], 1)
+        self.assertEqual(estimate(adapter, snapshot, iter((0, .101)).__next__), (None, FallbackReason.TIMEOUT))
+        self.assertEqual(adapter.estimate(snapshot).model_version, adapter.model_version)
+        backend.mode = 'version'
+        self.assertEqual(estimate(adapter, snapshot), (None, FallbackReason.VERSION))
+        backend.mode = 'error'
+        self.assertEqual(estimate(adapter, snapshot), (None, FallbackReason.UNAVAILABLE))
+        adapter.close()
+        self.assertEqual(estimate(adapter, snapshot), (None, FallbackReason.UNAVAILABLE))
 
 
 class ModelGames(unittest.TestCase):
