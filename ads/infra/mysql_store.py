@@ -70,7 +70,12 @@ class MySQLAdStore:
     """요청 단위 서비스의 공유 상태를 행 잠금 안에서 읽고 기록한다."""
 
     def serve(self, service, req):
-        """응답·예약·serve 아웃박스를 함께 커밋하고 같은 요청을 재생한다. 연결·커밋 시간은 따로 잰다."""
+        """응답·serve 기록·serve 아웃박스를 함께 커밋하고 같은 요청을 재생한다. 연결·커밋 시간은 따로 잰다.
+
+        예산 예약은 원장(`service.book`)이 정한 연결에서 따로 커밋된다(운영은 별도 연결, 11/11 사용자 결정).
+        이 트랜잭션이 예약 뒤에 실패하면 예약만 남고 해제 시각에 해제 작업이 원장만으로 풀어 준다.
+        격리 수준이 READ COMMITTED라 아래 `service.book.get`은 커밋된 예약 행을 읽는다.
+        """
         connect()
         with transaction.atomic():
             response = self._serve_locked(service, req)

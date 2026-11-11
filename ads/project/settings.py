@@ -1,4 +1,5 @@
 """게임 웹과 분리된 광고 서버의 MySQL·로깅 설정."""
+import copy
 import os
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -51,6 +52,11 @@ DATABASES = {"default": {
 if _db_ca := os.environ.get("PALDO_ADS_DB_SSL_CA"):
     DATABASES["default"]["OPTIONS"].update(
         ssl_ca=_db_ca, ssl_verify_cert=True, ssl_verify_identity=True)
+# 11/11 사용자 결정: serve의 예산 예약은 같은 DB의 별도 연결에서 짧은 트랜잭션으로 먼저 커밋한다.
+# 응답·serve 기록·아웃박스 트랜잭션이 끝날 때까지 (캠페인, 귀속일) 예산 행 잠금을 쥐지 않기 위해서다.
+# 시험에서는 같은 시험 DB를 가리킨다(MIRROR).
+DATABASES["ads_reserve"] = copy.deepcopy(DATABASES["default"]) | {"TEST": {"MIRROR": "default"}}
+ADS_RESERVE_DB = "ads_reserve"
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
     "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": [
         "django.template.context_processors.request", "django.contrib.auth.context_processors.auth",

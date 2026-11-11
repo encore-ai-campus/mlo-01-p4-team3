@@ -31,6 +31,8 @@ from tests.contract.test_ads import _camp, _serve
 class WorkerStackTests(TransactionTestCase):
     """웹과 별도 실행 경로에서 MySQL·Kafka 상태를 직접 확인한다."""
 
+    databases = {"default", "ads_reserve"}   # 운영 조립(get_service)은 예산 예약을 별도 연결에서 커밋한다.
+
     def test_expiry_process_catches_up_after_restart(self):
         schema = connection.settings_dict["NAME"]
         self.assertTrue(schema.startswith("test_"), "use an isolated test schema")

@@ -34,7 +34,7 @@ _optimization = OptimizationCache()
 def get_service():
     """HTTP 요청의 임시 작업 상태를 만들고 공유 상태는 MySQL에서 읽는다."""
     service = AdService(load_campaigns, _policies().copy(), settings.ADS_TOKEN_KEY.encode(),
-                        book=MySQLLedger(), store=MySQLAdStore())
+                        book=MySQLLedger(reserve_using=settings.ADS_RESERVE_DB), store=MySQLAdStore())
     versions = _optimization.get()
     if row := versions.get("ctr"):
         service.ctr_version = row.version
