@@ -21,7 +21,7 @@ from engine.domain.model import (PLAYER_ID, Claim, ClaimType, Command, CommandKi
                                  DivinationResult, EvidenceRef, EvidenceType, InterrogationKind, Phase,
                                  Place, PublicRecord, Slot, Speech)
 from engine.domain.serde import to_jsonable
-from engine.ports import ParseContext, ParseFailure
+from engine.ports import IntentParser, ParseContext, ParseFailure
 from intent.parser import BaselineIntentParser
 from tools.intent_examples import note_info
 
@@ -99,18 +99,31 @@ def candidate_label(command: Command) -> str:
     return f"interrogate_{command.interrogation_kind.value}" if command.kind is CommandKind.INTERROGATE else command.kind.value
 
 
-def evaluate(parser: BaselineIntentParser, rows: list[IntentExample]) -> dict:
+def commands_equal(actual: list[Command], expected: list[Command]) -> bool:
+    """Compare unordered commands one to one, counting repeated commands separately."""
+    unmatched = list(actual)
+    for command in expected:
+        index = next((i for i, candidate in enumerate(unmatched) if command_equal(candidate, command)), None)
+        if index is None:
+            return False
+        unmatched.pop(index)
+    return not unmatched
+
+
+def evaluate(parser: IntentParser, rows: list[IntentExample], *, case=reference_case) -> dict:
     """Measure macro F1, exact whole-command match and unsupported recall on supplied holdout rows."""
     if not rows:
         raise ValueError("evaluation rows are empty")
     gold, predictions, cases = [], [], []
     for row in rows:
-        text, ctx, expected = reference_case(row)
+        text, ctx, expected = case(row)
         result = parser.parse(text, ctx)
-        predicted = candidate_label(result.candidates[0].command) if result.candidates else "unsupported"
-        exact = ((expected is None and not result.candidates and result.failure is ParseFailure.UNSUPPORTED_INTENT) or
-                 (expected is not None and len(result.candidates) == 1 and
-                  command_equal(result.candidates[0].command, expected)))
+        predicted = (candidate_label(result.candidates[0].command) if result.candidates else
+                     "unsupported" if result.failure is ParseFailure.UNSUPPORTED_INTENT else "unparseable")
+        commands = [c.command for c in result.candidates]
+        expected_commands = expected if isinstance(expected, list) else [expected] if expected else []
+        exact = (commands_equal(commands, expected_commands) if expected_commands else
+                 not commands and result.failure is ParseFailure.UNSUPPORTED_INTENT)
         gold.append(row.label)
         predictions.append(predicted)
         cases.append({"example_id": row.example_id, "gold_label": row.label, "predicted_label": predicted,

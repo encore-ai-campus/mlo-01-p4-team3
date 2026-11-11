@@ -61,6 +61,7 @@ python -m ml.suspicion.train --rows out/suspicion/delta1108/aligned/rows.jsonl -
 원본의 마을 관측에서 `suspicion-1` 특징을 계산하고, `public-snapshot-v1` export의 행 ID·라벨·조인 시각 등을 대조해 특징을 교체한다. 대조에서는 C가 기록한 활동 인원 수를 보존한다. manifest에는 Delta 버전과 export part별 해시, 원본과 변환 행의 해시, 정책과 seed를 기록한다. 접속 위치와 키는 외부 보호 설정으로 관리한다.
 
 - D-07-03 의도 미세조정은 `python -m tools.perf.intent_finetune --epochs 5 --include-generated`로 실행한다. 증빙은 `docs/evidence/D-07-03.md`, 모델·실행 계보는 `mlruns/intent_bert/`에 보관한다.
+- D-09-01은 `python -m tools.perf.intent_human_eval --help`에서 실행 인자를 확인한다. 명령 전체 일치율과 소표본 구간 판정은 D-09-01 범위다. 레지스트리 승격 관문은 D-09-02가 담당한다.
 
 ### D-08-01 모델 판 실행
 
@@ -108,7 +109,7 @@ python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version 
 848dbdd20f02fefccda9bdbf4438830e844181949412bac7a5a70704bb58f8ca
 ```
 
-`select`는 고정 설정의 모델을 실제로 열어 검증한 뒤 버전 두 개와 `False`를 반환한다. 파일·로더·모델 ID 오류는 `ModelUnavailable`, 의심 특징 불일치는 `FeatureVersionMismatch`다. 조회는 로컬 경로와 버전만 사용한다. 판별 인스턴스 수명·버전 고정과 카나리아는 B-09-01, 원격 레지스트리는 C-09-01에서 연결한다. BERT 해석기 연결은 D-09-01 범위다.
+`select`는 고정 설정의 모델을 실제로 열어 검증한 뒤 버전 두 개와 `False`를 반환한다. 파일·로더·모델 ID 오류는 `ModelUnavailable`, 의심 특징 불일치는 `FeatureVersionMismatch`다. 조회는 로컬 경로와 버전만 사용한다. 판별 인스턴스 수명·버전 고정과 카나리아는 B-09-01, 원격 레지스트리는 C-09-01에서 연결한다. BERT 해석기 연결은 D-09-02 4번, 동결 사람 평가는 D-09-01 범위다.
 
 ### 광고 CTR (D-10-02)
 
@@ -164,5 +165,6 @@ python -m tools.ad_ctr_scenario score --out out/d1002/scenario --report out/ctr-
 | D-08-04 | 11/9 | A 쪽 재현 명령 `reproduce_model_games`(같은 모델·시드 두 실행 비교, 실제 v0 수령 전 가짜 모델 시험, E) |
 | D-08-04 | 11/9 | 사용자 변경 기준 적용, 실제 로컬 모델 인계와 A CLI·B 조립 50판 비교 완료 |
 | D-10-02 | 11/9 | 확정 Delta 맥락 CTR 학습, 동일 베타 평가, LightGBM 관문·MLflow 후보·시나리오 6 채점 |
+| D-09-01 | 11/11 | 공식 동결 평가의 기준선 유지 판정과 D-07-03 체크포인트 NAS 인계 |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.
