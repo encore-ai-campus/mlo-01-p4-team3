@@ -53,7 +53,7 @@ python -m unittest tests.tools.test_check_templates tests.tools.test_check_endin
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
 | `content_version` | `content-1.1` | 7·8인 판 주민 2명 추가(E-08-02, `content-1.0.1`에서 올림). `content-1.0.1`은 11/9 hothead 해명 변형 어조 한 줄 수정으로 `content-1.0`에서 올린 첫 플레이 버전 묶음 | 내용을 바꾸면 올린다. 결과·진척 화면 문안 `server/story_catalog.json`에 같은 버전 키를 둔다 |
-| 묶음 크기 | 인물 6·성향 4·비밀 6·원한 단서 4·장소 5·템플릿 47 | 6인 판 `base6`과 5인 판 `short5`를 채운다 | 7·8인 판 인물 2명은 E-08-02에서 추가 |
+| 묶음 크기 | 인물 8·성향 4·비밀 7·원한 단서 4·장소 5·템플릿 47 | 5인 `short5`·6인 `base6`·7인 `base7`·8인 `large8`을 채운다 | 7·8인 판 인물 2명(사냥꾼 `hunter`·떠돌이 스님 `monk`)과 비밀 `rite`는 E-08-02에서 추가. 엔진이 풀 전체에서 뽑으므로 5·6인 판에도 나온다 |
 | `--bundle` | `content/bundle_v1.json` | 검사할 묶음(저장소 기준 경로) | - |
 | `--preset` | 없음 | 배정 검증할 프리셋 ID(예: `base6`) | 없으면 구조 검사만 |
 | `--seeds` | 200 | 배정 검증 시드 수(0부터) | 늘리면 검사 시간이 늘어난다 |
