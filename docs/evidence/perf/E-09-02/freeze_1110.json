@@ -1,0 +1,52 @@
+{
+  "task": "E-09-02",
+  "commit": "fd0293645acc54f9e15a14f50aed32978de3dc36",
+  "generated_at": "2026-11-11T01:49:51Z",
+  "source": "python -m tools.ut_freeze (ut-freeze-1.1, seed 20261110, cutoff 2026-11-10T18:00+09:00) report.json, manifest sha256 5b217f61",
+  "metrics": {
+    "participants": {
+      "value": 7,
+      "unit": "명"
+    },
+    "eval_users": {
+      "value": 3,
+      "unit": "명"
+    },
+    "train_users": {
+      "value": 4,
+      "unit": "명"
+    },
+    "test_human": {
+      "value": 7,
+      "unit": "건"
+    },
+    "test_human_pm": {
+      "value": 5,
+      "unit": "건"
+    },
+    "train_candidates": {
+      "value": 9,
+      "unit": "건"
+    },
+    "train_labeled": {
+      "value": 9,
+      "unit": "건"
+    },
+    "eval_labeled": {
+      "value": 7,
+      "unit": "건"
+    },
+    "privacy_excluded": {
+      "value": 0,
+      "unit": "건"
+    },
+    "sentence_conflicts": {
+      "value": 0,
+      "unit": "건"
+    },
+    "user_overlap": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
