@@ -19,7 +19,7 @@ class FakeAdProvider:
         self.latency_ms = latency_ms
         self.fail = fail
         self.empty = empty
-        self.creative = creative or AdCreativeView("cr_fake", "주막 국밥", "뜨끈한 국밥 한 그릇", "/static/ads/fake.png")
+        self.creative = creative or AdCreativeView("cr_fake", "주막 국밥", "뜨끈한 국밥 한 그릇", "/static/promo/fake.png")
         self.calls: list[AdRequest] = []
         self.relay_calls: list[tuple] = []
 

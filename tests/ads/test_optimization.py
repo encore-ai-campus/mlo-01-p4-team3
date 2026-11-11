@@ -85,7 +85,7 @@ class ContextAndBidHTTPTests(TestCase):
             slots=["result_banner"], billing="cpc", min_bid_mw=10_000, max_bid_mw=100_000,
             target_cpc_mw=40_000, daily_budget_mw=10_000_000, start_date="2026-11-01", end_date="2026-12-01")
         Creative.objects.create(creative_id="syn:cr", campaign=campaign, title="ad", body="ad",
-                                image_path="/static/ads/example.png")
+                                image_path="/static/promo/example.png")
         now = [0.]
         cache = OptimizationCache(clock=lambda: now[0])
         actual_service = composition.get_service

@@ -242,18 +242,18 @@ python -c "from PIL import Image; Image.open('<원본 PNG>').convert('RGB').resi
 
 ## 광고 소재 실제 그림 (11/11 사용자 결정)
 
-11/5 PM 결정 "광고 소재는 시연까지 임시"를 11/11 사용자 결정으로 바꿔 실제 그림을 쓴다. 사용자가 Gemini로 생성했고(아래 프롬프트 전달본 사용), 원본은 1024×434(가로 띠용)·1024×765(상자용) WebP이며 저장소에 넣지 않는다. 원본 오른쪽 아래의 생성 도구 표시와 위아래 검은 여백은 자르는 범위에서 뺐다. 광고 문구는 화면이 글자로 쓴다. 부적 두 장의 붉은 문양은 읽히는 글자가 아닌 장식 문양이다(11/11 사용자 판단).
+11/5 PM 결정 "광고 소재는 시연까지 임시"를 11/11 사용자 결정으로 바꿔 실제 그림을 쓴다. 사용자가 Gemini로 생성했고(아래 프롬프트 전달본 사용), 원본은 1024×434(가로 띠용)·1024×765(상자용) WebP이며 저장소에 넣지 않는다. 원본 오른쪽 아래의 생성 도구 표시와 위아래 검은 여백은 자르는 범위에서 뺐다. 광고 문구는 화면이 글자로 쓴다. 파일 이름의 `__wide`는 728×90, `__box`는 300×250이다(광고 차단 목록의 규격 표기를 피함, `ads/domain/model.py` `slot_image_path`). 부적 두 장의 붉은 문양은 읽히는 글자가 아닌 장식 문양이다(11/11 사용자 판단).
 
 | 결과 파일 | 도구 | 모델·버전 | 프롬프트 전문 | 부정 프롬프트 | 시드 | 생성 시각 UTC | 가공 |
 |---|---|---|---|---|---|---|---|
-| `content/images/ad/gukbap_a__728x90.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 1 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gukbap_a_band.webp`(SHA-256 앞 16자 `74454940f2e0b3f9`)에서 (0, 160, 1024, 286) 영역을 잘라 LANCZOS로 축소, PNG optimize |
-| `content/images/ad/gukbap_a__300x250.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 2 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gukbap_a_box.webp`(SHA-256 앞 16자 `fee5011a476b9bc5`)에서 (256, 0, 1024, 640) 영역을 잘라 LANCZOS로 축소, PNG optimize |
-| `content/images/ad/gukbap_b__728x90.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 3 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gukbap_b_band.webp`(SHA-256 앞 16자 `ffa611a74a51b864`)에서 (0, 252, 584, 324) 영역을 잘라 LANCZOS로 축소, PNG optimize |
-| `content/images/ad/gukbap_b__300x250.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 4 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gukbap_b_box.webp`(SHA-256 앞 16자 `b9137d6ea3c06881`)에서 (440, 226, 802, 528) 영역을 잘라 LANCZOS로 축소, PNG optimize |
-| `content/images/ad/bujeok__728x90.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 5 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `bujeok_band.webp`(SHA-256 앞 16자 `f4b719f1892babfb`)에서 (0, 168, 1024, 294) 영역을 잘라 LANCZOS로 축소, PNG optimize |
-| `content/images/ad/bujeok__300x250.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 6 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `bujeok_box.webp`(SHA-256 앞 16자 `3e799e9758da6c38`)에서 (204, 152, 715, 578) 영역을 잘라 LANCZOS로 축소, PNG optimize |
-| `content/images/ad/yakcho__728x90.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 7 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `yakcho_band.webp`(SHA-256 앞 16자 `c70ca18f3676c9ed`)에서 (0, 132, 1024, 258) 영역을 잘라 LANCZOS로 축소, PNG optimize |
-| `content/images/ad/gat__300x250.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 8 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gat.webp`(SHA-256 앞 16자 `12c26bdfda17ad7b`)에서 (150, 92, 804, 637) 영역을 잘라 LANCZOS로 축소, PNG optimize |
+| `content/images/ad/gukbap_a__wide.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 1 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gukbap_a_band.webp`(SHA-256 앞 16자 `74454940f2e0b3f9`)에서 (0, 160, 1024, 286) 영역을 잘라 LANCZOS로 축소, PNG optimize |
+| `content/images/ad/gukbap_a__box.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 2 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gukbap_a_box.webp`(SHA-256 앞 16자 `fee5011a476b9bc5`)에서 (256, 0, 1024, 640) 영역을 잘라 LANCZOS로 축소, PNG optimize |
+| `content/images/ad/gukbap_b__wide.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 3 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gukbap_b_band.webp`(SHA-256 앞 16자 `ffa611a74a51b864`)에서 (0, 252, 584, 324) 영역을 잘라 LANCZOS로 축소, PNG optimize |
+| `content/images/ad/gukbap_b__box.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 4 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gukbap_b_box.webp`(SHA-256 앞 16자 `b9137d6ea3c06881`)에서 (440, 226, 802, 528) 영역을 잘라 LANCZOS로 축소, PNG optimize |
+| `content/images/ad/bujeok__wide.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 5 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `bujeok_band.webp`(SHA-256 앞 16자 `f4b719f1892babfb`)에서 (0, 168, 1024, 294) 영역을 잘라 LANCZOS로 축소, PNG optimize |
+| `content/images/ad/bujeok__box.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 6 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `bujeok_box.webp`(SHA-256 앞 16자 `3e799e9758da6c38`)에서 (204, 152, 715, 578) 영역을 잘라 LANCZOS로 축소, PNG optimize |
+| `content/images/ad/yakcho__wide.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 7 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `yakcho_band.webp`(SHA-256 앞 16자 `c70ca18f3676c9ed`)에서 (0, 132, 1024, 258) 영역을 잘라 LANCZOS로 축소, PNG optimize |
+| `content/images/ad/gat__box.png` | Gemini 앱 이미지 생성 | 도구 미표시 | 아래 프롬프트 8 | 별도 필드 미지원, 프롬프트에 금지 지시 포함 | 도구 미제공 | 2026-11-11T09:13~09:19Z(원본 파일 저장 시각) | 원본 `gat.webp`(SHA-256 앞 16자 `12c26bdfda17ad7b`)에서 (150, 92, 804, 637) 영역을 잘라 LANCZOS로 축소, PNG optimize |
 
 재현 명령(Pillow 12.3.0, 저장소 의존성 밖 도구). `<영역>`은 위 표의 (왼, 위, 오른, 아래) 값이다.
 

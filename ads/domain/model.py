@@ -35,17 +35,42 @@ SLOT_SIZES: dict[AdSlot, tuple[int, int]] = {
 }
 
 
+# 소재 이미지 공개 경로(11/11 사용자 결정). 브라우저 광고 차단 목록이 `/static/ads/`와 `_728x90`·`_300x250` 같은
+# 광고 규격 표기를 막아 그림이 보이지 않았다. 경로는 `/static/promo/`, 파일 이름은 규격 대신 모양(wide·box)으로 쓴다.
+PROMO_IMAGE_PREFIX = "/static/promo/"
+LEGACY_IMAGE_PREFIX = "/static/ads/"   # 옛 기본 경로. 저장된 값은 새 경로로 읽는다
+SIZE_SHAPES: dict[tuple[int, int], str] = {(728, 90): "wide", (300, 250): "box"}
+
+
 def slot_image_path(image_path: str, slot: AdSlot) -> str:
     """소재 기본 경로(`Creative.image_path`) → 그 지면 규격의 실제 이미지 경로.
 
-    예: `/static/ads/gat.png`, `lobby_banner` → `/static/ads/gat__728x90.png`.
+    예: `/static/promo/gat.png`, `review_side` → `/static/promo/gat__box.png`(728×90은 `__wide`).
+    옛 기본 경로 `/static/ads/<이름>`도 받아 같은 새 경로를 돌려준다(운영 DB 갱신 전 호환).
     광고 서버는 `AdCreativeView.image_path`에 이 값을 넣고, 에셋(E)은 이 이름으로 파일을 만든다.
     """
-    w, h = SLOT_SIZES[AdSlot(slot)]
+    if image_path.startswith(LEGACY_IMAGE_PREFIX):
+        image_path = PROMO_IMAGE_PREFIX + image_path[len(LEGACY_IMAGE_PREFIX):]
+    shape = SIZE_SHAPES[SLOT_SIZES[AdSlot(slot)]]
     head, dot, ext = image_path.rpartition(".")
     if not dot or "/" in ext:
-        return f"{image_path}__{w}x{h}"
-    return f"{head}__{w}x{h}.{ext}"
+        return f"{image_path}__{shape}"
+    return f"{head}__{shape}.{ext}"
+
+
+def legacy_slot_image_url(url: str) -> str | None:
+    """옛 지면 이미지 주소(`/static/ads/<이름>__728x90.png`) → 새 주소. 해당하지 않으면 None.
+
+    옛 광고 서버가 아직 옛 주소를 내보내는 배포 전환 동안 게임 웹이 같은 파일을 주기 위해 쓴다.
+    """
+    if not url.startswith(LEGACY_IMAGE_PREFIX):
+        return None
+    rest = url[len(LEGACY_IMAGE_PREFIX):]
+    for (w, h), shape in SIZE_SHAPES.items():
+        marker = f"__{w}x{h}."
+        if marker in rest:
+            return PROMO_IMAGE_PREFIX + rest.replace(marker, f"__{shape}.", 1)
+    return None
 
 
 class BillingType(str, enum.Enum):

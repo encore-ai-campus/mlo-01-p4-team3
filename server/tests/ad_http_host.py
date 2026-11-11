@@ -40,7 +40,7 @@ class LocalAdHost:
                     width, height = (300, 250) if request['slot'] == 'review_side' else (728, 90)
                     payload = json.dumps(dict(request_id=request['request_id'], filled=True,
                         creative=dict(creative_id='sample', title='가상 광고', body='HTTP 시험 문안',
-                                      image_path=f'/static/ads/sample__{width}x{height}.png', label='광고'),
+                                      image_path='/static/promo/sample__' + ('box' if (width, height) == (300, 250) else 'wide') + '.png', label='광고'),
                         serve_token=host.token, beacon_path='/ads/v1/impression',
                         click_path='/ads/v1/click?t=' + host.token)).encode()
                 elif path == '/ads/v1/impression':

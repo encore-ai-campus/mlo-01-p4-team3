@@ -27,7 +27,7 @@ class PersistentHTTPTests(TestCase):
             slots=["lobby_banner"], billing="cpm", max_bid_mw=10_000_000, daily_budget_mw=10_000_000,
             start_date="2026-11-01", end_date="2026-12-01")
         Creative.objects.create(creative_id="creative", campaign=campaign, title="ad", body="ad",
-                                image_path="/static/ads/example.png")
+                                image_path="/static/promo/example.png")
         patcher = patch.object(views, "get_service", side_effect=self.service)
         patcher.start()
         self.addCleanup(patcher.stop)

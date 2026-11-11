@@ -57,8 +57,26 @@ class Assets(SimpleTestCase):
                     self.assertEqual(b"".join(response.streaming_content), (settings.BASE_DIR / item["path"]).read_bytes())
                 finally:
                     response.close()
-        ads = sum(item["url"].startswith("/static/ads/") for item in manifest)
+        ads = sum(item["url"].startswith("/static/promo/") for item in manifest)
         print(f"Manifest images verified: {len(manifest)} ({ads} ads)", flush=True)
+
+    def test_legacy_ad_image_urls_serve_new_files(self):
+        """배포 전환 동안 옛 광고 서버가 내보내는 옛 소재 주소도 새 파일을 준다."""
+        manifest = json.loads(settings.ASSET_MANIFEST.read_text(encoding="utf-8"))
+        promo = [item for item in manifest if item["kind"] == "ad"]
+        self.assertTrue(promo)
+        for item in promo:
+            w, h = item["size"]
+            old = item["url"].replace("/static/promo/", "/static/ads/").replace(
+                "__wide.png" if (w, h) == (728, 90) else "__box.png", f"__{w}x{h}.png")
+            with self.subTest(url=old):
+                response = self.client.get(old)
+                try:
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(b"".join(response.streaming_content), (settings.BASE_DIR / item["path"]).read_bytes())
+                finally:
+                    response.close()
+        self.assertEqual(self.client.get("/static/ads/missing__728x90.png").status_code, 404)
 
     def test_unknown_id_has_fallback_and_no_path_escape(self):
         """누락은 대체하고 정적 경로 밖 파일은 차단한다."""
