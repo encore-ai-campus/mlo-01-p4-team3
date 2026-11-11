@@ -32,9 +32,13 @@ from django.http import HttpResponse
 from django.urls import path
 from django.core.handlers.wsgi import WSGIHandler
 
+KEEP = []  # 닫힌 연결 객체도 붙잡아 둬서 id가 재활용되지 않게 한다(서로 다른 연결이 같은 id로 보이는 것 방지)
+
+
 def probe(request):
     with connection.cursor() as c:
         c.execute("SELECT 1")
+    KEEP.append(connection.connection)
     return HttpResponse(str(id(connection.connection)))
 
 urlpatterns = [path("probe", probe)]
