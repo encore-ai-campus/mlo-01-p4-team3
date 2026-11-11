@@ -1,0 +1,28 @@
+{
+  "task": "C-08-02",
+  "commit": "388105d192ab8803f0a300fc77419608b95f097c",
+  "generated_at": "2026-11-11T08:00:19Z",
+  "source": "2026-11-11 installed aggregate unit/config read-only inspection; isolated b1eb7f8 deployment, official Bronze config proposal, restricted key + verified known-host SSH true; no aggregate execution or CTR update",
+  "metrics": {
+    "missing_spark_settings_before": {
+      "value": 7,
+      "unit": "개"
+    },
+    "ssh_authenticated": {
+      "value": 1,
+      "unit": "회"
+    },
+    "timer_enabled": {
+      "value": 0,
+      "unit": "개"
+    },
+    "production_env_changed": {
+      "value": 0,
+      "unit": "개"
+    },
+    "production_script_changed": {
+      "value": 0,
+      "unit": "개"
+    }
+  }
+}
