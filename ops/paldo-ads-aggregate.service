@@ -1,0 +1,14 @@
+[Unit]
+Description=Paldo ad daily aggregation (ledger -> Spark silver/gold -> ad_update ctr)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# 설치 스크립트가 실제 사용자·환경 파일·소스 경로로 바꾼다.
+User=@USER@
+EnvironmentFile=@ENV_FILE@
+EnvironmentFile=@AGG_ENV_FILE@
+ExecStart=/bin/sh @SRC@/ops/ads_aggregate.sh
+TimeoutStartSec=3600
+Nice=10

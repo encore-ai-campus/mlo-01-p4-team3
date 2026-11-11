@@ -126,7 +126,7 @@ app-01에서는 별도 Daphne·임시 SQLite·loopback Mongo replica set으로 1
 
 ### 맥락 CTR과 자동 입찰 (D-10-02)
 
-`ads_gold.py --phase final --export-optimization <폴더>`는 고정 Delta 버전에서 `ctr.json`과 `bid.json`을 내보낸다. 학습·등록은 [ML 사용법](ml.md#광고-ctr-d-10-02)을 따르고 운영자에게 등록된 후보 보고서를 전달한다.
+`ads_gold.py --phase final --export-optimization <폴더>`는 고정 Delta 버전에서 `ctr.json`과 `bid.json`을, 같은 silver snapshot에서 `ad_update ctr` 입력 `ctr_cells.json`을 내보낸다. 하루 1회 자동 실행은 `ops/ads_aggregate.sh`(ad-01 timer, `python ads/manage.py ad_export_ledger --out <폴더>`로 원장·일 예산 내보내기 포함)이고 절차는 `pipeline/README.md`에 있다. 학습·등록은 [ML 사용법](ml.md#광고-ctr-d-10-02)을 따르고 운영자에게 등록된 후보 보고서를 전달한다.
 
 ```powershell
 python ads/manage.py migrate ads_web 0005 --noinput
@@ -183,4 +183,5 @@ python ads/manage.py ad_update rollback-ctr --expected-version <활성-CTR-버�
 | D-08-02 | 11/8 | 전체 확정 Beta·MySQL 버전·60초 재적재·5분 페이싱·탐색·독립 평가. 11/9 실제 C 집계·환입 재대사·ad-01 새 버전 반영과 B 로그·장애 재시험 통과. 병목에 따른 인계 지연을 기록하고 사용자 승인으로 완료 판정 |
 | D-08-04 | 11/8 | 일괄 문서화 대상으로 D-08-02의 실행·설정·실측·한계와 변경 이력 6개 절 확인 |
 | D-10-02 | 11/9 | 맥락 CTR 카나리아·롤백, CPC 상하한·버전 갱신, 페이싱 제어 이득 보정 |
+| C-08-02 | 11/11 | 하루 집계 자동화: `ad_export_ledger`(원장·일 예산 내보내기), `ctr_cells.json` → `ad_update ctr`, ad-01 timer(E 보강) |
 | D-06-03 | 11/11 | 합성 트래픽 시험 호스트 대기 한도를 시작 180초·제어 30초로 나눔(E 보완, 병렬 검사 중 시작 시간 초과 수정) |

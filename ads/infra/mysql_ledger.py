@@ -131,3 +131,17 @@ class MySQLLedger:
     def confirmed_amounts(self):
         """대사용 확정 행과 환입 행의 금액을 반환한다."""
         return dict(AdLedgerEntry.objects.filter(state=ChargeState.CONFIRMED).values_list("charge_id", "amount_mw"))
+
+
+def export_ledger_rows():
+    """원장 전체를 gold `--ledger` 행 형식으로 읽는다(인증값·토큰 없음, charge_id 순)."""
+    return [dict(charge_id=r.charge_id, amount_mw=r.amount_mw, state=r.state, kind=r.kind,
+                 source_event_id=r.source_event_id, source=r.source, campaign_id=r.budget.campaign_id,
+                 attribution_day=r.budget.attribution_day.isoformat(), slot=r.slot)
+            for r in AdLedgerEntry.objects.select_related("budget").order_by("pk")]
+
+
+def campaign_daily_budgets():
+    """캠페인별 현재 일 예산(밀리원)."""
+    from ads.web.models import Campaign
+    return dict(Campaign.objects.values_list("pk", "daily_budget_mw"))
