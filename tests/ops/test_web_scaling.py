@@ -251,8 +251,13 @@ class BenchOptions(unittest.TestCase):
         self.assertFalse(model_load_passed(dict(row, inference_calls=100, inference_failures=2)))
         memory = {port: dict(web_rss_bytes=4096, worker_rss_bytes={'v0': 1024, 'v1': 2048})
                   for port in row['inference_calls_by_process']}
-        secondary = dict(row, secondary_model_version='v1', memory_by_process=memory)
+        secondary = dict(row, model_version='v0', secondary_model_version='v1', memory_by_process=memory)
         self.assertTrue(model_load_passed(secondary))
+        direct = {port: dict(web_rss_bytes=4096, worker_rss_bytes={}, in_process_versions=['v0', 'v1'])
+                  for port in memory}
+        self.assertTrue(model_load_passed(dict(secondary, memory_by_process=direct)))
+        direct['8002']['in_process_versions'] = ['v0']
+        self.assertFalse(model_load_passed(dict(secondary, memory_by_process=direct)))
         self.assertFalse(model_load_passed(dict(secondary, memory_by_process={})))
         self.assertFalse(model_load_passed(dict(secondary, memory_by_process={'8000': memory['8000']})))
         self.assertFalse(model_load_passed(dict(secondary, memory_by_process={
@@ -382,10 +387,12 @@ class BenchOptions(unittest.TestCase):
         scrape = ('# TYPE process_resident_memory_bytes gauge\nprocess_resident_memory_bytes 4096\n'
                   '# TYPE paldo_suspicion_worker_resident_memory_bytes gauge\n'
                   'paldo_suspicion_worker_resident_memory_bytes{model_version="a"} 1024\n'
-                  'paldo_suspicion_worker_resident_memory_bytes{model_version="b"} 2048\n')
+                  'paldo_suspicion_worker_resident_memory_bytes{model_version="b"} 2048\n'
+                  '# TYPE paldo_bench_suspicion_in_process gauge\n'
+                  'paldo_bench_suspicion_in_process{model_version="c"} 1\n')
         self.assertEqual(memory_metrics({'9000': scrape, '9001': ''}), {
-            '9000': dict(web_rss_bytes=4096, worker_rss_bytes={'a': 1024, 'b': 2048}),
-            '9001': dict(web_rss_bytes=None, worker_rss_bytes={})})
+            '9000': dict(web_rss_bytes=4096, worker_rss_bytes={'a': 1024, 'b': 2048}, in_process_versions=['c']),
+            '9001': dict(web_rss_bytes=None, worker_rss_bytes={}, in_process_versions=[])})
         with mock.patch('pathlib.Path.read_text', return_value='VmRSS:\t12 kB\n'):
             self.assertEqual(resident_bytes(123), 12288)
         with tempfile.TemporaryDirectory() as directory:

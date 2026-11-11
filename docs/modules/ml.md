@@ -64,13 +64,15 @@ python -m ml.suspicion.train --rows out/suspicion/delta1108/aligned/rows.jsonl -
 
 ### D-08-01 모델 판 실행
 
-D-08-01의 `ml/adapters/suspicion_model.py`는 지속 worker로 추론 마감을 지키고, 실패를 엔진의 규칙 v0 폴백 예외로 바꾼다. `ml/adapters/run_model_games.py`는 기존 판 실행기를 재사용해 모델 버전·합법성·폴백 수·p95를 기록한다. `tools/`에서 `ml/`을 import하지 않는다.
+D-08-01의 `ml/adapters/suspicion_model.py`는 웹 프로세스 내 로지스틱 추론과 격리 worker를 제공한다. `ml/adapters/run_model_games.py`는 기존 판 실행기를 재사용해 모델 버전·합법성·폴백 수·p95를 기록한다. `tools/`에서 `ml/`을 import하지 않는다.
+
+11/11 PM 결정으로 운영 웹과 부하 시험은 `suspicion-logistic-` 버전의 산출물을 웹 프로세스에 버전별로 한 번 로드하고, 각 호출에서 읽기 전용으로 직접 추론한다. 로드·예열에서 BLAS를 한 스레드로 제한한다. 동기 추론 시간은 웹 요청에 포함되며 엔진은 반환된 결과가 100ms를 넘으면 버리고 그 결정만 규칙 v0로 폴백한다. Selector가 산출물의 버전과 특징을 확인하고 기존 결과 검증과 폴백 이유 코드를 적용한다. 부하 도구는 두 버전이 상주한 웹 RSS와 살아 있는 worker 수를 기록한다.
 
 11/10 PM 정책에 따라 90ms 일반 마감은 해당 호출만 폴백한다. 같은 worker의 늦은 응답을 배경에서 요청 번호로 확인해 버리고, 처리 중에는 새 요청을 쌓지 않는다. 프로세스 종료 또는 요청 전송 시각부터 1.5초 동안 응답이 없을 때 같은 버전으로 재기동한다. 강제 한도는 후속 호출 없이도 집행된다. 재기동에 해당하는 연속 실패가 3회면 30초 대기하며 정상 추론 시 계수를 초기화한다. 입력 특징 오류는 worker를 유지하고, 산출물 특징·재로드 모델 ID 불일치와 파일 부재는 해당 버전을 거부한다. 명시적 `close()` 뒤에는 재기동하지 않는다.
 
 동급 VM 재측정은 기존 부하 CLI의 `--serve-dir <비공개 교환 경로> --listen-host <사설 IPv4> --client-ip <생성기 IPv4>`로 웹만 실행한다. SSH로 `client.json`을 측정 VM 밖의 비공개 폴더에 전달하고, 그 호스트에서 같은 CLI에 `--load-dir <폴더>`를 주어 부하를 실행한다. 생성된 `load.json`을 서버 교환 경로에 넘기면 서버가 추론·RSS·원인별 폴백을 회수하고 정리한다. 세션이 든 `client.json`은 로컬 증빙과 Git에 포함하지 않는다.
 
-`SharedModelStore`는 웹 프로세스가 소유한다. `store.get(version, lambda: selector.suspicion_model(version))`은 같은 버전 worker를 빌려주며 반환 포트의 `close()`는 worker를 닫지 않는다. 프로세스 종료 때 `store.close()`로 정리한다. 시험 조립은 이를 사용하고 운영 웹 연결은 B-09-01 담당이다.
+시험은 `SharedModelStore`, 운영 웹은 B-09-01의 `ProcessSuspicionModels`가 버전별 모델을 소유한다. 두 경로는 `selector.suspicion_model(version, in_process_logistic=True)`로 로지스틱을 선택한다. 판은 고정 버전의 포트를 빌리고 소유 보관소가 모델을 정리한다. 격리 worker 어댑터는 CLI 실행과 무거운 모델을 위한 경로로 남긴다.
 
 일반 timeout으로 worker를 유지한 호출은 연속 재기동 실패 수에 넣지 않는다. D-08-01 시험 조립은 NPC별 포트 호출·잠금 대기의 실제 시작/끝과 엔진 clock의 마감 시각을 같은 snapshot ID에 연결하고, 요청 UTC/monotonic 기준점으로 대사한다. 공식 부하는 11/11 PM 결정에 따라 코드 PR 병합 SHA를 고정한 기준 1회와 모델 켬 연속 2회로 판정한다.
 
@@ -157,6 +159,7 @@ python -m tools.ad_ctr_scenario score --out out/d1002/scenario --report out/ctr-
 | D-07-03 | 11/7 | intent/의 CPU 미세조정·동일 기준선 평가와 모델·계보 저장 경로를 연결 |
 | D-08-01 | 11/9 | 병합된 Selector와 실제 후보 50판 반복 재현. 격리 웹 부하의 실제 엔진·모델 모드 및 프로세스별 추론 집계 추가 |
 | D-08-01 | 11/10 | PM 장애 정책의 버전별 공유 worker·동일 버전 복구·연속 실패 대기와 부하 계측. 공통 처리 최적화 후 동급 VM 모델 켬 재측정: API p95 495.806ms·오류 0건, 폴백률 3.846%로 조건 6 미충족 |
+| D-08-01 | 11/11 | PM 결정에 따라 운영·부하 시험의 로지스틱을 웹 프로세스에서 직접 추론하고 두 버전 상주 RSS를 측정 |
 | D-08-04 | 11/8 | 로컬 Selector의 고정 버전 조회·특징 버전 검사와 A·B 재현 절차 추가 |
 | D-08-04 | 11/9 | A 쪽 재현 명령 `reproduce_model_games`(같은 모델·시드 두 실행 비교, 실제 v0 수령 전 가짜 모델 시험, E) |
 | D-08-04 | 11/9 | 사용자 변경 기준 적용, 실제 로컬 모델 인계와 A CLI·B 조립 50판 비교 완료 |

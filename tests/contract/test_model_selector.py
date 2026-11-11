@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from engine.domain.engine import PaldoEngine
 from engine.ports import EngineDeps, FeatureVersionMismatch, ModelUnavailable
@@ -44,6 +45,23 @@ class LocalModelSelectorTests(unittest.TestCase):
         old_model = selector.suspicion_model("fake-suspicion-previous")
         self.assertEqual(selector.suspicion_model("fake-suspicion-1").model_version, "fake-suspicion-1")
         self.assertEqual(old_model.model_version, "fake-suspicion-previous")
+
+    def test_web_selects_direct_logistic_and_keeps_worker_for_other_loads(self):
+        from server.infra.model_selector import LocalModelSelector
+
+        logistic = 'suspicion-logistic-0123456789ab'
+        other = 'suspicion-heavy-0123456789ab'
+        self.register(logistic)
+        self.register(other)
+        selector = LocalModelSelector(self.root, suspicion_version=logistic,
+                                      intent_version='', feature_version='fake-1')
+        with patch('ml.adapters.suspicion_model.InProcessSuspicionModelAdapter', side_effect=self.load_fixture) as direct, \
+             patch('ml.adapters.suspicion_model.load_model', side_effect=self.load_fixture) as worker:
+            self.assertEqual(selector.suspicion_model(logistic, in_process_logistic=True).model_version, logistic)
+            self.assertEqual(selector.suspicion_model(other, in_process_logistic=True).model_version, other)
+            self.assertEqual(selector.suspicion_model(logistic).model_version, logistic)
+        direct.assert_called_once_with(self.root / 'suspicion-v0' / logistic / 'models.pkl')
+        self.assertEqual(worker.call_count, 2)
 
     def test_wrong_feature_is_rejected_before_loading(self):
         self.register(feature="other")
