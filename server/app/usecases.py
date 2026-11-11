@@ -189,7 +189,11 @@ class GameService:
     def unfinished_open_games(self, player_pseudonym):
         """계정의 진행 중인 일반 판(회차 없음) ID를 시작 순서대로."""
         from .open_start import unfinished_open_games   # open_start가 이 모듈을 import하므로 늦게 불러온다
-        return unfinished_open_games(self.progress.load(player_pseudonym).game_ids, self.repository.load)
+        game_ids = self.progress.load(player_pseudonym).game_ids
+        reader = getattr(self.repository, 'unfinished_open_games', None)
+        if callable(reader):
+            return reader(game_ids)
+        return unfinished_open_games(game_ids, self.repository.load)
 
     def abandon_game(self, game_id, player_pseudonym):
         """진행 중인 일반 판을 중단 처리한다(삭제하지 않음). 이번 호출로 중단했으면 True, 아니면 False.

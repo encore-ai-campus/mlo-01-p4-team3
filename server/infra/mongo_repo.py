@@ -72,6 +72,20 @@ class MongoGameRepository:
         if document is None: raise KeyError(game_id)
         return from_jsonable(GameState,document['state']),from_jsonable(GameTruth,document['truth'])
 
+    def unfinished_open_games(self, game_ids):
+        """진척에 포함된 진행 중 일반 판 ID를 한 번 조회하고 원래 순서를 유지한다.
+
+        완료 판의 상태·진실을 전부 읽거나 복원하지 않는다. 삭제된 판은 건너뛰며
+        실제 중단·명령 저장 시 소유권·버전 CAS 확인은 기존 경로에서 수행한다.
+        """
+        if not game_ids:
+            return []
+        rows = self.collection.find(
+            {'_id': {'$in': list(game_ids)}, 'state.meta.session_id': None, 'state.result': None},
+            {'_id': 1})
+        found = {row['_id'] for row in rows}
+        return [game_id for game_id in game_ids if game_id in found]
+
     def find_command(self, game_id, command_id):
         """명령 ID에 대응하는 저장 응답을 찾는다. ID를 Mongo 필드명으로 쓰지 않는다."""
         document=self.collection.find_one({'_id':game_id},{'commands':{'$elemMatch':{'command_id':command_id}}})
