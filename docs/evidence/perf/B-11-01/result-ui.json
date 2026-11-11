@@ -1,0 +1,16 @@
+{
+  "base": "fd02936",
+  "worktree_base": "60fc9b8",
+  "server_tests": 543,
+  "server_passed": 529,
+  "server_skipped": 14,
+  "server_failures": 0,
+  "precheck_selected_tests": 493,
+  "browser_checks": 95,
+  "browser_failures": 0,
+  "injected_http_503": 3,
+  "unexpected_http_errors": 0,
+  "unexpected_browser_errors": 0,
+  "viewports": ["1528x730", "390x844"],
+  "screenshots": "backups/B-11-01-result-qa/"
+}
