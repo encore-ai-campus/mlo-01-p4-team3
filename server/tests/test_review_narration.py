@@ -96,6 +96,20 @@ class NarrationService(UnitTestCase):
         self.service.process_next()
         return self.narrator.bodies
 
+    def test_basis_is_appended_after_llm_and_template_not_sent(self):
+        """의심 근거 풀이는 생성 요청에 넣지 않고, LLM·템플릿 문장 뒤에 그대로 붙인다(11/11)."""
+        basis = "다른 사람들도 훈장을 수상하게 여기고 있었습니다."
+        out = review_output()
+        out.timeline[0] = replace(out.timeline[0], text=out.timeline[0].text + " " + basis)
+        payload = narration_input(out, CONTENT, PublicRecord(), seed=1, bases={"d5": basis})
+        first = payload["blocks"][0]["items"][0]
+        self.assertEqual((first["template"], first["basis"]), ("주모는 훈장에게 표를 던졌습니다.", basis))
+        self.service.ensure(out, CONTENT, PublicRecord(), 1, bases={"d5": basis})
+        self.service.process_next()
+        self.assertNotIn(basis, json.dumps(self.narrator.bodies, ensure_ascii=False))
+        texts = {n.npc: n.sentences[0].text for n in self.service.status("g1").npcs}
+        self.assertEqual(texts, {"jumo": GOOD["jumo"] + " " + basis, "meosum": GOOD["meosum"]})
+
     def test_register_is_idempotent_and_skips_aborted_and_disabled(self):
         """등록은 멱등이고, 중단된 판과 기능 꺼짐이면 등록하지 않는다."""
         self.service.ensure(review_output(), CONTENT, PublicRecord(), 1)
