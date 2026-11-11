@@ -201,7 +201,6 @@ class GameService:
         game_ids = self.progress.load(player_pseudonym).game_ids
         if self.find_open_games is not None:
             return self.find_open_games(game_ids)
-
         return unfinished_open_games(game_ids, self.repository.load)
 
     def abandon_game(self, game_id, player_pseudonym):

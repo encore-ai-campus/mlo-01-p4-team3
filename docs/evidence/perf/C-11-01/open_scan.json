@@ -1,8 +1,8 @@
 {
   "task": "C-11-01",
-  "commit": "79da6f13f1e096b80d52c5a674f5cd8533f46f9c",
-  "generated_at": "2026-11-11T00:04:41Z",
-  "source": "4ca94e4 actual Mongo: unique temporary collection, same 203 IDs, old load loop versus projected query, ordered result equality; not whole-API latency",
+  "commit": "ac6a4f8e327044bf9055e9c0b4a463f0ea8f480b",
+  "generated_at": "2026-11-11T05:10:41Z",
+  "source": "92aece2 canonical MongoGameRepository.unfinished_open_game_ids; real isolated Mongo 203 IDs; ordered result comparison, synthetic probe dropped; not whole-API latency",
   "metrics": {
     "history_ids": {
       "value": 203,
@@ -17,11 +17,11 @@
       "unit": "회"
     },
     "old_ms": {
-      "value": 3061.038,
+      "value": 3102.049,
       "unit": "ms"
     },
     "batch_ms": {
-      "value": 5.538,
+      "value": 2.861,
       "unit": "ms"
     },
     "result_mismatches": {
