@@ -47,6 +47,13 @@ def other():
         pass
     out["third"] = third.fields()
 t = threading.Thread(target=other, name="worker-x"); t.start(); t.join()
+# 서버가 끊은 연결 모사: 상태 확인이 실패하면 connect에서 다시 맺고 표시한다.
+connection.health_check_enabled = True
+connection.health_check_done = False
+connection.is_usable = lambda: False
+with timing.collect() as fourth:
+    pass
+out["fourth"] = fourth.fields()
 print(json.dumps(out))
 '''
 
@@ -79,6 +86,12 @@ class ServeTimingTests(unittest.TestCase):
         self.assertTrue(self.out["third"]["new_connection"])
         self.assertTrue(self.out["third"]["thread_first_connection"])
         self.assertEqual(self.out["third"]["thread"], "worker-x")
+
+    def test_stale_connection_is_replaced_inside_connect(self):
+        fourth = self.out["fourth"]
+        self.assertTrue(fourth["stale_connection_replaced"])
+        self.assertTrue(fourth["new_connection"])
+        self.assertFalse(self.out["second"]["stale_connection_replaced"])
 
     def test_only_numbers_flags_and_thread_name(self):
         for fields in self.out.values():

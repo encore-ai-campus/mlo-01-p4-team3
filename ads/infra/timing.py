@@ -53,9 +53,14 @@ def collect():
     timing = ServeTiming()
     token = _current.set(timing)
     try:
-        timing.flags["new_connection"] = connection.connection is None
         timing.flags["thread_first_connection"] = not getattr(_thread_seen, "connected", False)
         started = time.perf_counter()
+        had = connection.connection is not None
+        # Django는 상태 확인(CONN_HEALTH_CHECKS)을 첫 커서에서야 한다. 미리 해서 끊긴 연결을 다시 맺는 비용도
+        # connect에 넣는다(Codex 지적).
+        connection.close_if_health_check_failed()
+        timing.flags["stale_connection_replaced"] = had and connection.connection is None
+        timing.flags["new_connection"] = connection.connection is None
         connection.ensure_connection()
         timing.add("connect", time.perf_counter() - started)
         _thread_seen.connected = True
