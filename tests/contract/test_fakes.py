@@ -127,6 +127,10 @@ class Repository(unittest.TestCase):
         with self.assertRaises(ValueError):
             repo.commit("g_test", 1, make_state(5), GameTruth("g_test", {}), [], StoredCommand("c3", "{}"))
         self.assertIsNotNone(repo.find_command("g_test", "c1"))
+        events = repo.events("g_test")                 # 복기용 읽기(E-10-10): 전체·seq 순·복사본
+        self.assertEqual([e.seq for e in events], [0])
+        events[0].payload["changed"] = True
+        self.assertNotIn("changed", repo.events("g_test")[0].payload)
 
     def test_sink_dedup(self):
         s = ListEventSink()
