@@ -35,6 +35,8 @@ python -m unittest tests.infra.test_outbox_publisher -v
 
 ## 변경 이력
 
+일반 판 목록은 `MongoGameRepository.unfinished_open_games`가 진척 ID 집합 안의 진행 중 일반 판만 `_id` 투영으로 조회한다. 모든 완료 판의 상태·진실을 복원하지 않으며, 반환 순서는 진척 순서다. 저장소의 선택 기능을 사용하지 않는 조립은 기존 `load` 필터를 유지한다. 실제 상태 변경의 소유권·CAS 확인은 기존 경로를 사용한다. [검증](../evidence/C-11-01.md)
+
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
 | C-06-01 | 11/6 | Mongo majority/CAS·진척·불변 콘텐츠, 실제 VM 계약 시험과 지연 측정 |
@@ -42,3 +44,4 @@ python -m unittest tests.infra.test_outbox_publisher -v
 | C-06-03 | 11/6 | 본 모듈 변경 없음, 광고·계정 MySQL 분리는 ops/mysql 인계 |
 | C-06-04 | 11/6 | 당일 모듈 문서 일괄 갱신, P-31 상시 LLM 취소·오프라인 생성·RunPod 측정 범위 구분 |
 | E-09-09 | 11/9 | 콘텐츠 번들 버전별 프로세스 캐시(`MongoContentSource.load`, 첫 조회만 Mongo, 없는 버전·조회 실패는 캐시 안 함) |
+| C-11-01 | 11/11 | 새 판 시작·이어 하기의 완료 이력 전량 읽기를 진행 일반 판 ID 투영 조회로 줄임, 실제 Mongo 결과·순서·쿼리 수 대조 |

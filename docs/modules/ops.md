@@ -98,4 +98,4 @@ MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/READM
 | C-08-04 | 11/8 | E 태그 archive·4th_private 전용 조회 계정 guard |
 | E-09-10 | 11/9 | 실행 도구 `web --port 8000·8002`, Caddyfile upstream 2개·능동 상태 확인, 로컬 Prometheus `paldo-web` 대상 2개(`process` 라벨), Compose 선택 Redis(profile `redis`), proxy README 웹 프로세스 2개 절차·되돌림·비교 측정(`tools/perf/api_bench.py --web-processes`)·선택 Redis 절 |
 | C-09-04 | 11/9 | 판 아웃박스 기반 진척 재처리 및 실제 Mongo 멱등 검증 |
-| C-11-01 | 11/11 | 네 실제 장애 판·API 60건·380이벤트 대조, 일반 판 적재 정지 진단·복구 |
+| C-11-01 | 11/11 | 네 실제 장애·380이벤트 대조, Bronze 복구, 계정 이력에 따른 부하 비교 교란 발견·조회 수정과 새 코호트 두 웹 검증 |

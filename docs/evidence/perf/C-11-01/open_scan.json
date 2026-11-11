@@ -1,0 +1,32 @@
+{
+  "task": "C-11-01",
+  "commit": "79da6f13f1e096b80d52c5a674f5cd8533f46f9c",
+  "generated_at": "2026-11-11T00:04:41Z",
+  "source": "4ca94e4 actual Mongo: unique temporary collection, same 203 IDs, old load loop versus projected query, ordered result equality; not whole-API latency",
+  "metrics": {
+    "history_ids": {
+      "value": 203,
+      "unit": "건"
+    },
+    "old_find_queries": {
+      "value": 203,
+      "unit": "회"
+    },
+    "batch_find_queries": {
+      "value": 1,
+      "unit": "회"
+    },
+    "old_ms": {
+      "value": 3061.038,
+      "unit": "ms"
+    },
+    "batch_ms": {
+      "value": 5.538,
+      "unit": "ms"
+    },
+    "result_mismatches": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
