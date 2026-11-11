@@ -1,0 +1,32 @@
+{
+  "task": "D-10-03",
+  "commit": "098b0777c1a7a1b8e0284e8c9b6a50f6d28b5a82",
+  "generated_at": "2026-11-11T05:11:19Z",
+  "source": "python -m ml.selfplay --train-games 1000 --games 1000 --seed 1111 --out <new directory> --record",
+  "metrics": {
+    "baseline_games": {
+      "value": 1000,
+      "unit": "count"
+    },
+    "baseline_village_win_rate": {
+      "value": 0.497,
+      "unit": "ratio"
+    },
+    "baseline_illegal_commands": {
+      "value": 0,
+      "unit": "count"
+    },
+    "selfplay_games": {
+      "value": 1000,
+      "unit": "count"
+    },
+    "selfplay_village_win_rate": {
+      "value": 0.853,
+      "unit": "ratio"
+    },
+    "selfplay_illegal_commands": {
+      "value": 0,
+      "unit": "count"
+    }
+  }
+}

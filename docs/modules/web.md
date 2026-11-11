@@ -146,6 +146,7 @@ D-08-01 부하 최적화에서 Mongo 조립은 계정 진척의 판 ID 집합 �
 | B-08-03 | 11/9 | E 보완: 클릭 실패 시 홈 대신 게임 조회 없는 안내(장애 중 홈 재조회로 p95가 오르던 원인), 합성 소재 `syn:` 랜딩 허용, 중계·지면 로그 `serve_id`, 장애 시험에 클릭 도착 경로·단계별 조회 수 계측. D 인계 검증에서 HTTP 제공자의 클릭·랜딩도 기존 `LANDING_PATH`를 사용하도록 보완하고 일반·합성 소재 실제 HTTP 흐름 확인 |
 | B-10-07 | 11/9 | 확정 VN UI 인계·v5 전신/초상·읽기 보완·classic/vn 설정·PM 검토, 전체 완료 아님 |
 | E-09-10 | 11/9 | 게임 웹 Daphne 2개(8000·8002)와 Caddy `least_conn`·`/healthz` 능동 확인, 채널 레이어 설정 전환(`memory` 기본·`redis` 선택, 연결 실패 시 기동 거부), 프로세스별 로그 파일, 비교 부하 `tests/multiproc_bench.py`(`api_bench.py --web-processes`·`--front`·`--result-name`), 동시성 구조와 한계(server/DESIGN.md) |
+| D-10-03 | 11/10 | 선택 승률 JSON 모델을 운영 조립·종료 후 자기 판 복기 DTO에 연결, D3 그래프 숨김과 권한 검사 |
 
 B-06-03의 실제 Mongo 조립은 `server/paldo_web/mongo.py`를 사용한다. 엔진·모델을 명시적으로 넘겨 `open_mongo_runtime`을 호출하고 HTTP 처리 전 `configure()`로 연결한다. 기존 `PALDO_GAME_SERVICE_FACTORY` 함수 안에서는 `factory_service()`를 반환한다. 고정된 콘텐츠 버전·같은 고정 판을 복원한다. 접속 정보는 기존 `PALDO_MONGO_URI` 하나를 사용한다. 고유 컬렉션의 실제 시험은 `server/tests/mongo_game_sessions.py`이며 B-06-03의 회차·가명·동의 재검증은 완료했고 운영 조립·PM 브라우저 재개 판정도 병합됐다. VM·ASGI 성능은 B-07-05, 실제 광고 요청은 B-08-03에서 관리한다. 보조 저장의 실제 검증은 B-07-02 증빙에 있다.
 

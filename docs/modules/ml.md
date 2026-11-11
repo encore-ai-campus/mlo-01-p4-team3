@@ -166,5 +166,10 @@ python -m tools.ad_ctr_scenario score --out out/d1002/scenario --report out/ctr-
 | D-08-04 | 11/9 | 사용자 변경 기준 적용, 실제 로컬 모델 인계와 A CLI·B 조립 50판 비교 완료 |
 | D-10-02 | 11/9 | 확정 Delta 맥락 CTR 학습, 동일 베타 평가, LightGBM 관문·MLflow 후보·시나리오 6 채점 |
 | D-09-01 | 11/11 | 공식 동결 평가의 기준선 유지 판정과 D-07-03 체크포인트 NAS 인계 |
+| D-10-03 | 11/10 | 11/11 dev 반영, 버전 제한 JSON 승률 추론·복기 API·holdout 지표·패널, 표 기반 자기 대전 1,000판 비교, 프리셋·미학습 비밀 조합 및 무감금 상한 검증 |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.
+
+승리 확률은 `python -m ml.win_probability`로 학습한다. `model.json`은 유한 계수·특징·규칙·콘텐츠·프리셋과 holdout 지표를 포함한다. `server/infra/win_probability.py`가 표준 라이브러리로 복기 `win_prob`를 계산하고 offline_holdout Prometheus gauge를 제공한다. `PALDO_WIN_PROBABILITY_MODEL`은 신뢰된 로컬 JSON 경로이며 기본은 빈 값이다. 종료된 자기 판만 API가 반환하고, D3 결정의 화면 그래프 숨김을 적용한다. Grafana `model.json`의 비교 패널과 운영 설정·배포는 별도 수신 검증이 남아 있다.
+
+`python -m ml.selfplay --out <new directory> --record`는 양 진영의 표 기반 투표 정책을 1,000판 학습하고, 표를 고정해 A 규칙과 동일 시드 1,000판씩 비교한다. 추정 모델은 양쪽 FakeSuspicionModel, 플레이어는 LogicBot이다. `python -m ml.preset_report --out <new directory> --model <trusted models.pkl> --training-events <official events.jsonl> --record`는 현재 콘텐츠 배정 검사와 각 500판 개발 측정, fit·온도 보정 조합을 뺀 비밀 조합 평가를 수행한다. content-1.1에서 short5·base6·base7·large8을 측정했다. CLI는 새 출력 디렉터리를 요구한다.

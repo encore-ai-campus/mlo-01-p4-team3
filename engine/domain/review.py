@@ -76,7 +76,13 @@ class ReviewTrace:
     game_id: str
     rule_version: str
     items: list[ReviewTraceItem] = field(default_factory=list)
-    win_prob: Optional[list] = None          # 선택 필드(D-10-03). 지금은 늘 None
+    win_prob: Optional[list[dict[str, Any]]] = None  # D-10-03: 날짜별 day·probability, 없으면 None
+
+
+def public_win_features(day, preset_id, public):
+    """날짜 최초 관측의 공개 건수만 승률 특징으로 사용한다."""
+    return dict(day=day, preset=preset_id,
+                **{key: len(public[key]) for key in ("locks", "confessions", "disappearances")})
 
 
 def representative_code(codes: list[str]) -> str:
@@ -121,7 +127,7 @@ def _speakers(public: Optional[PublicRecord]) -> dict[str, str]:
     return {} if public is None else {s.speech_id: s.speaker for s in public.speeches}
 
 
-def review_trace(inp: TraceInput) -> ReviewTrace:
+def review_trace(inp: TraceInput, win_prob: Optional[list[dict[str, Any]]] = None) -> ReviewTrace:
     """decision 이벤트(seq 순)로 복기 항목을 만든다. 플레이어 결정(actor=mudang)은 넣지 않는다."""
     events = sorted(inp.events, key=lambda e: e.seq)
     speakers = _speakers(inp.public)
@@ -146,7 +152,7 @@ def review_trace(inp: TraceInput) -> ReviewTrace:
                 used.add(j)
                 break
         items.append(item)
-    return ReviewTrace(inp.game_id, inp.rule_version, items)
+    return ReviewTrace(inp.game_id, inp.rule_version, items, win_prob)
 
 
 def evidence_speaker(ref: EvidenceRef, public: Optional[PublicRecord]) -> Optional[str]:
