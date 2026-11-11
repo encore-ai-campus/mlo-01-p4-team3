@@ -111,6 +111,15 @@ python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version 
 
 `select`는 고정 설정의 모델을 실제로 열어 검증한 뒤 버전 두 개와 `False`를 반환한다. 파일·로더·모델 ID 오류는 `ModelUnavailable`, 의심 특징 불일치는 `FeatureVersionMismatch`다. 조회는 로컬 경로와 버전만 사용한다. 판별 인스턴스 수명·버전 고정과 카나리아는 B-09-01, 원격 레지스트리는 C-09-01에서 연결한다. BERT 해석기 연결은 D-09-02 4번, 동결 사람 평가는 D-09-01 범위다.
 
+### 의심 점수 섞기 α (D-10-01, 11/11)
+
+관문(`ml/gate.py`)은 그대로 두고 재학습(`python -m ml.suspicion.retrain`)이 섞는 비율 α를 고른다. 후보 하나의 최종 로짓은 `α × 모델 로짓/온도 + (1−α) × rule_score`다. α=1은 기존 모델, α=0은 규칙 의심도와 같은 확률이다.
+
+- 규칙(도메인): `ml/suspicion/blend.py`. α 후보는 0.0~1.0의 0.1 간격 11개다. 관문 benchmark 사유가 없는 α 중 log_loss가 가장 낮은 것을 고르고, 같으면 큰 α를 고른다. 고른 α가 0.3 미만이면 `alpha_too_small`, 규칙 점수 대비 log_loss 개선이 0.01 미만이면 `no_meaningful_gain`이다. 이 경우 관문을 통과해도 `accepted=false`라 승격하지 않는다.
+- 흐름(응용): `ml/suspicion/retrain.py`. α마다 같은 시드로 benchmark 봇 판을 다시 돌려 마을 승률을 재고, 기준선 판의 관측으로 예측 지표를 잰다. 고른 산출물이 `trained/models.pkl`이고, 원래 모델은 `trained/models.base.pkl`이다. `decision.json`의 `accepted`는 관문 통과이면서 유효 후보일 때만 참이다. 관문 결과는 `gate_accepted`, α 탐색 표는 `blend_search`, 고른 α는 `blend_alpha`, 규칙 대비 개선폭은 `log_loss_gain_vs_rule`에 기록된다. 같은 값이 MLflow 태그 `paldo.blend_alpha`·`paldo.blend_search`·`paldo.promotable`에도 들어간다.
+- 서빙(인프라 어댑터): `ml/adapters/suspicion_model.py`가 산출물의 `blend_alpha`를 읽는다. 값이 없는 기존 산출물(운영 `suspicion-logistic-9bbee626f29b` 등)은 α=1로 읽어 기존 계산 그대로이고, 0~1 밖이면 불러오지 않는다.
+- 사람 판(`--human-rows <rows.jsonl>`): 같은 폴더 `manifest.json`에 실제 `village_win_rate`가 있어야 한다. 11/10 사용자 테스트 내보내기에는 NPC 관측·정답 이벤트가 없어 만들 수 없다(`server/infra/ut_export.py`가 제외한다). 그래서 지금은 관문이 `human:invalid_or_missing_measurement`로 거부한다.
+
 ### 광고 CTR (D-10-02)
 
 ```powershell
@@ -167,6 +176,7 @@ python -m tools.ad_ctr_scenario score --out out/d1002/scenario --report out/ctr-
 | D-10-02 | 11/9 | 확정 Delta 맥락 CTR 학습, 동일 베타 평가, LightGBM 관문·MLflow 후보·시나리오 6 채점 |
 | D-09-01 | 11/11 | 공식 동결 평가의 기준선 유지 판정과 D-07-03 체크포인트 NAS 인계 |
 | D-10-03 | 11/10 | 11/11 dev 반영, 버전 제한 JSON 승률 추론·복기 API·holdout 지표·패널, 표 기반 자기 대전 1,000판 비교, 프리셋·미학습 비밀 조합 및 무감금 상한 검증 |
+| D-10-01 | 11/11 | 관문은 그대로 두고 재학습이 의심 점수 섞기 α를 고름(유효 후보 α≥0.3·규칙 대비 0.01 개선), 서빙 `blend_alpha` 하위 호환, 사람 판 평가 입력 `--human-rows` |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.
 
