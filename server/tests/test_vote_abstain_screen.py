@@ -18,6 +18,8 @@ def vote_view(kinds, votes=()):
 
 
 class AbstainScreen(SimpleTestCase):
+    """기권 버튼·기록 표시·폼 변환."""
+
     def actions(self, view):
         """행동 선택 조각(VN·classic 공통 `meeting_actions.html`)을 그린다."""
         return render_to_string("meeting_actions.html", meeting_context(view))
@@ -50,17 +52,20 @@ class RuleBaseSetting(SimpleTestCase):
     """새 일반 판 규칙은 `PALDO_RULE_BASE` 설정 하나로 고른다. 비우면 운영 기본 rule-0.8."""
 
     def versions(self, base):
+        """설정 base로 일반 판 시작 버전을 구한다."""
         from django.test import override_settings
         from server.paldo_web.composition import open_start_versions
         with override_settings(ACTIVE_RULE_BASE=base, ACTIVE_CONTENT_VERSION="content-1.0.1"):
             return open_start_versions()
 
     def test_default_and_abstain(self):
+        """비우면 rule-0.8, rule-0.9면 기권 규칙 버전이다."""
         from engine.domain import params
         self.assertEqual(self.versions("").rule_version, params.RULE_PARAMS_VERSION)
         self.assertTrue(self.versions("rule-0.9").rule_version.startswith("rule-0.9."))
 
     def test_unknown_blocks_start(self):
+        """허용 밖 값이면 판 시작을 막는다(503)."""
         from server.app.usecases import StartUnavailable
         with self.assertRaises(StartUnavailable):
             self.versions("rule-7.0")

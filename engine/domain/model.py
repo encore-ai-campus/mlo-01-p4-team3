@@ -72,6 +72,7 @@ class DivinationResult(str, enum.Enum):
 
 
 class CommandKind(str, enum.Enum):
+    """참가자 명령 종류. `ABSTAIN`(투표 기권)은 rule-0.9~ 판의 투표·결선에서만 합법이다."""
     SUSPECT = "suspect"
     DEFEND = "defend"
     POINT_CONTRADICTION = "point_contradiction"
@@ -251,6 +252,7 @@ class Speech:
 
 @dataclass
 class VoteRecord:
+    """공개된 한 표. 대상이 None이면 기권(rule-0.9~)이다."""
     vote_id: str
     day: int
     round: str          # "main" | "runoff"
@@ -709,6 +711,7 @@ class GameResult:
 
 @dataclass
 class GameState:
+    """판 상태(공개 기록·참가자·단계·비공개 표 등). 진실(`GameTruth`)은 따로 둔다."""
     meta: GameMeta
     state_version: int
     day: int
