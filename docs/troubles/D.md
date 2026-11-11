@@ -139,5 +139,5 @@
 ### D-11-02
 - 문제: 밴딧 보상 조인 `ml/bandit.py` `games_from_events`가 창귀 승리 판을 `invalid winner`로 거부했다.
 - 원인: 조인은 승자 값을 `'possessed'`로 검사했지만 엔진 `game_ended`는 `Faction` 값 `'changgwi'`를 낸다(`pipeline/spark`는 이미 `'village'`·`'changgwi'`로 검사).
-- 대응: 허용 값을 `'village'`·`'changgwi'`로 맞추고, 창귀 승리 조인과 엔진에 없는 값(`possessed`·`draw`·`null`) 거부 테스트를 더했다. Mongo 시험 픽스처도 `'changgwi'`로 고쳤다. 11/11 사용자 결정(운영에 필요한 D 작업 중 D-08-01 부하 측정과 겹치지 않는 것은 E가 대신 함)으로 E가 처리했다.
+- 대응: 허용 값을 `'village'`·`'changgwi'`로 맞추고, 창귀 승리 조인과 엔진에 없는 값(`possessed`·`draw`·`null`) 거부 테스트를 더했다. Mongo 시험 픽스처도 `'changgwi'`로 고쳤다.
 - 결과: 11/10 운영 내보내기(비공개 사본)의 `game_ended` 승자 값은 `village` 413·`changgwi` 191·중단 40판(`completed=false`)이었다. 내보내기에는 `topic`·`model_versions`가 없어 조인 자체를 그 자료로 돌리지는 못했고, 같은 승자 값으로 만든 테스트로 확인했다. `tests.test_bandit` 12개 통과.
