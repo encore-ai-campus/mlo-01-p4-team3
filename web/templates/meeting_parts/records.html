@@ -101,9 +101,10 @@
   {% endif %}
   {% if vm.speeches %}
     <details class="speech-transcript"><summary>공개 발언 전체 보기</summary><h2>발언</h2>
-    {% for speech in vm.speeches %}<p class="vn-source" data-line-id="{{ speech.speech_id }}" data-speaker-id="{{ speech.speaker_id }}" data-day="{{ speech.day }}" data-phase="{{ speech.phase }}" data-speaker="{{ speech.speaker_name|display_name }}" data-sprite="{% if speech.speaker_id == 'mudang' %}{% with sprite_id=mudang_portrait_id|default:'portrait:mudang_f'|cut:'portrait:' %}{% with key='sprite:'|add:sprite_id %}{% review_asset key %}{% endwith %}{% endwith %}{% else %}{% with sprite_id='sprite:'|add:speech.speaker_id %}{% review_asset sprite_id %}{% endwith %}{% endif %}">{{ speech.speaker_name|display_name }}:
+    {% for speech in vm.speeches %}{% with expression=vn_expressions|get_item:speech.speech_id %}<p class="vn-source" data-line-id="{{ speech.speech_id }}" data-speaker-id="{{ speech.speaker_id }}" data-day="{{ speech.day }}" data-phase="{{ speech.phase }}" data-speaker="{{ speech.speaker_name|display_name }}" data-sprite="{% vn_sprite speech.speaker_id expression mudang_portrait_id %}"{% if expression %} data-expression="{{ expression }}"{% endif %}>{{ speech.speaker_name|display_name }}:
       <span class="vn-source-text" id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
-    </p>{% with clue=clue_lines|get_item:speech.speech_id %}{% for line in clue %}{% include "meeting_parts/vn_line.html" %}{% endfor %}{% endwith %}{% endfor %}
+      {% if speech.speech_id in vn_tell_lines %}<span class="vn-tell-notice" data-vn-tell>{{ vn_tell_notice }}</span>{% endif %}
+    </p>{% endwith %}{% with reaction=reaction_lines|get_item:speech.speech_id %}{% for line in reaction %}{% include "meeting_parts/vn_line.html" %}{% endfor %}{% endwith %}{% with clue=clue_lines|get_item:speech.speech_id %}{% for line in clue %}{% include "meeting_parts/vn_line.html" %}{% endfor %}{% endwith %}{% endfor %}
     </details>
   {% endif %}
   {% if published_votes %}

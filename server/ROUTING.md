@@ -34,7 +34,7 @@ B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_benc
 
 운영 팩토리는 `server.infra.game_factory.build_game_service` → `paldo_web/mongo.py` 실행 자원 → `infra/interaction_store.py` 보조 저장을 연결한다. B-09-01: 판 시작 모델 버전 고정·카나리아 규칙은 응용 `app/model_versions.py`, 레지스트리 조회는 인프라 `infra/model_registry.py`(C-09-01 전 임시 `StaticModelRegistry`), 폴백 지표는 `paldo_web/engine_metrics.py`, 업데이트 내역 패널은 `game.html`의 `update_history.html`(태그 `update_history`). B-06-02 시험 조립과 분리되며 설정·실행 순서는 [웹 모듈](../docs/modules/web.md#사용법)에 있다.
 
-`POST /admin/sessions` → `app/test_sessions.py`는 최신 엔진의 합성 규칙 버전(`rule-0.7.decision-1`)을 회차와 판 메타에 그대로 전달한다. `tests/test_sessions.py`가 등록·시작과 잘못된 버전 거부를 확인한다.
+`POST /admin/sessions` → `app/test_sessions.py`는 최신 엔진의 합성 규칙 버전(`rule-0.8.decision-2`, 11/10 A-10-01 rule-0.8)을 회차와 판 메타에 그대로 전달한다. `tests/test_sessions.py`가 등록·시작과 잘못된 버전 거부를 확인한다.
 
 dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결과는 [B-06-02 증빙](../docs/evidence/B-06-02.md)에 둔다.
 
@@ -98,3 +98,29 @@ B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story
 계정 GET/POST·홈·게임 시작 URL과 시작 정책은 유지한다. `accounts/views.py`는 배정된 미완료 판 여부를 `test_round_pending`으로 전달하고 계정의 `account-start.js`가 일반/테스트 영역을 하나씩 펼친다. `accounts/base.html`이 판 시작 전 로고와 계정 전용 CSS를 연결하고 게임 기본 템플릿은 로고를 연결하지 않는다. 배경은 `api/assets.py`의 기존 `asset_url`로 공식 manifest의 정식 night를 읽는다. 자원은 기존 공식 manifest·`web/static/` 허용 경로로 제공한다.
 
 `tests/ui_theme_preview.py --font-probe`는 `tests/ui_font_probe.py`를 시험 미들웨어에만 주입한다. 로그인 GET에만 글꼴 Timing 표본을 추가하며 운영 설정·URL은 바꾸지 않는다. 기록 도구는 `tools/perf/account_assets.py`다. [웹 라우팅](../web/ROUTING.md#b-10-08-계정-디자인로고글꼴)
+
+
+## 확정 표정 에셋 교체 (2026-11-10)
+
+A-10-06의 기쁨·당황 16종 전신과 같은 수의 파생 초상을 기존 manifest ID·경로에 등록했다. 기본 인물 파일·API·공개 사건 선택 로직은 변경하지 않았다. 복구한 출처 기록과 제출 상태는 docs/evidence/A-10-06.md를 따른다.
+
+A-11-04의 슬픔 8종 전신과 같은 수의 파생 초상을 기존 manifest ID·경로에 등록했다. 기본 인물 파일·API·공개 사건 선택 로직은 변경하지 않았다. 복구한 출처 기록과 제출 상태는 docs/evidence/A-11-04.md를 따른다.
+
+### 공개 사건 표정 자동 연결 (B-10-07, 2026-11-10)
+
+A-10-06·A-11-04의 확정 그림을 공개 사건에 연결했다. 앞 절의 에셋 배치 검수와 별도로, 현재 대사·사건 ID마다 표정을 계산한다. 감싸진 대상은 다음 자기 대사에 기쁨, 의심·모순 지적·공개된 탁한 점괘의 대상은 다음 자기 대사에 당황, 희생자 발표 뒤 첫 대사·고백·감금 당사자는 슬픔이다. 다음 대사에서 기본으로 돌아오며, 겹치면 슬픔 > 당황 > 기쁨이다. 승인된 예외로 투표 생존 기쁨과 아침 첫 대사 슬픔이 겹친 한 줄은 기쁨이다.
+
+표정 선택은 PlayerView의 공개 기록만 받고 역할·진위·현재 생존 상태·개인 점괘는 입력하지 않는다. 기색은 공개 기록의 shown=True인 주장에만 문구와 당황을 붙인다. 표정 파일이 미등록·임시·유실이면 같은 인물의 기본 그림으로 대체하고 남/여 무당 선택을 유지한다. API·명령·DTO·엔진·이미지 파일·계약·기획·결정 문서는 바꾸지 않았다. 에셋 규격표 7절은 B-10-07 1-3에 이미 승인된 11/9 규칙으로 동기화했다.
+
+[표정 연결 검수·한계](../docs/evidence/B-10-07.md#공개-사건-표정-연결-2026-11-10). 실운영 DB·VM 판정이나 B-10-07 전체 완료를 뜻하지 않는다.
+
+| 경로 | 책임·호출 |
+|---|---|
+| `meeting_view.meeting_context` | 기존 `/games/{id}` HTML·htmx 응답의 표시 줄과 공개 기록 → `vn_expressions.expression_cues` |
+| `vn_expressions.py` | 표시 순서로 한 줄 표정·공개 기색 ID 계산. 도메인/DB/별도 HTTP 호출 없음 |
+| `vn_script.reaction_target` | 공개 대상·근거 진술에서 모순 지적/의심 대상 선택, 기존 즉시 반응과 공유 |
+| `ui_assets.vn_sprite_url` → 템플릿 `vn_sprite` | 공식 manifest 조회, 실제 표정 없으면 기본 sprite, 무당 선택 보존 |
+
+### B-11-01 캐릭터·도움말 표시 보완 (2026-11-11)
+
+기존 게임 조회 → 회의 템플릿 → `web/static/game.css` 경로를 그대로 쓴다. 캐릭터 hover/active 투명 배경과 모바일 도움말 배치만 보완한다. 서버 URL·API·DTO·명령 처리·응답은 변경하지 않았다. [검증](../docs/evidence/B-11-01.md).

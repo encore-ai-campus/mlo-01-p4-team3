@@ -35,9 +35,18 @@
 | 결말 문안 바꾸기 | 데이터 `content/endings_v1.json`, 검사 `python -m tools.check_endings`(규칙·조립 `tools/check_endings.py`), 형식 `docs/contracts/content.md` 1절 `Ending` |
 | 의도 예시 추가·검사 | 데이터 `content/intent/examples_v1.jsonl`, 규칙 `tools/intent_examples.py`(집계 `python -m tools.intent_examples`), 형식 `docs/contracts/intent.md`. LLM 변형 규칙은 도메인 `llm/intent_variants.py`, 생성·반영은 인프라 `llm/bench/gen_intent_variants.py` |
 | LLM 모델·스레드·실행 방식 다시 재기 | 인프라 `llm/bench/run_bench.py`(`--help`), 결과·결정 `docs/reports/llm_bench.md` |
+| E-10-13 템플릿 변형 생성 서버(Kanana) 켜기·끄기·접속 | 운영 절차 `ops/runbook/llm_gen.md`(구성·시작·정지·터널·로그·라이선스 규칙). 생성 코드는 인프라(서버 호출), 검사는 도메인 `llm/validator.py` 재사용. 주소·계정·초기화 절차는 저장소 밖(`4th_private`) |
 | 추궁 답변 프롬프트·검증 규칙·지표 정의 바꾸기 | 도메인 `llm/prompt.py`·`llm/validator.py`·`llm/mvp_metrics.py`(테스트 `tests/llm/`). 평가 세트는 `python -m llm.eval_set --seed 1`로 다시 만들고, 측정은 `run_bench.py --eval`(검증 규칙만 바꿨으면 `--eval … --rejudge`로 저장된 기록 재판정) |
 | GPU 시연 자유 질문 답변 검사 규칙·평가 세트 바꾸기 | 도메인 `llm/free_answer.py`·`llm/free_answer_eval.py`(테스트 `tests/llm/test_free_answer.py`의 반례 표를 함께 고침, 평가 세트는 `python -m llm.free_answer_eval --seed 1`). 부하·Pod 스크립트는 인프라 `llm/bench/free_answer_load.py`·`watch_pods.py`·`run_pod.sh`, 실행 절차 `ops/runbook/gpu_demo.md` |
 | LLM MVP 제출 묶음·코랩 노트북 고치기 | 표현·응용 `tools/build_llm_bundle.py`(zip, `python -m tools.build_llm_bundle --out out/llm_mvp/`), 표현 `llm/colab/paldo_llm_mvp.ipynb`, 테스트 `tests/tools/test_build_llm_bundle.py`. zip·실행한 사본은 `out/`에만 |
 | 사용자 테스트 일정·설문 문항·고정 시드 판 바꾸기 | `docs/user_test/plan.md`(동의 문구·수집 항목의 원본은 `docs/contracts/privacy.md`) |
 | 사용자 테스트 중 웹 장애 대처 | `ops/runbook/user_test_incident.md`(회차 등록·버전 값·동결은 `docs/user_test/plan.md` 4절) |
 | 이미지 추가·교체 | 같은 경로에 덮어쓰기만. 규격·파일명은 `docs/assets/spec.md`, 코드는 `manifest.json`·`image_path`로만 참조(기준 `docs/tasks/E_pm.md` "에셋 작업 기준", 실제 에셋 태스크는 `docs/tasks/A_engine.md` `[에셋]`, 남은 일 담당 B) |
+
+## A-10-06 표정 파일 등록
+
+기존 content/images/sprite → make_placeholders → portrait → manifest → server/api/assets.py 경로로 기쁨·당황 16종을 제공한다. 증빙 docs/evidence/A-10-06.md. 새 URL·선택 로직은 없다.
+
+## A-11-04 표정 파일 등록
+
+기존 content/images/sprite → make_placeholders → portrait → manifest → server/api/assets.py 경로로 슬픔 8종을 제공한다. 증빙 docs/evidence/A-11-04.md. 새 URL·선택 로직은 없다.

@@ -2,7 +2,7 @@
 
 B-09-02 D 어댑터 수신은 서버의 해석기 팩토리 조립만 추가한다. 기존 자유 입력·카드·폴링 URL과 템플릿 연결은 그대로이며 화면 계약 회귀 결과와 실물 모델 대기는 [증빙](../docs/evidence/B-09-02.md)에 기록한다.
 
-B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인과 버튼 설명 상자를 맡는다. 행동 결과·아침 진술 대사 줄은 `server/api/vn_script.py` → `meeting_view.py`의 `vn_lines` → records.html의 숨은 `.vn-script`로 들어온다(문장 틀은 vn_script.py 맨 위). 투표 결과 발표 장면도 vn_script.py, 화면 잠금은 ui-vn.js. 첫 판 안내 대사는 `server/api/tutorial_script.py`(도메인성 순수 함수) → 첫 판 판단은 `server/app/usecases.py` `guide_info`(응용) → `meeting_view.py`가 줄을 끼움 → `meeting_parts/vn_line.html`. 아침 실종 발표(까치)는 `vn_script.announcement_lines`, 진술표 카드 문장은 `vn_script.claim_card_text`. 판 도중 원한 단서 알림은 판정 `server/app/clue_notice.py`(응용, 순수 함수) → `guide_info`가 함께 돌려줌 → `meeting_view._clue_vn_lines`가 고백 발언 뒤에 줄을 붙임(족제비 문장은 `tutorial_script.CLUE_*`). 수첩 한 번 누름 표시는 `notebook_marks.html`(주민 창·수첩 창) → ui-vn.js가 기존 수첩 저장 경로로 보낸다. 버튼 설명 문구는 `server/api/template_tags.py`의 `UI_TIPS`를 `{% tip %}`로 붙인다. 의존 방향: 템플릿·JS(표현) → meeting_view·vn_script(viewmodel) → 엔진 공개 기록. CSS 공통 토큰은 web/static/css/theme.css다.
+B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인과 버튼 설명 상자를 맡는다. 행동 결과·아침 진술 대사 줄은 `server/api/vn_script.py` → `meeting_view.py`의 `vn_lines` → records.html의 숨은 `.vn-script`로 들어온다(문장 틀은 vn_script.py 맨 위). 투표 결과 발표 장면도 vn_script.py, 화면 잠금은 ui-vn.js. 첫 판 안내 대사는 `server/api/tutorial_script.py`(도메인성 순수 함수) → 첫 판 판단은 `server/app/usecases.py` `guide_info`(응용) → `meeting_view.py`가 줄을 끼움 → `meeting_parts/vn_line.html`. 아침 실종 발표(까치)는 `vn_script.announcement_lines`, 진술표 카드 문장은 `vn_script.claim_card_text`. 판 도중 원한 단서 알림은 판정 `server/app/clue_notice.py`(응용, 순수 함수) → `guide_info`가 함께 돌려줌 → `meeting_view._clue_vn_lines`가 고백 발언 뒤에 줄을 붙임(족제비 문장은 `tutorial_script.CLUE_*`). 의심·모순 지적 즉시 반응은 `vn_script.reaction_lines`(문장 `REACTION_*`, 성향은 응용 `usecases.temperaments`가 판 콘텐츠에서 읽음) → `meeting_view`의 `reaction_lines` → records.html이 플레이어 발언 뒤에 줄을 붙임. 수첩 한 번 누름 표시는 `notebook_marks.html`(주민 창·수첩 창) → ui-vn.js가 기존 수첩 저장 경로로 보낸다. 버튼 설명 문구는 `server/api/template_tags.py`의 `UI_TIPS`를 `{% tip %}`로 붙인다. 의존 방향: 템플릿·JS(표현) → meeting_view·vn_script(viewmodel) → 엔진 공개 기록. CSS 공통 토큰은 web/static/css/theme.css다.
 
 공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 manifest의 정식 그림(현재 로고·회의/밤 배경 포함 21개)과 임시 자원 상태를 표시하고 classic은 404다. 수량은 manifest에서 계산한다. 시안 후보 카탈로그는 읽지 않는다. 보존한 전체 HTML 시안과 실제 화면의 적용 범위는 UI_APPLY.md에서 구분한다.
 
@@ -106,3 +106,29 @@ B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story
 | `tools/perf/account_assets.py` | 시험 DOM 표본과 디스크 글꼴 합계를 공통 증빙 JSON으로 기록 |
 
 로드 측정용 숨김 출력은 시험 미들웨어에서만 넣으며 운영 `MIDDLEWARE`·URL·템플릿에는 넣지 않는다. [웹 디자인](DESIGN.md#b-10-08-로그인홈-시안-적용) · [증빙](../docs/evidence/B-10-08.md)
+
+
+## 확정 표정 에셋 교체 (2026-11-10)
+
+A-10-06의 기쁨·당황 16종 전신과 같은 수의 파생 초상을 기존 manifest ID·경로에 등록했다. 기본 인물 파일·API·공개 사건 선택 로직은 변경하지 않았다. 복구한 출처 기록과 제출 상태는 docs/evidence/A-10-06.md를 따른다.
+
+A-11-04의 슬픔 8종 전신과 같은 수의 파생 초상을 기존 manifest ID·경로에 등록했다. 기본 인물 파일·API·공개 사건 선택 로직은 변경하지 않았다. 복구한 출처 기록과 제출 상태는 docs/evidence/A-11-04.md를 따른다.
+
+### 공개 사건 표정 자동 연결 (B-10-07, 2026-11-10)
+
+A-10-06·A-11-04의 확정 그림을 공개 사건에 연결했다. 앞 절의 에셋 배치 검수와 별도로, 현재 대사·사건 ID마다 표정을 계산한다. 감싸진 대상은 다음 자기 대사에 기쁨, 의심·모순 지적·공개된 탁한 점괘의 대상은 다음 자기 대사에 당황, 희생자 발표 뒤 첫 대사·고백·감금 당사자는 슬픔이다. 다음 대사에서 기본으로 돌아오며, 겹치면 슬픔 > 당황 > 기쁨이다. 승인된 예외로 투표 생존 기쁨과 아침 첫 대사 슬픔이 겹친 한 줄은 기쁨이다.
+
+표정 선택은 PlayerView의 공개 기록만 받고 역할·진위·현재 생존 상태·개인 점괘는 입력하지 않는다. 기색은 공개 기록의 shown=True인 주장에만 문구와 당황을 붙인다. 표정 파일이 미등록·임시·유실이면 같은 인물의 기본 그림으로 대체하고 남/여 무당 선택을 유지한다. API·명령·DTO·엔진·이미지 파일·계약·기획·결정 문서는 바꾸지 않았다. 에셋 규격표 7절은 B-10-07 1-3에 이미 승인된 11/9 규칙으로 동기화했다.
+
+[표정 연결 검수·한계](../docs/evidence/B-10-07.md#공개-사건-표정-연결-2026-11-10). 실운영 DB·VM 판정이나 B-10-07 전체 완료를 뜻하지 않는다.
+
+| 경로 | 책임·직접 연결 |
+|---|---|
+| `meeting_parts/records.html` | 공개 발언 ID → `vn_expressions` → `vn_sprite`로 그림 URL, 기색 문구는 폴링 본문 밖에 보존 |
+| `meeting_parts/vn_line.html` | 진술·즉시 반응·감금·피해자 컷 ID → 같은 표정 조회. 마스코트는 기존 경로 |
+| `js/ui-vn.js` | 지금 줄의 그림만 표시하고 공개 기색 문구를 대사·낭독에 포함. 읽기 ID/seen 저장 방식 유지 |
+| `game.css .vn-guide-skip` | PC 행동 패널 안에 가려지던 안내 버튼을 대사창 쪽으로 배치. 1.95 이상 화면은 기존 오른쪽 배치 |
+
+### B-11-01 캐릭터·도움말 표시 보완 (2026-11-11)
+
+기존 `vn_scene.html`의 캐릭터 버튼과 `ui_help.html`의 도움말 대화상자가 `web/static/game.css`를 사용한다. 기존 `ui-vn.js`의 캐릭터 읽기·도움말 열기/닫기 처리는 그대로이며 새 URL·탭·스크립트는 추가하지 않았다. [검증](../docs/evidence/B-11-01.md).

@@ -117,7 +117,14 @@ def _top(scores: dict[str, float], rng: random.Random) -> tuple[str, bool]:
 
 
 class VillagerPolicy(RuleBase):
-    """마을 주민(비밀 보유자 포함) 규칙 v0. `NpcPolicy`의 talk·vote·react를 구현한다(night_plan 없음)."""
+    """마을 주민(비밀 보유자 포함) 규칙 v0. `NpcPolicy`의 talk·vote·react를 구현한다(night_plan 없음).
+
+    `q_max`를 주면 모델 투표의 무당 의심 상한을 그 값으로 고정한다(rule-0.7 이하 판, `params.LEGACY_DECISION`).
+    생략하면 프로세스 값(`params.Q_MAX`)이다."""
+
+    def __init__(self, content: Optional[ContentBundle] = None, q_max: Optional[float] = None):
+        super().__init__(content)
+        self.q_max = q_max
 
     def talk(self, obs: ObservationSnapshot, rng: random.Random) -> Decision:
         """회의 말 행동: 모순 지적 → 의심 → 해명 → 감싸기 → 침묵 순으로 처음 해당하는 것."""
@@ -218,7 +225,7 @@ class VillagerPolicy(RuleBase):
         if est is None:
             d = self.vote(obs, candidates, rng)
             return vt.VoteOutcome(Decision(d.value, d.reason_codes + [vt.FALLBACK_CODE[why]], d.evidence), why)
-        target, codes = vt.choose_target(obs, b, candidates, est, self.temperament(obs.observer), rng)
+        target, codes = vt.choose_target(obs, b, candidates, est, self.temperament(obs.observer), rng, self.q_max)
         return vt.VoteOutcome(self.with_witness(obs, b, target, target, codes, vote_refs(b, target)))
 
     def react(self, obs: ObservationSnapshot, cmd: Command, rng: random.Random) -> Decision:

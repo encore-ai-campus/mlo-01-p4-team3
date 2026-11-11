@@ -4,10 +4,12 @@
 거짓 진술도 같은 틀을 써서 줄만 보고 진위를 알 수 없게 한다(docs/assets/spec.md 7절).
 """
 import re
+import zlib
 from dataclasses import dataclass
 
-from engine.domain.model import ClaimType, Phase, Polarity
+from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, Phase, Polarity
 from engine.ports import PlayerView
+from server.app.trust_cue import trust_cue
 from .viewmodels import PLACE_KO, SLOT_KO
 
 # 자기 행적 진술 문장 틀(11/10 사용자 승인).
@@ -40,6 +42,24 @@ KKACHI_MASCOT = "mascot:kkachi"
 ANNOUNCE_MISSING = "깍깍! 간밤 {slot}에 {name}이(가) 사라졌어요. {name}의 짚신이 {place}에서 발견됐대요!"
 ANNOUNCE_NONE = "깍깍! 간밤엔 아무도 사라지지 않았어요."
 HOME_PLACE = "{name}의 집"   # 피해 장소가 집이면 기존 기록 문구처럼 누구의 집인지 밝힌다
+# 플레이어가 주민을 의심하거나 모순을 지적하면 지목된 주민이 바로 한 줄 반응한다(11/10 사용자 승인).
+# 엔진 규칙과 무관한 연출 줄이다: 믿음·투표·진술에 들어가지 않고, 결백·사실을 주장하지 않는 감정 표현만 둔다.
+# 성향(콘텐츠 temperament_id)별 2개, 성향이 없거나 모르는 성향이면 None 줄. 고르기는 발언 ID로 결정적이다.
+REACTION_SUSPECTED = {
+    None: ("내가 뭘 어쨌다고 그러오!", "날 의심하다니, 억울하오."),
+    "scholar": ("근거도 없이 나를 의심하는 것이오?", "의심은 자유이나, 섣부르구려."),
+    "keen": ("아이고, 나를 잡겠다고? 헛짚었네.", "허허, 내가 수상해 보이나?"),
+    "hothead": ("뭐? 나라고?", "누굴 의심하는 거냐!"),
+    "timid": ("제, 제가요? 아, 아닙니다요!", "그, 그런 눈으로 보지 마셔요…"),
+}
+REACTION_CONTRADICTED = {
+    None: ("내 말이 어디가 어긋났단 말이오?", "말이 다르다니, 무슨 소리요?"),
+    "scholar": ("어느 대목이 어긋난다는 것인지 짚어 보시오.", "내 말의 앞뒤를 다시 들어 보시오."),
+    "keen": ("말이 다르다니, 어디가 말인가?", "에이, 내 말을 잘못 들은 게지."),
+    "hothead": ("다르긴 뭐가 달라!", "트집 잡지 마라!"),
+    "timid": ("제, 제 말이 다르다고요…?", "어, 어디가 다르다는 건지… 모르겠습니다요."),
+}
+REACTIONS = {CommandKind.SUSPECT: REACTION_SUSPECTED, CommandKind.POINT_CONTRADICTION: REACTION_CONTRADICTED}
 
 
 @dataclass(frozen=True)
@@ -126,25 +146,88 @@ def announcement_lines(view: PlayerView) -> list[VNLine]:
 
     실종이 있으면 발표 줄 바로 다음에 피해자 전신 컷 줄을 한 박자 둔다(밤 습격 결과 전신 컷, spec 7절).
     전신 컷 동안 대사창은 숨으므로 새 문장 없이 발표 문장을 그대로 단다.
+    2일째 아침부터는 그 뒤에 주민 신뢰 단서 해설 줄(화자 없음)을 하나 더 단다(`server.app.trust_cue`).
     """
     by_night = {record.night: record for record in view.public.disappearances}
     lines = []
     for day in range(1, view.day + 1):
-        record = by_night.get(day - 1)
-        if record is None:
-            lines.append(VNLine(f"announcement-none-{day}", day, Phase.MORNING.value, SPEAKER_KKACHI, ANNOUNCE_NONE,
-                                sprite_id=KKACHI_MASCOT, mascot=True))
-            continue
-        name = _name(view, record.victim)
-        place = (HOME_PLACE.format(name=name) if record.place.value == "home"
-                 else PLACE_KO.get(record.place.value, record.place.value))
-        text = attach_particles(ANNOUNCE_MISSING.format(slot=SLOT_KO.get(record.slot.value, ""), name=name, place=place))
-        lines.append(VNLine(f"announcement-{record.night}", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
-                            sprite_id=KKACHI_MASCOT, mascot=True))
-        if record.victim != "mudang":
-            lines.append(VNLine(f"announcement-{record.night}-full", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
-                                record.victim, f"sprite:{record.victim}", full=True, actor_name=name, beat=True))
+        lines.extend(_announcement(view, day, by_night.get(day - 1)))
+        cue = trust_cue(day, view.public.votes, view.public.speeches)
+        if cue:
+            lines.append(VNLine(f"trust-cue-{day}", day, Phase.MORNING.value, "", cue))
     return lines
+
+
+def _announcement(view: PlayerView, day: int, record) -> list[VNLine]:
+    """day일째 아침 까치 발표 줄과 (실종이 있으면) 피해자 전신 컷 줄."""
+    if record is None:
+        return [VNLine(f"announcement-none-{day}", day, Phase.MORNING.value, SPEAKER_KKACHI, ANNOUNCE_NONE,
+                       sprite_id=KKACHI_MASCOT, mascot=True)]
+    name = _name(view, record.victim)
+    place = (HOME_PLACE.format(name=name) if record.place.value == "home"
+             else PLACE_KO.get(record.place.value, record.place.value))
+    text = attach_particles(ANNOUNCE_MISSING.format(slot=SLOT_KO.get(record.slot.value, ""), name=name, place=place))
+    lines = [VNLine(f"announcement-{record.night}", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
+                    sprite_id=KKACHI_MASCOT, mascot=True)]
+    if record.victim != "mudang":
+        lines.append(VNLine(f"announcement-{record.night}-full", day, Phase.MORNING.value, SPEAKER_KKACHI, text,
+                            record.victim, f"sprite:{record.victim}", full=True, actor_name=name, beat=True))
+    return lines
+
+
+def reaction_text(kind, speech_id: str, temperament_id) -> str:
+    """지목된 주민의 반응 문장. (발언 종류, 발언 ID, 성향)이 같으면 늘 같은 문장이고, 모르는 성향은 None 줄을 쓴다."""
+    table = REACTIONS[kind]
+    variants = table.get(temperament_id, table[None])
+    return variants[zlib.crc32(speech_id.encode("utf-8")) % len(variants)]
+
+
+def reaction_target(public, speech):
+    """반응할 주민. 의심은 대상, 모순 지적은 대상이 없으면 근거 두 진술에서 고른다.
+
+    화면의 모순 지적 양식은 대상 칸 없이 진술 두 개(또는 모순 기록 1개)만 보낸다. 두 진술의 화자가 같으면 그 사람,
+    다르면 한쪽 화자가 다른 쪽 진술의 목격 대상일 때 그 사람(남의 목격과 어긋난 당사자), 그 밖에는 고르지 않는다.
+    """
+    if speech.target:
+        return speech.target
+    if speech.kind is not CommandKind.POINT_CONTRADICTION:
+        return None
+    ids = []
+    for ref in speech.evidence:
+        if ref.type.value == "contradiction":
+            ids = ref.record_id.split("|")
+            break
+        if ref.type.value == "claim":
+            ids.append(ref.record_id)
+    claims = {c.claim_id: c for c in public.claims}
+    pair = [claims[i] for i in ids[:2] if i in claims]
+    if len(pair) != 2:
+        return None
+    first, second = pair
+    if first.speaker == second.speaker:
+        return first.speaker
+    pointed = [c.speaker for c, other in ((first, second), (second, first)) if c.speaker in (other.seen or [])]
+    return pointed[0] if len(pointed) == 1 else None
+
+
+def reaction_lines(view: PlayerView, temperaments=None) -> dict[str, list[VNLine]]:
+    """플레이어의 의심 제기·모순 지적 발언 ID → 그 바로 뒤 지목된 주민의 반응 줄.
+
+    공개 발언·진술 기록만으로 만들므로 새로 고침·기록 보기에서도 같은 줄이 나온다. 주민끼리의 발언, 지목된 주민을
+    고를 수 없거나(reaction_target) 무당인 발언에는 붙이지 않는다. 대상의 지금 상태(감금·실종)와 무관하게 발언 당시 기록 그대로 보인다.
+    """
+    temperaments = temperaments or {}
+    out: dict[str, list[VNLine]] = {}
+    for speech in view.public.speeches:
+        if speech.speaker != PLAYER_ID or speech.kind not in REACTIONS:
+            continue
+        target = reaction_target(view.public, speech)
+        if not target or target == PLAYER_ID:
+            continue
+        text = reaction_text(speech.kind, speech.speech_id, temperaments.get(target))
+        out[speech.speech_id] = [VNLine(f"reaction-{speech.speech_id}", speech.day, speech.phase.value,
+                                        _name(view, target), text, target, f"sprite:{target}")]
+    return out
 
 
 def _tally(view: PlayerView, votes) -> list[tuple[str, int]]:
