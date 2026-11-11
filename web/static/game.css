@@ -652,7 +652,11 @@ button { border-radius:2px; }
  .game-page .site-links { gap:2px; }
  .game-page .site-links button,.game-page .site-links a { padding:6px; font-size:13px; }
  .game-page #meeting > h1 { font-size:17px; }
- .end-screen { max-height:calc(100svh - 150px); }
+}
+/* B-11-01 11/11: 휴대폰(좁은 화면, 가로로 눕힌 터치 화면)에서는 판 종료 화면의 안쪽 스크롤 상자를 풀고
+   페이지 전체로 스크롤한다. 상자 안 설문이 잘리거나 이중 스크롤이 되는 것을 막는다. 데스크톱 규칙은 그대로다. */
+@media (max-width:700px), (max-height:500px) and (pointer:coarse) {
+ .end-screen { max-height:none; overflow:visible; }
 }
 
 
