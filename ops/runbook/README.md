@@ -8,6 +8,8 @@ sudo systemctl show paldo-web@8000 paldo-web@8002 paldo-outbox -p WorkingDirecto
 
 이후 명령의 `SOURCE`, `PYTHON`, `PROFILE`, `PRIVATE_*`는 그 인계 경로로 설정한다. 프로필 내용을 터미널이나 채팅에 출력하지 않는다.
 
+11/11 오후 확인한 운영 후보는 `098b077`·콘텐츠 `content-1.1`이며 LLM 터널·복기 작업자·NPC 대사 작업자가 실행 중이었다. 이후 배포에서는 위 unit의 실제 프로필을 다시 기준으로 삼는다. 과거 동결 후보의 템플릿 경로와 현재 LLM 경로를 구분한다.
+
 ## 기동
 
 | 순서 | 실행 VM | 명령 | 통과 확인 |
@@ -19,7 +21,9 @@ sudo systemctl show paldo-web@8000 paldo-web@8002 paldo-outbox -p WorkingDirecto
 | 5 | Spark master·worker | `sudo systemctl start pj3-spark` | 클러스터 worker 가용 상태 확인 |
 | 6 | Spark master | `sudo systemctl start paldo-bronze` | 서비스 active와 함께 새 배치 commit·audit 증가 확인 |
 | 7 | 광고 서버 | `sudo systemctl start paldo-ads paldo-ads-publish paldo-ads-expire paldo-ads-refund` | 광고 health와 worker 지표 확인 |
-| 8 | 게임 웹 | `sudo systemctl start paldo-outbox paldo-web@8000 paldo-web@8002 caddy` | 두 health·metrics 200, HTTPS·wss 확인 |
+| 8 | 게임 웹(LLM 사용 시) | `sudo systemctl start paldo-llm-tunnel` | 보호 인계 경로의 생성 서버 health 200 |
+| 9 | 게임 웹(LLM 사용 시) | `sudo systemctl start paldo-review-worker paldo-npc-line-worker` | 두 worker active·작업 결과 확인 |
+| 10 | 게임 웹 | `sudo systemctl start paldo-outbox paldo-web@8000 paldo-web@8002 caddy` | 두 health·metrics 200, HTTPS·wss 확인 |
 
 `is-active`만으로 적재 성공을 판정하지 않는다. 11/11에는 일반 사람 판의 null 회차를 거부해 Bronze가 재시작을 반복했다. [일반 판 수정 PR](https://github.com/encore-ai-campus/mlo-01-p4-team3/pull/371)의 검증기를 포함한 소스로 실행하고 새 체크포인트 commit과 `bronze_batch_committed`를 확인한다.
 
@@ -32,13 +36,17 @@ sudo journalctl -u paldo-bronze --since '10 minutes ago' --no-pager
 
 ## 데이터 재처리
 
+현재 Primary의 MySQL 접속 한도는 C-11-01 검증 뒤64로 보존했다. 용량·TLS·복제 확인은 [MySQL 런북](../mysql/README.md)을 따른다. 공유 PJ3 채널의 binlog 만료는 해결되지 않았으므로 전체 승격을 PJ4 지연0만으로 판정하지 않는다. LLM 설정·모드·작업자 운영은 [LLM 절차](llm_gen.md)를 따른다.
+
 외부 설정의 기존 checkpoint·bronze·writer lock을 그대로 사용한다. 정식 스트림을 먼저 중지하고 단일 writer로 available-now를 실행한다. 다른 작업이 같은 writer lock을 잡고 있으면 중복 실행을 중단한다.
 
 ```sh
 sudo systemctl stop paldo-bronze
-sudo -u pj3-spark "$PRIVATE_PIPELINE_LAUNCHER" bronze --available-now
-sudo -u pj3-spark "$PRIVATE_PIPELINE_LAUNCHER" silver
-sudo -u pj3-spark "$PRIVATE_PIPELINE_LAUNCHER" labels
+PIPELINE_USER=$(systemctl show paldo-bronze -p User --value)
+PIPELINE_USER=${PIPELINE_USER:-root}
+sudo -u "$PIPELINE_USER" "$PRIVATE_PIPELINE_LAUNCHER" bronze --available-now
+sudo -u "$PIPELINE_USER" "$PRIVATE_PIPELINE_LAUNCHER" silver
+sudo -u "$PIPELINE_USER" "$PRIVATE_PIPELINE_LAUNCHER" labels
 sudo systemctl start paldo-bronze
 ```
 
@@ -52,10 +60,13 @@ sudo systemctl start paldo-bronze
 
 ```sh
 "$PYTHON" -m ops.mlflow.retrain --config "$PRIVATE_RETRAIN_CONFIG" --check
+kubectl -n paldo-ml get cronjob paldo-retrain
 kubectl -n paldo-ml create job --from=cronjob/paldo-retrain "paldo-retrain-manual-$(date +%s)"
 ```
 
 평가 거부도 정상 결과다. run의 출처·특징·SHA 및 거부 사유를 확인하고 후보 등록 수가 0인지 본다. 통과 후보는 D가 카나리아·대조 최소 표본과 경보를 확인해 승격한다. 복구는 previous를 production에 적용하며 진행 중 판은 시작 때 고정한 모델을 유지한다.
+
+실제 입력·이미지·PVC와 CronJob 설치는 C-10-01의 미완료 구간이다. 위 `--check`와 `get cronjob`이 성공한 환경에서만 `create job`을 진행한다. 정의 파일의 server dry-run과 격리 모델 검증을 실제 학습 실행으로 기록하지 않는다. 승격은 [카나리아 경합 수정 PR #402](https://github.com/encore-ai-campus/mlo-01-p4-team3/pull/402)를 포함하고, 기대 후보 버전이 달라지면 관측 보고서부터 다시 확인한다.
 
 ## 대사
 
@@ -73,6 +84,9 @@ kubectl -n paldo-ml create job --from=cronjob/paldo-retrain "paldo-retrain-manua
 
 ```sh
 sudo systemctl stop paldo-web@8000 paldo-web@8002 caddy
+# LLM 사용 배포는 새 요청을 막은 뒤 작업자·터널 순서로 종료한다.
+sudo systemctl stop paldo-review-worker paldo-npc-line-worker
+sudo systemctl stop paldo-llm-tunnel
 sudo systemctl stop paldo-ads
 # 아웃박스 및 worker의 pending=0 확인 후
 sudo systemctl stop paldo-outbox paldo-ads-publish paldo-ads-expire paldo-ads-refund
