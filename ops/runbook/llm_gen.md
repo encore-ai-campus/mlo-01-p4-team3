@@ -71,4 +71,20 @@ E-10-13(템플릿 변형 사전 생성)에서 캐묻기 반응·복기 해설 �
 | 확인 | 복기 화면에서 "족제비가 해설을 다듬고 있어요…" 뒤 "마을 사람들의 속마음" 문장이 보이면 정상. 서버가 꺼져 있으면 묶음이 사라지고 템플릿 해설만 남는다 |
 | 실측 | `python server/manage.py review_narration_perf --url http://127.0.0.1:<포트> --games 12 --burst 4 --samples <저장소 밖 경로>` → `docs/evidence/perf/E-10-01/review_narration.json`(집계만) |
 
-게임 서버(app-01) → 생성 기기 상시 터널(포워딩 전용 계정, 설계 D2)은 아직 적용하지 않았다. 적용 전에는 개발 노트북에서만 켠다. 계정·주소·서비스 설정은 `4th_private`.
+게임 서버(app-01) → 생성 기기 상시 터널(포워딩 전용 계정, 설계 D2)은 11/11 적용했다(app-01 `127.0.0.1:18080` → 생성 기기 `127.0.0.1:8080`, 터널 서비스 자동 재접속, app-01에서 health 200 확인). 생성 서버는 11/11부터 슬롯 2개·슬롯당 문맥 4096(`-np 2 -c 8192`)이고 자동 재시작된다. 계정·주소·서비스 설정은 `4th_private`.
+
+## 8. NPC 대사 LLM에서 쓰기 (E-11-13)
+
+11/11 사용자 결정("NPC 대사 LLM 서빙")으로 판 진행 중 회의 발언 다듬기(polish)와 캐묻기 답 실시간 생성(live)에 이 서버를 쓴다. 기본은 꺼짐이다.
+
+| 항목 | 값 |
+|---|---|
+| 상한 스위치 | 게임 서버 환경 변수 `PALDO_NPC_LLM_URL=http://127.0.0.1:<로컬 포트>`(복기와 같은 터널 끝). 비우면 모드와 관계없이 꺼짐(템플릿만·Kanana 표기 숨김) |
+| 모드 | `off`·`polish`·`live`(live는 polish 포함). Mongo `<접두어>ops_settings`의 `npc_llm` 문서가 정하고, 없으면 `PALDO_NPC_LLM_MODE`(코드 기본 off). 웹은 10초 안에, 작업 프로세스는 다음 작업부터 반영 |
+| 모드 바꾸기 | `python server/manage.py npc_llm_mode {off\|polish\|live\|show} [--live-deadline-ms N] [--polish-queue-max N]`. 재배포·재시작 없음. 급하면 `off`. live는 운영진이 이 명령으로만 켠다 |
+| 작업 프로세스 | `python server/manage.py npc_line_worker`(한 번에 한 줄, 실시간 > 다듬기). `review_worker`와 따로 1개 상시 실행해 서버 슬롯 2개를 하나씩 쓴다 |
+| 요청 | 줄마다 `/v1/chat/completions` 1회. 다듬기 최대 64토큰·요청 제한 10초, 실시간은 마감(기본 3000ms, 11/11 실측으로 확정)까지. 프롬프트 캐시(`cache_prompt`) 켬 |
+| 저장 | Mongo `<접두어>npc_line_jobs`(줄당 문서 1개). 판 삭제(`privacy_game_cleanup`)가 같이 지운다. 본문은 이 문서에만 있고 로그·이벤트에 없다 |
+| 확인 | `npc_llm_mode show`, 작업 프로세스 로그 `npc_line_worker`의 `status`(done·rejected·failed·closed). 회의 대사창에서 NPC 발언 앞에 말투 감탄사가 붙으면 다듬기가 도는 것이다 |
+| 켜기 순서 | 배포(코드 기본 off) → `PALDO_NPC_LLM_URL` 설정 → 표본 30개 사용자 승인 → `npc_llm_mode polish` → 운영 비밀 파일 `PALDO_NPC_LLM_MODE=polish` |
+
