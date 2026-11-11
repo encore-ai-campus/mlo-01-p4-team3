@@ -1,0 +1,44 @@
+{
+  "task": "D-11-01",
+  "commit": "4d7c7c6e96b9c4960e9ffa804da026898add1024",
+  "generated_at": "2026-11-11T08:46:30Z",
+  "source": "python -m intent.retrain (official frozen split, local SQLite registry)",
+  "metrics": {
+    "rejected_runs": {
+      "value": 1,
+      "unit": "회"
+    },
+    "registered_versions": {
+      "value": 0,
+      "unit": "개"
+    },
+    "training_rows": {
+      "value": 9,
+      "unit": "건"
+    },
+    "evaluation_rows": {
+      "value": 7,
+      "unit": "건"
+    },
+    "candidate_command_exact_match": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "reference_command_exact_match": {
+      "value": 0.8571428571428571,
+      "unit": ""
+    },
+    "deleted_rows_remaining": {
+      "value": 0,
+      "unit": "건"
+    },
+    "auto_executed_remaining": {
+      "value": 0,
+      "unit": "건"
+    },
+    "seconds": {
+      "value": 133.565,
+      "unit": "초"
+    }
+  }
+}

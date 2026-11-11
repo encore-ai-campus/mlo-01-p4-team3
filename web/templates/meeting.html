@@ -8,7 +8,7 @@
     <div class="vn-rail" aria-label="판 진행"><span {% if vm.phase == 'morning' %}aria-current="step"{% endif %}>아침</span><span {% if vm.phase == 'round1' or vm.phase == 'round2' or vm.phase == 'interrogation' %}aria-current="step"{% endif %}>회의</span><span {% if vm.phase == 'vote' or vm.phase == 'runoff' %}aria-current="step"{% endif %}>투표</span><span {% if vm.phase == 'night' %}aria-current="step"{% endif %}>밤</span></div>
     {% include "vn_scene.html" %}
     <div data-stage-content>
-      <section id="stage-actions" data-stage-panel="행동 선택">
+      <section id="stage-actions" data-stage-panel="행동 선택" aria-labelledby="meeting-actions-title" tabindex="-1">
         {% if vm.phase == 'vote' or vm.phase == 'runoff' %}<p class="phase-notice">이번 투표는 비공개이며, 투표가 끝나면 모두의 표가 함께 공개됩니다.</p>{% endif %}
         {% if vm.phase == 'night' %}<p class="phase-notice player-notice">밤의 점치기입니다. 점괘는 나에게만 표시됩니다.</p>{% endif %}
         <p class="phase-notice result-lock-notice" data-result-lock-notice role="status" hidden>투표 결과를 먼저 확인하세요. 대사를 끝까지 넘기거나 모두 보기를 누르면 행동할 수 있습니다.</p>
@@ -27,7 +27,7 @@
           {% endwith %}
         {% endif %}
         {% endif %}
-        <span class="person-caption"><strong>{{ person.name|display_name }}</strong><span>{{ person.status|status_label }}</span></span>
+        <span class="person-caption"><strong>{{ person.name|display_name }}</strong> <span>{{ person.status|status_label }}</span></span>
       </button>{% if participant_forms_available and person.npc_id != 'mudang' and person.status == 'active' %}{% include "notebook_marks.html" with mark_npc=person.npc_id mark_name=person.name mark_value=person.notebook_value %}{% endif %}</li>
     {% endfor %}
   </ul>{% if participant_forms_available %}<p class="mark-status" role="status" data-mark-status></p>{% endif %}</div>
