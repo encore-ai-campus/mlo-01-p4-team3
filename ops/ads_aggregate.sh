@@ -45,7 +45,7 @@ if ! flock -n 9; then step lock skip 0 '"reason":"already_running"'; exit 0; fi
 
 need ADS_SRC ADS_PYTHON SPARK_HOST SPARK_KEY SPARK_KNOWN_HOSTS SPARK_SRC SPARK_WORK SPARK_SUBMIT SPARK_AD_CONFIG
 SSH="ssh -i $SPARK_KEY -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$SPARK_KNOWN_HOSTS"
-SCP="scp -q -i $SPARK_KEY -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$SPARK_KNOWN_HOSTS"
+SCP="scp -O -q -i $SPARK_KEY -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$SPARK_KNOWN_HOSTS"
 run() { if [ "$DRY" = 1 ]; then echo "DRY: $*" >&2; else "$@"; fi; }
 
 fail() { step "$1" fail "$2" "\"next\":\"ctr_not_published\""; exit 1; }
