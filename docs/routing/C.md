@@ -37,6 +37,8 @@
 
 ## C-08-01 작업 위치
 
+재학습 실행기와 별칭 제어는 `ops/mlflow/{retrain,canary,lifecycle}.py`, B 조회 어댑터는 `server/infra/mlflow_registry.py`다. 야간 일정은 `ops/k3s/cronjobs/retrain.yaml`, 의존성 이미지는 `ops/k3s/images/retrain/`, 실행·복구 순서는 `ops/runbook/rollback.md`에 있다.
+
 | 작업 | 위치 |
 |---|---|
 | C-08-01 작업 | ops/prometheus 지표 중계·읽기 수집기, ops/grafana/dashboards 6종과 alerts.yml. 검증 부하는 tools/perf/web_concurrency.py. |

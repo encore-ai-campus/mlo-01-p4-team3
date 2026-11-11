@@ -1,0 +1,20 @@
+rule_files:
+  - alerts.yml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'paldo_model_decisions_total{canary="true",result="fallback"}'
+        values: "0+10x10"
+      - series: 'paldo_model_decisions_total{canary="true",result="success"}'
+        values: "0+90x10"
+    alert_rule_test:
+      - eval_time: 7m
+        alertname: PaldoCanaryFallback
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              project: pj4
+            exp_annotations:
+              summary: PaldoCanaryFallback
+              description: C detects; D decides rollback, E approves during user test. Missing eligible canary data does not imply success.

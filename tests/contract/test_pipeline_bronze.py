@@ -70,7 +70,10 @@ class BronzeContractTests(unittest.TestCase):
         self.assertEqual(row['source'], 'human')
         self.assertTrue(row['load_test'])
         self.assertEqual(json.loads(row['envelope_json'])['player_pseudonym'], 'pseudonym')
-        with self.assertRaises(BronzeContractError): self.row({**event, 'session_id':None})
+        regular = self.row({**event, 'session_id':None})
+        self.assertIsNone(json.loads(regular['envelope_json'])['session_id'])
+        with self.assertRaises(BronzeContractError): self.row({**event, 'player_pseudonym':None, 'session_id':None})
+        with self.assertRaises(BronzeContractError): self.row({**event, 'session_id':''})
         with self.assertRaises(BronzeContractError): self.row({**event, 'source':'bot'})
 
     def test_conflicts_never_overwrite_committed_content(self):

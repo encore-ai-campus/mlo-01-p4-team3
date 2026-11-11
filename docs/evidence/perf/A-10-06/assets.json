@@ -1,0 +1,56 @@
+{
+  "task": "A-10-06",
+  "commit": "5090491324ab84cf4ec46a16be00fa0e5b3578e4",
+  "generated_at": "2026-11-10T09:16:59Z",
+  "source": "python out/handoff/update_committed_evidence.py (tools.assets.check_assets.check, placeholder_mode=True)",
+  "metrics": {
+    "expected_total": {
+      "value": 103,
+      "unit": "개"
+    },
+    "manifest_total": {
+      "value": 103,
+      "unit": "개"
+    },
+    "files_total": {
+      "value": 103,
+      "unit": "개"
+    },
+    "missing_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "extra_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "spec_violation_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "record_missing_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "policy_violation_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "map_region_error_count": {
+      "value": 0,
+      "unit": "건"
+    },
+    "real_count": {
+      "value": 53,
+      "unit": "개"
+    },
+    "placeholder_count": {
+      "value": 50,
+      "unit": "개"
+    },
+    "max_file_bytes": {
+      "value": 1936669,
+      "unit": "바이트"
+    }
+  }
+}

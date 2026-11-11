@@ -592,7 +592,7 @@ button { border-radius:2px; }
 .vn-player { display:block; clear:both; max-width:min(100%,calc((100svh - 250px)*16/9)); margin-inline:auto; }
 .vn-stage { isolation:isolate; }
 .vn-actor { padding:0; border:0; border-radius:0; background:transparent; min-height:0; }
-.vn-actor:hover { background:transparent; transform:none; }
+.vn-actor:hover:not(:disabled), .vn-actor:active:not(:disabled) { background:transparent; border-color:transparent; transform:none; box-shadow:none; }
 .stage-toolbar { position:absolute; z-index:4; top:12px; left:12px; right:12px; display:flex; gap:8px; flex-wrap:wrap; }
 .stage-toolbar button { min-height:40px; padding:6px 16px; font-size:14px; background:#101e25ed; box-shadow:0 2px 8px #0007; }
 .stage-toolbar button:first-child { color:#172125; background:#dbc397; }
@@ -652,7 +652,11 @@ button { border-radius:2px; }
  .game-page .site-links { gap:2px; }
  .game-page .site-links button,.game-page .site-links a { padding:6px; font-size:13px; }
  .game-page #meeting > h1 { font-size:17px; }
- .end-screen { max-height:calc(100svh - 150px); }
+}
+/* B-11-01 11/11: 휴대폰(좁은 화면, 가로로 눕힌 터치 화면)에서는 판 종료 화면의 안쪽 스크롤 상자를 풀고
+   페이지 전체로 스크롤한다. 상자 안 설문이 잘리거나 이중 스크롤이 되는 것을 막는다. 데스크톱 규칙은 그대로다. */
+@media (max-width:700px), (max-height:500px) and (pointer:coarse) {
+ .end-screen { max-height:none; overflow:visible; }
 }
 
 
@@ -718,6 +722,11 @@ button { border-radius:2px; }
 /* 버튼 설명(title 문구를 화면 안에 그린다). 한 줄, 클릭을 막지 않는다. */
 .ui-tip { position:absolute; z-index:1000; max-width:min(320px, calc(100vw - 8px)); padding:6px 10px; color:var(--text); background:#0e1a1e; border:1px solid var(--accent); border-radius:4px; font-size:.85rem; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.4); }
 .ui-tip[hidden] { display:none; }
+@media(max-width:600px) {
+ #ui-help { padding:16px; max-height:calc(100% - 32px); }
+ #ui-help .help-heading { flex-wrap:wrap; }
+ #ui-help .help-mascot { float:none; display:block; margin:0 auto 16px; }
+}
 /* 11/10: 수첩 한 번 누름 표시, 첫 판 안내 건너뛰기, 투표 결과 확인 전 잠금 */
 .people li:has(.notebook-marks) { flex-direction:column; align-items:stretch; }
 .notebook-marks { display:flex; gap:2px; }  /* 버튼은 글자 폭 기준(flex auto)으로 나눠 좁은 밤 카드에서도 '모르겠음'이 잘리지 않게 */
@@ -728,6 +737,13 @@ button { border-radius:2px; }
 .notebook-list li > span:first-of-type { min-width:5em; }
 .mark-status { min-height:1.2em; margin:4px 0; font-size:.85rem; }
 .vn-guide-skip { position:absolute; bottom:calc(25% + 8px); right:12px; background:#111c20ed; min-height:36px; padding:6px 12px; }
+/* 무대 안 행동 패널이 있는 PC에서는 대사창 오른쪽 경계 안에 둔다. */
+@media(min-width:900px) {
+ .vn-guide-skip { right:calc(33.8125% + 12px); }
+}
+@media(min-width:900px) and (min-aspect-ratio:1.95) {
+ .vn-guide-skip { right:12px; }
+}
 .result-lock-notice { border-left:3px solid #dbc397; }
 [data-result-locked] { opacity:.45; cursor:not-allowed; filter:grayscale(.6); }
 .end-guide { display:flex; align-items:flex-start; gap:12px; margin:8px 0 12px; }
