@@ -1,0 +1,32 @@
+{
+  "task": "C-11-01",
+  "commit": "a7e74f29ef1f4c42fb26638bc84106072abc2954",
+  "generated_at": "2026-11-10T23:22:42Z",
+  "source": "11/11 실제 Kafka·Mongo·광고·Spark 장애, 합성 HTTP 및 Mongo/Kafka/Delta 전량 비교",
+  "metrics": {
+    "missing": {
+      "value": 0,
+      "unit": "건"
+    },
+    "duplicates": {
+      "value": 0,
+      "unit": "건"
+    },
+    "hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "api_requests": {
+      "value": 60,
+      "unit": "건"
+    },
+    "api_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "compared_events": {
+      "value": 380,
+      "unit": "건"
+    }
+  }
+}
