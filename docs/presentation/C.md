@@ -24,8 +24,8 @@ C는 VM 자원·서비스 실행, DB 권한과 TLS, Mongo 게임 저장, Outbox�
 | 일반 판 이벤트에서 Bronze가 재시작 반복 | API 계약상 일반 판 `session_id=null`인데 이전 Bronze 검증이 필수 문자열로 취급했다. 사람 가명 필수·빈 문자열 거부를 유지하면서 null을 허용하고, 같은 checkpoint로 재개했다 | 배치 commit 재개 후 장애 판까지 Delta 대사했다. [수정 PR #371](https://github.com/encore-ai-campus/mlo-01-p4-team3/pull/371), [실측 기록](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/a1295c239269cf1cad6800bb714e5054afa78869/docs/evidence/C-11-01.md) |
 | 두 웹의 `/metrics`가 Host 검증으로 400 | 공개 출처와 일치하는 고정 Host로 loopback 지표를 중계하고, 운영 두 포트를 별도 scrape 대상으로 등록했다 | 웹 두 대상 up=1, 노드 20대 up. [트러블 C-08-01](../troubles/C.md#c-08-01), [증빙](../evidence/C-08-01.md) |
 | 판 저장 뒤 진척 반영 전 중단 시 획득 항목 누락 | 저장된 Outbox 이벤트를 다시 읽고 온라인과 같은 멱등 진척 함수를 호출하도록 복구 CLI를 만들었다 | 두 판에서 단서 3개·결말 1개 복구, 재실행 신규 반영 0건. [트러블 C-09-04](../troubles/C.md#c-09-04), [증빙](../evidence/C-09-04.md) |
-| 성능 비교가 계정 이력 누적으로 교란 | 같은 시험 계정의 완료 판이 늘고 새 판 시작 때 과거 판을 개별 load했다. 구간별 새 계정으로 통제하고 최신 dev의 진행 판 ID 일괄 조회를 검증했다 | 실제 Mongo 203회·3102.049ms→1회·2.861ms, 결과·순서 일치. 전체 API 지연 수치가 아니다. [C-11-01](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/C-11-01.md), [JSON](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/perf/C-11-01/open_scan.json) |
-| 광고 부하에서 계정 SQL 오류·접속 포화 발견 | 한도40·최대 접속41·누적 접속 초과525를 확인했다. 메모리와 원값을 확인해64로 시험·보존했다 | 한도64 재측정의 광고 요청10.069배에서 게임718건 오류0, p95증가49.444ms. DB 지연 성능은 여전히 실패다. [C-11-01](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/C-11-01.md), [용량 JSON](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/perf/C-11-01/mysql_capacity.json) |
+| 성능 비교가 계정 이력 누적으로 교란 | 같은 시험 계정의 완료 판이 늘고 새 판 시작 때 과거 판을 개별 load했다. 구간별 새 계정으로 통제하고 최신 dev의 진행 판 ID 일괄 조회를 검증했다 | 실제 Mongo 203회·3102.049ms→1회·2.861ms, 결과·순서 일치. 전체 API 지연 수치가 아니다. [C-11-01](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/C-11-01.md), [JSON](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/perf/C-11-01/open_scan.json) |
+| 광고 부하에서 계정 SQL 오류·접속 포화 발견 | 한도40·최대 접속41·누적 접속 초과525를 확인했다. 메모리와 원값을 확인해64로 시험·보존했다 | 현재098b077·한도64의 광고지면 HTTP요청10.006배에서 게임716건 오류0, p95차이−72.962ms. DB 지연 성능은 여전히 실패다. [C-11-01](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/C-11-01.md), [용량 JSON](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/perf/C-11-01/mysql_capacity.json) |
 
 ## 산출물·검증 수치
 
@@ -50,24 +50,26 @@ C는 VM 자원·서비스 실행, DB 권한과 TLS, Mongo 게임 저장, Outbox�
 | 광고 서버 정지 | 07:59:50~08:00:09 | 19초 | 15/0 |
 | Spark 강제 종료·동일 checkpoint 재개 | 08:07:40~08:08:01 | 21초 | 15/0 |
 
-MySQL 수동 승격은 공유 PJ3 복제 채널에서 필요한 binlog가 만료돼 미실행이다. 동결 후보에는 운영 LLM 서버가 없었으며 오후 현재 운영 LLM 접속 장애는 아래 별도 실행으로 검증했다. 생성 서버 자체의 프로세스 종료는 미실행이다. ([C-11-01 한계](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/C-11-01.md))
+MySQL 수동 승격은 공유 PJ3 복제 채널에서 필요한 binlog가 만료돼 미실행이다. 동결 후보에는 운영 LLM 서버가 없었으며 오후 현재 운영 LLM 접속 장애는 아래 별도 실행으로 검증했다. 생성 서버 자체의 프로세스 종료는 미실행이다. ([C-11-01 한계](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/C-11-01.md))
 
 ### 11/11 게임 경로 보호 추가 실측
 
-전체 격리 후보 `79da6f1`, 실제 엔진·DB·광고, Daphne 두 개+Caddy, 매 구간 판 이력이 없는 새 계정 네 명·180초, MySQL 접속 한도64 조건이다. 30명·최신 모델/LLM의 성능으로 확대하지 않는다. 아래 모든 수치는 [실측 증빙](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/C-11-01.md)과 [결과 JSON](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/perf/C-11-01/protection_candidate64.json)에 근거한다.
+현재 운영 `098b077`·`content-1.1`, 실제 엔진·DB·광고, 격리 Daphne 두 개+Caddy, 구간별 새 계정 네 명·180초, MySQL 접속 한도64 조건이다. 구간 전 시험 웹을 재시작해 이전 회로 차단 상태를 초기화했다. 30명·매 요청 LLM 추론 성능으로 확대하지 않는다. [실측 증빙](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/C-11-01.md), [결과 JSON](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/perf/C-11-01/protection_current098.json)
 
 | 구간 | 게임 요청/오류 | API p95(ms) | 정상 대비 증가(ms) | 기준 판정 |
 |---|---:|---:|---:|---|
-| 정상 광고 | 720/0 | 374.067 | 0 | 기준선 |
-| 광고 DB 쿼리 왕복 통신 지연 | 720/0 | 558.287 | 184.220 | 실패(50ms 초과) |
-| 실제 광고 요청량 10.069배 | 718/0 | 423.511 | 49.444 | 통과 |
-| 노트북3 호스트 CPU 압박 | 720/0 | 396.898 | 22.831 | 통과 |
+| 정상 광고 | 720/0 | 446.033 | 0 | 기준선 |
+| 광고 DB 목적지 TCP 왕복 통신 3000ms 지연 | 720/0 | 520.896 | 74.863 | 실패(50ms 초과) |
+| 광고지면 HTTP 요청량 10.006배 | 716/0 | 373.071 | -72.962 | 통과 |
+| 노트북3 호스트 CPU 압박 | 720/0 | 340.750 | -105.283 | 통과 |
 
-DB 지연의 게임 응답 증가 원인은 추가 분석이 필요하다. 이전 실패·한도40 결과·교란된 비교도 원 증빙에 보존했다. CPU 작업·시험 웹·프록시를 종료했고 합성 계정48개와 세션·인증 복사본을 정리했다. ([C-11-01 정리 기록](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/C-11-01.md))
+총2876게임 요청 오류0이다. 음수 차이는 관측값이며 부하가 응답을 빠르게 한다는 결론은 아니다. 광고 비율은 지면 HTTP 요청176→1761건으로 Kafka 이벤트량이 아니다. 이전79da6f1의 DB지연 증가184.220ms 등 실패 결과도 원 증빙에 보존했다. 소스와 구간 초기화가 달라 두 수치를 개선 효과로 단정하지 않는다. DB 지연 기준 초과 원인은 추가 분석이 필요하다.
+
+이번214판(완주198·진행16)의 Mongo18389건·Kafka고유18389건·공식Delta18389건은 누락·중복·해시 불일치0이다. 미발행 Outbox0, 전량 load_test=true다. 합성 계정16개와 세션·임시 인증을 정리하고 시험 웹·프록시·CPU 작업을 종료했다. 이전 후보48개와 LLM시험4개 정리는 별도 실행이다. ([대조 JSON](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/perf/C-11-01/current_events.json))
 
 ### 현재 운영 LLM 접속 장애
 
-운영 `098b077`·콘텐츠 `content-1.1`과 같은 조립의 격리 웹에서 실제 SSH 접속 터널을 잠시 정지했다. 생성 서버 프로세스는 유지한 연결 장애다. 회의 다듬기 생성4건의 `unreachable`을 확인하고 shown API로 template을 고정했다. 게임은 전체31요청(장애 전 시작1·장애 중30) 오류0으로 완주했다. 정지 전부터 완주·접속 복구·health200 확인까지10.748초였다. 이 판의 Mongo·Kafka·Delta141건은 유실·중복·해시 불일치0이다. ([실측](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/C-11-01.md), [JSON](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/65ad184/docs/evidence/perf/C-11-01/llm_link_fault.json))
+운영 `098b077`·콘텐츠 `content-1.1`과 같은 조립의 격리 웹에서 실제 SSH 접속 터널을 잠시 정지했다. 생성 서버 프로세스는 유지한 연결 장애다. 회의 다듬기 생성4건의 `unreachable`을 확인하고 shown API로 template을 고정했다. 게임은 전체31요청(장애 전 시작1·장애 중30) 오류0으로 완주했다. 정지 전부터 완주·접속 복구·health200 확인까지10.748초였다. 이 판의 Mongo·Kafka·Delta141건은 유실·중복·해시 불일치0이다. ([실측](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/C-11-01.md), [JSON](https://github.com/encore-ai-campus/mlo-01-p4-team3/blob/f87fb7a/docs/evidence/perf/C-11-01/llm_link_fault.json))
 
 ### 관측·웹·마감 기록
 
