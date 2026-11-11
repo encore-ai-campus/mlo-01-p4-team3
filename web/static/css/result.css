@@ -28,6 +28,13 @@
   border-top: 1px solid var(--pd-line-soft, #c6b99f); padding: .7rem 0; overflow-wrap: anywhere; }
 .review-residents li.is-possessed strong { color: var(--pd-red, #b04a3a); }
 .review-residents small, .progress-clues small { display: block; }
+/* 복기 행동 목록(E-10-10·B-10-01): 결정마다 머리줄·템플릿 해설·이유 코드·근거 */
+.review-reason p { margin: .15rem 0; }
+.review-when { color: var(--pd-muted, #6b6455); font-size: .85rem; }
+.review-reason-text { line-height: 1.55; }
+.review-reason-meta { font-size: .8rem; color: var(--pd-muted, #6b6455); }
+.review-code { display: inline-block; margin: 0 .3rem .2rem 0; padding: 0 .35rem; border: 1px solid var(--pd-line-soft, #c6b99f);
+  border-radius: var(--pd-radius, 3px); font-size: .75rem; }
 .end-home { margin: 1rem 0; }
 @media (max-width: 600px) {
   .end-card { padding: 1.25rem 1rem; }

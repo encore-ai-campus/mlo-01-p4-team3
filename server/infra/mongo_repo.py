@@ -125,3 +125,10 @@ class MongoGameRepository:
         document=self.collection.find_one({'_id':game_id},{'outbox':1})
         if document is None: raise KeyError(game_id)
         return [from_jsonable(EventEnvelope,row['envelope']) for row in document['outbox'] if not row['published']]
+
+    def events(self, game_id):
+        """복기 review_trace용으로 아웃박스 전체(발행 여부 무관)를 seq 순으로 읽는다. 판 문서를 바꾸지 않는다."""
+        document=self.collection.find_one({'_id':game_id},{'outbox':1})
+        if document is None: raise KeyError(game_id)
+        rows=[from_jsonable(EventEnvelope,row['envelope']) for row in document['outbox']]
+        return sorted(rows,key=lambda envelope:envelope.seq)

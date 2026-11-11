@@ -132,6 +132,15 @@ class MongoContractTests(unittest.TestCase):
         self.assertEqual([e.seq for e in self.repo.unpublished(game)],[0,1])
         self.assertEqual(self.repo.load(game)[0].state_version,1)
 
+    def test_events_reads_whole_outbox_in_seq_order_without_change(self):
+        """복기용 events()는 발행 여부와 무관하게 아웃박스 전체를 seq 순으로 읽고 문서를 바꾸지 않는다(E-10-10)."""
+        state,truth,event=self.make_game();game=state.meta.game_id
+        self.repo.append_events(game,[event],'attempt:events')
+        before=self.repo.collection.find_one({'_id':game})
+        self.assertEqual([e.seq for e in self.repo.events(game)],[0])
+        self.assertEqual(self.repo.collection.find_one({'_id':game}),before)
+        with self.assertRaises(KeyError): self.repo.events('missing-game')
+
     def test_parallel_append_never_loses_seq_or_dedup(self):
         state,truth,event=self.make_game();game=state.meta.game_id
         with ThreadPoolExecutor(max_workers=20) as pool:
