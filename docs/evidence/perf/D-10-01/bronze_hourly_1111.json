@@ -1,0 +1,100 @@
+{
+  "task": "D-10-01",
+  "commit": "2a79c3f1a8789e5da02e179d9c8b40f23974f48c",
+  "generated_at": "2026-11-11T08:27:38Z",
+  "source": "Read-only pipeline.spark.ut_bronze_counts query via Spark harness, source SHA256 97e4b7fb8a2bbf186402cc7c74cd289cf8ba5178fa908105e7b8cbfd555ed0f1; delta:official-bronze@245; checked 2026-11-11T17:20:32.837763+09:00; occurred_at time windows, source=human, not load_test; retrospective event totals only, no proof of contemporaneous arrival checks",
+  "metrics": {
+    "delta_version": {
+      "value": 245,
+      "unit": ""
+    },
+    "hours": {
+      "value": 5,
+      "unit": "구간"
+    },
+    "contemporaneous_checks_verified": {
+      "value": 0,
+      "unit": "회"
+    },
+    "h13_intent": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h13_survey": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h13_notebook": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h13_ads": {
+      "value": 4,
+      "unit": "건"
+    },
+    "h14_intent": {
+      "value": 2,
+      "unit": "건"
+    },
+    "h14_survey": {
+      "value": 2,
+      "unit": "건"
+    },
+    "h14_notebook": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h14_ads": {
+      "value": 15,
+      "unit": "건"
+    },
+    "h15_intent": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h15_survey": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h15_notebook": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h15_ads": {
+      "value": 3,
+      "unit": "건"
+    },
+    "h16_intent": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h16_survey": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h16_notebook": {
+      "value": 0,
+      "unit": "건"
+    },
+    "h16_ads": {
+      "value": 2,
+      "unit": "건"
+    },
+    "h17_intent": {
+      "value": 12,
+      "unit": "건"
+    },
+    "h17_survey": {
+      "value": 13,
+      "unit": "건"
+    },
+    "h17_notebook": {
+      "value": 4,
+      "unit": "건"
+    },
+    "h17_ads": {
+      "value": 58,
+      "unit": "건"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "task": "D-10-01",
+  "commit": "2a79c3f1a8789e5da02e179d9c8b40f23974f48c",
+  "generated_at": "2026-11-11T08:12:55Z",
+  "source": "Read-only in-place NAS SHA/annotation/freeze integrity verification against E-09-02 and D-10-01 prepared hashes; tools.ut_metrics metrics default 11/10 13:00-18:00 human scope, ut-metrics-1.3; no raw-input copy or C-tombstone rerun",
+  "metrics": {
+    "input_hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "reviewed_train_rows": {
+      "value": 9,
+      "unit": "행"
+    },
+    "reviewed_eval_rows": {
+      "value": 7,
+      "unit": "행"
+    },
+    "user_overlap": {
+      "value": 0,
+      "unit": "건"
+    },
+    "survey_games_ended": {
+      "value": 16,
+      "unit": "판"
+    },
+    "survey_games_aborted": {
+      "value": 6,
+      "unit": "판"
+    },
+    "survey_denominator": {
+      "value": 10,
+      "unit": "판"
+    },
+    "survey_answered": {
+      "value": 2,
+      "unit": "건"
+    },
+    "survey_skipped": {
+      "value": 8,
+      "unit": "건"
+    },
+    "survey_response_rate": {
+      "value": 0.2,
+      "unit": ""
+    },
+    "games_started": {
+      "value": 22,
+      "unit": "판"
+    }
+  }
+}
