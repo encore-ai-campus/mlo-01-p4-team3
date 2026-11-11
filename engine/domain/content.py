@@ -75,6 +75,7 @@ class TemplateLine:
 
 @dataclass
 class ContentBundle:
+    """한 콘텐츠 버전의 묶음(content/bundle_v1.json). 확장 인물·비밀 목록은 `draw_pool`이 프리셋별로 쓴다."""
     content_version: str
     places: list[PlaceDef]
     temperaments: list[Temperament]
