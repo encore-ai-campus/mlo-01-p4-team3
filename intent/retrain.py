@@ -18,7 +18,8 @@ from ml.gate import INTENT_SLOTS, intent_gate
 from pipeline.spark.privacy_filter import load_tombstones
 from tools.intent_examples import LABELS
 from tools.perf.engine_bench import percentile
-from tools.ut_freeze import DEFAULT_CUTOFF, DEFAULT_OPEN, KST, freeze_manifest, normalize
+from tools.ut_freeze import (DEFAULT_CUTOFF, DEFAULT_OPEN, FREEZE_DATA_VERSION, KST, freeze_data_version,
+                             freeze_manifest, normalize)
 
 
 def training_rows(rows, deleted, eval_users, eval_texts):
@@ -183,7 +184,8 @@ def _local_registry(folder, artifact, report):
         if report["accepted"] and not report["fixture"]:
             mlflow.log_artifacts(str(artifact), "model")
     client.set_tag(run_id, "paldo.gate.reasons", json.dumps(report["reasons"]))
-    passed = check_run(client, run_id, lambda _: (report["accepted"], "accepted" if report["accepted"] else "intent_gate"))
+    passed = check_run(client, run_id, lambda _: (report["accepted"], "accepted" if report["accepted"] else "intent_gate"),
+                       allow_freeze=True)
     version = register_candidate(client, run_id, "intent", "model", source_uri=source_uri) if passed else None
     return {"run_id": run_id, "candidate": version, "tracking": "isolated_sqlite"}
 
@@ -214,8 +216,12 @@ def main(argv=None):
     if args.fixture:
         if not args.data_version.startswith("fixture:"):
             parser.error("fixture mode requires fixture provenance")
-    elif not args.registry_dir or not re.fullmatch(r"delta:[A-Za-z0-9_.-]+@\d+", args.data_version):
-        parser.error("real runs require a Delta snapshot version and a private isolated registry directory")
+    elif not args.registry_dir or not (re.fullmatch(r"delta:[A-Za-z0-9_.-]+@\d+", args.data_version)
+                                       or FREEZE_DATA_VERSION.fullmatch(args.data_version)):
+        parser.error("real runs require a Delta snapshot or freeze manifest version and a private isolated registry directory")
+    elif (FREEZE_DATA_VERSION.fullmatch(args.data_version)
+          and ((not (args.freeze / "manifest.json").is_file()) or args.data_version != freeze_data_version(args.freeze))):
+        parser.error("freeze data version must equal the sha256 of --freeze manifest.json")
     if args.out.exists() or args.epochs < 1 or args.threads < 1:
         parser.error("use a new private output directory and positive epochs/threads")
 
@@ -266,6 +272,8 @@ def main(argv=None):
                   versions=dict(data_version=args.data_version, feature_version=TOKENIZER_VERSION,
                                 code_commit=commit, replay_source_sha256=_sha(__file__)),
                   seconds=round(perf_counter() - started, 3))
+    if FREEZE_DATA_VERSION.fullmatch(args.data_version) and args.data_version != "freeze:" + report["freeze_sha256"]:
+        raise ValueError("freeze manifest changed during training; restart with current inputs")
     decision_path = args.out / "decision.json"
     decision_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if args.registry_dir:

@@ -1,5 +1,5 @@
 {
-  "content_version": "content-1.0.1",
+  "content_version": "content-1.1",
   "places": [
     {
       "place": "well",
@@ -216,6 +216,52 @@
         }
       },
       "speech_style": "조용하고 단정한 말투. 말수가 적고, 틀린 말에는 낮은 목소리로 하나하나 짚는다."
+    },
+    {
+      "npc_id": "hunter",
+      "name_ko": "사냥꾼",
+      "aliases": [
+        "사냥꾼",
+        "포수",
+        "산포수",
+        "강 포수"
+      ],
+      "temperament_id": "hothead",
+      "routine": {
+        "evening": {
+          "gate": 0.5,
+          "tavern": 0.4,
+          "home": 0.1
+        },
+        "midnight": {
+          "home": 0.8,
+          "gate": 0.2
+        }
+      },
+      "speech_style": "퉁명한 하게체에 반말이 섞인다. 한마디 한마디를 산짐승·덫·발자국에 빗대고, 길게 따지면 대꾸를 끊어 버린다."
+    },
+    {
+      "npc_id": "monk",
+      "name_ko": "스님",
+      "aliases": [
+        "스님",
+        "떠돌이 스님",
+        "탁발승",
+        "객승"
+      ],
+      "temperament_id": "timid",
+      "routine": {
+        "evening": {
+          "shrine": 0.5,
+          "well": 0.3,
+          "home": 0.2
+        },
+        "midnight": {
+          "home": 0.9,
+          "shrine": 0.1
+        }
+      },
+      "speech_style": "조심스러운 합쇼체. 자신을 '소승'이라 낮추고, 합장하며 말끝마다 '나무아미타불'을 붙이며, 남을 탓하는 말은 끝내 입에 올리지 않는다."
     }
   ],
   "secrets": [
@@ -225,7 +271,8 @@
       "eligible_npcs": [
         "blacksmith",
         "meosum",
-        "yakcho"
+        "yakcho",
+        "hunter"
       ],
       "slot": "midnight",
       "actual_place": "tavern",
@@ -241,7 +288,8 @@
       "eligible_npcs": [
         "jumo",
         "blacksmith",
-        "gwabu"
+        "gwabu",
+        "hunter"
       ],
       "slot": "midnight",
       "actual_place": "shrine",
@@ -293,7 +341,8 @@
       "eligible_npcs": [
         "hunjang",
         "jumo",
-        "gwabu"
+        "gwabu",
+        "monk"
       ],
       "slot": "evening",
       "actual_place": "well",
@@ -309,7 +358,8 @@
       "eligible_npcs": [
         "hunjang",
         "blacksmith",
-        "yakcho"
+        "yakcho",
+        "hunter"
       ],
       "slot": "evening",
       "actual_place": "tavern",
@@ -318,6 +368,22 @@
       "confession_threshold": 40.0,
       "conflicts_with": [],
       "grudge_clue_id": "clue_gate"
+    },
+    {
+      "secret_id": "rite",
+      "title_ko": "몰래 올린 제",
+      "eligible_npcs": [
+        "meosum",
+        "gwabu",
+        "monk"
+      ],
+      "slot": "evening",
+      "actual_place": "shrine",
+      "false_place": "home",
+      "confession_line": "서낭당에서 남몰래 넋을 달래는 제를 올렸소. 달래 드려야 할 넋이 있어 그랬으니, 그 일만은 덮어 주시오.",
+      "confession_threshold": 55.0,
+      "conflicts_with": [],
+      "grudge_clue_id": null
     }
   ],
   "grudge_clues": [
@@ -821,5 +887,12 @@
         "흐흑, 다 말씀드리겠습니다요. {fact}"
       ]
     }
+  ],
+  "extra_npcs": [
+    "hunter",
+    "monk"
+  ],
+  "extra_secrets": [
+    "rite"
   ]
 }
