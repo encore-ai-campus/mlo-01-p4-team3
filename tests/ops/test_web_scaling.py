@@ -220,9 +220,16 @@ class BenchOptions(unittest.TestCase):
         version = "model-v0"
         rows = {"8001": scrape(version, "ok", 100, 100),
                 "8002": scrape(version, "fallback", 0, 4) + scrape("other", "ok", 0, 100)}
+        rows["8002"] += (
+            '# TYPE paldo_model_decisions_total counter\n'
+            'paldo_model_decisions_total{model_version="model-v0",result="fallback"} 6\n'
+            '# TYPE paldo_engine_suspicion_fallback_total counter\n'
+            'paldo_engine_suspicion_fallback_total 5\n'
+        )
         self.assertEqual(inference_metrics(rows, version), {
             "inference_calls": 104, "inference_failures": 4, "inference_p95_upper_ms": 100,
             "inference_calls_by_process": {"8001": 100, "8002": 4},
+            "engine_fallback_decisions": 6, "engine_committed_fallbacks": 5,
         })
         self.assertIsNone(inference_metrics({"8001": ""}, version)["inference_p95_upper_ms"])
 
@@ -264,6 +271,37 @@ class BenchOptions(unittest.TestCase):
             self.assertIn("server.tests.multiproc_bench", call.call_args[0][0])
             cli.main(["--users", "3"])
             self.assertIn("server.tests.api_bench", call.call_args[0][0])
+            cli.main(["--load-dir", "out/test"])
+            self.assertIn("server.tests.multiproc_bench", call.call_args[0][0])
+
+    def test_external_client_uses_only_load_driver(self):
+        from server.tests import multiproc_bench as bench
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            host = '.'.join(map(str, (10, 0, 0, 1)))  # 실제 인프라 주소를 쓰지 않는 시험용 RFC1918 주소.
+            state = dict(origin=f'http://{host}:1234', cookies=['sessionid=abc'], minutes=3)
+            (path / 'client.json').write_text(json.dumps(state), encoding='utf-8')
+            with mock.patch.object(bench, 'drive_load', return_value={'users': 1}) as load, \
+                    mock.patch.object(bench, 'mongo_uri', side_effect=AssertionError('client must not use Mongo')), \
+                    mock.patch.object(bench, 'with_ping', side_effect=lambda host, folder, drive: drive()):
+                self.assertEqual(bench.main(['--load-dir', directory]), 0)
+                load.assert_called_once_with(state['origin'], state['cookies'], None, 3, diagnostics=True)
+                self.assertEqual(json.loads((path / 'load.json').read_text())['users'], 1)
+
+    def test_proxy_samples_match_client_ids_and_cpu_uses_the_load_window(self):
+        from server.tests.bench_diagnostics import access_summary, cpu_summary
+        requests = [dict(bench_id='a', stages={'server_total': 10})]
+        event = dict(logger='http.log.access', request={'headers': {'X-Paldo-Bench-Request-Id': ['a']}},
+                     duration=.012)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'caddy.log'
+            path.write_text(json.dumps(event), encoding='utf-8')
+            self.assertEqual(access_summary(path, requests),
+                             dict(caddy_samples=1, caddy_p95_ms=12, django_samples=1, django_p95_ms=10))
+        result = cpu_summary([(0, 0, 0), (1, 100, 40), (2, 200, 60), (3, 400, 100)],
+                             dict(start=1, end=2))
+        self.assertEqual(result['host_cpu_percent'], 80)
+        self.assertEqual(result['cpu_samples'], 2)
 
     def test_memory_and_timeout_recovery_preserve_missing_measurements(self):
         from server.tests.multiproc_bench import memory_metrics, recovery_metrics, resident_bytes
@@ -284,6 +322,7 @@ class BenchOptions(unittest.TestCase):
                      model_version='a', duration_ms=42),
                 dict(component='suspicion_model', reason='model timeout'))), encoding='utf-8')
             self.assertEqual(recovery_metrics([path])['worker.log'], dict(timeouts=2, unresolved=1,
+                fallback_reasons={'model timeout': 2},
                 recoveries=[dict(model_version='a', duration_ms=42)]))
 
 

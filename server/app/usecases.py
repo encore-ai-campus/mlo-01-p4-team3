@@ -12,6 +12,7 @@ from engine.domain.serde import dumps, from_jsonable
 from engine.ports import StoredCommand, VersionConflict
 from engine.domain.abandon import AlreadyEnded, abandon
 from engine.domain.progress import ending_available
+from engine.domain.review import TraceEvent, TraceInput, review_text, review_trace
 from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewOutput
 from .clue_notice import clue_notices
 from .progress import apply_progress, sweep_game
@@ -65,6 +66,10 @@ class GameService:
         self._start_locks_guard = threading.Lock()
         # 판 종료를 받는 함수(B-09-01 1번 의심 모델 보관소 `release`). None이면 부르지 않는다.
         self.release_game = None
+        # Mongo 조립은 진행 판 ID만 조회한다. 다른 저장소는 기존 load 포트로 판정한다.
+        self.find_open_games = None
+        # 복기 템플릿 해설 문구 {phrase_id: [변형]}(E-10-10, `server/infra/review_lines.py`가 읽음). None이면 문장 없이 이유 코드만.
+        self.review_lines = None
 
     def owned(self, game_id, player_pseudonym):
         """멱등 응답·버전 확인보다 먼저 판 소유권을 확인한다."""
@@ -189,7 +194,10 @@ class GameService:
     def unfinished_open_games(self, player_pseudonym):
         """계정의 진행 중인 일반 판(회차 없음) ID를 시작 순서대로."""
         from .open_start import unfinished_open_games   # open_start가 이 모듈을 import하므로 늦게 불러온다
-        return unfinished_open_games(self.progress.load(player_pseudonym).game_ids, self.repository.load)
+        game_ids = self.progress.load(player_pseudonym).game_ids
+        if self.find_open_games is not None:
+            return self.find_open_games(game_ids)
+        return unfinished_open_games(game_ids, self.repository.load)
 
     def abandon_game(self, game_id, player_pseudonym):
         """진행 중인 일반 판을 중단 처리한다(삭제하지 않음). 이번 호출로 중단했으면 True, 아니면 False.
@@ -253,13 +261,29 @@ class GameService:
         game_id = state.meta.game_id
         self._sweep_saved(player_pseudonym, state)
         progress = self.progress.load(player_pseudonym)
-        # 행동 시점 이유는 review_trace 인수 전까지 비워 둔다. 현재 믿음에서 추론하지 않는다.
-        timeline = [ReviewItem(speech.speech_id, speech.speaker, [], list(speech.evidence))
-                    for speech in state.public.speeches]
+        timeline = self._review_timeline(state)
         clues = [clue_id for clue_id, record in sorted(progress.clues.items())
                  if record.first_game_id == game_id]
         return ReviewOutput(game_id, state.result, dict(truth.roles), dict(truth.secrets),
                             timeline, clues_gained=clues)
+
+    def _review_timeline(self, state):
+        """행동 시점 decision 이벤트(아웃박스)로 복기 항목을 만든다. 현재 믿음·상태에서 이유를 다시 계산하지 않는다."""
+        meta = state.meta
+        envelopes = self.repository.events(meta.game_id)
+        trace = review_trace(TraceInput(meta.game_id, meta.rule_version, meta.seed,
+                                        [TraceEvent(e.seq, e.day, e.phase, e.state_version, e.event_type, e.payload)
+                                         for e in envelopes], state.public))
+        try:
+            names = {c.npc_id: c.name_ko for c in self.dependencies(meta).content.characters}
+        except (LookupError, RuntimeError):    # 판 콘텐츠 버전을 못 읽을 때만(저장소 KeyError, 웹 조립의
+            names = {}                         # GameServiceUnavailable). 이름 대신 ID로 보이고 이유 코드는 그대로
+        lines = self.review_lines or {}
+        return [ReviewItem(item.item_id, item.actor, item.day, item.phase, item.kind, list(item.reason_codes),
+                           list(item.evidence), item.phrase_id, review_text(item, lines, names, meta.seed),
+                           item.speech_id, item.target_npc, item.reaction, item.executor, item.victim,
+                           item.policy_version)
+                for item in trace.items]
 
     def command(self, data, player_pseudonym):
         """중복 → 버전 → 엔진 → 원자 저장 → 경합 처리 순서를 지킨다."""

@@ -16,10 +16,12 @@ from server.app.ads_port import AdGateway
 from engine.testing.fakes import ScriptedGameEngine
 from ads.testing.fakes import FakeAdProvider
 
+from server.tests.asgi_bench_metrics import observe_calls, observe_engine_estimate, observe_fallbacks, record_wait, timed
+
 model_version = os.environ.get("PALDO_BENCH_SUSPICION_VERSION")
+actual = bool(model_version) or os.environ.get("PALDO_BENCH_ACTUAL_BASELINE") == "1"
 if model_version:
     from ml.suspicion.features import FEATURE_VERSION
-    from server.infra.game_factory import ContentPolicyEngine
     from server.infra.model_selector import LocalModelSelector
     from server.infra.observed_models import ObservedSuspicionModel
     from ml.adapters.suspicion_model import SharedModelStore
@@ -28,7 +30,12 @@ if model_version:
                                   intent_version="", feature_version=FEATURE_VERSION)
     model_store = SharedModelStore()
     atexit.register(model_store.close)
-    adapter = model_store.get(model_version, lambda: selector.suspicion_model(model_version))
+    def load_primary():
+        adapter = selector.suspicion_model(model_version)
+        adapter.wait_observer = record_wait
+        return adapter
+
+    adapter = model_store.get(model_version, load_primary)
     if secondary_version := os.environ.get('PALDO_BENCH_SECONDARY_SUSPICION_VERSION'):
         model_store.get(secondary_version, lambda: selector.suspicion_model(secondary_version))
 
@@ -50,13 +57,27 @@ if model_version:
 
     REGISTRY.register(WorkerMemory())
     suspicion = ObservedSuspicionModel(adapter)
-    engine = ContentPolicyEngine(model_version=model_version)
+    suspicion.estimate = observe_calls(suspicion.estimate)
 else:
-    engine, suspicion = ScriptedGameEngine(), None
+    suspicion = None
+if actual:
+    from server.infra.game_factory import ContentPolicyEngine
+
+    engine = ContentPolicyEngine(model_version=model_version or 'off')
+    if model_version:
+        engine.apply = observe_fallbacks(engine.apply)
+        from engine.domain.npc import vote
+        vote.estimate = observe_engine_estimate(vote.estimate)
+else:
+    engine = ScriptedGameEngine()
 runtime = open_mongo_runtime(engine=engine, suspicion=suspicion,
                              uri=os.environ["PALDO_MONGO_URI"], collection_prefix=os.environ["PALDO_BENCH_PREFIX"])
-if model_version:
+if actual:
     game = runtime.game
+    game.load_test = True
+else:
+    game = fixture_service(runtime)
+if model_version:
     prepare_start = game.prepare_start
 
     def prepare_model_game(data, player):
@@ -64,15 +85,11 @@ if model_version:
         return replace(prepare_start(data, player), model_versions={"suspicion": model_version})
 
     game.prepare_start = prepare_model_game
-    game.load_test = True
-else:
-    game = fixture_service(runtime)
 if os.environ.get('PALDO_BENCH_INTENT_FACTORY'):
     from server.app.interactions import InteractionService
     from server.infra.interaction_store import MongoInteractionStore
     from django.utils.module_loading import import_string
     from server.paldo_web.intent import ObservedIntentParser
-    from server.tests.asgi_bench_metrics import timed
 
     parser = ObservedIntentParser(import_string(os.environ['PALDO_BENCH_INTENT_FACTORY'])())
     parser.parse = timed(parser.parse, 'intent_parse')
@@ -80,7 +97,6 @@ if os.environ.get('PALDO_BENCH_INTENT_FACTORY'):
     game.interactions = InteractionService(game, store, parser=parser)
 configure_game_service(game)
 configure_session_service(runtime.sessions)
-from server.tests.asgi_bench_metrics import timed
 
 
 for name in ('load', 'find_command', 'commit', 'create'):
@@ -88,6 +104,8 @@ for name in ('load', 'find_command', 'commit', 'create'):
 game.dependencies = timed(game.dependencies, 'content')
 for name in ('load', 'add_game'):
     setattr(game.progress, name, timed(getattr(game.progress, name), 'progress_' + name))
+if game.find_open_games is not None:
+    game.find_open_games = timed(game.find_open_games, 'find_open_games')
 for name in ('new_game', 'apply', 'player_view'):
     setattr(game.engine, name, timed(getattr(game.engine, name), 'engine_' + name))
 from server.api import views

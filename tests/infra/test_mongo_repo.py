@@ -47,6 +47,29 @@ class MongoContractTests(unittest.TestCase):
         event=serde.from_jsonable(EventEnvelope,load_jsonl('fixtures/events/sample_events.jsonl')[0])
         return state,truth,replace(event,game_id=state.meta.game_id)
 
+    def test_unfinished_id_query_matches_full_load_and_observes_updates(self):
+        """ID 조회는 완료·회차·없는 판을 제외하고 순서·중복과 다음 조회의 최신 상태를 보존한다."""
+        from engine.domain.abandon import abandon
+        from server.app.open_start import unfinished_open_games
+        states=[]
+        for _ in range(4):
+            state,truth,_=self.make_game()
+            states.append((state,truth))
+        first,second,finished,session=[state.meta.game_id for state,truth in states]
+        ended,_=abandon(states[2][0])
+        self.repo.collection.update_one({'_id':finished},{'$set':{'state':serde.to_jsonable(ended)}})
+        self.repo.collection.update_one({'_id':session},{'$set':{'state.meta.session_id':'session'}})
+        self.repo.collection.update_one({'_id':second},{'$unset':{'state.meta.session_id':1}})
+        self.repo.collection.update_one({'_id':first},{'$unset':{'state.result':1}})
+        ids=[second,'missing-'+uuid.uuid4().hex,finished,session,first,second]
+        expected=unfinished_open_games(ids,self.repo.load)
+        self.assertEqual(expected,[second,first,second])
+        self.assertEqual(self.repo.unfinished_open_game_ids(ids),expected)
+        ended,_=abandon(states[0][0])
+        self.repo.collection.update_one({'_id':first},{'$set':{'state':serde.to_jsonable(ended)}})
+        self.assertEqual(self.repo.unfinished_open_game_ids(ids),[second,second])
+        self.assertEqual(self.repo.unfinished_open_game_ids([]),[])
+
     def test_replay_recovers_published_and_pending_confessions(self):
         """실제 아웃박스를 두 번 읽어 단서와 해금을 한 번씩 복구한다."""
         from server.infra.replay_progress import replay_games
@@ -108,6 +131,15 @@ class MongoContractTests(unittest.TestCase):
         self.repo.commit(game,0,replace(state,state_version=1),truth,[event],StoredCommand('c','{}'))
         self.assertEqual([e.seq for e in self.repo.unpublished(game)],[0,1])
         self.assertEqual(self.repo.load(game)[0].state_version,1)
+
+    def test_events_reads_whole_outbox_in_seq_order_without_change(self):
+        """복기용 events()는 발행 여부와 무관하게 아웃박스 전체를 seq 순으로 읽고 문서를 바꾸지 않는다(E-10-10)."""
+        state,truth,event=self.make_game();game=state.meta.game_id
+        self.repo.append_events(game,[event],'attempt:events')
+        before=self.repo.collection.find_one({'_id':game})
+        self.assertEqual([e.seq for e in self.repo.events(game)],[0])
+        self.assertEqual(self.repo.collection.find_one({'_id':game}),before)
+        with self.assertRaises(KeyError): self.repo.events('missing-game')
 
     def test_parallel_append_never_loses_seq_or_dedup(self):
         state,truth,event=self.make_game();game=state.meta.game_id

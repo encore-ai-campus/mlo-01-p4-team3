@@ -78,6 +78,15 @@ class MongoGameRepository:
         if not document or not document.get('commands'): return None
         return from_jsonable(StoredCommand,document['commands'][0])
 
+    def unfinished_open_game_ids(self, game_ids):
+        """주어진 판 중 진행 중인 일반 판 ID만 원래 순서로 반환한다. 상태·진실은 읽지 않는다."""
+        if not game_ids:
+            return []
+        found = {row['_id'] for row in self.collection.find(
+            {'_id': {'$in': game_ids}, 'state.meta.session_id': None, 'state.result': None},
+            {'_id': 1})}
+        return [game_id for game_id in game_ids if game_id in found]
+
     def commit(self, game_id, expected_version, state, truth, outbox, command):
         """상태·진실·Outbox·명령을 하나의 CAS update pipeline으로 반영한다."""
         if state.state_version != expected_version+1:
@@ -116,3 +125,10 @@ class MongoGameRepository:
         document=self.collection.find_one({'_id':game_id},{'outbox':1})
         if document is None: raise KeyError(game_id)
         return [from_jsonable(EventEnvelope,row['envelope']) for row in document['outbox'] if not row['published']]
+
+    def events(self, game_id):
+        """복기 review_trace용으로 아웃박스 전체(발행 여부 무관)를 seq 순으로 읽는다. 판 문서를 바꾸지 않는다."""
+        document=self.collection.find_one({'_id':game_id},{'outbox':1})
+        if document is None: raise KeyError(game_id)
+        rows=[from_jsonable(EventEnvelope,row['envelope']) for row in document['outbox']]
+        return sorted(rows,key=lambda envelope:envelope.seq)
