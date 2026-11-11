@@ -57,6 +57,32 @@ class GateTests(unittest.TestCase):
         self.client.create_model_version.assert_called_once_with("intent", source, run_id="r1")
         self.client.set_registered_model_alias.assert_called_once_with("intent", "candidate", "4")
 
+    def test_freeze_version_only_passes_when_runner_allows_it(self):
+        """동결 해시 버전은 의도 해석기 실행기가 허용할 때만 통과하고 CLI 기본값은 거절한다."""
+        self.tags["data_version"] = "freeze:" + "a" * 64
+        self.assertFalse(gate.check_run(self.client, "r1", lambda run: (True, "ok")))
+        self.client.set_tag.assert_any_call("r1", "paldo.gate.reason", "required_run_metadata")
+        self.assertTrue(gate.check_run(self.client, "r1", lambda run: (True, "ok"), allow_freeze=True))
+        evaluate = Mock()
+        self.assertEqual(self.invoke(evaluate), 1)
+        evaluate.assert_not_called()
+
+    def test_malformed_freeze_versions_fail_even_when_allowed(self):
+        """접두어 뒤 빈 값, 길이·문자 오류, 허용하지 않은 접두어는 평가 전에 거절한다."""
+        for value in ("freeze:", "freeze:" + "a" * 63, "freeze:" + "A" * 64, "freeze:" + "g" * 64,
+                      "a" * 64, "fixture:" + "a" * 64, "freeze:" + "a" * 64 + " "):
+            self.tags["data_version"] = value
+            evaluate = Mock()
+            self.assertFalse(gate.check_run(self.client, "r1", evaluate, allow_freeze=True), value)
+            evaluate.assert_not_called()
+
+    def test_existing_delta_versions_still_pass_with_or_without_freeze(self):
+        """기존에 받던 `delta:bronze:42`와 `delta:t@3`은 허용 여부와 관계없이 그대로 받는다."""
+        for value in ("delta:bronze:42", "delta:official-bronze@3"):
+            self.tags["data_version"] = value
+            self.assertTrue(gate.check_run(self.client, "r1", lambda run: (True, "ok")))
+            self.assertTrue(gate.check_run(self.client, "r1", lambda run: (True, "ok"), allow_freeze=True))
+
     def test_selector_resolves_an_alias_to_an_exact_version(self):
         self.client.get_model_version_by_alias.return_value = SimpleNamespace(
             version=3, source="mlflow-artifacts:/1/r1/artifacts/model", run_id="r1"
