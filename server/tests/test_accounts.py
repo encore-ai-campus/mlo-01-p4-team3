@@ -1,6 +1,6 @@
 """계정·잠금·세션·CSRF·비밀번호 규칙의 Django 회귀 검사."""
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from io import StringIO
 import json
 from logging.handlers import TimedRotatingFileHandler
@@ -363,7 +363,11 @@ class Accounts(TestCase):
                 )
                 self.assertEqual(response.status_code, 200)
             self.assertIsNotNone(response.json()["view"]["result"])
-            self.assertEqual(self.client.get("/ads/slot/result_banner").status_code, 200)
+            # 광고 시간 조건은 서울 시각 기준: UTC 15:30은 서울 0시로 보낸다.
+            seoul_midnight = datetime(2026, 11, 11, 15, 30, tzinfo=dt_timezone.utc)
+            with patch("server.api.ad_slots.timezone.now", return_value=seoul_midnight):
+                self.assertEqual(self.client.get("/ads/slot/result_banner").status_code, 200)
+            self.assertEqual(provider.calls[-1].context.hour, 0)
             self.assertEqual(self.client.post("/accounts/signup", dict(signup_data, username=username.upper())).status_code, 400)
             self.client.post("/accounts/logout")
             for _ in range(5):
