@@ -23,7 +23,8 @@ if ($null -eq $running) { "경고: vmrun 실행 목록을 얻지 못했다. 기�
 function Read-VmdkText([string]$path) {
   # 작은 설명 파일은 그대로, 단일 파일(monolithic) 디스크는 앞 64KB에 설명이 들어 있다.
   if ((Get-Item $path).Length -lt 100KB) { return (Get-Content $path -Raw -ErrorAction SilentlyContinue) }
-  $fs = [System.IO.File]::OpenRead($path)
+  # 실행 중인 VMware의 쓰기 핸들과 공존하며 설명 영역만 읽는다.
+  $fs = [System.IO.File]::Open($path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
   try { $buf = New-Object byte[] 65536; $n = $fs.Read($buf, 0, $buf.Length); return [System.Text.Encoding]::ASCII.GetString($buf, 0, $n) } finally { $fs.Close() }
 }
 
