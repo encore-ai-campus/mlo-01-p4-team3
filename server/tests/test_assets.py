@@ -118,6 +118,9 @@ class AssetReplacement(TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(first_png)
 
+            # 화면 템플릿 로더는 BASE_DIR 아래에서 템플릿을 찾으므로, 에셋 루트를 바꾸기 전에 한 번 읽어 캐시에 올린다.
+            # 이 테스트를 단독으로 돌려도 저장소의 실제 템플릿을 쓰게 하려는 것이다.
+            self.assertEqual(self.client.get(game_url, HTTP_ACCEPT="text/html").status_code, 200)
             # TEMPLATES는 저장소의 실제 경로를 유지하고 제공할 에셋 루트만 바꾼다.
             with self.settings(BASE_DIR=root, ASSET_MANIFEST=manifest_path):
                 first_page = self.client.get(game_url, HTTP_ACCEPT="text/html")
