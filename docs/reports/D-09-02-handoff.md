@@ -15,7 +15,9 @@
 소표본 개선 판단의 주 지표는 각각 log loss와 명령 일치율이다. 승률은 개선 목표가 아니라 안정성 제한이다.
 테스트 픽스처는 실제 사람 평가나 모델 채택 증거가 아니다.
 
-## B-09-01 밴딧 연결
+## B-09-01 밴딧 연결 (현재 담당 E)
+
+11/9 PM 담당 변경에 따라 B-09-01 1~5번의 수신 담당은 E다([현재 태스크](../tasks/E_pm.md#b-09-01-모델-버전-적용업데이트-내역-표시)). 아래 판 시작 조립·버전 고정 절차는 E의 수신 검증 항목이다.
 
 배치는 동의한 사람의 `paldo.game`/`paldo.player` 전체 종료 이력 export를 읽는다. 스트림 증분만 넣지 않는다.
 `game_ended`(phase=ended, winner=village/possessed), `survey_submitted`를 판 ID로 조인한다.
@@ -79,7 +81,86 @@ tokenizer_config.json 및 함께 저장된 선택적 tokenizer 파일. 로더는
 11/9 재검증에서 기존 실제 체크포인트의 IntentParser 로드·대상 슬롯·확인 필수 응답이 통과했고 실물 통합 테스트 4개도 통과했다. 이전 WinError 4551은 같은 환경에서 재현되지 않았으며 정책 설정은 바꾸지 않았다. 83.80%는 개발 수치이며 사람 평가 합격을 뜻하지 않는다.
 `test_human` 인계는 11/10 19:30, D-09-01 최종 평가는 11/11 09:00이다. 사람 평가 합격을 주장하지 않는다.
 
-## 사용자 수행 대기
+## RunPod 준비와 종료 확인
 
-RunPod 결제 설정·자동 충전 끔·잔액 알림·D 한도 $4.5 및 Restricted 키의 비공개 전달은 사용자 조건이다.
-완료 증거를 받지 못했으므로 미충족이다. 결제·키 생성·전달을 대신 실행하지 않았다. 값 자체를 증빙에 넣지 않는다.
+11/10 사용자 확인으로 선불 충전·자동 충전 끔·잔액 부족 알림·Restricted 설정 저장·E 수령은 완료했다. D 한도는 $4.5다. 조건 5의 남은 순서는 E의 실제 실험 종료·키 폐기 요청 확인 뒤 D가 전달 키를 폐기하고, 실험용 Network Volume 0개를 확인한 다음, Pod별 사용 시간·요금을 E에게 저장소 밖으로 전달하는 것이다. 실험 종료·폐기 요청과 종료 확인 증빙은 아직 받지 못했다. 키 원문은 기록하지 않는다.
+
+## 11/10 로컬 BERT HTTP 수신 검증
+
+최신 dev `5cbb14e`의 B 수신 시험에 실물 체크포인트를 주입했다. Django test client·임시 SQLite·녹화 엔진에서 31개 시험이 24.574초에 통과했고 건너뜀은 0개다. 그중 실물 체크포인트를 사용하는 RealBertScreens는 11개다. 새 회귀는 실제 BERT의 `훈장이 수상하다` 입력에서 `kind=suspect, target=hunjang`, 확인 필수, 시도 기록의 모델·토크나이저 버전, 취소 후 동일 state_version을 검증한다.
+
+측정 당시 테스트 파일 SHA256은 `f59dbb3cef34d1b936c7bd9e6914905dffe9c7f2fcb02c0d81e3c9ccaa08279c`다. 결과는 [bert_receive.json](../evidence/perf/D-09-02/bert_receive.json)에 기록했다. 이 실행은 같은 VM의 웹 2프로세스·30명·3분 부하 측정을 포함하지 않는다.
+
+### B가 재현할 설정
+
+압축을 푼 `20261107T162208Z` 디렉터리에 run.json과 model/이 함께 있어야 한다. 운영 설정에 사용할 공개 무인자 팩토리는 `server.paldo_web.intent.make_bert_parser`다.
+
+| 설정 | 값 |
+|---|---|
+| INTENT_PARSER_FACTORY | server.paldo_web.intent.make_bert_parser |
+| INTENT_BERT_RUN_DIR | 압축을 푼 20261107T162208Z 절대 경로 |
+| 모델 버전 | koelectra-intent-v0-7ec09f448fe3 |
+| 입력 길이 / 임계값 | 64 / 0.2 |
+| 최소 입력과 기대 후보 | 훈장이 수상하다 → suspect / hunjang / needs_confirmation=true |
+
+PowerShell에서 시험용 경로만 지정해 수신 검증을 재현한다.
+
+```powershell
+$env:PALDO_BERT_RECEIVE_RUN_DIR = '<압축 해제 경로>/20261107T162208Z'
+$env:OMP_NUM_THREADS = '1'
+$env:MKL_NUM_THREADS = '1'
+$env:HF_HUB_OFFLINE = '1'
+python -B server/manage.py test server.tests.test_bert_receive --settings=server.paldo_web.test_settings --noinput --verbosity=2
+```
+
+검증 환경은 Python 3.14.6이다. 설치 기준은 requirements/ml.txt와 requirements/web.txt이며 다음 표는 실제 실행 환경에서 읽은 버전이다.
+
+| 패키지 | 실행 버전 |
+|---|---|
+| torch | 2.15.0+cpu |
+| transformers | 5.22.1 |
+| tokenizers | 0.23.3 |
+| safetensors | 0.8.0 |
+| scikit-learn | 1.9.1 |
+| numpy | 2.5.4 |
+| django | 6.1.2 |
+| joblib | 1.6.0 |
+| prometheus-client | 0.26.0 |
+
+### 로컬 인계 묶음
+
+로컬 파일은 `koelectra-intent-v0-7ec09f448fe3.zip`다. 크기는 453038785 bytes, SHA256은 `dc8884daafeab7a0a42490c8ee5e11581412b9d390b819f26a32e89c504e7636`다. 원래 체크포인트 파일 5개, manifest.json, ML·웹 requirements를 담았다. 압축 내부 파일을 다시 읽어 아래 SHA256과 모두 일치함을 검사했다. 묶음 생성까지 완료했으며 B의 다른 장비 전달·수신 기록은 대기다.
+
+| 아티팩트 상대 경로 | SHA256 |
+|---|---|
+| run.json | `520c1e03768e6dc26d6a44ba6076cff76733a4b10a00008432ad118fdab399fa` |
+| model/config.json | `9add951f73b6e5d68f8d9ef2a8b0dae9b3aa57789f71d69c6f5e4317b094ec31` |
+| model/model.safetensors | `7ec09f448fe3f768575227be0baebdb23408bf829968eb2694c29e39d18239d3` |
+| model/tokenizer.json | `a9c958b7afb86ba4bd2b476e0ce39c131f3fd3d8f7146f77287e0830180f4515` |
+| model/tokenizer_config.json | `cc777ac02b3331f4ae490a2e461c45d20d5ecd29b1e93b64e7c1567d59637293` |
+
+## 11/10 로컬 종료·설문 이벤트 검증
+
+dev 5cbb14e의 기존 웹 설문 시험에서 녹화 판을 시작·종료하고 HTTP로 설문을 제출했다. 시험 상태에 밴딧 버전과 팔을 고정한 경우, 웹이 생성한 paldo.game/game_ended와 paldo.player/survey_submitted가 같은 판의 보상 입력 1건으로 결합됐다. 설문 의견은 보상 입력에 들어가지 않았다. 기본 조립에서는 두 이벤트에 밴딧 귀속 값이 없었고, D 배치의 입력 검사가 이 이력을 거부했다. 두 경우를 모두 확인했다.
+
+E의 판 시작 조립에서 bandit과 bandit_arm을 함께 기록한 뒤, 이 값이 있는 대상 판의 종료·설문 이력을 배치에 인계해야 한다. 전환 전의 값 없는 이력이 섞인 전체 export는 현재 입력 검사에서 거부된다. 소급해서 팔을 추정하지 않도록 대상 판의 범위를 E/C와 합의해야 한다. 실제 Kafka 발행·소비와 다음 판 반영은 남아 있다.
+
+## 후속 완료 범위
+
+- 조건 2의 실제 웹 판 시작 → 밴딧 버전/팔 고정 → 종료·설문 Kafka → 배치 → 다음 판 연결은 E 담당 B-09-01 수신 경로와 함께 확인해야 한다.
+- B-09-02의 실제 엔진·동급 VM 30명3분 측정은 별도 조건이다.
+- 11/10 사용자 확인: D 계정 RunPod 결제 설정·키 전달 완료. 선불 충전, 자동 충전 OFF, 잔액 부족 알림 ON, Restricted 설정 저장 및 E 수령을 확인했다. 첨부 편집 화면에서 GraphQL Read / Write는 전체 GraphQL 접근으로 표시되며, 화면에 Pod 전용 권한 항목은 없다. 실험 후 키 폐기, 실험용 Network Volume 0개 확인, Pod별 사용 시간과 요금의 E 전달은 대기다. 조건 5는 종료 증빙 대기 상태다.
+
+
+## 11/11 dev 재검증
+
+기존 작업 브랜치에 `origin/dev`의 `5156dec`을 반영했다. 관문·밴딧·실물 BERT 통합 23개, 실제 체크포인트 HTTP 수신 31개(실물 클래스 11개), 격리 Mongo 5개가 모두 통과했고 건너뜀은 0개다. [재검증 증빙](../evidence/D-09-02.md#1111-최신-dev-반영과-후속-착수-확인).
+
+E-11-12 PR #346은 자유 대화 도구·평가 세트가 병합된 상태다. 실험 종료 여부는 병합과 별도로 확인해야 한다. E 담당 B-09-01의 밴딧 운영 주입·버전 고정은 현재 dev에서 확인되지 않아 조건 2의 실제 웹/Kafka 연결 검증은 대기다. RunPod 준비는 완료이며, 조건 5는 실제 실험 종료 후 확인만 남는다.
+
+
+## 11/11 부분 PR 재검증
+
+제출 직전 dev `2a79c3f`를 반영해 관문·밴딧·BERT 24개, 실제 체크포인트 HTTP 수신 33개(실물 클래스 12개), 격리 Mongo 5개가 통과했다. 건너뜀은 0개다. 최신 결과는 [D-09-02 증빙](../evidence/D-09-02.md#1111-부분-pr-직전-재검증)과 `dev_recheck.json`에 있다.
+
+11/11 사용자가 E의 실제 실험 종료·키 폐기 요청을 아직 받지 않았다고 확인했다. 준비 완료와 종료 확인 대기를 구분한다. 조건 2의 E 밴딧 운영 주입·실제 Kafka 연결과 조건 5의 실험 종료 후 확인은 이번 부분 PR의 미완료 항목이다.

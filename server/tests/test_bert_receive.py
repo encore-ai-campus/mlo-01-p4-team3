@@ -103,3 +103,30 @@ class RealBertScreens(screens.UtteranceScreens):
         """모델 로더를 대체하지 않고 이번 시험에서만 실제 아티팩트 경로를 지정한다."""
         self.enterContext(override_settings(INTENT_BERT_RUN_DIR=os.environ['PALDO_BERT_RECEIVE_RUN_DIR']))
         super().setUp()
+
+    def test_real_checkpoint_target_versions_and_cancel_preserve_state(self):
+        """실물 BERT의 공개 대상·버전을 HTTP 시도에 저장하고 취소는 판을 소비하지 않는다."""
+        from engine.domain.model import Phase
+        from intent.bert import BertIntentParser
+
+        self.at_phase(Phase.ROUND1)
+        parser = self.service.interactions.parser.parser
+        self.assertIsInstance(parser, BertIntentParser)
+        before = self.service.repository.load(self.gid)[0].state_version
+        response = self.parse(text='훈장이 수상하다')
+        self.assertEqual(response.status_code, 200)
+        aid = response.context['attempt_id']
+        with self.service.interactions.store.edit(self.gid) as records:
+            attempt = records.attempts[aid]
+            self.assertTrue(attempt['output'].needs_confirmation)
+            self.assertEqual(attempt['payload']['versions']['model'], parser.model.model_version)
+            self.assertIn('sha256:', attempt['payload']['versions']['tokenizer'])
+            self.assertTrue(any(candidate['command']['kind'] == 'suspect' and
+                                candidate['command']['target'] == 'hunjang'
+                                for candidate in attempt['payload']['candidates']))
+        self.assertEqual(self.service.repository.load(self.gid)[0].state_version, before)
+        cancelled = self.resolve(aid, 'cancel')
+        self.assertEqual(cancelled.status_code, 200)
+        self.assertEqual(self.service.repository.load(self.gid)[0].state_version, before)
+        with self.service.interactions.store.edit(self.gid) as records:
+            self.assertTrue(records.attempts[aid]['closed'])
