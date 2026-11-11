@@ -35,7 +35,7 @@
 ### 2-0-1. 복기 해설 LLM 요약 `ReviewNarrationOutput` (11/11, E-10-01)
 - `GET /games/{id}/review/narration` → `{status, final, npcs: [{npc, sentences: [{cite, text}], source}]}`. `status`는 `off`(기능 꺼짐)·`queued`·`running`·`done`·`failed`·`timeout`, `final`이 true면 다시 바뀌지 않는다. `npcs`는 `final`일 때만 채운다. `source`는 `llm`(검사 통과 문장) 또는 `template`(그 NPC는 템플릿 해설), `cite`는 `ReviewItem.item_id`.
 - 작업 등록: 기능이 켜진 환경(`PALDO_REVIEW_LLM_URL`)에서 `GET /games/{id}/review`를 처음 연 판만 멱등 등록한다(중단 판 제외). 마감(`PALDO_REVIEW_DEADLINE_S`, 기본 180초)이 지나면 템플릿으로 확정한다.
-- htmx: 복기 패널은 생성 중이면 "마을 사람들의 속마음" 묶음에 "족제비가 해설을 다듬고 있어요…"와 `hx-get="/games/{id}/review/narration" hx-trigger="every 2s" hx-swap="outerHTML"`를 둔다. 확정 조각에는 폴링 속성이 없고, `source=llm`인 NPC 문장만 보인다(모두 템플릿이면 묶음을 숨긴다. 실패를 알리지 않는다). 문장별 LLM 표시는 없다.
+- htmx: 복기 패널은 생성 중이면 "마을 사람들의 속마음" 묶음에 "족제비가 해설을 다듬고 있어요…"와 `hx-get="/games/{id}/review/narration" hx-trigger="every 2s" hx-swap="outerHTML"`를 둔다. 확정 조각에는 폴링 속성이 없고, `source=llm`인 NPC가 하나라도 있으면 요약 대상 NPC를 모두 같은 순서로 보인다(`llm`은 생성문, `template`은 템플릿 문장, 11/11 사용자 결정 "속마음 칸 ①"). 모두 템플릿이면 묶음을 숨긴다(실패를 알리지 않는다). 문장별 LLM 표시는 없다.
 
 ### 2-1. 계정 (11/4 PM 결정, B-06-04)
 - 위 표의 모든 엔드포인트와 화면은 **로그인 필수**다. 비로그인 요청은 JSON이면 401, 화면 요청이면 로그인 화면으로 이동한다.
