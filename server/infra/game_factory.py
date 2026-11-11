@@ -5,7 +5,7 @@
 
 - 엔진: 판의 콘텐츠 버전마다 `PaldoEngine(RuleV0Policy(content))`(`ContentPolicyEngine`).
 - 의심 모델: 기본은 규칙 의심도를 확률로 바꾸는 `FakeSuspicionModel`. `PALDO_SUSPICION_MODEL_VERSION`을 주면
-  프로세스 보관소(`ProcessSuspicionModels`)가 그 실제 모델 버전을 버전당 worker 하나로 띄워 판들이 빌려 쓴다.
+  프로세스 보관소(`ProcessSuspicionModels`)가 실제 모델을 버전별로 소유하고 판들이 빌려 쓴다.
 - 보조 기록: `MongoInteractionStore`, 컬렉션은 B 규칙대로 `<접두어>b_interactions`.
 - 해석기: 프로세스마다 한 번 만든 D-07-01 기준선. 웹 조립이 관측 래퍼를 씌운다.
 - 렌더러: 런타임 LLM 없이(P-31 (나)) 엔진의 템플릿 문장(`fallback_text`)을 쓰게 하는 `TemplateLineRenderer`.
@@ -197,7 +197,7 @@ def suspicion_models(fake, version: str = "", root: str = "mlruns"):
     def load(v):
         if v == fake.model_version:
             return fake
-        return ObservedSuspicionModel(selector.suspicion_model(v))
+        return ObservedSuspicionModel(selector.suspicion_model(v, in_process_logistic=True))
 
     production = {"value": fake.model_version}
     store = ProcessSuspicionModels(load, lambda: {production["value"]}, feature_version=fake.feature_version)

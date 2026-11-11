@@ -1,0 +1,60 @@
+{
+  "task": "D-08-01",
+  "commit": "92ddbad3cb1f65e8f4266c62450547465511e8f6",
+  "generated_at": "2026-11-11T01:35:01.214862Z",
+  "source": "Fixed batch D-08-01-20261111-02. Baseline completed on nifi-01 + external WSL2. Model-1 server reached ready state but the WSL client failed before game load with Wsl/Service/CreateInstance/E_FAIL, code6 stage2. No model acceptance measurement or model-2. Raw out/d08-01/1111-batch02 manifest SHA256 92ff3a0eb7c947ca5611e289e75baa9ffdde3df1a1108c59283524eef4b5f745. User reports host C drive had zero free space; later verified15.73GiB but Ubuntu startup still fails, causal relation not confirmed. Test server processes cleaned up. Awaiting local generator recovery choice.",
+  "metrics": {
+    "baseline_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "baseline_elapsed_seconds": {
+      "value": 180.349,
+      "unit": "s"
+    },
+    "baseline_requests": {
+      "value": 5400,
+      "unit": "count"
+    },
+    "baseline_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_finished_games": {
+      "value": 379,
+      "unit": "count"
+    },
+    "baseline_p95_ms": {
+      "value": 280.483,
+      "unit": "ms"
+    },
+    "baseline_caddy_p95_ms": {
+      "value": 263.174,
+      "unit": "ms"
+    },
+    "baseline_django_p95_ms": {
+      "value": 235.426,
+      "unit": "ms"
+    },
+    "baseline_rtt_p95_ms": {
+      "value": 1.53,
+      "unit": "ms"
+    },
+    "baseline_host_cpu_percent": {
+      "value": 45.967,
+      "unit": "%"
+    },
+    "baseline_warmup_seconds": {
+      "value": 6.694,
+      "unit": "s"
+    },
+    "completed_model_rounds": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model_1_load_generator_startup_errors": {
+      "value": 1,
+      "unit": "count"
+    }
+  }
+}

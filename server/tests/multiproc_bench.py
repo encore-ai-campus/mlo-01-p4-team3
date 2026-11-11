@@ -17,6 +17,7 @@ python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis -
   두 모드 모두 시험 접두어 컬렉션을 사용하고 이 도구가 Caddy와 웹 프로세스를 직접 띄운다.
 - B-09-02 준비: `--intent-every N`은 말하기 단계의 N번째 명령마다 해석·취소를 추가한다(0은 기존 부하).
   `--intent-factory`로 시험 해석기를 선택한다. 전체 API p95에는 두 요청을 포함하고 순수 해석 지연도 따로 기록한다.
+  분리 부하는 서버 쪽에서 간격과 팩토리를 지정하고, 클라이언트는 교환 파일의 간격만 읽는다.
 Mongo는 PALDO_MONGO_URI(api_bench.mongo_uri 규칙)로 받는다. 결과는 out/handoff/e0910-multiproc-report.json에 쓴다.
 """
 import argparse
@@ -171,14 +172,15 @@ def inference_metrics(scrapes, version) -> dict:
 
 def model_load_passed(row) -> bool:
     """실제 게임 완료와 모든 프로세스의 추론을 확인하고 지연·오류 관문을 적용한다."""
-    if row.get('secondary_model_version') and any(
-            m['web_rss_bytes'] is None or m['web_rss_bytes'] <= 0 or len(m['worker_rss_bytes']) != 2
-            or any(rss <= 0 for rss in m['worker_rss_bytes'].values())
-            for m in row.get('memory_by_process', {}).values()):
-        return False
-    if row.get('secondary_model_version') and set(row.get('memory_by_process', {})) != set(
-            row['inference_calls_by_process']):
-        return False
+    if row.get('secondary_model_version'):
+        memories = row.get('memory_by_process', {})
+        versions = {row['model_version'], row['secondary_model_version']}
+        if set(memories) != set(row['inference_calls_by_process']) or any(
+                not m['web_rss_bytes'] or m['web_rss_bytes'] < 0
+                or set(m['worker_rss_bytes']).union(m.get('in_process_versions', ())) != versions
+                or any(rss <= 0 for rss in m['worker_rss_bytes'].values())
+                for m in memories.values()):
+            return False
     return (row["errors"] == 0 and row["finished_games"] > 0
             and row["beacon_errors"] == 0 and row["beacon_acks"] > 0 and row["p95_ms"] <= 1000
             and row["inference_calls"] > 0 and max(row["inference_failures"], row.get("engine_fallback_decisions", 0),
@@ -199,18 +201,22 @@ def resident_bytes(pid):
 
 
 def memory_metrics(scrapes):
-    """웹과 worker의 RSS를 프로세스별로 보존한다. RSS는 공유 페이지를 중복 포함한다."""
+    """프로세스별 상주 모델과 RSS를 보존한다. RSS는 공유 페이지를 중복 포함한다."""
     from prometheus_client.parser import text_string_to_metric_families
     rows = {}
     for port, scrape in scrapes.items():
         web, workers = None, {}
+        direct_versions = []
         for family in text_string_to_metric_families(scrape):
             for sample in family.samples:
                 if sample.name == 'process_resident_memory_bytes':
                     web = sample.value
                 elif sample.name == 'paldo_suspicion_worker_resident_memory_bytes':
                     workers[sample.labels['model_version']] = sample.value
-        rows[port] = dict(web_rss_bytes=web, worker_rss_bytes=workers)
+                elif sample.name == 'paldo_bench_suspicion_in_process' and sample.value == 1:
+                    direct_versions.append(sample.labels['model_version'])
+        rows[port] = dict(web_rss_bytes=web, worker_rss_bytes=workers,
+                          in_process_versions=sorted(direct_versions))
     return rows
 
 
@@ -311,7 +317,8 @@ def external_load(origin, cookies, args):
     result = folder / 'load.json'
     state = folder / 'client.json'
     with state.open('x', encoding='utf-8') as stream:
-        json.dump(dict(origin=origin, cookies=cookies, minutes=args.minutes), stream)
+        json.dump(dict(origin=origin, cookies=cookies, minutes=args.minutes,
+                       intent_every=args.intent_every), stream)
     state.chmod(0o600)
     print(json.dumps(dict(client_state=str(state), origin=origin)), flush=True)
     deadline = time.monotonic() + args.minutes * 60 + 120
@@ -321,7 +328,9 @@ def external_load(origin, cookies, args):
         if not result.exists():
             raise RuntimeError('external_load_result_timeout')
         row = json.loads(result.read_text(encoding='utf-8'))
-        if row['users'] != len(cookies) or row['elapsed_seconds'] < args.minutes * 60:
+        reported_interval = row.get('intent_every', 0)
+        if (row['users'] != len(cookies) or row['elapsed_seconds'] < args.minutes * 60
+                or type(reported_interval) is not int or reported_interval != args.intent_every):
             raise RuntimeError('external_load_does_not_match_requested_workload')
         return row
     finally:
@@ -350,8 +359,12 @@ def load_only(folder):
     minutes = float(state['minutes'])
     if not 0 < minutes <= 10:
         raise ValueError('invalid benchmark duration')
+    intent_every = state.get('intent_every', 0)
+    if type(intent_every) is not int or not 0 <= intent_every <= 100:
+        raise ValueError('invalid benchmark intent interval')
     row = with_ping(origin.hostname, folder, lambda: drive_load(
-        state['origin'], cookies, None, minutes, diagnostics=True))
+        state['origin'], cookies, None, minutes, intent_every=intent_every, diagnostics=True))
+    row['intent_every'] = intent_every
     row['load_generator'] = socket.gethostname()
     with (folder / 'load.json').open('x', encoding='utf-8') as stream:
         json.dump(row, stream)
@@ -480,14 +493,14 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
                    mongo_version=runtime.client.server_info()["version"])
         if args.serve_dir or args.suspicion_version:
             row.update(inference_metrics(scrapes, args.suspicion_version), model_version=args.suspicion_version or None)
-        if args.suspicion_version:
-            row['inference_fallback_percent'] = (100 * row['engine_fallback_decisions'] / row['inference_calls']
-                                                 if row['inference_calls'] else 100)
             row['memory_by_process'] = memory_metrics(scrapes)
             memories = row['memory_by_process'].values()
             row['resident_memory_bytes'] = sum((m['web_rss_bytes'] or 0) + sum(m['worker_rss_bytes'].values())
                                                for m in memories)
             row['worker_count'] = sum(len(m['worker_rss_bytes']) for m in row['memory_by_process'].values())
+        if args.suspicion_version:
+            row['inference_fallback_percent'] = (100 * row['engine_fallback_decisions'] / row['inference_calls']
+                                                 if row['inference_calls'] else 100)
             row['secondary_model_version'] = args.secondary_suspicion_version or None
             recovery = {}
             for port in ports:
@@ -569,6 +582,8 @@ def main(argv=None):
     parser.add_argument('--client-ip', help='서버 전용 모드에서 허용하는 부하 생성기 사설 IPv4')
     args = parser.parse_args(argv)
     if args.load_dir:
+        if args.intent_every:
+            parser.error('--intent-every는 --serve-dir 쪽에서 지정한다')
         return load_only(Path(args.load_dir))
     if not 0 <= args.intent_every <= 100:
         parser.error('intent-every=0..100')
@@ -595,7 +610,7 @@ def main(argv=None):
         except ValueError as error:
             parser.error(str(error))
         if (args.client_ip == args.listen_host or args.front != 'binary' or len(cases) != 1
-                or not (args.suspicion_version or args.actual_baseline) or args.intent_every
+                or not (args.suspicion_version or args.actual_baseline)
                 or any(layer != 'memory' for _, layer in cases.values())):
             parser.error('서버 전용 모드는 외부 호스트, binary, 단일 memory 구성과 실제 엔진을 사용한다')
     elif args.listen_host != '127.0.0.1' or args.client_ip:

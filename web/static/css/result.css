@@ -2,6 +2,7 @@
    색·글꼴은 공통 테마 토큰(theme.css, B-10-07)을 쓰고, 토큰이 없을 때를 위해 같은 값을 대체값으로 둔다. */
 .end-screen { margin: 1.25rem 0; font-family: var(--pd-sans, "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif); }
 .end-tabs { display: flex; gap: .5rem; flex-wrap: wrap; border-bottom: 1px solid var(--pd-line, #9e8555); margin-bottom: 1rem; }
+.end-tabs[hidden], .end-screen [hidden] { display: none; }
 .end-tabs [role=tab] { min-height: var(--pd-button-min, 44px); padding: .45rem 1.1rem; border: 1px solid var(--pd-line, #9e8555); border-bottom: 0;
   border-radius: var(--pd-radius, 3px) var(--pd-radius, 3px) 0 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .end-tabs [role=tab][aria-selected=true] { background: var(--pd-ink, #1f2433); color: var(--pd-paper, #e8dfc8); font-weight: 700;
@@ -36,9 +37,13 @@
 .review-code { display: inline-block; margin: 0 .3rem .2rem 0; padding: 0 .35rem; border: 1px solid var(--pd-line-soft, #c6b99f);
   border-radius: var(--pd-radius, 3px); font-size: .75rem; }
 .end-home { margin: 1rem 0; }
+.end-screen:has(#end-panel-survey:not([hidden]) [data-survey-done]) .end-home { display: none; }
+.end-panel > :first-child { margin-top: 0; }
+.end-panel [data-end-retry] { min-height: var(--pd-button-min, 44px); }
+.end-panel .record-compare-tools > p { flex: 1 1 100%; margin: 0; }
 @media (max-width: 600px) {
   .end-card { padding: 1.25rem 1rem; }
-  .end-tabs [role=tab] { flex: 1; padding: .4rem .5rem; }
+  .end-tabs [role=tab] { flex: 1 0 auto; padding: .4rem .5rem; white-space: nowrap; }
   .end-panel #survey { padding: 1rem .75rem; }
   .end-panel #survey label { display: flex; }
 }

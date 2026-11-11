@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from typing import Optional, Protocol
 
 from . import params, serde
-from .content import Assignment, Character, ContentBundle, Secret, required_counts, validate_assignment
+from .content import Assignment, Character, ContentBundle, Secret, draw_pool, required_counts, validate_assignment
 from .events import DomainEvent, EventType
 from .model import (
     LIMITS, PHASE_RULES, PLAYER_ID, PRESETS, Claim, ClaimTruth, ClaimType, Command, CommandEnvelope, CommandKind,
@@ -90,12 +90,13 @@ def _check_content(preset: Preset, content: ContentBundle) -> None:
 def _draw_assignment(rng: random.Random, preset: Preset, content: ContentBundle, game_id: str,
                      lure: bool = True, home: bool = True) -> Optional[Assignment]:
     chars = {c.npc_id: c for c in content.characters}
-    residents = rng.sample(sorted(chars), preset.n_resident_pool_needed)
+    pool_chars, pool_secrets = draw_pool(preset, content)
+    residents = rng.sample(sorted(c.npc_id for c in pool_chars), preset.n_resident_pool_needed)
     possessed = rng.sample(residents, preset.n_possessed)
     roles = {r: (Role.POSSESSED if r in possessed else Role.VILLAGER) for r in residents}
     villagers = [r for r in residents if r not in possessed]
     victim = rng.choice(villagers)
-    secrets = _draw_secrets(rng, [v for v in villagers if v != victim], content.secrets, preset.n_secret)
+    secrets = _draw_secrets(rng, [v for v in villagers if v != victim], pool_secrets, preset.n_secret)
     if secrets is None:
         return None
     by_id = {s.secret_id: s for s in content.secrets}

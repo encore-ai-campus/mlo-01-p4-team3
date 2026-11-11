@@ -1,10 +1,20 @@
-/* 판 종료 화면 탭(B-10-01·B-08-01). 같은 판 화면 안에서 결과·복기·원한 단서를 바꿔 보이며 서버 명령을 보내지 않는다.
-   복기·원한 단서 내용은 탭을 열 때 `paldo:end-open` 이벤트로 htmx가 읽어 온다. 한 번 성공하면 다시 읽지 않고,
-   실패하면 안내를 보이고 탭을 다시 누를 때 다시 요청한다. htmx 교체 뒤에도 문서 위임으로 동작한다. */
+/* B-11-01 판 종료 화면: 탭은 표시만 바꾸고 조회만 필요할 때 보낸다. */
 (() => {
   "use strict";
   if (window.paldoEndTabs) return;
   window.paldoEndTabs = true;
+  function load(panel) {
+    const content = panel.querySelector("[data-end-content]");
+    if (!window.htmx || !content || ["loading", "loaded"].includes(content.dataset.endState)) return;
+    content.dataset.endState = "loading";
+    panel.querySelector("[data-end-fallback]").hidden = true;
+    const status = panel.querySelector("[data-end-status]");
+    status.hidden = false;
+    status.textContent = "불러오는 중입니다.";
+    const retry = panel.querySelector("[data-end-retry]");
+    retry.setAttribute("aria-disabled", "true");
+    window.htmx.trigger(content, "paldo:end-open");
+  }
   function select(tab, focus) {
     const list = tab.closest("[role=tablist]");
     if (!list) return;
@@ -13,33 +23,71 @@
       other.setAttribute("aria-selected", String(on));
       other.tabIndex = on ? 0 : -1;
       const panel = document.getElementById(other.getAttribute("aria-controls"));
-      if (panel) panel.hidden = !on;
+      panel.hidden = !on;
     });
     if (focus) tab.focus();
     const panel = document.getElementById(tab.getAttribute("aria-controls"));
-    if (panel && window.htmx && panel.hasAttribute("hx-get") && !panel.dataset.endState) {
-      panel.dataset.endState = "loading";
-      window.htmx.trigger(panel, "paldo:end-open");
-    }
-    if (panel && panel.getBoundingClientRect().top < 0) list.scrollIntoView({block: "start"});
+    load(panel);
+    if (!list.hidden && panel.getBoundingClientRect().top < 0) list.scrollIntoView({block: "start"});
   }
-  document.addEventListener("htmx:afterRequest", event => {
-    const panel = event.detail && event.detail.elt;
-    if (!panel || !panel.classList || !panel.classList.contains("end-panel") || !panel.dataset.endState) return;
-    if (event.detail.successful) {
-      panel.dataset.endState = "loaded";
-      return;
+  function mount(root) {
+    const list = root.querySelector(".end-tabs");
+    if (!list?.hidden) return;
+    for (const tab of list.querySelectorAll("[role=tab]")) {
+      const panel = document.getElementById(tab.getAttribute("aria-controls"));
+      panel.setAttribute("role", "tabpanel");
+      panel.setAttribute("aria-labelledby", tab.id);
+      panel.tabIndex = 0;
     }
-    delete panel.dataset.endState;
-    const note = document.createElement("p");
-    note.className = "end-loading";
-    note.setAttribute("role", "status");
-    note.textContent = "불러오지 못했습니다. 탭을 다시 누르면 다시 시도합니다.";
-    panel.replaceChildren(note);
+    const initial = location.hash === "#survey" ? "#end-tab-survey" : "#end-tab-result";
+    select(list.querySelector(initial), false);
+    list.hidden = false;
+  }
+  function mountAll() {
+    for (const root of document.querySelectorAll("#game-end")) mount(root);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mountAll);
+  else mountAll();
+  document.addEventListener("htmx:load", mountAll);
+
+  document.addEventListener("htmx:afterRequest", event => {
+    const content = event.detail?.elt;
+    if (!content?.matches("[data-end-content]") || content.dataset.endState !== "loading") return;
+    const panel = content.closest("[data-end-lookup]");
+    const status = panel.querySelector("[data-end-status]");
+    const retry = panel.querySelector("[data-end-retry]");
+    retry.removeAttribute("aria-disabled");
+    if (event.detail.successful) {
+      content.dataset.endState = "loaded";
+      status.hidden = true;
+      if (document.activeElement === retry) panel.focus();
+      retry.hidden = true;
+    } else {
+      content.dataset.endState = "failed";
+      status.textContent = "내용을 불러오지 못했습니다.";
+      retry.hidden = false;
+    }
+  });
+  document.addEventListener("htmx:afterSwap", event => {
+    if (event.detail?.target?.id !== "survey" && event.detail?.elt?.id !== "survey") return;
+    const done = document.querySelector("#game-end [data-survey-done]");
+    if (!done) return;
+    document.getElementById("end-home-note")?.remove();
+    document.querySelector(".end-home a")?.removeAttribute("aria-describedby");
+    if (!done.closest("[hidden]")) done.querySelector("[data-end-result]").focus();
   });
   document.addEventListener("click", event => {
     const tab = event.target.closest(".end-tabs [role=tab]");
-    if (tab) select(tab, false);
+    if (tab) return select(tab, false);
+    const retry = event.target.closest("[data-end-retry]");
+    if (retry) return load(retry.closest("[data-end-lookup]"));
+    const back = event.target.closest("#game-end [data-end-result]");
+    if (back) {
+      const result = document.getElementById("end-tab-result");
+      if (result.closest("[hidden]")) return;
+      event.preventDefault();
+      select(result, true);
+    }
   });
   document.addEventListener("keydown", event => {
     const tab = event.target.closest(".end-tabs [role=tab]");
