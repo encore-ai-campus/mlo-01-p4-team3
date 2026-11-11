@@ -21,6 +21,7 @@ from typing import Any, Optional
 from .model import (PLAYER_ID, ClaimType, CommandKind, EvidenceRef, EvidenceType, Place, Polarity,
                     PrivateKnowledge, PublicRecord)
 from .observation import NO_EVIDENCE_CODES, ReasonCode
+from .npc.beliefs import pointing_succeeded
 
 TALK_KINDS = frozenset(k.value for k in (CommandKind.SUSPECT, CommandKind.DEFEND, CommandKind.POINT_CONTRADICTION,
                                           CommandKind.EXPLAIN, CommandKind.SILENCE))
@@ -261,8 +262,10 @@ def _secondary_basis(item: ReviewTraceItem, public: PublicRecord, by_id: dict) -
     found: list[SuspectBasis] = []
     for r in item.evidence:
         if r.type is EvidenceType.CONTRADICTION:
-            pair = [by_id[i] for i in r.record_id.split("|") if i in by_id]
-            if len(pair) == 2 and any(c.speaker == target for c in pair) and any(c.speaker != target for c in pair):
+            ids = r.record_id.split("|")
+            pair = [by_id[i] for i in ids if i in by_id]
+            # 지적이 틀린 쌍(pointed_failed)도 같은 근거 종류로 남으므로, 두 주장이 실제로 어긋날 때만 쓴다
+            if len(pair) == 2 and pointing_succeeded(public, *ids) and any(c.speaker == target for c in pair) and any(c.speaker != target for c in pair):
                 found.append(SuspectBasis(BASIS_CONTRADICTION))
         elif r.type is EvidenceType.TELL:
             c = by_id.get(r.record_id)

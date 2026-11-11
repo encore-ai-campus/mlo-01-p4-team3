@@ -101,7 +101,7 @@ def ref_item(*refs):
 
 class SecondaryBasisTest(unittest.TestCase):
     """4~6(11/11 추가 승인): 1~3이 맞지 않을 때 근거 종류로 고른다."""
-    claims = [where("c1", "meosum", Place.WELL), saw("c2", "yakcho", ["jumo"], Place.WELL)]
+    claims = [where("c1", "meosum", Place.WELL), saw("c2", "yakcho", ["meosum"], Place.TAVERN)]
 
     def test_contradiction(self):
         it = ref_item((EvidenceType.CONTRADICTION, "c1|c2"))
@@ -133,6 +133,8 @@ class SecondaryBasisTest(unittest.TestCase):
         self.assertIsNone(suspect_basis(ref_item((EvidenceType.MAJORITY, "s2")), pub, private()))
         self.assertIsNone(suspect_basis(ref_item((EvidenceType.MAJORITY, "s3")), pub, private()))
         self.assertIsNone(suspect_basis(ref_item((EvidenceType.CONTRADICTION, "c2|c3")), pub, private()))  # 대상 말 아님
+        # 틀린 모순 지적(pointed_failed)의 쌍: 대상 말과 남의 말이지만 실제로는 어긋나지 않는다
+        self.assertIsNone(suspect_basis(ref_item((EvidenceType.CONTRADICTION, "c1|c3")), pub, private()))
         self.assertIsNone(suspect_basis(ref_item((EvidenceType.TELL, "c2")), pub, private()))               # 대상 말 아님
 
     def test_primary_rules_win_over_secondary(self):
