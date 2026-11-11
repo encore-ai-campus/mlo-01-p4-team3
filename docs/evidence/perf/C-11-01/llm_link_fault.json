@@ -1,0 +1,52 @@
+{
+  "task": "C-11-01",
+  "commit": "7892b499818c33f8ce36acacecb604a25f0b26bd",
+  "generated_at": "2026-11-11T05:41:07Z",
+  "source": "active release098b077 content1.1 real engine and shared production NPC polish worker; actual SSH tunnel stopped with90s recovery timer, template fixed and game completed, tunnel/health restored; total31 API includes1 start before outage,30 during; Mongo/Kafka/Delta141 events all load_test, no missing/duplicates/hash mismatch; generation server process remained running",
+  "metrics": {
+    "api_requests_total": {
+      "value": 31,
+      "unit": "건"
+    },
+    "api_requests_during_outage": {
+      "value": 30,
+      "unit": "건"
+    },
+    "api_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "failed_generation_jobs": {
+      "value": 4,
+      "unit": "건"
+    },
+    "recovery_window_seconds": {
+      "value": 10.748,
+      "unit": "초"
+    },
+    "events": {
+      "value": 141,
+      "unit": "건"
+    },
+    "missing": {
+      "value": 0,
+      "unit": "건"
+    },
+    "duplicates": {
+      "value": 0,
+      "unit": "건"
+    },
+    "hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "template_fixed": {
+      "value": 1,
+      "unit": ""
+    },
+    "server_process_stopped": {
+      "value": 0,
+      "unit": ""
+    }
+  }
+}
