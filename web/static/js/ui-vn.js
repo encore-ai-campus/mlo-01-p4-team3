@@ -269,8 +269,8 @@ function mountScene(root) {
     root.querySelector('[data-stage-open="meeting-records"]')?.click();
     const transcript=root.querySelector('.speech-transcript');if(transcript){transcript.open=true;transcript.scrollIntoView({block:'start'});}
   }
-  player.querySelector('[data-vn-show-all]').addEventListener('click',showTranscript);
-  player.querySelector('[data-vn-skip]').addEventListener('click',()=>{
+  // 모두 보기: 출력 중 연출을 끝내고(현재 줄 닫기·끝남 저장) 공개 발언 전체 기록을 연다(11/11 연출 건너뛰기와 통합)
+  player.querySelector('[data-vn-show-all]').addEventListener('click',()=>{
     const source=sources[index];if(source)closed.add(source.dataset.lineId);
     clearTimeout(timer);render(false,true);text.textContent=lastText;persist(true);
     showTranscript();
