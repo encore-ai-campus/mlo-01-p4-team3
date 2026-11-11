@@ -78,7 +78,7 @@ class WebsocketContract(TransactionTestCase):
         self.assertEqual(await ws.receive_json_from(), {"type": "ack", "msg_id": event["msg_id"], "relayed": True})
         args = self.provider.relay_calls[0]
         self.assertEqual(args[:5], ("impression", event["token"], 0.5, 1000, 1000))
-        self.assertEqual(args[-2:], (100, 300))
+        self.assertEqual(args[-2:], (100, 800))
         self.assertNotIn(self.cookie.decode(), repr(args))
         self.assertNotIn(self.user.username, repr(args))
         await ws.disconnect()

@@ -86,7 +86,7 @@
   | 항목 | 값(실측 후 조정) |
   |---|---|
   | 연결 시간 제한 | 100ms |
-  | 전체 시간 제한 | 300ms |
+  | 전체 시간 제한 | 800ms(11/11 사용자 결정, 300ms에서 변경) |
   | 동시 호출 상한 | 8. 넘으면 기다리지 않고 `busy`로 빈 광고 |
   | 재시도 | 없음 |
   | 회로 차단 | 연속 실패 5회면 30초 동안 호출을 생략한다(`circuit_open`). 그 뒤 첫 호출로 회복을 시험한다 |
@@ -103,7 +103,7 @@
   | `send_click(serve_token, request_id, connect_timeout_ms, total_timeout_ms) -> str \| None` | GET `/ads/v1/click?t=`. 리다이렉트를 따라가지 않고 `Location`(랜딩 경로)만 돌려준다 | `None` → 화면은 `/`로 이동 |
   | `fetch_landing(creative_id, request_id, connect_timeout_ms, total_timeout_ms) -> str \| None` | GET `/ads/landing/<creative_id>`(HTML) | `None` → 대체 조각 |
 
-- `AdGateway.report_impression`·`click`·`landing`이 위 메서드를 감싼다. serve와 같은 시간 제한(연결 100ms, 전체 300ms), 재시도 없음, 예외를 올리지 않음. 회로 차단기는 serve와 함께 쓰고(같은 서버의 상태), 동시 호출 상한 8은 중계용으로 따로 둔다(비콘이 serve 자리를 빼앗지 않게). 중계는 게임 명령 처리 경로 밖이다(웹소켓 Consumer와 `/ads/click`·`/ads/landing` 요청). 결과는 `paldo_ad_relay_total{kind,result}`.
+- `AdGateway.report_impression`·`click`·`landing`이 위 메서드를 감싼다. serve와 같은 시간 제한(연결 100ms, 전체 800ms), 재시도 없음, 예외를 올리지 않음. 회로 차단기는 serve와 함께 쓰고(같은 서버의 상태), 동시 호출 상한 8은 중계용으로 따로 둔다(비콘이 serve 자리를 빼앗지 않게). 중계는 게임 명령 처리 경로 밖이다(웹소켓 Consumer와 `/ads/click`·`/ads/landing` 요청). 결과는 `paldo_ad_relay_total{kind,result}`.
 - B-07-05 로컬 사전 구현은 `server/app/ad_events.py`에서 위 포트를 조정하고 `ads/testing/fakes.py`로 중계를 시험한다. 실제 HTTP 제공자·VM·성능 검증의 남은 범위는 [B-07-05 증빙](../evidence/B-07-05.md)에 기록한다.
 - **비동기 경계**: 웹소켓 Consumer는 비동기(`AsyncJsonWebsocketConsumer`)이고 `AdGateway`는 동기다. Consumer는 이벤트 루프에서 `AdGateway`를 직접 부르지 않고 `asgiref.sync.sync_to_async(..., thread_sensitive=False)`로 스레드에서 실행한다(동기 호출이 Daphne 이벤트 루프를 막아 게임 HTTP 요청까지 멈추지 않게). 중계 동시 상한 8을 넘는 비콘은 기다리지 않고 `ack.relayed=false`로 끝낸다. `/ads/click`·`/ads/landing`은 동기 Django 뷰다.
 - **전달 헤더**: 중계 요청은 헤더를 새로 만든다. 보내는 것은 `X-Request-Id`와 필요한 `Content-Type`뿐이고, 참가자의 `Cookie`·`Authorization`·`X-Forwarded-For`·`User-Agent`·`Referer`는 복사하지 않는다(ads.md 9절, 테스트로 확인).
