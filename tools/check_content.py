@@ -38,6 +38,9 @@ class ContentLoadError(ValueError):
     """묶음 파일을 읽지 못했거나 엄격 검증·왕복 직렬화에 실패했다."""
 
 
+_OPTIONAL_TOP = ("extra_npcs", "extra_secrets")   # E-08-02 11/11: 선택 필드(기본 빈 목록)
+
+
 def load_bundle(path: Path) -> ContentBundle:
     """묶음 JSON을 엄격 검증으로 읽는다. 다시 직렬화한 값이 원본과 다르면 실패."""
     try:
@@ -45,7 +48,11 @@ def load_bundle(path: Path) -> ContentBundle:
         bundle = serde.from_jsonable(ContentBundle, data)
     except (OSError, ValueError) as e:
         raise ContentLoadError(f"{path}: {e}") from e
-    if serde.to_jsonable(bundle) != data:
+    again = serde.to_jsonable(bundle)
+    for key in _OPTIONAL_TOP:                      # 확장 목록이 없는 이전 묶음은 빈 기본값으로 읽은 것과 같다
+        if key not in data and again.get(key) == []:
+            again.pop(key)
+    if again != data:
         raise ContentLoadError(f"{path}: 왕복 직렬화 결과가 원본과 다름")
     return bundle
 

@@ -125,6 +125,15 @@ class ExtraCast(unittest.TestCase):
                 else:
                     self.assertGreater(seen_npc, 0)
 
+    def test_bundle_without_extra_lists_still_loads(self):
+        """확장 목록이 없는 이전 묶음(content-1.0.1 등)도 엄격 읽기·왕복 검사를 통과한다."""
+        d = serde.to_jsonable(_bundle())
+        del d["extra_npcs"], d["extra_secrets"]
+        with tempfile.TemporaryDirectory() as t:
+            p = Path(t) / "old.json"
+            p.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+            self.assertEqual(load_bundle(p).extra_npcs, [])
+
     def test_unknown_extra_ids_are_problems(self):
         d = serde.to_jsonable(_bundle())
         d["extra_npcs"].append("nobody")
