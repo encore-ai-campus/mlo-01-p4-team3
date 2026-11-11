@@ -172,6 +172,25 @@ function mountScene(root) {
     if(!pendingSince.has(id)) { pendingSince.set(id,Date.now()); setTimeout(()=>{ if(root.isConnected && sources[index]===n) render(false,true); },PENDING_HOLD_MS+50); }
     return Date.now()-pendingSince.get(id)<PENDING_HOLD_MS;
   }
+  const divinationSubmit=root.querySelector('[data-divination-submit]');
+  let divinationChoice=null;
+  if(divinationSubmit) {
+    for(const choice of root.querySelectorAll('[data-divination-choice]')) {
+      choice.setAttribute('aria-pressed','false');
+      choice.addEventListener('click',event=>{
+        event.preventDefault();
+        if(choice.disabled)return;
+        divinationChoice?.setAttribute('aria-pressed','false');
+        divinationChoice=choice;
+        choice.setAttribute('aria-pressed','true');
+        divinationSubmit.disabled=false;
+      });
+    }
+    divinationSubmit.hidden=false;
+    divinationSubmit.addEventListener('click',()=>{
+      if(divinationChoice && !divinationChoice.disabled) divinationChoice.form.requestSubmit(divinationChoice);
+    });
+  }
   // 줄은 문장이 끝까지 보였을 때만 '본 줄'이 된다. 글자 출력 중에 화면을 다시 그리면 그 줄에서 다시 시작한다.
   function persist(done=false) { const id=sources[index]?.dataset.lineId; if(id&&done&&!isPending(sources[index]))seen.add(id); saveStore(key,{line:id,closed:[...closed],seen:[...seen]}); updateResultLock(); }
   // 투표 결과 발표 줄을 다 읽기 전에는 그 단계 행동(결선 투표·밤 점치기)을 잠근다. 서버 명령은 바꾸지 않는다.
@@ -180,9 +199,11 @@ function mountScene(root) {
     const panel=root.querySelector('#stage-actions'); if(!panel)return;
     root.querySelector('[data-result-lock-notice]')?.toggleAttribute('hidden',!pending);
     for(const control of panel.querySelectorAll('.command-bar button, .command-bar input, .command-bar select, .command-bar textarea')) {
+      if(control===divinationSubmit)continue;
       if(pending && !control.disabled) { control.disabled=true; control.dataset.resultLocked=''; }
       else if(!pending && control.dataset.resultLocked!==undefined) { control.disabled=false; delete control.dataset.resultLocked; }
     }
+    if(divinationSubmit)divinationSubmit.disabled=pending || !divinationChoice || divinationChoice.disabled;
   }
   function markAllSeen() { for(const n of sources)seen.add(n.dataset.lineId); persist(); }
   function render(announce=true, force=false) {
@@ -334,7 +355,9 @@ document.addEventListener('submit',event=>{
   const dialog=document.querySelector('#ui-confirm');
   const labels=[form.querySelector('button[type=submit]')?.textContent.trim()||'선택한 행동'];
   for(const select of form.querySelectorAll('select')) if(!select.disabled&&select.value)labels.push(select.selectedOptions[0]?.textContent.trim());
-  const evidence=[...form.querySelectorAll('input[name=evidence]:checked')].map(x=>x.value);
+  const evidence=[...form.querySelectorAll('input[name=evidence]:checked')]
+    .map(input=>input.labels?.[0]?.textContent.trim())
+    .filter(Boolean);
   if(evidence.length)labels.push('근거 '+evidence.join(', '));
   dialog.querySelector('[data-confirm-description]').textContent=labels.filter(Boolean).join(' · ');
   dialog.showModal();
