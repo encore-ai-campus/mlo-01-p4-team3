@@ -14,6 +14,10 @@ D 어댑터 수신 회귀는 `python -B server/manage.py test server.tests.test_
 
 해석·취소는 전체 API 표본에 포함하고 상태 버전·확인 상태를 검사한다. `intent_http_p95_ms`는 DB·HTTP 포함, `intent_parse_p95_ms`는 시험 헤더의 순수 parse 표본이다. 각 프로세스의 해석 호출 수도 결과에 남긴다. 해석 요청 0건·취소 누락·오류는 혼합 시험 성공으로 처리하지 않는다. 30명·3분 이상이어야 기존 `--result-name`을 쓸 수 있으나 녹화 결과로 B-09-02 전체 완료를 판정하지 않는다.
 
+실제 엔진 경로는 위 명령에 `--actual-baseline`을 더해 확인한다. 이 옵션은 의심 모델을 끈 실제 게임 엔진이며 자유 입력 해석기는 별도로 선택한다. 분리 부하에서는 서버의 기존 `--serve-dir`, `--listen-host`, `--client-ip`, `--front binary` 명령에 `--intent-every N`과 필요 시 `--intent-factory`를 더한다. 부하 생성기는 비공개로 받은 `client.json`이 있는 폴더로 `python -B tools/perf/api_bench.py --load-dir <교환 폴더>`만 실행한다. 간격을 클라이언트 명령에 다시 지정하지 않는다. `load.json`을 서버에 돌려주면 서버가 간격과 실행 조건을 확인한다.
+
+BERT 판정은 시험 서버 또는 동급 VM에서 실제 체크포인트로 웹 2프로세스·동시 30명·3분 이상을 실행한다. 해석·취소를 포함한 전체 게임 API p95 1초 이하와 실제 해석 지연을 기록한다. 짧은 로컬 기준선 시험은 연결 확인이며 BERT 운영 전환 판단에 쓰지 않는다.
+
 회귀: `python -B server/manage.py test server.tests.test_intent_load server.tests.test_interactions server.tests.test_utterance_ui server.tests.test_phase_filter --settings=server.paldo_web.test_settings --noinput`.
 
 [사전 결과와 D 인수 목록](../../docs/evidence/B-09-02.md). 실제 BERT·실제 엔진 혼합·동급 VM 검증은 별도다.
