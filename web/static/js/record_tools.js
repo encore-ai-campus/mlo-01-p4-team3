@@ -67,7 +67,9 @@
       const target=root.querySelector('[data-record-comparison-lines]'); if(!target || chosen.length!==2)return;
       target.replaceChildren();
       for(const card of chosen) { const p=document.createElement('p'); p.textContent=`${card.querySelector('strong').textContent} · ${card.querySelector('.claim-meta')?.textContent.trim() || ''} — ${card.querySelector('.claim-meta + p').textContent}`; target.append(p); }
-      root.querySelector('[data-record-comparison]').hidden=false;
+      const comparison=target.closest('[data-record-comparison]');
+      comparison.hidden=false;
+      if(comparison.closest('dialog'))comparison.scrollIntoView({block:'start'});
     });
     filter();
     if (selectionGuide) updateSelection();

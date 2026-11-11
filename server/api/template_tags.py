@@ -113,6 +113,7 @@ def action_icon(kind):
 # 게임 화면 버튼의 마우스 올림 설명(기능 안내 UI 문구, 대사 아님). 문구는 이 사전 한 곳에서만 고친다.
 # aria-label이 있는 버튼은 같은 문구를 쓴다. {name}은 공개된 인물 이름이다.
 UI_TIPS = {
+    "stage_menu": "게임 메뉴를 열거나 닫습니다",
     "records_open": "공개 기록 창을 엽니다",
     "notebook_open": "내 수첩을 엽니다",
     "help_open": "게임 방법 도움말을 엽니다",
@@ -157,6 +158,8 @@ UI_TIPS = {
     "end_lookup_retry": "내용을 다시 불러옵니다",
     "survey_submit": "설문 응답을 보냅니다",
     "survey_skip": "설문을 건너뜁니다",
+    "survey_previous": "이전 설문 문항으로 돌아갑니다",
+    "survey_next": "다음 설문 문항으로 넘어갑니다",
     "action:suspect": "이 인물을 의심한다고 말합니다",
     "action:defend": "이 인물을 감싸 줍니다",
     "action:interrogate": "이 인물에게 행적이나 이유를 따져 묻습니다",
