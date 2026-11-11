@@ -1,21 +1,34 @@
 @import url("/static/fonts/fonts.css");
-/* B-10-08: 확정 시안의 먹·한지·놋쇠와 로컬 SIL OFL 글꼴. */
+/* 공통 색·글꼴. 금색·한지 확장안은 격리 UI 브랜치에서 화면군별 적용한다. */
 :root {
   color-scheme: dark;
-  --page: #0c1316;
-  --surface: #172428;
-  --text: #eee8d9;
-  --muted: #bcbdb4;
-  --line: #657478;
-  --accent: #dbc397;
+  --page: #0c1113;
+  --surface: #172123;
+  --text: #e9e4d5;
+  --muted: #b6b6a9;
+  --line: #74664e;
+  --accent: #c3ac7e;
   --danger: #ffb4a6;
+  --pd-paper: #e8dfc8;
+  --pd-text: #242b28;
+  --pd-muted: #5d594e;
+  --ui-ink: #0c1718;
+  --ui-gold: #c6a76c;
+  --ui-gold-deep: #8a6937;
+  --ui-paper: #eee3ca;
+  --ui-paper-text: #30291e;
+  --ui-paper-muted: #665a45;
+  --ui-frame-corner: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23bd9655' stroke-width='1.2'%3E%3Cpath d='M1 1h23v23H1zM12 12h23v23H12zM1 35V1h34'/%3E%3C/g%3E%3C/svg%3E");
+  --ui-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+  --ui-crimson: #702f2b;
+  --ui-crimson-hover: #873e32;
+  --ui-focus: #24747a;
+  --ui-space: 8px;
   font-family: var(--pd-sans);
   color: var(--text);
   background: var(--page);
   font-synthesis: none;
 }
-:root { --page:#0c1113; --surface:#172123; --text:#e9e4d5; --muted:#b6b6a9; --line:#74664e; --accent:#c3ac7e; }
-:root { --pd-paper:#e8dfc8; --pd-text:#242b28; --pd-muted:#5d594e; }
 /* 행적표(B-10-07, 11/10 사용자 결정). 칸 테두리, 피해 칸 강조(글과 함께), 고치기 전 흐림(글과 함께), 좁은 화면은 표 감싸개만 가로 스크롤. classic-game.css에 같은 규칙. */
 .alibi-grid details { margin: 8px 0; }
 .alibi-grid-scroll { overflow-x: auto; max-width: 100%; }
@@ -35,5 +48,126 @@
 .alibi-grid-before { opacity: .6; }
 .alibi-grid-before .alibi-grid-before { opacity: 1; }
 @media (max-width: 480px) { .alibi-grid-sources { display: block; } }
-/* 무대 버튼이 6개가 된 뒤 좁은 화면에서 "행적/표"처럼 단어 중간이 꺾이지 않게: 글자 폭만큼 나눠 갖는다 */
-@media (max-width: 700px) { .vn-player .stage-toolbar button { flex: 1 1 auto; padding: 5px 4px; white-space: nowrap; } }
+.game-page .app-header .wordmark {
+  color: #f3e3bb;
+  line-height: 1.2;
+  text-shadow: 0 2px 6px #0008;
+}
+.game-page .app-header .site-links {
+  gap: 0;
+  align-items: center;
+  padding: 0 2px;
+  border-block: 1px solid #977547aa;
+  background: #0d1a1c;
+}
+.game-page .app-header .site-links > :is(button,a) {
+  border-width: 0 1px 0 0;
+  border-radius: 0;
+  border-color: #8d714a80;
+  background: transparent;
+  color: #f1e5c8;
+  white-space: nowrap;
+}
+.game-page:has(#meeting .vn-player) .app-header .site-links > button:not(:disabled) {
+  border-color: #8d714a80;
+  background: transparent;
+}
+.game-page .app-header .site-links > :is(button,a):hover:not(:disabled),
+.game-page:has(#meeting .vn-player) .app-header .site-links > button:hover:not(:disabled) {
+  background: #344237;
+}
+.game-page .app-header .site-links > :last-child { border-inline-end: 0; }
+.game-page .app-header .site-links > [data-help-open] {
+  box-shadow: inset 0 0 0 1px #c6a76c77;
+  color: #fff1d0;
+}
+.game-page .app-header .site-links > :is(button,a):focus-visible,
+.game-page .stage-toolbar button:focus-visible {
+  outline: 2px solid #f2c983;
+  outline-offset: -3px;
+}
+.game-page .stage-toolbar .stage-lookup-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  min-width: 0;
+  border: 1px solid #a38654;
+  background: #122020ed;
+}
+.game-page .stage-toolbar :is([data-stage-open=stage-actions],.stage-lookup-links button) {
+  min-height: 44px;
+  white-space: nowrap;
+}
+.game-page .stage-toolbar .stage-lookup-links > button {
+  border-width: 0 1px 0 0;
+  border-radius: 0;
+  border-color: #92774f85;
+  background: transparent;
+  color: #f0e6ce;
+  box-shadow: none;
+}
+.game-page .stage-toolbar .stage-lookup-links > button:last-child { border-inline-end: 0; }
+.game-page .stage-toolbar .stage-lookup-links > button:hover:not(:disabled) { background: #344237; }
+.game-page .stage-toolbar > [data-stage-open=stage-actions] {
+  border-color: #bc9d66;
+  box-shadow: inset 0 0 0 1px #f9e9c7, 0 2px 6px #0005;
+}
+@media (max-width: 899px) {
+  .game-page .stage-toolbar > [data-stage-open=stage-actions] {
+    flex: 0 0 auto;
+    padding-inline: clamp(5px,2vw,12px);
+  }
+  .game-page .stage-toolbar .stage-lookup-links { flex: 1 1 auto; }
+  .game-page .stage-toolbar .stage-lookup-links > button {
+    flex: 1 1 auto;
+    padding-inline: clamp(4px,1.5vw,9px);
+  }
+  .game-page .app-header .site-links > :is(button,a) { padding-inline: clamp(5px,2vw,12px); }
+}
+
+:is(.account-page,.game-page) #ui-help {
+  --text: var(--ui-paper-text);
+  --accent: #68471f;
+  --muted: var(--ui-paper-muted);
+  --help-inset: clamp(16px,4vw,28px);
+  padding: 0 var(--help-inset) var(--help-inset);
+  color-scheme: light;
+  color: var(--text);
+  border-color: var(--ui-gold-deep);
+  background: var(--ui-paper-grain), linear-gradient(135deg,#fff4dc,#e7d6b1);
+  box-shadow: inset 0 0 0 4px #f3e3c1, inset 0 0 0 5px #bd9b63, 0 14px 36px #0008;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+:is(.account-page,.game-page) #ui-help .help-heading {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  flex-wrap: nowrap;
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #aa8953;
+  background: #f1e3c6;
+}
+:is(.account-page,.game-page) #ui-help .help-heading h2 {
+  color: var(--text);
+  font-size: clamp(1.25rem,4vw,1.65rem);
+}
+:is(.account-page,.game-page) #ui-help [data-help-close] {
+  flex: 0 0 auto;
+  min-height: 44px;
+  border-color: var(--ui-gold-deep);
+  background: #1b2925;
+  color: #fff0d0;
+}
+:is(.account-page,.game-page) #ui-help [data-help-close]:hover { background: #314036; }
+:is(.account-page,.game-page) #ui-help [data-help-close]:focus-visible {
+  outline: 3px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+:is(.account-page,.game-page) #ui-help kbd {
+  padding-inline: .25em;
+  background: #dbcaa7;
+  color: var(--text);
+  border-radius: 2px;
+}
