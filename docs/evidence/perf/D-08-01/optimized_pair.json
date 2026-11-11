@@ -1,0 +1,180 @@
+{
+  "task": "D-08-01",
+  "commit": "87fddf970869f89fd2d7553e981089c86741ba70",
+  "generated_at": "2026-11-10T12:32:13Z",
+  "source": "Consecutive actual-engine suspicion=None baseline and logistic 9bbee626f29b ON with co-resident 1afb8f051c4e, nifi-01 2vCPU/3398MiB, external WSL2 Ubuntu, 30 users for >=3min each. Only app/inference load, isolated loopback Mongo/Caddy/Daphne2. Bounded static serde metadata reuse and live unfinished-game ID query; no batch/pool change. Base local 87fddf9 plus uncommitted optimization, manifest SHA-256 2908215a625e861c3cb9f7443aa3e5a6137ff5cb0cdc6cb3de3d98ad013796d0. Raw process metrics before/after, request/Caddy/Django timings, simultaneous RTT/CPU, end-of-load RSS (not peak) retained in out/d08-01/optimized-final.",
+  "metrics": {
+    "baseline_elapsed_seconds": {
+      "value": 180.418,
+      "unit": "s"
+    },
+    "baseline_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "baseline_requests": {
+      "value": 5400,
+      "unit": "count"
+    },
+    "baseline_finished_games": {
+      "value": 392,
+      "unit": "count"
+    },
+    "baseline_p95_ms": {
+      "value": 468.2,
+      "unit": "ms"
+    },
+    "baseline_command_p95_ms": {
+      "value": 459.44,
+      "unit": "ms"
+    },
+    "baseline_caddy_p95_ms": {
+      "value": 438.745,
+      "unit": "ms"
+    },
+    "baseline_django_p95_ms": {
+      "value": 390.964,
+      "unit": "ms"
+    },
+    "baseline_rtt_p95_ms": {
+      "value": 1.43,
+      "unit": "ms"
+    },
+    "baseline_host_cpu_percent": {
+      "value": 55.49,
+      "unit": "%"
+    },
+    "baseline_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_inference_calls": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_inference_failures": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_engine_fallback_decisions": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_engine_committed_fallbacks": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model_elapsed_seconds": {
+      "value": 180.404,
+      "unit": "s"
+    },
+    "model_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "model_requests": {
+      "value": 5399,
+      "unit": "count"
+    },
+    "model_finished_games": {
+      "value": 440,
+      "unit": "count"
+    },
+    "model_p95_ms": {
+      "value": 495.806,
+      "unit": "ms"
+    },
+    "model_command_p95_ms": {
+      "value": 494.534,
+      "unit": "ms"
+    },
+    "model_caddy_p95_ms": {
+      "value": 486.123,
+      "unit": "ms"
+    },
+    "model_django_p95_ms": {
+      "value": 449.611,
+      "unit": "ms"
+    },
+    "model_rtt_p95_ms": {
+      "value": 1.27,
+      "unit": "ms"
+    },
+    "model_host_cpu_percent": {
+      "value": 54.168,
+      "unit": "%"
+    },
+    "model_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model_inference_calls": {
+      "value": 2600,
+      "unit": "count"
+    },
+    "model_inference_failures": {
+      "value": 91,
+      "unit": "count"
+    },
+    "model_engine_fallback_decisions": {
+      "value": 100,
+      "unit": "count"
+    },
+    "model_engine_committed_fallbacks": {
+      "value": 100,
+      "unit": "count"
+    },
+    "model_fallback_percent": {
+      "value": 3.8461538461538463,
+      "unit": "%"
+    },
+    "model_port_failure_percent": {
+      "value": 3.5,
+      "unit": "%"
+    },
+    "model_inference_p95_upper_ms": {
+      "value": 100.0,
+      "unit": "ms"
+    },
+    "model_rss_mib": {
+      "value": 1023.01953125,
+      "unit": "MiB"
+    },
+    "model_worker_count": {
+      "value": 4,
+      "unit": "count"
+    },
+    "model_timeout_recoveries": {
+      "value": 6,
+      "unit": "count"
+    },
+    "model_unresolved_timeouts": {
+      "value": 0,
+      "unit": "count"
+    },
+    "app01_vcpu": {
+      "value": 2,
+      "unit": "count"
+    },
+    "app01_ram_mib": {
+      "value": 3398,
+      "unit": "MiB"
+    },
+    "nifi_vcpu": {
+      "value": 2,
+      "unit": "count"
+    },
+    "nifi_ram_mib": {
+      "value": 3398,
+      "unit": "MiB"
+    },
+    "model_timeout_recovery_min_ms": {
+      "value": 129.263,
+      "unit": "ms"
+    },
+    "model_timeout_recovery_max_ms": {
+      "value": 308.082,
+      "unit": "ms"
+    }
+  }
+}

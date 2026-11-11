@@ -2,6 +2,7 @@
 from dataclasses import dataclass, replace
 
 from .meeting_view import MeetingClaim, meeting_context
+from .vn_script import attach_particles
 
 
 @dataclass(frozen=True)
@@ -55,5 +56,5 @@ def cards_context(output, view):
 def line_context(game_id, output, speaker="", is_interrogation_answer=False):
     """공개 문장과 식별자·완료 여부·추궁 답변 표시 여부만 전달한다."""
     return {"line": {"game_id": game_id, "speech_id": output.speech_id, "job_id": output.job_id,
-                     "text": output.text, "final": output.final, "speaker": speaker,
+                     "text": attach_particles(output.text), "final": output.final, "speaker": speaker,
                      "is_interrogation_answer": is_interrogation_answer}}

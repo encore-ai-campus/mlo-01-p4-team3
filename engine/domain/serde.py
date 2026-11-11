@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
+from functools import lru_cache
 import json
 import types
 import typing
@@ -114,11 +115,16 @@ def _key_from_str(kt: Any, key: str, path: str) -> Any:
     return key
 
 
+@lru_cache(maxsize=256)
+def _dataclass_schema(tp: type):
+    """정적인 계약 타입 정보만 재사용하고 JSON 값과 검증 결과는 보관하지 않는다."""
+    return typing.get_type_hints(tp), {f.name: f for f in dataclasses.fields(tp)}
+
+
 def _dataclass_from(tp: type, data: Any, path: str) -> Any:
     if not isinstance(data, dict):
         raise SchemaError(path, f"{tp.__name__} 객체여야 함")
-    hints = typing.get_type_hints(tp)
-    fields = {f.name: f for f in dataclasses.fields(tp)}
+    hints, fields = _dataclass_schema(tp)
     unknown = set(data) - set(fields)
     if unknown:
         raise SchemaError(path, f"{tp.__name__}에 없는 필드: {sorted(unknown)}")
