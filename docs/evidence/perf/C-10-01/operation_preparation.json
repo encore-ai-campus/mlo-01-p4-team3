@@ -1,0 +1,48 @@
+{
+  "task": "C-10-01",
+  "commit": "4780db2cedb84a056897b13be8aa8ecec1a401c7",
+  "generated_at": "2026-11-11T11:18:27Z",
+  "source": "actual k3s worker CPU import: torch2.15.0+cpu/transformers5.22.1/lightgbm4.7.0/sklearn1.9.1/mlflow3.18.0/pymongo4.19.0; OCI e640e95a8dc4ae3184beb73098abd6ecb7ece1138b9d1fd10c1e7ffc27a871ce; 2PVC Bound and suspended02:00 CronJob installed; input transfer awaits explicit approval",
+  "metrics": {
+    "non_root_image_smoke": {
+      "value": 1,
+      "unit": "회"
+    },
+    "bound_pvcs": {
+      "value": 2,
+      "unit": "개"
+    },
+    "input_capacity_gib": {
+      "value": 4,
+      "unit": "GiB"
+    },
+    "output_capacity_gib": {
+      "value": 8,
+      "unit": "GiB"
+    },
+    "cronjobs_installed": {
+      "value": 1,
+      "unit": "개"
+    },
+    "cronjobs_suspended": {
+      "value": 1,
+      "unit": "개"
+    },
+    "private_input_transfers": {
+      "value": 0,
+      "unit": "회"
+    },
+    "manual_training_jobs": {
+      "value": 0,
+      "unit": "회"
+    },
+    "production_web_deployments": {
+      "value": 0,
+      "unit": "회"
+    },
+    "oci_bytes": {
+      "value": 660272128,
+      "unit": "bytes"
+    }
+  }
+}

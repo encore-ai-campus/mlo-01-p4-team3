@@ -1,0 +1,15 @@
+{
+  "image_digest": "sha256:e640e95a8dc4ae3184beb73098abd6ecb7ece1138b9d1fd10c1e7ffc27a871ce",
+  "oci_index_digest": "sha256:208d8d57f8b3940f6183b18afa89bfb561d9c948012785ec4c76c8e5c1b13377",
+  "platform": "linux/amd64",
+  "python": "3.14.4",
+  "requirements_ml_sha256": "6617d4dad44f21cc7b9b5903f9a996f44e37ccf48ea432d18902bc6383f849e0",
+  "dockerfile_sha256": "df6f3b1933f6fab337e48abf577370966e2ef07fc38dcb251d0558f42032644b",
+  "registry_pushed": false,
+  "imported_nodes": [
+    "spark-worker-03"
+  ],
+  "non_root_cpu_import_verified": true,
+  "contains_private_training_inputs": false,
+  "source_code": "read-only reviewed input PVC, not embedded in dependency image"
+}

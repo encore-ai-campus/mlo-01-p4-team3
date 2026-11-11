@@ -77,7 +77,8 @@ def record_candidate(family, spec, report, artifact, config):
         metadata_match = metadata_match and provenance.get("code_commit") == config["code_commit"]
     elif spec["model"] != "paldo-ad-ctr-" + report["source"]:
         raise ValueError("ctr_source_model_mismatch")
-    passed = decision.accepted and metadata_match
+    # D의 α 유효성·추가 관문 거부를 재평가한 기본 지표만으로 뒤집지 않는다.
+    passed = decision.accepted and metadata_match and report.get('accepted', True) is True
     if load_tombstones(config["tombstones"]) != config["_tombstones"]:
         raise ValueError("privacy_registry_changed_during_training")
     tags = {"data_version": actual or "missing", "feature_version": spec["feature_version"],

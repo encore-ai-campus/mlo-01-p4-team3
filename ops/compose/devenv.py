@@ -34,6 +34,9 @@ LOCAL_FIXED = {
     "AUTH_DB_USER": "paldo_auth_dev",
     "PUBLIC_ORIGIN": "http://localhost:8000",   # Django 개발 서버 기본 포트. 브라우저도 이 주소로(127.0.0.1이면 웹소켓 거부)
     "MLFLOW_URI": "",               # 로컬은 mlruns/(가짜 → 진짜 교체표)
+    "MLFLOW_MODELS": "",            # 로컬은 기존 정적 레지스트리
+    "MLFLOW_MODEL_CACHE": "mlruns",
+    "MLFLOW_TRACKING_URI": "",
     "LLM_URL": "",                  # 로컬은 LLM 폴백 템플릿
     "ADS_INTERNAL_URL": "",         # 로컬은 FakeAdProvider
 }
@@ -45,6 +48,7 @@ DERIVED = {
 COMPOSE_VARS = ("PALDO_ADS_DB_PORT",)
 # 로컬에서 비어 있어도 되는 변수.
 MAY_BE_EMPTY = ("PALDO_MLFLOW_URI", "PALDO_LLM_URL", "PALDO_ADS_INTERNAL_URL",
+                "PALDO_MLFLOW_MODELS", "MLFLOW_TRACKING_URI",
                 "PALDO_SIGNUP_INVITE_CODE")   # 초대 코드: 비면 공개 가입(파일럿)
 
 
