@@ -78,6 +78,15 @@ class MongoGameRepository:
         if not document or not document.get('commands'): return None
         return from_jsonable(StoredCommand,document['commands'][0])
 
+    def unfinished_open_game_ids(self, game_ids):
+        """주어진 판 중 진행 중인 일반 판 ID만 원래 순서로 반환한다. 상태·진실은 읽지 않는다."""
+        if not game_ids:
+            return []
+        found = {row['_id'] for row in self.collection.find(
+            {'_id': {'$in': game_ids}, 'state.meta.session_id': None, 'state.result': None},
+            {'_id': 1})}
+        return [game_id for game_id in game_ids if game_id in found]
+
     def commit(self, game_id, expected_version, state, truth, outbox, command):
         """상태·진실·Outbox·명령을 하나의 CAS update pipeline으로 반영한다."""
         if state.state_version != expected_version+1:

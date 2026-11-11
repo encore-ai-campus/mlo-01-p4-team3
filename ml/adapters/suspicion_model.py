@@ -64,6 +64,7 @@ class SuspicionModelAdapter:
         self.timeout_s = timeout_s
         self.calls = self.successes = 0
         self.latencies_ms = deque(maxlen=10000)
+        self.wait_observer = None
         self._lock = threading.Lock()
         self._closed = False
         self._loader = loader
@@ -209,9 +210,14 @@ class SuspicionModelAdapter:
         try:
             if self._closed or self._permanent or not self._ready.is_set():
                 raise ModelUnavailable('model closed or recovering')
-            if not self._idle.wait(max(0, self.timeout_s - (time.monotonic() - started))):
-                raise ModelUnavailable('model busy')
-            acquired = self._lock.acquire(timeout=max(0, self.timeout_s - (time.monotonic() - started)))
+            wait_started = time.monotonic()
+            try:
+                if not self._idle.wait(max(0, self.timeout_s - (time.monotonic() - started))):
+                    raise ModelUnavailable('model busy')
+                acquired = self._lock.acquire(timeout=max(0, self.timeout_s - (time.monotonic() - started)))
+            finally:
+                if self.wait_observer is not None:
+                    self.wait_observer(wait_started, time.monotonic())
             if not acquired:
                 raise ModelUnavailable('model busy')
             if not self._ready.is_set() or self._closed:

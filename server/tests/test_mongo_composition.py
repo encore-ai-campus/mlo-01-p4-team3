@@ -1,5 +1,6 @@
 """B Mongo 조립의 설정·실패 격리. 실제 DB 시험은 mongo_game_sessions에서 수행한다."""
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 from django.test import SimpleTestCase, override_settings
 from pymongo.errors import ExecutionTimeout, OperationFailure, ServerSelectionTimeoutError
 from server.paldo_web.composition import (GameServiceUnavailable, configure_game_service,
@@ -9,6 +10,37 @@ from server.paldo_web.mongo import MongoRuntime, WebMongoGameRepository, open_mo
 
 class MongoComposition(SimpleTestCase):
     """접속 정보 노출과 시험 대역 자동 주입 없이 명시적인 설정만 받는다."""
+
+    def test_open_game_query_is_bounded_to_ids_and_preserves_input_order(self):
+        repository = object.__new__(WebMongoGameRepository)
+        repository.collection = Mock()
+        repository.collection.find.return_value = [{'_id': 'b'}, {'_id': 'a'}]
+        self.assertTrue(callable(getattr(repository, 'unfinished_open_game_ids', None)))
+        with patch('server.infra.mongo_repo.from_jsonable', side_effect=AssertionError('full state read')):
+            self.assertEqual(repository.unfinished_open_game_ids(['a', 'missing', 'b', 'a']), ['a', 'b', 'a'])
+        repository.collection.find.assert_called_once_with(
+            {'_id': {'$in': ['a', 'missing', 'b', 'a']}, 'state.meta.session_id': None, 'state.result': None},
+            {'_id': 1})
+        repository.collection.find.reset_mock()
+        self.assertEqual(repository.unfinished_open_game_ids([]), [])
+        repository.collection.find.assert_not_called()
+
+    def test_service_uses_injected_open_query_without_loading_each_state(self):
+        from server.app.usecases import GameService
+        state = SimpleNamespace(meta=SimpleNamespace(session_id=None), result=None)
+        repository = SimpleNamespace(load=Mock(return_value=(state, None)))
+        progress = SimpleNamespace(load=Mock(return_value=SimpleNamespace(game_ids=['a', 'b'])))
+        service = GameService(None, repository, progress, None)
+        service.find_open_games = Mock(return_value=['a', 'b'])
+        self.assertEqual(service.unfinished_open_games('player'), ['a', 'b'])
+        service.find_open_games.assert_called_once_with(['a', 'b'])
+        repository.load.assert_not_called()
+
+    def test_mongo_runtime_connects_open_query(self):
+        database = Mock()
+        database.__getitem__ = Mock(return_value=Mock())
+        runtime = MongoRuntime(Mock(), database, object(), None, 'probe_')
+        self.assertIs(getattr(getattr(runtime.game, 'find_open_games', None), '__self__', None), runtime.game.repository)
 
     def test_non_connection_failures_are_not_converted_to_retryable_errors(self):
         """권한·실행 제한·입력 오류를 일시 연결 오류로 바꾸지 않는다."""

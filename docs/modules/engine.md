@@ -77,6 +77,8 @@ n = fallback_count(res2.events)             # engine.domain.npc.vote. B가 paldo
 
 ## 설정값
 
+공통 역직렬화는 정적인 dataclass 타입별 주석 해석·필드 정보를 프로세스 안에서 최대 256종 재사용한다. JSON 값·판 상태·진실·검증 결과는 캐시하지 않으며, 매 입력의 필드·타입·생성자 검증과 `SchemaError`는 그대로 실행한다. JSON 스키마·공개 함수·계약 버전은 바뀌지 않는다.
+
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
 | `RULE_PARAMS_VERSION`(`params.py`) | `rule-0.8.decision-2` | 규칙 기반 버전(`RULE_BASE_VERSION`) + 결정 파라미터 버전. 판 메타에 들어가 재현에 쓴다 | 규칙 상수를 바꾸면 기반 버전을, 결정 파라미터를 바꾸면 json `version`을 올린다 |
@@ -118,6 +120,7 @@ n = fallback_count(res2.events)             # engine.domain.npc.vote. B가 paldo
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
+| D-08-01 | 11/10 | 부하 병목 개선: `serde`의 타입 메타데이터만 제한된 캐시로 재사용. 입력별 엄격 검증·객체 격리·공개 계약 유지 |
 | A-05-02 | 11/5 | `apply`(회의 라운드·캐묻기·동시 비공개 투표·결선·재동점 무감금·감금 공개·종료 판정·최소 밤), `player_view`, 명령 검증, `NpcPolicy`·`BaselinePolicy`, `new_game_from_setup`·`setup_from_assignment`, `engine_bench --op apply` |
 | A-06-01 | 11/6 | 밤 목격·다음 날 아침 진술, 점괘 공개 분리 저장, 고백 처리 자리, 기색(보인 것만 공개, `TELL_PROB`, rule-0.3) |
 | A-06-02 | 11/6 | `observation.py`(관측 투영·믿음 갱신·이유 코드), 정책 입력을 `ObservationSnapshot`으로, `observe` 구현, 결정 직전 `observation`·직후 `decision`(`paldo.observations`), 종료 후 `truth_revealed` |

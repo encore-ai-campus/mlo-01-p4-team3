@@ -13,7 +13,7 @@ python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis -
   30명·3분 이상일 때만. `--compare-asgi`는 C-08-04 명령과 맞추려고 받기만 한다(이 도구는 늘 앞단 경유 비교다).
 - `--front`: 앞단 Caddy를 띄우는 방법. `docker`(기본, 공식 이미지. Linux는 host 네트워크로 loopback daphne에 닿는다)
   또는 `binary`(이미 설치된 caddy 실행 파일, `--caddy-bin`. 시험 서버처럼 Docker가 없는 곳).
-- 기본은 녹화 엔진이다. --mlruns와 --suspicion-version을 함께 지정하면 실제 엔진과 고정 버전 모델을 사용한다.
+- 기본은 녹화 엔진이다. --actual-baseline은 실제 엔진의 의심 모델을 끄고, --mlruns와 --suspicion-version은 고정 모델을 켠다.
   두 모드 모두 시험 접두어 컬렉션을 사용하고 이 도구가 Caddy와 웹 프로세스를 직접 띄운다.
 - B-09-02 준비: `--intent-every N`은 말하기 단계의 N번째 명령마다 해석·취소를 추가한다(0은 기존 부하).
   `--intent-factory`로 시험 해석기를 선택한다. 전체 API p95에는 두 요청을 포함하고 순수 해석 지연도 따로 기록한다.
@@ -43,6 +43,7 @@ from urllib.request import Request, build_opener
 
 from .api_bench import mongo_uri, percentile
 from .asgi_bench import beacon_load, measure_game
+from .bench_diagnostics import access_summary, cpu_sample, cpu_summary, with_ping
 
 CADDY_IMAGE = "caddy:2.10.2"
 LAYERS = ("memory", "redis")
@@ -87,7 +88,8 @@ def caddyfile(ports, front_host, listen=":8080", upstream_host="host.docker.inte
                    "    respond @outside 403\n") if client_ip else ""
     return (f"{{\n    admin off\n    auto_https off\n}}\n\nhttp://{listen} {{\n{bind}"
             f"{restriction}"
-            f"    reverse_proxy {upstreams} {{\n"
+            + ("    log\n" if client_ip else "")
+            + f"    reverse_proxy {upstreams} {{\n"
             "        lb_policy least_conn\n        lb_try_duration 2s\n        lb_try_interval 250ms\n"
             "        fail_duration 10s\n        health_uri /healthz\n        health_interval 5s\n        health_timeout 5s\n"
             "        health_fails 3\n        health_passes 1\n"
@@ -151,13 +153,20 @@ def inference_metrics(scrapes, version) -> dict:
                         and sample.labels.get('model_version') == version
                         and sample.labels.get('result') == 'fallback'):
                     engine_fallbacks += int(sample.value)
-    failures = max(failures, engine_fallbacks)
+    committed = sum(
+        int(sample.value)
+        for scrape in scrapes.values()
+        for family in text_string_to_metric_families(scrape)
+        for sample in family.samples
+        if sample.name == 'paldo_engine_suspicion_fallback_total'
+    )
     total = sum(calls.values())
     rank = math.ceil(total * .95)
     upper_ms = next((upper * 1000 for upper in sorted(buckets)
                      if rank and math.isfinite(upper) and buckets[upper] >= rank), None)
     return dict(inference_calls=total, inference_failures=failures, inference_p95_upper_ms=upper_ms,
-                inference_calls_by_process=calls)
+                inference_calls_by_process=calls, engine_fallback_decisions=engine_fallbacks,
+                engine_committed_fallbacks=committed)
 
 
 def model_load_passed(row) -> bool:
@@ -172,7 +181,8 @@ def model_load_passed(row) -> bool:
         return False
     return (row["errors"] == 0 and row["finished_games"] > 0
             and row["beacon_errors"] == 0 and row["beacon_acks"] > 0 and row["p95_ms"] <= 1000
-            and row["inference_calls"] > 0 and row["inference_failures"] / row["inference_calls"] <= .01
+            and row["inference_calls"] > 0 and max(row["inference_failures"], row.get("engine_fallback_decisions", 0),
+                    row.get("engine_committed_fallbacks", 0)) / row["inference_calls"] <= .01
             and row["inference_p95_upper_ms"] is not None and row["inference_p95_upper_ms"] <= 100
             and bool(row["inference_calls_by_process"]) and all(row["inference_calls_by_process"].values()))
 
@@ -236,7 +246,7 @@ def redis_clients(url):
         client.close()
 
 
-def drive_load(origin, cookies, steps, minutes, intent_every=0, redis_url=None):
+def drive_load(origin, cookies, steps, minutes, intent_every=0, redis_url=None, *, diagnostics=False):
     """격리 서버 주소에 게임·비콘 부하만 보낸다. DB와 서버 프로세스를 다루지 않는다."""
     opener = build_opener()
     for cookie in cookies:
@@ -259,10 +269,12 @@ def drive_load(origin, cookies, steps, minutes, intent_every=0, redis_url=None):
                         clients['during'] = redis_clients(redis_url)
 
                 Thread(target=sample_redis, daemon=True).start()
-            barrier = Barrier(len(cookies))
+            window = {}
+            barrier = Barrier(len(cookies), action=lambda: window.update(start=time.time()))
             futures = [pool.submit(measure_game, origin, cookie, steps, minutes, barrier,
-                                   intent_every=intent_every) for cookie in cookies]
+                                   intent_every=intent_every, diagnostics=diagnostics) for cookie in cookies]
             results = [future.result() for future in futures]
+            window['end'] = time.time()
         finally:
             stop.set()
         beacon_rows = [future.result() for future in beacons]
@@ -276,7 +288,7 @@ def drive_load(origin, cookies, steps, minutes, intent_every=0, redis_url=None):
                                for route in ('command', 'utterance', 'cancel'))
     parses = [r['stages']['intent_parse'] for row in results for r in row['request_timings']
               if r['route'] == 'utterance' and 'intent_parse' in r['stages']]
-    return dict(users=len(cookies), minutes=minutes, started_at=started_at, elapsed_seconds=round(elapsed, 3),
+    row = dict(users=len(cookies), minutes=minutes, started_at=started_at, elapsed_seconds=round(elapsed, 3),
                 requests=len(values), throughput_rps=round(len(values) / elapsed, 2), statuses=statuses,
                 errors=sum(r['errors'] for r in results), finished_games=sum(r['finished_games'] for r in results),
                 p50_ms=round(percentile(values, .5), 3), p95_ms=round(percentile(values, .95), 3),
@@ -286,6 +298,10 @@ def drive_load(origin, cookies, steps, minutes, intent_every=0, redis_url=None):
                 redis_clients=clients or None, intent_requests=len(intent), cancel_requests=len(cancel),
                 intent_http_p95_ms=round(percentile(intent, .95), 3) if intent else None,
                 intent_parse_p95_ms=round(percentile(parses, .95), 3) if parses else None)
+    if diagnostics:
+        row['window'] = window
+        row['client_requests'] = [timing for result in results for timing in result['request_timings']]
+    return row
 
 
 def external_load(origin, cookies, args):
@@ -334,11 +350,12 @@ def load_only(folder):
     minutes = float(state['minutes'])
     if not 0 < minutes <= 10:
         raise ValueError('invalid benchmark duration')
-    row = drive_load(state['origin'], cookies, None, minutes)
+    row = with_ping(origin.hostname, folder, lambda: drive_load(
+        state['origin'], cookies, None, minutes, diagnostics=True))
     row['load_generator'] = socket.gethostname()
     with (folder / 'load.json').open('x', encoding='utf-8') as stream:
         json.dump(row, stream)
-    print(json.dumps(row), flush=True)
+    print(json.dumps({key: value for key, value in row.items() if key != 'client_requests'}), flush=True)
     return 0
 
 
@@ -355,12 +372,14 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
     try:
         content = FixtureContentSource().load("*")
         runtime.content.insert(content)
+        startup_started_at = time.time()
         for port in ports:
             env = dict(os.environ, PALDO_MONGO_URI=uri, PALDO_PUBLIC_ORIGIN=origin, PALDO_BENCH_PREFIX=prefix,
                        PYTHONUNBUFFERED='1',
                        PALDO_LOG_DIR=str(folder / f'{name}-{port}-structured'),
                        PALDO_BENCH_PORT=str(port), PALDO_BENCH_SCENARIO="normal", PALDO_CHANNEL_LAYER=layer,
                        PALDO_WEB_INSTANCE=str(port), PALDO_CONTENT_VERSION=content.content_version,
+                       PALDO_BENCH_ACTUAL_BASELINE=str(int(args.actual_baseline)),
                        PALDO_BENCH_MLRUNS=args.mlruns, PALDO_BENCH_SUSPICION_VERSION=args.suspicion_version,
                        PALDO_BENCH_SECONDARY_SUSPICION_VERSION=args.secondary_suspicion_version,
                        PALDO_BENCH_INTENT_FACTORY=args.intent_factory if args.intent_every else '')
@@ -417,19 +436,52 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
         else:
             raise RuntimeError("proxy_timeout")
         time.sleep(6)   # Caddy 첫 능동 상태 확인(5초 간격)이 끝난 뒤 시작한다
-        load = (external_load(origin, users, args) if args.serve_dir else
-                drive_load(origin, users, steps, args.minutes, args.intent_every,
-                           args.redis_url if layer == 'redis' else None))
-        scrapes = {}
-        for port in ports:
-            with opener.open(f"http://127.0.0.1:{port}/metrics", timeout=5) as r:
-                scrapes[str(port)] = r.read().decode()
+        server_ready_at = time.time()
+        def scrape(phase):
+            samples = {}
+            for port in ports:
+                with opener.open(f"http://127.0.0.1:{port}/metrics", timeout=5) as response:
+                    samples[str(port)] = response.read().decode()
+                if args.serve_dir:
+                    (folder / f'{name}-{port}-{phase}.prom').write_text(samples[str(port)], encoding='utf-8')
+            return samples
+
+        if args.serve_dir:
+            before = scrape('before')
+            cpu = []
+            stop = Event()
+
+            def sample_cpu():
+                while not stop.is_set():
+                    cpu.append(cpu_sample())
+                    stop.wait(0.5)
+
+            monitor = Thread(target=sample_cpu, daemon=True)
+            monitor.start()
+            try:
+                load = external_load(origin, users, args)
+            finally:
+                stop.set()
+                monitor.join()
+            (folder / f'{name}-cpu.json').write_text(json.dumps(cpu), encoding='utf-8')
+            requests = load.pop('client_requests')
+            (folder / f'{name}-requests.json').write_text(json.dumps(requests), encoding='utf-8')
+            load.update(cpu_summary(cpu, load['window']))
+            load.update(access_summary(folder / f'{name}-caddy.log', requests))
+            load['counters_before'] = inference_metrics(before, args.suspicion_version)
+        else:
+            load = drive_load(origin, users, steps, args.minutes, args.intent_every,
+                              args.redis_url if layer == 'redis' else None)
+        scrapes = scrape('after')
         row = dict(load, case=name, processes=processes, channel_layer=layer,
+                   server_started_at=startup_started_at, server_ready_at=server_ready_at,
+                   warmup_seconds=round(server_ready_at - startup_started_at, 3),
                    per_process_commits={port: stage_counts(scrape) for port, scrape in scrapes.items()},
                    mongo_version=runtime.client.server_info()["version"])
+        if args.serve_dir or args.suspicion_version:
+            row.update(inference_metrics(scrapes, args.suspicion_version), model_version=args.suspicion_version or None)
         if args.suspicion_version:
-            row.update(inference_metrics(scrapes, args.suspicion_version), model_version=args.suspicion_version)
-            row['inference_fallback_percent'] = (100 * row['inference_failures'] / row['inference_calls']
+            row['inference_fallback_percent'] = (100 * row['engine_fallback_decisions'] / row['inference_calls']
                                                  if row['inference_calls'] else 100)
             row['memory_by_process'] = memory_metrics(scrapes)
             memories = row['memory_by_process'].values()
@@ -446,8 +498,8 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
             reasons = Counter()
             for item in recovery.values():
                 reasons.update(item['fallback_reasons'])
-            row['fallback_reasons'] = dict(reasons, unattributed=max(0, row['inference_failures'] - sum(reasons.values())))
-        row.update(engine='actual' if args.suspicion_version else 'scripted', intent_every=args.intent_every,
+            row['fallback_reasons'] = dict(reasons, unattributed=max(0, row['engine_fallback_decisions'] - sum(reasons.values())))
+        row.update(engine='actual' if args.suspicion_version or args.actual_baseline else 'scripted', intent_every=args.intent_every,
                    intent_parser_factory=args.intent_factory if args.intent_every else None)
         print(json.dumps(row), flush=True)
         return row
@@ -469,8 +521,9 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
         if args.keep_logs:   # 실패 원인 확인용(out/ 아래, Git 추적 안 함)
             keep = Path(args.keep_logs)
             keep.mkdir(parents=True, exist_ok=True)
-            for path in folder.glob(f"{name}-*.log"):
-                (keep / path.name).write_bytes(path.read_bytes())
+            for path in folder.glob(f"{name}-*"):
+                if path.is_file():
+                    (keep / path.name).write_bytes(path.read_bytes())
             for path in folder.glob(f'{name}-*-structured/ci.jsonl'):
                 (keep / f'{path.parent.name}.jsonl').write_bytes(path.read_bytes())
         try:
@@ -495,6 +548,7 @@ def main(argv=None):
     parser.add_argument("--channel-layer", default="memory", choices=LAYERS, help="--web-processes와 함께 쓸 채널 레이어")
     parser.add_argument("--front", default="docker", choices=("docker", "binary"), help="앞단 Caddy 실행 방식")
     parser.add_argument("--caddy-bin", default="caddy", help="--front binary일 때 caddy 실행 파일")
+    parser.add_argument("--actual-baseline", action="store_true", help="실제 엔진에 의심 모델을 주지 않는다")
     parser.add_argument("--mlruns", default="", help="실제 엔진 시험용 신뢰된 로컬 모델 디렉터리")
     parser.add_argument("--suspicion-version", default="", help="실제 엔진 시험용 고정 모델 버전")
     parser.add_argument('--secondary-suspicion-version', default='',
@@ -527,6 +581,8 @@ def main(argv=None):
         parser.error(f"경우 이름이 틀렸다: {error} (p1~p{MAX_PROCESSES}_memory|redis)")
     if not 1 <= args.users <= 60 or not 0 < args.minutes <= 10 or not names:
         parser.error("users=1..60, minutes=0..10, 경우가 하나 이상 필요하다")
+    if args.actual_baseline and args.suspicion_version:
+        parser.error('--actual-baseline과 --suspicion-version을 함께 쓸 수 없다')
     if bool(args.mlruns) != bool(args.suspicion_version):
         parser.error("--mlruns와 --suspicion-version은 함께 지정해야 한다")
     if args.secondary_suspicion_version and (not args.suspicion_version or
@@ -539,8 +595,9 @@ def main(argv=None):
         except ValueError as error:
             parser.error(str(error))
         if (args.client_ip == args.listen_host or args.front != 'binary' or len(cases) != 1
-                or not args.suspicion_version or args.intent_every or any(layer != 'memory' for _, layer in cases.values())):
-            parser.error('서버 전용 모드는 외부 호스트, binary, 단일 memory 구성과 실제 모델을 사용한다')
+                or not (args.suspicion_version or args.actual_baseline) or args.intent_every
+                or any(layer != 'memory' for _, layer in cases.values())):
+            parser.error('서버 전용 모드는 외부 호스트, binary, 단일 memory 구성과 실제 엔진을 사용한다')
     elif args.listen_host != '127.0.0.1' or args.client_ip:
         parser.error('외부 주소는 서버 전용 모드에서만 사용한다')
     if args.result_name:
@@ -576,7 +633,7 @@ def main(argv=None):
             client = Client()
             client.force_login(user)
             users.append("sessionid=" + client.cookies["sessionid"].value)
-        steps = None if args.suspicion_version else make_service().engine.steps[1:]
+        steps = None if args.suspicion_version or args.actual_baseline else make_service().engine.steps[1:]
         rows = []
         try:
             for name in names:
@@ -584,7 +641,7 @@ def main(argv=None):
                 print(json.dumps({"starting_case": name}), flush=True)
                 rows.append(run_case(args, name, processes, layer, uri, users, steps, folder))
             report = {"cpu_count": os.cpu_count(), "front": front_mode(args.front), "rows": rows}
-            report_name = "d0801-model-load-report.json" if args.suspicion_version else "e0910-multiproc-report.json"
+            report_name = "d0801-model-load-report.json" if args.suspicion_version or args.actual_baseline else "e0910-multiproc-report.json"
             (root / "out/handoff" / report_name).write_text(json.dumps(report, indent=2), encoding="utf-8")
             if args.result_name:
                 from tools.evidence_result import write_result
@@ -594,6 +651,8 @@ def main(argv=None):
                            f"--result-name {args.result_name}") if args.web_processes else \
                     (f"python -B -m server.tests.multiproc_bench --cases {','.join(names)} --users {args.users} "
                      f"--minutes {args.minutes} --front {args.front} --result-name {args.result_name}")
+                if args.actual_baseline:
+                    command += ' --actual-baseline'
                 if args.suspicion_version:
                     command += f' --mlruns "{args.mlruns}" --suspicion-version {args.suspicion_version}'
                 if args.secondary_suspicion_version:
