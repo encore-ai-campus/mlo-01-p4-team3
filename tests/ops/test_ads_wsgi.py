@@ -7,6 +7,7 @@ Django 연결 수명 규칙(request_started/finished의 close_old_connections)�
 import json
 import os
 import subprocess
+import secrets
 import sys
 import tempfile
 import unittest
@@ -23,7 +24,7 @@ import json, os, sys, threading
 import django
 from django.conf import settings
 settings.configure(
-    DEBUG=False, ALLOWED_HOSTS=["*"], ROOT_URLCONF=__name__, SECRET_KEY="x", MIDDLEWARE=[],
+    DEBUG=False, ALLOWED_HOSTS=["*"], ROOT_URLCONF=__name__, SECRET_KEY=os.urandom(16).hex(), MIDDLEWARE=[],
     DATABASES={"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": sys.argv[1],
                            "CONN_MAX_AGE": int(sys.argv[2]), "CONN_HEALTH_CHECKS": True}})
 django.setup()
@@ -92,7 +93,7 @@ class AdsSettings(unittest.TestCase):
         code = ("import json, ads.project.settings as s; d=s.DATABASES['default'];"
                 "print(json.dumps([d['CONN_MAX_AGE'], d['CONN_HEALTH_CHECKS']]))")
         result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT,
-                                env={**os.environ, "PYTHONPATH": str(ROOT), "DJANGO_SECRET_KEY": "test-only", "PALDO_ADS_TOKEN_KEY": "test-only", **env}, timeout=60)
+                                env={**os.environ, "PYTHONPATH": str(ROOT), "DJANGO_SECRET_KEY": secrets.token_hex(16), "PALDO_ADS_TOKEN_KEY": secrets.token_hex(16), **env}, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout.strip().splitlines()[-1])
 
@@ -115,12 +116,12 @@ class AdsRuntime(unittest.TestCase):
                 return execv.call_args[0][1]
 
     def test_default_is_gunicorn_single_process_fixed_threads(self):
-        argv = self._run({"bind": "10.0.0.5"})
+        argv = self._run({"bind": "192.0.2.5"})
         self.assertEqual(argv[1:3], ["-m", "gunicorn"])
         self.assertEqual(argv[argv.index("--worker-class") + 1], "gthread")
         self.assertEqual(argv[argv.index("--workers") + 1], "1")
         self.assertEqual(argv[argv.index("--threads") + 1], str(service_runtime.ADS_THREADS))
-        self.assertEqual(argv[argv.index("--bind") + 1], "10.0.0.5:8001")
+        self.assertEqual(argv[argv.index("--bind") + 1], "192.0.2.5:8001")
         self.assertEqual(argv[-1], "ads.project.wsgi:application")
 
     def test_rollback_to_daphne_by_profile_or_env(self):
