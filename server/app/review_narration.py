@@ -131,8 +131,11 @@ def _bundle_dict(content) -> dict:
             "characters": [{"name_ko": c.name_ko, "aliases": list(c.aliases)} for c in content.characters]}
 
 
-def narration_input(output, content, public, seed: int) -> dict:
-    """복기 DTO·콘텐츠·공개 기록 → 작업 문서에 담을 생성 입력(직렬화 가능한 dict)."""
+def narration_input(output, content, public, seed: int, bases: Optional[dict[str, str]] = None) -> dict:
+    """복기 DTO·콘텐츠·공개 기록 → 작업 문서에 담을 생성 입력(직렬화 가능한 dict).
+
+    `bases`는 {항목 ID: 의심 근거 풀이 문장}(응용 `_review_items`가 판 종료 뒤 기록으로 만든 승인 문장).
+    LLM에는 보내지 않고 최종 문장 뒤에 그대로 붙이므로, 복기 문장(`row.text`, 풀이를 붙인 것)에서 떼어 템플릿으로 둔다."""
     names = {c.npc_id: c.name_ko for c in content.characters}
     names["mudang"] = "무당"
     places = {p.place.value: p.name_ko for p in content.places}
@@ -143,12 +146,14 @@ def narration_input(output, content, public, seed: int) -> dict:
     for row in output.timeline:
         if row.actor not in names:
             continue
+        basis = (bases or {}).get(row.item_id, "")
         items.append(NarrationItem(
             row.item_id, row.day, row.phase, row.actor, row.kind, representative_code(row.reason_codes),
             target=names.get(row.target_npc) if row.target_npc else None,
             victim=names.get(row.victim) if row.victim else None,
             executor=names.get(row.executor) if row.executor else None,
-            reaction=row.reaction, evidence=_evidence_texts(row.evidence, claims, names, places), template=row.text))
+            reaction=row.reaction, evidence=_evidence_texts(row.evidence, claims, names, places), template=_without_basis(row.text, basis),
+            basis=basis))
     possessed = {npc for npc, role in output.roles.items() if role is Role.POSSESSED}
     picked = select_items(items, possessed)
     blocks = [NpcBlock(npc, names[npc], "창귀에 씐 사람" if npc in possessed else "마을 사람",
@@ -156,6 +161,12 @@ def narration_input(output, content, public, seed: int) -> dict:
     reason = getattr(output.result.reason, "value", str(output.result.reason))
     return {"seed": int(seed) % (2 ** 31), "result_text": RESULT_KO.get(reason, reason),
             "blocks": [asdict(b) for b in blocks], "lexicon": lexicon_from_bundle(_bundle_dict(content)).to_json()}
+
+
+def _without_basis(text: str, basis: str) -> str:
+    if basis and text.endswith(basis):
+        return text[:-len(basis)].rstrip()
+    return text
 
 
 def _order(items: list[NarrationItem]) -> tuple[int, int]:
@@ -224,13 +235,13 @@ class ReviewNarrationService:
         return self.narrator is not None
 
     # ------------------------------------------------------------ 등록
-    def ensure(self, output, content, public, seed: int) -> None:
+    def ensure(self, output, content, public, seed: int, bases: Optional[dict[str, str]] = None) -> None:
         """종료된 판의 해설 작업을 멱등 등록한다. 중단 판·꺼짐·이미 있음이면 아무것도 하지 않는다."""
         if not self.enabled or not getattr(output.result, "completed", True):
             return
         if self.store.get(output.game_id) is not None:
             return
-        payload = narration_input(output, content, public, seed)
+        payload = narration_input(output, content, public, seed, bases)
         now = self.clock()
         doc = {"_id": output.game_id, "status": QUEUED, "created_at": now,
                "deadline_at": now + self.settings.deadline_s, "attempts": 0, "claim_token": None,

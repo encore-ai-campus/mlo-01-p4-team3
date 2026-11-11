@@ -12,7 +12,7 @@ from engine.domain.serde import dumps, from_jsonable
 from engine.ports import StoredCommand, VersionConflict
 from engine.domain.abandon import AlreadyEnded, abandon
 from engine.domain.progress import ending_available
-from engine.domain.review import TraceEvent, TraceInput, review_text, review_trace
+from engine.domain.review import TraceEvent, TraceInput, basis_text, review_text, review_trace, suspect_basis
 from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewNarrationOutput, ReviewOutput
 from .clue_notice import clue_notices
 from .progress import apply_progress, sweep_game
@@ -74,6 +74,7 @@ class GameService:
         self.narration = None
         # NPC 대사 LLM(E-11-13, `npc_lines.NpcLineService`). None이면 기능 꺼짐(템플릿 대사만).
         self.npc_lines = None
+        self.win_probability = None  # 종료 판의 TraceInput·GameMeta → 날짜별 확률 또는 None
 
     def owned(self, game_id, player_pseudonym):
         """멱등 응답·버전 확인보다 먼저 판 소유권을 확인한다."""
@@ -265,21 +266,22 @@ class GameService:
         game_id = state.meta.game_id
         self._sweep_saved(player_pseudonym, state)
         progress = self.progress.load(player_pseudonym)
-        timeline = self._review_timeline(state)
+        trace = self._review_trace(state)
+        timeline, bases = self._review_items(state, trace)
         clues = [clue_id for clue_id, record in sorted(progress.clues.items())
                  if record.first_game_id == game_id]
         output = ReviewOutput(game_id, state.result, dict(truth.roles), dict(truth.secrets),
-                              timeline, clues_gained=clues)
-        self._ensure_narration(output, state)
+                              timeline, clues_gained=clues, win_prob=trace.win_prob)
+        self._ensure_narration(output, state, bases)
         return output
 
-    def _ensure_narration(self, output, state):
+    def _ensure_narration(self, output, state, bases=None):
         """복기를 처음 연 판의 해설 작업을 멱등 등록한다(E-10-01, 설계 D5). 실패해도 복기는 템플릿으로 보인다."""
         if self.narration is None or not self.narration.enabled:
             return
         try:
             content = self.dependencies(state.meta).content
-            self.narration.ensure(output, content, state.public, state.meta.seed)
+            self.narration.ensure(output, content, state.public, state.meta.seed, bases=bases)
         except Exception as exc:    # 작업 저장소·콘텐츠 장애가 복기 조회를 막지 않게 한다
             LOGGER.warning("review_narration_register_failed %s", type(exc).__name__)
 
@@ -296,23 +298,39 @@ class GameService:
             LOGGER.warning("review_narration_status_failed %s", type(exc).__name__)
             return ReviewNarrationOutput("off", True)
 
-    def _review_timeline(self, state):
-        """행동 시점 decision 이벤트(아웃박스)로 복기 항목을 만든다. 현재 믿음·상태에서 이유를 다시 계산하지 않는다."""
+    def _review_trace(self, state):
+        """저장된 행동 시점 이벤트와 선택 승률 모델로 복기 자료를 만든다."""
         meta = state.meta
-        envelopes = self.repository.events(meta.game_id)
-        trace = review_trace(TraceInput(meta.game_id, meta.rule_version, meta.seed,
-                                        [TraceEvent(e.seq, e.day, e.phase, e.state_version, e.event_type, e.payload)
-                                         for e in envelopes], state.public))
+        inp = TraceInput(meta.game_id, meta.rule_version, meta.seed,
+                         [TraceEvent(e.seq, e.day, e.phase, e.state_version, e.event_type, e.payload)
+                          for e in self.repository.events(meta.game_id)], state.public)
+        probabilities = self.win_probability(inp, meta) if self.win_probability is not None else None
+        return review_trace(inp, probabilities)
+
+    def _review_timeline(self, state):
+        return self._review_items(state)[0]
+
+    def _review_items(self, state, trace=None):
+        """행동 시점 decision 이벤트로 항목을 만든다. 현재 믿음에서 이유를 다시 계산하지 않는다."""
+        meta = state.meta
+        trace = trace if trace is not None else self._review_trace(state)
         try:
             names = {c.npc_id: c.name_ko for c in self.dependencies(meta).content.characters}
         except (LookupError, RuntimeError):    # 판 콘텐츠 버전을 못 읽을 때만(저장소 KeyError, 웹 조립의
             names = {}                         # GameServiceUnavailable). 이름 대신 ID로 보이고 이유 코드는 그대로
         lines = self.review_lines or {}
-        return [ReviewItem(item.item_id, item.actor, item.day, item.phase, item.kind, list(item.reason_codes),
-                           list(item.evidence), item.phrase_id, review_text(item, lines, names, meta.seed),
-                           item.speech_id, item.target_npc, item.reaction, item.executor, item.victim,
-                           item.policy_version)
-                for item in trace.items]
+        items, bases = [], {}
+        for item in trace.items:
+            text = review_text(item, lines, names, meta.seed)
+            npc = state.npcs.get(item.actor)
+            basis = basis_text(item, suspect_basis(item, state.public, npc.private if npc else None), lines, names)
+            if basis:
+                bases[item.item_id] = basis
+                text = f"{text} {basis}" if text else basis
+            items.append(ReviewItem(item.item_id, item.actor, item.day, item.phase, item.kind, list(item.reason_codes),
+                                    list(item.evidence), item.phrase_id, text, item.speech_id, item.target_npc,
+                                    item.reaction, item.executor, item.victim, item.policy_version))
+        return items, bases
 
     def command(self, data, player_pseudonym):
         """중복 → 버전 → 엔진 → 원자 저장 → 경합 처리 순서를 지킨다."""

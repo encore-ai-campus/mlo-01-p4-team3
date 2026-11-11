@@ -8,7 +8,7 @@
 
 설정의 `code_commit`은 이미지 소스 전체 SHA, `tombstones`는 읽기 전용 입력 PVC의 최신 삭제 목록이다. 각 모델 설정에 `model`, `data_version`(`delta:<table>@<version>`. 사용자 테스트 동결로 학습하는 `intent`만 `freeze:<manifest.json sha256>`이고 학습 명령의 `--freeze` 폴더와 해시가 같아야 한다), `feature_version`, `train`, `report`, `artifact`를 둔다. 광고 CTR은 보고서 버전 `artifact_version`도 지정한다. 주소·계정·입력 경로는 보호 설정에만 기록한다.
 
-`train`은 기존 D 진입점의 인자 배열이다. 의도 해석기는 `["-m","intent.retrain",...,"--out","{output}"]`, 씐 자는 `["-m","ml.suspicion.retrain",...,"--out","{output}"]`, CTR은 `["-m","ml.ad_ctr",...,"--out","{output}/decision.json"]`을 쓴다. 검수된 동결·라벨·평가 맥락·보정 자료와 정확한 Delta 버전을 넘긴다. 의도와 씐 자의 report는 `decision.json`, artifact는 각각 `checkpoint`와 `trained`다. CTR은 report와 artifact 모두 `decision.json`이다.
+`train`은 기존 D 진입점의 인자 배열이다. 의도 해석기는 `["-m","intent.retrain",...,"--report-only","--out","{output}"]`, 씐 자는 `["-m","ml.suspicion.retrain",...,"--out","{output}"]`, CTR은 `["-m","ml.ad_ctr",...,"--out","{output}/decision.json"]`을 쓴다. 검수된 동결·라벨·평가 맥락·보정 자료와 정확한 Delta 버전을 넘긴다. 의도와 씐 자의 report는 `decision.json`, artifact는 각각 `checkpoint`와 `trained`다. CTR은 report와 artifact 모두 `decision.json`이다.
 
 명령은 모델별로 학습을 실행하고 D의 지표 관문을 다시 적용한다. 출처 버전과 삭제 목록이 유지되는지 확인한 뒤 MLflow에 기록한다. 거부된 실행은 거부 사유를 남기며 통과 실행만 `candidate`로 등록한다. 운영·카나리아 별칭 전환은 운영자가 수행한다.
 

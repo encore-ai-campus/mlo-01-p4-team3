@@ -101,7 +101,7 @@ class GameEndScreens(TestCase):
         self.assertEqual(page["Cache-Control"], "private, no-store")
         self.assertEqual(self.document, before)
         self.assertEqual(set(self.client.get(path, HTTP_ACCEPT="application/json").json())
-                         , {"game_id", "result", "roles", "secrets", "timeline", "explanation_job_id", "clues_gained"})
+                         , {"game_id", "result", "roles", "secrets", "timeline", "explanation_job_id", "clues_gained", "win_prob"})
 
     def test_progress_fragment_for_tab_and_page_for_lobby(self):
         """htmx는 탭에 넣을 조각, 일반 요청은 로비용 전체 화면이다."""

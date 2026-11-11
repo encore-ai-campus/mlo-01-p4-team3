@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 from collections import defaultdict
 from datetime import datetime
-import hashlib
 import json
 from pathlib import Path
 import random
@@ -18,6 +17,9 @@ from engine.ports import EngineDeps
 from engine.sim.bots import LogicBot
 from engine.sim.runner import run_game
 from engine.testing.fakes import FakeSuspicionModel, FixtureContentSource, InMemoryGameRepository
+from ops.mlflow.lifecycle import transition
+from server.app.model_versions import VersionPinning
+from server.infra.mlflow_registry import MlflowModelRegistry
 from server.infra.model_selector import lookup_model
 from tools.gitrepo import GitRepo
 from tools.perf.engine_bench import bench_player_command, percentile
@@ -51,25 +53,6 @@ class _MeasuredRule(FakeSuspicionModel):
             self.latency.append((perf_counter() - started) * 1000)
 
 
-class _ReplaySelector:
-    """Choose local registry aliases once per simulated game."""
-
-    def __init__(self, client, name, models):
-        self.client, self.name, self.models = client, name, models
-        self.enabled = True
-
-    def select(self, game_id, player_pseudonym):
-        """Apply a stable 20 percent assignment exclusively to bot games."""
-        bucket = int.from_bytes(hashlib.sha256(game_id.encode()).digest()[:8], "big") % 100
-        canary = self.enabled and player_pseudonym is None and bucket < 20
-        model = lookup_model(self.client, self.name, "canary" if canary else "production")
-        return {"suspicion": model["version"]}, canary
-
-    def suspicion_model(self, version):
-        """Resolve the version stored at game start, independently of current aliases."""
-        return self.models[version]
-
-
 def main(argv=None):
     """Run the P-17 cohort and inject a model failure without touching any live aliases."""
     import mlflow
@@ -91,20 +74,27 @@ def main(argv=None):
                     code_commit=commit)
     marker = out / "rule.json"
     marker.write_text(json.dumps(versions), encoding="utf-8")
-    previous, probe = [str(client.create_model_version(name, marker.as_uri()).version) for _ in range(2)]
+    experiment = client.create_experiment("d10-01-drill", artifact_location=(out / "artifacts").as_uri())
+    probe_run = client.create_run(experiment, tags={**versions, "paldo.gate.status": "passed"})
+    client.set_terminated(probe_run.info.run_id)
+    previous = str(client.create_model_version(name, marker.as_uri()).version)
+    probe = str(client.create_model_version(name, marker.as_uri(), run_id=probe_run.info.run_id).version)
+    for version in (previous, probe):
+        client.set_model_version_tag(name, version, "paldo.artifact_version", version)
     client.set_registered_model_alias(name, "production", previous)
     client.set_registered_model_alias(name, "previous", previous)
-    client.set_registered_model_alias(name, "canary", probe)
-    selector = _ReplaySelector(client, name, {v: _MeasuredRule(v) for v in (previous, probe)})
+    client.set_registered_model_alias(name, "candidate", probe)
+    transition(client, name, "canary", previous, "isolated_drill")
+    pin = VersionPinning(MlflowModelRegistry(client, {"suspicion": name}), lambda: .2)
+    models = {v: _MeasuredRule(v) for v in (previous, probe)}
     content = FixtureContentSource().load("*")
     engine = PaldoEngine(RuleV0Policy(content))
 
     def start(index, seed):
         gid = f"d1001-drill-{index:04d}"
-        fixed, canary = selector.select(gid, None)
-        meta = GameMeta(gid, PRESETS["base6"], seed, DataSource.BOT, params.RULE_PARAMS_VERSION,
-                        ENGINE_VERSION, content.content_version, model_versions=fixed, canary=canary)
-        return meta, EngineDeps(content, selector.suspicion_model(fixed["suspicion"]))
+        meta = pin(GameMeta(gid, PRESETS["base6"], seed, DataSource.BOT, params.RULE_PARAMS_VERSION,
+                            ENGINE_VERSION, content.content_version))
+        return meta, EngineDeps(content, models[meta.model_versions["suspicion"]])
 
     # Identical seed streams per cohort isolate alias routing from model quality.
     cohorts = defaultdict(list)
@@ -116,7 +106,7 @@ def main(argv=None):
         if min(len(cohorts[True]), len(cohorts[False])) >= 30:
             break
     rates = {k: sum(g.winner == "village" for g in v) / len(v) for k, v in cohorts.items()}
-    canary = selector.suspicion_model(probe)
+    canary = models[probe]
     p95 = percentile(canary.latency, 95)
     verdict = canary_decision(len(cohorts[True]), len(cohorts[False]), rates[True], rates[False],
                               canary.failures / canary.calls, p95)
@@ -127,7 +117,7 @@ def main(argv=None):
     repo = InMemoryGameRepository()
     repo.create(state.state, state.truth, [])
     if verdict == "promote":
-        client.set_registered_model_alias(name, "production", probe)
+        transition(client, name, "promote", previous, "cohorts_passed", expected_canary=probe)
     production_before = lookup_model(client, name, "production")["version"]
     healthy_fallback = canary.failures / canary.calls
     canary.fail = True
@@ -136,17 +126,18 @@ def main(argv=None):
     injected_rate = (canary.failures - failures_before) / (canary.calls - calls_before)
     if canary_decision(1, 0, 0, 0, injected_rate, 0) != "rollback":
         raise RuntimeError("injected fallback did not trigger rollback")
-    client.set_model_version_tag(name, probe, "paldo.rollback.reason", "injected_fallback")
-    client.set_registered_model_alias(name, "production", lookup_model(client, name, "previous")["version"])
-    client.delete_registered_model_alias(name, "canary")
-    selector.enabled = False
+    rollback = transition(client, name, "rollback", production_before, "injected_fallback")
+    restored = client.get_model_version_by_alias(name, "production")
+    if (rollback["selected_version"] != previous or "canary" in client.get_registered_model(name).aliases
+            or restored.tags.get("paldo.lifecycle.reason") != "injected_fallback"):
+        raise RuntimeError("C-10-01 rollback alias or audit tag missing")
     next_meta, _ = start(2001, 92)
     saved, truth = repo.load(active_meta.game_id)
-    pinned = saved.meta.model_versions["suspicion"]
+    pinned = pin(saved.meta).model_versions["suspicion"]
     view = engine.player_view(saved, content)
     command = bench_player_command(view, random.Random(saved.meta.seed))
     continued = engine.apply(saved, truth, CommandEnvelope(saved.meta.game_id, "after-rollback", saved.state_version, command),
-                             EngineDeps(content, selector.suspicion_model(pinned)))
+                             EngineDeps(content, models[pinned]))
     if not continued.accepted or continued.state.meta.model_versions["suspicion"] != probe or next_meta.model_versions["suspicion"] != previous:
         raise RuntimeError("version pin or rollback failed")
     report = dict(**versions, canary_games=len(cohorts[True]), control_games=len(cohorts[False]),
