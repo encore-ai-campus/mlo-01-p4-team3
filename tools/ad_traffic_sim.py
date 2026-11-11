@@ -28,6 +28,11 @@ from tools.jsonlog import log
 
 ROOT = Path(__file__).resolve().parents[1]
 STEP_MS = 10
+# 시험 호스트 대기 한도(초). 시작은 새 프로세스가 Django를 불러오므로 CPU가 꽉 찬 병렬 검사 중에는 평소 약 2초가
+# 30초를 넘는다(11/11 16코어 전부 점유 상태에서 28~61초). 제어 응답은 부하 중에도 1ms 미만이라 짧게 둔다.
+# 호스트가 죽으면 대기 한도와 상관없이 stdout 종료로 바로 실패한다.
+STARTUP_TIMEOUT_S = 180
+CONTROL_TIMEOUT_S = 30
 INVALID_TYPES = ('duplicate', 'bad_signature', 'no_serve', 'expired')
 
 
@@ -62,7 +67,7 @@ class _Server:
         self.reader = threading.Thread(target=self._read_replies, daemon=True)
         self.reader.start()
         try:
-            ready = self._read()
+            ready = self._read(STARTUP_TIMEOUT_S, 'synthetic HTTP host did not start in time; see host.stderr')
             self.now = ready['now']
             self.http = http.client.HTTPConnection('127.0.0.1', ready['port'], timeout=10)
             return self
@@ -90,11 +95,12 @@ class _Server:
         finally:
             self.replies.put(None)
 
-    def _read(self):
+    def _read(self, timeout=CONTROL_TIMEOUT_S, message='synthetic HTTP host control timed out; see host.stderr'):
+        """호스트의 다음 응답 줄을 읽는다. `timeout`초 안에 없으면 TimeoutError, 호스트가 끝났으면 RuntimeError."""
         try:
-            line = self.replies.get(timeout=30)
+            line = self.replies.get(timeout=timeout)
         except queue.Empty:
-            raise TimeoutError('synthetic HTTP host control timed out; see host.stderr') from None
+            raise TimeoutError(message) from None
         if not line:
             raise RuntimeError('synthetic HTTP host stopped; see host.stderr')
         return json.loads(line)

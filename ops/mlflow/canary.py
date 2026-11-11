@@ -50,7 +50,8 @@ def main(argv=None):
     if str(client.get_model_version_by_alias(args.model, "canary").version) != args.expected_canary:
         parser.error("canary_version_changed")
     if args.apply and decision == "promote":
-        result = transition(client, args.model, "promote", args.expected_production, "cohorts_passed")
+        result = transition(client, args.model, "promote", args.expected_production, "cohorts_passed",
+                            expected_canary=args.expected_canary)
     else:
         result = {"verdict": decision, "applied": False}
     print(json.dumps(result))
