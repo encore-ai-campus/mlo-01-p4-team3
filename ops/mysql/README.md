@@ -38,7 +38,7 @@ free -m
 # Replica 승격 전에는 승격 대상의 접속 용량도 확인한다.
 ```
 
-`service_runtime.py --profile "$PRIVATE_RUNTIME" <role>`은 보호 JSON의 `source`, `environment`, 선택 `kafka_config`를 읽어 같은 venv 프로세스로 교체한다. 역할은 web, ads, migrate-web, migrate-ads, collectstatic, load-content, outbox, publish, expire, refund다. 주소·계정·암호·키를 인자로 전달하지 않는다. 웹은 loopback:8000·8002(`web --port`, 프로세스 2개, E-09-10·[proxy README](../proxy/README.md)), 광고는 보호 설정의 내부 bind:8001이다. 광고는 gunicorn gthread(프로세스 1개·스레드 16, `ads.project.wsgi:application`)로 띄워 스레드별 DB 연결을 재사용한다(11/11, `CONN_MAX_AGE` 기본 60초, `PALDO_ADS_DB_CONN_MAX_AGE`). daphne(ASGI)는 요청마다 스레드를 새로 만들어 연결을 재사용하지 못한다. 되돌릴 때는 보호 JSON에 `"ads_server": "daphne"`(또는 환경 변수 `PALDO_ADS_SERVER=daphne`)를 넣고 재시작하면 `ads.project.asgi:application`으로 뜬다.
+`service_runtime.py --profile "$PRIVATE_RUNTIME" <role>`은 보호 JSON의 `source`, `environment`, 선택 `kafka_config`를 읽어 같은 venv 프로세스로 교체한다. 역할은 web, ads, migrate-web, migrate-ads, collectstatic, load-content, outbox, publish, expire, refund다. 주소·계정·암호·키를 인자로 전달하지 않는다. 웹은 loopback:8000·8002(`web --port`, 프로세스 2개, E-09-10·[proxy README](../proxy/README.md)), 광고는 보호 설정의 내부 bind:8001이다. 광고는 gunicorn gthread(프로세스 1개·스레드 16, 보호 JSON `ads_threads`로 1~64 조정, `ads.project.wsgi:application`)로 띄워 스레드별 DB 연결을 재사용한다(11/11, `CONN_MAX_AGE` 기본 60초, `PALDO_ADS_DB_CONN_MAX_AGE`). daphne(ASGI)는 요청마다 스레드를 새로 만들어 연결을 재사용하지 못한다. 되돌릴 때는 보호 JSON에 `"ads_server": "daphne"`(또는 환경 변수 `PALDO_ADS_SERVER=daphne`)를 넣고 재시작하면 `ads.project.asgi:application`으로 뜬다.
 
 웹 `PALDO_AUTH_DB_SSL_CA`, 광고 `PALDO_ADS_DB_SSL_CA`는 각각 인증서·호스트 검증을 강제한다. CA는 공개 파일이지만 DB 계정 프로필은 자기 서비스만 읽는다. 양쪽 실제 호스트의 migration·자기 스키마 TLS·상대 스키마 1044와 실제 브라우저 가입/로그인을 확인했다. 광고 직접 HTTP 제공·노출·클릭도 MySQL Outbox·Kafka·bronze까지 확인했다. 실제 파일 경로·서비스명·기동/종료 명령은 비공개 운영 인계 기록을 따른다.
 
