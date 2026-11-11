@@ -339,7 +339,6 @@ kbd { font: 600 15px/1.5 var(--pd-sans); background: #203239; border: 1px solid 
 .paper-page li { padding: 14px; background: #101d22; }
 .progress-summary { display: flex; align-items: baseline; gap: 18px; border-bottom: 1px solid #766c55; padding: 20px 0; }
 .progress-summary strong { font: 400 3rem/1.2 var(--pd-serif); }
-.review-reason { display: inline-block; margin: 4px 8px 4px 0; padding: 4px 8px; border: 1px solid #766c55; font-size: .85rem; }
 .ending-reason { font-family: var(--pd-serif); font-size: 1.3rem; }
 @container (max-width: 900px) { .vn-mobile-text, .vn-mobile-attribution { display: block; } .vn-dialogue p { font-size: 14px; } }
 /* Keep the stage and primary actions in the first desktop viewport. */

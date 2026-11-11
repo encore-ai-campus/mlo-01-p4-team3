@@ -208,6 +208,10 @@ class InMemoryGameRepository:
     def unpublished(self, game_id: str) -> list[EventEnvelope]:
         return list(self.docs[game_id]["outbox"])
 
+    def events(self, game_id: str) -> list[EventEnvelope]:
+        """아웃박스 전체를 seq 순으로(복기용 읽기 전용)."""
+        return copy.deepcopy(sorted(self.docs[game_id]["outbox"], key=lambda e: e.seq))
+
 
 class InMemoryProgressRepository:
     def __init__(self) -> None:

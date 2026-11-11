@@ -162,6 +162,7 @@ class StoredCommand:
 
 @runtime_checkable
 class GameRepository(Protocol):
+    """판 상태·진실·아웃박스 저장소 포트. 응용이 쓰고 인프라(Mongo·메모리)가 구현한다."""
     def create(self, state: GameState, truth: GameTruth, outbox: list[EventEnvelope]) -> None: ...
 
     def load(self, game_id: str) -> tuple[GameState, GameTruth]: ...
@@ -178,6 +179,11 @@ class GameRepository(Protocol):
     def append_events(self, game_id: str, outbox: list[EventEnvelope], dedup_key: str) -> bool:
         """상태를 바꾸지 않는 이벤트(해석 시도·카드 반응·수첩·설문·렌더 결과)를 아웃박스에 원자적으로 추가한다.
         상태 버전은 올리지 않는다. 같은 dedup_key가 이미 있으면 False(멱등). seq는 commit과 같은 카운터."""
+        ...
+
+    def events(self, game_id: str) -> list[EventEnvelope]:
+        """판의 아웃박스 이벤트 전체(발행 여부와 무관)를 seq 순으로 읽는다. 읽기 전용, 복기 `review_trace`용(E-10-10).
+        판이 없으면 KeyError."""
         ...
 
 
