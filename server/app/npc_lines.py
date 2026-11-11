@@ -39,10 +39,12 @@ class NpcLlmConfig:
 
     @property
     def polish_on(self) -> bool:
+        """회의 발언 다듬기가 켜졌는지(polish 또는 live)."""
         return self.mode in (POLISH, LIVE)
 
     @property
     def live_on(self) -> bool:
+        """캐묻기 실시간 생성이 켜졌는지(live만)."""
         return self.mode == LIVE
 
 
@@ -57,36 +59,49 @@ def resolve_mode(url: str, doc_mode: Optional[str], env_mode: str) -> str:
 class OpsSettings(Protocol):
     """운영 설정 읽기. `current`는 웹용 캐시 값, `fresh`는 작업 프로세스용 즉시 읽기."""
 
-    def current(self) -> NpcLlmConfig: ...
+    def current(self) -> NpcLlmConfig:
+        """현재 설정(웹은 캐시 값)."""
 
-    def fresh(self) -> NpcLlmConfig: ...
+    def fresh(self) -> NpcLlmConfig:
+        """캐시 없이 읽은 설정."""
 
 
 class NpcLineStore(Protocol):
     """작업 저장소(`server/infra/npc_line_jobs.py`)."""
 
-    def insert_if_absent(self, doc: dict) -> bool: ...
+    def insert_if_absent(self, doc: dict) -> bool:
+        """같은 키가 없을 때만 넣는다. 넣었으면 True."""
 
-    def get(self, job_id: str) -> Optional[dict]: ...
+    def get(self, job_id: str) -> Optional[dict]:
+        """작업 문서를 읽는다."""
 
-    def list_day(self, game_id: str, day: int, kind: str) -> list[dict]: ...
+    def list_day(self, game_id: str, day: int, kind: str) -> list[dict]:
+        """한 판·한 날의 작업 문서(등록 순)."""
 
-    def count_queued(self, kind: str, now: float) -> int: ...
+    def count_queued(self, kind: str, now: float) -> int:
+        """종류별 대기 작업 수. 마감이 지난 대기 작업은 세지 않는다."""
 
-    def claim_next(self, now: float, lease_until: float, token: str) -> Optional[dict]: ...
+    def claim_next(self, now: float, lease_until: float, token: str) -> Optional[dict]:
+        """우선순위·등록 순으로 잡을 수 있는 작업 하나를 잡는다. 마감이 지난 작업은 잡지 않는다."""
 
-    def finish(self, job_id: str, token: str, now: float, fields: dict) -> bool: ...
+    def finish(self, job_id: str, token: str, now: float, fields: dict) -> bool:
+        """토큰·실행 중·마감 전·미고정 조건부로 완료한다."""
 
-    def close(self, job_id: str, status: str, fields: dict, token: Optional[str] = None) -> bool: ...
+    def close(self, job_id: str, status: str, fields: dict, token: Optional[str] = None) -> bool:
+        """열린 작업만 닫는다. 토큰을 주면 그 토큰으로 잡은 작업만 닫는다."""
 
-    def fix(self, job_id: str, final: dict) -> Optional[dict]: ...
+    def fix(self, job_id: str, final: dict) -> Optional[dict]:
+        """아직 고정되지 않은 줄만 고정하고 고정된 문서를 돌려준다."""
 
-    def fix_stale(self, game_id: str, day: int, phase: str, finals: dict) -> int: ...
+    def fix_stale(self, game_id: str, day: int, phase: str, finals: dict) -> int:
+        """현재 단계가 아닌 미고정 줄을 템플릿으로 고정한다."""
 
-    def delete(self, game_ids: list) -> int: ...
+    def delete(self, game_ids: list) -> int:
+        """판의 작업 문서를 모두 지운다."""
 
 
 def polish_id(game_id: str, speech_id: str) -> str:
+    """회의 발언 다듬기 작업 키(`<판 ID>:<발언 ID>`)."""
     return f"{game_id}:{speech_id}"
 
 
@@ -118,14 +133,17 @@ class NpcLineService:
 
     # ---- 모드
     def config(self) -> NpcLlmConfig:
+        """지금 적용되는 모드·마감·대기 상한."""
         if self.narrator is None:
             return NpcLlmConfig()
         return self.settings.current()
 
     def polish_on(self) -> bool:
+        """회의 발언 다듬기가 켜졌는지(polish 또는 live)."""
         return self.config().polish_on
 
     def live_on(self) -> bool:
+        """캐묻기 실시간 생성이 켜졌는지(live만)."""
         return self.config().live_on
 
     def _lexicon(self, content) -> Lexicon:
@@ -216,6 +234,7 @@ class NpcLineService:
         return {"speech_id": speech_id, "variant": final["variant"], "text": final.get("text")}
 
     def delete(self, game_ids: list) -> int:
+        """판의 작업 문서를 모두 지운다."""
         return self.store.delete(list(game_ids))
 
     # ---- 작업 프로세스

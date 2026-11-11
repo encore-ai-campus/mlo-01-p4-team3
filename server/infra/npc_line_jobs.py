@@ -111,6 +111,7 @@ class MemoryNpcLineStore:
         self._lock = threading.Lock()
 
     def insert_if_absent(self, doc: dict) -> bool:
+        """같은 키가 없을 때만 넣는다. 넣었으면 True."""
         with self._lock:
             if doc["_id"] in self.docs:
                 return False
@@ -118,21 +119,25 @@ class MemoryNpcLineStore:
             return True
 
     def get(self, job_id: str) -> Optional[dict]:
+        """작업 문서를 읽는다."""
         with self._lock:
             doc = self.docs.get(job_id)
             return copy.deepcopy(doc) if doc else None
 
     def list_day(self, game_id: str, day: int, kind: str) -> list[dict]:
+        """한 판·한 날의 작업 문서(등록 순)."""
         with self._lock:
             out = [d for d in self.docs.values() if d["game_id"] == game_id and d["day"] == day and d["kind"] == kind]
             return copy.deepcopy(sorted(out, key=lambda d: d["created_at"]))
 
     def count_queued(self, kind: str, now: float) -> int:
+        """종류별 대기 작업 수. 마감이 지난 대기 작업은 세지 않는다."""
         with self._lock:
             return sum(1 for d in self.docs.values()
                        if d["status"] == "queued" and d["kind"] == kind and d["deadline_at"] >= now)
 
     def claim_next(self, now: float, lease_until: float, token: str) -> Optional[dict]:
+        """우선순위·등록 순으로 잡을 수 있는 작업 하나를 잡는다. 마감이 지난 작업은 잡지 않는다."""
         with self._lock:
             ready = [d for d in self.docs.values() if d["deadline_at"] >= now and
                      (d["status"] == "queued" or (d["status"] == "running" and d["lease_until"] < now))]
@@ -144,6 +149,7 @@ class MemoryNpcLineStore:
             return copy.deepcopy(doc)
 
     def finish(self, job_id: str, token: str, now: float, fields: dict) -> bool:
+        """토큰·실행 중·마감 전·미고정 조건부로 완료한다."""
         with self._lock:
             doc = self.docs.get(job_id)
             if (not doc or doc.get("claim_token") != token or doc["status"] != "running" or now > doc["deadline_at"]
@@ -153,6 +159,7 @@ class MemoryNpcLineStore:
             return True
 
     def close(self, job_id: str, status: str, fields: dict, token: Optional[str] = None) -> bool:
+        """열린 작업만 닫는다. 토큰을 주면 그 토큰으로 잡은 작업만 닫는다."""
         with self._lock:
             doc = self.docs.get(job_id)
             if not doc or doc["status"] not in _OPEN or (token is not None and doc.get("claim_token") != token):
@@ -161,6 +168,7 @@ class MemoryNpcLineStore:
             return True
 
     def fix(self, job_id: str, final: dict) -> Optional[dict]:
+        """아직 고정되지 않은 줄만 고정하고 고정된 문서를 돌려준다."""
         with self._lock:
             doc = self.docs.get(job_id)
             if doc is None:
@@ -170,6 +178,7 @@ class MemoryNpcLineStore:
             return copy.deepcopy(doc)
 
     def fix_stale(self, game_id: str, day: int, phase: str, finals: dict[str, dict]) -> int:
+        """현재 단계가 아닌 미고정 줄을 템플릿으로 고정한다."""
         n = 0
         with self._lock:
             for job_id, final in finals.items():
@@ -184,6 +193,7 @@ class MemoryNpcLineStore:
         return n
 
     def delete(self, game_ids: list[str]) -> int:
+        """판의 작업 문서를 모두 지운다."""
         with self._lock:
             gone = [k for k, d in self.docs.items() if d["game_id"] in game_ids]
             for k in gone:

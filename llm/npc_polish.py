@@ -57,6 +57,7 @@ class PolishRequest:
     allowed_names: tuple[str, ...]  # 원문에 나온 인물 이름
 
     def as_dict(self) -> dict:
+        """요청을 작업 문서에 저장할 사전으로 바꾼다."""
         return {"speech_id": self.speech_id, "kind": self.kind, "text": self.text, "persona": self.persona,
                 "allowed_names": list(self.allowed_names)}
 

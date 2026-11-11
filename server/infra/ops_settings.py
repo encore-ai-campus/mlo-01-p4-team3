@@ -96,7 +96,9 @@ class StaticOpsSettings:
         self.config = config
 
     def current(self) -> NpcLlmConfig:
+        """현재 설정(웹은 캐시 값)."""
         return self.config
 
     def fresh(self) -> NpcLlmConfig:
+        """캐시 없이 읽은 설정."""
         return self.config

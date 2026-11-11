@@ -38,6 +38,7 @@ class KananaLineRenderer:
         return cfg.live_deadline_ms if cfg.live_on else req.deadline_ms
 
     def submit(self, req: RenderRequest) -> None:
+        """live 모드이고 대기 줄이 비었을 때만 실시간 작업을 넣는다. 아니면 넣지 않아 바로 폴백된다."""
         cfg = self.settings.current()
         if not cfg.live_on or self.store.count_queued(LIVE, self.clock()) >= LIVE_QUEUE_MAX:
             return
@@ -50,6 +51,7 @@ class KananaLineRenderer:
             "prompt_version": PROMPT_VERSION})
 
     def poll(self, job_id: str, game_id: str = "") -> RenderResult:
+        """작업 문서 상태를 렌더 결과로 바꾼다. 마감 안에 저장된 결과만 done이다."""
         doc = self.store.get(job_key(game_id, job_id))
         meta = {"prompt_version": PROMPT_VERSION, "quantization": QUANTIZATION}
         if doc is None:
@@ -70,4 +72,5 @@ class KananaLineRenderer:
                             latency_ms=doc.get("latency_ms"), fallback=True, model_version=model, **meta)
 
     def cancel(self, job_id: str, game_id: str = "") -> None:
+        """열린 실시간 작업을 취소로 닫는다."""
         self.store.close(job_key(game_id, job_id), "cancelled", {"reason": "cancelled"})

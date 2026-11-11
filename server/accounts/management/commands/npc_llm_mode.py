@@ -13,11 +13,13 @@ class Command(BaseCommand):
     help = "NPC 대사 LLM 모드(off|polish|live)를 운영 설정 문서에 저장하거나(show) 현재 값을 보여 준다."
 
     def add_arguments(self, parser):
+        """모드 인자와 마감·대기 상한 선택 인자를 받는다."""
         parser.add_argument("mode", choices=("off", "polish", "live", "show"))
         parser.add_argument("--live-deadline-ms", type=int, default=None, help="실시간 생성 마감(ms, 200~15000)")
         parser.add_argument("--polish-queue-max", type=int, default=None, help="다듬기 대기 상한(0~1000)")
 
     def handle(self, *args, **options):
+        """운영 설정 문서를 읽거나 바꾸고 결과 모드를 출력한다."""
         from server.paldo_web.composition import get_game_service
         lines = getattr(get_game_service(), "npc_lines", None)
         if lines is None:
