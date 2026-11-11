@@ -161,7 +161,7 @@ def _fit_and_evaluate(out, presets, seed, games_per_preset, calibration, started
     candidate = {"benchmark": chosen_metrics}
     if human_dataset:
         candidate["human"], baseline["human"] = _human_split(human_dataset, base, pick, seed)
-    # 사람 판 평가(human)가 없으면 관문은 그대로 거부한다(관문 규칙은 바꾸지 않음).
+    # 실제 사용자 판 시험 세트(human)가 없으면 관문은 봇 판 시험 세트(benchmark)만으로 판단한다(11/11 사용자 결정).
     decision = suspicion_gate(candidate, baseline)
     # 관문 함수는 그대로 두고, 재학습 쪽 선택 규칙으로 '유효 후보'만 승격 대상(accepted)으로 둔다.
     rule_log_loss = baseline["benchmark"]["log_loss"]
@@ -191,7 +191,7 @@ def _fit_and_evaluate(out, presets, seed, games_per_preset, calibration, started
                   data_version=training["manifest"]["data_version"], feature_version=features.FEATURE_VERSION,
                   code_commit=GitRepo().head(), player_bot_version=bot_version, training_games=sum(map(len, fit.values())),
                   candidate=candidate, reference=baseline,
-                  human_evaluation="provided" if human_dataset else "missing_human_observations",
+                  human_evaluation="provided" if human_dataset else "skipped_no_human_games",
                   seconds=round(perf_counter() - started, 3))
     result = json.dumps(report, ensure_ascii=False)
     (out / "decision.json").write_text(result + "\n", encoding="utf-8")

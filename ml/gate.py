@@ -67,14 +67,18 @@ def ad_ctr_gate(candidate, reference, *, current_version=None):
 
 
 def suspicion_gate(candidate, reference, *, current_version=None):
-    """Require benchmark AND human: loss +.01, ECE <=.05, win rate ±.05.
+    """Require benchmark, and human when measured: loss +.01, ECE <=.05, win rate ±.05.
 
     Each split supplies games/log_loss/ece/village_win_rate. Below 50 games,
     both bootstrap_95.log_loss intervals must show strictly lower loss.
+    The human split is skipped only when neither report has it (no real-player
+    games yet, 11/11 user decision); one-sided human data is still invalid.
     With no production version the caller supplies rule-v0 measurements.
     """
     reasons = []
     for split in ('benchmark', 'human'):
+        if split == 'human' and 'human' not in candidate and 'human' not in reference:
+            continue
         try:
             c, r = candidate[split], reference[split]
             n, rn = _count(c, 'games'), _count(r, 'games')
