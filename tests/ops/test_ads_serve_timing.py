@@ -29,6 +29,7 @@ with timing.phase("outside"):
 timing.record("outside", 1.0)
 
 with timing.collect() as first:
+    timing.connect()
     with timing.phase("campaign_lock"):
         with connection.cursor() as c:
             c.execute("SELECT 1")
@@ -39,12 +40,12 @@ with timing.collect() as first:
 out["first"] = first.fields()
 
 with timing.collect() as second:          # 같은 스레드·연결 유지
-    pass
+    timing.connect()
 out["second"] = second.fields()
 
 def other():
     with timing.collect() as third:      # 새 스레드: 스레드 첫 연결
-        pass
+        timing.connect()
     out["third"] = third.fields()
 t = threading.Thread(target=other, name="worker-x"); t.start(); t.join()
 # 서버가 끊은 연결 모사: 상태 확인이 실패하면 connect에서 다시 맺고 표시한다.
@@ -52,8 +53,14 @@ connection.health_check_enabled = True
 connection.health_check_done = False
 connection.is_usable = lambda: False
 with timing.collect() as fourth:
-    pass
+    timing.connect()
 out["fourth"] = fourth.fields()
+# 메모리 저장소(시험 호스트): connect를 부르지 않으면 DB에 접속하지 않는다.
+connection.close()
+with timing.collect() as memory:
+    pass
+out["memory"] = memory.fields()
+out["memory_connected"] = connection.connection is not None
 print(json.dumps(out))
 '''
 
@@ -93,7 +100,13 @@ class ServeTimingTests(unittest.TestCase):
         self.assertTrue(fourth["new_connection"])
         self.assertFalse(self.out["second"]["stale_connection_replaced"])
 
+    def test_memory_store_path_does_not_connect(self):
+        self.assertFalse(self.out.pop("memory_connected"))
+        self.assertNotIn("connect_ms", self.out["memory"])
+        self.assertEqual(self.out["memory"]["db_queries"], 0)
+
     def test_only_numbers_flags_and_thread_name(self):
+        self.out.pop("memory_connected", None)
         for fields in self.out.values():
             for key, value in fields.items():
                 self.assertTrue(key == "thread" or isinstance(value, (int, float, bool)), (key, value))

@@ -18,7 +18,7 @@ from ads.domain.model import (
 )
 from ads.domain.rules import GRACE_MS, JUDGE_VERSION, Judgement, ValidityState, charge_id, verify_token
 from ads.infra.outbox import enqueue
-from ads.infra.timing import phase, record as record_phase
+from ads.infra.timing import connect, phase, record as record_phase
 from ads.web.models import AdReceipt, AdSession, AdStoredRequest
 from ads.web.telemetry import LOGGER
 from engine.domain.model import PRESETS
@@ -70,7 +70,8 @@ class MySQLAdStore:
     """요청 단위 서비스의 공유 상태를 행 잠금 안에서 읽고 기록한다."""
 
     def serve(self, service, req):
-        """응답·예약·serve 아웃박스를 함께 커밋하고 같은 요청을 재생한다. 커밋 시간은 따로 잰다."""
+        """응답·예약·serve 아웃박스를 함께 커밋하고 같은 요청을 재생한다. 연결·커밋 시간은 따로 잰다."""
+        connect()
         with transaction.atomic():
             response = self._serve_locked(service, req)
             body_done = time.perf_counter()

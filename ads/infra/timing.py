@@ -24,6 +24,7 @@ class ServeTiming:
         self.flags = {}
 
     def add(self, name, seconds):
+        """name 단계에 걸린 시간(초)을 ms로 더하고 횟수를 센다."""
         self.ms[name] = self.ms.get(name, 0.0) + seconds * 1000
         self.counts[name] = self.counts.get(name, 0) + 1
 
@@ -49,25 +50,36 @@ def _query_wrapper(execute, sql, params, many, context):
 
 @contextmanager
 def collect():
-    """serve 한 건을 감싼다. 연결 상태를 먼저 확인해 새 연결 비용을 따로 잰다."""
+    """serve 한 건을 감싼다. DB에 접속하지 않고 연결 상태만 기록한다(메모리 저장소 시험 호스트도 같은 경로)."""
     timing = ServeTiming()
     token = _current.set(timing)
     try:
         timing.flags["thread_first_connection"] = not getattr(_thread_seen, "connected", False)
-        started = time.perf_counter()
-        had = connection.connection is not None
-        # Django는 상태 확인(CONN_HEALTH_CHECKS)을 첫 커서에서야 한다. 미리 해서 끊긴 연결을 다시 맺는 비용도
-        # connect에 넣는다(Codex 지적).
-        connection.close_if_health_check_failed()
-        timing.flags["stale_connection_replaced"] = had and connection.connection is None
         timing.flags["new_connection"] = connection.connection is None
-        connection.ensure_connection()
-        timing.add("connect", time.perf_counter() - started)
-        _thread_seen.connected = True
+        timing.flags["stale_connection_replaced"] = False
         with connection.execute_wrapper(_query_wrapper):
             yield timing
     finally:
         _current.reset(token)
+
+
+def connect():
+    """DB 저장소가 쓰기 직전에 연결을 확보하고 그 시간을 connect에 넣는다.
+
+    Django는 상태 확인(CONN_HEALTH_CHECKS)을 첫 커서에서야 하므로 미리 해서, 끊긴 연결을 다시 맺는 비용도
+    connect에 들어가게 한다(Codex 지적). 수집 중이 아니면 연결만 확보한다.
+    """
+    timing = _current.get()
+    started = time.perf_counter()
+    had = connection.connection is not None
+    connection.close_if_health_check_failed()
+    replaced = had and connection.connection is None
+    connection.ensure_connection()
+    _thread_seen.connected = True
+    if timing is not None:
+        timing.add("connect", time.perf_counter() - started)
+        timing.flags["stale_connection_replaced"] = replaced
+        timing.flags["new_connection"] = timing.flags["new_connection"] or replaced
 
 
 def record(name, seconds):
