@@ -32,7 +32,9 @@ def fit_vote_weight(samples):
 
 
 def _prior(ballots):
-    counts = Counter(ballots)
+    counts = Counter(b for b in ballots if b is not None)   # 기권표(rule-0.9~)는 빼고 센다
+    if not counts:
+        return {}
     return {npc: count / sum(counts.values()) for npc, count in counts.items()}
 
 

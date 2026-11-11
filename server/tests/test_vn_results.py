@@ -305,3 +305,32 @@ class SightingTemplates(SimpleTestCase):
                 text = statement_text(self.claim(kind, list(names)), list(names))
                 self.assertNotRegex(text, r"\(")
                 self.assertRegex(text, SIGHT)
+
+
+class AbstainLines(SimpleTestCase):
+    """투표 기권(rule-0.9, 11/11 ②안): 기권표는 득표에서 빠지고, 기권자는 따로 한 줄로 공개된다(문장 승인 대기)."""
+
+    def test_abstainers_listed_and_not_counted(self):
+        """기권표는 득표 요약에 없고 '표를 던지지 않았소' 줄과 개별 표 줄의 '표 안 던짐'으로 보인다."""
+        votes = [VoteRecord("v1", 1, "main", "mudang", None), VoteRecord("v2", 1, "main", "jumo", "yakcho"),
+                 VoteRecord("v3", 1, "main", "yakcho", None), VoteRecord("v4", 1, "main", "blacksmith", "yakcho")]
+        lines = build_vn_lines(fake_view(votes=votes, locks=[LockRecord(1, "yakcho", False)], phase=Phase.NIGHT),
+                               RESULT_KO)
+        text = {line.line_id: line.text for line in lines}
+        self.assertEqual(text["vote-summary-1-main"], "투표 결과 — 약초꾼 2표")
+        self.assertEqual(text["vote-abstain-1-main"], "무당과 약초꾼은 표를 던지지 않았소.")
+        self.assertIn("무당 → 표 안 던짐", text["vote-1-main"])
+
+    def test_everyone_abstains(self):
+        """모두 기권하면 요약 자리에 '아무도 표를 던지지 않았소'가 나오고 무감금 줄이 이어진다."""
+        votes = [VoteRecord("v1", 1, "main", "mudang", None), VoteRecord("v2", 1, "main", "jumo", None)]
+        lines = build_vn_lines(fake_view(votes=votes, locks=[LockRecord(1, None, None)], phase=Phase.NIGHT), RESULT_KO)
+        text = {line.line_id: line.text for line in lines}
+        self.assertEqual(text["vote-summary-1-main"], "투표 결과 — 아무도 표를 던지지 않았소")
+        self.assertEqual(text["lock-1"], "1일째 · 무감금")
+
+    def test_no_abstain_line_without_abstainers(self):
+        """기권표가 없는 판(rule-0.8)은 기권 줄이 생기지 않는다."""
+        votes = [VoteRecord("v1", 1, "main", "mudang", "jumo"), VoteRecord("v2", 1, "main", "jumo", "yakcho")]
+        lines = build_vn_lines(fake_view(votes=votes, phase=Phase.NIGHT), RESULT_KO)
+        self.assertFalse([line for line in lines if line.line_id.startswith("vote-abstain")])

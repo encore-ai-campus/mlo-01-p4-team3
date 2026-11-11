@@ -46,7 +46,7 @@ class PublishedVote:
     day: int
     round: str
     voter: str
-    target: str
+    target: str | None   # None = 기권(rule-0.9~)
 
 
 @dataclass(frozen=True)
@@ -142,7 +142,7 @@ def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bo
             )
     published_votes = [
         PublishedVote(vote.day, vote.round, view.names.get(vote.voter, vote.voter),
-                      view.names.get(vote.target, vote.target))
+                      view.names.get(vote.target, vote.target) if vote.target is not None else None)
         for vote in view.public.votes
     ]
     published_locks = [

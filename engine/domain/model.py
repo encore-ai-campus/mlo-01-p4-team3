@@ -83,6 +83,8 @@ class CommandKind(str, enum.Enum):
     DIVINE = "divine"                         # 무당의 밤 점
     NIGHT_PLAN = "night_plan"                 # 씐 자(들)의 공동 밤 명령. NPC 전용
     ADVANCE = "advance"                       # 자동 단계 진행 요청(아침 → 1라운드 등)
+    ABSTAIN = "abstain"                       # 무당의 투표 기권(rule-0.9~, 투표·결선 단계). `PHASE_RULES`에는 없고
+                                              # 엔진 `legal_player_kinds`가 규칙 버전을 보고 더한다
 
 
 class InterrogationKind(str, enum.Enum):
@@ -253,7 +255,7 @@ class VoteRecord:
     day: int
     round: str          # "main" | "runoff"
     voter: str
-    target: str
+    target: Optional[str]   # None = 기권(rule-0.9~). 이전 규칙 판은 항상 대상이 있다
 
 
 @dataclass
@@ -363,6 +365,7 @@ REQUIRED_SLOTS: dict[CommandKind, tuple[str, ...]] = {
     CommandKind.DIVINE: ("target",),
     CommandKind.NIGHT_PLAN: ("night_plan",),
     CommandKind.ADVANCE: (),
+    CommandKind.ABSTAIN: (),
 }
 
 INTERROGATION_REQUIRED: dict[InterrogationKind, tuple[str, ...]] = {
@@ -462,41 +465,49 @@ class VoteOutcome:
     counts: dict[str, int] = field(default_factory=dict)
 
 
-def tally(votes: dict[str, str]) -> dict[str, int]:
+def tally(votes: dict[str, Optional[str]]) -> dict[str, int]:
+    """대상별 득표. 기권표(None)는 세지 않는다."""
     counts: dict[str, int] = {}
     for voter, target in votes.items():
+        if target is None:
+            continue
         if voter == target:
             raise ValueError("자기 자신에게 투표 불가")
         counts[target] = counts.get(target, 0) + 1
     return counts
 
 
-def _check_ballots(votes: dict[str, str], voters: Optional[list[str]], name: str) -> None:
+def _check_ballots(votes: dict[str, Optional[str]], voters: Optional[list[str]], name: str,
+                   abstain: bool = False) -> None:
+    if not abstain and any(t is None for t in votes.values()):
+        raise ValueError(f"{name}: 기권을 허용하지 않는 규칙인데 기권표가 있음")
     if voters is None:
         return
     if set(votes) != set(voters):
         raise ValueError(f"{name}: 유권자 불일치(누락 {sorted(set(voters) - set(votes))}, 추가 {sorted(set(votes) - set(voters))})")
-    bad = [t for t in votes.values() if t not in voters]
+    bad = [t for t in votes.values() if t is not None and t not in voters]
     if bad:
         raise ValueError(f"{name}: 활동 인원이 아닌 대상 {bad}")
 
 
-def resolve_vote(main: dict[str, str], runoff: Optional[dict[str, str]] = None,
-                 voters: Optional[list[str]] = None) -> VoteOutcome:
+def resolve_vote(main: dict[str, Optional[str]], runoff: Optional[dict[str, Optional[str]]] = None,
+                 voters: Optional[list[str]] = None, abstain: bool = False) -> VoteOutcome:
     """동시 비공개 투표 결과. 동점이면 동점자만 후보로 결선, 결선도 동점이면 무감금.
 
     voters = 활동 인원 전체(무당 포함). 주면 전원이 정확히 한 표씩 냈는지 검사한다.
     엔진은 항상 voters를 넘긴다(본투표·결선 모두 활동 인원 전원 투표).
+    abstain = 기권 허용(rule-0.9~). 기권표(None)는 집계에서 빠지고, 과반 기준 없이 남은 표의 최다 득표로 정한다.
+    모두 기권하면(득표 0) 결선 없이 무감금이다. 허용하지 않는 규칙에서 기권표가 오면 오류다.
     """
-    _check_ballots(main, voters, "본투표")
-    _check_ballots(runoff or {}, voters if runoff is not None else None, "결선")
+    _check_ballots(main, voters, "본투표", abstain)
+    _check_ballots(runoff or {}, voters if runoff is not None else None, "결선", abstain)
     counts = tally(main)
     top = _top(counts)
     if len(top) == 1:
         return VoteOutcome(top[0], counts=counts)
     if runoff is None:
         return VoteOutcome(None, runoff_candidates=sorted(top), counts=counts)
-    bad = [t for t in runoff.values() if t not in top]
+    bad = [t for t in runoff.values() if t is not None and t not in top]
     if bad:
         raise ValueError(f"결선 후보가 아닌 대상: {bad}")
     r_counts = tally(runoff)
@@ -710,7 +721,7 @@ class GameState:
     player: PlayerState = field(default_factory=PlayerState)
     turn_order: list[str] = field(default_factory=list)    # 현재 라운드 발언 순서
     turn_index: int = 0
-    pending_votes: dict[str, str] = field(default_factory=dict)  # 공개 전 비공개 투표
+    pending_votes: dict[str, Optional[str]] = field(default_factory=dict)  # 공개 전 비공개 투표(None = 기권, rule-0.9~)
     runoff_candidates: list[str] = field(default_factory=list)
     result: Optional[GameResult] = None
 
