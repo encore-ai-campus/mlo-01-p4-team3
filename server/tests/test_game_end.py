@@ -1,4 +1,4 @@
-"""B-08-01·B-10-01 판 종료 화면: 같은 판 화면 안 결과·복기·원한 단서 전환, 결말 해금 표시, 선택형 도전 목록."""
+"""판 종료 화면 탭, 복기·단서 조회, 결말 해금 표시, 선택형 도전 목록."""
 from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from engine.domain.model import ClaimTruth, ClueRecord, Role
 from server.api.story_view import ending_options, preset_choices
@@ -49,22 +49,33 @@ class GameEndScreens(TestCase):
         self.assertNotContains(page, f'/games/{self.gid}/review')
 
     def test_finished_game_switches_inside_the_same_screen(self):
-        """종료 뒤 전체 화면·htmx 조각 모두 같은 #meeting 안에 세 탭을 두고 다른 페이지로 보내지 않는다."""
+        """VN·classic 모두 종료 정보와 양식을 같은 판 화면에 한 번씩 둔다."""
         self.finish()
-        for headers in ({"HTTP_ACCEPT": "text/html"}, {"HTTP_HX_REQUEST": "true"}):
-            page = self.client.get(f"/games/{self.gid}", **headers)
-            html = page.content.decode()
-            self.assertContains(page, 'id="game-end"')
-            for tab in ("end-tab-result", "end-tab-review", "end-tab-clues"):
-                self.assertContains(page, f'id="{tab}"')
-            self.assertContains(page, f'hx-get="/games/{self.gid}/review"')
-            self.assertContains(page, 'hx-get="/players/me/progress"')
-            self.assertContains(page, 'id="game-result"')
-            self.assertEqual(html.count('data-ad-placeholder="result_banner"'), 1)
-            self.assertNotIn('data-ad-placeholder="review_side"', html)   # 복기 탭을 열 때만 요청한다
-            self.assertNotIn('href="/players/me/progress"', html)        # 단서는 페이지 이동이 아니라 탭
-            self.assertNotIn("gambling", html)                            # 정체·비밀은 복기 조각에서만
-            self.assertNotIn("몰래 노름", html)
+        for mode in ("vn", "classic"):
+            for headers in ({"HTTP_ACCEPT": "text/html"}, {"HTTP_HX_REQUEST": "true"}):
+                with self.subTest(mode=mode, headers=headers), override_settings(GAME_UI=mode):
+                    page = self.client.get(f"/games/{self.gid}", **headers)
+                    html = page.content.decode()
+                    self.assertContains(page, 'id="game-end"')
+                    for tab in ("result", "review", "clues", "records", "survey"):
+                        self.assertContains(page, f'id="end-tab-{tab}"', count=1)
+                        self.assertContains(page, f'id="end-panel-{tab}"', count=1)
+                    self.assertContains(page, f'hx-get="/games/{self.gid}/review"')
+                    self.assertContains(page, 'hx-get="/players/me/progress"')
+                    result = html.split('id="end-panel-result"', 1)[1].split('id="end-panel-review"', 1)[0]
+                    records = html.split('id="end-panel-records"', 1)[1].split('id="end-panel-survey"', 1)[0]
+                    self.assertIn('id="game-result"', result)
+                    self.assertNotIn('id="survey"', result)
+                    self.assertIn('data-ad-placeholder="result_banner"', result)
+                    self.assertIn('data-grid-night=', records)
+                    self.assertIn('type="checkbox" data-record-select', records)
+                    self.assertIn("비교할 진술 2개를 선택해 주세요.", records)
+                    self.assertContains(page, 'id="alibi-grid-title"', count=1)
+                    self.assertContains(page, 'id="survey"', count=1)
+                    self.assertContains(page, "설문 참여는 선택입니다.")
+                    self.assertNotIn('data-ad-placeholder="review_side"', html)  # 복기 조각만
+                    self.assertNotIn("gambling", html)  # 정체·비밀은 복기 조각에서만
+                    self.assertNotIn("몰래 노름", html)
 
     def test_review_fragment_after_end_only(self):
         """복기 조각은 종료 전 403, 종료 뒤 정체·비밀 제목·이 판의 단서·복기 광고 지면만 보인다."""

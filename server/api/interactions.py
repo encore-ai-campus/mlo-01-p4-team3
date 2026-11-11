@@ -1,6 +1,7 @@
 """공통 API의 자유 입력·렌더·수첩·설문 HTTP 경계."""
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils.crypto import salted_hmac
 from django.views.decorators.http import require_GET, require_http_methods
 from engine.domain.serde import to_jsonable
@@ -105,6 +106,10 @@ def submit_survey(request, game_id):
     created = service.survey(data, request.player_pseudonym, comment_digest)
     if request.headers.get("HX-Request") == "true":
         if created:
-            return render(request, "survey_done.html")
+            return render(request, "survey_done.html", {"survey_skipped": data.skipped})
         return HttpResponse(status=204, headers={"HX-Refresh": "true"})
+    if (request.content_type == "application/x-www-form-urlencoded"
+            and request.get_preferred_type(["application/json", "text/html"]) == "text/html"):
+        # 브라우저 기본 폼도 저장을 확인한 뒤 같은 판을 GET으로 읽는다.
+        return HttpResponse(status=303, headers={"Location": reverse("game-detail", args=[game_id]) + "#survey"})
     return HttpResponse(status=204)

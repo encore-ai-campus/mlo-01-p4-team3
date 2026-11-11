@@ -74,7 +74,7 @@ class MongoBanditTests(unittest.TestCase):
                         source='human', load_test=False, occurred_at=row['ended_at'],
                         model_versions={'bandit': 'bandit-0', 'bandit_arm': 'uniform'})
             events += [dict(meta, event_id=row['game_id']+':1', topic='paldo.game', phase='ended',
-                            event_type='game_ended', payload={'winner':'village' if row['village_win'] else 'possessed'}),
+                            event_type='game_ended', payload={'winner':'village' if row['village_win'] else 'changgwi'}),
                        dict(meta, event_id=row['game_id']+':2', topic='paldo.player',
                             event_type='survey_submitted', payload=row['survey'])]
         with tempfile.TemporaryDirectory() as tmp:

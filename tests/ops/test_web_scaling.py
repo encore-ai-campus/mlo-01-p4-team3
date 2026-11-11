@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 from ops.mysql import service_runtime
@@ -27,6 +28,11 @@ CADDYFILE = (ROOT / "ops" / "proxy" / "Caddyfile").read_text(encoding="utf-8")
 PROMETHEUS = (ROOT / "ops" / "compose" / "prometheus.yml").read_text(encoding="utf-8")
 HAS_REDIS_PACKAGE = importlib.util.find_spec("channels_redis") is not None
 TEST_REDIS_URL = os.environ.get("PALDO_TEST_REDIS_URL", "")
+
+
+def _private_test_host(last_octet: int = 1) -> str:
+    """실제 인프라 주소 대신 네트워크 요청을 보내지 않는 시험 값을 만든다."""
+    return '.'.join(map(str, (10, 0, 0, last_octet)))
 
 
 def _closed_port() -> int:
@@ -245,8 +251,13 @@ class BenchOptions(unittest.TestCase):
         self.assertFalse(model_load_passed(dict(row, inference_calls=100, inference_failures=2)))
         memory = {port: dict(web_rss_bytes=4096, worker_rss_bytes={'v0': 1024, 'v1': 2048})
                   for port in row['inference_calls_by_process']}
-        secondary = dict(row, secondary_model_version='v1', memory_by_process=memory)
+        secondary = dict(row, model_version='v0', secondary_model_version='v1', memory_by_process=memory)
         self.assertTrue(model_load_passed(secondary))
+        direct = {port: dict(web_rss_bytes=4096, worker_rss_bytes={}, in_process_versions=['v0', 'v1'])
+                  for port in memory}
+        self.assertTrue(model_load_passed(dict(secondary, memory_by_process=direct)))
+        direct['8002']['in_process_versions'] = ['v0']
+        self.assertFalse(model_load_passed(dict(secondary, memory_by_process=direct)))
         self.assertFalse(model_load_passed(dict(secondary, memory_by_process={})))
         self.assertFalse(model_load_passed(dict(secondary, memory_by_process={'8000': memory['8000']})))
         self.assertFalse(model_load_passed(dict(secondary, memory_by_process={
@@ -278,15 +289,83 @@ class BenchOptions(unittest.TestCase):
         from server.tests import multiproc_bench as bench
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
-            host = '.'.join(map(str, (10, 0, 0, 1)))  # 실제 인프라 주소를 쓰지 않는 시험용 RFC1918 주소.
+            host = _private_test_host()
             state = dict(origin=f'http://{host}:1234', cookies=['sessionid=abc'], minutes=3)
             (path / 'client.json').write_text(json.dumps(state), encoding='utf-8')
             with mock.patch.object(bench, 'drive_load', return_value={'users': 1}) as load, \
                     mock.patch.object(bench, 'mongo_uri', side_effect=AssertionError('client must not use Mongo')), \
                     mock.patch.object(bench, 'with_ping', side_effect=lambda host, folder, drive: drive()):
                 self.assertEqual(bench.main(['--load-dir', directory]), 0)
-                load.assert_called_once_with(state['origin'], state['cookies'], None, 3, diagnostics=True)
+                load.assert_called_once_with(state['origin'], state['cookies'], None, 3,
+                                             intent_every=0, diagnostics=True)
                 self.assertEqual(json.loads((path / 'load.json').read_text())['users'], 1)
+
+    def test_external_mixed_workload_round_trip(self):
+        """서버가 정한 간격이 실제 엔진용 부하 호출과 반환 결과에 보존된다."""
+        from server.tests import multiproc_bench as bench
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory) / 'exchange'
+            origin, cookies = f'http://{_private_test_host()}:1234', ['sessionid=abc']
+            args = SimpleNamespace(serve_dir=folder, minutes=3, intent_every=2)
+
+            def run_client(_):
+                state = json.loads((folder / 'client.json').read_text(encoding='utf-8'))
+                self.assertEqual(set(state), {'origin', 'cookies', 'minutes', 'intent_every'})
+                self.assertEqual(bench.main(['--load-dir', str(folder)]), 0)
+
+            with mock.patch.object(bench, 'drive_load', return_value={'users': 1, 'elapsed_seconds': 180}) as load, \
+                    mock.patch.object(bench, 'with_ping', side_effect=lambda host, path, drive: drive()), \
+                    mock.patch.object(bench.time, 'sleep', side_effect=run_client):
+                row = bench.external_load(origin, cookies, args)
+            load.assert_called_once_with(origin, cookies, None, 3, intent_every=2, diagnostics=True)
+            self.assertEqual(row['intent_every'], 2)
+            self.assertFalse((folder / 'client.json').exists())
+
+    def test_external_mixed_server_keeps_existing_scope(self):
+        """혼합 옵션은 허용하되 실제 엔진·사설 주소 제한을 바꾸지 않는다."""
+        from contextlib import redirect_stderr
+        from io import StringIO
+        from server.tests import multiproc_bench as bench
+        args = ['--serve-dir', 'out/exchange', '--web-processes', '2', '--front', 'binary',
+                '--listen-host', _private_test_host(), '--client-ip', _private_test_host(2), '--intent-every', '2']
+        with mock.patch.object(bench, 'mongo_uri', side_effect=RuntimeError('before_database')) as mongo:
+            with redirect_stderr(StringIO()), self.assertRaises(SystemExit):
+                bench.main(args)  # 녹화 엔진은 분리 부하에서 계속 거부한다.
+            mongo.assert_not_called()
+            with self.assertRaisesRegex(RuntimeError, 'before_database'):
+                bench.main([*args, '--actual-baseline'])
+            mongo.assert_called_once()
+
+    def test_external_result_rejects_unmixed_response_to_mixed_request(self):
+        """구버전 클라이언트가 혼합 간격을 무시하면 측정 결과를 받아들이지 않는다."""
+        from server.tests import multiproc_bench as bench
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory) / 'exchange'
+            args = SimpleNamespace(serve_dir=folder, minutes=3, intent_every=2)
+
+            def old_client(_):
+                (folder / 'load.json').write_text(json.dumps({'users': 1, 'elapsed_seconds': 180}),
+                                                  encoding='utf-8')
+
+            with mock.patch.object(bench.time, 'sleep', side_effect=old_client):
+                with self.assertRaisesRegex(RuntimeError, 'external_load_does_not_match_requested_workload'):
+                    bench.external_load(f'http://{_private_test_host()}:1234', ['sessionid=abc'], args)
+            self.assertFalse((folder / 'client.json').exists())
+
+    def test_external_client_rejects_invalid_intent_interval_before_requests(self):
+        """교환 파일의 숫자 범위와 자료형이 맞지 않으면 부하를 보내지 않는다."""
+        from server.tests import multiproc_bench as bench
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            with mock.patch.object(bench, 'drive_load') as load:
+                for interval in (-1, 101, True, '2', 1.5):
+                    with self.subTest(interval=interval):
+                        state = dict(origin=f'http://{_private_test_host()}:1234', cookies=['sessionid=abc'],
+                                     minutes=3, intent_every=interval)
+                        (folder / 'client.json').write_text(json.dumps(state), encoding='utf-8')
+                        with self.assertRaisesRegex(ValueError, 'invalid benchmark intent interval'):
+                            bench.load_only(folder)
+                load.assert_not_called()
 
     def test_proxy_samples_match_client_ids_and_cpu_uses_the_load_window(self):
         from server.tests.bench_diagnostics import access_summary, cpu_summary
@@ -308,10 +387,12 @@ class BenchOptions(unittest.TestCase):
         scrape = ('# TYPE process_resident_memory_bytes gauge\nprocess_resident_memory_bytes 4096\n'
                   '# TYPE paldo_suspicion_worker_resident_memory_bytes gauge\n'
                   'paldo_suspicion_worker_resident_memory_bytes{model_version="a"} 1024\n'
-                  'paldo_suspicion_worker_resident_memory_bytes{model_version="b"} 2048\n')
+                  'paldo_suspicion_worker_resident_memory_bytes{model_version="b"} 2048\n'
+                  '# TYPE paldo_bench_suspicion_in_process gauge\n'
+                  'paldo_bench_suspicion_in_process{model_version="c"} 1\n')
         self.assertEqual(memory_metrics({'9000': scrape, '9001': ''}), {
-            '9000': dict(web_rss_bytes=4096, worker_rss_bytes={'a': 1024, 'b': 2048}),
-            '9001': dict(web_rss_bytes=None, worker_rss_bytes={})})
+            '9000': dict(web_rss_bytes=4096, worker_rss_bytes={'a': 1024, 'b': 2048}, in_process_versions=['c']),
+            '9001': dict(web_rss_bytes=None, worker_rss_bytes={}, in_process_versions=[])})
         with mock.patch('pathlib.Path.read_text', return_value='VmRSS:\t12 kB\n'):
             self.assertEqual(resident_bytes(123), 12288)
         with tempfile.TemporaryDirectory() as directory:
