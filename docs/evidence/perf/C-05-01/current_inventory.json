@@ -1,0 +1,24 @@
+{
+  "task": "C-05-01",
+  "commit": "4b378e82befec5ccc3738aa59cdfb5ba6aa66369",
+  "generated_at": "2026-11-11T07:45:07Z",
+  "source": "2026-11-11 VMware VMX/vmrun/VMDK shared-read + tools/perf/vm_probe.sh via explicit bash + vm_service_versions.py; 5 Windows hosts and 20 Linux guests; no mutations to VMs or disks",
+  "metrics": {
+    "guest_hosts": {
+      "value": 20,
+      "unit": "대"
+    },
+    "physical_hosts": {
+      "value": 5,
+      "unit": "대"
+    },
+    "ssh_failures": {
+      "value": 0,
+      "unit": "대"
+    },
+    "running_project_vms": {
+      "value": 20,
+      "unit": "대"
+    }
+  }
+}
