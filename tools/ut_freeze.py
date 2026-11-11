@@ -173,6 +173,18 @@ def freeze_manifest(folder, names):
     return {"freeze_version": FREEZE_VERSION, "files": files}
 
 
+FREEZE_DATA_VERSION = re.compile(r"freeze:[0-9a-f]{64}")
+UT_EXPORT_DATA_VERSION = re.compile(r"ut-export:[0-9a-f]{64}")  # 내보내기 games.json 바이트 sha256(11/11 사용자 결정)
+
+
+def freeze_data_version(folder):
+    """동결 폴더 `manifest.json` 바이트의 sha256을 `freeze:<hex>` 데이터 버전으로 만든다.
+
+    사용자 테스트 동결 출처의 의도 해석기 재학습이 Delta 버전 대신 기록한다(11/11 사용자 결정).
+    """
+    return "freeze:" + hashlib.sha256((Path(folder) / "manifest.json").read_bytes()).hexdigest()
+
+
 def _load_games(path):
     return json.loads(Path(path).read_text(encoding="utf-8")).get("games", []) if path else []
 

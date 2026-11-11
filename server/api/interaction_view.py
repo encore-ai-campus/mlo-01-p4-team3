@@ -53,8 +53,12 @@ def cards_context(output, view):
             "suggestions": list(output.suggestions), "needs_confirmation": output.needs_confirmation}
 
 
-def line_context(game_id, output, speaker="", is_interrogation_answer=False):
-    """공개 문장과 식별자·완료 여부·추궁 답변 표시 여부만 전달한다."""
+def line_context(game_id, output, speaker="", is_interrogation_answer=False, live=False):
+    """공개 문장과 식별자·완료 여부·추궁 답변 표시 여부만 전달한다.
+
+    실시간 생성(E-11-13)이 켜져 있으면 끝나기 전에는 "…"만 보이고 0.5초마다 다시 묻는다(폴백을 먼저 보이지 않음).
+    """
+    text = "…" if live and not output.final else attach_particles(output.text)
     return {"line": {"game_id": game_id, "speech_id": output.speech_id, "job_id": output.job_id,
-                     "text": attach_particles(output.text), "final": output.final, "speaker": speaker,
-                     "is_interrogation_answer": is_interrogation_answer}}
+                     "text": text, "final": output.final, "speaker": speaker,
+                     "is_interrogation_answer": is_interrogation_answer, "live": live and not output.final}}

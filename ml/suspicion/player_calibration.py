@@ -13,7 +13,7 @@ from engine.domain.model import PLAYER_ID, CommandKind
 from engine.sim.bots import LogicBot, legal_commands
 from pipeline.spark.privacy_filter import load_tombstones
 from tools.gitrepo import GitRepo
-from tools.ut_freeze import DEFAULT_CUTOFF, DEFAULT_OPEN, snapshot, split_users
+from tools.ut_freeze import DEFAULT_CUTOFF, DEFAULT_OPEN, UT_EXPORT_DATA_VERSION, snapshot, split_users
 
 FEATURE_VERSION = "notebook-prior-ballot-v1"
 
@@ -96,8 +96,20 @@ class CalibratedPlayerBot(LogicBot):
         return votes[vote_target(notes, prior, self.weight)]
 
 
+def _tombstones_sha256(directory):
+    """삭제 요청 파일(`request-*.json`) 이름과 바이트를 정렬해 한 해시로 묶는다. 실행 증빙에 남긴다."""
+    digest = hashlib.sha256()
+    for file in sorted(Path(directory).glob("request-*.json")):
+        data = file.read_bytes()
+        digest.update(f"{file.name}\0{len(data)}\0".encode("utf-8") + data)
+    return digest.hexdigest()
+
+
 def main(argv=None):
-    """Publish aggregate fit settings and held-out vote recall from a single snapshot."""
+    """Publish aggregate fit settings and held-out vote recall from a single snapshot.
+
+    `--data-version`은 `delta:`·`fixture:` 또는 `ut-export:<--games 파일 sha256>`이다(11/11 사용자 결정).
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("games", "consented-users", "tombstones", "out"):
         parser.add_argument("--" + name, type=Path, required=True)
@@ -106,12 +118,20 @@ def main(argv=None):
     args = parser.parse_args(argv)
     started = perf_counter()
     raw = args.games.read_bytes()
-    consent = json.loads(args.consented_users.read_text(encoding="utf-8"))
+    consent_raw = args.consented_users.read_bytes()
+    consent = json.loads(consent_raw.decode("utf-8"))
     if not isinstance(consent, list) or any(not isinstance(user, str) or not user for user in consent):
         parser.error("invalid consent allowlist")
-    if not args.data_version.startswith(("delta:", "fixture:")):
-        parser.error("data version must identify the Delta snapshot or the local fixture")
+    source_sha256 = hashlib.sha256(raw).hexdigest()
+    if UT_EXPORT_DATA_VERSION.fullmatch(args.data_version):
+        if args.data_version != "ut-export:" + source_sha256:
+            parser.error("ut-export data version must equal the sha256 of the --games file")
+    elif not args.data_version.startswith(("delta:", "fixture:")):
+        parser.error("data version must identify the Delta snapshot, the user-test export or the local fixture")
+    tombstones_sha256 = _tombstones_sha256(args.tombstones)
     deleted = load_tombstones(args.tombstones)["players"]
+    if _tombstones_sha256(args.tombstones) != tombstones_sha256:
+        raise ValueError("tombstones changed during calibration")
     samples = vote_samples(json.loads(raw)["games"], set(consent), deleted)
     test, fit, _ = split_users(samples, args.seed)
     if not test:
@@ -119,10 +139,11 @@ def main(argv=None):
     training = [sample for user in fit for sample in samples[user]]
     heldout = [sample for user in test for sample in samples[user]]
     weight = fit_vote_weight(training)
-    if load_tombstones(args.tombstones)["players"] != deleted:
+    if load_tombstones(args.tombstones)["players"] != deleted or _tombstones_sha256(args.tombstones) != tombstones_sha256:
         raise ValueError("tombstones changed during calibration")
     report = dict(data_version=args.data_version, feature_version=FEATURE_VERSION, code_commit=GitRepo().head(),
-                  cutoff=DEFAULT_CUTOFF, source_sha256=hashlib.sha256(raw).hexdigest(), seed=args.seed,
+                  cutoff=DEFAULT_CUTOFF, source_sha256=source_sha256, seed=args.seed,
+                  consent_sha256=hashlib.sha256(consent_raw).hexdigest(), tombstones_sha256=tombstones_sha256,
                   fit_users=len(fit), test_users=len(test), fit_votes=len(training), test_votes=len(heldout),
                   baseline_hits=sum(vote_target(notes, prior, 0.) == t for t, notes, prior in heldout),
                   calibrated_hits=sum(vote_target(notes, prior, weight) == t for t, notes, prior in heldout),

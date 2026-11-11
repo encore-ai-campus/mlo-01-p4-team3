@@ -5,7 +5,7 @@
 
 - 엔진: 판의 콘텐츠 버전마다 `PaldoEngine(RuleV0Policy(content))`(`ContentPolicyEngine`).
 - 의심 모델: 기본은 규칙 의심도를 확률로 바꾸는 `FakeSuspicionModel`. `PALDO_SUSPICION_MODEL_VERSION`을 주면
-  프로세스 보관소(`ProcessSuspicionModels`)가 그 실제 모델 버전을 버전당 worker 하나로 띄워 판들이 빌려 쓴다.
+  프로세스 보관소(`ProcessSuspicionModels`)가 실제 모델을 버전별로 소유하고 판들이 빌려 쓴다.
 - 보조 기록: `MongoInteractionStore`, 컬렉션은 B 규칙대로 `<접두어>b_interactions`.
 - 해석기: 프로세스마다 한 번 만든 D-07-01 기준선. 웹 조립이 관측 래퍼를 씌운다.
 - 렌더러: 런타임 LLM 없이(P-31 (나)) 엔진의 템플릿 문장(`fallback_text`)을 쓰게 하는 `TemplateLineRenderer`.
@@ -148,14 +148,34 @@ def narration_parts(database, prefix):
             lambda gid: games.count_documents({"_id": gid}, limit=1) > 0)
 
 
+def attach_npc_lines(service, store, narrator, settings):
+    """게임 서비스에 NPC 대사 LLM(E-11-13)을 끼우고, 실시간 생성 렌더러를 돌려준다. `narrator`가 None이면 늘 off."""
+    from server.app.npc_lines import NpcLineService
+    from server.infra.kanana_line_renderer import KananaLineRenderer
+    service.npc_lines = NpcLineService(service, store, narrator, settings)
+    return KananaLineRenderer(store, settings) if narrator is not None else None
+
+
+def npc_line_parts(database, prefix):
+    """설정 `NPC_LLM_URL`(상한 스위치)·`NPC_LLM_MODE`로 생성기·작업 저장소·운영 설정 읽기를 만든다. 같은 접두어."""
+    from django.conf import settings
+    from server.infra.kanana_narrator import KananaNarrator
+    from server.infra.npc_line_jobs import COLLECTION, MongoNpcLineStore
+    from server.infra.ops_settings import COLLECTION as OPS, MongoOpsSettings
+    url = getattr(settings, "NPC_LLM_URL", "")
+    return (MongoNpcLineStore(database[prefix + COLLECTION]), KananaNarrator(url) if url else None,
+            MongoOpsSettings(database[prefix + OPS], url, getattr(settings, "NPC_LLM_MODE", "")))
+
+
 def build_from_runtime(runtime, parser):
-    """B 실행 자원의 게임 서비스에 A 몫(보조 기록·해석기·렌더러·복기 해설)을 끼워 돌려준다. 같은 접두어."""
+    """B 실행 자원의 게임 서비스에 A 몫(보조 기록·해석기·렌더러·복기 해설·NPC 대사 LLM)을 끼워 돌려준다. 같은 접두어."""
     from server.infra.interaction_store import MongoInteractionStore
     service = runtime.factory_service()
     prefix = runtime_prefix(runtime)
     store = MongoInteractionStore(runtime.database[prefix + INTERACTIONS])
     attach_narration(service, *narration_parts(runtime.database, prefix))
-    return attach_interactions(service, store, parser)
+    renderer = attach_npc_lines(service, *npc_line_parts(runtime.database, prefix))
+    return attach_interactions(service, store, parser, renderer)
 
 
 def attach_model_versions(service, registry, suspicion_models=None, canary_ratio=lambda: 0.0):
@@ -184,7 +204,7 @@ def suspicion_models(fake, version: str = "", root: str = "mlruns"):
     def load(v):
         if v == fake.model_version:
             return fake
-        return ObservedSuspicionModel(selector.suspicion_model(v))
+        return ObservedSuspicionModel(selector.suspicion_model(v, in_process_logistic=True))
 
     production = {"value": fake.model_version}
     store = ProcessSuspicionModels(load, lambda: {production["value"]}, feature_version=fake.feature_version)

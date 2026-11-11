@@ -55,13 +55,13 @@ class SpecTableTest(unittest.TestCase):
         self.assertEqual(spec.image_format, "png")
         self.assertEqual(spec.max_bytes, 512000)
         self.assertEqual(spec.kind_max_bytes, {"sprite": 8388608, "portrait": 3145728, "background": 10485760,
-                                               "mascot": 3145728})
+                                               "mascot": 3145728, "map": 1048576})
         self.assertEqual(spec.max_bytes_for("sprite"), 8388608)
         self.assertEqual(spec.max_bytes_for("ui"), 512000)        # kind별 행이 없으면 공통 상한
         self.assertEqual(spec.root, "content/images")
         self.assertEqual(spec.manifest_path, "content/images/manifest.json")
         self.assertEqual(spec.sizes, {"portrait": (512, 512), "sprite": (512, 1280), "background": (1280, 720), "mascot": (512, 512), "branding": (512, 512),
-                                      "place": (128, 128), "ui": (128, 128), "map": (1280, 720)})
+                                      "place": (128, 128), "ui": (128, 128), "map": (1728, 720)})
         self.assertEqual(spec.ui_icon_ids, UI_IDS)
 
     def test_baseline_table_matches_vn(self):
@@ -301,7 +301,7 @@ class GenerateTest(unittest.TestCase):
         target = next(d for d in items if d["kind"] == "map")
         target["placeholder"] = False
         mpath.write_text(json.dumps(items), encoding="utf-8")
-        real = png.encode_rgb(1280, 720, art.render("map", "other", 1280, 720).rows)
+        real = png.encode_rgb(1728, 720, art.render("map", "other", 1728, 720).rows)
         (self.tmp / target["path"]).write_bytes(real)
         r = run(self.tmp)
         self.assertTrue(r.ok, format_report(r))

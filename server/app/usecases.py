@@ -72,6 +72,8 @@ class GameService:
         self.review_lines = None
         # 복기 해설 LLM 요약 작업(E-10-01, `review_narration.ReviewNarrationService`). None이면 기능 꺼짐.
         self.narration = None
+        # NPC 대사 LLM(E-11-13, `npc_lines.NpcLineService`). None이면 기능 꺼짐(템플릿 대사만).
+        self.npc_lines = None
 
     def owned(self, game_id, player_pseudonym):
         """멱등 응답·버전 확인보다 먼저 판 소유권을 확인한다."""

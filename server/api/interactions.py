@@ -1,6 +1,8 @@
 """공통 API의 자유 입력·렌더·수첩·설문 HTTP 경계."""
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils.crypto import salted_hmac
 from django.views.decorators.http import require_GET, require_http_methods
 from engine.domain.serde import to_jsonable
@@ -23,6 +25,11 @@ def _service(request, game_id):
     if service.interactions is None:
         raise InteractionUnavailable
     return service.interactions
+
+
+def _free_text_disabled():
+    """직접 입력창을 끈 서버(`PALDO_FREE_TEXT_INPUT=off`)는 해석·카드 반응 요청을 받지 않는다(11/11 사용자 결정)."""
+    return None if settings.FREE_TEXT_INPUT else JsonResponse({"error": "free_text_disabled"}, status=403)
 
 
 def _input(request, dto, game_id, attempt_id=None):
@@ -60,6 +67,8 @@ def _response(request, game_id, output):
 @require_http_methods(["POST"])
 def parse_utterance(request, game_id):
     """자기 판의 엄격한 JSON 해석 요청을 처리한다."""
+    if (disabled := _free_text_disabled()) is not None:
+        return disabled
     service = _service(request, game_id)
     return _response(request, game_id, service.parse(_input(request, ParseUtteranceInput, game_id), request.player_pseudonym))
 
@@ -68,6 +77,8 @@ def parse_utterance(request, game_id):
 @require_http_methods(["POST"])
 def resolve_utterance(request, game_id, attempt_id):
     """판·시도 소유권을 확인한 카드 반응을 처리한다."""
+    if (disabled := _free_text_disabled()) is not None:
+        return disabled
     service = _service(request, game_id)
     return _response(request, game_id, service.resolve(_input(request, ResolveUtteranceInput, game_id, attempt_id), request.player_pseudonym))
 
@@ -81,7 +92,9 @@ def poll_render(request, game_id, job_id):
         view = get_game_service().detail(game_id, request.player_pseudonym).view
         answer = any(s.speech_id == output.speech_id and s.render_job_id == output.job_id
                      and is_interrogation_answer(s) for s in view.public.speeches)
-        return render(request, "speech_line.html", line_context(game_id, output, is_interrogation_answer=answer))
+        lines = getattr(get_game_service(), "npc_lines", None)
+        live = bool(lines is not None and lines.live_on())
+        return render(request, "speech_line.html", line_context(game_id, output, is_interrogation_answer=answer, live=live))
     return JsonResponse(to_jsonable(output))
 
 
@@ -105,6 +118,10 @@ def submit_survey(request, game_id):
     created = service.survey(data, request.player_pseudonym, comment_digest)
     if request.headers.get("HX-Request") == "true":
         if created:
-            return render(request, "survey_done.html")
+            return render(request, "survey_done.html", {"survey_skipped": data.skipped})
         return HttpResponse(status=204, headers={"HX-Refresh": "true"})
+    if (request.content_type == "application/x-www-form-urlencoded"
+            and request.get_preferred_type(["application/json", "text/html"]) == "text/html"):
+        # 브라우저 기본 폼도 저장을 확인한 뒤 같은 판을 GET으로 읽는다.
+        return HttpResponse(status=303, headers={"Location": reverse("game-detail", args=[game_id]) + "#survey"})
     return HttpResponse(status=204)

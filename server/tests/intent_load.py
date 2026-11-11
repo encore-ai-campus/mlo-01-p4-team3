@@ -5,7 +5,7 @@ def probe_intent(view, send):
     """같은 판 버전에서 해석하고 취소한다. HTTP·수명주기 위반 수를 반환한다.
 
     send(route, path, body)는 (상태 코드, JSON)을 반환하며 모든 요청 시간을 수집한다.
-    향후 실제 엔진 부하도 공개 PlayerView JSON과 같은 함수를 사용할 수 있다.
+    녹화·실제 엔진 부하에서 같은 공개 PlayerView JSON을 사용한다.
     """
     game_id, version = view['game_id'], view['state_version']
     base = f'/games/{game_id}/utterances'

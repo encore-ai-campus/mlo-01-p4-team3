@@ -1,7 +1,9 @@
 {% if survey_submitted %}{% include "survey_done.html" %}{% else %}
 <section id="survey" aria-labelledby="survey-title">
   <h2 id="survey-title">판 종료 설문</h2>
-  <form class="participant-form" hx-post="{% url 'game-survey' vm.game_id %}" hx-target="#survey" hx-swap="outerHTML"
+  <p>설문 참여는 선택입니다.</p>
+  <form class="participant-form" method="post" action="{% url 'game-survey' vm.game_id %}"
+        hx-post="{% url 'game-survey' vm.game_id %}" hx-target="#survey" hx-swap="outerHTML"
         hx-sync="#survey:drop" hx-disabled-elt="#survey button" x-data="{ failed: false }"
         @htmx:after-request.camel="failed = !$event.detail.successful">
     {% csrf_token %}
@@ -17,16 +19,17 @@
       <textarea name="comment" maxlength="4000"></textarea>
     </label>
     <button type="submit">설문 제출</button>
-    <p role="alert" x-show="failed" style="display: none">설문을 저장하지 못했습니다. 화면을 새로고침해 제출 상태를 확인해 주세요.</p>
+    <p role="alert" x-show="failed" style="display: none">저장 결과를 확인하지 못했습니다. 화면을 새로고침해 제출 상태를 확인해 주세요.</p>
   </form>
-  <form class="participant-form" hx-post="{% url 'game-survey' vm.game_id %}" hx-target="#survey" hx-swap="outerHTML"
+  <form class="participant-form" method="post" action="{% url 'game-survey' vm.game_id %}"
+        hx-post="{% url 'game-survey' vm.game_id %}" hx-target="#survey" hx-swap="outerHTML"
         hx-sync="#survey:drop" hx-disabled-elt="#survey button" x-data="{ failed: false }"
         @htmx:after-request.camel="failed = !$event.detail.successful">
     {% csrf_token %}
     <input type="hidden" name="game_id" value="{{ vm.game_id }}">
     <input type="hidden" name="skipped" value="true">
     <button type="submit">건너뛰기</button>
-    <p role="alert" x-show="failed" style="display: none">건너뛰기를 기록하지 못했습니다. 화면을 새로고침해 제출 상태를 확인해 주세요.</p>
+    <p role="alert" x-show="failed" style="display: none">저장 결과를 확인하지 못했습니다. 화면을 새로고침해 제출 상태를 확인해 주세요.</p>
   </form>
 </section>
 {% endif %}

@@ -100,14 +100,17 @@ NARRATION_WAIT = "족제비가 해설을 다듬고 있어요…"
 
 
 def narration_context(output, content, game_id):
-    """복기 해설 LLM 요약(E-10-01)의 화면 행. 생성 중이면 2초 폴링, 끝나면 검사를 통과한 LLM 문장만 보인다.
+    """복기 해설 LLM 요약(E-10-01)의 화면 행. 생성 중이면 2초 폴링, 끝나면 요약 대상 NPC를 모두 보인다.
 
-    템플릿으로 대체된 NPC는 이 묶음에 넣지 않는다(템플릿 해설은 이미 행동 목록에 있다). 기능 꺼짐·전부 대체면
-    묶음 자체를 숨긴다(실패를 알리지 않는다, 설계 7절). 문장별 LLM 표시는 두지 않는다(11/11 사용자 결정).
+    LLM 문장이 검사를 통과한 NPC는 그 문장, 거부돼 템플릿으로 대체된 NPC는 템플릿 문장을 같은 순서로 보인다
+    (11/11 사용자 결정 "속마음 칸 ①"). 기능 꺼짐·전부 대체면 묶음 자체를 숨긴다(실패를 알리지 않는다, 설계 7절).
+    문장별 LLM 표시는 두지 않는다(11/11 사용자 결정).
     """
     names = {c.npc_id: c.name_ko for c in content.characters}
+    rows = [n for n in output.npcs if n.sentences]
+    any_llm = any(n.source == "llm" for n in rows)
     npcs = [{"name": names.get(n.npc, n.npc), "sentences": [s.text for s in n.sentences]}
-            for n in output.npcs if n.source == "llm" and n.sentences]
+            for n in rows] if any_llm else []
     return {"narration": {"pending": not output.final, "npcs": npcs, "show": (not output.final) or bool(npcs),
                           "url": f"/games/{game_id}/review/narration", "title": NARRATION_TITLE,
                           "wait": NARRATION_WAIT}}

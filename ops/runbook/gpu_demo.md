@@ -45,6 +45,7 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<결과 반출 명령>' bash llm/bench/run_p
 | `runpodctl`이 `RUNPOD_API_KEY` 환경 변수를 설정 파일보다 먼저 쓰는지 | `--key-env`로 그 계정 키만 자식 프로세스에 넘기고, 이름의 계정 칸이 다른 Pod는 세지도 지우지도 않는다(키가 섞여도 다른 계정 Pod는 안 지움) | 계정마다 `--once`로 그 계정 Pod만 보이는지(예: E 계정에만 s0 Pod가 있을 때 B·C·D 감시에는 0개). 환경 변수를 안 쓰면 E 노트북의 `runpodctl config` 설정 파일을 지우고 감시 프로세스마다 다른 설정 위치(홈 디렉터리 환경 변수)로 다시 확인하고, 그래도 안 되면 계정마다 따로 실행하는 방식으로 되돌리고 사용자에게 알린다 |
 | Restricted 키 권한 | 계정마다 키 하나 | 네 계정 각각 그 키로 조회·생성·삭제가 되는지. E 계정은 0단계 Pod 2개로 본다. B·C·D는 가장 싼 Pod 1개(`paldo-e1112-s0-<계정>-1`)를 만들자마자 목록 확인 뒤 지운다(5분 이내, 4090 기준 약 $0.08 이하) |
 | 네트워크 볼륨 목록 명령 | 볼륨을 만들지 않고 콘솔 Storage에서 0개 확인 | - |
+| `runpodctl` 삭제 하위 명령 | 기본 `pod delete`. 설치 버전이 다르면 감시는 `--delete-cmd "remove pod"`, Pod 안은 `RUNPODCTL_DELETE="remove pod"`로 바꾼다(11/11 추가) | 0단계 시작 전 노트북에서 `runpodctl --help`로 삭제·목록 하위 명령 이름 확인 |
 | `runpodctl` Pod 목록 출력 형식 | 기본 `runpodctl pod list -o json`, JSON 배열의 `id`·`name`·`costPerHr` | 실제 출력이 다르면 `--list-cmd`·`--fields`로 맞추고 이 표를 고친다 |
 | 디스크 요금 | 세지 않음(소프트 상한) | 콘솔 Billing의 Pod별 금액과 장부 누계 차이 |
 

@@ -1,0 +1,236 @@
+{
+  "task": "D-08-01",
+  "commit": "d9417ba6f5f79815d99a09c4f4a5c930a4f2a0a6",
+  "generated_at": "2026-11-11T02:43:13.309428Z",
+  "source": "Official D-08-01-20261111-04, PR #386 merged SHA, nifi-01 2 vCPU/3398 MiB and external Ubuntu WSL2, isolated Caddy/Daphne2/Mongo. Baseline then both direct logistic ON rounds at 30 users >=180s each, both model versions resident in each web process. RSS is end-of-load process RSS sum including shared pages. Raw out/d08-01/1111-batch04 manifest SHA-256 bb65c1e1fb2521366a57c38fe50851950084cb0403f56c41f88a8d487b3b1bdd.",
+  "metrics": {
+    "baseline_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "baseline_elapsed_seconds": {
+      "value": 180.281,
+      "unit": "s"
+    },
+    "baseline_requests": {
+      "value": 5400,
+      "unit": "count"
+    },
+    "baseline_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_finished_games": {
+      "value": 366,
+      "unit": "count"
+    },
+    "baseline_p95_ms": {
+      "value": 276.022,
+      "unit": "ms"
+    },
+    "baseline_caddy_p95_ms": {
+      "value": 264.657,
+      "unit": "ms"
+    },
+    "baseline_django_p95_ms": {
+      "value": 244.28,
+      "unit": "ms"
+    },
+    "baseline_rtt_p95_ms": {
+      "value": 1.53,
+      "unit": "ms"
+    },
+    "baseline_host_cpu_percent": {
+      "value": 47.383,
+      "unit": "%"
+    },
+    "baseline_warmup_seconds": {
+      "value": 6.911,
+      "unit": "s"
+    },
+    "baseline_inference_calls": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_inference_failures": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_engine_fallback_decisions": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_worker_count": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_rss_mib": {
+      "value": 238.64453125,
+      "unit": "MiB"
+    },
+    "model1_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "model1_elapsed_seconds": {
+      "value": 180.322,
+      "unit": "s"
+    },
+    "model1_requests": {
+      "value": 5400,
+      "unit": "count"
+    },
+    "model1_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model1_finished_games": {
+      "value": 459,
+      "unit": "count"
+    },
+    "model1_p95_ms": {
+      "value": 423.29,
+      "unit": "ms"
+    },
+    "model1_caddy_p95_ms": {
+      "value": 415.644,
+      "unit": "ms"
+    },
+    "model1_django_p95_ms": {
+      "value": 392.956,
+      "unit": "ms"
+    },
+    "model1_rtt_p95_ms": {
+      "value": 1.43,
+      "unit": "ms"
+    },
+    "model1_host_cpu_percent": {
+      "value": 45.86,
+      "unit": "%"
+    },
+    "model1_warmup_seconds": {
+      "value": 8.944,
+      "unit": "s"
+    },
+    "model1_inference_calls": {
+      "value": 2669,
+      "unit": "count"
+    },
+    "model1_inference_failures": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model1_engine_fallback_decisions": {
+      "value": 3,
+      "unit": "count"
+    },
+    "model1_worker_count": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model1_rss_mib": {
+      "value": 583.09375,
+      "unit": "MiB"
+    },
+    "model1_fallback_percent": {
+      "value": 0.11240164855751218,
+      "unit": "%"
+    },
+    "model1_inference_p95_upper_ms": {
+      "value": 50.0,
+      "unit": "ms"
+    },
+    "model1_rss_reduction_mib": {
+      "value": 427.953125,
+      "unit": "MiB"
+    },
+    "model1_engine_deadline_late": {
+      "value": 3,
+      "unit": "count"
+    },
+    "model2_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "model2_elapsed_seconds": {
+      "value": 180.378,
+      "unit": "s"
+    },
+    "model2_requests": {
+      "value": 5400,
+      "unit": "count"
+    },
+    "model2_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model2_finished_games": {
+      "value": 454,
+      "unit": "count"
+    },
+    "model2_p95_ms": {
+      "value": 425.066,
+      "unit": "ms"
+    },
+    "model2_caddy_p95_ms": {
+      "value": 414.045,
+      "unit": "ms"
+    },
+    "model2_django_p95_ms": {
+      "value": 381.988,
+      "unit": "ms"
+    },
+    "model2_rtt_p95_ms": {
+      "value": 2.7,
+      "unit": "ms"
+    },
+    "model2_host_cpu_percent": {
+      "value": 46.11,
+      "unit": "%"
+    },
+    "model2_warmup_seconds": {
+      "value": 8.538,
+      "unit": "s"
+    },
+    "model2_inference_calls": {
+      "value": 2676,
+      "unit": "count"
+    },
+    "model2_inference_failures": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model2_engine_fallback_decisions": {
+      "value": 7,
+      "unit": "count"
+    },
+    "model2_worker_count": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model2_rss_mib": {
+      "value": 580.47265625,
+      "unit": "MiB"
+    },
+    "model2_fallback_percent": {
+      "value": 0.2615844544095665,
+      "unit": "%"
+    },
+    "model2_inference_p95_upper_ms": {
+      "value": 50.0,
+      "unit": "ms"
+    },
+    "model2_rss_reduction_mib": {
+      "value": 430.57421875,
+      "unit": "MiB"
+    },
+    "model2_engine_deadline_late": {
+      "value": 7,
+      "unit": "count"
+    },
+    "passing_model_rounds": {
+      "value": 2,
+      "unit": "count"
+    }
+  }
+}
