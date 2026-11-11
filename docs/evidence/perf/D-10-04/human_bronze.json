@@ -1,0 +1,28 @@
+{
+  "task": "D-10-04",
+  "commit": "098b0777c1a7a1b8e0284e8c9b6a50f6d28b5a82",
+  "generated_at": "2026-11-11T07:33:39Z",
+  "source": "User executed sudo python3 /tmp/d1004-human-ads-readonly-20261111.py on Spark Master; read-only official Bronze history and event-time grouped counts; summary retrieved over SSH",
+  "metrics": {
+    "raw_human_serves": {
+      "value": 73,
+      "unit": "건"
+    },
+    "raw_human_impression_events": {
+      "value": 5,
+      "unit": "건"
+    },
+    "raw_human_click_events": {
+      "value": 4,
+      "unit": "건"
+    },
+    "physical_snapshot_version": {
+      "value": 129,
+      "unit": ""
+    },
+    "observed_latest_version": {
+      "value": 245,
+      "unit": ""
+    }
+  }
+}
