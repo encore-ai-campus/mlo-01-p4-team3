@@ -2,7 +2,7 @@
 
 B-09-02 어댑터 수신: `composition._configure_parser` → 설정 `INTENT_PARSER_FACTORY` → `paldo_web.intent.make_bert_parser()` → D의 `intent.bert.BertIntentParser(run_dir)` → 기존 `ObservedIntentParser` → `InteractionService`다. 로컬 아티팩트 경로는 `INTENT_BERT_RUN_DIR`(환경 `PALDO_INTENT_BERT_RUN_DIR`)로 받는다. 기본 팩토리는 빈 문자열로 유지한다. 운영 URL·DTO 변경은 없으며 인수 범위와 실제 가중치 미검증은 [증빙](../docs/evidence/B-09-02.md)에 구분한다.
 
-B-09-02 사전 부하: 기존 `tools/perf/api_bench.py --web-processes 2 --intent-every 1` → `tests/multiproc_bench.py` → 시험 전용 `asgi_bench_app.py` → `asgi_bench.py`·`intent_load.py`다. 시험 해석기는 `--intent-factory`로 고르고 기존 해석기 포트·계측을 사용한다. 공개 화면 버전으로 기존 `POST /games/<id>/utterances` 해석 후 같은 시도를 `cancel`하며 명령은 실행하지 않는다. 보조 기록은 시험 접두어의 Mongo `b_interactions`에 저장하고 종료 때 삭제한다. 운영 URL·DTO·화면·설정 기본값은 변경하지 않는다. 실제 엔진 부하 옵션은 D-08-01과 연결 대기다. [증빙](../docs/evidence/B-09-02.md)
+B-09-02 사전 부하: `tools/perf/api_bench.py --web-processes 2 --actual-baseline --intent-every 1` → `tests/multiproc_bench.py` → 시험 전용 `asgi_bench_app.py` 및 `asgi_bench.py`·`intent_load.py`다. 분리 부하는 `--serve-dir`의 `client.json`으로 간격을 넘기고 `--load-dir`에서 실제 엔진용 `drive_load`를 호출해 `load.json`을 반환한다. 시험 해석기는 서버의 `--intent-factory`로 고른다. 공개 화면 버전으로 기존 `POST /games/<id>/utterances` 해석 후 같은 시도를 `cancel`하며 해석 후보를 명령으로 실행하지 않는다. 보조 기록은 시험 접두어의 Mongo `b_interactions`에 저장하고 종료 때 삭제한다. 운영 URL·DTO·화면·설정 기본값은 유지한다. [증빙](../docs/evidence/B-09-02.md)
 
 B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
 
