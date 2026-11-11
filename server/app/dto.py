@@ -170,5 +170,28 @@ class ReviewOutput:
 
 
 @dataclass
+class NarrationSentence:
+    """복기 해설 한 문장과 인용한 복기 항목 ID."""
+    cite: str                                 # 인용한 복기 항목 ID("d<seq>")
+    text: str
+
+
+@dataclass
+class NarrationNpc:
+    """NPC 한 명의 해설 문장 묶음. source는 "llm" 또는 "template"."""
+    npc: str
+    sentences: list[NarrationSentence]
+    source: str                               # "llm" | "template"
+
+
+@dataclass
+class ReviewNarrationOutput:
+    """복기 해설 LLM 요약 조회(E-10-01, `GET /games/{id}/review/narration`). final이면 다시 바뀌지 않는다."""
+    status: str                               # off|queued|running|done|failed|timeout
+    final: bool
+    npcs: list[NarrationNpc] = field(default_factory=list)
+
+
+@dataclass
 class ProgressOutput:
     progress: PlayerProgress

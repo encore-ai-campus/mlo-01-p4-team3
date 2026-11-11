@@ -24,12 +24,18 @@
 | PUT `/games/{id}/notebook` | `SaveNotebookInput` | 204 | - |
 | POST `/games/{id}/survey` | `SubmitSurveyInput` | 204 | `survey_done` |
 | GET `/games/{id}/review` | - | `ReviewOutput`(종료 후만, 그 전에는 403) | `review` |
+| GET `/games/{id}/review/narration` | - | `ReviewNarrationOutput`(종료 후만, 그 전에는 403) | `review_narration` |
 | GET `/players/me/progress` | - | `ProgressOutput` | `progress` |
 
 ### 2-0. 복기 `ReviewOutput.timeline` (11/10, E-10-10)
 - `timeline`은 NPC 결정 단위 `ReviewItem` 목록이다(엔진 `review_trace`, 아웃박스 `decision` 이벤트를 seq 순으로). 플레이어 결정은 넣지 않는다.
 - `ReviewItem` 필드: `item_id`("d<seq>"), `actor`, `day`, `phase`, `kind`(`suspect`·`defend`·`point_contradiction`·`explain`·`silence`·`vote`·`night_plan`·`react`), `reason_codes`, `evidence`, `phrase_id`(`rv_<대표 이유 코드>`), `text`(템플릿 해설, 문구가 없으면 ""), `speech_id`(회의 말·캐묻기 답만, 없으면 null), `target_npc`, `reaction`(react만), `executor`·`victim`(night_plan만), `policy_version`, `vote_explain`(선택, 지금은 null).
 - 이전 형식(발언마다 한 항목, 이유 코드는 빈 목록)은 11/10에 이 형식으로 바뀌었다. `explanation_job_id`는 쓰지 않고 남겨 둔다.
+
+### 2-0-1. 복기 해설 LLM 요약 `ReviewNarrationOutput` (11/11, E-10-01)
+- `GET /games/{id}/review/narration` → `{status, final, npcs: [{npc, sentences: [{cite, text}], source}]}`. `status`는 `off`(기능 꺼짐)·`queued`·`running`·`done`·`failed`·`timeout`, `final`이 true면 다시 바뀌지 않는다. `npcs`는 `final`일 때만 채운다. `source`는 `llm`(검사 통과 문장) 또는 `template`(그 NPC는 템플릿 해설), `cite`는 `ReviewItem.item_id`.
+- 작업 등록: 기능이 켜진 환경(`PALDO_REVIEW_LLM_URL`)에서 `GET /games/{id}/review`를 처음 연 판만 멱등 등록한다(중단 판 제외). 마감(`PALDO_REVIEW_DEADLINE_S`, 기본 180초)이 지나면 템플릿으로 확정한다.
+- htmx: 복기 패널은 생성 중이면 "마을 사람들의 속마음" 묶음에 "족제비가 해설을 다듬고 있어요…"와 `hx-get="/games/{id}/review/narration" hx-trigger="every 2s" hx-swap="outerHTML"`를 둔다. 확정 조각에는 폴링 속성이 없고, `source=llm`인 NPC 문장만 보인다(모두 템플릿이면 묶음을 숨긴다. 실패를 알리지 않는다). 문장별 LLM 표시는 없다.
 
 ### 2-1. 계정 (11/4 PM 결정, B-06-04)
 - 위 표의 모든 엔드포인트와 화면은 **로그인 필수**다. 비로그인 요청은 JSON이면 401, 화면 요청이면 로그인 화면으로 이동한다.
@@ -107,11 +113,11 @@
 6. 단계 거르기(B-09-07): 응답 카드(`cards`)에는 현재 단계에서 플레이어가 낼 수 있는 명령만 남는다(`is_legal_kind`). 투표·결선 단계의 `suspect` 후보는 같은 대상의 `vote` 카드로 바꾸고(결선이면 결선 후보 대상만), 뜻이 뒤집히는 후보(`defend` 등)는 버린다. 거른 뒤 카드가 0장이면 `unsupported_intent`로 안내하고 `suggestions`에 현재 단계의 플레이어 행동 종류를 담는다. `intent_attempt` 이벤트의 `candidates`·`failure`는 해석기 원래 결과 그대로다. 아침·밤 화면은 입력 칸을 비활성으로 둔다.
 
 ## 5. LLM 답변 폴링
-- 게임 추궁 답변에는 `Powered by Kanana`를 사용자가 쉽게 알아보게 표시한다(11/10 사용자 결정으로 11/8 "표시하지 않음"(B-08-02 ③)을 바꿈, E-10-13 5번). 게임 문장은 템플릿과 Kanana 서버로 미리 생성·검수한 변형을 사용한다(런타임 호출 없음). 최초 화면·폴링 조각·완료·취소 재조회 모두 동일하다.
+- `Powered by Kanana`는 답변 영역에 고정 표시하지 않고 게임 화면 밖 좌측 하단 출처 표시 영역에 한 번만 둔다(11/11 사용자 결정, 11/10 "추궁 답변에 표시"를 바꿈). 게임 추궁 문장은 템플릿과 Kanana 서버로 미리 생성·검수한 변형을 사용한다(런타임 호출 없음).
 - 캐묻기가 수락되면, 응답 화면의 해당 발언 자리에 폴백 문장이 먼저 표시된다. 그 자리에 `hx-get="/games/{id}/renders/{job_id}" hx-trigger="every 1s"` 조각이 붙는다.
 - `RenderOutput.final`이 true이면(done, timeout, failed, cancelled, discarded) 폴링 속성이 없는 조각으로 바꿔 폴링을 멈춘다. done이 아니면 `text`는 폴백 문장이다.
 - 판이 다음 단계로 넘어가면 응용 계층이 미완료 작업을 취소한다. 그 뒤의 폴링 응답은 `final=true`(폴백)다.
-- 복기 해설(`GET /games/{id}/review`의 해설 칸)도 같은 폴링 조각(`/games/{id}/renders/{job_id}`)을 쓴다(11/4 PM 결정 #17). LLM 서비스와의 전송은 [ports.md 4절](ports.md).
+- 복기 해설은 이 렌더 폴링을 쓰지 않고 판 단위 요약 `GET /games/{id}/review/narration`(2-0-1절)을 쓴다(11/10 사용자 결정으로 11/4 #17을 바꿈: 판 단위 요약은 `RenderRequest` 모양과 다르다).
 
 ## 6. 화면 정보 제한
 - 플레이어 화면에 들어가는 것은 `PlayerView`의 정보뿐이다(domain.md 7절).

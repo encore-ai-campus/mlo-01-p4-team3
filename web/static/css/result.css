@@ -42,3 +42,8 @@
   .end-panel #survey { padding: 1rem .75rem; }
   .end-panel #survey label { display: flex; }
 }
+/* 복기 해설 LLM 요약(E-10-01): 검사를 통과한 문장만. 문장별 표시 없음(11/11 사용자 결정) */
+.review-narration-list { list-style: none; padding: 0; margin: 0 0 1rem; }
+.review-narration-list li { border-top: 1px solid var(--pd-line-soft, #c6b99f); padding: .7rem 0; overflow-wrap: anywhere; }
+.review-narration-list p { margin: .15rem 0; line-height: 1.55; }
+.review-narration-wait { color: var(--pd-muted, #6b6455); }

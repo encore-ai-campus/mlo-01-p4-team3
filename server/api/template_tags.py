@@ -39,8 +39,10 @@ def update_history():
 @register.inclusion_tag('asset_credits.html')
 def asset_attribution():
     """게임 화면 하단에 출처 파일의 공개 요약을 표시한다."""
+    from django.conf import settings
     from .village_assets import image_source
-    return {'asset_source': image_source()}
+    # 복기 해설 LLM(E-10-01)이 켜진 환경이면 Kanana 표기를 출처 영역 첫 줄에 한 번 둔다(11/11 사용자 결정).
+    return {'asset_source': image_source(), 'kanana_credit': bool(getattr(settings, 'REVIEW_LLM_URL', ''))}
 
 ACTION_LABELS = {"advance": "다음으로", "suspect": "의심 제기", "defend": "변호", "silence": "지켜보기",
                  "interrogate": "캐묻기", "point_contradiction": "모순 지적", "reveal_divination": "점괘 공개",
