@@ -210,7 +210,8 @@ def games_from_events(events, consented_users):
                  ended_at=e['occurred_at'], arm=e['model_versions']['bandit_arm'],
                  bandit_version=e['model_versions']['bandit'])
         if kind == 'game_ended':
-            if payload['winner'] not in ('village', 'possessed'):
+            # 엔진 game_ended의 승자 값은 Faction 값 'village'·'changgwi'다(pipeline/spark와 같은 집합).
+            if payload['winner'] not in ('village', 'changgwi'):
                 raise ValueError('invalid winner')
             g['village_win'] = payload['winner'] == 'village'
         else:
