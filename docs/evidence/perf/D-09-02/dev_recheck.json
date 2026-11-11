@@ -1,0 +1,44 @@
+{
+  "task": "D-09-02",
+  "commit": "2a79c3f1a8789e5da02e179d9c8b40f23974f48c",
+  "generated_at": "2026-11-11T08:25:55Z",
+  "source": "PALDO_BERT_TESTS=1 python -X utf8 -B -m unittest tests.test_ml_gate tests.test_bandit tests.intent.test_bert -v; PALDO_BERT_RECEIVE_RUN_DIR=<D-07-03 checkpoint> python -X utf8 -B server/manage.py test server.tests.test_bert_receive --settings=server.paldo_web.test_settings --noinput --verbosity=1; RunPod preparation confirmed by user on 2026-11-10; experiment-end/key-revocation request not received as confirmed by user on 2026-11-11",
+  "metrics": {
+    "unit_tests": {
+      "value": 24,
+      "unit": "개"
+    },
+    "unit_failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "unit_skipped": {
+      "value": 0,
+      "unit": "개"
+    },
+    "http_tests": {
+      "value": 33,
+      "unit": "건"
+    },
+    "real_checkpoint_tests": {
+      "value": 12,
+      "unit": "건"
+    },
+    "http_failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "http_skipped": {
+      "value": 0,
+      "unit": "건"
+    },
+    "runpod_preparation_confirmed": {
+      "value": 1,
+      "unit": ""
+    },
+    "runpod_cleanup_evidence_available": {
+      "value": 0,
+      "unit": ""
+    }
+  }
+}

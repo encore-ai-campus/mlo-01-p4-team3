@@ -1,0 +1,32 @@
+{
+  "task": "D-09-02",
+  "commit": "5cbb14ed5fced3f29c4b5c5f883d9f609eb6364b",
+  "generated_at": "2026-11-10T01:13:49Z",
+  "source": "PALDO_BERT_RECEIVE_RUN_DIR=<D-07-03 run> python -B server/manage.py test server.tests.test_bert_receive --settings=server.paldo_web.test_settings --noinput --verbosity=2",
+  "metrics": {
+    "http_tests": {
+      "value": 31,
+      "unit": "건"
+    },
+    "real_checkpoint_tests": {
+      "value": 11,
+      "unit": "건"
+    },
+    "failures": {
+      "value": 0,
+      "unit": "건"
+    },
+    "skipped": {
+      "value": 0,
+      "unit": "건"
+    },
+    "target_and_version_verified": {
+      "value": 1,
+      "unit": ""
+    },
+    "artifact_files_verified": {
+      "value": 5,
+      "unit": "개"
+    }
+  }
+}

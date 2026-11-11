@@ -1,8 +1,8 @@
 {
   "task": "D-09-02",
-  "commit": "4058df7200395fb569375ca9b6470ca52346f590",
-  "generated_at": "2026-11-09T02:12:45Z",
-  "source": "python work/verify_mongo.py (isolated local Mongo replica set)",
+  "commit": "2a79c3f1a8789e5da02e179d9c8b40f23974f48c",
+  "generated_at": "2026-11-11T08:25:55Z",
+  "source": "python -X utf8 -B out/d09_02/verify_mongo.py (isolated local MongoDB 8.3.7 replica set)",
   "metrics": {
     "service_tests": {
       "value": 5,
