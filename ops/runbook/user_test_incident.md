@@ -26,8 +26,8 @@
 
 1. **기록(E)**: 시작 시각, 증상, 보고한 인원 수. 가명 ID 외의 식별 정보는 적지 않는다.
 2. **참가자 안내(E)**: 4절 문구를 화면이나 구두로 알린다.
-3. **서버 확인(C)**: `sudo systemctl status caddy paldo-web`, `sudo journalctl -u caddy --since '10 minutes ago'`, 웹 unit 로그. Mongo·계정 MySQL 연결 오류가 있는지 확인한다.
-4. **재시작(C)**: 원인이 웹 프로세스면 `ops/proxy/README.md`의 두 unit만 재시작한다. 다른 서비스는 건드리지 않는다. 웹은 Daphne 1개로 유지한다.
+3. **서버 확인(C)**: `sudo systemctl status caddy paldo-web@8000 paldo-web@8002`, `sudo journalctl -u caddy --since '10 minutes ago'`, 웹 unit 로그. Mongo·계정 MySQL 연결 오류가 있는지 확인한다.
+4. **재시작(C)**: 원인이 웹 프로세스면 `ops/proxy/README.md`의 두 웹 unit을 재시작한다. 기본은 Daphne 2개와 InMemory이며 E가 1개 복구를 결정하면 프록시 문서의 되돌림 절차를 적용한다.
 5. **복구 확인(E)**: 운영자 계정으로 홈 → 판 화면 → `/ws/game/` 101을 확인한 뒤 참가자에게 재개를 안내한다.
 6. **사후 기록(E)**: 끝난 시각과 원인을 E-09-01 증빙(사전 테스트면 E-08-10)과 [트러블 E](../../docs/troubles/E.md)에 적는다. 지표를 집계할 때 장애 구간을 함께 보고한다.
 
