@@ -3,8 +3,8 @@ import unittest
 
 from tools.perf.int07_scenarios import Lab, play, replay, search
 
-# 11/8 탐색 결과(`python -m tools.perf.int07_scenarios`)의 시드·전략 번호. confession_switch는 11/10 rule-0.7(꾀어내기)로 다시 찾음
-KNOWN = {"false_reveal": (2, 2), "last_possessed": (10, 0), "confession_switch": (15, 1)}
+# 11/8 탐색 결과(`python -m tools.perf.int07_scenarios`)의 시드·전략 번호. confession_switch는 11/10 rule-0.8(집 알리바이·decision-2)로 다시 찾음
+KNOWN = {"false_reveal": (2, 2), "last_possessed": (10, 0), "confession_switch": (3, 2)}
 
 
 class Scenarios(unittest.TestCase):

@@ -8,7 +8,7 @@
   - 버전: `contract_version`, `rule_version`, `engine_version`, `content_version`, `npc_policy_versions`, `model_versions`
   - 재현: `seed`, `preset_id`
   - 출처: `source`(human, bot, synthetic, scripted), `load_test`
-- 사람 데이터 필드(`player_pseudonym`, `session_id`)는 `source=human`일 때만 채운다(privacy.md).
+- 사람 가명 `player_pseudonym`은 `source=human`에서 필수다. `session_id`는 회차 판에서 채우고 일반 판은 `null`이다(api.md 2-3절). 비사람 출처에는 두 식별자를 넣지 않는다(privacy.md).
 
 ## 2. 토픽
 

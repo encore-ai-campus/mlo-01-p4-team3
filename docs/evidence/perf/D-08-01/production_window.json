@@ -1,0 +1,88 @@
+{
+  "task": "D-08-01",
+  "commit": "87fddf970869f89fd2d7553e981089c86741ba70",
+  "generated_at": "2026-11-10T09:03:51Z",
+  "source": "Read-only metrics-01 Prometheus mTLS query at 2026-11-10T09:00:00Z: increase(paldo_model_calls_total{job=~\"paldo-web(-2)?\"}[5h]), increase(paldo_model_decisions_total{job=~\"paldo-web(-2)?\"}[5h]), increase(paldo_engine_suspicion_fallback_total{job=~\"paldo-web(-2)?\"}[5h]); app-01 /web and /web-2, including all model labels; raw range and resets saved. Observed counters only: long missing model-series intervals and process resets; port labels use the logistic version while engine decision labels use fake-suspicion-1. Not a complete human-test-only fallback rate or a version-specific acceptance result. Repository commit is evidence collector base, not a verified production deployment commit. Zero denominator has no rate. Raw SHA-256 e2451067ef0a0ccc008ec7badbe2759ddc3b7fcfc05f65c706d57adbb437980f",
+  "metrics": {
+    "model_calls": {
+      "value": 68.05671392827355,
+      "unit": "count"
+    },
+    "model_failures": {
+      "value": 0,
+      "unit": "count"
+    },
+    "engine_decisions": {
+      "value": 68.05671392827355,
+      "unit": "count"
+    },
+    "engine_fallbacks": {
+      "value": 68.05671392827355,
+      "unit": "count"
+    },
+    "committed_engine_fallbacks": {
+      "value": 68.05671392827355,
+      "unit": "count"
+    },
+    "fallback_percent_per_call": {
+      "value": 100.0,
+      "unit": "%"
+    },
+    "fallback_percent_per_decision": {
+      "value": 100.0,
+      "unit": "%"
+    },
+    "window_seconds": {
+      "value": 18000.0,
+      "unit": "s"
+    },
+    "processes": {
+      "value": 2,
+      "unit": "count"
+    },
+    "web_1_up_failed_samples": {
+      "value": 3,
+      "unit": "count"
+    },
+    "web_2_up_failed_samples": {
+      "value": 2,
+      "unit": "count"
+    },
+    "calls_counter_resets": {
+      "value": 4.0,
+      "unit": "count"
+    },
+    "calls_observed_delta": {
+      "value": 68.0,
+      "unit": "count"
+    },
+    "calls_maximum_sample_gap_seconds": {
+      "value": 7170.0,
+      "unit": "s"
+    },
+    "decisions_counter_resets": {
+      "value": 4.0,
+      "unit": "count"
+    },
+    "decisions_observed_delta": {
+      "value": 68.0,
+      "unit": "count"
+    },
+    "decisions_maximum_sample_gap_seconds": {
+      "value": 7170.0,
+      "unit": "s"
+    },
+    "engine_counter_resets": {
+      "value": 4.0,
+      "unit": "count"
+    },
+    "engine_observed_delta": {
+      "value": 68.0,
+      "unit": "count"
+    },
+    "engine_maximum_sample_gap_seconds": {
+      "value": 4110.0,
+      "unit": "s"
+    }
+  }
+}

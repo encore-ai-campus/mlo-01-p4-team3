@@ -220,10 +220,13 @@ def _argmax(scores: dict[str, float], rng: random.Random) -> tuple[str, bool]:
 
 
 def choose_target(obs: ObservationSnapshot, b: Beliefs, candidates: list[str], est: SuspicionEstimate,
-                  temp: Optional[Temperament], rng: random.Random) -> tuple[str, list[ReasonCode]]:
-    """세 층을 차례로 적용해 (대상, 이유 코드)를 낸다. 의심 추정은 이미 성공한 상태(est)라고 본다."""
+                  temp: Optional[Temperament], rng: random.Random,
+                  q_max: Optional[float] = None) -> tuple[str, list[ReasonCode]]:
+    """세 층을 차례로 적용해 (대상, 이유 코드)를 낸다. 의심 추정은 이미 성공한 상태(est)라고 본다.
+
+    `q_max`는 정책이 고정한 무당 의심 상한(이전 규칙 판용, `RuleV0Policy(q_max=...)`). 생략하면 `params.Q_MAX`."""
     legal = [c for c in candidates if c != obs.observer]
-    susp = combined_suspicion(weighted_probs(est, temp), b.trust_in_mudang)
+    susp = combined_suspicion(weighted_probs(est, temp), b.trust_in_mudang, q_max)
     susp = {c: susp.get(c, 0.0) for c in legal}          # 후보에 없는 합법 대상(결선 등)은 0
     expected = expected_votes(obs)
     scores = decision_scores(susp, expected, temp.conformity if temp else 0.0, rng)

@@ -1,0 +1,184 @@
+{
+  "task": "D-08-01",
+  "commit": "87fddf970869f89fd2d7553e981089c86741ba70",
+  "generated_at": "2026-11-10T12:08:32Z",
+  "source": "Re-analysis of existing nifi-01/WSL2 30-user paired request/Caddy/web logs, using the same nearest-rank p95. No new server load or acceptance re-test. Start-history scan and bounded type-hint-cache experiment are OFFLINE Windows Python 3.14.6, mock read-only collection, one completed rule-v0 game, five samples per history size; not VM latency, not production implementation. Base local 87fddf9; cancellation-only bench logging patch tested separately after the original measurement. Artifact SHA-256 {\"api-diagnosis.json\": \"8b1ebfa2815c75afbf848a7d2085b822647f47a40b2a15d911bfea443282a085\", \"start-history-probe.json\": \"5b0192e9ffad117decf93b12e76f6e77983b3870a10eb252cdb34a0b0cdad2d8\"}",
+  "metrics": {
+    "baseline_start_requests": {
+      "value": 392,
+      "unit": "count"
+    },
+    "baseline_start_client_p95": {
+      "value": 2445.675,
+      "unit": "ms"
+    },
+    "baseline_start_server_total_p95": {
+      "value": 2183.46,
+      "unit": "ms"
+    },
+    "baseline_start_load_p95": {
+      "value": 1284.381,
+      "unit": "ms"
+    },
+    "baseline_start_engine_new_game_p95": {
+      "value": 8.233,
+      "unit": "ms"
+    },
+    "baseline_start_account_sql_p95": {
+      "value": 59.621,
+      "unit": "ms"
+    },
+    "baseline_start_response_conversion_p95": {
+      "value": 0.529,
+      "unit": "ms"
+    },
+    "baseline_command_requests": {
+      "value": 4541,
+      "unit": "count"
+    },
+    "baseline_command_client_p95": {
+      "value": 1483.547,
+      "unit": "ms"
+    },
+    "baseline_command_server_total_p95": {
+      "value": 1269.731,
+      "unit": "ms"
+    },
+    "baseline_command_load_p95": {
+      "value": 169.08,
+      "unit": "ms"
+    },
+    "baseline_command_engine_apply_p95": {
+      "value": 39.51,
+      "unit": "ms"
+    },
+    "baseline_command_account_sql_p95": {
+      "value": 51.914,
+      "unit": "ms"
+    },
+    "baseline_command_response_conversion_p95": {
+      "value": 0.862,
+      "unit": "ms"
+    },
+    "model_start_requests": {
+      "value": 427,
+      "unit": "count"
+    },
+    "model_start_client_p95": {
+      "value": 2674.526,
+      "unit": "ms"
+    },
+    "model_start_server_total_p95": {
+      "value": 2532.727,
+      "unit": "ms"
+    },
+    "model_start_load_p95": {
+      "value": 1634.38,
+      "unit": "ms"
+    },
+    "model_start_engine_new_game_p95": {
+      "value": 6.015,
+      "unit": "ms"
+    },
+    "model_start_account_sql_p95": {
+      "value": 62.477,
+      "unit": "ms"
+    },
+    "model_start_response_conversion_p95": {
+      "value": 0.401,
+      "unit": "ms"
+    },
+    "model_command_requests": {
+      "value": 4488,
+      "unit": "count"
+    },
+    "model_command_client_p95": {
+      "value": 1466.628,
+      "unit": "ms"
+    },
+    "model_command_server_total_p95": {
+      "value": 1263.472,
+      "unit": "ms"
+    },
+    "model_command_load_p95": {
+      "value": 164.686,
+      "unit": "ms"
+    },
+    "model_command_engine_apply_p95": {
+      "value": 96.486,
+      "unit": "ms"
+    },
+    "model_command_account_sql_p95": {
+      "value": 53.181,
+      "unit": "ms"
+    },
+    "model_command_response_conversion_p95": {
+      "value": 0.819,
+      "unit": "ms"
+    },
+    "offline_history_0_reads": {
+      "value": 0,
+      "unit": "count"
+    },
+    "offline_history_0_mean_ms": {
+      "value": 0.00058002769947052,
+      "unit": "ms"
+    },
+    "offline_history_1_reads": {
+      "value": 1,
+      "unit": "count"
+    },
+    "offline_history_1_mean_ms": {
+      "value": 14.28881986066699,
+      "unit": "ms"
+    },
+    "offline_history_5_reads": {
+      "value": 5,
+      "unit": "count"
+    },
+    "offline_history_5_mean_ms": {
+      "value": 70.77368004247546,
+      "unit": "ms"
+    },
+    "offline_history_10_reads": {
+      "value": 10,
+      "unit": "count"
+    },
+    "offline_history_10_mean_ms": {
+      "value": 145.75017988681793,
+      "unit": "ms"
+    },
+    "offline_history_20_reads": {
+      "value": 20,
+      "unit": "count"
+    },
+    "offline_history_20_mean_ms": {
+      "value": 398.7833000719547,
+      "unit": "ms"
+    },
+    "offline_cached_history_1_mean_ms": {
+      "value": 3.905280027538538,
+      "unit": "ms"
+    },
+    "offline_cached_history_5_mean_ms": {
+      "value": 19.66875996440649,
+      "unit": "ms"
+    },
+    "offline_cached_history_10_mean_ms": {
+      "value": 35.9349200502038,
+      "unit": "ms"
+    },
+    "offline_cached_history_20_mean_ms": {
+      "value": 64.9537199176848,
+      "unit": "ms"
+    },
+    "offline_profile_get_type_hints_calls": {
+      "value": 1760,
+      "unit": "count"
+    },
+    "offline_validation_cases": {
+      "value": 3,
+      "unit": "count"
+    }
+  }
+}

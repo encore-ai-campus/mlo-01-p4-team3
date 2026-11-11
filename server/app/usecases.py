@@ -66,6 +66,8 @@ class GameService:
         self._start_locks_guard = threading.Lock()
         # 판 종료를 받는 함수(B-09-01 1번 의심 모델 보관소 `release`). None이면 부르지 않는다.
         self.release_game = None
+        # Mongo 조립은 진행 판 ID만 조회한다. 다른 저장소는 기존 load 포트로 판정한다.
+        self.find_open_games = None
         # 복기 템플릿 해설 문구 {phrase_id: [변형]}(E-10-10, `server/infra/review_lines.py`가 읽음). None이면 문장 없이 이유 코드만.
         self.review_lines = None
         # 복기 해설 LLM 요약 작업(E-10-01, `review_narration.ReviewNarrationService`). None이면 기능 꺼짐.
@@ -194,7 +196,10 @@ class GameService:
     def unfinished_open_games(self, player_pseudonym):
         """계정의 진행 중인 일반 판(회차 없음) ID를 시작 순서대로."""
         from .open_start import unfinished_open_games   # open_start가 이 모듈을 import하므로 늦게 불러온다
-        return unfinished_open_games(self.progress.load(player_pseudonym).game_ids, self.repository.load)
+        game_ids = self.progress.load(player_pseudonym).game_ids
+        if self.find_open_games is not None:
+            return self.find_open_games(game_ids)
+        return unfinished_open_games(game_ids, self.repository.load)
 
     def abandon_game(self, game_id, player_pseudonym):
         """진행 중인 일반 판을 중단 처리한다(삭제하지 않음). 이번 호출로 중단했으면 True, 아니면 False.

@@ -19,8 +19,9 @@ from __future__ import annotations
 import threading
 from typing import Callable
 
+from engine.domain import params
 from engine.domain.content import ContentBundle
-from engine.domain.engine import PaldoEngine
+from engine.domain.engine import PaldoEngine, home_alibi
 from engine.domain.npc import RuleV0Policy
 from engine.ports import RenderRequest, RenderResult, RenderStatus
 from server.app.interactions import InteractionService
@@ -53,6 +54,8 @@ class ContentPolicyEngine:
     """판의 콘텐츠 버전마다 `PaldoEngine(RuleV0Policy(content))`를 한 번 만들어 위임한다.
 
     규칙 v0은 인물 성향·동선을 콘텐츠에서 찾으므로 판이 고정한 콘텐츠 버전으로 정책을 만든다.
+    rule-0.7 이하로 시작한 판(`home_alibi` 거짓)은 무당 의심 상한을 `params.LEGACY_DECISION.q_max`로 고정한
+    정책을 따로 만들어, rule-0.8 배포 뒤에도 판 메타 버전의 수치로 이어 간다(A-10-01 1번).
     """
 
     def __init__(self, make_policy: Callable[[ContentBundle], object] = RuleV0Policy, model_version='unknown'):
@@ -62,27 +65,37 @@ class ContentPolicyEngine:
         self._engines: dict[str, PaldoEngine] = {}
         self._lock = threading.Lock()
 
-    def _for(self, content: ContentBundle) -> PaldoEngine:
+    def _policy(self, content: ContentBundle, legacy: bool):
+        if not legacy:
+            return self.make_policy(content)
+        try:
+            return self.make_policy(content, q_max=params.LEGACY_DECISION.q_max)
+        except TypeError:   # q_max를 받지 않는 정책 공급자(시험용 등)는 그대로 쓴다
+            return self.make_policy(content)
+
+    def _for(self, content: ContentBundle, rule_version: str = "") -> PaldoEngine:
+        legacy = bool(rule_version) and not home_alibi(rule_version)
+        key = (content.content_version, legacy)
         with self._lock:
-            engine = self._engines.get(content.content_version)
+            engine = self._engines.get(key)
             if engine is None:
-                engine = self._engines[content.content_version] = PaldoEngine(self.make_policy(content))
+                engine = self._engines[key] = PaldoEngine(self._policy(content, legacy))
             return engine
 
     def new_game(self, meta, deps):
-        """판 콘텐츠 버전의 엔진으로 판을 만든다."""
-        return self._for(deps.content).new_game(meta, deps)
+        """판 콘텐츠 버전(과 규칙 버전)의 엔진으로 판을 만든다."""
+        return self._for(deps.content, meta.rule_version).new_game(meta, deps)
 
     def apply(self, state, truth, env, deps):
-        """판 콘텐츠 버전의 엔진으로 명령을 적용한다."""
+        """판 콘텐츠 버전(과 규칙 버전)의 엔진으로 명령을 적용한다."""
         from server.infra.observed_models import observe_decisions
-        transition=self._for(deps.content).apply(state, truth, env, deps)
+        transition=self._for(deps.content, state.meta.rule_version).apply(state, truth, env, deps)
         observe_decisions(transition,self.model_version)
         return transition
 
     def player_view(self, state, content):
         """판 콘텐츠 버전의 엔진으로 플레이어 화면 정보를 만든다."""
-        return self._for(content).player_view(state, content)
+        return self._for(content, state.meta.rule_version).player_view(state, content)
 
 
 def engine_parts():
