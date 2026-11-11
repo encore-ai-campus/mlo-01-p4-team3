@@ -93,6 +93,7 @@
   - 버전 충돌: 409, `reject=state_version_conflict`. 현재 화면을 함께 보내며, 클라이언트는 화면을 바꿔 끼운다. 서버는 명령을 자동으로 재적용하지 않는다(ports.md 2절).
 
 ## 4. 자유 입력 수명주기
+- 서버 설정(11/11 사용자 결정): 환경 변수 `PALDO_FREE_TEXT_INPUT`(`on`/`off`, 기본 `off`). `off`이면 회의 화면(VN·클래식)에 직접 입력창을 그리지 않고, `POST /games/{id}/utterances`·`POST /games/{id}/utterances/{attempt_id}`는 로그인 확인 뒤 해석기를 부르지 않고 403 `{"error": "free_text_disabled"}`를 돌려준다(JSON·htmx 같음). `on`이면 아래 수명주기 그대로다. 해석기·`intent_attempt` 기록·재학습 경로는 바꾸지 않는다.
 1. 해석: `POST /utterances`를 보내면 `attempt_id`를 발급한다. 결과는 카드 0~N장과 실패 상태다. 이 단계에서는 **소비가 없다.** `intent_attempt` 이벤트를 기록한다.
 2. 카드: 다중 의도이면 카드가 여러 장 나오고, 플레이어는 **하나만** 고른다. 빠진 슬롯이 있는 카드는 실행 버튼을 비활성화하고, 해당 칸을 고르게 한다.
 3. 반응(`ResolveUtteranceInput.reaction`):

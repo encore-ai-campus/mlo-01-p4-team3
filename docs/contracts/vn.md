@@ -110,7 +110,7 @@
 | 완주·성능 | 6인·8인 녹화 VN 완주, 즉시 표시 켬/끔 읽기 시간, B-10-02 용량·첫 화면 시간 |
 | 배포 | 11/10 리허설부터 18시까지 테스트 서버 SHA 유지. VN 병합과 배포를 구분하고 blocker 예외는 E 승인 절차 |
 
-화면 전환 설정은 서버 환경 변수 `PALDO_GAME_UI`(`vn` 기본, `classic`)다. VN 화면에 막는 문제가 생기면 `classic`으로 바꾸고 웹 서버를 재시작해 기존 회의 화면(`meeting_classic.html`)으로 되돌린다. 두 화면은 같은 정보 조각(`meeting_parts/`)과 같은 명령 경로를 쓴다.
+화면 전환 설정은 서버 환경 변수 `PALDO_GAME_UI`(`vn` 기본, `classic`)다. VN 화면에 막는 문제가 생기면 `classic`으로 바꾸고 웹 서버를 재시작해 기존 회의 화면(`meeting_classic.html`)으로 되돌린다. 두 화면은 같은 정보 조각(`meeting_parts/`)과 같은 명령 경로를 쓴다. 직접 입력창은 두 화면 모두 `PALDO_FREE_TEXT_INPUT=on`일 때만 그린다(기본 `off`, [API 계약](api.md) 4절).
 
 ## 7. E 검토·공통 기준 확인 목록
 

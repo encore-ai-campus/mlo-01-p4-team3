@@ -4,6 +4,8 @@ B-09-02 어댑터 수신: `composition._configure_parser` → 설정 `INTENT_PAR
 
 B-09-02 사전 부하: `tools/perf/api_bench.py --web-processes 2 --actual-baseline --intent-every 1` → `tests/multiproc_bench.py` → 시험 전용 `asgi_bench_app.py` 및 `asgi_bench.py`·`intent_load.py`다. 분리 부하는 `--serve-dir`의 `client.json`으로 간격을 넘기고 `--load-dir`에서 실제 엔진용 `drive_load`를 호출해 `load.json`을 반환한다. 시험 해석기는 서버의 `--intent-factory`로 고른다. 공개 화면 버전으로 기존 `POST /games/<id>/utterances` 해석 후 같은 시도를 `cancel`하며 해석 후보를 명령으로 실행하지 않는다. 보조 기록은 시험 접두어의 Mongo `b_interactions`에 저장하고 종료 때 삭제한다. 운영 URL·DTO·화면·설정 기본값은 유지한다. [증빙](../docs/evidence/B-09-02.md)
 
+직접 입력창 표시(11/11 사용자 결정): 설정 `PALDO_FREE_TEXT_INPUT`(기본 off) → `paldo_web/settings.py` `FREE_TEXT_INPUT` → 템플릿 값 `paldo_web/ui_flags.py` → `meeting.html`·`meeting_classic.html`의 `utterance_input.html` 포함 여부. 끄면 `api/interactions.py`가 해석·카드 반응 요청을 403 `free_text_disabled`로 거부한다. 해석기·기록 경로는 그대로다.
+
 B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
 
 공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 manifest의 정식 그림(현재 로고·회의/밤 배경 포함 21개)과 임시 자원 상태를 표시하고 classic은 404다. 수량은 manifest에서 계산한다. 시안 후보 카탈로그는 읽지 않는다. 보존한 전체 HTML 시안과 실제 화면의 적용 범위는 web/UI_APPLY.md에서 구분한다.

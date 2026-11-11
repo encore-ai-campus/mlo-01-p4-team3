@@ -41,6 +41,12 @@ try:  # E-09-10: 기본 memory(웹 프로세스 2개·1개 모두), Redis는 선
 except ChannelLayerConfigError as error:
     raise ImproperlyConfigured(str(error)) from None
 LOGIN_URL = "/accounts/login"
+# 직접 입력창(문장 → 의도 해석 → 카드) 표시·수신(11/11 사용자 결정). 기본 off: 화면에서 입력창을 그리지 않고
+# `POST /games/{id}/utterances…`는 403 `free_text_disabled`. on이면 기존 동작 그대로(발표·재학습 시연용).
+_free_text = os.environ.get("PALDO_FREE_TEXT_INPUT", "off").strip().lower()
+if _free_text not in {"on", "off"}:
+    raise ImproperlyConfigured("PALDO_FREE_TEXT_INPUT은 on 또는 off여야 합니다.")
+FREE_TEXT_INPUT = _free_text == "on"
 SIGNUP_INVITE_CODE = os.environ.get("PALDO_SIGNUP_INVITE_CODE", "")
 GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
 INTENT_PARSER_FACTORY = ""  # 기준선 사용 시 "intent.parser.BaselineIntentParser"를 지정한다.
@@ -97,6 +103,7 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
                   "django.template.context_processors.request",
                   "django.contrib.auth.context_processors.auth",
                   "django.contrib.messages.context_processors.messages",
+                  "server.paldo_web.ui_flags.ui_flags",
               ], "libraries": {"meeting": "server.api.template_tags", "ad_slots": "server.api.ad_slot_tags"}}}]
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "server.accounts.validators.PasswordRulesValidator"},
