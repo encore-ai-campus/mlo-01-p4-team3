@@ -23,20 +23,20 @@ def campaigns() -> list[Campaign]:
     return [
         Campaign("cp_gukbap", "adv_jumak", "주막 국밥", [S.LOBBY_BANNER, S.REVIEW_SIDE], BillingType.CPC,
                  won(300), won(30_000), Targeting(), "2026-11-05", "2026-11-12", CampaignStatus.ACTIVE,
-                 [Creative("cr_gukbap_a", "cp_gukbap", "뜨끈한 국밥", "주막에서 쉬어 가시오", "/static/ads/gukbap_a.png", "/ads/landing/gukbap"),
-                  Creative("cr_gukbap_b", "cp_gukbap", "국밥 한 그릇", "기다리는 동안 한 술", "/static/ads/gukbap_b.png", "/ads/landing/gukbap")]),
+                 [Creative("cr_gukbap_a", "cp_gukbap", "뜨끈한 국밥", "주막에서 쉬어 가시오", "/static/promo/gukbap_a.png", "/ads/landing/gukbap"),
+                  Creative("cr_gukbap_b", "cp_gukbap", "국밥 한 그릇", "기다리는 동안 한 술", "/static/promo/gukbap_b.png", "/ads/landing/gukbap")]),
         Campaign("cp_bujeok", "adv_shrine", "서낭당 부적", [S.RESULT_BANNER, S.REVIEW_SIDE], BillingType.CPM,
                  won(4_000), won(20_000), Targeting(outcomes=[GameOutcome.LOSE]), "2026-11-05", "2026-11-12",
                  CampaignStatus.ACTIVE,
-                 [Creative("cr_bujeok", "cp_bujeok", "액막이 부적", "다음 판엔 창귀를 막으시오", "/static/ads/bujeok.png", "/ads/landing/bujeok")]),
+                 [Creative("cr_bujeok", "cp_bujeok", "액막이 부적", "다음 판엔 창귀를 막으시오", "/static/promo/bujeok.png", "/ads/landing/bujeok")]),
         Campaign("cp_yakcho", "adv_herb", "약초방", [S.LOBBY_BANNER, S.RESULT_BANNER], BillingType.CPC,
                  won(150), won(10_000), Targeting(returning=True), "2026-11-05", "2026-11-12",
                  CampaignStatus.ACTIVE,
-                 [Creative("cr_yakcho", "cp_yakcho", "산삼 한 뿌리", "기운이 탁할 땐 약초방", "/static/ads/yakcho.png", "/ads/landing/yakcho")]),
+                 [Creative("cr_yakcho", "cp_yakcho", "산삼 한 뿌리", "기운이 탁할 땐 약초방", "/static/promo/yakcho.png", "/ads/landing/yakcho")]),
         Campaign("cp_gat", "adv_gat", "갓 공방", [S.REVIEW_SIDE], BillingType.CPM,
                  won(2_500), won(5_000), Targeting(hours=list(range(18, 24))), "2026-11-05", "2026-11-12",
                  CampaignStatus.PAUSED,
-                 [Creative("cr_gat", "cp_gat", "새 갓", "무당 어른도 갓 하나", "/static/ads/gat.png", "/ads/landing/gat")]),
+                 [Creative("cr_gat", "cp_gat", "새 갓", "무당 어른도 갓 하나", "/static/promo/gat.png", "/ads/landing/gat")]),
     ]
 
 

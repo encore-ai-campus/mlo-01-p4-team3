@@ -1,12 +1,12 @@
 {% load meeting %}
 <section id="meeting" data-phase="{{ vm.phase }}" data-state-version="{{ vm.state_version }}" data-game-id="{{ vm.game_id }}" data-day="{{ vm.day }}"{% if npc_polish %} data-npc-lines="/games/{{ vm.game_id }}/lines" data-npc-csrf="{{ csrf_token }}"{% endif %}>
   <h1 tabindex="-1">{{ vm.day }}일째 · {{ vm.phase|phase_label }}</h1>
-  {% if rejected %}<p role="alert">행동을 적용하지 못했습니다. 현재 화면을 확인해 주세요.</p>{% endif %}
+  <p class="command-feedback" data-command-feedback role="alert">{% if rejected %}행동을 적용하지 못했습니다. 현재 화면을 확인해 주세요.{% endif %}</p>
   {% if vm.ended %}
     {% include "game_end.html" %}
   {% else %}
     <div class="vn-rail" aria-label="판 진행"><span {% if vm.phase == 'morning' %}aria-current="step"{% endif %}>아침</span><span {% if vm.phase == 'round1' or vm.phase == 'round2' or vm.phase == 'interrogation' %}aria-current="step"{% endif %}>회의</span><span {% if vm.phase == 'vote' or vm.phase == 'runoff' %}aria-current="step"{% endif %}>투표</span><span {% if vm.phase == 'night' %}aria-current="step"{% endif %}>밤</span></div>
-    {% include "vn_scene.html" %}
+    <div class="vn-stage-slot">{% include "vn_scene.html" %}</div>
     <div data-stage-content>
       <section id="stage-actions" data-stage-panel="행동 선택" aria-labelledby="meeting-actions-title" tabindex="-1">
         {% if vm.phase == 'vote' or vm.phase == 'runoff' %}<p class="phase-notice">이번 투표는 비공개이며, 투표가 끝나면 모두의 표가 함께 공개됩니다.</p>{% endif %}

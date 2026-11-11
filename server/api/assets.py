@@ -5,6 +5,7 @@ from pathlib import Path
 from django.conf import settings
 from django.http import FileResponse, Http404
 from django.views.decorators.http import require_GET
+from ads.domain.model import legacy_slot_image_url
 from server.paldo_web.middleware import LOGGER
 
 
@@ -22,6 +23,8 @@ def asset_url(content_id):
 def asset_file(request, asset_path):
     """manifest에 등록한 파일과 web/static 아래 파일만 연다."""
     url = "/static/" + asset_path
+    # 배포 전환 동안 옛 광고 서버가 내보내는 옛 소재 주소(/static/ads/…__728x90.png)도 같은 파일로 준다.
+    url = legacy_slot_image_url(url) or url
     items = json.loads(Path(settings.ASSET_MANIFEST).read_text(encoding="utf-8"))
     for item in items:
         if item["url"] == url:

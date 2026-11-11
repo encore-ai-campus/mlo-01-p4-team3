@@ -22,7 +22,7 @@ MAP_IDS: tuple[str, ...] = ("village",)
 BACKGROUND_IDS: tuple[str, ...] = ("meeting", "night")  # 회의 장소 고정 1장, 밤 마을 공통 1장(spec.md 7절)
 MASCOT_IDS: tuple[str, ...] = ("jokjebi", "kkachi")     # 족제비(무당의 짝, 안내)·까치(아침 소식), 11/5 PM 결정 P-21
 VARIANT_SEP = "__"                                      # 표정 변형 id = <인물 id>__<표정 id>
-AD_URL_PREFIX = "/static/ads/"
+AD_URL_PREFIX = "/static/promo/"   # ads.domain.model.PROMO_IMAGE_PREFIX와 같은 값
 SYNTHETIC_CAMPAIGN_PREFIX = "syn:"
 ID_RE = re.compile(r"^[a-z0-9_]+$")
 SIZE_RE = re.compile(r"^(\d+)\s*[×x]\s*(\d+)$")

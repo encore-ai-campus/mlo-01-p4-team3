@@ -218,6 +218,7 @@ function mountScene(root) {
     const tell=source?.querySelector('[data-vn-tell]')?.textContent.trim();
     const line=tell ? body + ' ' + tell : body;
     if(!announce && !force && line===lastText)return;
+    if(line!==lastText) text.closest('.vn-dialogue').scrollTop=0;
     lastText=line;
     clearTimeout(timer);
     // 해설 줄(화자 없음, data-speaker="")은 이름표를 비운다. 화자 칸이 아예 없는 줄만 무당으로 읽는다.
@@ -277,10 +278,14 @@ function mountScene(root) {
   }
   player.querySelector('[data-vn-next]').addEventListener('click',next);
   player.querySelector('[data-vn-prev]').addEventListener('click',()=>{index=Math.max(0,index-1);render();});
-  player.querySelector('[data-vn-full-close]').addEventListener('click',next);
+  player.querySelector('[data-vn-full-close]').addEventListener('click',()=>{
+    next();
+    (player.querySelector('[data-vn-next]:not(:disabled)') || player).focus({preventScroll:true});
+  });
   // 무대(대사창 포함)를 한 번 누르면 한 줄만 넘긴다. 버튼·입력·열린 패널 안의 클릭은 제 일만 한다.
   // 인물 그림도 넘김이다(11/10 사용자 결정). 인물 행동 메뉴는 주민 창·행동하기에서 연다.
-  player.querySelector('[data-vn-stage]').addEventListener('click',e=>{
+  player.addEventListener('click',e=>{
+    if(!e.target.closest('[data-vn-stage],.vn-dialogue'))return;
     if(!e.target.closest('[data-vn-actor]') && e.target.closest('button,a,input,select,textarea,label,summary,details,dialog,form,[data-stage-panel],[data-person],.speech-card'))return;
     next();
   });
@@ -322,8 +327,11 @@ function mount() {
 }
 document.addEventListener('DOMContentLoaded',mount);
 document.addEventListener('htmx:afterSwap',mount);
-document.addEventListener('htmx:beforeSwap',e=>{
-  if(e.detail.target?.id==='meeting') { const old=document.querySelector('#meeting'); scenes.get(old)?.dispose(); currentScene=null; }
+document.addEventListener('htmx:beforeCleanupElement',e=>{
+  const scene=scenes.get(e.detail.elt);
+  if(!scene)return;
+  scene.dispose();
+  if(currentScene===scene)currentScene=null;
 });
 document.addEventListener('keydown',e=>{
   if(e.defaultPrevented || e.isComposing || e.repeat || ![' ','Enter'].includes(e.key) || document.querySelector('dialog[open]'))return;
@@ -375,7 +383,7 @@ document.addEventListener('click',event=>{
 /* Button hover tips: the text comes from each button's title (UI_TIPS). Draw it in-page so it shows the same on every OS. */
 let tipBox=null,tipOwner=null;
 function hideTip(){ if(tipOwner?.dataset.tipTitle!==undefined){tipOwner.title=tipOwner.dataset.tipTitle;delete tipOwner.dataset.tipTitle;} tipOwner=null; tipBox?.setAttribute('hidden',''); }
-function showTip(owner){
+function showTip(owner,pointer){
   if(tipOwner===owner)return; hideTip();
   // Modal dialogs sit in the top layer above an in-page box, so they keep the native title tooltip.
   const textValue=owner.getAttribute('title'); if(!textValue || owner.closest('dialog'))return;
@@ -383,15 +391,26 @@ function showTip(owner){
   tipOwner=owner; owner.dataset.tipTitle=textValue; owner.removeAttribute('title');
   tipBox.textContent=textValue; tipBox.hidden=false;
   const box=owner.getBoundingClientRect(), width=tipBox.offsetWidth, height=tipBox.offsetHeight;
-  const top=box.top-height-8>=4 ? box.top-height-8 : box.bottom+8;
-  tipBox.style.left=`${Math.max(4,Math.min(innerWidth-width-4,box.left+box.width/2-width/2))+scrollX}px`;
-  tipBox.style.top=`${top+scrollY}px`;
+  const actor=owner.matches('[data-vn-actor]');
+  const x=actor && pointer ? pointer.clientX : box.left+box.width/2;
+  const above=actor ? (pointer?.clientY ?? box.bottom) : box.top;
+  const below=actor && pointer ? pointer.clientY : box.bottom;
+  const top=above-height-8>=4 ? above-height-8 : below+8;
+  tipBox.style.left=`${Math.max(4,Math.min(document.documentElement.clientWidth-width-4,x-width/2))}px`;
+  tipBox.style.top=`${Math.max(4,Math.min(innerHeight-height-4,top))}px`;
 }
 const tipTarget=e=>e.target.closest?.('button[title],label[title],button[data-tip-title],label[data-tip-title]');
-document.addEventListener('pointerover',e=>{const owner=tipTarget(e); if(owner)showTip(owner); else if(tipOwner && !tipOwner.contains(e.target))hideTip();});
+document.addEventListener('pointerover',e=>{const owner=tipTarget(e); if(owner && e.pointerType!=='touch')showTip(owner,e);});
+document.addEventListener('pointerout',e=>{
+  if(tipOwner?.contains(e.target) && !tipOwner.contains(e.relatedTarget))hideTip();
+});
+document.addEventListener('pointercancel',hideTip);
+window.addEventListener('blur',hideTip);
 document.addEventListener('focusin',e=>{const owner=tipTarget(e); if(owner && owner.matches(':focus-visible'))showTip(owner); else hideTip();});
 document.addEventListener('focusout',hideTip);
 document.addEventListener('pointerdown',hideTip);
+document.addEventListener('scroll',hideTip,true);
+window.addEventListener('resize',hideTip);
 document.addEventListener('htmx:beforeSwap',hideTip);
 
 /* Notebook marks: one press saves through the existing notebook form (all entries, same PUT path).

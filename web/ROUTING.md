@@ -1,5 +1,13 @@
 # 웹 라우팅
 
+## PR #422 후속 화면 보완
+
+`meeting.html`의 `command-feedback`은 기존 명령 거부 응답과 `game.js`의 전송 실패 안내를 표시한다. `vn-stage-slot`·`game.css`는 머리글·안내·무대·출처 높이를 분리한다. PC 게임 메뉴 버튼은 머리글에 두며, `ui-stage.js`는 화면 교체 때 이전 버튼과 이벤트를 정리한다. 모바일은 무대 → 대사 → 읽기 조작 → 행동판 순서다.
+
+`claim_cards.html`은 `record_comparison.html`을 공유한다. 판 중 진술표는 필터 다음, 목록 위에 비교·선택 해제를 두고 창 안에서 고정한다. 종료 공개 기록·classic은 기존 목록 아래 위치를 유지한다. `record_tools.js`가 비교 결과를 같은 창 안으로 스크롤한다. 선택값과 기존 명령 요청은 바뀌지 않는다.
+
+`ui_help.html`의 `help-body`만 스크롤하며 제목·닫기는 별도 행이다. `theme.css`가 기본 화면과 확대 화면의 최대 높이를 제한한다. `ui-vn.js`는 포인터 이탈·창 초점 이탈·스크롤 때 설명 상자를 닫고, 실제 화면 제거 때만 읽기 상태를 정리한다. 버튼 설명은 `server/api/template_tags.py`의 기존 사전을 사용한다.
+
 계정 화면은 `accounts.css`, VN 무대·정보 창은 `game.css`, 종료 탭·조회 상태·설문 완료 및 단독 복기는 `result.css`의 금색·한지 표현을 사용한다. 복기·단서 조회 상태는 `end_lookup.html`에서 기존 상태와 재시도 컨트롤을 함께 표시한다. 검토 브랜치는 같은 게임 URL의 기본 PC 화면에 하단 전체 너비 대사창과 오른쪽 위 행동판을 표시한다.
 
 대사창과 행동판의 맞닿는 위치는 `game.css`의 무대 안 행동판 시작 위치에서 계산한다. 같은 파일의 `#stage-actions #utterance-input` 스타일이 ON 입력과 해석 카드에 적용된다.

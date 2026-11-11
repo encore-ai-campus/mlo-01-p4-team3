@@ -9,6 +9,7 @@ import argparse
 import hashlib
 import json
 import math
+import re
 from collections import defaultdict
 from dataclasses import replace
 from datetime import datetime
@@ -182,6 +183,36 @@ def _game_rows(gid: str, es: list[dict], audit: dict, source: str, user: str | N
     return rows
 
 
+def _fill_policy_versions(es: list[dict]) -> tuple[list[dict], bool]:
+    """웹 판은 봉투 `npc_policy_versions`가 비어 있다(게임 메타에 기록하지 않음, 결정 payload에만 버전이 있음).
+
+    비어 있으면 진실 이벤트의 역할 명단(플레이어 제외)과 결정의 정책 버전(`-fallback` 접미사 제외)으로 채운다.
+    판 안 결정 버전이 둘 이상이면 섞인 판이라 거부한다. 이미 채워진 판은 그대로 둔다.
+    """
+    if any(e.get('npc_policy_versions') for e in es):
+        return es, False
+    truth = next((e for e in es if e.get('event_type') == 'truth_revealed'), None)
+    versions = {e['payload']['policy_version'].removesuffix('-fallback')
+                for e in es if e.get('event_type') == 'decision'}
+    if truth is None or not versions:
+        raise ValueError('정책 버전 추정 불가(진실·결정 없음)')
+    if len(versions) != 1:
+        raise ValueError('판 안 정책 버전 혼합')
+    version = versions.pop()
+    mapping = {npc: version for npc in truth['payload']['roles'] if npc != PLAYER_ID}
+    return [dict(e, npc_policy_versions=mapping) for e in es], True
+
+
+# 이 모듈이 직접 던지는 고정 검사 문구. 사유 키에는 이 문구만 넣는다.
+_CHECK_MESSAGES = frozenset(re.findall(r"raise ValueError\('([^']+)'\)", Path(__file__).read_text(encoding='utf-8')))
+
+
+def _invalid_reason(exc: Exception) -> str:
+    """제외 사유 키. 파싱 예외 메시지에는 입력값(시각·열거값 등)이 섞일 수 있어 고정 검사 문구만 붙인다."""
+    msg = str(exc)
+    return f'invalid:{type(exc).__name__}' + (f':{msg}' if msg in _CHECK_MESSAGES else '')
+
+
 def human_rows(games: list[dict], consent: set[str], deleted: set[str]) -> tuple[list[TrainingRow], dict]:
     """학습용 내보내기(`ut_export training`)의 사람 판을 학습 행으로 바꾼다.
 
@@ -189,7 +220,8 @@ def human_rows(games: list[dict], consent: set[str], deleted: set[str]) -> tuple
     밤 재학습 전체를 멈추지 않고 그 판만 사유별로 뺀다. 정책 버전은 판마다 하나여야 하고 판끼리는 달라도 된다.
     `results`는 쓴 판의 실제 승자(시험 세트 마을 승률 계산용).
     """
-    audit = dict(games=len(games), used_games=0, excluded={}, policy_versions={}, results={})
+    audit = dict(games=len(games), used_games=0, excluded={}, policy_versions={}, results={},
+                 policy_versions_inferred=0)
     rows = []
 
     def skip(reason):
@@ -217,6 +249,7 @@ def human_rows(games: list[dict], consent: set[str], deleted: set[str]) -> tuple
                 raise ValueError('판 ID 불일치')
             for raw in es:
                 serde.from_jsonable(EventEnvelope, raw)
+            es, inferred = _fill_policy_versions(es)
             version = policy_signature(es[0])
             if any(policy_signature(e) != version for e in es):
                 raise ValueError('판 안 정책 버전 혼합')
@@ -224,14 +257,15 @@ def human_rows(games: list[dict], consent: set[str], deleted: set[str]) -> tuple
             converted = _game_rows(game['game_id'], es, game_audit, 'human', user, contiguous=False)
             if converted:
                 validate_rows(converted)
-        except (ValueError, KeyError, TypeError, AttributeError):
-            skip('invalid')
+        except (ValueError, KeyError, TypeError, AttributeError) as exc:
+            skip(_invalid_reason(exc))
             continue
         if not converted:
             skip('incomplete' if game_audit['excluded_incomplete_games'] else 'no_town_rows')
             continue
         winner = next(e['payload'].get('winner') for e in es if e['event_type'] == 'game_ended')
         audit['used_games'] += 1
+        audit['policy_versions_inferred'] += int(inferred)
         audit['policy_versions'][version] = audit['policy_versions'].get(version, 0) + 1
         audit['results'][game['game_id']] = winner
         rows.extend(converted)

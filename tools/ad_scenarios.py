@@ -44,7 +44,7 @@ def _uniform(seed, *parts):
 def _world(scenario):
     def campaign(name, billing, bid, budget, rates):
         cid = "syn:" + name
-        creatives = [Creative(cid + f":cr{i}", cid, "evaluation", "evaluation", "/static/ads/eval.png",
+        creatives = [Creative(cid + f":cr{i}", cid, "evaluation", "evaluation", "/static/promo/eval.png",
                               "/ads/landing/" + cid + f":cr{i}") for i in range(len(rates))]
         c = Campaign(cid, "syn:advertiser", name, list(AdSlot), billing, bid, budget, Targeting(),
                      DAY, DAY, CampaignStatus.ACTIVE, creatives)

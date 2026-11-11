@@ -130,7 +130,9 @@
   --accent: #68471f;
   --muted: var(--ui-paper-muted);
   --help-inset: clamp(16px,4vw,28px);
-  padding: 0 var(--help-inset) var(--help-inset);
+  max-height: min(calc(100% - 32px), calc(100dvh - 32px));
+  padding: 0;
+  overflow: hidden;
   color-scheme: light;
   color: var(--text);
   border-color: var(--ui-gold-deep);
@@ -139,17 +141,31 @@
   overflow-wrap: anywhere;
   word-break: keep-all;
 }
+:is(.account-page,.game-page) #ui-help[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
 :is(.account-page,.game-page) #ui-help .help-heading {
-  position: sticky;
-  z-index: 1;
-  top: 0;
-  flex-wrap: nowrap;
-  margin-bottom: 16px;
-  padding: 12px 0;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 12px var(--help-inset);
   border-bottom: 1px solid #aa8953;
   background: #f1e3c6;
 }
+:is(.account-page,.game-page) #ui-help .help-body {
+  min-width: 0;
+  min-height: 0;
+  padding: 0 var(--help-inset) var(--help-inset);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+:is(.account-page,.game-page) #ui-help .help-body:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: -4px;
+}
 :is(.account-page,.game-page) #ui-help .help-heading h2 {
+  overflow-wrap: normal;
   color: var(--text);
   font-size: clamp(1.25rem,4vw,1.65rem);
 }

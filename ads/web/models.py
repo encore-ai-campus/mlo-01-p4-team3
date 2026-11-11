@@ -79,7 +79,7 @@ class Creative(models.Model):
     title = models.CharField(max_length=200)
     body = models.TextField()
     image_path = models.CharField(max_length=300,
-        validators=[RegexValidator(r"^/static/ads/[A-Za-z0-9_/-]+\.[A-Za-z0-9]+$",
+        validators=[RegexValidator(r"^/static/(promo|ads)/[A-Za-z0-9_/-]+\.[A-Za-z0-9]+$",
                                    "사이트 안 광고 이미지 기본 경로를 입력하세요.")])
 
     def clean(self):

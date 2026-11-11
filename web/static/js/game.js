@@ -23,11 +23,17 @@ document.addEventListener("htmx:beforeSwap", (event) => {
 });
 function showCommandRetry(event) {
   if (!event.detail.elt.closest(".command-form")) return;
-  const status = document.getElementById("command-status");
+  const status = document.querySelector("[data-command-feedback]") || document.getElementById("command-status");
   if (status) status.textContent = "응답을 확인하지 못했습니다. 같은 행동을 다시 보내거나 화면을 새로고침해 주세요.";
 }
 document.addEventListener("htmx:sendError", showCommandRetry);
 document.addEventListener("htmx:timeout", showCommandRetry);
+document.addEventListener("htmx:responseError", showCommandRetry);
+document.addEventListener("htmx:beforeSend", event => {
+  if (!event.detail.elt.closest(".command-form")) return;
+  const feedback = document.querySelector("[data-command-feedback]");
+  if (feedback) feedback.textContent = "";
+});
 
 /* 심문은 공개된 진술 선택과 지난 밤만 사용한다. 최종 판정은 기존 엔진이 맡는다. */
 function validateInterrogation(form) {

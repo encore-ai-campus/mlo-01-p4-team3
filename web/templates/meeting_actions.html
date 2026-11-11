@@ -94,6 +94,6 @@
   {% endfor %}
 </div>
 {% if 'divine' in vm.allowed_actions %}
-  <button type="button" class="divination-submit" data-divination-submit hidden disabled>점치기</button>
+  <button type="button" class="divination-submit" data-divination-submit hidden disabled{% tip "action:divine" %}>점치기</button>
 {% endif %}
 </section>

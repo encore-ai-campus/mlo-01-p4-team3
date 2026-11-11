@@ -94,7 +94,7 @@ class WorkerStackTests(TransactionTestCase):
             slots=["lobby_banner"], billing="cpm", max_bid_mw=10_000_000, daily_budget_mw=10_000_000,
             start_date="2026-11-01", end_date="2026-12-01")
         Creative.objects.create(creative_id="stack-cr", campaign=campaign, title="ad", body="ad",
-                                image_path="/static/ads/example.png")
+                                image_path="/static/promo/example.png")
         service = get_service()
         service.clock = lambda: BASE_MS
         out = service.serve(AdRequest(rid, AdSlot.LOBBY_BANNER, "stack", AdContext()))

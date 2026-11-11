@@ -17,6 +17,7 @@
     </div>
     {% if stage_records %}<p class="section-guide record-claim-guide">비교할 진술 두 개를 선택해 주세요.</p>{% endif %}
     <p class="record-count" data-record-count></p>
+    {% if stage_records %}{% include "meeting_parts/record_comparison.html" %}{% endif %}
     {% if end_records %}
       <p data-record-empty role="status" hidden>조건에 맞는 진술이 없습니다.</p>
       <p data-record-hidden-selection role="status" hidden></p>
@@ -35,8 +36,6 @@
         </li>
       {% endfor %}
     </ul>
-    {% if stage_records %}</div>{% endif %}
-    <div class="record-compare-tools"><span data-record-selection-count>선택한 진술 0개</span>{% if end_records %}<p data-record-selection-guide role="status">비교할 진술 2개를 선택해 주세요.</p>{% endif %}<button type="button" data-record-compare{% tip "record_compare" %} disabled>{% if end_records %}선택한 진술 비교{% else %}두 진술 비교{% endif %}</button><button type="button" data-record-clear{% tip "record_clear" %}>선택 해제</button></div>
-    <div class="record-comparison" data-record-comparison hidden><h3>선택한 두 진술</h3><div data-record-comparison-lines></div><p class="section-guide">공개된 문장을 나란히 보여 줍니다. 진위나 모순 여부는 직접 판단하세요.</p></div>
+    {% if stage_records %}</div>{% else %}{% include "meeting_parts/record_comparison.html" %}{% endif %}
   </section>
 {% endif %}
