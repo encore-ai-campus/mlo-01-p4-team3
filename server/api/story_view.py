@@ -43,13 +43,36 @@ def preset_choices(preset_ids):
     return base, challenges
 
 
-def review_context(output, content):
+REVIEW_KIND_LABELS = {"night_plan": "밤 계획", "react": "캐묻기 답"}   # 11/11 사용자 승인
+REVIEW_EMPTY = "이 판에는 남은 행동 기록이 없습니다."                      # 11/11 사용자 승인
+REVIEW_TIMELINE_TITLE = "그날 마을 사람들이 한 일과 그 까닭"              # 11/11 사용자 승인
+
+
+def _evidence_label(ref, public, names):
+    """근거 ID를 화면 이름표로 바꾼다(공개 기록의 화자만 쓴다). 11/11 사용자 승인."""
+    from engine.domain.model import EvidenceType
+    from engine.domain.review import evidence_speaker
+    if ref.type is EvidenceType.VOTE:
+        return "투표 기록"
+    if ref.type is EvidenceType.MAJORITY:
+        return "다수 의견"
+    if ref.type is EvidenceType.CONTRADICTION:
+        return "어긋난 두 진술"
+    speaker = evidence_speaker(ref, public)
+    who = names.get(speaker, speaker) if speaker else "누군가"
+    suffix = {EvidenceType.TELL: "기색", EvidenceType.DIVINATION: "점괘 공개"}.get(ref.type, "진술")
+    return f"{who}의 {suffix}"
+
+
+def review_context(output, content, public=None):
     """종료된 판의 복기 DTO를 화면 행으로 바꾼다. 정체·비밀은 판이 끝난 뒤에만 이 함수까지 온다.
 
-    이유 코드가 있는 행동만 '행동의 이유'에 보인다. 행동 시점 이유(review_trace, E-10-10)가 연결되기 전에는
-    비어 있어 그 영역을 숨긴다.
+    행동 목록은 NPC 결정마다 한 행(E-10-10 `review_trace`): 날짜·단계, 행동, 대상, 템플릿 해설, 이유 코드, 근거.
+    승리 확률 그래프는 `win_prob`(D-10-03)가 없으므로 그리지 않는다(11/10 사용자 결정 D3).
     """
+    from .template_tags import ACTION_LABELS, phase_label
     names = {c.npc_id: c.name_ko for c in content.characters}
+    names.setdefault("mudang", "무당")
     secret_titles = {s.secret_id: s.title_ko for s in content.secrets}
     clue_texts = {c.clue_id: c.text_ko for c in content.grudge_clues}
     residents = [{"name": names.get(npc_id, npc_id), "role": ROLE_LABELS.get(role, ""),
@@ -57,11 +80,40 @@ def review_context(output, content):
                   "secret": secret_titles.get(output.secrets.get(npc_id, ""), "")}
                  for npc_id, role in output.roles.items() if role is not Role.MUDANG]
     residents.sort(key=lambda row: (not row["possessed"], row["name"]))
-    reasons = [{"actor": names.get(item.actor, item.actor), "reason_codes": list(item.reason_codes)}
-               for item in output.timeline if item.reason_codes]
+    reasons = []
+    for item in output.timeline:
+        target = item.victim if item.kind == "night_plan" else item.target_npc
+        reasons.append({"item_id": item.item_id, "when": f"{item.day}일째 {phase_label(item.phase)}",
+                        "actor": names.get(item.actor, item.actor),
+                        "action": REVIEW_KIND_LABELS.get(item.kind) or ACTION_LABELS.get(item.kind, item.kind),
+                        "target": names.get(target, target) if target else "",
+                        "text": item.text, "reason_codes": list(item.reason_codes),
+                        "evidence": [_evidence_label(ref, public, names) for ref in item.evidence]})
     return {"review": {"game_id": output.game_id, "residents": residents, "reasons": reasons,
+                       "timeline_title": REVIEW_TIMELINE_TITLE, "empty_text": REVIEW_EMPTY,
                        "clues": [clue_texts.get(clue_id, "이전 콘텐츠 버전의 수집 단서")
                                  for clue_id in output.clues_gained]}}
+
+
+NARRATION_TITLE = "마을 사람들의 속마음"            # 11/11 사용자 승인 문구(review_text_draft.md 2절)
+NARRATION_WAIT = "족제비가 해설을 다듬고 있어요…"
+
+
+def narration_context(output, content, game_id):
+    """복기 해설 LLM 요약(E-10-01)의 화면 행. 생성 중이면 2초 폴링, 끝나면 요약 대상 NPC를 모두 보인다.
+
+    LLM 문장이 검사를 통과한 NPC는 그 문장, 거부돼 템플릿으로 대체된 NPC는 템플릿 문장을 같은 순서로 보인다
+    (11/11 사용자 결정 "속마음 칸 ①"). 기능 꺼짐·전부 대체면 묶음 자체를 숨긴다(실패를 알리지 않는다, 설계 7절).
+    문장별 LLM 표시는 두지 않는다(11/11 사용자 결정).
+    """
+    names = {c.npc_id: c.name_ko for c in content.characters}
+    rows = [n for n in output.npcs if n.sentences]
+    any_llm = any(n.source == "llm" for n in rows)
+    npcs = [{"name": names.get(n.npc, n.npc), "sentences": [s.text for s in n.sentences]}
+            for n in rows] if any_llm else []
+    return {"narration": {"pending": not output.final, "npcs": npcs, "show": (not output.final) or bool(npcs),
+                          "url": f"/games/{game_id}/review/narration", "title": NARRATION_TITLE,
+                          "wait": NARRATION_WAIT}}
 
 
 def progress_context(progress):

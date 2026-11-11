@@ -56,7 +56,7 @@ class KkachiAnnouncement(SimpleTestCase):
         """받침 없는 이름은 '가', 있는 이름은 '이'. 화자 까치, 까치 그림. 발표 줄 바로 뒤에 피해자 전신 컷 줄."""
         view = view_with([disappearance(0, "gwabu", Place.WELL), disappearance(1, "hunjang", Place.HOME, Slot.EVENING)],
                          day=2)
-        first, first_full, second, second_full = announcement_lines(view)
+        first, first_full, second, second_full, _cue = announcement_lines(view)   # 끝은 2일째 신뢰 단서(test_trust_cue)
         self.assertEqual(first.text, "깍깍! 간밤 한밤에 과부가 사라졌어요. 과부의 짚신이 우물가에서 발견됐대요!")
         self.assertEqual(second.text, "깍깍! 간밤 초저녁에 훈장이 사라졌어요. 훈장의 짚신이 훈장의 집에서 발견됐대요!")
         self.assertEqual([(line.day, line.phase) for line in (first, second)], [(1, "morning"), (2, "morning")])
@@ -74,7 +74,7 @@ class KkachiAnnouncement(SimpleTestCase):
     def test_morning_without_disappearance(self):
         """실종 기록이 없는 아침은 '아무도 사라지지 않았어요'."""
         lines = announcement_lines(view_with([disappearance(0, "gwabu", Place.WELL)], day=2))
-        self.assertEqual(len(lines), 3)   # 1일째 발표·전신 컷, 2일째 실종 없음(전신 컷 없음)
+        self.assertEqual(len(lines), 4)   # 1일째 발표·전신 컷, 2일째 실종 없음(전신 컷 없음)·신뢰 단서
         self.assertEqual(lines[2].text, "깍깍! 간밤엔 아무도 사라지지 않았어요.")
         self.assertEqual((lines[2].day, lines[2].full, lines[2].sprite_id), (2, False, "mascot:kkachi"))
 

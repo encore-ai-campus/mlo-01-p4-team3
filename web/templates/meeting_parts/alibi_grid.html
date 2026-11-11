@@ -1,0 +1,38 @@
+{% comment %}행적표(11/10 사용자 결정·문구 확정): 공개 진술을 밤·시간대·장소 칸에 모은 읽기 전용 요약. 판정·초상·진술 카드 속성(data-record-*, .vn-source)은 쓰지 않는다.
+   VN은 meeting.html의 무대 패널(in_panel, 창 제목이 "행적표"라 섹션 제목을 두지 않음), classic은 records.html 진술표 앞(11/11 사용자 결정).{% endcomment %}
+{% if alibi_grid %}
+<section class="{% if not classic_mode %}record-panel {% endif %}alibi-grid"{% if in_panel %} aria-labelledby="meeting-alibi-grid-dialog-title"{% else %} aria-labelledby="alibi-grid-title"{% endif %} data-grid>
+  {% if not in_panel %}<h2 id="alibi-grid-title">행적표</h2>{% endif %}
+  <p class="section-guide">공개된 진술을 밤·시간대·장소별로 모았습니다. 누가 어디 있었는지는 직접 판단하세요.</p>
+  <p class="section-guide">같은 칸에 있어도 함께 있었다는 뜻은 아닙니다.</p>
+  {% if alibi_grid_duo %}<p class="section-guide">목격된 사람도 씐 자일 수 있습니다.</p>{% endif %}
+  {% for night in alibi_grid %}
+    <details class="alibi-grid-night" data-grid-night="{{ night.night }}"{% if night.open %} open{% endif %}>
+      <summary>{{ night.label }}</summary>
+      <div class="alibi-grid-scroll" tabindex="0" role="region" aria-labelledby="alibi-grid-caption-{{ night.night }}">
+        <table class="alibi-grid-table">
+          <caption id="alibi-grid-caption-{{ night.night }}">{{ night.caption }}</caption>
+          <thead><tr><td></td><th scope="col">초저녁</th><th scope="col">한밤</th></tr></thead>
+          <tbody>
+            {% for row in night.rows %}
+              <tr data-grid-place="{{ row.place_key }}">
+                <th scope="row">{{ row.place_label }}</th>
+                {% for cell in row.cells %}
+                  <td data-grid-slot="{{ cell.slot }}"{% if cell.crime %} class="alibi-grid-crime"{% endif %}>
+                    {% if cell.crime %}<p class="alibi-grid-crime-label">{{ cell.crime }}</p>{% endif %}
+                    {% if cell.people %}<ul class="alibi-grid-people">
+                      {% for person in cell.people %}<li data-grid-person="{{ person.npc_id }}"{% if person.faded %} class="alibi-grid-before"{% endif %}><strong>{{ person.name }}</strong>{% if person.shown %} <span class="alibi-grid-sources">({% for source in person.shown %}<span data-grid-claim="{{ source.claim_id }}"{% if source.corrected == 'before' %} class="alibi-grid-before"{% endif %}>{{ source.text }}</span>{% if not forloop.last %}, {% endif %}{% endfor %})</span>{% endif %}</li>{% endfor %}
+                    </ul>{% endif %}
+                    {% for line in cell.others %}<p class="alibi-grid-other{% if line.corrected == 'before' %} alibi-grid-before{% endif %}" data-grid-claim="{{ line.claim_id }}">{{ line.text }}</p>{% endfor %}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if night.no_claim %}<p class="alibi-grid-no-claim">{{ night.no_claim }}</p>{% endif %}
+    </details>
+  {% endfor %}
+</section>
+{% endif %}

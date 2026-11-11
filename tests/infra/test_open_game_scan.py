@@ -16,10 +16,10 @@ class OpenGameScan(unittest.TestCase):
         repository = object.__new__(MongoGameRepository)
         repository.collection = collection
         history = ['finished', 'first', 'deleted', 'second', 'session-game']
-        self.assertEqual(repository.unfinished_open_games(history), ['first', 'second'])
+        self.assertEqual(repository.unfinished_open_game_ids(history), ['first', 'second'])
         self.assertEqual(calls, [({'_id': {'$in': history}, 'state.meta.session_id': None,
                                  'state.result': None}, {'_id': 1})])
-        self.assertEqual(repository.unfinished_open_games([]), [])
+        self.assertEqual(repository.unfinished_open_game_ids([]), [])
         self.assertEqual(len(calls), 1)
 
     def test_service_uses_projected_reader_instead_of_per_game_load(self):
@@ -28,9 +28,8 @@ class OpenGameScan(unittest.TestCase):
         calls = []
         def no_load(game):
             raise AssertionError('individual game load must not run')
-        repository = SimpleNamespace(load=no_load, unfinished_open_games=lambda ids:
-                                     calls.append(ids) or ['199'])
-        service = SimpleNamespace(repository=repository,
+        repository = SimpleNamespace(load=no_load)
+        service = SimpleNamespace(repository=repository, find_open_games=lambda ids: calls.append(ids) or ['199'],
                                   progress=SimpleNamespace(load=lambda player: SimpleNamespace(game_ids=history)))
         self.assertEqual(GameService.unfinished_open_games(service, 'player'), ['199'])
         self.assertEqual(calls, [history])
@@ -44,6 +43,6 @@ class OpenGameScan(unittest.TestCase):
                 raise KeyError(game)
             session, result = states[game]
             return SimpleNamespace(meta=SimpleNamespace(session_id=session), result=result), None
-        service = SimpleNamespace(repository=SimpleNamespace(load=load), progress=SimpleNamespace(
+        service = SimpleNamespace(repository=SimpleNamespace(load=load), find_open_games=None, progress=SimpleNamespace(
             load=lambda player: SimpleNamespace(game_ids=['finished', 'first', 'missing', 'session', 'last'])))
         self.assertEqual(GameService.unfinished_open_games(service, 'player'), ['first', 'last'])

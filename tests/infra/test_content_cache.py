@@ -140,5 +140,25 @@ class SharedBundleGameTests(unittest.TestCase):
         self.assertEqual(serde.to_jsonable(self.content), serde.to_jsonable(BUNDLE))
 
 
+class RuleVersionPolicy(unittest.TestCase):
+    """rule-0.8(A-10-01 1번): rule-0.7 이하 판은 무당 의심 상한을 decision-1 값으로 고정한 정책 엔진을 따로 쓴다."""
+
+    def test_legacy_rule_gets_fixed_q_max(self):
+        from engine.domain import params
+        shared = ContentPolicyEngine()
+        new = shared._for(BUNDLE, params.RULE_PARAMS_VERSION)
+        old = shared._for(BUNDLE, "rule-0.7.decision-1")
+        self.assertIsNot(new, old)
+        self.assertIsNone(new.policy.villager.q_max)
+        self.assertEqual(old.policy.villager.q_max, params.LEGACY_DECISION.q_max)
+        self.assertIs(shared._for(BUNDLE, "rule-0.6.decision-1"), old)
+        self.assertIs(shared._for(BUNDLE), new)
+
+    def test_policy_factory_without_q_max(self):
+        """q_max를 받지 않는 정책 공급자도 이전 판에서 그대로 동작한다."""
+        shared = ContentPolicyEngine(make_policy=lambda content: RuleV0Policy(content))
+        self.assertIsNone(shared._for(BUNDLE, "rule-0.7.decision-1").policy.villager.q_max)
+
+
 if __name__ == "__main__":
     unittest.main()

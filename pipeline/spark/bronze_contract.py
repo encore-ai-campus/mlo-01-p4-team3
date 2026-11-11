@@ -71,7 +71,7 @@ def normalize(raw: str, *, topic: str, key: str | None, partition: int, offset: 
         if timestamp.tzinfo is None or timestamp.utcoffset() != timedelta(0):
             raise BronzeContractError('occurred_at_utc')
         if envelope.source is DataSource.HUMAN:
-            if not envelope.player_pseudonym or not envelope.session_id:
+            if not envelope.player_pseudonym or envelope.session_id == "":
                 raise BronzeContractError('human_identity_missing')
         elif envelope.player_pseudonym is not None or envelope.session_id is not None:
             raise BronzeContractError('nonhuman_identity')

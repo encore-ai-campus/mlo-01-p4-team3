@@ -41,6 +41,12 @@ try:  # E-09-10: 기본 memory(웹 프로세스 2개·1개 모두), Redis는 선
 except ChannelLayerConfigError as error:
     raise ImproperlyConfigured(str(error)) from None
 LOGIN_URL = "/accounts/login"
+# 직접 입력창(문장 → 의도 해석 → 카드) 표시·수신(11/11 사용자 결정). 기본 off: 화면에서 입력창을 그리지 않고
+# `POST /games/{id}/utterances…`는 403 `free_text_disabled`. on이면 기존 동작 그대로(발표·재학습 시연용).
+_free_text = os.environ.get("PALDO_FREE_TEXT_INPUT", "off").strip().lower()
+if _free_text not in {"on", "off"}:
+    raise ImproperlyConfigured("PALDO_FREE_TEXT_INPUT은 on 또는 off여야 합니다.")
+FREE_TEXT_INPUT = _free_text == "on"
 SIGNUP_INVITE_CODE = os.environ.get("PALDO_SIGNUP_INVITE_CODE", "")
 GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
 INTENT_PARSER_FACTORY = ""  # 기준선 사용 시 "intent.parser.BaselineIntentParser"를 지정한다.
@@ -56,6 +62,17 @@ MODEL_CANARY_RATIO = float(os.environ.get("PALDO_MODEL_CANARY_RATIO", "0") or 0)
 SUSPICION_MODEL_VERSION = os.environ.get("PALDO_SUSPICION_MODEL_VERSION", "").strip()
 # 신뢰된 로컬 모델 산출물 폴더(`models.pkl`·`report.json`, D-08-04 인계 형식). 상대 경로는 웹 작업 폴더 기준.
 SUSPICION_MODEL_ROOT = os.environ.get("PALDO_MLRUNS_ROOT", "mlruns")
+# 복기 해설 LLM 요약(E-10-01). 생성 서버(OpenAI 호환) 주소, 예: 게임 서버에서 생성 기기로 가는 터널의 로컬 끝
+# `http://127.0.0.1:<port>`. 비어 있으면 기능 꺼짐(작업 미등록·템플릿 해설만·Kanana 표기 숨김). 실제 값은 저장소 밖.
+REVIEW_LLM_URL = os.environ.get("PALDO_REVIEW_LLM_URL", "").strip()
+# 복기 해설 작업 마감(초). 지나면 템플릿으로 확정한다.
+REVIEW_DEADLINE_S = float(os.environ.get("PALDO_REVIEW_DEADLINE_S", "180") or 180)
+# NPC 대사 LLM(E-11-13). 생성 서버 주소(상한 스위치): 비어 있으면 모드와 관계없이 꺼짐(템플릿 대사만·Kanana 표기 숨김).
+# 보통 복기와 같은 터널 끝이다. 실제 값은 저장소 밖.
+NPC_LLM_URL = os.environ.get("PALDO_NPC_LLM_URL", "").strip()
+# 운영 설정 문서(`<접두어>ops_settings`의 `npc_llm`)가 없을 때 쓰는 모드: off | polish | live. 코드 기본값 off.
+# 재배포 없이 바꿀 때는 관리 명령 `npc_llm_mode`를 쓴다.
+NPC_LLM_MODE = os.environ.get("PALDO_NPC_LLM_MODE", "off").strip()
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
@@ -92,6 +109,7 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
                   "django.template.context_processors.request",
                   "django.contrib.auth.context_processors.auth",
                   "django.contrib.messages.context_processors.messages",
+                  "server.paldo_web.ui_flags.ui_flags",
               ], "libraries": {"meeting": "server.api.template_tags", "ad_slots": "server.api.ad_slot_tags"}}}]
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "server.accounts.validators.PasswordRulesValidator"},

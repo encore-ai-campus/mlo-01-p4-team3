@@ -2,7 +2,9 @@
 
 B-09-02 어댑터 수신: `composition._configure_parser` → 설정 `INTENT_PARSER_FACTORY` → `paldo_web.intent.make_bert_parser()` → D의 `intent.bert.BertIntentParser(run_dir)` → 기존 `ObservedIntentParser` → `InteractionService`다. 로컬 아티팩트 경로는 `INTENT_BERT_RUN_DIR`(환경 `PALDO_INTENT_BERT_RUN_DIR`)로 받는다. 기본 팩토리는 빈 문자열로 유지한다. 운영 URL·DTO 변경은 없으며 인수 범위와 실제 가중치 미검증은 [증빙](../docs/evidence/B-09-02.md)에 구분한다.
 
-B-09-02 사전 부하: 기존 `tools/perf/api_bench.py --web-processes 2 --intent-every 1` → `tests/multiproc_bench.py` → 시험 전용 `asgi_bench_app.py` → `asgi_bench.py`·`intent_load.py`다. 시험 해석기는 `--intent-factory`로 고르고 기존 해석기 포트·계측을 사용한다. 공개 화면 버전으로 기존 `POST /games/<id>/utterances` 해석 후 같은 시도를 `cancel`하며 명령은 실행하지 않는다. 보조 기록은 시험 접두어의 Mongo `b_interactions`에 저장하고 종료 때 삭제한다. 운영 URL·DTO·화면·설정 기본값은 변경하지 않는다. 실제 엔진 부하 옵션은 D-08-01과 연결 대기다. [증빙](../docs/evidence/B-09-02.md)
+B-09-02 사전 부하: `tools/perf/api_bench.py --web-processes 2 --actual-baseline --intent-every 1` → `tests/multiproc_bench.py` → 시험 전용 `asgi_bench_app.py` 및 `asgi_bench.py`·`intent_load.py`다. 분리 부하는 `--serve-dir`의 `client.json`으로 간격을 넘기고 `--load-dir`에서 실제 엔진용 `drive_load`를 호출해 `load.json`을 반환한다. 시험 해석기는 서버의 `--intent-factory`로 고른다. 공개 화면 버전으로 기존 `POST /games/<id>/utterances` 해석 후 같은 시도를 `cancel`하며 해석 후보를 명령으로 실행하지 않는다. 보조 기록은 시험 접두어의 Mongo `b_interactions`에 저장하고 종료 때 삭제한다. 운영 URL·DTO·화면·설정 기본값은 유지한다. [증빙](../docs/evidence/B-09-02.md)
+
+직접 입력창 표시(11/11 사용자 결정): 설정 `PALDO_FREE_TEXT_INPUT`(기본 off) → `paldo_web/settings.py` `FREE_TEXT_INPUT` → 템플릿 값 `paldo_web/ui_flags.py` → `meeting.html`·`meeting_classic.html`의 `utterance_input.html` 포함 여부. 끄면 `api/interactions.py`가 해석·카드 반응 요청을 403 `free_text_disabled`로 거부한다. 해석기·기록 경로는 그대로다.
 
 B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인을 맡는다. CSS 공통 토큰은 web/static/css/theme.css다.
 
@@ -34,7 +36,7 @@ B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_benc
 
 운영 팩토리는 `server.infra.game_factory.build_game_service` → `paldo_web/mongo.py` 실행 자원 → `infra/interaction_store.py` 보조 저장을 연결한다. B-09-01: 판 시작 모델 버전 고정·카나리아 규칙은 응용 `app/model_versions.py`, 레지스트리 조회는 인프라 `infra/model_registry.py`(C-09-01 전 임시 `StaticModelRegistry`), 폴백 지표는 `paldo_web/engine_metrics.py`, 업데이트 내역 패널은 `game.html`의 `update_history.html`(태그 `update_history`). B-06-02 시험 조립과 분리되며 설정·실행 순서는 [웹 모듈](../docs/modules/web.md#사용법)에 있다.
 
-`POST /admin/sessions` → `app/test_sessions.py`는 최신 엔진의 합성 규칙 버전(`rule-0.7.decision-1`)을 회차와 판 메타에 그대로 전달한다. `tests/test_sessions.py`가 등록·시작과 잘못된 버전 거부를 확인한다.
+`POST /admin/sessions` → `app/test_sessions.py`는 최신 엔진의 합성 규칙 버전(`rule-0.8.decision-2`, 11/10 A-10-01 rule-0.8)을 회차와 판 메타에 그대로 전달한다. `tests/test_sessions.py`가 등록·시작과 잘못된 버전 거부를 확인한다.
 
 dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결과는 [B-06-02 증빙](../docs/evidence/B-06-02.md)에 둔다.
 
@@ -62,6 +64,8 @@ dev `f24f6a8` 반영 후에도 이 경로와 API 계약은 같다. 재검증 결
 
 B-07-02의 수첩·설문 쓰기와 `GET /games/{id}`의 공개 화면 복원은 `InteractionService.participant_records`를 거친다. 저장 계획은 보조 저장의 `effects`, 공개 표시 값은 `state`에 보존하고 C 게임 아웃박스의 동일 키 재생으로 복구한다. C의 별도 `outbox_publisher`가 `paldo.player`로 발행한다. API·이벤트 형식은 그대로다.
 
+B-11-01에서 `participant_context`는 저장된 설문 완료 여부와 건너뜀 여부만 화면에 더한다. `submit_survey`는 첫 htmx 저장에 `survey_done.html`, 동일 재전송에 기존 204·`HX-Refresh`를 반환한다. HTML 기본 폼 성공은 같은 판 `#survey`로 303, JSON은 기존 204를 반환한다.
+
 실제 검증은 `tests/mongo_participant.py` → 기존 HTTP → B 응용·실제 Mongo → C 발행기 → TLS Kafka 수신이다. `tests/participant_worker.py`는 새 프로세스 재시작·경합, `tests/kafka_local.py`는 로컬 격리 TLS 브로커 준비 전용이다. 운영 진입점은 이 시험 모듈을 사용하지 않는다.
 
 - [전체 API 계약](../docs/contracts/api.md)
@@ -81,7 +85,7 @@ B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 �
 
 ## B-08-01 결과·진척·결말 선택
 
-`GET /players/me/progress`는 기존 JSON DTO를 유지하고 HTML 요청에는 로비용 `progress.html`, htmx 요청(판 종료 화면 단서 탭)에는 `progress_panel.html` 조각을 반환한다. `GET /games/{id}/review`도 htmx 요청이면 종료 뒤 `review_panel.html`(B-10-01 복기 탭)을, 그 밖에는 `ReviewOutput` JSON을 반환한다. `story_view.py`는 본인 진척의 수집 단서만 문안과 연결한다. 홈의 일반 판·고정 회차 폼은 `ending_choice.html`에서 열린 결말을 고르고 `POST /games`의 폼·JSON을 같은 `StartGameInput`으로 처리한다. 일반 판의 `start_token`·초상·공개 프리셋 경로는 유지한다. 종료된 `GET /games/{id}`·명령 응답은 기존 회의 조각에 `game_end.html`(결과 `game_result.html`·복기·단서 탭)을 포함한다. 공개 결과는 `PlayerView`, 선택 결말·콘텐츠 버전은 소유권 확인한 메타에서 읽는다.
+`GET /players/me/progress`는 기존 JSON DTO를 유지하고 HTML 요청에는 로비용 `progress.html`, htmx 요청(판 종료 화면 단서 탭)에는 `progress_panel.html` 조각을 반환한다. `GET /games/{id}/review`도 htmx 요청이면 종료 뒤 `review_panel.html`(B-10-01 복기 탭)을, 그 밖에는 `ReviewOutput` JSON을 반환한다. 복기를 처음 열 때 응용 `GameService._ensure_narration`이 해설 작업을 멱등 등록하고(E-10-01, 기능 꺼짐이면 생략), `GET /games/{id}/review/narration`은 htmx면 `review_narration.html` 폴링 조각, 그 밖에는 `ReviewNarrationOutput` JSON이다. 계층: 표현 `server/api/views.py`·`story_view.narration_context` → 응용 `server/app/review_narration.py`(등록·조회·처리, 포트 `Narrator`·`ReviewJobStore`) → 도메인 `llm/review_narration.py`. 인프라: 생성 서버 HTTP `server/infra/kanana_narrator.py`, 저장 `server/infra/review_jobs.py`(`<접두어>review_jobs`), 조립 `server/infra/game_factory.py`(`attach_narration`), 작업 프로세스 `manage.py review_worker`, 실측 `manage.py review_narration_perf`. 설정 `PALDO_REVIEW_LLM_URL`·`PALDO_REVIEW_DEADLINE_S`. NPC 대사 LLM(E-11-13, 기본 꺼짐): 회의 화면(`views._meeting_response`)이 응용 `server/app/npc_lines.py`의 `prepare`로 그날 회의 발언 다듬기 작업을 멱등 등록하고, 켜져 있을 때만 `#meeting`에 선조회 속성을 붙인다. 경로 `GET /games/{id}/lines`·`POST /games/{id}/lines/{speech_id}/shown`은 표현 `server/api/npc_lines_view.py` → 응용 `npc_lines` → 도메인 `llm/npc_polish.py`. 인프라: 작업 저장 `server/infra/npc_line_jobs.py`(`<접두어>npc_line_jobs`), 캐묻기 실시간 렌더러 `server/infra/kanana_line_renderer.py`, 모드 읽기 `server/infra/ops_settings.py`(`<접두어>ops_settings`), 조립 `game_factory.attach_npc_lines`, 작업 프로세스 `manage.py npc_line_worker`, 모드 명령 `manage.py npc_llm_mode`. 설정 `PALDO_NPC_LLM_URL`·`PALDO_NPC_LLM_MODE`. `story_view.py`는 본인 진척의 수집 단서만 문안과 연결한다. 홈의 일반 판·고정 회차 폼은 `ending_choice.html`에서 열린 결말을 고르고 `POST /games`의 폼·JSON을 같은 `StartGameInput`으로 처리한다. 일반 판의 `start_token`·초상·공개 프리셋 경로는 유지한다. 종료된 `GET /games/{id}`·명령 응답은 기존 회의 조각에 `game_end.html`(결과 `game_result.html`·복기·원한 단서·공개 기록·설문 탭)을 포함한다. 공개 결과는 `PlayerView`, 선택 결말·콘텐츠 버전은 소유권 확인한 메타에서 읽는다.
 
 B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
 

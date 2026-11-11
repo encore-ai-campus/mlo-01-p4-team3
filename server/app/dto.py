@@ -139,10 +139,23 @@ class SubmitSurveyInput:
 
 @dataclass
 class ReviewItem:
-    speech_id: str
+    """복기 항목 1개 = NPC 결정 1개(E-10-10 `review_trace`). 회의 말·캐묻기 답은 발언과 연결되고 투표·밤은 발언이 없다."""
+    item_id: str                              # "d<seq>"
     actor: str
+    day: int
+    phase: str
+    kind: str                                 # suspect|defend|point_contradiction|explain|silence|vote|night_plan|react
     reason_codes: list[str]
     evidence: list[EvidenceRef]
+    phrase_id: str                            # 템플릿 해설 문구 ID rv_<대표 이유 코드>
+    text: str = ""                            # 템플릿 해설 문장(문구가 없으면 빈 문자열)
+    speech_id: Optional[str] = None
+    target_npc: Optional[str] = None
+    reaction: Optional[str] = None
+    executor: Optional[str] = None
+    victim: Optional[str] = None
+    policy_version: str = ""
+    vote_explain: Optional[list] = None       # 모델 추정 기여(선택). 지금은 늘 None
 
 
 @dataclass
@@ -154,6 +167,29 @@ class ReviewOutput:
     timeline: list[ReviewItem]
     explanation_job_id: Optional[str] = None  # LLM 복기 해설(확장)
     clues_gained: list[str] = field(default_factory=list)
+
+
+@dataclass
+class NarrationSentence:
+    """복기 해설 한 문장과 인용한 복기 항목 ID."""
+    cite: str                                 # 인용한 복기 항목 ID("d<seq>")
+    text: str
+
+
+@dataclass
+class NarrationNpc:
+    """NPC 한 명의 해설 문장 묶음. source는 "llm" 또는 "template"."""
+    npc: str
+    sentences: list[NarrationSentence]
+    source: str                               # "llm" | "template"
+
+
+@dataclass
+class ReviewNarrationOutput:
+    """복기 해설 LLM 요약 조회(E-10-01, `GET /games/{id}/review/narration`). final이면 다시 바뀌지 않는다."""
+    status: str                               # off|queued|running|done|failed|timeout
+    final: bool
+    npcs: list[NarrationNpc] = field(default_factory=list)
 
 
 @dataclass

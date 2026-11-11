@@ -196,7 +196,8 @@ class StyleExamples(unittest.TestCase):
         """실제 콘텐츠(content/bundle_v1.json) 인물의 긴 말투 설명도 의도한 계열로 잡힌다(11/6, 대장장이·과부 오분류 수정)."""
         from llm import prompt
         bundle = json.loads((ROOT / "content" / "bundle_v1.json").read_text(encoding="utf-8"))
-        want = {"훈장": "하오체", "주모": "하게체", "대장장이": "거친", "머슴": "더듬", "약초꾼": "노인", "과부": "단정"}
+        want = {"훈장": "하오체", "주모": "하게체", "대장장이": "거친", "머슴": "더듬", "약초꾼": "노인", "과부": "단정",
+                "사냥꾼": "하게체", "스님": "합장"}  # 사냥꾼·스님은 E-08-02(7·8인 판 추가 주민)
         for c in bundle["characters"]:
             fam = next(p[0][0] for p in prompt.STYLE_PROFILES if prompt.style_profile(c["speech_style"]) == p[1:])
             self.assertEqual(fam, want[c["name_ko"]], c["speech_style"])

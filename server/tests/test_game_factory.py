@@ -276,7 +276,9 @@ class AssemblyUnits(unittest.TestCase):
         self.assertIsInstance(kwargs["suspicion"].model, FakeSuspicionModel)
         self.assertNotIn("collection_prefix", kwargs)
         self.assertIs(built, service)
-        runtime.database.__getitem__.assert_called_once_with(INTERACTIONS)
+        runtime.database.__getitem__.assert_any_call(INTERACTIONS)
+        runtime.database.__getitem__.assert_any_call("review_jobs")
+        self.assertIsNotNone(built.narration)
         self.assertIsInstance(built.interactions.renderer, TemplateLineRenderer)
         self.assertIsInstance(built.interactions.store, MongoInteractionStore)
         self.assertIs(built.interactions.parser, parser)
@@ -286,7 +288,8 @@ class AssemblyUnits(unittest.TestCase):
         runtime = MagicMock(collection_names=["t_games", "t_progress", "t_content", "t_b_test_sessions", "t_b_ad_identities"])
         runtime.factory_service.return_value.interactions = None
         build_from_runtime(runtime, MagicMock())
-        runtime.database.__getitem__.assert_called_once_with("t_" + INTERACTIONS)
+        runtime.database.__getitem__.assert_any_call("t_" + INTERACTIONS)
+        runtime.database.__getitem__.assert_any_call("t_review_jobs")
         with self.assertRaises(ValueError):
             build_from_runtime(MagicMock(collection_names=["other"]), MagicMock())
 

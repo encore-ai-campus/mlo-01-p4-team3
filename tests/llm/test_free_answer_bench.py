@@ -214,7 +214,7 @@ with open(state_path + ".log", "a", encoding="utf-8") as f:
     f.write(" ".join(args) + "\n")
 if args[:2] == ["pod", "list"]:
     print(json.dumps(st["pods"]))
-elif args[:2] == ["pod", "delete"]:
+elif args[:2] in (["pod", "delete"], ["remove", "pod"]):
     if st.get("fail_delete", 0) > 0:
         st["fail_delete"] -= 1
         json.dump(st, open(state_path, "w", encoding="utf-8"))
@@ -288,6 +288,13 @@ class WatchPodsTest(unittest.TestCase):
         self.assertEqual(self.calls().count("pod delete a"), 3)
         self.set_pods([{"id": "b", "name": "paldo-e1112-s0-e-1", "costPerHr": 0.89}], fail_delete=5)
         self.assertFalse(self.ctl.delete_pod("b", sleep=lambda s: None))
+
+    def test_delete_cmd_override(self):
+        """설치된 runpodctl의 삭제 하위 명령이 다르면 `--delete-cmd`로 바꾼다(11/11, 0단계 확인 대비)."""
+        ctl = wp.RunpodCtl(shlex.join(self.ctl.bin), delete_cmd="remove pod")
+        self.set_pods([{"id": "a", "name": "paldo-e1112-s0-e-1", "costPerHr": 0.89}])
+        self.assertTrue(ctl.delete_pod("a", sleep=lambda s: None))
+        self.assertEqual(self.calls(), ["remove pod a"])
 
     def test_gone_pod_stays_in_ledger(self):
         led = {}
@@ -456,6 +463,11 @@ class RunPodShTest(unittest.TestCase):
         self.assertLess(time.monotonic() - t0, 20)
         self.assertIn("시간 초과", r.stdout)
         self.assertEqual(self.calls(), ["pod delete pod-test"])
+
+    def test_delete_subcommand_override(self):
+        """RUNPODCTL_DELETE로 삭제 하위 명령을 바꾼다(예: "remove pod")."""
+        r = self.run_sh({"STAGE": "s0", "MAX_MINUTES": "20", "RUNPODCTL_DELETE": "remove pod"}, "true")
+        self.assertEqual((r.returncode, self.calls()), (0, ["remove pod pod-test"]))
 
     def test_delete_retry_and_give_up(self):
         r = self.run_sh({"STAGE": "s1", "MAX_MINUTES": "90"}, "true", fails=2)
