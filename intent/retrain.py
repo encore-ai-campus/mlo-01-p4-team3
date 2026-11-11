@@ -191,7 +191,7 @@ def _local_registry(folder, artifact, report):
 
 
 def main(argv=None):
-    """Replay reviewed human data through KoELECTRA, the D gate and isolated MLflow."""
+    """Replay reviewed human data and either record locally or return a report to the C runner."""
     from intent.baseline import load_examples
     from intent.bert import BertIntentParser
     from intent.finetune import TOKENIZER_VERSION, _sha, main as finetune
@@ -203,7 +203,9 @@ def main(argv=None):
     for name in ("freeze", "train-labels", "eval-labels", "contexts", "tombstones", "cache", "out"):
         parser.add_argument("--" + name, required=True, type=Path)
     parser.add_argument("--data-version", required=True)
-    parser.add_argument("--registry-dir", type=Path)
+    registration = parser.add_mutually_exclusive_group()
+    registration.add_argument("--registry-dir", type=Path, help="record the result in isolated SQLite MLflow")
+    registration.add_argument("--report-only", action="store_true", help="leave MLflow recording to the C-10-01 runner")
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--fixture", action="store_true")
@@ -216,9 +218,11 @@ def main(argv=None):
     if args.fixture:
         if not args.data_version.startswith("fixture:"):
             parser.error("fixture mode requires fixture provenance")
-    elif not args.registry_dir or not (re.fullmatch(r"delta:[A-Za-z0-9_.-]+@\d+", args.data_version)
-                                       or FREEZE_DATA_VERSION.fullmatch(args.data_version)):
-        parser.error("real runs require a Delta snapshot or freeze manifest version and a private isolated registry directory")
+    elif not (re.fullmatch(r"delta:[A-Za-z0-9_.-]+@\d+", args.data_version)
+              or FREEZE_DATA_VERSION.fullmatch(args.data_version)):
+        parser.error("real runs require a Delta snapshot or freeze manifest version")
+    elif not (args.registry_dir or args.report_only):
+        parser.error("real runs require a private isolated registry directory or --report-only")
     elif (FREEZE_DATA_VERSION.fullmatch(args.data_version)
           and ((not (args.freeze / "manifest.json").is_file()) or args.data_version != freeze_data_version(args.freeze))):
         parser.error("freeze data version must equal the sha256 of --freeze manifest.json")

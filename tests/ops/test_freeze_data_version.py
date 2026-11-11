@@ -35,13 +35,14 @@ class FreezeDataVersionTests(unittest.TestCase):
     def test_version_is_the_manifest_file_sha256(self):
         self.assertEqual(freeze_data_version(self.freeze), self.version)
 
-    def intent_error(self, data_version, freeze=None):
+    def intent_error(self, data_version, freeze=None, registry_args=None):
         """재학습 명령의 인자 검사 오류 문장을 돌려준다. 무거운 학습 전에 멈춘다."""
         root = Path(self.tmp.name)
         argv = ["--freeze", str(freeze or self.freeze), "--train-labels", str(root / "t.jsonl"),
                 "--eval-labels", str(root / "e.jsonl"), "--contexts", str(root / "c.jsonl"),
                 "--tombstones", str(self.tombstones), "--cache", str(root / "cache"), "--out", str(self.out),
-                "--registry-dir", str(root / "registry"), "--data-version", data_version, "--first-model"]
+                "--data-version", data_version, "--first-model"]
+        argv += ["--registry-dir", str(root / "registry")] if registry_args is None else registry_args
         stderr = io.StringIO()
         with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
             intent_retrain.main(argv)
@@ -85,6 +86,19 @@ class FreezeDataVersionTests(unittest.TestCase):
             validate(self.config(intent="freeze:" + "0" * 64))
         with self.assertRaisesRegex(ValueError, "versioned_delta_input_required"):
             validate(self.config(intent="freeze:" + "A" * 64))
+
+    def test_runner_owns_registration_for_report_only_replay(self):
+        """C accepts the same registration-free argument that D can execute."""
+        config = self.config(intent=self.version)
+        config["models"]["intent"]["train"].append("--report-only")
+        validate(config)
+        self.assertIn("new private output directory",
+                      self.intent_error(self.version, registry_args=["--report-only"]))
+        self.assertIn("sha256 of --freeze manifest.json",
+                      self.intent_error("freeze:" + "0" * 64, registry_args=["--report-only"]))
+        self.assertIn("registry directory or --report-only", self.intent_error(self.version, registry_args=[]))
+        self.assertIn("not allowed with argument",
+                      self.intent_error(self.version, registry_args=["--report-only", "--registry-dir", str(self.out)]))
 
     def test_runner_rejects_freeze_without_a_freeze_folder_argument(self):
         config = self.config(intent=self.version)

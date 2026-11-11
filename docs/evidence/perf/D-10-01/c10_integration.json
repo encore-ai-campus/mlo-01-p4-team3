@@ -1,0 +1,36 @@
+{
+  "task": "D-10-01",
+  "commit": "d9af0d6cedaa633eccb83408054750e813d60af9",
+  "generated_at": "2026-11-11T06:38:23Z",
+  "source": "ml.lifecycle_demo, intent.retrain --report-only, ops.mlflow.retrain.record_candidate",
+  "metrics": {
+    "canary_games": {
+      "value": 30,
+      "unit": "판"
+    },
+    "control_games": {
+      "value": 116,
+      "unit": "판"
+    },
+    "injected_fallback": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "version_pin_verified": {
+      "value": 1,
+      "unit": "회"
+    },
+    "registered_models": {
+      "value": 0,
+      "unit": "개"
+    },
+    "rejected_runs": {
+      "value": 1,
+      "unit": "회"
+    },
+    "intent_seconds": {
+      "value": 149.438,
+      "unit": "s"
+    }
+  }
+}
