@@ -1,6 +1,6 @@
 {
   "version": "review_lines_v1",
-  "status": "승인(11/11 사용자, review_text_draft.md 초안 그대로)",
+  "status": "승인(11/11 사용자, review_text_draft.md 초안 그대로). 단 rv_abstain_uncertain은 승인 대기(11/11 투표 기권 rule-0.9)",
   "note": "이유 코드별 템플릿 해설(E-10-10). 키는 rv_<이유 코드>, 값은 변형 목록. 자리표시자는 {actor} {target} {victim} {executor}만 쓴다. 괄호 조사는 화면에서 받침에 맞춰 고른다.",
   "lines": {
     "rv_baseline_silence": [
@@ -119,6 +119,9 @@
     ],
     "rv_skip_trusted_mudang": [
       "{actor}은(는) 믿을 만한 무당을 후보에서 빼고 {target}에게 표를 던졌습니다."
+    ],
+    "rv_abstain_uncertain": [
+      "{actor}은(는) 누가 더 수상한지 가리기 어려워 표를 던지지 않았습니다."
     ]
   }
 }

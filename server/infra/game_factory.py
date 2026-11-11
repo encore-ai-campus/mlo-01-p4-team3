@@ -21,7 +21,7 @@ from typing import Callable
 
 from engine.domain import params
 from engine.domain.content import ContentBundle
-from engine.domain.engine import PaldoEngine, home_alibi
+from engine.domain.engine import PaldoEngine, abstain_margin_of, home_alibi
 from engine.domain.npc import RuleV0Policy
 from engine.ports import RenderRequest, RenderResult, RenderStatus
 from server.app.interactions import InteractionService
@@ -56,30 +56,37 @@ class ContentPolicyEngine:
     규칙 v0은 인물 성향·동선을 콘텐츠에서 찾으므로 판이 고정한 콘텐츠 버전으로 정책을 만든다.
     rule-0.7 이하로 시작한 판(`home_alibi` 거짓)은 무당 의심 상한을 `params.LEGACY_DECISION.q_max`로 고정한
     정책을 따로 만들어, rule-0.8 배포 뒤에도 판 메타 버전의 수치로 이어 간다(A-10-01 1번).
+    기권 규칙 판(rule-0.9~, `abstain_margin_of`)은 마을 주민 기권 문턱을 준 정책을 따로 만든다.
     """
 
     def __init__(self, make_policy: Callable[[ContentBundle], object] = RuleV0Policy, model_version='unknown'):
         """콘텐츠별 엔진 캐시와 관측용 모델 버전을 보관한다."""
         self.make_policy = make_policy
         self.model_version = model_version
-        self._engines: dict[str, PaldoEngine] = {}
+        self._engines: dict[tuple, PaldoEngine] = {}
         self._lock = threading.Lock()
 
-    def _policy(self, content: ContentBundle, legacy: bool):
-        if not legacy:
+    def _policy(self, content: ContentBundle, legacy: bool, abstain_margin=None):
+        kw = {}
+        if legacy:
+            kw["q_max"] = params.LEGACY_DECISION.q_max
+        if abstain_margin is not None:
+            kw["abstain_margin"] = abstain_margin
+        if not kw:
             return self.make_policy(content)
         try:
-            return self.make_policy(content, q_max=params.LEGACY_DECISION.q_max)
-        except TypeError:   # q_max를 받지 않는 정책 공급자(시험용 등)는 그대로 쓴다
+            return self.make_policy(content, **kw)
+        except TypeError:   # q_max·abstain_margin을 받지 않는 정책 공급자(시험용 등)는 그대로 쓴다
             return self.make_policy(content)
 
     def _for(self, content: ContentBundle, rule_version: str = "") -> PaldoEngine:
         legacy = bool(rule_version) and not home_alibi(rule_version)
-        key = (content.content_version, legacy)
+        margin = abstain_margin_of(rule_version) if rule_version else None
+        key = (content.content_version, legacy, margin)
         with self._lock:
             engine = self._engines.get(key)
             if engine is None:
-                engine = self._engines[key] = PaldoEngine(self._policy(content, legacy))
+                engine = self._engines[key] = PaldoEngine(self._policy(content, legacy, margin))
             return engine
 
     def new_game(self, meta, deps):

@@ -31,7 +31,7 @@
       <h2 id="published-votes-title">공개된 투표</h2>
       <ul>
         {% for vote in published_votes %}
-          <li data-vote-round="{{ vote.round }}">{{ vote.day }}일째 {% if vote.round == 'runoff' %}결선{% else %}본투표{% endif %} · {{ vote.voter|display_name }} → {{ vote.target|display_name }}</li>
+          <li data-vote-round="{{ vote.round }}">{{ vote.day }}일째 {% if vote.round == 'runoff' %}결선{% else %}본투표{% endif %} · {{ vote.voter|display_name }} → {% if vote.target %}{{ vote.target|display_name }}{% else %}표 안 던짐{% endif %}</li>
         {% endfor %}
       </ul>
     </section>
@@ -113,7 +113,7 @@
       <h2 id="published-votes-title">공개된 투표</h2>
       <ul>
         {% for vote in published_votes %}
-          <li data-vote-round="{{ vote.round }}">{{ vote.day }}일째 {% if vote.round == 'runoff' %}결선{% else %}본투표{% endif %} · {{ vote.voter|display_name }} → {{ vote.target|display_name }}</li>
+          <li data-vote-round="{{ vote.round }}">{{ vote.day }}일째 {% if vote.round == 'runoff' %}결선{% else %}본투표{% endif %} · {{ vote.voter|display_name }} → {% if vote.target %}{{ vote.target|display_name }}{% else %}표 안 던짐{% endif %}</li>
         {% endfor %}
       </ul>
     </section>

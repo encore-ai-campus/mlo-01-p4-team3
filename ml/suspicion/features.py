@@ -141,7 +141,8 @@ def engine_rows(events: list[dict]) -> tuple[list[TrainingRow], dict]:
                     raise ValueError('결정 정책과 봉투 정책 불일치')
                 audit['decisions_checked'] += 1
                 active = (roster | {PLAYER_ID}) - {r.locked for r in obs.public.locks} - {r.victim for r in obs.public.disappearances}
-                invalid_target = p['kind'] in ('vote', 'suspect', 'defend') and p['target'] not in active
+                abstained = p['kind'] == 'vote' and p['target'] is None   # 기권(rule-0.9~)
+                invalid_target = p['kind'] in ('vote', 'suspect', 'defend') and not abstained and p['target'] not in active
                 audit['legal_action_violations'] += int(invalid_target or legal_problem(obs, p['kind'], p['target'], p['actor']) is not None)
                 if obs.private.role is Role.VILLAGER:
                     audit['town_decisions_checked'] += 1

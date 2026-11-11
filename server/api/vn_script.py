@@ -36,6 +36,10 @@ SPEAKER_DIVINATION = "무당"
 VOTE_SUMMARY = {"main": "투표 결과 — {tally}", "runoff": "결선 결과 — {tally}"}
 VOTE_TALLY_ITEM = "{name} {count}표"
 RUNOFF_NOTICE = "{names}의 표가 같아 결선 투표로 넘어갑니다."
+# 투표 기권(rule-0.9, 11/11 사용자 결정 ②안) 문장. 승인 대기. 이전 규칙 판에는 기권표가 없어 나오지 않는다.
+VOTE_ABSTAIN_TARGET = "표 안 던짐"                        # 개별 표 줄에서 기권한 사람의 대상 자리
+VOTE_ABSTAIN_LINE = "{names}은(는) 표를 던지지 않았소."    # 득표 요약 뒤 기권자 공개
+VOTE_TALLY_NONE = "아무도 표를 던지지 않았소"             # 모두 기권해 득표가 없을 때 요약 자리
 # 아침 실종 발표는 까치가 말한다(11/10 사용자 승인). 발표 줄은 밤 화면이 아니면 단계와 상관없이 까치 그림을 세운다.
 SPEAKER_KKACHI = "까치"
 KKACHI_MASCOT = "mascot:kkachi"
@@ -279,6 +283,8 @@ def speech_display_text(view: PlayerView, speech, stored: str) -> str:
 def _tally(view: PlayerView, votes) -> list[tuple[str, int]]:
     counts: dict[str, int] = {}
     for vote in votes:
+        if vote.target is None:                      # 기권표(rule-0.9~)는 세지 않는다
+            continue
         counts[vote.target] = counts.get(vote.target, 0) + 1
     order = list(counts)
     return sorted(counts.items(), key=lambda item: (-item[1], order.index(item[0])))
@@ -306,9 +312,17 @@ def _result_lines(view: PlayerView) -> list[VNLine]:
             tally = _tally(view, votes)
             summary = ", ".join(VOTE_TALLY_ITEM.format(name=_name(view, npc), count=n) for npc, n in tally)
             lines.append(VNLine(f"vote-summary-{day}-{rnd}", day, phase, SPEAKER_VOTE,
-                                VOTE_SUMMARY.get(rnd, VOTE_SUMMARY["main"]).format(tally=summary), result=True))
+                                VOTE_SUMMARY.get(rnd, VOTE_SUMMARY["main"]).format(tally=summary or VOTE_TALLY_NONE),
+                                result=True))
+            abstained = [_name(view, v.voter) for v in votes if v.target is None]
+            if abstained:
+                lines.append(VNLine(f"vote-abstain-{day}-{rnd}", day, phase, SPEAKER_VOTE,
+                                    attach_particles(VOTE_ABSTAIN_LINE.format(names=join_names(abstained))),
+                                    result=True))
             text = VOTE_LINE.format(day=day, round=VOTE_ROUND_KO.get(rnd, rnd),
-                                    votes=", ".join(f"{_name(view, v.voter)} → {_name(view, v.target)}" for v in votes))
+                                    votes=", ".join(f"{_name(view, v.voter)} → "
+                                                    f"{VOTE_ABSTAIN_TARGET if v.target is None else _name(view, v.target)}"
+                                                    for v in votes))
             lines.append(VNLine(f"vote-{day}-{rnd}", day, phase, SPEAKER_VOTE, text, result=True))
             if rnd == "main" and day in has_runoff:
                 top = tally[0][1]

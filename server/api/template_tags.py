@@ -46,7 +46,8 @@ def asset_attribution():
 
 ACTION_LABELS = {"advance": "다음으로", "suspect": "의심 제기", "defend": "변호", "silence": "지켜보기",
                  "interrogate": "캐묻기", "point_contradiction": "모순 지적", "reveal_divination": "점괘 공개",
-                 "vote": "투표", "divine": "점치기", "explain": "설명하기"}
+                 "vote": "투표", "divine": "점치기", "explain": "설명하기",
+                 "abstain": "이번엔 투표하지 않기"}   # abstain: 11/11 투표 기권(rule-0.9), 문구 승인 대기
 
 
 @register.filter
@@ -149,6 +150,7 @@ UI_TIPS = {
     "action:silence": "이번 차례에는 말하지 않습니다",
     "action:reveal_divination": "내 점괘를 모두에게 공개합니다",
     "action:vote": "이 인물에게 감금 표를 던집니다",
+    "action:abstain": "이번 투표에서는 아무에게도 표를 던지지 않습니다",   # 승인 대기(11/11 투표 기권)
     "action:divine": "오늘 밤 이 인물을 점칩니다",
     "action:advance": "다음 단계로 넘어갑니다",
     "open_resume": "중단하지 않고 진행 중인 판으로 돌아갑니다",

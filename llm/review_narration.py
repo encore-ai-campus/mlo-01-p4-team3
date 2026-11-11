@@ -81,6 +81,7 @@ REASON_DESC = {
     "model_fallback_timeout": "평소 판단 기준대로 표를 던졌다",
     "model_fallback_invalid": "평소 판단 기준대로 표를 던졌다",
     "skip_trusted_mudang": "믿을 만한 무당은 후보에서 빼고 표를 던졌다",
+    "abstain_uncertain": "누가 더 수상한지 가리기 어려워 표를 던지지 않았다",   # 11/11 투표 기권(rule-0.9)
 }
 
 KIND_KO = {"suspect": "의심 제기", "defend": "감싸기", "point_contradiction": "모순 지적", "explain": "해명",

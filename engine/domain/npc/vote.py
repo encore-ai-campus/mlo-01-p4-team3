@@ -213,6 +213,17 @@ def safe_pool(obs: ObservationSnapshot, b: Beliefs, candidates: Iterable[str]) -
     return kept, codes
 
 
+def uncertain(scores: dict[str, float], margin: Optional[float]) -> bool:
+    """기권 판정(rule-0.9~): 후보가 둘 이상이고 1·2위 점수 차가 margin 이하인가. margin이 None이면 항상 거짓.
+
+    점수는 확률 단위(0~1)로 넘긴다. 규칙 v0 투표는 의심도(0~100)를 100으로 나눠 같은 문턱을 쓴다.
+    """
+    if margin is None or len(scores) < 2:
+        return False
+    top, second = sorted(scores.values(), reverse=True)[:2]
+    return top - second <= margin
+
+
 def _argmax(scores: dict[str, float], rng: random.Random) -> tuple[str, bool]:
     best = max(scores.values())
     tied = sorted(c for c, v in scores.items() if v == best)
@@ -221,10 +232,13 @@ def _argmax(scores: dict[str, float], rng: random.Random) -> tuple[str, bool]:
 
 def choose_target(obs: ObservationSnapshot, b: Beliefs, candidates: list[str], est: SuspicionEstimate,
                   temp: Optional[Temperament], rng: random.Random,
-                  q_max: Optional[float] = None) -> tuple[str, list[ReasonCode]]:
+                  q_max: Optional[float] = None,
+                  abstain_margin: Optional[float] = None) -> tuple[Optional[str], list[ReasonCode]]:
     """세 층을 차례로 적용해 (대상, 이유 코드)를 낸다. 의심 추정은 이미 성공한 상태(est)라고 본다.
 
-    `q_max`는 정책이 고정한 무당 의심 상한(이전 규칙 판용, `RuleV0Policy(q_max=...)`). 생략하면 `params.Q_MAX`."""
+    `q_max`는 정책이 고정한 무당 의심 상한(이전 규칙 판용, `RuleV0Policy(q_max=...)`). 생략하면 `params.Q_MAX`.
+    `abstain_margin`(rule-0.9~)을 주면 안전 층을 거친 후보의 1·2위 결정 점수 차가 그 이하일 때 대상 None(기권)과
+    `ABSTAIN_UNCERTAIN`을 낸다. 후보가 모두 빠진 폴백에서는 기권하지 않는다."""
     legal = [c for c in candidates if c != obs.observer]
     susp = combined_suspicion(weighted_probs(est, temp), b.trust_in_mudang, q_max)
     susp = {c: susp.get(c, 0.0) for c in legal}          # 후보에 없는 합법 대상(결선 등)은 0
@@ -236,6 +250,8 @@ def choose_target(obs: ObservationSnapshot, b: Beliefs, candidates: list[str], e
         target, tied = _argmax(susp, rng)
         codes.append(ReasonCode.FALLBACK_MAX_SUSPICION)
     else:
+        if uncertain({c: scores[c] for c in pool}, abstain_margin):
+            return None, [ReasonCode.ABSTAIN_UNCERTAIN] + codes   # 대표 이유(복기 문구)가 기권이 되게 맨 앞
         target, tied = _argmax({c: scores[c] for c in pool}, rng)
         plain = max(sorted(pool), key=lambda c: susp[c])  # 동조·잡음 없이 고른 대상
         if plain != target and expected.get(target, 0.0) > 0:
