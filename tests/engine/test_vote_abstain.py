@@ -181,9 +181,12 @@ class NpcAbstain(unittest.TestCase):
 
 
 class Rule08Bytes(unittest.TestCase):
-    """rule-0.8 판 바이트 회귀: 기권 규칙 추가 전(fd02936)과 같은 해시. 운영 조립 + FakeSuspicionModel + LogicBot."""
+    """rule-0.8 판 바이트 회귀: 기권 규칙이 없는 dev(a44dcc2, content-1.1)와 같은 해시. 운영 조립 + FakeSuspicionModel + LogicBot.
 
-    GOLDEN = "7635b6abf5cb0f0374d4be1ba138ad182fcc9e44d8400ebf607aec16bcea84e2"
+    콘텐츠가 바뀌면 해시도 바뀐다. 그때는 기권 규칙이 없는 커밋에서 같은 절차로 다시 구해 맞춘다(fd02936·content-1.0.1 때
+    7635b6ab…, 두 커밋에서 같았음)."""
+
+    GOLDEN = "0e9eb0d3ccbbc440ea0d17b9db8218bfa0ad2c3c73cb4358ec3827b8866713e9"
 
     def test_same_bytes(self):
         from server.infra.game_factory import ContentPolicyEngine
