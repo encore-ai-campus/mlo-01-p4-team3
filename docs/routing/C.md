@@ -48,6 +48,7 @@
 | 작업 | 위치 |
 |---|---|
 | C-08-02 작업 | 광고 집계·대사: pipeline/spark/ads_{silver,gold,reconcile}.py, ads_contract.py, ops/ad_probe.py. |
+| 광고 하루 집계 자동 실행(원장 → silver·gold → CTR 갱신) | 응용(흐름) `ops/ads_aggregate.sh`, 예약 `ops/paldo-ads-aggregate.{service,timer}`, 도메인 `pipeline/spark/ads_contract.py`(`ctr_cells`), 인프라 `pipeline/spark/ads_gold.py`(`ctr_cells.json`)·`ads/infra/mysql_ledger.py`(원장 읽기), 표현 `ads/manage.py ad_export_ledger`, 시험 `tests/contract/test_ads_aggregate.py` |
 
 ## C-08-03 작업 위치
 

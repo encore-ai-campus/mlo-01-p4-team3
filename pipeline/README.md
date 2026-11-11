@@ -82,4 +82,6 @@ spark-submit <외부 TLS·JAR 옵션> pipeline/spark/ads_reconcile.py --config "
 python -m unittest tests.contract.test_ads_pipeline -v
 ```
 
+하루 1회 자동 실행(11/11): ad-01의 `ops/ads_aggregate.sh`(systemd `ops/paldo-ads-aggregate.{service,timer}`, 매일 00:40 서울)가 silver(재판정 발행) → 환입 반영 대기(`ADS_REJUDGE_WAIT`, 기본 120초) → 원장 내보내기(`ads/manage.py ad_export_ledger`) → gold(`--export-optimization --reconcile-closed-days`: 운영 중에도 같은 시점을 비교하도록 대조를 확정 마감이 지난 귀속일로 좁힘, 불일치면 원장을 다시 내보내 1회 재시도) → `ctr_cells.json` → `ad_update ctr`를 이어 부른다. `--export-optimization`은 `ctr.json`(맥락 학습 행)·`bid.json`과 함께 `ad_update ctr` 칸 형식의 `ctr_cells.json`을 쓴다. 단계마다 `ads_aggregate_step` JSON 로그를 남기고, 실패하면 CTR 갱신을 하지 않는다. 마지막 성공 시각은 `paldo_ads_aggregate.prom` 지표 파일에 쓴다. 시험: `python -m unittest tests.contract.test_ads_aggregate`.
+
 `ops/ad_probe.py --execute`는 C가 만든 격리 합성 실행을 실제 내부 HTTP·MySQL로 검증한다. `ads_probe_snapshot.py`는 그 실행 ID/hash 전체를 공식 bronze와 대조한 뒤 별도 검증 Delta만 만든다. missing serve 주입은 이 복사본의 합성 양수 과금 한 건에만 허용한다. 공식 bronze는 바꾸지 않는다. 이 실행은 PM이 지정한 **D-08-02 7번의 D 제공 실행 ID를 대체하지 않는다**. 그 ID를 받은 뒤 같은 대사를 반복해야 C-08-02 3번을 닫을 수 있다.

@@ -193,3 +193,40 @@ def reconcile_rows(ledger_rows,silver):
     differences['duplicate']=sorted(set(differences['duplicate'])|duplicate_ids)
     return {'mismatches':sum(len(v) for v in differences.values()),'differences':differences,
             'ledger_net_mw':sum(r['amount_mw'] for r in confirmed),'delta_mw':sum(sum(v) for v in delta.values())}
+
+
+CTR_CELL_KEYS=('campaign_id','creative_id','slot','source','attribution_day','hour')
+
+
+def ctr_cells(rows,as_of_ms):
+    """확정 마감이 지난 날의 유효 노출·클릭된 노출을 `ad_update ctr` 칸으로 접는다(부하 시험 제외).
+
+    칸은 (캠페인, 소재, 지면, 출처, 귀속일, 시간)이고 serve 하나는 한 번만 센다. 클릭만 온 serve도
+    노출로 친다(gold `measures`와 같은 규칙). 맥락·귀속이 없는 행과 마감 전 날은 넣지 않는다."""
+    shown=defaultdict(set);clicked=defaultdict(set)
+    for row in rows:
+        day=row['attribution_day']
+        if (row['load_test'] or row['status']!='valid' or not day or row['hour'] is None or not row['serve_id']
+                or not row['campaign_id'] or not row['creative_id'] or closing_times(day)[1]>as_of_ms):
+            continue
+        cell=tuple(row[k] for k in CTR_CELL_KEYS)
+        shown[cell].add(row['serve_id'])
+        if row['topic']=='ad.click':clicked[cell].add(row['serve_id'])
+    return [dict(zip(CTR_CELL_KEYS,cell),valid_impressions=len(serves),clicked_impressions=len(clicked[cell]&serves))
+            for cell,serves in sorted(shown.items(),key=lambda item:tuple(str(v) for v in item[0]))]
+
+
+def ctr_snapshot(rows,as_of_ms,source_version):
+    """`ad_update ctr` 입력 봉투(계약 ads.md 4절): 확정 표시·출처 버전·관찰 시각·전체 칸."""
+    if not source_version:raise ValueError('source_version_required')
+    return {'finalized':True,'source_version':source_version,'as_of_ms':as_of_ms,'rows':ctr_cells(rows,as_of_ms)}
+
+
+def final_closed_scope(ledger_rows,rows,as_of_ms):
+    """대조 범위를 확정 마감이 지난 귀속일로 좁힌다(원장·silver 양쪽).
+
+    운영 중 하루 집계는 원장을 내보내는 순간에도 오늘 과금이 늘고 bronze 반영이 늦을 수 있다. 확정 마감이 지난
+    날은 새 과금이 생기지 않으므로(환입은 원래 귀속일 원장에 붙음) 이 범위만 대조하면 같은 시점을 비교한다."""
+    closed=lambda day:bool(day) and closing_times(day)[1]<=as_of_ms
+    return ([r for r in ledger_rows if closed(r['attribution_day'])],
+            [r for r in rows if closed(r['attribution_day'])])

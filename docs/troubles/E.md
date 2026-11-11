@@ -223,3 +223,10 @@
 - 원인: 시험 호스트는 새 프로세스로 Django를 불러온 뒤 첫 줄을 보내는데, 이 시작 대기와 제어 응답 대기가 같은 30초 한도였다. 16코어를 모두 바쁘게 만든 상태에서 시작 시간이 평소 약 1.7초에서 28~61초로 늘었다. 제어 응답(시계·스냅숏)은 부하 중에도 1ms 미만이었다.
 - 대응: 대기 한도를 시작 `STARTUP_TIMEOUT_S` 180초와 제어 `CONTROL_TIMEOUT_S` 30초로 나눴다(`tools/ad_traffic_sim.py`). 호스트가 죽으면 한도와 상관없이 바로 실패하는 동작과 시험의 판정 기준은 그대로다. 시작 대기가 180초를 쓰는지, 시간 초과와 호스트 종료가 서로 다른 오류인지 시험을 더했다.
 - 결과: 16코어 점유 상태에서 시작 60.79초·23.2초도 통과, 같은 부하에서 시험 모듈 전체 통과. 단독 실행 시간은 수정 전과 같은 수준(아래 PR 본문 수치).
+
+### C-08-02 광고 집계 결과가 CTR 갱신 입력과 이어지지 않음(E 보강)
+
+- 문제: 광고 서버 로그의 후보 CTR이 사전값(0.02) 그대로였고, 확정 집계(silver·gold)와 `ad_update ctr`가 모두 수동이라 한 번도 이어서 돈 적이 없었다(11/11 운영 확인).
+- 원인: ① gold `--ledger`·`--budgets` 입력을 만드는 명령이 시험 코드(`ops/ad_probe.py`, 합성 실행 범위) 안에만 있었다. ② `--export-optimization`의 `ctr.json`은 맥락 학습 행(`campaign_id`·`valid_impressions` 없음, 프리셋·승패로 칸이 쪼개짐)이라 `build_ctr`가 "invalid aggregate cell"로 거부한다. 이 경로를 잇는 시험이 없었다. ③ 단계를 순서대로 부르는 예약 작업이 없었다.
+- 대응: `ad_export_ledger` 명령(원장 전체·날짜별 일 예산), 같은 silver snapshot에서 `ctr_cells.json`을 쓰는 `ads_contract.ctr_cells`(확정 마감 지난 날·유효·부하 시험 제외, serve 하나 한 번), ad-01에서 단계를 부르는 `ops/ads_aggregate.sh`와 매일 00:40 timer. 운영 중 원장 내보내기 시점과 silver 관찰 시각이 어긋나거나 재판정 환입이 늦게 붙어 대조가 깨지지 않도록, silver(재판정 발행)를 먼저 돌리고 기다린 뒤 원장을 내보내며 gold 대조는 확정 마감이 지난 날만 본다(`--reconcile-closed-days`, Codex 지적 반영). 실패하면 CTR 갱신을 하지 않는다. `ctr.json`은 `ml.ad_ctr`가 쓰므로 그대로 뒀다.
+- 결과: `tests.contract.test_ads_aggregate` 10개(학습 행이 `build_ctr`에 거부되는 이전 결함 재현 포함) 통과, 작업 스크립트 드라이런으로 ①~⑤ 명령 순서와 실패 시 ⑤ 생략 확인. 운영 첫 실행은 Spark 서버 전달 수단(C) 확인 뒤.
