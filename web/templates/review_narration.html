@@ -1,0 +1,5 @@
+{% if narration.show %}<section class="review-narration" data-review-narration aria-live="polite"{% if narration.pending %} hx-get="{{ narration.url }}" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <h3>{{ narration.title }}</h3>
+  {% if narration.pending %}<p class="review-narration-wait">{{ narration.wait }}</p>{% else %}
+  <ul class="review-narration-list">{% for row in narration.npcs %}<li><strong>{{ row.name }}</strong>{% for text in row.sentences %}<p>{{ text }}</p>{% endfor %}</li>{% endfor %}</ul>{% endif %}
+</section>{% else %}<div data-review-narration hidden></div>{% endif %}

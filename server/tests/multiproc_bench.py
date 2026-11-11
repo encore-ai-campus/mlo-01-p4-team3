@@ -17,6 +17,7 @@ python -B -m server.tests.multiproc_bench --cases p2_memory,p1_memory,p2_redis -
   두 모드 모두 시험 접두어 컬렉션을 사용하고 이 도구가 Caddy와 웹 프로세스를 직접 띄운다.
 - B-09-02 준비: `--intent-every N`은 말하기 단계의 N번째 명령마다 해석·취소를 추가한다(0은 기존 부하).
   `--intent-factory`로 시험 해석기를 선택한다. 전체 API p95에는 두 요청을 포함하고 순수 해석 지연도 따로 기록한다.
+  분리 부하는 서버 쪽에서 간격과 팩토리를 지정하고, 클라이언트는 교환 파일의 간격만 읽는다.
 Mongo는 PALDO_MONGO_URI(api_bench.mongo_uri 규칙)로 받는다. 결과는 out/handoff/e0910-multiproc-report.json에 쓴다.
 """
 import argparse
@@ -311,7 +312,8 @@ def external_load(origin, cookies, args):
     result = folder / 'load.json'
     state = folder / 'client.json'
     with state.open('x', encoding='utf-8') as stream:
-        json.dump(dict(origin=origin, cookies=cookies, minutes=args.minutes), stream)
+        json.dump(dict(origin=origin, cookies=cookies, minutes=args.minutes,
+                       intent_every=args.intent_every), stream)
     state.chmod(0o600)
     print(json.dumps(dict(client_state=str(state), origin=origin)), flush=True)
     deadline = time.monotonic() + args.minutes * 60 + 120
@@ -321,7 +323,9 @@ def external_load(origin, cookies, args):
         if not result.exists():
             raise RuntimeError('external_load_result_timeout')
         row = json.loads(result.read_text(encoding='utf-8'))
-        if row['users'] != len(cookies) or row['elapsed_seconds'] < args.minutes * 60:
+        reported_interval = row.get('intent_every', 0)
+        if (row['users'] != len(cookies) or row['elapsed_seconds'] < args.minutes * 60
+                or type(reported_interval) is not int or reported_interval != args.intent_every):
             raise RuntimeError('external_load_does_not_match_requested_workload')
         return row
     finally:
@@ -350,8 +354,12 @@ def load_only(folder):
     minutes = float(state['minutes'])
     if not 0 < minutes <= 10:
         raise ValueError('invalid benchmark duration')
+    intent_every = state.get('intent_every', 0)
+    if type(intent_every) is not int or not 0 <= intent_every <= 100:
+        raise ValueError('invalid benchmark intent interval')
     row = with_ping(origin.hostname, folder, lambda: drive_load(
-        state['origin'], cookies, None, minutes, diagnostics=True))
+        state['origin'], cookies, None, minutes, intent_every=intent_every, diagnostics=True))
+    row['intent_every'] = intent_every
     row['load_generator'] = socket.gethostname()
     with (folder / 'load.json').open('x', encoding='utf-8') as stream:
         json.dump(row, stream)
@@ -569,6 +577,8 @@ def main(argv=None):
     parser.add_argument('--client-ip', help='서버 전용 모드에서 허용하는 부하 생성기 사설 IPv4')
     args = parser.parse_args(argv)
     if args.load_dir:
+        if args.intent_every:
+            parser.error('--intent-every는 --serve-dir 쪽에서 지정한다')
         return load_only(Path(args.load_dir))
     if not 0 <= args.intent_every <= 100:
         parser.error('intent-every=0..100')
@@ -595,7 +605,7 @@ def main(argv=None):
         except ValueError as error:
             parser.error(str(error))
         if (args.client_ip == args.listen_host or args.front != 'binary' or len(cases) != 1
-                or not (args.suspicion_version or args.actual_baseline) or args.intent_every
+                or not (args.suspicion_version or args.actual_baseline)
                 or any(layer != 'memory' for _, layer in cases.values())):
             parser.error('서버 전용 모드는 외부 호스트, binary, 단일 memory 구성과 실제 엔진을 사용한다')
     elif args.listen_host != '127.0.0.1' or args.client_ip:

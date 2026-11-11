@@ -9,6 +9,7 @@
       </li>
     {% endfor %}
   </ul>
+  {% include "review_narration.html" %}
   <h3>{{ review.timeline_title }}</h3>
   <ol class="review-reasons" data-review-timeline>
     {% for row in review.reasons %}
