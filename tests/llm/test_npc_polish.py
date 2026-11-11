@@ -120,6 +120,36 @@ class CheckTest(unittest.TestCase):
         self.assertIn(P.ADDED_SENTENCE, ok("훈장, 수상하다. 넌 말이 안 된다! 정말이다.", r).reasons)
 
 
+class InterjectionTest(unittest.TestCase):
+    """원문 앞 감탄사·추임새는 인물 말투 계열별 허용 목록에 있을 때만 통과(11/11 사용자 승인)."""
+
+    def test_allowed_pieces_of_own_family_and_common(self):
+        for out in ("에헴, 훈장이 수상하오.", "허허, 훈장이 수상하오.", "거 참, 훈장이 수상하오.",
+                    "거, 훈장이 수상하오.", "훈장이 수상하구려."):
+            with self.subTest(out=out):
+                self.assertTrue(ok(out).ok, ok(out))
+
+    def test_typo_and_other_family_rejected(self):
+        """오타("에헝")와 다른 계열 감탄사(대장장이의 "쳇")는 거부한다."""
+        for out in ("에헝, 훈장이 수상하오.", "쳇. 훈장이 수상하오.", "어머나, 훈장이 수상하오."):
+            with self.subTest(out=out):
+                self.assertIn(P.INTERJECTION, ok(out).reasons)
+
+    def test_stammer_family_and_source_start_kept(self):
+        """더듬는 말투는 "예, 예…"를 붙일 수 있고, 원문이 이미 추임새로 시작하면 그 부분은 원문으로 본다."""
+        stammer = "더듬는 말투(~습니다요)."
+        r = P.build_request("s2", "point_contradiction", "그, 그런데… 말씀이 앞뒤가 다른 것 같습니다요.", stammer, LEX)
+        self.assertTrue(P.check("예, 예… 그런데 말씀이 앞뒤가 다른 것 같습니다요.", r, LEX)[1].ok)
+        self.assertEqual(P.added_prefix("저, 저기… 훈장이 이상하오.", "저, 저기… 훈장이 이상하오."), ())
+
+    def test_changed_start_is_rejected_and_live_result_combines(self):
+        self.assertEqual(P.interjection_problem("그 밤 한때는 집에 있었소.", "그날 한밤엔 집에 있었소.", STYLE),
+                         "원문 시작을 찾지 못함")
+        base = P.ValidationResult(True)
+        self.assertEqual(P.with_interjection_check("에헝. 그날 한밤엔 집에 있었소.", base, "그날 한밤엔 집에 있었소.",
+                                                   STYLE).reasons, (P.INTERJECTION,))
+
+
 class SelectTest(unittest.TestCase):
     def test_shown_text_prefers_final_then_ready_then_template(self):
         self.assertEqual(P.shown_text({"variant": "template", "text": None}, "다듬음", "원문")[0], "template")

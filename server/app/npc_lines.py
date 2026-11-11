@@ -294,7 +294,8 @@ class NpcLineService:
 
             def check(raw):
                 text = normalize_output(raw)
-                return text, validate(text, req, lexicon)
+                result = validate(text, req, lexicon)
+                return text, npc_polish.with_interjection_check(text, result, req["fact_sentence"], req["persona"])
             return body, check
         req = npc_polish.PolishRequest(doc["request"]["speech_id"], doc["request"]["kind"], doc["request"]["text"],
                                        doc["request"]["persona"], tuple(doc["request"]["allowed_names"]))

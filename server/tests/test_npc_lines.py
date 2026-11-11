@@ -284,6 +284,13 @@ class LiveRendererTest(TestCase):
         self.assertEqual(self.renderer.poll("j1", game_id="g2").status, RenderStatus.QUEUED)
         self.assertEqual(self.renderer.poll("j1", game_id="g1").status, RenderStatus.DONE)
 
+    def test_live_answer_interjection_must_be_in_allow_list(self):
+        """실시간 답도 원문 앞 감탄사는 말투 계열 허용 목록에 있어야 한다("에헝" 같은 오타는 템플릿)."""
+        for job, prefix, status in (("ok", "허, ", "done"), ("typo", "에헝. ", "rejected")):
+            self.lines.narrator = FakeNarrator(lambda s, p=prefix: p + s)
+            self.renderer.submit(self.req(job))
+            self.assertEqual(self.lines.process_next().status, status, job)
+
     def test_live_before_polish_priority(self):
         """실시간 줄이 다듬기 줄보다 먼저 잡힌다."""
         self.store.insert_if_absent({"_id": "g1:p", "game_id": "g1", "kind": "polish", "priority": 1, "status": "queued",

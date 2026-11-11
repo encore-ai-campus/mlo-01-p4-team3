@@ -75,7 +75,7 @@ E-10-13(템플릿 변형 사전 생성)에서 캐묻기 반응·복기 해설 �
 
 ## 8. NPC 대사 LLM에서 쓰기 (E-11-13)
 
-11/11 사용자 결정("NPC 대사 LLM 서빙")으로 판 진행 중 회의 발언 다듬기(polish)와 캐묻기 답 실시간 생성(live)에 이 서버를 쓴다. 기본은 꺼짐이다.
+11/11 사용자 결정("NPC 대사 LLM 서빙")으로 판 진행 중 회의 발언 다듬기(polish)와 캐묻기 답 실시간 생성(live)에 이 서버를 쓴다. 코드 기본은 꺼짐이다. **운영 값은 polish 켬, live 끔**(11/11 사용자 승인, 표본 30개 승인 완료). live는 운영진이 시연 등 필요할 때만 켜고 끝나면 `npc_llm_mode polish`로 되돌린다.
 
 | 항목 | 값 |
 |---|---|
@@ -86,5 +86,5 @@ E-10-13(템플릿 변형 사전 생성)에서 캐묻기 반응·복기 해설 �
 | 요청 | 줄마다 `/v1/chat/completions` 1회. 다듬기 최대 64토큰·요청 제한 10초, 실시간은 마감(기본 3000ms, 11/11 실측으로 확정)까지. 프롬프트 캐시(`cache_prompt`) 켬 |
 | 저장 | Mongo `<접두어>npc_line_jobs`(줄당 문서 1개). 판 삭제(`privacy_game_cleanup`)가 같이 지운다. 본문은 이 문서에만 있고 로그·이벤트에 없다 |
 | 확인 | `npc_llm_mode show`, 작업 프로세스 로그 `npc_line_worker`의 `status`(done·rejected·failed·closed). 회의 대사창에서 NPC 발언 앞에 말투 감탄사가 붙으면 다듬기가 도는 것이다 |
-| 켜기 순서 | 배포(코드 기본 off) → `PALDO_NPC_LLM_URL` 설정 → 표본 30개 사용자 승인 → `npc_llm_mode polish` → 운영 비밀 파일 `PALDO_NPC_LLM_MODE=polish` |
+| 켜기 순서 | 배포(코드 기본 off) → `npc_line_worker` 상시 실행 → 웹·작업 프로세스에 `PALDO_NPC_LLM_URL` 설정 → `npc_llm_mode polish`(표본 30개는 11/11 승인됨) → `npc_llm_mode show`로 polish 확인 → 운영 비밀 파일 `PALDO_NPC_LLM_MODE=polish`(설정 문서가 없어져도 polish). live는 켜지 않는다 |
 

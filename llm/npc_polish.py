@@ -18,7 +18,7 @@ from llm.validator import (FORBIDDEN_ENTITY, FORMAT_LENGTH, Lexicon, ValidationR
                            validate)
 
 PROMPT_VERSION = "meeting-polish-v3"   # v2: 인물 말투 계열의 짧은 앞말을 예시로(11/11 실측: v1은 "허,"만 베낌), v3: 고정 지시를 앞으로(캐시)
-VALIDATOR_VERSION = "meeting-polish-check-v1"
+VALIDATOR_VERSION = "meeting-polish-check-v2"
 
 POLISH_KINDS = ("suspect", "defend", "point_contradiction", "explain")   # 지켜보기는 "……" 같은 비언어 줄이 있어 제외(D1)
 KIND_KO = {"suspect": "의심", "defend": "감싸기", "point_contradiction": "말이 어긋난 곳 짚기", "explain": "자기 해명"}
@@ -44,7 +44,15 @@ COMMON_NOUNS = frozenset(("사람", "자네", "당신", "그대", "이보게", "
 DIRECTION = "direction"
 ADDED_SENTENCE = "added_sentence"
 NEW_NOUN = "new_noun"
-REASONS = (FORMAT_LENGTH, FORBIDDEN_ENTITY, "added_assertion", "fact_changed", ADDED_SENTENCE, DIRECTION, NEW_NOUN)
+INTERJECTION = "interjection"
+REASONS = (FORMAT_LENGTH, FORBIDDEN_ENTITY, "added_assertion", "fact_changed", ADDED_SENTENCE, DIRECTION, NEW_NOUN,
+           INTERJECTION)
+
+# 원문 앞에 붙인 감탄사·추임새 허용 목록(11/11 사용자 승인). 인물 말투 계열의 앞말(`llm.prompt.STYLE_PROFILES`)을
+# 문장부호로 나눈 조각("허허, 이것 참." → 허허·이것 참)과 모든 계열에 쓰는 짧은 감탄사만 통과한다. "에헝" 같은 오타는 거부.
+COMMON_INTERJECTIONS = frozenset({"아", "어", "허", "흠", "음", "거"})
+_WORD = re.compile(r"[가-힣A-Za-z0-9]+")
+_PIECE_SPLIT = re.compile(r"[,.…!?~]+")
 
 
 @dataclass(frozen=True)
@@ -81,6 +89,42 @@ def short_prefixes(style: str) -> tuple[str, ...]:
         if all(len(_HANGUL.findall(c)) <= 2 for c in split_clauses(p)) and len(split_sentences(p)) <= 1:
             out.append(p)
     return tuple(out) or ("허,",)
+
+
+def allowed_interjections(persona: str) -> frozenset[str]:
+    """이 인물 말투 계열에서 원문 앞에 붙여도 되는 감탄사·추임새 조각."""
+    pieces = {piece.strip() for p in style_profile(speaker_and_style(persona)[1])[0] for piece in _PIECE_SPLIT.split(p)}
+    return frozenset(x for x in pieces if x) | COMMON_INTERJECTIONS
+
+
+def added_prefix(text: str, source: str) -> tuple[str, ...] | None:
+    """생성 문장이 원문 앞에 붙인 조각들. 원문 첫 두 어절 중 하나가 처음 나오는 곳 앞을 문장부호로 나눈다.
+
+    원문 시작을 찾지 못하면 None(앞부분을 바꾼 것이라 허용 목록으로 판단할 수 없다).
+    """
+    src = _WORD.findall(source)[:2]
+    for m in _WORD.finditer(text):
+        if m.group() in src:
+            return tuple(x.strip() for x in _PIECE_SPLIT.split(text[:m.start()]) if x.strip())
+    return None
+
+
+def interjection_problem(text: str, source: str, persona: str) -> str | None:
+    """앞에 붙인 감탄사가 허용 목록 밖이면 사유 문장, 문제가 없으면 None. 회의 다듬기와 캐묻기 실시간 생성이 함께 쓴다."""
+    pieces = added_prefix(text, source)
+    if pieces is None:
+        return "원문 시작을 찾지 못함"
+    bad = [p for p in pieces if p not in allowed_interjections(persona)]
+    return "허용 목록 밖 감탄사 " + ",".join(bad) if bad else None
+
+
+def with_interjection_check(text: str, result: ValidationResult, source: str, persona: str) -> ValidationResult:
+    """검사 결과에 감탄사 허용 목록 검사를 더한다."""
+    problem = interjection_problem(text, source, persona)
+    if problem is None:
+        return result
+    reasons = tuple(result.reasons) + ((INTERJECTION,) if INTERJECTION not in result.reasons else ())
+    return ValidationResult(False, reasons, tuple(result.details) + (problem,))
 
 
 def build_messages(req: PolishRequest) -> list[dict]:
@@ -165,6 +209,9 @@ def check(raw: str, req: PolishRequest, lexicon: Lexicon) -> tuple[str, Validati
                                                                           for k in known if len(k) >= 2)]
     if new:
         add(NEW_NOUN, "새 명사 후보 " + ",".join(dict.fromkeys(new)))
+    problem = interjection_problem(text, req.text, req.persona)
+    if problem:
+        add(INTERJECTION, problem)
     ordered = tuple(r for r in REASONS if r in reasons)
     return text, ValidationResult(not ordered, ordered, tuple(details))
 
