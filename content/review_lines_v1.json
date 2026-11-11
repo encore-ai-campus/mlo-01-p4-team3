@@ -124,7 +124,7 @@
       "{actor}은(는) 누가 더 수상한지 가리기 어려워 표를 던지지 않았습니다."
     ]
   },
-  "basis_status": "승인됨(11/11 사용자). 회의 의심 근거 풀이 3종",
+  "basis_status": "승인됨(11/11 사용자). 회의 의심 근거 풀이 6종(1~3 먼저 승인, 4~6 추가 승인)",
   "basis_note": "의심(kind=suspect) 근거 주장이 왜 수상했는지(engine/domain/review.py suspect_basis). 키는 rv_basis_<규칙>. 자리표시자 {actor}=의심한 NPC, {target}=의심받은 사람, {victim}=실종자(at_crime_scene만).",
   "basis_lines": {
     "rv_basis_at_crime_scene": [
@@ -135,6 +135,15 @@
     ],
     "rv_basis_claimed_seeing_me_falsely": [
       "{target}은(는) {actor}을(를) 봤다고 했지만, {actor}은(는) 그때 거기 없었습니다."
+    ],
+    "rv_basis_tell": [
+      "{target}은(는) 그 말을 할 때 기색이 수상했습니다."
+    ],
+    "rv_basis_contradiction": [
+      "{target}의 말이 다른 사람의 진술과 어긋났습니다."
+    ],
+    "rv_basis_others_suspect": [
+      "다른 사람들도 {target}을(를) 수상하게 여기고 있었습니다."
     ]
   }
 }

@@ -198,11 +198,15 @@ def review_text(item: ReviewTraceItem, lines: dict[str, list[str]], names: dict[
 
 
 # ---------------------------------------------------------------- 의심 근거 풀이(11/11 사용자 승인)
-# 회의 의심(kind=suspect)의 근거가 행적·목격 주장일 때, 그 주장이 왜 수상했는지를 판 종료 뒤 기록으로 다시 따진다.
-# 판정은 `npc.beliefs`가 의심도를 올리는 세 규칙과 같다. 여럿이 맞으면 그 규칙의 가중치(W)가 큰 쪽을 고른다.
+# 마을 사람 의심(rule_suspect)의 근거가 왜 수상했는지를 판 종료 뒤 기록으로 다시 따진다. 판정은 `npc.beliefs`의 규칙과 같다.
+# 1~3(행적·목격 주장 규칙)이 맞으면 그중 가중치(W) 큰 쪽, 아니면 4~6(근거 종류: 모순·공개된 기색·다른 사람의 의심 발언).
 BASIS_OWN_WITNESS_LIE = "own_witness_lie"                    # 의심한 NPC가 그 밤 대상을 다른 곳에서 봄(W 35)
 BASIS_CLAIMED_SEEING_ME_FALSELY = "claimed_seeing_me_falsely"  # 대상이 의심한 NPC를 봤다고 했지만 그는 거기 없었음(W 35)
 BASIS_AT_CRIME_SCENE = "at_crime_scene"                      # 대상이 실종 장소·시간대에 있었다고 스스로 말함(W 8)
+# 아래 셋은 위 셋이 맞지 않을 때만(11/11 사용자 추가 승인). 근거 종류가 모순·기색·다른 사람의 의심 발언일 때
+BASIS_CONTRADICTION = "contradiction"                        # 대상의 주장이 다른 사람 주장과 공개 모순(W 20)
+BASIS_TELL = "tell"                                          # 대상이 그 주장을 할 때 공개된 기색이 보임(W 12)
+BASIS_OTHERS_SUSPECT = "others_suspect"                      # 다른 사람이 이미 대상을 의심하는 말을 함(W 6~8)
 BASIS_PREFIX = "rv_basis_"
 
 
@@ -215,7 +219,7 @@ class SuspectBasis:
 
 def suspect_basis(item: ReviewTraceItem, public: Optional[PublicRecord],
                   private: Optional[PrivateKnowledge]) -> Optional[SuspectBasis]:
-    """의심 항목(이유 코드 rule_suspect)의 근거 주장이 세 규칙 중 무엇에 걸렸는지. 해당 없음·근거 없음이면 None.
+    """의심 항목(이유 코드 rule_suspect)의 근거가 왜 수상했는지(규칙 1~3 우선, 아니면 근거 종류 4~6). 없으면 None.
 
     `private`는 의심한 NPC의 개인 지식(판 종료 뒤라 복기에서 써도 된다). 근거 주장의 대상이 의심 대상과 같을 때만 본다.
     """
@@ -242,8 +246,33 @@ def suspect_basis(item: ReviewTraceItem, public: Optional[PublicRecord],
                 if rec.night == c.night and rec.slot is c.slot and rec.place is c.place:
                     found.append(SuspectBasis(BASIS_AT_CRIME_SCENE, rec.victim))
                     break
-    order = (BASIS_OWN_WITNESS_LIE, BASIS_CLAIMED_SEEING_ME_FALSELY, BASIS_AT_CRIME_SCENE)
+    if not found:
+        found = _secondary_basis(item, public, by_id)
+    order = (BASIS_OWN_WITNESS_LIE, BASIS_CLAIMED_SEEING_ME_FALSELY, BASIS_AT_CRIME_SCENE,
+             BASIS_CONTRADICTION, BASIS_TELL, BASIS_OTHERS_SUSPECT)
     return min(found, key=lambda b: order.index(b.basis)) if found else None
+
+
+def _secondary_basis(item: ReviewTraceItem, public: PublicRecord, by_id: dict) -> list[SuspectBasis]:
+    """근거 종류로 고르는 풀이(모순·기색·다른 사람의 의심). 공개되지 않은 기색은 쓰지 않는다."""
+    me, target = item.actor, item.target_npc
+    shown = {t.claim_id for t in public.tells if t.shown}
+    speeches = {s.speech_id: s for s in public.speeches}
+    found: list[SuspectBasis] = []
+    for r in item.evidence:
+        if r.type is EvidenceType.CONTRADICTION:
+            pair = [by_id[i] for i in r.record_id.split("|") if i in by_id]
+            if len(pair) == 2 and any(c.speaker == target for c in pair) and any(c.speaker != target for c in pair):
+                found.append(SuspectBasis(BASIS_CONTRADICTION))
+        elif r.type is EvidenceType.TELL:
+            c = by_id.get(r.record_id)
+            if c is not None and c.speaker == target and r.record_id in shown:
+                found.append(SuspectBasis(BASIS_TELL))
+        elif r.type is EvidenceType.MAJORITY:
+            sp = speeches.get(r.record_id)
+            if sp is not None and sp.kind is CommandKind.SUSPECT and sp.target == target and sp.speaker not in (me, target):
+                found.append(SuspectBasis(BASIS_OTHERS_SUSPECT))
+    return found
 
 
 def basis_text(item: ReviewTraceItem, basis: Optional[SuspectBasis], lines: dict[str, list[str]],

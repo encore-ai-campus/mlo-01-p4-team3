@@ -3,10 +3,12 @@ import json
 import unittest
 from pathlib import Path
 
-from engine.domain.model import (Claim, ClaimType, DisappearanceRecord, EvidenceRef, EvidenceType, Place, Polarity,
-                                 PrivateKnowledge, PublicRecord, Role, Sighting, Slot)
-from engine.domain.review import (BASIS_AT_CRIME_SCENE, BASIS_CLAIMED_SEEING_ME_FALSELY, BASIS_OWN_WITNESS_LIE,
-                                  ReviewTraceItem, SuspectBasis, basis_text, suspect_basis)
+from engine.domain.model import (Claim, ClaimType, CommandKind, DisappearanceRecord, EvidenceRef, EvidenceType, Phase,
+                                 Place, Polarity, PrivateKnowledge, PublicRecord, Role, Sighting, Slot, Speech,
+                                 TellRecord)
+from engine.domain.review import (BASIS_AT_CRIME_SCENE, BASIS_CLAIMED_SEEING_ME_FALSELY, BASIS_CONTRADICTION,
+                                  BASIS_OTHERS_SUSPECT, BASIS_OWN_WITNESS_LIE, BASIS_TELL, ReviewTraceItem,
+                                  SuspectBasis, basis_text, suspect_basis)
 
 LINES = json.loads((Path(__file__).resolve().parents[2] / "content" / "review_lines_v1.json")
                    .read_text(encoding="utf-8"))["basis_lines"]
@@ -89,6 +91,56 @@ class SuspectBasisTest(unittest.TestCase):
         framed = item(["c1"])
         framed.reason_codes = ["frame_suspected"]
         self.assertIsNone(suspect_basis(framed, pub, private()))
+
+
+def ref_item(*refs):
+    it = item([])
+    it.evidence = [EvidenceRef(t, rid) for t, rid in refs]
+    return it
+
+
+class SecondaryBasisTest(unittest.TestCase):
+    """4~6(11/11 추가 승인): 1~3이 맞지 않을 때 근거 종류로 고른다."""
+    claims = [where("c1", "meosum", Place.WELL), saw("c2", "yakcho", ["jumo"], Place.WELL)]
+
+    def test_contradiction(self):
+        it = ref_item((EvidenceType.CONTRADICTION, "c1|c2"))
+        basis = suspect_basis(it, PublicRecord(claims=self.claims), private())
+        self.assertEqual(basis, SuspectBasis(BASIS_CONTRADICTION))
+        self.assertEqual(basis_text(it, basis, LINES, NAMES), "머슴의 말이 다른 사람의 진술과 어긋났습니다.")
+
+    def test_tell_only_when_shown(self):
+        it = ref_item((EvidenceType.TELL, "c1"))
+        shown = PublicRecord(claims=self.claims, tells=[TellRecord("c1", 2, True)])
+        basis = suspect_basis(it, shown, private())
+        self.assertEqual(basis, SuspectBasis(BASIS_TELL))
+        self.assertEqual(basis_text(it, basis, LINES, NAMES), "머슴은 그 말을 할 때 기색이 수상했습니다.")
+        hidden = PublicRecord(claims=self.claims, tells=[TellRecord("c1", 2, False)])
+        self.assertIsNone(suspect_basis(it, hidden, private()))
+
+    def test_others_suspect_speech(self):
+        sp = Speech("s1", 2, Phase.ROUND1, "yakcho", CommandKind.SUSPECT, target="meosum")
+        it = ref_item((EvidenceType.MAJORITY, "s1"))
+        basis = suspect_basis(it, PublicRecord(claims=self.claims, speeches=[sp]), private())
+        self.assertEqual(basis, SuspectBasis(BASIS_OTHERS_SUSPECT))
+        self.assertEqual(basis_text(it, basis, LINES, NAMES), "다른 사람들도 머슴을 수상하게 여기고 있었습니다.")
+
+    def test_secondary_skips_wrong_shapes(self):
+        own = Speech("s2", 2, Phase.ROUND1, "hunjang", CommandKind.SUSPECT, target="meosum")      # 자기 발언
+        react = Speech("s3", 2, Phase.ROUND1, "meosum", CommandKind.INTERROGATE)                 # 캐묻기 반응
+        others = [saw("c3", "yakcho", ["jumo"], Place.TAVERN)]
+        pub = PublicRecord(claims=self.claims + others, speeches=[own, react])
+        self.assertIsNone(suspect_basis(ref_item((EvidenceType.MAJORITY, "s2")), pub, private()))
+        self.assertIsNone(suspect_basis(ref_item((EvidenceType.MAJORITY, "s3")), pub, private()))
+        self.assertIsNone(suspect_basis(ref_item((EvidenceType.CONTRADICTION, "c2|c3")), pub, private()))  # 대상 말 아님
+        self.assertIsNone(suspect_basis(ref_item((EvidenceType.TELL, "c2")), pub, private()))               # 대상 말 아님
+
+    def test_primary_rules_win_over_secondary(self):
+        pub = PublicRecord(claims=self.claims, disappearances=[VANISH], tells=[TellRecord("c1", 2, True)])
+        it = ref_item((EvidenceType.TELL, "c1"), (EvidenceType.CLAIM, "c1"))
+        self.assertEqual(suspect_basis(it, pub, private()).basis, BASIS_AT_CRIME_SCENE)
+        both = ref_item((EvidenceType.TELL, "c1"), (EvidenceType.CONTRADICTION, "c1|c2"))
+        self.assertEqual(suspect_basis(both, pub, private()).basis, BASIS_CONTRADICTION)
 
 
 class RealGamesTest(unittest.TestCase):
