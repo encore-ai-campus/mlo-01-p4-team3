@@ -25,7 +25,7 @@
   {% if vm.speeches %}
     <h2>발언</h2>
     {% for speech in vm.speeches %}<p>{{ speech.speaker_name|display_name }}:
-      <span id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
+      <span id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every {% if npc_live %}500ms{% else %}1s{% endif %}" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
     </p>{% endfor %}
   {% endif %}
   {% if published_votes %}
@@ -82,8 +82,8 @@
   {% include "meeting_parts/claim_cards.html" %}
   {% if vm.speeches %}
     <details class="speech-transcript"><summary>공개 발언 전체 보기</summary><h2>발언</h2>
-    {% for speech in vm.speeches %}{% with expression=vn_expressions|get_item:speech.speech_id %}<p class="vn-source" data-line-id="{{ speech.speech_id }}" data-speaker-id="{{ speech.speaker_id }}" data-day="{{ speech.day }}" data-phase="{{ speech.phase }}" data-speaker="{{ speech.speaker_name|display_name }}" data-sprite="{% vn_sprite speech.speaker_id expression mudang_portrait_id %}"{% if expression %} data-expression="{{ expression }}"{% endif %}>{{ speech.speaker_name|display_name }}:
-      <span class="vn-source-text" id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every 1s" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
+    {% for speech in vm.speeches %}{% with expression=vn_expressions|get_item:speech.speech_id %}<p class="vn-source" data-line-id="{{ speech.speech_id }}" data-speaker-id="{{ speech.speaker_id }}" data-day="{{ speech.day }}" data-phase="{{ speech.phase }}" data-speaker="{{ speech.speaker_name|display_name }}" data-sprite="{% vn_sprite speech.speaker_id expression mudang_portrait_id %}"{% if expression %} data-expression="{{ expression }}"{% endif %}{% if npc_polish %}{% with nf=npc_finals|get_item:speech.speech_id %}{% if nf %} data-npc-final="{{ nf }}"{% endif %}{% endwith %}{% endif %}>{{ speech.speaker_name|display_name }}:
+      <span class="vn-source-text" id="speech-{{ speech.speech_id }}"{% if speech.pending_job_id %} data-job-id="{{ speech.pending_job_id }}" hx-get="/games/{{ vm.game_id }}/renders/{{ speech.pending_job_id }}" hx-trigger="every {% if npc_live %}500ms{% else %}1s{% endif %}" hx-swap="outerHTML" hx-sync="#meeting:abort"{% endif %}>{{ speech.text }}</span>
       {% if speech.speech_id in vn_tell_lines %}<span class="vn-tell-notice" data-vn-tell>{{ vn_tell_notice }}</span>{% endif %}
     </p>{% endwith %}{% with reaction=reaction_lines|get_item:speech.speech_id %}{% for line in reaction %}{% include "meeting_parts/vn_line.html" %}{% endfor %}{% endwith %}{% with clue=clue_lines|get_item:speech.speech_id %}{% for line in clue %}{% include "meeting_parts/vn_line.html" %}{% endfor %}{% endwith %}{% endfor %}
     </details>

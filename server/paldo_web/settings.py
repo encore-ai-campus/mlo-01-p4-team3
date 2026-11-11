@@ -61,6 +61,12 @@ SUSPICION_MODEL_ROOT = os.environ.get("PALDO_MLRUNS_ROOT", "mlruns")
 REVIEW_LLM_URL = os.environ.get("PALDO_REVIEW_LLM_URL", "").strip()
 # 복기 해설 작업 마감(초). 지나면 템플릿으로 확정한다.
 REVIEW_DEADLINE_S = float(os.environ.get("PALDO_REVIEW_DEADLINE_S", "180") or 180)
+# NPC 대사 LLM(E-11-13). 생성 서버 주소(상한 스위치): 비어 있으면 모드와 관계없이 꺼짐(템플릿 대사만·Kanana 표기 숨김).
+# 보통 복기와 같은 터널 끝이다. 실제 값은 저장소 밖.
+NPC_LLM_URL = os.environ.get("PALDO_NPC_LLM_URL", "").strip()
+# 운영 설정 문서(`<접두어>ops_settings`의 `npc_llm`)가 없을 때 쓰는 모드: off | polish | live. 코드 기본값 off.
+# 재배포 없이 바꿀 때는 관리 명령 `npc_llm_mode`를 쓴다.
+NPC_LLM_MODE = os.environ.get("PALDO_NPC_LLM_MODE", "off").strip()
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",

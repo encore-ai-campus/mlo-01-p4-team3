@@ -384,9 +384,11 @@ class InteractionService:
                     raise ValueError("invalid_render_request")
                 if req.job_id in records.renders:
                     continue
+                # 실시간 생성(E-11-13)이 켜진 렌더러는 운영 설정의 마감을 준다. 그 밖에는 요청 값.
+                deadline_ms = getattr(self.renderer, "deadline_ms", lambda r: r.deadline_ms)(req)
                 records.renders[req.job_id] = {"request": req, "final": None,
                     "day": state.day, "phase": state.phase,
-                    "deadline_at": time.time() + req.deadline_ms / 1000, "submit_failed": False}
+                    "deadline_at": time.time() + deadline_ms / 1000, "submit_failed": False}
                 if self.renderer is not None:
                     try:
                         self.renderer.submit(req)
@@ -409,24 +411,35 @@ class InteractionService:
             try:
                 if record.get("submit_failed"):
                     result = RenderResult(job_id, RenderStatus.FAILED, None, fallback=True)
-                elif time.time() >= record["deadline_at"]:
-                    result = RenderResult(job_id, RenderStatus.TIMEOUT, None, fallback=True)
-                    try:
-                        self.renderer.cancel(job_id)
-                    except (ConnectionError, TimeoutError, KeyError):
-                        pass
                 else:
-                    result = self.renderer.poll(job_id)
+                    # 마감 판정은 결과의 완료 시각으로 한다(E-11-13). 마감 안에 끝난 결과는 늦게 폴링해도 인정하고,
+                    # 마감이 지나도 아직 대기·처리 중일 때만 시간 초과로 닫는다.
+                    # 완료 시각으로 마감을 지키는 렌더러(`enforces_deadline`)만 그렇고, 그 밖의 렌더러는 기존대로 마감 뒤면 시간 초과다.
+                    result = self.renderer.poll(job_id, **self._scope(game_id))
+                    late = time.time() >= record["deadline_at"]
+                    pending = result.status in (RenderStatus.QUEUED, RenderStatus.RUNNING)
+                    if late and (pending or not getattr(self.renderer, "enforces_deadline", False)):
+                        result = RenderResult(job_id, RenderStatus.TIMEOUT, None, fallback=True)
+                        try:
+                            self.renderer.cancel(job_id, **self._scope(game_id))
+                        except (ConnectionError, TimeoutError, KeyError):
+                            pass
             except (ConnectionError, TimeoutError, KeyError):
                 result = RenderResult(job_id, RenderStatus.FAILED, None, fallback=True)
             final = result.status not in (RenderStatus.QUEUED, RenderStatus.RUNNING)
             output = RenderOutput(job_id, req.speech_id, result.status,
                                   result.text if result.status == RenderStatus.DONE and result.text else req.fallback_text, final)
-            self._event(state, EventType.RENDER_JOB, {**to_jsonable(result), "fallback": result.fallback or not result.text or result.status != RenderStatus.DONE},
+            # 생성 본문은 이벤트에 넣지 않는다(E-11-13). 상태·지연·사유·버전만 남기고 본문은 보조 기록·작업 문서에만 둔다.
+            payload = {k: v for k, v in to_jsonable(result).items() if k != "text"}
+            self._event(state, EventType.RENDER_JOB, {**payload, "fallback": result.fallback or not result.text or result.status != RenderStatus.DONE},
                         f"render:{job_id}:{result.status.value}")
             if final:
                 record["final"] = output
             return output
+
+    def _scope(self, game_id) -> dict:
+        """판마다 작업 번호가 겹치므로, 판 ID로 묶는 렌더러(E-11-13 실시간 생성)에는 판 ID를 함께 넘긴다."""
+        return {"game_id": game_id} if getattr(self.renderer, "scoped_by_game", False) else {}
 
     def render_snapshot(self, game_id, player):
         """화면에 붙일 공개 폴백/완료 문장만 읽는다. 외부 폴링은 실행하지 않는다."""
@@ -453,7 +466,7 @@ class InteractionService:
                     continue
                 if self.renderer is not None:
                     try:
-                        self.renderer.cancel(job_id)
+                        self.renderer.cancel(job_id, **self._scope(current.meta.game_id))
                     except (ConnectionError, TimeoutError, KeyError):
                         pass
                 output = RenderOutput(job_id, req.speech_id, RenderStatus.CANCELLED, req.fallback_text, True)
