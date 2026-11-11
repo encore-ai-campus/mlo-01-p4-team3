@@ -180,8 +180,10 @@ def _fit_and_evaluate(out, presets, seed, games_per_preset, calibration, started
     client.set_tag(run_id, "calibration_data_version", calibration["data_version"])
     client.set_tag(run_id, "paldo.blend_alpha", "none" if chosen is None else f"{chosen:.1f}")
     client.set_tag(run_id, "paldo.blend_search", json.dumps(trials))
+    # train.run이 올린 산출물은 α 적용 전 원본이므로, 고른 α 산출물을 같은 실행에 따로 올린다.
+    client.log_artifact(run_id, str(artifact_path), "selected")
     report = dict(accepted=accepted, gate_accepted=decision.accepted, effective=not effective_reasons,
-                  effective_reasons=effective_reasons, reasons=decision.reasons + effective_reasons,
+                  effective_reasons=effective_reasons, reasons=[*decision.reasons, *effective_reasons],
                   rule_log_loss=rule_log_loss, log_loss_gain_vs_rule=gain, serving_version=decision.serving_version,
                   run_id=run_id, model_version=model_version, base_model_version="suspicion-logistic-" + hashlib.sha256(
                       base_path.read_bytes()).hexdigest()[:12], blend_alpha=chosen, blend_search=trials,
