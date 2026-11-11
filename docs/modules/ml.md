@@ -125,7 +125,7 @@ python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version 
 매일 밤 재학습이 운영의 사람 판을 자동으로 꺼내 학습과 시험 세트에 쓴다. 관문(`ml/gate.py`)은 그대로라 사람 판 시험 세트가 없으면 `human:invalid_or_missing_measurement`로 거부한다.
 
 - 내보내기(인프라): `python -m server.infra.ut_export training --out training.json`. 사람 판(`source=human`)이면서 부하 시험이 아니고 종료·진실 이벤트가 있는 판만, 아래 필드만 읽는다.
-- 변환(도메인): `ml/suspicion/features.py` `human_rows(games, consent, deleted)`. 동의한 가명만 쓰고 삭제 요청 가명은 뺀다. 봇 판과 같은 검사·특징 추출이고 출처 `human`, 분할 키 `user`=가명만 다르다. 검사에 걸린 판은 밤 실행을 멈추지 않고 사유별로 빼서 센다(`invalid`·`incomplete`·`no_consent`·`deletion_request`·`load_test` 등). 정책 버전은 판마다 하나여야 하고 판끼리는 달라도 된다.
+- 변환(도메인): `ml/suspicion/features.py` `human_rows(games, consent, deleted)`. 동의한 가명만 쓰고 삭제 요청 가명은 뺀다. 봇 판과 같은 검사·특징 추출이고 출처 `human`, 분할 키 `user`=가명만 다르다. 검사에 걸린 판은 밤 실행을 멈추지 않고 사유별로 빼서 센다(`invalid:<예외>[:<검사 문구>]`, 검사 문구는 코드에 고정된 문구일 때만 붙여 입력값이 남지 않게 함·`incomplete`·`no_consent`·`deletion_request`·`load_test` 등). 정책 버전은 판마다 하나여야 하고 판끼리는 달라도 된다. 웹 판은 봉투 `npc_policy_versions`가 비어 있어(게임 메타에 기록하지 않음) 결정의 정책 버전(`-fallback` 제외)과 진실 이벤트의 역할 명단으로 채운다(`policy_versions_inferred`). 판 안 결정 버전이 둘 이상이면 거부한다.
 - 분할(도메인): `ml/suspicion/evaluate.py` `human_side`. 사람(가명) 단위로 `sha256("suspicion-human-split-v1"||가명)` 앞 8바이트가 0.3 미만이면 시험, 아니면 학습이다(`docs/contracts/events.md` 3절). 결과가 가명과 고정 문자열에만 달려 있어 새 사람이 늘어도 기존 사람은 옮겨지지 않고, 상태 파일이 없어 삭제 요청 때 지울 명단도 없다. 비율을 바꾸면 고정 문자열 버전을 올린다.
 - 흐름(응용): `python -m ml.suspicion.retrain ... --human-games training.json --consented-users consent.json --tombstones <삭제 요청 폴더> [--production-model <운영 models.pkl>]`. 학습 쪽 사람 행은 봇 학습 행과 합쳐 `dataset_train/`으로 학습한다. 시험 쪽은 후보(고른 α)와 기준을 같은 행·같은 seed로 채점해 관문 `human` 지표를 만든다. 사람 판은 이미 끝난 판이라 마을 승률은 양쪽 모두 그 판들의 실제 결과다. `decision.json`의 `human`에 학습/시험 판·사람·행 수와 제외 사유별 수, `human_evaluation`에 `provided`·`no_human_test_games`·`no_human_input`이 남는다.
 - 판 수가 적을 때: 시험 세트가 50판 미만이면 관문이 무작위 재표본 95% 구간(bootstrap)이 기준보다 확실히 낮을 때만 통과시킨다. 사람 판이 쌓일수록 통과 가능성이 생긴다. 시험 쪽이 0판이면 human 지표를 만들지 않고 관문이 거부한다.
@@ -198,6 +198,7 @@ python -m tools.ad_ctr_scenario score --out out/d1002/scenario --report out/ctr-
 | D-10-03 | 11/10 | 11/11 dev 반영, 버전 제한 JSON 승률 추론·복기 API·holdout 지표·패널, 표 기반 자기 대전 1,000판 비교, 프리셋·미학습 비밀 조합 및 무감금 상한 검증 |
 | D-10-01 | 11/11 | 관문은 그대로 두고 재학습이 의심 점수 섞기 α를 고름(유효 후보 α≥0.3·규칙 대비 0.01 개선), 서빙 `blend_alpha` 하위 호환, 사람 판 평가 입력 |
 | D-10-01 | 11/11 | 매일 밤 재학습이 동의한 사람 판을 학습용 내보내기로 꺼내 사람 단위 30%를 시험 세트, 나머지를 학습에 섞음. 관문 기준을 지금 운영 모델로(없으면 규칙 점수). 관문 규칙은 그대로(E 보완) |
+| D-10-01 | 11/11 | 사람 판 변환: 웹 판의 빈 봉투 정책 버전을 결정 버전으로 채움(운영 23판이 전부 `invalid`로 빠지던 원인), 제외 사유를 검사 문구별로 세분(E 보완) |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.
 

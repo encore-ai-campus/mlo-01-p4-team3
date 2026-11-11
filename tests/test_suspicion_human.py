@@ -77,9 +77,39 @@ class HumanRows(unittest.TestCase):
         truth["seq"] = 0  # 진실이 종료 앞에 온 판
         games[2]["events"] = [e for e in games[2]["events"] if e["event_type"] != "truth_revealed"]
         rows, audit = ft.human_rows(games, set(USERS), set())
-        self.assertEqual(audit["excluded"], {"invalid": 1, "incomplete": 1})
+        self.assertEqual(audit["excluded"], {"invalid:ValueError:판별 seq 중복·역순": 1, "incomplete": 1})
         self.assertEqual(audit["used_games"], len(games) - 2)
         self.assertTrue(rows)
+
+    def test_web_games_without_envelope_policy_versions_are_inferred(self):
+        """운영 웹 판은 봉투 npc_policy_versions가 비어 있다: 결정의 정책 버전과 진실 명단으로 채워 같은 행을 만든다."""
+        games = copy.deepcopy(self.games)
+        expected, _ = ft.human_rows(copy.deepcopy(self.games), set(USERS), set())
+        for g in games:
+            for e in g["events"]:
+                e["npc_policy_versions"] = {}
+        rows, audit = ft.human_rows(games, set(USERS), set())
+        self.assertEqual(audit["used_games"], len(games))
+        self.assertEqual(audit["policy_versions_inferred"], len(games))
+        strip = lambda rs: sorted((r.row_id, r.label, tuple(sorted(r.features.items()))) for r in rs)
+        self.assertEqual(strip(rows), strip(expected))
+
+    def test_web_game_with_mixed_decision_versions_is_rejected(self):
+        games = copy.deepcopy(self.games[:1])
+        decisions = [e for e in games[0]["events"] if e["event_type"] == "decision"]
+        for e in games[0]["events"]:
+            e["npc_policy_versions"] = {}
+        decisions[0]["payload"]["policy_version"] = "rule-other"
+        rows, audit = ft.human_rows(games, set(USERS), set())
+        self.assertEqual(rows, [])
+        self.assertEqual(audit["excluded"], {"invalid:ValueError:판 안 정책 버전 혼합": 1})
+
+    def test_parse_error_reason_does_not_copy_input_values(self):
+        games = copy.deepcopy(self.games[:1])
+        games[0]["events"][0]["ts"] = "not-a-time-secret-1234"
+        rows, audit = ft.human_rows(games, set(USERS), set())
+        self.assertEqual(rows, [])
+        self.assertEqual(list(audit["excluded"]), ["invalid:SchemaError"])
 
     def test_no_games_gives_no_rows(self):
         self.assertEqual(ft.human_rows([], set(USERS), set())[0], [])
