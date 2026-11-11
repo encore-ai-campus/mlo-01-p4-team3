@@ -42,7 +42,7 @@ class AdHTTPTests(TestCase):
             slots=["lobby_banner"], billing=billing, max_bid_mw=bid, daily_budget_mw=budget,
             start_date="2026-11-01", end_date="2026-12-01", **kwargs)
         Creative.objects.create(creative_id=("syn:cr_" + cid[4:]) if cid.startswith("syn:") else "cr_" + cid, campaign=c, title="가상 광고",
-                                body="사이트 안 안내", image_path="/static/ads/example.png")
+                                body="사이트 안 안내", image_path="/static/promo/example.png")
         return c
 
     def serve(self, request_id=None, session=None, **kwargs):
@@ -81,7 +81,7 @@ class AdHTTPTests(TestCase):
         self.campaign()
         with self.assertLogs("paldo.ads", level="INFO") as logs:
             filled = self.serve()
-            self.assertEqual(filled["creative"]["image_path"], "/static/ads/example__728x90.png")
+            self.assertEqual(filled["creative"]["image_path"], "/static/promo/example__wide.png")
             result = self.event("impression", filled["serve_token"])
             self.assertEqual(result.judgement.status.value, "valid")
             result = self.event("click", filled["serve_token"])
@@ -282,11 +282,11 @@ class AdHTTPTests(TestCase):
         c = self.campaign()
         a = self.serve()
         cr = c.creatives.get()
-        cr.image_path = "/static/ads/replaced.png"
+        cr.image_path = "/static/promo/replaced.png"
         cr.save()
         b = self.serve()
         self.assertNotEqual(a["creative"]["image_path"], b["creative"]["image_path"])
-        self.assertEqual(b["creative"]["image_path"], "/static/ads/replaced__728x90.png")
+        self.assertEqual(b["creative"]["image_path"], "/static/promo/replaced__wide.png")
         cr.title = '<script>alert("x")</script>'
         cr.save()
         self.assertNotIn(b"<script>", self.client.get("/ads/landing/" + cr.pk).content)
@@ -302,7 +302,7 @@ class AdHTTPTests(TestCase):
             **{"creatives-TOTAL_FORMS": "1", "creatives-INITIAL_FORMS": "0",
                "creatives-MIN_NUM_FORMS": "0", "creatives-MAX_NUM_FORMS": "1000",
                "creatives-0-creative_id": "admin_cr", "creatives-0-title": "생성",
-               "creatives-0-body": "설명", "creatives-0-image_path": "/static/ads/new.png"})
+               "creatives-0-body": "설명", "creatives-0-image_path": "/static/promo/new.png"})
         r = staff.post("/admin/ads_web/campaign/add/", data)
         self.assertEqual(r.status_code, 302, r.content)
         self.assertTrue(self.serve()["filled"])
@@ -433,11 +433,11 @@ class AdHTTPTests(TestCase):
         from django.test import override_settings
         source = ROOT / "content/images"
         # E의 실제 임시 PNG 두 장으로 정적 파일 덮어쓰기를 재현한다.
-        pngs = list((source / "ad").glob("*__728x90.png"))
+        pngs = list((source / "ad").glob("*__wide.png"))
         self.assertGreaterEqual(len(pngs), 2)
         self.campaign()
         with TemporaryDirectory() as folder, override_settings(STATIC_ROOT=folder):
-            image = Path(folder) / "ads/example__728x90.png"
+            image = Path(folder) / "promo/example__wide.png"
             image.parent.mkdir()
             image.write_bytes(pngs[0].read_bytes())
             first_bytes = image.read_bytes()
@@ -446,7 +446,7 @@ class AdHTTPTests(TestCase):
             b = self.serve()["creative"]
             self.assertNotEqual(first_bytes, image.read_bytes())
             self.assertEqual(a["image_path"], b["image_path"])
-            self.assertEqual(b["image_path"], "/static/ads/example__728x90.png")
+            self.assertEqual(b["image_path"], "/static/promo/example__wide.png")
 
     def test_current_contract_has_three_slots_and_rejects_removed_wait_slot(self):
         self.assertEqual({slot.value for slot in AdSlot},

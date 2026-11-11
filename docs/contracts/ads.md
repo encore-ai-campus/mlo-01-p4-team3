@@ -38,7 +38,7 @@
   | `lobby_banner`, `result_banner` | 728×90 |
   | `review_side` | 300×250 |
 
-  - 소재 이미지는 지면이 아니라 **규격마다 1장**이다. `Creative.image_path`는 기본 경로이고, 지면별 실제 파일은 `slot_image_path(image_path, slot)`이다(예: `/static/ads/gat.png` → `/static/ads/gat__728x90.png`). 소재가 나가는 지면들의 규격 수만큼 파일이 있다.
+  - 소재 이미지는 지면이 아니라 **규격마다 1장**이다. `Creative.image_path`는 기본 경로이고, 지면별 실제 파일은 `slot_image_path(image_path, slot)`이다(예: `/static/promo/gat.png` → `/static/promo/gat__wide.png`, 300×250은 `__box`. 옛 기본 경로 `/static/ads/<이름>`도 같은 새 주소로 바꾼다. 광고 차단 목록의 경로·규격 표기를 피하려는 11/11 결정). 소재가 나가는 지면들의 규격 수만큼 파일이 있다.
   - 광고 서버는 `AdCreativeView.image_path`에 요청 지면의 `slot_image_path` 결과를 넣는다(`FakeAdProvider`도 같다). 화면(B)은 그 경로를 그대로 쓰고, 이미지 크기는 `SLOT_SIZES[slot]`로 잡는다.
   - 픽스처 `fixtures/ads/campaigns.json`의 `slot_sizes`는 같은 값의 사본이다(에셋 검사 도구가 파이썬 import 없이 읽는다). 규격을 바꾸면 `SLOT_SIZES`를 고치고 픽스처를 다시 만든다.
 - **`SlotPolicy`**: 지면 최저 eCPM, 사전 CTR μ, 사전 강도 κ(기본 200), 빈도 제한(세션당 같은 소재 serve 횟수 상한. 11/11 사용자 결정으로 1000, 사실상 해제. 소재가 지면당 1~3개뿐이라 3회면 한 로그인에서 몇 판 만에 빈 응답이 됐다).

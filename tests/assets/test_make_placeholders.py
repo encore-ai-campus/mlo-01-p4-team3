@@ -173,12 +173,12 @@ class ExpectedEntriesTest(unittest.TestCase):
     def test_synthetic_campaign_skipped_and_same_size_slots_one_file(self):
         spec = parse_spec_md(SPEC_TEXT)
         cps = [{"campaign_id": "cp_x", "slots": ["lobby_banner", "result_banner"],
-                "creatives": [{"creative_id": "cr_x", "image_path": "/static/ads/x.png"}]},
+                "creatives": [{"creative_id": "cr_x", "image_path": "/static/promo/x.png"}]},
                {"campaign_id": "syn:cp_y", "slots": ["review_side"],
-                "creatives": [{"creative_id": "cr_y", "image_path": "/static/ads/y.png"}]}]
+                "creatives": [{"creative_id": "cr_y", "image_path": "/static/promo/y.png"}]}]
         got = ad_entries(spec, cps, SLOT_SIZES_STR, slot_image_path)
         self.assertEqual([(e.id, e.size, e.url) for e in got],
-                         [("cr_x", (728, 90), "/static/ads/x__728x90.png")])
+                         [("cr_x", (728, 90), "/static/promo/x__wide.png")])
 
     def test_ad_url_outside_static_ads_fails(self):
         spec = parse_spec_md(SPEC_TEXT)
