@@ -67,6 +67,14 @@ def content_problems(b: ContentBundle) -> list[str]:
             out.append(f"인물 {c.npc_id}: 없는 성향 {c.temperament_id}")
         if not c.aliases:
             out.append(f"인물 {c.npc_id}: 별칭 없음")
+    for kind, ids, known in (("확장 인물", b.extra_npcs, chars), ("확장 비밀", b.extra_secrets, set(secrets))):
+        unknown = sorted(set(ids) - known)
+        if unknown:
+            out.append(f"{kind} 목록에 없는 ID: {unknown}")
+    extra_n = set(b.extra_npcs)
+    for s in b.secrets:
+        if s.secret_id not in b.extra_secrets and not set(s.eligible_npcs) - extra_n:
+            out.append(f"비밀 {s.secret_id}: 핵심 비밀인데 핵심 인물 자격자가 없음")
     owner: dict[str, str] = {}
     for c in b.characters:
         for a in c.aliases:

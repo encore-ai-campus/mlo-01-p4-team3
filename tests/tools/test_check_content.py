@@ -75,6 +75,65 @@ class BundleV1(unittest.TestCase):
                 self.assertEqual(sum(r.violations.values()), 0, dict(r.violations))
 
 
+@unittest.skipUnless(HAS_ENGINE, "엔진 배정기 병합 전")
+class ExtraCast(unittest.TestCase):
+    """E-08-02 11/11 사용자 결정: 5·6인 판은 핵심 6명·비밀 6개에서만 뽑아 기존(content-1.0.1) 배정과 같고,
+    확장 인물(사냥꾼·스님)과 확장 비밀(rite)은 7·8인 판에만 나온다."""
+
+    @staticmethod
+    def _core_only(b: ContentBundle) -> ContentBundle:
+        d = serde.to_jsonable(b)
+        extra_n, extra_s = set(d["extra_npcs"]), set(d["extra_secrets"])
+        d["characters"] = [c for c in d["characters"] if c["npc_id"] not in extra_n]
+        d["secrets"] = [s for s in d["secrets"] if s["secret_id"] not in extra_s]
+        for s in d["secrets"]:
+            s["eligible_npcs"] = [n for n in s["eligible_npcs"] if n not in extra_n]
+        d["extra_npcs"], d["extra_secrets"] = [], []
+        return serde.from_jsonable(ContentBundle, d)
+
+    def test_bundle_marks_extra_cast(self):
+        b = _bundle()
+        self.assertEqual(sorted(b.extra_npcs), ["hunter", "monk"])
+        self.assertEqual(b.extra_secrets, ["rite"])
+
+    def test_small_presets_match_core_bundle(self):
+        """핵심만 남긴 묶음(= 추가 전 묶음)과 같은 시드에서 배정이 한 글자도 다르지 않다."""
+        from engine.domain.engine import make_setup
+        from engine.domain.model import PRESETS
+        full, core = _bundle(), self._core_only(_bundle())
+        for pid in ("short5", "base6"):
+            for seed in range(40):
+                with self.subTest(preset=pid, seed=seed):
+                    a = make_setup(PRESETS[pid], full, seed, "g")
+                    b = make_setup(PRESETS[pid], core, seed, "g")
+                    self.assertEqual(serde.to_jsonable(a), serde.to_jsonable(b))
+
+    def test_extra_cast_only_in_large_presets(self):
+        from engine.domain.engine import make_setup
+        from engine.domain.model import PRESETS
+        b = _bundle()
+        extra = set(b.extra_npcs)
+        for pid in ("short5", "base6", "base7", "large8"):
+            seen_npc = seen_rite = 0
+            for seed in range(100):
+                a = make_setup(PRESETS[pid], b, seed, "g").assignment
+                seen_npc += bool(extra & set(a.residents))
+                seen_rite += "rite" in a.secrets.values()
+            with self.subTest(pid):
+                if pid in ("short5", "base6"):
+                    self.assertEqual((seen_npc, seen_rite), (0, 0))
+                else:
+                    self.assertGreater(seen_npc, 0)
+
+    def test_unknown_extra_ids_are_problems(self):
+        d = serde.to_jsonable(_bundle())
+        d["extra_npcs"].append("nobody")
+        d["extra_secrets"].append("no_secret")
+        probs = content_problems(serde.from_jsonable(ContentBundle, d))
+        self.assertTrue(any("확장 인물" in p for p in probs))
+        self.assertTrue(any("확장 비밀" in p for p in probs))
+
+
 class Problems(unittest.TestCase):
     """검사 규칙이 위반을 잡는지."""
 

@@ -887,5 +887,12 @@
         "흐흑, 다 말씀드리겠습니다요. {fact}"
       ]
     }
+  ],
+  "extra_npcs": [
+    "hunter",
+    "monk"
+  ],
+  "extra_secrets": [
+    "rite"
   ]
 }
