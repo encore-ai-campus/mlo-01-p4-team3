@@ -1,0 +1,352 @@
+{
+  "task": "C-11-01",
+  "commit": "65ad184c831b58d386b5c84219ff03392d52b6f5",
+  "generated_at": "2026-11-11T06:36:14Z",
+  "source": "098b077 active release/content-1.1; actual engine, shared databases and ads; isolated two Daphne+Caddy; four fresh players per case/180s; test web workers restarted between cases to reset circuit-breaker state; MySQL max_connections=64; slot HTTP request ratio, not Kafka event ratio; failures retained",
+  "metrics": {
+    "normal_p95_ms": {
+      "value": 446.033,
+      "unit": "ms"
+    },
+    "normal_requests": {
+      "value": 720,
+      "unit": "건"
+    },
+    "normal_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "normal_ads_requests": {
+      "value": 176,
+      "unit": "건"
+    },
+    "normal_ad_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "normal_click_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "normal_finished_games": {
+      "value": 51,
+      "unit": "판"
+    },
+    "normal_find_command_stage_p95_ms": {
+      "value": 2.845,
+      "unit": "ms"
+    },
+    "normal_server_total_stage_p95_ms": {
+      "value": 443.062,
+      "unit": "ms"
+    },
+    "normal_open_games_scan_stage_p95_ms": {
+      "value": 0.896,
+      "unit": "ms"
+    },
+    "normal_account_sql_stage_p95_ms": {
+      "value": 207.746,
+      "unit": "ms"
+    },
+    "normal_commit_stage_p95_ms": {
+      "value": 19.104,
+      "unit": "ms"
+    },
+    "normal_content_stage_p95_ms": {
+      "value": 0.031,
+      "unit": "ms"
+    },
+    "normal_load_stage_p95_ms": {
+      "value": 18.025,
+      "unit": "ms"
+    },
+    "normal_create_stage_p95_ms": {
+      "value": 5.197,
+      "unit": "ms"
+    },
+    "normal_progress_add_game_stage_p95_ms": {
+      "value": 4.899,
+      "unit": "ms"
+    },
+    "normal_engine_apply_stage_p95_ms": {
+      "value": 10.073,
+      "unit": "ms"
+    },
+    "normal_progress_load_stage_p95_ms": {
+      "value": 4.881,
+      "unit": "ms"
+    },
+    "normal_engine_new_game_stage_p95_ms": {
+      "value": 0.356,
+      "unit": "ms"
+    },
+    "normal_engine_player_view_stage_p95_ms": {
+      "value": 0.54,
+      "unit": "ms"
+    },
+    "db_delay_p95_ms": {
+      "value": 520.896,
+      "unit": "ms"
+    },
+    "db_delay_requests": {
+      "value": 720,
+      "unit": "건"
+    },
+    "db_delay_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "db_delay_ads_requests": {
+      "value": 179,
+      "unit": "건"
+    },
+    "db_delay_ad_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "db_delay_click_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "db_delay_finished_games": {
+      "value": 49,
+      "unit": "판"
+    },
+    "db_delay_p95_increase_ms": {
+      "value": 74.863,
+      "unit": "ms"
+    },
+    "db_delay_ads_request_ratio": {
+      "value": 1.017,
+      "unit": "배"
+    },
+    "db_delay_find_command_stage_p95_ms": {
+      "value": 4.405,
+      "unit": "ms"
+    },
+    "db_delay_server_total_stage_p95_ms": {
+      "value": 518.268,
+      "unit": "ms"
+    },
+    "db_delay_open_games_scan_stage_p95_ms": {
+      "value": 0.898,
+      "unit": "ms"
+    },
+    "db_delay_account_sql_stage_p95_ms": {
+      "value": 210.265,
+      "unit": "ms"
+    },
+    "db_delay_commit_stage_p95_ms": {
+      "value": 17.772,
+      "unit": "ms"
+    },
+    "db_delay_content_stage_p95_ms": {
+      "value": 0.031,
+      "unit": "ms"
+    },
+    "db_delay_load_stage_p95_ms": {
+      "value": 20.594,
+      "unit": "ms"
+    },
+    "db_delay_create_stage_p95_ms": {
+      "value": 4.586,
+      "unit": "ms"
+    },
+    "db_delay_progress_add_game_stage_p95_ms": {
+      "value": 4.366,
+      "unit": "ms"
+    },
+    "db_delay_engine_apply_stage_p95_ms": {
+      "value": 10.696,
+      "unit": "ms"
+    },
+    "db_delay_progress_load_stage_p95_ms": {
+      "value": 5.177,
+      "unit": "ms"
+    },
+    "db_delay_engine_new_game_stage_p95_ms": {
+      "value": 0.351,
+      "unit": "ms"
+    },
+    "db_delay_engine_player_view_stage_p95_ms": {
+      "value": 0.529,
+      "unit": "ms"
+    },
+    "burst10_p95_ms": {
+      "value": 373.071,
+      "unit": "ms"
+    },
+    "burst10_requests": {
+      "value": 716,
+      "unit": "건"
+    },
+    "burst10_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "burst10_ads_requests": {
+      "value": 1761,
+      "unit": "건"
+    },
+    "burst10_ad_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "burst10_click_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "burst10_finished_games": {
+      "value": 48,
+      "unit": "판"
+    },
+    "burst10_p95_increase_ms": {
+      "value": -72.962,
+      "unit": "ms"
+    },
+    "burst10_ads_request_ratio": {
+      "value": 10.006,
+      "unit": "배"
+    },
+    "burst10_find_command_stage_p95_ms": {
+      "value": 4.833,
+      "unit": "ms"
+    },
+    "burst10_server_total_stage_p95_ms": {
+      "value": 367.821,
+      "unit": "ms"
+    },
+    "burst10_open_games_scan_stage_p95_ms": {
+      "value": 1.186,
+      "unit": "ms"
+    },
+    "burst10_account_sql_stage_p95_ms": {
+      "value": 208.766,
+      "unit": "ms"
+    },
+    "burst10_commit_stage_p95_ms": {
+      "value": 18.992,
+      "unit": "ms"
+    },
+    "burst10_content_stage_p95_ms": {
+      "value": 0.041,
+      "unit": "ms"
+    },
+    "burst10_load_stage_p95_ms": {
+      "value": 25.106,
+      "unit": "ms"
+    },
+    "burst10_create_stage_p95_ms": {
+      "value": 4.779,
+      "unit": "ms"
+    },
+    "burst10_progress_add_game_stage_p95_ms": {
+      "value": 4.706,
+      "unit": "ms"
+    },
+    "burst10_engine_apply_stage_p95_ms": {
+      "value": 13.217,
+      "unit": "ms"
+    },
+    "burst10_progress_load_stage_p95_ms": {
+      "value": 5.788,
+      "unit": "ms"
+    },
+    "burst10_engine_new_game_stage_p95_ms": {
+      "value": 0.376,
+      "unit": "ms"
+    },
+    "burst10_engine_player_view_stage_p95_ms": {
+      "value": 0.786,
+      "unit": "ms"
+    },
+    "notebook3_cpu_p95_ms": {
+      "value": 340.75,
+      "unit": "ms"
+    },
+    "notebook3_cpu_requests": {
+      "value": 720,
+      "unit": "건"
+    },
+    "notebook3_cpu_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "notebook3_cpu_ads_requests": {
+      "value": 176,
+      "unit": "건"
+    },
+    "notebook3_cpu_ad_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "notebook3_cpu_click_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "notebook3_cpu_finished_games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "notebook3_cpu_p95_increase_ms": {
+      "value": -105.283,
+      "unit": "ms"
+    },
+    "notebook3_cpu_ads_request_ratio": {
+      "value": 1.0,
+      "unit": "배"
+    },
+    "notebook3_cpu_find_command_stage_p95_ms": {
+      "value": 3.826,
+      "unit": "ms"
+    },
+    "notebook3_cpu_server_total_stage_p95_ms": {
+      "value": 336.821,
+      "unit": "ms"
+    },
+    "notebook3_cpu_open_games_scan_stage_p95_ms": {
+      "value": 0.819,
+      "unit": "ms"
+    },
+    "notebook3_cpu_account_sql_stage_p95_ms": {
+      "value": 61.423,
+      "unit": "ms"
+    },
+    "notebook3_cpu_commit_stage_p95_ms": {
+      "value": 17.023,
+      "unit": "ms"
+    },
+    "notebook3_cpu_content_stage_p95_ms": {
+      "value": 0.037,
+      "unit": "ms"
+    },
+    "notebook3_cpu_load_stage_p95_ms": {
+      "value": 20.644,
+      "unit": "ms"
+    },
+    "notebook3_cpu_create_stage_p95_ms": {
+      "value": 4.578,
+      "unit": "ms"
+    },
+    "notebook3_cpu_progress_add_game_stage_p95_ms": {
+      "value": 4.593,
+      "unit": "ms"
+    },
+    "notebook3_cpu_engine_apply_stage_p95_ms": {
+      "value": 10.635,
+      "unit": "ms"
+    },
+    "notebook3_cpu_progress_load_stage_p95_ms": {
+      "value": 5.316,
+      "unit": "ms"
+    },
+    "notebook3_cpu_engine_new_game_stage_p95_ms": {
+      "value": 0.359,
+      "unit": "ms"
+    },
+    "notebook3_cpu_engine_player_view_stage_p95_ms": {
+      "value": 0.581,
+      "unit": "ms"
+    }
+  }
+}
