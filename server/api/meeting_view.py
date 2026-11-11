@@ -6,10 +6,8 @@ from engine.ports import PlayerView
 from .viewmodels import PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_meeting_vm
 from .ui_viewmodels import build_ui_vm
 from .tutorial_script import CLUE_DUPLICATE, CLUE_NEW, CLUE_UNLOCK, FIRST_GAME_END, GUIDE_SPEAKER, guide_lines
-from .vn_script import VNLine, announcement_lines, build_vn_lines, claim_card_text, reaction_lines
+from .vn_script import DIVINATION_KO, VNLine, announcement_lines, build_vn_lines, claim_card_text, reaction_lines
 from .vn_expressions import TELL_NOTICE, expression_cues
-
-DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
 
 @dataclass(frozen=True)
