@@ -24,6 +24,8 @@
 
 ## 사용법
 
+운영 기동·재처리·재학습 준비·대사·종료는 [운영 인계](../../ops/runbook/README.md)를 따른다. 다른 흐름의 실제 검수 결과는 런북 마지막 표에 기록한다.
+
 진척 저장 중 장애가 난 판은 보호된 `PALDO_MONGO_URI`를 설정하고 `python -m tools.replay_progress --game-id <판 ID>`로 복구한다. 여러 판은 `--game-id`를 반복하고, 플레이어 단위는 `--player`를 쓴다. 전체 판은 `--all`을 명시해야 한다. 발행 여부와 관계없이 고백·종료 이벤트를 읽으며, 판에 고정된 콘텐츠를 사용한다. 재실행 결과의 신규 단서·결말은 0건이어야 한다. 격리 시험에서만 시험용 컬렉션 `--prefix`를 붙인다.
 
 ```
@@ -99,3 +101,4 @@ MySQL 생성·분리·PJ4 named channel 복구와 앱 런처는 `ops/mysql/READM
 | E-09-10 | 11/9 | 실행 도구 `web --port 8000·8002`, Caddyfile upstream 2개·능동 상태 확인, 로컬 Prometheus `paldo-web` 대상 2개(`process` 라벨), Compose 선택 Redis(profile `redis`), proxy README 웹 프로세스 2개 절차·되돌림·비교 측정(`tools/perf/api_bench.py --web-processes`)·선택 Redis 절 |
 | C-09-04 | 11/9 | 판 아웃박스 기반 진척 재처리 및 실제 Mongo 멱등 검증 |
 | C-11-01 | 11/11 | 네 장애·380이벤트 대조와 Bronze 복구, 새 코호트 두 웹 성능, MySQL 한도64·광고/CPU 통과·DB 지연 실패, 현재 LLM 연결 장애 폴백·141이벤트 대사·시험 정리 |
+| C-11-03 | 11/11 | 실제 unit 기동·재처리·재학습 준비·대사·종료 인계, 타 흐름 검수 표 |
