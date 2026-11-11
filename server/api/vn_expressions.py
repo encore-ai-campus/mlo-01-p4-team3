@@ -80,6 +80,6 @@ def expression_cues(public, lines):
         if key in locks:
             lock = locks[key]
             for vote in public.votes:
-                if vote.day == lock.day and vote.target != lock.locked:
+                if vote.day == lock.day and vote.target is not None and vote.target != lock.locked:
                     pending[vote.target].add("vote_joy")
     return moods, frozenset(tells)

@@ -11,11 +11,12 @@ from __future__ import annotations
 
 import copy
 import random
+import re
 from dataclasses import dataclass
 from typing import Optional, Protocol
 
 from . import params, serde
-from .content import Assignment, Character, ContentBundle, Secret, required_counts, validate_assignment
+from .content import Assignment, Character, ContentBundle, Secret, draw_pool, required_counts, validate_assignment
 from .events import DomainEvent, EventType
 from .model import (
     LIMITS, PHASE_RULES, PLAYER_ID, PRESETS, Claim, ClaimTruth, ClaimType, Command, CommandEnvelope, CommandKind,
@@ -52,19 +53,24 @@ class Setup:
 
 
 # ---------------------------------------------------------------- 배정
-def make_setup(preset: Preset, content: ContentBundle, seed: int, game_id: str, lure: bool = True) -> Setup:
+def make_setup(preset: Preset, content: ContentBundle, seed: int, game_id: str, lure: bool = True,
+               home: bool = True) -> Setup:
     """시드로 배정을 만들고 검증기를 통과할 때까지 파생 시드로 다시 뽑는다(domain.md 10절).
 
-    `lure`가 거짓이면 이전 규칙(`rule-0.6` 이하: 피해 장소 = 피해자의 한밤 장소)으로 뽑는다(`lures`)."""
+    `lure`가 거짓이면 이전 규칙(`rule-0.6` 이하: 피해 장소 = 피해자의 한밤 장소)으로 뽑는다(`lures`).
+    `home`이 거짓이면 `rule-0.7` 이하 규칙(한밤 동선 그대로, 실행자 알리바이는 공공장소 균등, 목격 확률
+    decision-1)으로 뽑는다(`home_alibi`)."""
     _check_content(preset, content)
+    chars = {c.npc_id: c for c in content.characters}
     for attempt in range(params.ASSIGNMENT_MAX_ATTEMPTS):
         rng = random.Random(f"{seed}:{attempt}")
-        a = _draw_assignment(rng, preset, content, game_id, lure)
+        a = _draw_assignment(rng, preset, content, game_id, lure, home)
         if a is None:
             continue
-        sightings = _draw_sightings(rng, a, preset.witness_scale)
+        sightings = _draw_sightings(rng, a, preset.witness_scale, _witness_prob(home))
         plan = a.night0_plan
-        alibi = executor_alibi(rng, a.night0_whereabouts[plan.executor][Slot.MIDNIGHT], sightings[plan.executor])
+        alibi = executor_alibi(rng, a.night0_whereabouts[plan.executor][Slot.MIDNIGHT], sightings[plan.executor],
+                               _alibi_prefs(chars.get(plan.executor), home))
         if preset.n_possessed == 2:                       # 2명 판은 실행자의 거짓 알리바이를 합의한다
             plan.agreed_alibis = {plan.executor: alibi.value}
         if validate_assignment(preset, content, a):
@@ -83,19 +89,20 @@ def _check_content(preset: Preset, content: ContentBundle) -> None:
 
 
 def _draw_assignment(rng: random.Random, preset: Preset, content: ContentBundle, game_id: str,
-                     lure: bool = True) -> Optional[Assignment]:
+                     lure: bool = True, home: bool = True) -> Optional[Assignment]:
     chars = {c.npc_id: c for c in content.characters}
-    residents = rng.sample(sorted(chars), preset.n_resident_pool_needed)
+    pool_chars, pool_secrets = draw_pool(preset, content)
+    residents = rng.sample(sorted(c.npc_id for c in pool_chars), preset.n_resident_pool_needed)
     possessed = rng.sample(residents, preset.n_possessed)
     roles = {r: (Role.POSSESSED if r in possessed else Role.VILLAGER) for r in residents}
     villagers = [r for r in residents if r not in possessed]
     victim = rng.choice(villagers)
-    secrets = _draw_secrets(rng, [v for v in villagers if v != victim], content.secrets, preset.n_secret)
+    secrets = _draw_secrets(rng, [v for v in villagers if v != victim], pool_secrets, preset.n_secret)
     if secrets is None:
         return None
     by_id = {s.secret_id: s for s in content.secrets}
 
-    where: dict[str, dict[Slot, Place]] = {r: {s: _routine_place(rng, chars[r], s) for s in SLOTS}
+    where: dict[str, dict[Slot, Place]] = {r: {s: _routine_place(rng, chars[r], s, home=home) for s in SLOTS}
                                            for r in residents}
     for npc, sid in secrets.items():                      # 비밀 시간대는 비밀의 실제 장소
         s = by_id[sid]
@@ -106,7 +113,7 @@ def _draw_assignment(rng: random.Random, preset: Preset, content: ContentBundle,
         fixed = {npc for npc, sid in secrets.items() if by_id[sid].slot is Slot.MIDNIGHT}
         for r in villagers:                               # 한밤 비밀 장소와 겹치면 검증기가 걸러 다시 뽑는다
             if r != victim and r not in fixed and where[r][Slot.MIDNIGHT] is crime:
-                where[r][Slot.MIDNIGHT] = _routine_place(rng, chars[r], Slot.MIDNIGHT, exclude=crime)
+                where[r][Slot.MIDNIGHT] = _routine_place(rng, chars[r], Slot.MIDNIGHT, exclude=crime, home=home)
 
     plan = NightPlan(executor=executor, victim=victim)
     return Assignment(game_id=game_id, preset_id=preset.preset_id, residents=residents,
@@ -149,10 +156,69 @@ def _draw_secrets(rng: random.Random, holders_pool: list[str], secrets: list[Sec
 LEGACY_CRIME_RULES = ("rule-0.1", "rule-0.2", "rule-0.3", "rule-0.4", "rule-0.5", "rule-0.6")
 
 
+LEGACY_ALIBI_RULES = LEGACY_CRIME_RULES + ("rule-0.7",)
+HOME_MIDNIGHT_SCALE = 0.25   # rule-0.8: 한밤 집 가중치 배율. 줄어든 몫은 다른 장소에 가중치 비율대로 나눈다
+
+
+def _rule_base(rule_version: str) -> str:
+    return rule_version.split(params.VERSION_JOIN + "decision")[0]
+
+
 def lures(rule_version: str) -> bool:
     """판 메타의 규칙 버전이 꾀어내기 규칙(`rule-0.7`~)을 쓰는가. 이전 버전(`LEGACY_CRIME_RULES`)으로 시작한 판·회차는
     배포 뒤에도 이전 규칙으로 이어 가 판 메타 버전과 실제 규칙이 어긋나지 않게 한다. 모르는 버전은 현재 규칙이다."""
-    return rule_version.split(params.VERSION_JOIN + "decision")[0] not in LEGACY_CRIME_RULES
+    return _rule_base(rule_version) not in LEGACY_CRIME_RULES
+
+
+def home_alibi(rule_version: str) -> bool:
+    """판 메타의 규칙 버전이 `rule-0.8`~ 규칙(실행자 알리바이에 집 포함·한밤 동선 비례, 한밤 집 가중치 ×0.25,
+    목격·기색 확률 decision-2 이후)을 쓰는가. `rule-0.7` 이하(`LEGACY_ALIBI_RULES`)로 시작한 판·회차는 배포 뒤에도
+    이전 규칙과 `params.LEGACY_DECISION`의 목격·기색 확률로 이어 간다. 모르는 버전은 현재 규칙이다."""
+    return _rule_base(rule_version) not in LEGACY_ALIBI_RULES
+
+
+def abstains(rule_version: str) -> bool:
+    """판 메타의 규칙 버전이 투표 기권 규칙(`rule-0.9`~, `params.ABSTAIN_RULE_BASE`)을 쓰는가.
+
+    다른 규칙 판단과 달리 운영 기본값(rule-0.8)보다 새 규칙이라, 읽을 수 없는 버전(시험용 `rule-test` 등)은 기권 없음이다.
+    """
+    m = re.fullmatch(r"rule-(\d+)\.(\d+)", _rule_base(rule_version))
+    return m is not None and (int(m.group(1)), int(m.group(2))) >= (0, 9)
+
+
+def abstain_margin_of(rule_version: str) -> Optional[float]:
+    """판 규칙 버전의 NPC 기권 문턱. 기권 규칙이 아니면 None(NPC는 기권하지 않는다)."""
+    return params.ABSTAIN_MARGIN if abstains(rule_version) else None
+
+
+def decision_of(rule_version: str) -> params.DecisionParams:
+    """판 규칙 버전이 쓰는 결정 파라미터. `rule-0.7` 이하는 고정 decision-1, 그 뒤는 프로세스 값(`params.current`)."""
+    return params.current() if home_alibi(rule_version) else params.LEGACY_DECISION
+
+
+def _witness_prob(home: bool) -> float:
+    return params.current().witness_prob if home else params.LEGACY_DECISION.witness_prob
+
+
+def _slot_weights(ch: Character, slot: Slot, home: bool) -> dict[Place, float]:
+    """인물의 시간대 동선 가중치. `home`(rule-0.8~)이면 한밤 집 가중치를 `HOME_MIDNIGHT_SCALE`배로 줄이고 줄어든 몫을
+    다른 장소에 기존 가중치 비율대로 나눈다(다른 장소가 없으면 그대로). 콘텐츠 값은 바꾸지 않는다."""
+    prefs = dict(ch.routine.get(slot, {}))
+    if not home or slot is not Slot.MIDNIGHT or prefs.get(Place.HOME, 0) <= 0:
+        return prefs
+    others = sum(w for p, w in prefs.items() if p is not Place.HOME and w > 0)
+    if others <= 0:
+        return prefs
+    cut = prefs[Place.HOME] * (1.0 - HOME_MIDNIGHT_SCALE)
+    return {p: (prefs[p] * HOME_MIDNIGHT_SCALE if p is Place.HOME
+                else (prefs[p] + cut * prefs[p] / others if prefs[p] > 0 else prefs[p])) for p in prefs}
+
+
+def _alibi_prefs(ch: Optional[Character], home: bool) -> Optional[dict[Place, float]]:
+    """`executor_alibi`에 줄 한밤 동선 가중치(rule-0.8~). 이전 규칙이면 None(공공장소 균등)."""
+    if not home:
+        return None
+    return _slot_weights(ch, Slot.MIDNIGHT, True) if ch is not None else {}
 
 
 def _crime_place(rng: random.Random, where: dict[str, dict[Slot, Place]], victim: str, executor: str,
@@ -168,9 +234,12 @@ def _crime_place(rng: random.Random, where: dict[str, dict[Slot, Place]], victim
     return crime
 
 
-def _routine_place(rng: random.Random, ch: Character, slot: Slot, exclude: Optional[Place] = None) -> Place:
-    """인물 동선 가중치로 장소를 뽑는다(동선 무작위성 `params.ROUTINE_RANDOMNESS`만큼 균등 분포와 섞음). 후보가 없으면 집."""
-    prefs = [(p, w) for p, w in ch.routine.get(slot, {}).items() if p is not exclude and w > 0]
+def _routine_place(rng: random.Random, ch: Character, slot: Slot, exclude: Optional[Place] = None,
+                   home: bool = True) -> Place:
+    """인물 동선 가중치로 장소를 뽑는다(동선 무작위성 `params.ROUTINE_RANDOMNESS`만큼 균등 분포와 섞음). 후보가 없으면 집.
+
+    가중치는 `_slot_weights`(rule-0.8~ 한밤 집 ×0.25)다. `home`이 거짓이면 콘텐츠 값 그대로다."""
+    prefs = [(p, w) for p, w in _slot_weights(ch, slot, home).items() if p is not exclude and w > 0]
     if not prefs:
         return Place.HOME
     places, weights = zip(*prefs)
@@ -181,37 +250,51 @@ def _routine_place(rng: random.Random, ch: Character, slot: Slot, exclude: Optio
     return rng.choices(places, weights=weights)[0]
 
 
-def executor_alibi(rng: random.Random, crime: Place, own_sightings: list[Sighting]) -> Place:
+def executor_alibi(rng: random.Random, crime: Place, own_sightings: list[Sighting],
+                   prefs: Optional[dict[Place, float]] = None) -> Place:
     """실행자가 한밤에 있었다고 말할 장소(기획서 5.2 씐 자 전략의 단순형, 정교화는 A-07-01).
 
-    자기가 아는 목격 기록으로 반박되지 않는 공공장소 중에서 시드로 고른다: 범행 장소와
-    자기가 한밤에 누군가를 본 장소(= 그 시각 실제로 있던 곳)는 뺀다.
+    자기가 아는 목격 기록으로 반박되지 않는 장소 중에서 시드로 고른다: 범행 장소와 자기가 한밤에 누군가를 본
+    장소(= 그 시각 실제로 있던 곳)는 뺀다.
+    - `prefs`가 None(rule-0.7 이하): 공공장소 중 균등.
+    - `prefs`가 있으면(rule-0.8~, A-10-01 1번): 집을 포함한 후보를 실행자의 한밤 동선 가중치에 비례해 고른다.
+      집 진술이 결백의 증거가 되지 않고, 평소 안 가는 장소를 말해 드러나지 않게 한다. 후보 가중치가 모두 0이면 균등.
     """
     known = {s.place for s in own_sightings if s.slot is Slot.MIDNIGHT} | {crime}
-    return rng.choice([p for p in PUBLIC_PLACES if p not in known])
+    if prefs is None:
+        return rng.choice([p for p in PUBLIC_PLACES if p not in known])
+    cands = [p for p in (Place.HOME,) + tuple(PUBLIC_PLACES) if p not in known]
+    weights = [prefs.get(p, 0.0) for p in cands]
+    if sum(weights) > 0:
+        return rng.choices(cands, weights=weights)[0]
+    return rng.choice(cands)
 
 
 # ---------------------------------------------------------------- 목격과 거짓 행적
-def _draw_sightings(rng: random.Random, a: Assignment, scale: float = 1.0) -> dict[str, list[Sighting]]:
+def _draw_sightings(rng: random.Random, a: Assignment, scale: float = 1.0,
+                    prob: Optional[float] = None) -> dict[str, list[Sighting]]:
     """0일째 밤 목격(`draw_sightings`에 배정의 행적을 넣는다)."""
-    return draw_sightings(rng, NIGHT0, a.residents, a.night0_whereabouts, scale)
+    return draw_sightings(rng, NIGHT0, a.residents, a.night0_whereabouts, scale, prob)
 
 
 def draw_sightings(rng: random.Random, night: int, people: list[str],
-                   where: dict[str, dict[Slot, Place]], scale: float = 1.0) -> dict[str, list[Sighting]]:
+                   where: dict[str, dict[Slot, Place]], scale: float = 1.0,
+                   prob: Optional[float] = None) -> dict[str, list[Sighting]]:
     """같은 시간대·같은 공공장소의 두 사람은 WITNESS_PROB로 서로를 본다(기획서 4.2, domain.md 5절 4-3).
 
     0일째와 이후 밤이 같은 규칙을 쓴다. 쌍마다 한 번 뽑고 서로 본다. 못 봤다는 것은 부재 증명이 아니다.
     `scale`은 선택형 도전 "목격 정보 축소"의 확률 배율이다(`Preset.witness_scale`). 쌍마다 난수를 한 번씩
-    뽑는 순서는 배율과 무관하게 같아서, 배율 1.0이면 기존 판과 결과가 같다.
+    뽑는 순서는 배율과 무관하게 같아서, 배율 1.0이면 기존 판과 결과가 같다. `prob`은 판 규칙 버전의 목격 확률
+    (`decision_of(...).witness_prob`)이고, 생략하면 프로세스 값(`params.WITNESS_PROB`)이다.
     """
+    p_witness = params.WITNESS_PROB if prob is None else prob
     seen: dict[str, dict[Slot, list[str]]] = {r: {s: [] for s in SLOTS} for r in people}
     for slot in SLOTS:
         for place in PUBLIC_PLACES:
             here = [r for r in people if where[r][slot] is place]
             for i, x in enumerate(here):
                 for y in here[i + 1:]:
-                    if rng.random() < params.WITNESS_PROB * scale:
+                    if rng.random() < p_witness * scale:
                         seen[x][slot].append(y)
                         seen[y][slot].append(x)
     return {r: [Sighting(night, s, where[r][s], sorted(seen[r][s])) for s in SLOTS if seen[r][s]]
@@ -277,13 +360,17 @@ def night_claims(speakers: list[str], night: int, day: int, where: dict[str, dic
 
 
 # ---------------------------------------------------------------- 고정 배정으로 판 만들기
-def setup_from_assignment(a: Assignment, content: ContentBundle, seed: int) -> Setup:
-    """이미 정해진 배정(픽스처·재현용)에서 목격·거짓 행적을 시드로 만든다. 배정 자체는 바꾸지 않는다."""
+def setup_from_assignment(a: Assignment, content: ContentBundle, seed: int, home: bool = True) -> Setup:
+    """이미 정해진 배정(픽스처·재현용)에서 목격·거짓 행적을 시드로 만든다. 배정 자체는 바꾸지 않는다.
+
+    `home`은 `make_setup`과 같다(거짓이면 rule-0.7 이하 알리바이·목격 확률)."""
     rng = random.Random(f"{seed}:fixed")
     preset = PRESETS.get(a.preset_id)
-    sightings = _draw_sightings(rng, a, preset.witness_scale if preset else 1.0)
+    sightings = _draw_sightings(rng, a, preset.witness_scale if preset else 1.0, _witness_prob(home))
     plan = a.night0_plan
-    alibi = executor_alibi(rng, a.night0_whereabouts[plan.executor][Slot.MIDNIGHT], sightings[plan.executor])
+    ch = next((c for c in content.characters if c.npc_id == plan.executor), None)
+    alibi = executor_alibi(rng, a.night0_whereabouts[plan.executor][Slot.MIDNIGHT], sightings[plan.executor],
+                           _alibi_prefs(ch, home))
     return Setup(a, 1, sightings, _lies_of(a, content, alibi))
 
 
@@ -383,7 +470,15 @@ def legal_player_kinds(state: GameState) -> list[CommandKind]:
     """지금 단계에서 플레이어가 낼 수 있는 명령 종류(`PHASE_RULES` − 횟수 제한에 걸린 것)."""
     if state.result is not None:
         return []
-    return [k for k in PHASE_RULES[state.phase].player_kinds if check_player_limits(state.player, k) is None]
+    kinds = [k for k in PHASE_RULES[state.phase].player_kinds if check_player_limits(state.player, k) is None]
+    if _abstain_open(state):
+        kinds.append(CommandKind.ABSTAIN)
+    return kinds
+
+
+def _abstain_open(state: GameState) -> bool:
+    """지금 무당이 기권할 수 있는가: 기권 규칙 판(rule-0.9~)의 투표·결선 단계."""
+    return state.phase in (Phase.VOTE, Phase.RUNOFF) and abstains(state.meta.rule_version)
 
 
 def validate_command(state: GameState, truth: GameTruth, env: CommandEnvelope) -> Optional[tuple[RejectCode, str]]:
@@ -398,7 +493,10 @@ def validate_command(state: GameState, truth: GameTruth, env: CommandEnvelope) -
         return RejectCode.GAME_ENDED, ""
     if cmd.actor != PLAYER_ID:
         return RejectCode.NOT_YOUR_TURN, f"플레이어 명령만 받는다: {cmd.actor}"
-    if not is_legal_kind(state.phase, cmd.kind, True):
+    if cmd.kind is CommandKind.ABSTAIN:
+        if not _abstain_open(state):
+            return RejectCode.ILLEGAL_PHASE, f"{state.phase.value}에서 {cmd.kind.value} 불가"
+    elif not is_legal_kind(state.phase, cmd.kind, True):
         return RejectCode.ILLEGAL_PHASE, f"{state.phase.value}에서 {cmd.kind.value} 불가"
     if state.phase in ROUND_PHASES and (state.turn_index >= len(state.turn_order)
                                         or state.turn_order[state.turn_index] != PLAYER_ID):
@@ -717,7 +815,8 @@ class _Tx:
         if agreed and Place(agreed) is not actual:      # 합의 알리바이가 실제 범행 장소면 알리바이가 아니므로 쓰지 않는다(A-07-01)
             return Place(agreed)
         own = [s for s in self.st.npcs[npc].private.witnessed if s.night == night]
-        return executor_alibi(random.Random(f"{self.st.meta.seed}:{night}:alibi:{npc}"), actual, own)
+        return executor_alibi(random.Random(f"{self.st.meta.seed}:{night}:alibi:{npc}"), actual, own,
+                              _alibi_prefs(self.chars.get(npc), home_alibi(self.st.meta.rule_version)))
 
     # ---- 고백
     def confess(self, npc: str) -> tuple[list[str], str]:
@@ -747,7 +846,7 @@ class _Tx:
         return new_ids, fact
 
     # ---- 투표
-    def npc_votes(self, candidates: list[str], round_: str) -> dict[str, str]:
+    def npc_votes(self, candidates: list[str], round_: str) -> dict[str, Optional[str]]:
         """vote·runoff 단계에 들어갈 때 NPC 표를 정한다(플레이어 표를 보지 않는다, domain.md 5절 1)."""
         st = self.st
         out = {}
@@ -756,6 +855,9 @@ class _Tx:
                 continue
             rng = self.rng(f"vote:{round_}:{npc}")
             t = self.decide(npc, [CommandKind.VOTE], lambda o: self.policy_vote(o, list(candidates), rng)).value
+            if t is None and abstains(st.meta.rule_version):
+                out[npc] = None                                  # 기권(rule-0.9~)
+                continue
             if t == npc or t not in candidates:
                 raise ValueError(f"NPC 정책이 불법 표를 냄: {npc} -> {t}")
             out[npc] = t
@@ -774,7 +876,7 @@ class _Tx:
         st.runoff_candidates = []
         st.pending_votes = self.npc_votes(list(st.active), "main")
 
-    def reveal(self, round_: str) -> dict[str, str]:
+    def reveal(self, round_: str) -> dict[str, Optional[str]]:
         st = self.st
         ballots = {v: st.pending_votes[v] for v in st.active}
         base = sum(1 for v in st.public.votes if v.day == st.day)
@@ -783,13 +885,15 @@ class _Tx:
         st.pending_votes = {}
         return ballots
 
-    def vote(self, cmd: Command) -> None:
+    def vote(self, cmd: Command, abstain: bool = False) -> None:
+        """무당 표(abstain이면 기권, rule-0.9~)를 넣고 표를 공개해 결과를 낸다."""
         st = self.st
-        st.pending_votes[PLAYER_ID] = cmd.target
+        st.pending_votes[PLAYER_ID] = None if abstain else cmd.target
         voters = list(st.active)
+        allow = abstains(st.meta.rule_version)
         if st.phase is Phase.VOTE:
             main = self.reveal("main")
-            out = resolve_vote(main, voters=voters)
+            out = resolve_vote(main, voters=voters, abstain=allow)
             self.emit(EventType.VOTES_REVEALED, {"round": "main", "votes": main, "counts": out.counts,
                                                  "runoff_candidates": out.runoff_candidates})
             if out.runoff_candidates:
@@ -800,7 +904,7 @@ class _Tx:
         else:
             main = {v.voter: v.target for v in st.public.votes if v.day == st.day and v.round == "main"}
             runoff = self.reveal("runoff")
-            out = resolve_vote(main, runoff, voters=voters)
+            out = resolve_vote(main, runoff, voters=voters, abstain=allow)
             self.emit(EventType.VOTES_REVEALED, {"round": "runoff", "votes": runoff, "counts": out.counts,
                                                  "runoff_candidates": []})
         self.lock(out.locked)
@@ -858,10 +962,11 @@ class _Tx:
         plan = tr.night_plans[night]
         participants = [n for n in st.active if n != PLAYER_ID]
         where = _night_whereabouts(self.rng("whereabouts"), participants, self.chars, plan,
-                                   lures(st.meta.rule_version))                               # 2
+                                   lures(st.meta.rule_version), home_alibi(st.meta.rule_version))  # 2
         tr.whereabouts[night] = where
         sightings = draw_sightings(self.rng("sightings"), night, participants, where,
-                                   st.meta.preset.witness_scale)                               # 3
+                                   st.meta.preset.witness_scale,
+                                   decision_of(st.meta.rule_version).witness_prob)             # 3
         for n in participants:
             st.npcs[n].private.whereabouts[night] = dict(where[n])
             st.npcs[n].private.witnessed.extend(sightings[n])
@@ -975,7 +1080,8 @@ def record_tell(state: GameState, claim: Claim, claim_truth: ClaimTruth) -> Opti
         return None
     if claim.claim_id in npc.runtime.tells:
         return npc.runtime.tells[claim.claim_id]
-    shown = judge_tell(random.Random(f"{state.meta.seed}:{claim.day}:tell:{claim.claim_id}"), claim, claim_truth)
+    shown = judge_tell(random.Random(f"{state.meta.seed}:{claim.day}:tell:{claim.claim_id}"), claim, claim_truth,
+                       decision_of(state.meta.rule_version).tell_prob)
     if shown is None:
         return None
     npc.runtime.tells[claim.claim_id] = shown
@@ -987,14 +1093,16 @@ def record_tell(state: GameState, claim: Claim, claim_truth: ClaimTruth) -> Opti
 FACT_CLAIMS = (ClaimType.WHEREABOUTS, ClaimType.SIGHTING, ClaimType.NON_SIGHTING)
 
 
-def judge_tell(rng: random.Random, claim: Claim, claim_truth: ClaimTruth) -> Optional[bool]:
+def judge_tell(rng: random.Random, claim: Claim, claim_truth: ClaimTruth,
+               prob: Optional[float] = None) -> Optional[bool]:
     """기색 판정(기획서 4.2, domain.md 6-1). 사실 주장(행적·목격·비목격)이 거짓일 때만 판정한다.
 
-    판정 대상이 아니면 None, 대상이면 TELL_PROB로 보임(True)/안 보임(False). 엔진은 주장 ID당 한 번만 부른다.
+    판정 대상이 아니면 None, 대상이면 기색 확률로 보임(True)/안 보임(False). 엔진은 주장 ID당 한 번만 부른다.
+    `prob`은 판 규칙 버전의 기색 확률(`decision_of(...).tell_prob`)이고, 생략하면 프로세스 값(`params.TELL_PROB`)이다.
     """
     if claim.claim_type not in FACT_CLAIMS or claim_truth.is_true:
         return None
-    return rng.random() < params.TELL_PROB
+    return rng.random() < (params.TELL_PROB if prob is None else prob)
 
 
 def can_confess(state: GameState, truth: GameTruth, npc_id: str) -> bool:
@@ -1005,14 +1113,16 @@ def can_confess(state: GameState, truth: GameTruth, npc_id: str) -> bool:
 
 
 def _night_whereabouts(rng: random.Random, participants: list[str], chars: dict[str, Character],
-                       plan: NightPlan, lure: bool = True) -> dict[str, dict[Slot, Place]]:
-    """밤 시작 참가자의 행적. 동선 가중치로 뽑고, 실행자가 피해자를 공개 장소로 꾀어낸다(0일째와 같은 규칙)."""
-    where = {r: {s: _routine_place(rng, chars[r], s) for s in SLOTS} for r in participants}
+                       plan: NightPlan, lure: bool = True, home: bool = True) -> dict[str, dict[Slot, Place]]:
+    """밤 시작 참가자의 행적. 동선 가중치로 뽑고, 실행자가 피해자를 공개 장소로 꾀어낸다(0일째와 같은 규칙).
+
+    `home`이 거짓이면 rule-0.7 이하 동선(콘텐츠 가중치 그대로)이다(`home_alibi`)."""
+    where = {r: {s: _routine_place(rng, chars[r], s, home=home) for s in SLOTS} for r in participants}
     crime = _crime_place(rng, where, plan.victim, plan.executor, lure)
     if crime in PUBLIC_PLACES:   # 범행 장소 동석 금지
         for r in participants:
             if r not in (plan.victim, plan.executor) and where[r][Slot.MIDNIGHT] is crime:
-                where[r][Slot.MIDNIGHT] = _routine_place(rng, chars[r], Slot.MIDNIGHT, exclude=crime)
+                where[r][Slot.MIDNIGHT] = _routine_place(rng, chars[r], Slot.MIDNIGHT, exclude=crime, home=home)
     return where
 
 
@@ -1029,7 +1139,8 @@ class PaldoEngine:
     def new_game(self, meta: GameMeta, deps: EngineDeps) -> TransitionResult:
         """판을 만든다: 배정(검증기 통과) → 0일째 밤 행적·목격·홀림 → 1일째 아침 실종 발표와 진술."""
         return self.new_game_from_setup(meta, deps, make_setup(meta.preset, deps.content, meta.seed, meta.game_id,
-                                                                 lures(meta.rule_version)))
+                                                                 lures(meta.rule_version),
+                                                                 home_alibi(meta.rule_version)))
 
     def new_game_from_setup(self, meta: GameMeta, deps: EngineDeps, setup: Setup) -> TransitionResult:
         """정해진 배정(`Setup`)으로 1일째 아침 상태를 만든다. `new_game`과 고정 배정 재현이 같이 쓴다."""
@@ -1104,6 +1215,8 @@ class PaldoEngine:
             tx.interrogate(cmd)
         elif k is CommandKind.VOTE:
             tx.vote(cmd)
+        elif k is CommandKind.ABSTAIN:
+            tx.vote(cmd, abstain=True)
         elif k is CommandKind.DIVINE:
             tx.divine(cmd)
         else:  # pragma: no cover - PHASE_RULES가 막는다

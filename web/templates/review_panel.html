@@ -9,10 +9,19 @@
       </li>
     {% endfor %}
   </ul>
-  {% if review.reasons %}
-    <h3>행동의 이유</h3>
-    <ul class="review-reasons">{% for row in review.reasons %}<li>{{ row.actor }} · {{ row.reason_codes|join:", " }}</li>{% endfor %}</ul>
-  {% endif %}
+  {% include "review_narration.html" %}
+  <h3>{{ review.timeline_title }}</h3>
+  <ol class="review-reasons" data-review-timeline>
+    {% for row in review.reasons %}
+      <li class="review-reason" data-review-item="{{ row.item_id }}">
+        <p class="review-reason-head"><span class="review-when">{{ row.when }}</span> <strong>{{ row.actor }}</strong> · {{ row.action }}{% if row.target %} → {{ row.target }}{% endif %}</p>
+        {% if row.text %}<p class="review-reason-text">{{ row.text }}</p>{% endif %}
+        <p class="review-reason-meta">{% for code in row.reason_codes %}<code class="review-code">{{ code }}</code>{% endfor %}{% if row.evidence %} <span class="review-evidence">근거: {{ row.evidence|join:", " }}</span>{% endif %}</p>
+      </li>
+    {% empty %}
+      <li class="review-reason review-empty">{{ review.empty_text }}</li>
+    {% endfor %}
+  </ol>
   <h3>이번 판에서 얻은 원한 단서</h3>
   <ul class="review-clues">{% for text in review.clues %}<li>{{ text }}</li>{% empty %}<li>이번 판에서 새로 얻은 단서는 없습니다.</li>{% endfor %}</ul>
 </section>

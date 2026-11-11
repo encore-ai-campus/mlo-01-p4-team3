@@ -78,6 +78,7 @@
 
 - 참고 열은 태그 전 값이다. 증빙에는 태그에서 읽은 값을 적는다.
 - 11/10 테스트 중 피해 장소 규칙(A-10-01 5번)을 배포하면 그 뒤 일반 판의 `rule_version`은 `rule-0.7.decision-1`이다. 배포 전에 시작한 판과 `rule-0.6.decision-1`로 등록한 회차의 판은 이전 규칙으로 이어 간다(엔진이 판 메타의 규칙 버전을 따름). 집계에서 `versions`가 두 줄이 되는 것은 이 때문이고, E-09-01은 규칙 버전별로 나눠 본다.
+- rule-0.8(A-10-01 1번, 11/10 사용자 결정)을 배포하면 그 뒤 일반 판의 `rule_version`은 `rule-0.8.decision-2`이다. 배포 전에 시작한 `rule-0.7.decision-1` 판은 이전 규칙·decision-1 수치로 이어 가므로(엔진 `decision_of`, 운영 조립 `ContentPolicyEngine`) `versions`에 줄이 하나 더 생긴다. 2일째 아침부터 나오는 주민 신뢰 단서 줄은 화면 표시라 두 버전 판에 모두 나온다.
 - 11/10 정식 테스트는 회차를 쓰지 않으므로(8절) 회차 재등록은 보통 필요 없다. 배포 뒤 운영 Mongo `b_test_sessions`에서 회차별 `versions.rule_version`을 읽어(`/admin/sessions` 화면은 버전·명단을 보여 주지 않는다. 조회 명령은 접속 정보와 함께 저장소 밖에 둔다) `rule-0.6.decision-1` 회차가 있으면, 명단을 `tools/ut_metrics.py participants`로 같은 가입 시각 구간으로 다시 뽑아 새 회차 ID·같은 판 목록·`rule-0.7.decision-1`로 `/admin/sessions`에서 다시 등록한다. 기존 회차는 바꾸거나 지울 수 없으므로(`TestSessionService.create`) 그대로 두고, 두 회차에 모두 든 참가자에게는 새 회차로 하라고 안내한다.
 - **콘텐츠 적재 확인.** 운영 게임은 판의 `content_version`으로 Mongo `content` 컬렉션에서 그 버전을 읽는다(`server/infra/content_store.py`). 같은 버전은 다시 적재할 수 없다(`content_version_exists`).
   - `content-1.0`은 C-07-04 운영 인계 때 실제로 읽혔다([`ops/proxy/README.md`](../../ops/proxy/README.md) "운영 인계 범위"). 적재된 내용이 태그의 `content/bundle_v1.json`과 같은지 대조한 기록은 없다. `bundle_v1.json`은 11/7 E-07-05에서도 바뀌었다.
@@ -189,7 +190,7 @@ E-08-10·E-09-01 지표와 E-09-02 분할·교집합 검사는 집계 도구로 
 | 완주율 | `game_ended` 시각, `result.completed` | 마감 시각(11/10 18:00) 이하에 끝난 판 ÷ 시작한 판. 마감 뒤 시작한 판과 마감 뒤 종료·입력·반응·추궁·명령·설문은 모든 지표에서 뺀다 | 11/8 일정 변경 |
 | 미종료 판 | `game_ended` 시각 | 마감 시각까지 끝나지 않은 판(마감 뒤에 끝난 판 포함). 미완주와 따로 센다 | 11/8 일정 변경 |
 | 한 판 소요 시간 | `game_started`·`game_ended` 시각 | 완주 판의 차이(분), 중앙값·p90. 1인 총시간은 첫 판 시작~마지막 판 종료 | |
-| 설문 응답률 | `survey_submitted` `skipped` | 마감 시각 이하에 제출된 `skipped=false` ÷ 마감 시각까지 끝난 판(7절 "응답 수 ÷ 판 수", 건너뜀은 분모에만). 마감 전에 끝난 판의 서버 자동 건너뜀(`reason=backfill`, 마감 직후 일괄 보완)은 이벤트 시각이 마감 뒤여도 센다(`ut-metrics-1.2`). 시작한 판 기준 값도 함께 | 11/8 확정, 같은 날 스냅숏으로 마감 뒤 제외 |
+| 설문 응답률 | `survey_submitted` `skipped` | 마감 시각 이하에 제출된 `skipped=false` ÷ 마감 시각까지 끝난 판(7절 "응답 수 ÷ 판 수", 건너뜀은 분모에만). 마감 전에 끝난 판의 서버 자동 건너뜀(`reason=backfill`, 마감 직후 일괄 보완)은 이벤트 시각이 마감 뒤여도 센다(`ut-metrics-1.2`). 새로 시작으로 중단한 판(`reason=aborted`)은 끝 화면에 가지 않아 설문을 볼 수 없었으므로 분모에서 뺀다(`ut-metrics-1.3`). 시작한 판 기준 값도 함께 | 11/8 확정, 같은 날 스냅숏으로 마감 뒤 제외, 11/11 중단 판 제외 |
 | 입력 문장 수 | `intent_attempt` 최초 이벤트 | 시도(`attempt_id`)별 1건, 다시 입력은 새 시도로 1건, 마스킹 뒤 빈 문장 제외 | |
 | 원하는 행동 완료율 | `intent_attempt` 반응 이벤트 | 묶음(최초 시도 + `superseded_by`로 이어진 다시 입력)의 마지막 반응이 `confirm`·`edit`(명령 수락 뒤에만 기록)인 묶음 ÷ 전체 묶음. 반응 없는 묶음도 분모 | 11/8 확정 |
 | 추가 선택 횟수 | 같은 묶음 | 묶음별 다시 입력 수 + 마지막이 `edit`이면 1. 합계와 실행된 묶음당 평균 | 11/8 확정 |

@@ -41,6 +41,12 @@ try:  # E-09-10: 기본 memory(웹 프로세스 2개·1개 모두), Redis는 선
 except ChannelLayerConfigError as error:
     raise ImproperlyConfigured(str(error)) from None
 LOGIN_URL = "/accounts/login"
+# 직접 입력창(문장 → 의도 해석 → 카드) 표시·수신(11/11 사용자 결정). 기본 off: 화면에서 입력창을 그리지 않고
+# `POST /games/{id}/utterances…`는 403 `free_text_disabled`. on이면 기존 동작 그대로(발표·재학습 시연용).
+_free_text = os.environ.get("PALDO_FREE_TEXT_INPUT", "off").strip().lower()
+if _free_text not in {"on", "off"}:
+    raise ImproperlyConfigured("PALDO_FREE_TEXT_INPUT은 on 또는 off여야 합니다.")
+FREE_TEXT_INPUT = _free_text == "on"
 SIGNUP_INVITE_CODE = os.environ.get("PALDO_SIGNUP_INVITE_CODE", "")
 GAME_SERVICE_FACTORY = os.environ.get("PALDO_GAME_SERVICE_FACTORY", "")
 INTENT_PARSER_FACTORY = ""  # 기준선 사용 시 "intent.parser.BaselineIntentParser"를 지정한다.
@@ -49,6 +55,9 @@ ADS_INTERNAL_URL = os.environ.get("PALDO_ADS_INTERNAL_URL", "")
 SESSION_MONGO_URI = os.environ.get("PALDO_MONGO_URI", "")
 # 회차 없는 일반 판의 content_version(운영 Mongo에 적재된 활성 버전, E-08-14). 비어 있으면 일반 판 시작은 503
 ACTIVE_CONTENT_VERSION = os.environ.get("PALDO_CONTENT_VERSION", "")
+# 회차 없는 일반 판의 규칙(11/11 투표 기권). 비우면 배포 코드 기본(rule-0.8), "rule-0.9"면 투표 기권 규칙.
+# 고를 수 있는 값은 `engine.domain.params.RULE_BASES`. 이미 시작한 판은 판 메타의 규칙 버전으로 이어 간다.
+ACTIVE_RULE_BASE = os.environ.get("PALDO_RULE_BASE", "").strip()
 # 일반 판 카나리아 배정 비율(B-09-01, ml_lifecycle.md 4절). 0이면 끔. 사용자 테스트 회차 판은 비율과 무관하게 끈다.
 MODEL_CANARY_RATIO = float(os.environ.get("PALDO_MODEL_CANARY_RATIO", "0") or 0)
 # 실제 의심 모델 사용(B-09-01). 비어 있으면 끔(규칙 의심도 `FakeSuspicionModel`). 값은 `<mlruns>/suspicion-v0/<버전>/`의
@@ -56,6 +65,17 @@ MODEL_CANARY_RATIO = float(os.environ.get("PALDO_MODEL_CANARY_RATIO", "0") or 0)
 SUSPICION_MODEL_VERSION = os.environ.get("PALDO_SUSPICION_MODEL_VERSION", "").strip()
 # 신뢰된 로컬 모델 산출물 폴더(`models.pkl`·`report.json`, D-08-04 인계 형식). 상대 경로는 웹 작업 폴더 기준.
 SUSPICION_MODEL_ROOT = os.environ.get("PALDO_MLRUNS_ROOT", "mlruns")
+# 복기 해설 LLM 요약(E-10-01). 생성 서버(OpenAI 호환) 주소, 예: 게임 서버에서 생성 기기로 가는 터널의 로컬 끝
+# `http://127.0.0.1:<port>`. 비어 있으면 기능 꺼짐(작업 미등록·템플릿 해설만·Kanana 표기 숨김). 실제 값은 저장소 밖.
+REVIEW_LLM_URL = os.environ.get("PALDO_REVIEW_LLM_URL", "").strip()
+# 복기 해설 작업 마감(초). 지나면 템플릿으로 확정한다.
+REVIEW_DEADLINE_S = float(os.environ.get("PALDO_REVIEW_DEADLINE_S", "180") or 180)
+# NPC 대사 LLM(E-11-13). 생성 서버 주소(상한 스위치): 비어 있으면 모드와 관계없이 꺼짐(템플릿 대사만·Kanana 표기 숨김).
+# 보통 복기와 같은 터널 끝이다. 실제 값은 저장소 밖.
+NPC_LLM_URL = os.environ.get("PALDO_NPC_LLM_URL", "").strip()
+# 운영 설정 문서(`<접두어>ops_settings`의 `npc_llm`)가 없을 때 쓰는 모드: off | polish | live. 코드 기본값 off.
+# 재배포 없이 바꿀 때는 관리 명령 `npc_llm_mode`를 쓴다.
+NPC_LLM_MODE = os.environ.get("PALDO_NPC_LLM_MODE", "off").strip()
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
@@ -92,6 +112,7 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
                   "django.template.context_processors.request",
                   "django.contrib.auth.context_processors.auth",
                   "django.contrib.messages.context_processors.messages",
+                  "server.paldo_web.ui_flags.ui_flags",
               ], "libraries": {"meeting": "server.api.template_tags", "ad_slots": "server.api.ad_slot_tags"}}}]
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "server.accounts.validators.PasswordRulesValidator"},

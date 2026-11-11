@@ -20,7 +20,17 @@ from pathlib import Path
 VERSION_PATTERN = re.compile(r"[a-zA-Z0-9_.-]{1,80}")
 VERSION_JOIN = "."   # 규칙 버전 + 결정 파라미터 버전 연결 문자(11/7: `+`가 회차 등록 검증에 걸려 `.`으로 바꿈)
 
-RULE_BASE_VERSION = "rule-0.7"   # 0.2: 실행자 거짓 행적 공공장소 무작위. 0.3: TELL_PROB. 0.4: Q_MAX. 0.5: 결정 파라미터를 json으로 분리·동선 무작위성 추가(A-08-03). 0.6: 모델 경로 무당 투표 문턱·1일째 의심 문턱·발언 변형 돌려쓰기(A-09-06). 0.7: 꾀어내기 — 피해 장소를 공개 장소에서 뽑음(A-10-01 5번)
+RULE_BASE_VERSION = "rule-0.8"   # 0.2: 실행자 거짓 행적 공공장소 무작위. 0.3: TELL_PROB. 0.4: Q_MAX. 0.5: 결정 파라미터를 json으로 분리·동선 무작위성 추가(A-08-03). 0.6: 모델 경로 무당 투표 문턱·1일째 의심 문턱·발언 변형 돌려쓰기(A-09-06). 0.7: 꾀어내기 — 피해 장소를 공개 장소에서 뽑음(A-10-01 5번). 0.8: 실행자 거짓 알리바이에 집 포함·한밤 동선 가중치 비례, 한밤 집 가중치 ×0.25, 결정 파라미터 decision-2(A-10-01 1번, 11/10 사용자 결정)
+
+# 투표 기권 규칙판(11/11 사용자 결정 ②안). 운영 기본값은 `RULE_BASE_VERSION`(rule-0.8)이고, 새 판 규칙은 서버 설정
+# `PALDO_RULE_BASE`로 고른다(`rule_params_version`). rule-0.9는 rule-0.8 규칙에 다음을 더한다:
+# - 무당은 투표·결선에서 기권(`CommandKind.ABSTAIN`)할 수 있다.
+# - 마을 주민 NPC는 1·2위 결정 점수 차가 `ABSTAIN_MARGIN`(확률 단위, 규칙 v0 의심도 0~100은 100으로 나눠 비교) 이하이면
+#   기권한다. 씐 자는 기권하지 않는다. 기권표는 집계에서 빠지고, 모두 기권하면 무감금이다.
+# 문턱을 바꾸면 규칙 버전을 올린다(판 메타만으로 재현).
+ABSTAIN_RULE_BASE = "rule-0.9"
+ABSTAIN_MARGIN = 0.05
+RULE_BASES = (RULE_BASE_VERSION, ABSTAIN_RULE_BASE)   # 서버 설정으로 고를 수 있는 새 판 규칙
 
 DECISION_PARAMS_FILE = Path(__file__).with_name("decision_params.json")
 
@@ -86,6 +96,12 @@ TELL_PROB = DEFAULT.tell_prob
 ROUTINE_RANDOMNESS = DEFAULT.routine_randomness
 
 
+# rule-0.7 이하로 시작한 판·회차가 쓰는 결정 파라미터(decision-1, A-08-03). rule-0.8 배포 뒤에도 이전 판은 이 값으로
+# 이어 간다(엔진 `engine.decision_of`). 프로세스 값(`apply`)과 무관한 고정값이다.
+LEGACY_DECISION = DecisionParams(version="decision-1", conformity_scale=0.1, vote_noise=0.02, q_max=0.7,
+                                 witness_prob=0.5, tell_prob=0.4, routine_randomness=0.0)
+
+
 def current() -> DecisionParams:
     """지금 프로세스에 적용된 결정 파라미터."""
     return _current
@@ -100,3 +116,12 @@ def apply(p: DecisionParams) -> None:
     RULE_PARAMS_VERSION = f"{RULE_BASE_VERSION}{VERSION_JOIN}{p.version}"
     CONFORMITY_SCALE, VOTE_NOISE, Q_MAX = p.conformity_scale, p.vote_noise, p.q_max
     WITNESS_PROB, TELL_PROB, ROUTINE_RANDOMNESS = p.witness_prob, p.tell_prob, p.routine_randomness
+
+
+def rule_params_version(base: str = "") -> str:
+    """새 판 규칙 버전 문자열. base가 비면 `RULE_PARAMS_VERSION`(운영 기본), 아니면 `RULE_BASES` 중 하나여야 한다."""
+    if not base or base == RULE_BASE_VERSION:
+        return RULE_PARAMS_VERSION
+    if base not in RULE_BASES:
+        raise ValueError(f"고를 수 없는 규칙 버전: {base!r} (허용 {RULE_BASES})")
+    return f"{base}{VERSION_JOIN}{DECISION_PARAMS_VERSION}"

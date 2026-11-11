@@ -23,6 +23,7 @@
 | `tools/check_handoff_a06.py` | 표현·응용 | 판 실행 출력 검사: 종료 1회·`seq` 연속·`serde` 엄격 검증, 11/6 A → D 인수 조건 4개 |
 | `tools/optimize_decision.py` | 표현·응용 | 결정 층 최적화(A-08-03): 플레이어 대역 봇 vs 규칙 v0 판으로 목표 마을 승률 구간(`--target`)에 맞는 결정 파라미터 탐색. 격자 표본·윌슨 구간·후보 선택은 순수 함수 |
 | `engine/domain/progress.py` | 도메인 | 판 밖 진척 규칙(E-09-08): 고백 이벤트 → 원한 단서(`clue_gains`), 같은 가설 세 부분 → 한풀이 해금(`completed_hypotheses`·`ending_unlocks`), 결말 선택 가능 여부(`ending_available`, 퇴마는 항상), 재처리 대상 이벤트(`progress_events`). 반영 순서는 `server/app/progress.py` |
+| `engine/domain/review.py` | 도메인 | 복기용 이유 조회(E-10-10): 아웃박스 `decision` 이벤트 → 결정 단위 항목(`review_trace`, 종류별 발언 연결), 대표 이유 코드·문구 ID(`phrase_id_for`), 템플릿 해설(`review_text`, 괄호 조사 정리 `attach_josa`), 빠진 문구 검사(`missing_phrases`). 문구 파일은 콘텐츠 `content/review_lines_v1.json`, 저장소 읽기는 포트 `GameRepository.events` |
 | `tools/perf/challenge_balance.py` | 표현·응용 | 선택형 도전 3종(`base6_div1`·`base6_secret3`·`base6_sight`)과 base6을 같은 판 시드로 돌려 봇별 마을 승률·윌슨 구간·검사 실패를 재고 P-08 공개 판정 |
 | `tools/perf/npc_rule_check.py` | 표현·응용 | `--events`: jsonl의 결정마다 관측과 맞춰 합법 행동 위반·마을 추론 위반·의심 모델 폴백 결정을 센다. `--bench`: NPC 1명 결정 시간 |
 
@@ -38,7 +39,7 @@
 - `new_game_from_setup`을 나눈 이유: 시나리오 파일의 고정 배정을 그대로 재현해 실제 엔진으로 재생하려고.
 - 정책 입력을 관찰자 `ObservationSnapshot` 하나로 둔 이유: 상태 전체를 넘기면 다른 NPC의 개인 지식(역할·밤 명령)을 통해 진실이 새기 때문이다(기획서 v1.1 5.1 네 층 분리, A-06-02). 엔진은 결정 직전 `observation`, 직후 `decision`을 같은 `snapshot_id`로 `paldo.observations`에 남기고, 진실은 판 종료 뒤 `truth_revealed`(`paldo.truth`)로만 낸다(events.md 3절, 기획서 8.2).
 - 기색은 공개 기록에 보인 것만 남긴다: 판정 대상이 거짓 주장뿐이라 "판정했다"는 사실 자체가 진위 정보이기 때문이다(domain.md 7절, A-06-01).
-- 결정 파라미터를 json 한 파일(`decision_params.json`)에 두는 이유: 탐색 도구가 결과를 그대로 쓰고, 버전(`DECISION_PARAMS_VERSION`)이 `RULE_PARAMS_VERSION`(`rule-0.7.decision-N`, 연결 문자는 `.`)에 붙어 판 메타만으로 값을 재현하려고(A-08-03). 엔진·투표는 호출할 때마다 `params` 모듈 값을 읽으므로 탐색 도구는 프로세스 안에서 `params.apply`로 후보 값을 바꿔 판을 돌린다. 게임 웹은 `apply`를 부르지 않는다.
+- 결정 파라미터를 json 한 파일(`decision_params.json`)에 두는 이유: 탐색 도구가 결과를 그대로 쓰고, 버전(`DECISION_PARAMS_VERSION`)이 `RULE_PARAMS_VERSION`(`rule-0.8.decision-N`, 연결 문자는 `.`)에 붙어 판 메타만으로 값을 재현하려고(A-08-03). 판 메타가 `rule-0.7` 이하인 판은 고정값 `params.LEGACY_DECISION`(decision-1)을 쓴다: 목격·기색 확률은 엔진 `decision_of`, q_max는 정책 `RuleV0Policy(q_max=...)`(운영 조립 `ContentPolicyEngine`이 이전 판용 정책을 따로 만든다)(A-10-01 1번). 엔진·투표는 호출할 때마다 `params` 모듈 값을 읽으므로 탐색 도구는 프로세스 안에서 `params.apply`로 후보 값을 바꿔 판을 돌린다. 게임 웹은 `apply`를 부르지 않는다.
 - 규칙 v0 믿음을 공개 기록에서 매번 다시 계산하는 이유: 스냅샷 계약에 압박도·성향이 없고, 같은 스냅샷이면 같은 믿음이 나와야 관측 기록과 실제 판단이 일치한다(A-07-01). 확정 명제를 직접 목격에서만 만드는 이유: 타인 주장은 거짓일 수 있고 "못 봤다"는 없음의 증거가 아니다(기획서 5.2).
 - 투표를 추정·결정·안전 세 층으로 나눈 이유: 추정(의심 모델)은 D가 바꾸고, 성향·동조는 엔진 규칙이며, 안전 층은 어떤 모델이 와도 확정 무고에게 표를 주지 않게 한다(기획서 5.2, ports.md 3). 모델이 실패해도 판이 멈추지 않게 그 결정만 규칙 v0로 대신하고 `-fallback`으로 표시한다(A-07-02).
 - 판 실행 도구가 고정 시각·시드로 같은 바이트를 내는 이유: D·C가 같은 명령으로 인수 데이터를 다시 만들고 해시로 대조하려고(A-06-03). 판 메타의 `npc_policy_versions`를 채우는 이유: D가 정책 버전이 다른 데이터를 한 학습에 섞지 않게(parallel_dev.md 3절).
@@ -77,9 +78,11 @@ n = fallback_count(res2.events)             # engine.domain.npc.vote. B가 paldo
 
 ## 설정값
 
+공통 역직렬화는 정적인 dataclass 타입별 주석 해석·필드 정보를 프로세스 안에서 최대 256종 재사용한다. JSON 값·판 상태·진실·검증 결과는 캐시하지 않으며, 매 입력의 필드·타입·생성자 검증과 `SchemaError`는 그대로 실행한다. JSON 스키마·공개 함수·계약 버전은 바뀌지 않는다.
+
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
-| `RULE_PARAMS_VERSION`(`params.py`) | `rule-0.7.decision-1` | 규칙 기반 버전(`RULE_BASE_VERSION`) + 결정 파라미터 버전. 판 메타에 들어가 재현에 쓴다 | 규칙 상수를 바꾸면 기반 버전을, 결정 파라미터를 바꾸면 json `version`을 올린다 |
+| `RULE_PARAMS_VERSION`(`params.py`) | `rule-0.8.decision-2` | 규칙 기반 버전(`RULE_BASE_VERSION`) + 결정 파라미터 버전. 판 메타에 들어가 재현에 쓴다 | 규칙 상수를 바꾸면 기반 버전을, 결정 파라미터를 바꾸면 json `version`을 올린다 |
 | `WITNESS_PROB`(`decision_params.json` `witness_prob`) | 0.5 | 같은 시간대·공공장소 두 사람이 서로 목격할 확률 | 단서 양·승률이 바뀐다(A-08-03에서 0.7 → 0.5) |
 | `TELL_PROB`(`tell_prob`) | 0.4 | 거짓 사실 주장에 기색이 보일 확률(주장 ID당 1회 판정) | 기색 단서 양이 바뀐다(A-08-03에서 0.5 → 0.4) |
 | `Q_MAX`(`q_max`) | 0.7 | 무당 의심 결합 상한(ports.md 3) | 클수록 NPC가 무당을 의심해 마을 승률이 크게 내려간다(A-08-03에서 0.5 → 0.7) |
@@ -118,6 +121,7 @@ n = fallback_count(res2.events)             # engine.domain.npc.vote. B가 paldo
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
+| D-08-01 | 11/10 | 부하 병목 개선: `serde`의 타입 메타데이터만 제한된 캐시로 재사용. 입력별 엄격 검증·객체 격리·공개 계약 유지 |
 | A-05-02 | 11/5 | `apply`(회의 라운드·캐묻기·동시 비공개 투표·결선·재동점 무감금·감금 공개·종료 판정·최소 밤), `player_view`, 명령 검증, `NpcPolicy`·`BaselinePolicy`, `new_game_from_setup`·`setup_from_assignment`, `engine_bench --op apply` |
 | A-06-01 | 11/6 | 밤 목격·다음 날 아침 진술, 점괘 공개 분리 저장, 고백 처리 자리, 기색(보인 것만 공개, `TELL_PROB`, rule-0.3) |
 | A-06-02 | 11/6 | `observation.py`(관측 투영·믿음 갱신·이유 코드), 정책 입력을 `ObservationSnapshot`으로, `observe` 구현, 결정 직전 `observation`·직후 `decision`(`paldo.observations`), 종료 후 `truth_revealed` |
@@ -127,3 +131,7 @@ n = fallback_count(res2.events)             # engine.domain.npc.vote. B가 paldo
 | A-08-03 | 11/8 | 결정 파라미터를 `decision_params.json`(decision-1)으로 분리·호출 시점 읽기, `routine_randomness` 추가, `tools/optimize_decision.py`(목표 승률 구간 인자), rule-0.5. 논리 우선 봇 vs 규칙 v0 1000판 마을 승률 49.6% |
 | A-08-03 | 11/7 | 후속 수정: `RULE_PARAMS_VERSION` 연결 문자 `+` → `.`(`rule-0.5.decision-1`). `+`가 B 회차 등록 검증 `[a-zA-Z0-9_.-]`에 걸려 운영자가 회차를 등록할 수 없었다. `DecisionParams.version`도 같은 문자 집합만 받는다 |
 | E-09-08 | 11/9 | `progress.py`(원한 단서 획득·한풀이 해금·결말 선택 규칙), 선택형 도전 프리셋 3종(`Preset.challenge`·`divination_limit`·`witness_scale`, 점 1회 제한은 `divination_available`, 목격 축소는 `draw_sightings(scale)`), `tools/perf/challenge_balance.py`. 기본 프리셋 판은 그대로(배율 1.0·점 제한 없음) |
+| A-10-01 | 11/10 | rule-0.8·decision-2(1번, 11/10 사용자 결정): 실행자 거짓 알리바이에 집 포함·한밤 동선 비례(`executor_alibi(prefs)`), 한밤 집 가중치 ×0.25(`_slot_weights`, 콘텐츠 값은 그대로), 목격 0.7·기색 0.2·q_max 1.0. 이전 판 경계: `home_alibi`·`decision_of`·`params.LEGACY_DECISION`, `RuleV0Policy(q_max=...)`, `ContentPolicyEngine` 규칙 버전별 정책. rule-0.7 판 궤적이 이전 엔진과 같음을 해시로 시험(`tests/engine/test_rule08.py`) |
+| 투표 기권 | 11/11 | rule-0.9(11/11 사용자 결정 ②안, 운영 기본은 rule-0.8 유지): `CommandKind.ABSTAIN`(규칙 버전으로 `legal_player_kinds`가 더함), `resolve_vote(abstain=)`·`tally`가 기권표(None) 제외, 모두 기권이면 무감금, `abstains`·`abstain_margin_of`, 마을 주민 기권(`vote.uncertain`, 규칙 v0·모델 경로 같은 문턱 `params.ABSTAIN_MARGIN` 0.05), 이유 코드 `abstain_uncertain`, `params.rule_params_version`·`RULE_BASES`. 균형 측정 `tools/perf/abstain_balance.py`. rule-0.8 판 바이트 회귀 해시 시험(`tests/engine/test_vote_abstain.py`) |
+| E-10-10 | 11/10 | `review.py`(`review_trace`·`review_text`) 추가, 포트 `GameRepository.events`(가짜 저장소 구현 포함), 문구 파일 `content/review_lines_v1.json`(이유 코드 39개, 11/11 사용자 승인). 엔진 규칙·상태·난수는 바꾸지 않음 |
+| E-08-02 | 11/11 | 확장 인물·비밀(`ContentBundle.extra_npcs`·`extra_secrets`, 기본 빈 목록)과 `draw_pool`: 주민 풀이 핵심 인물 수 이하인 프리셋은 핵심 인물·비밀에서만 뽑아 같은 시드 배정이 확장 전과 같다(11/11 사용자 결정, short5·base6 dev와 200/200 일치) |

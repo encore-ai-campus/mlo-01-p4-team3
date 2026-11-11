@@ -33,36 +33,6 @@ function decorate(root=document) {
     }
   }
 }
-function mountRecords(root) {
-  const cards=[...root.querySelectorAll('[data-record-id]')];
-  const selected=()=>cards.filter(c=>c.querySelector('[data-record-select]').checked);
-  function updateSelection() {
-    const chosen=selected();
-    root.querySelector('[data-record-selection-count]')?.replaceChildren(document.createTextNode(`선택한 진술 ${chosen.length}개`));
-    const compare=root.querySelector('[data-record-compare]'); if(compare) compare.disabled=chosen.length!==2;
-    const values=new Set(chosen.map(c=>c.querySelector('[data-record-select]').value));
-    for (const input of root.querySelectorAll('.command-form input[name=evidence]')) {
-      const checked=values.has(input.value);
-      if(input.checked!==checked) { input.checked=checked; input.dispatchEvent(new Event('change',{bubbles:true})); }
-    }
-    root.querySelector('[data-record-comparison]')?.setAttribute('hidden','');
-  }
-  function filter() {
-    const filters=[...root.querySelectorAll('[data-record-filter]')];
-    for(const card of cards) card.hidden=filters.some(f=>f.value && card.getAttribute(`data-record-${f.dataset.recordFilter}`)!==f.value);
-    const count=root.querySelector('[data-record-count]'); if(count) count.textContent=`진술 ${cards.filter(c=>!c.hidden).length}개 · 전체 ${cards.length}개`;
-  }
-  for(const input of root.querySelectorAll('[data-record-select]')) input.addEventListener('change',updateSelection);
-  for(const input of root.querySelectorAll('[data-record-filter]')) input.addEventListener('change',filter);
-  root.querySelector('[data-record-clear]')?.addEventListener('click',()=>{ for(const c of cards)c.querySelector('input').checked=false; updateSelection(); });
-  root.querySelector('[data-record-compare]')?.addEventListener('click',()=>{
-    const target=root.querySelector('[data-record-comparison-lines]'); if(!target)return;
-    target.replaceChildren();
-    for(const card of selected()) { const p=document.createElement('p'); p.textContent=`${card.querySelector('strong').textContent} · ${card.querySelector('.claim-meta')?.textContent.trim() || ''} — ${card.querySelector('.claim-meta + p').textContent}`; target.append(p); }
-    root.querySelector('[data-record-comparison]').hidden=false;
-  });
-  filter();
-}
 // 안내 상태: 첫 판은 건너뛰기 표시가 없으면 켬, 다른 판은 켠 시점({day, phase, at})이 저장돼 있으면 켬. 저장이 막히면 탭 메모리.
 // 첫 판도 1일째가 지난 뒤 다시 켜면(켠 시점 day > 1) 서버 안내 줄 대신 숨은 목록으로 판 시작 안내부터 만든다(pool 방식).
 function guideState(root) {
@@ -84,6 +54,53 @@ function syncGuide(root) {
   const {active}=guideState(root);
   toggle.checked=active;
   for(const bubble of root.querySelectorAll('[data-guide-end]')) bubble.hidden=!active;
+}
+// NPC 대사 LLM(E-11-13): 회의 발언 다듬기가 켜진 판만 서버가 #meeting에 data-npc-lines를 붙인다. 없으면 지금과 같다.
+// 선조회는 고정하지 않는다. 줄을 띄우는 순간 가진 결과(다듬은 문장 또는 템플릿)를 바로 띄우고, 띄운 변형을 서버에 한 번 고정한다.
+// 한 번 띄운 줄은 나중에 다듬은 문장이 와도 바꾸지 않는다. 다른 탭이 먼저 고정한 경우에만 그 값으로 바꾼다.
+function npcLines(root,onUpdate) {
+  const url=root.dataset.npcLines; if(!url)return null;
+  // early: 첫 선조회가 오기 전에 이미 템플릿으로 띄운 줄. 응답이 오면 그 줄은 템플릿으로 고정한다.
+  const lines=new Map(), sent=new Set(), early=new Map(); let timer=null, tries=0, dead=false, loaded=false;
+  async function load() {
+    if(dead||!root.isConnected)return;
+    try {
+      const r=await fetch(url,{headers:{'Accept':'application/json'}});
+      if(r.ok) {
+        const data=await r.json(); for(const l of data.lines||[]) { const old=lines.get(l.speech_id); if(!old?.final&&!old?.shownChoice) lines.set(l.speech_id,l); }
+        if(!loaded) { loaded=true; for(const [id,template] of early) if(lines.has(id)) shown(id,{variant:'template',text:template,rev:0}); }
+        onUpdate();
+      }
+    } catch { /* 선조회 실패는 템플릿으로 읽게 둔다 */ }
+    const waiting=[...lines.values()].some(l=>!l.final&&!l.shownChoice&&l.status==='pending');
+    // 첫 선조회가 실패하면(일시 오류) 다시 묻는다. 그래야 먼저 띄운 줄도 고정된다.
+    if((waiting||!loaded) && ++tries<60) timer=setTimeout(load,1000);
+  }
+  function pick(id,template,fixed) {
+    // 서버가 다듬은 문장으로 이미 고정된 줄은 화면에 실어 보낸다(재접속 첫 줄도 고정값).
+    if(fixed) return {variant:'polished',text:fixed,fixed:true};
+    const l=lines.get(id);
+    if(!loaded) { if(!early.has(id)) early.set(id,template); return null; }
+    if(!l)return null;
+    if(l.final) return {variant:l.final.variant, text:l.final.variant==='polished'&&l.final.text ? l.final.text : template};
+    if(l.shownChoice) return l.shownChoice;
+    return l.status==='ready'&&l.text ? {variant:'polished',text:l.text,rev:l.job_rev} : {variant:'template',text:template,rev:l.job_rev||0};
+  }
+  async function shown(id,choice) {
+    if(choice.fixed)return;
+    const l=lines.get(id); if(!l||l.final||sent.has(id))return;
+    sent.add(id); l.shownChoice=choice;
+    try {
+      const r=await fetch(`${url}/${encodeURIComponent(id)}/shown`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':root.dataset.npcCsrf||''},body:JSON.stringify({variant:choice.variant,job_rev:choice.rev||0})});
+      if(!r.ok) { retry(); return; }
+      const f=await r.json(); l.final={variant:f.variant,text:f.text};
+      if(f.variant!==choice.variant) onUpdate();
+    } catch { retry(); }
+    // 일시 오류면 띄운 변형 그대로 다시 고정을 요청한다(서버가 다른 변형으로 고정하지 않게).
+    function retry() { sent.delete(id); l.retries=(l.retries||0)+1; if(l.retries<10) setTimeout(()=>{ if(!dead) shown(id,choice); },1000); }
+  }
+  load();
+  return {pick,shown,dispose(){dead=true;clearTimeout(timer);}};
 }
 function mountScene(root) {
   const player=root.querySelector('.vn-player'); if(!player)return;
@@ -131,6 +148,7 @@ function mountScene(root) {
       .sort((a,b)=>rank(a.dataset.phase)-rank(b.dataset.phase)||order.get(a)-order.get(b));
   }
   const sources=collect();
+  const npc=npcLines(root,()=>render(false));
   const stored=readStore(key);
   const seen=new Set(stored?.seen || []);
   // 새로고침·재연결은 이미 본 줄을 다시 강요하지 않고, 행동 뒤 새로 생긴 줄은 그 첫 줄에서 멈춘다.
@@ -160,7 +178,9 @@ function mountScene(root) {
     const source=sources[index];
     const span=source?.querySelector('.vn-source-text');
     const copy=span?.cloneNode(true); copy?.querySelector('.line-attribution')?.remove();
-    const body=copy?.textContent.trim() || (root.dataset.phase==='night'?'점칠 대상을 골라 주세요. 점괘는 나에게만 표시됩니다.':'공개된 기록을 읽고 행동을 선택하세요.');
+    let body=copy?.textContent.trim() || (root.dataset.phase==='night'?'점칠 대상을 골라 주세요. 점괘는 나에게만 표시됩니다.':'공개된 기록을 읽고 행동을 선택하세요.');
+    const npcChoice=npc&&source ? npc.pick(source.dataset.lineId,body,source.dataset.npcFinal) : null;
+    if(npcChoice) body=npcChoice.text;
     // 공개된「보인 기색」만 문장과 함께 표시한다. 폴링이 본문 span을 교체해도 이 표시는 보존된다.
     const tell=source?.querySelector('[data-vn-tell]')?.textContent.trim();
     const line=tell ? body + ' ' + tell : body;
@@ -205,6 +225,7 @@ function mountScene(root) {
     player.querySelector('[data-vn-prev]').disabled=index===0;
     player.querySelector('[data-vn-next]').disabled=index>=sources.length-1 && !full && instant;
     player.querySelector('[data-vn-announcement]').textContent=`${name}. ${line}`;
+    if(npcChoice) npc.shown(source.dataset.lineId,npcChoice);
     if(instant || full || !announce) { text.textContent=line; persist(!full); return; }
     let at=0; text.textContent=''; const type=()=>{if(!root.isConnected)return; text.textContent=line.slice(0,++at); if(at<line.length)timer=setTimeout(type,24); else persist(true);}; type();
     persist();
@@ -257,13 +278,13 @@ function mountScene(root) {
   player.querySelector('[data-vn-instant]').addEventListener('change',e=>{instant=e.target.checked;saveStore('changgui:instant',instant);render();});
   const observer=new MutationObserver(()=>render(false));
   for(const source of sources) observer.observe(source,{childList:true,subtree:true,characterData:true});
-  const controller={next,setGuide,dispose(){clearTimeout(timer);observer.disconnect();}};
+  const controller={next,setGuide,dispose(){clearTimeout(timer);observer.disconnect();npc?.dispose();}};
   scenes.set(root,controller); currentScene=controller; render();
 }
 function mount() {
   const root=document.querySelector('#meeting');
   updateChrome(root); decorate(); syncGuide(root);
-  if(root && !mounted.has(root)) { mounted.add(root); mountRecords(root); mountScene(root); }
+  if(root && !mounted.has(root)) { mounted.add(root); mountScene(root); }
 }
 document.addEventListener('DOMContentLoaded',mount);
 document.addEventListener('htmx:afterSwap',mount);

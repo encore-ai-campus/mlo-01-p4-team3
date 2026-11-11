@@ -215,7 +215,7 @@ class SuspicionModelsSwitchTest(TestCase):
         with patch("server.infra.model_selector.LocalModelSelector.suspicion_model", return_value=model) as load:
             store, production = suspicion_models(fake, "suspicion-logistic-abc", "mlruns")
         self.assertEqual(production, "suspicion-logistic-abc")
-        load.assert_called_once_with("suspicion-logistic-abc")
+        load.assert_called_once_with("suspicion-logistic-abc", in_process_logistic=True)
         game = store.for_game("g1", production)
         self.assertEqual(game.estimate("o")[1], "suspicion-logistic-abc")
         store.close()
@@ -297,6 +297,6 @@ class StoreRaceAndRollbackTest(TestCase):
             store._background = False
             game = store.for_game("g-old", "suspicion-logistic-abc")
         self.assertEqual(production, fake.model_version)
-        load.assert_called_once_with("suspicion-logistic-abc")
+        load.assert_called_once_with("suspicion-logistic-abc", in_process_logistic=True)
         self.assertEqual(game.estimate("o")[1], "suspicion-logistic-abc")
         store.close()

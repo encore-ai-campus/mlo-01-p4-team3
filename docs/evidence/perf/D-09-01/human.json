@@ -1,0 +1,344 @@
+{
+  "task": "D-09-01",
+  "commit": "10ef8728570ae4df35d820c3084a772bbf66e20a",
+  "generated_at": "2026-11-11T03:34:29Z",
+  "source": "python -m tools.perf.intent_human_eval --run C:/Users/playdata/.codex/worktrees/644a/mlo-01-p4-team3/mlruns/intent_bert/20261107T162208Z --human 'Z:\\pj-4th-team\\5. 테스트 데이터\\user_test\\review_1110\\eval_labels.jsonl' --contexts 'Z:\\pj-4th-team\\5. 테스트 데이터\\user_test\\review_1110\\contexts.jsonl' --manifest 'Z:\\pj-4th-team\\5. 테스트 데이터\\user_test\\freeze_1110\\manifest.json' --n 200 --threads 4",
+  "metrics": {
+    "baseline_macro_f1": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "baseline_command_exact_match": {
+      "value": 0.8571428571428571,
+      "unit": ""
+    },
+    "baseline_unsupported_recall": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "baseline_evaluation_rows": {
+      "value": 7,
+      "unit": "문장"
+    },
+    "baseline_unsupported_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "baseline_confirmation_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "baseline_wrong_immediate_execution_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "baseline_single_command_rows": {
+      "value": 7,
+      "unit": "문장"
+    },
+    "baseline_slot_kind_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "baseline_slot_addressee_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "baseline_slot_target_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "baseline_slot_evidence_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "baseline_slot_night_error_rate": {
+      "value": 0.14285714285714285,
+      "unit": ""
+    },
+    "baseline_slot_slot_error_rate": {
+      "value": 0.14285714285714285,
+      "unit": ""
+    },
+    "baseline_slot_divination_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "baseline_slot_interrogation_kind_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "baseline_contrast_groups": {
+      "value": 0,
+      "unit": "개"
+    },
+    "baseline_parse_p50": {
+      "value": 0.48689963296055794,
+      "unit": "ms"
+    },
+    "baseline_parse_p95": {
+      "value": 0.6812000647187233,
+      "unit": "ms"
+    },
+    "baseline_parse_calls": {
+      "value": 200,
+      "unit": "회"
+    },
+    "bert_macro_f1": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "bert_command_exact_match": {
+      "value": 0.8571428571428571,
+      "unit": ""
+    },
+    "bert_unsupported_recall": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "bert_evaluation_rows": {
+      "value": 7,
+      "unit": "문장"
+    },
+    "bert_unsupported_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "bert_confirmation_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "bert_wrong_immediate_execution_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "bert_single_command_rows": {
+      "value": 7,
+      "unit": "문장"
+    },
+    "bert_slot_kind_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "bert_slot_addressee_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "bert_slot_target_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "bert_slot_evidence_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "bert_slot_night_error_rate": {
+      "value": 0.14285714285714285,
+      "unit": ""
+    },
+    "bert_slot_slot_error_rate": {
+      "value": 0.14285714285714285,
+      "unit": ""
+    },
+    "bert_slot_divination_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "bert_slot_interrogation_kind_error_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "bert_contrast_groups": {
+      "value": 0,
+      "unit": "개"
+    },
+    "bert_parse_p50": {
+      "value": 70.06079982966185,
+      "unit": "ms"
+    },
+    "bert_parse_p95": {
+      "value": 99.36089999973774,
+      "unit": "ms"
+    },
+    "bert_parse_calls": {
+      "value": 200,
+      "unit": "회"
+    },
+    "bert_available": {
+      "value": 1,
+      "unit": ""
+    },
+    "checkpoint_weights_verified": {
+      "value": 1,
+      "unit": ""
+    },
+    "human_evaluation": {
+      "value": 1,
+      "unit": ""
+    },
+    "accepted": {
+      "value": 0,
+      "unit": ""
+    },
+    "baseline_negation_accuracy": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "baseline_negation_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "baseline_pronoun_accuracy": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "baseline_pronoun_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "baseline_ellipsis_accuracy": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "baseline_ellipsis_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "baseline_multi_intent_accuracy": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "baseline_multi_intent_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "baseline_question_assertion_accuracy": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "baseline_question_assertion_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "baseline_alias_accuracy": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "baseline_alias_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "baseline_split_negation_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "baseline_split_pronoun_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "baseline_split_ellipsis_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "baseline_split_multi_intent_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "baseline_split_question_assertion_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "baseline_split_alias_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "baseline_exact_ci95_low": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "baseline_exact_ci95_high": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "bert_negation_accuracy": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "bert_negation_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "bert_pronoun_accuracy": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "bert_pronoun_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "bert_ellipsis_accuracy": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "bert_ellipsis_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "bert_multi_intent_accuracy": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "bert_multi_intent_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "bert_question_assertion_accuracy": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "bert_question_assertion_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "bert_alias_accuracy": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "bert_alias_rows": {
+      "value": 2,
+      "unit": "문장"
+    },
+    "bert_split_negation_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "bert_split_pronoun_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "bert_split_ellipsis_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "bert_split_multi_intent_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "bert_split_question_assertion_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "bert_split_alias_rows": {
+      "value": 0,
+      "unit": "문장"
+    },
+    "bert_exact_ci95_low": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "bert_exact_ci95_high": {
+      "value": 1.0,
+      "unit": ""
+    }
+  }
+}

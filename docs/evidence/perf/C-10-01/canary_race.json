@@ -1,0 +1,24 @@
+{
+  "task": "C-10-01",
+  "commit": "8d3ad12b770e59282e6e8884565955663d6f9842",
+  "generated_at": "2026-11-11T04:53:42Z",
+  "source": "8d3ad12: CLI race + gate-time race + production change regressions; real isolated NiFi MLflow SQLite candidate replacement rejection and evaluated-version promotion; synthetic metadata only",
+  "metrics": {
+    "regression_tests": {
+      "value": 9,
+      "unit": "건"
+    },
+    "changed_candidate_rejected": {
+      "value": 1,
+      "unit": ""
+    },
+    "normal_promotion_verified": {
+      "value": 1,
+      "unit": ""
+    },
+    "production_changes_on_rejection": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

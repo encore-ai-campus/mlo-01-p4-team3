@@ -2,11 +2,11 @@
 
 B-09-02 D 어댑터 수신은 서버의 해석기 팩토리 조립만 추가한다. 기존 자유 입력·카드·폴링 URL과 템플릿 연결은 그대로이며 화면 계약 회귀 결과와 실물 모델 대기는 [증빙](../docs/evidence/B-09-02.md)에 기록한다.
 
-B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·비교·확인과 버튼 설명 상자를 맡는다. 행동 결과·아침 진술 대사 줄은 `server/api/vn_script.py` → `meeting_view.py`의 `vn_lines` → records.html의 숨은 `.vn-script`로 들어온다(문장 틀은 vn_script.py 맨 위). 투표 결과 발표 장면도 vn_script.py, 화면 잠금은 ui-vn.js. 첫 판 안내 대사는 `server/api/tutorial_script.py`(도메인성 순수 함수) → 첫 판 판단은 `server/app/usecases.py` `guide_info`(응용) → `meeting_view.py`가 줄을 끼움 → `meeting_parts/vn_line.html`. 아침 실종 발표(까치)는 `vn_script.announcement_lines`, 진술표 카드 문장은 `vn_script.claim_card_text`. 판 도중 원한 단서 알림은 판정 `server/app/clue_notice.py`(응용, 순수 함수) → `guide_info`가 함께 돌려줌 → `meeting_view._clue_vn_lines`가 고백 발언 뒤에 줄을 붙임(족제비 문장은 `tutorial_script.CLUE_*`). 의심·모순 지적 즉시 반응은 `vn_script.reaction_lines`(문장 `REACTION_*`, 성향은 응용 `usecases.temperaments`가 판 콘텐츠에서 읽음) → `meeting_view`의 `reaction_lines` → records.html이 플레이어 발언 뒤에 줄을 붙임. 수첩 한 번 누름 표시는 `notebook_marks.html`(주민 창·수첩 창) → ui-vn.js가 기존 수첩 저장 경로로 보낸다. 버튼 설명 문구는 `server/api/template_tags.py`의 `UI_TIPS`를 `{% tip %}`로 붙인다. 의존 방향: 템플릿·JS(표현) → meeting_view·vn_script(viewmodel) → 엔진 공개 기록. CSS 공통 토큰은 web/static/css/theme.css다.
+B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·확인과 버튼 설명 상자를, record_tools.js는 진술표 비교와 선택을 맡는다. 행동 결과·아침 진술 대사 줄은 `server/api/vn_script.py` → `meeting_view.py`의 `vn_lines` → records.html의 숨은 `.vn-script`로 들어온다(문장 틀은 vn_script.py 맨 위). 투표 결과 발표 장면도 vn_script.py, 화면 잠금은 ui-vn.js. 첫 판 안내 대사는 `server/api/tutorial_script.py`(도메인성 순수 함수) → 첫 판 판단은 `server/app/usecases.py` `guide_info`(응용) → `meeting_view.py`가 줄을 끼움 → `meeting_parts/vn_line.html`. 아침 실종 발표(까치)는 `vn_script.announcement_lines`, 진술표 카드 문장은 `vn_script.claim_card_text`. 판 도중 원한 단서 알림은 판정 `server/app/clue_notice.py`(응용, 순수 함수) → `guide_info`가 함께 돌려줌 → `meeting_view._clue_vn_lines`가 고백 발언 뒤에 줄을 붙임(족제비 문장은 `tutorial_script.CLUE_*`). 의심·모순 지적 즉시 반응은 `vn_script.reaction_lines`(문장 `REACTION_*`, 성향은 응용 `usecases.temperaments`가 판 콘텐츠에서 읽음) → `meeting_view`의 `reaction_lines` → records.html이 플레이어 발언 뒤에 줄을 붙임. 무당 회의 발언 문장(`vn_script.MUDANG_LINES`)과 발언 문장의 괄호 조사 표시는 `vn_script.speech_display_text` → `ui_viewmodels.build_ui_vm`(발언 기록·대사창 원본)과 `interaction_view.line_context`(폴링 조각)에서 보일 때만 적용한다. 수첩 한 번 누름 표시는 `notebook_marks.html`(주민 창·수첩 창) → ui-vn.js가 기존 수첩 저장 경로로 보낸다. 버튼 설명 문구는 `server/api/template_tags.py`의 `UI_TIPS`를 `{% tip %}`로 붙인다. 의존 방향: 템플릿·JS(표현) → meeting_view·vn_script(viewmodel) → 엔진 공개 기록. CSS 공통 토큰은 web/static/css/theme.css다.
 
 공식 그림은 ui_assets.py → assets.asset_url → manifest. 여성 전신·초상은 같은 ID의 v5 파일이다. GET /ui-review는 로그인한 vn에서 manifest의 정식 그림(현재 로고·회의/밤 배경 포함 21개)과 임시 자원 상태를 표시하고 classic은 404다. 수량은 manifest에서 계산한다. 시안 후보 카탈로그는 읽지 않는다. 보존한 전체 HTML 시안과 실제 화면의 적용 범위는 UI_APPLY.md에서 구분한다.
 
-종료 탭은 같은 판 URL에서 결과·복기·단서를 표시한다. GET review의 htmx는 review_panel.html, 일반 HTML은 review.html, JSON DTO·소유권·진행 중 403은 유지한다. 서버·웹 디자인 및 web/PM_UI_REVIEW.md·UI_ASSET_PLAN.md·UI_APPLY.md를 함께 갱신한다.
+종료 탭은 같은 판 URL에서 결과·복기·원한 단서·공개 기록·설문을 표시한다. GET review의 htmx는 review_panel.html, 일반 HTML은 review.html, JSON DTO·소유권·진행 중 403은 유지한다.
 
 B-10-02: 기존 게임 전체/htmx 응답의 meeting.html → village_assets.html(고정 지도·전체 초상 펼치기)·asset_credits.html(하단 출처). 좌표·URL은 manifest, 출처는 SOURCES.md에서 읽는다. 펼치기는 HTML details로 처리하며 서버 명령을 보내지 않는다. 새 URL·API는 없다.
 
@@ -80,10 +80,13 @@ B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 �
 ## B-08-01 결과·진척·결말, B-10-01 복기(판 종료 화면)
 
 - 홈의 일반 판·고정 회차 시작 폼은 `ending_choice.html`을 포함한다. 퇴마는 항상, 한풀이는 해금된 것만 고를 수 있다. 판 구성 목록은 `presets_enabled.json`에 공개된 선택형 도전이 있을 때만 `선택형 도전` 묶음으로 보인다(`story_view.preset_choices`).
-- 판이 끝나면 기존 `GET /games/{id}` 전체 화면·회의 조각의 `#meeting` 안에 `game_end.html`(결과·복기·원한 단서 탭)을 넣는다. 탭 전환은 `web/static/js/game_end.js`, 모양은 `web/static/css/result.css`(B-10-07 `--pd-*` 이름, 대체값 포함).
-- 결과 탭: `game_result.html`(승패·종료 사유·결말 문안)·`result_banner`·종료 설문. 복기 탭: 열 때 `GET /games/{id}/review`(htmx) → `review_panel.html`(정체·숨긴 비밀·이 판 단서·`review_side`). 단서 탭: 열 때 `GET /players/me/progress`(htmx) → `progress_panel.html`.
-- 일반 요청은 그대로다: 복기는 `ReviewOutput` JSON, 진척은 로비용 전체 화면 `progress.html`. 행동 이유(E-10-10 `review_trace`)가 없으면 복기의 이유 영역은 숨긴다.
+- 판이 끝나면 기존 `GET /games/{id}` 전체 화면·회의 조각의 `#meeting` 안에 VN·classic 공통 `game_end.html`(탭 5개)을 넣는다. `game_end.js`가 탭을 켜기 전에는 기록과 설문을 본문에서 읽을 수 있다. 스타일은 `css/result.css`다.
+- 결과: `game_result.html`과 `result_banner`. 복기·원한 단서: `end_lookup.html` → 기존 `GET /games/{id}/review`와 `GET /players/me/progress`(htmx) → `review_panel.html`(`review_side` 포함), `progress_panel.html`. 실패 시 버튼으로 같은 GET을 다시 보낸다.
+- 공개 기록: 행적표와 `meeting_parts/records.html` → `claim_cards.html`. `record_tools.js`가 기존 진술 비교·선택을 맡고 종료 화면에서만 안내와 필터 초기화를 더한다. 설문: 기존 `survey.html` → 기존 POST → `survey_done.html`. 스크립트 없이 제출하면 같은 판의 설문 위치로 돌아온다.
+- 일반 요청은 그대로다: 복기는 `ReviewOutput` JSON, 진척은 로비용 전체 화면 `progress.html`. 복기 행동 목록은 `ReviewOutput.timeline`(E-10-10 `review_trace`, NPC 결정 단위)을 `story_view.review_context`가 화면 행으로 바꾼 것이다. 기록이 없는 옛 판은 빈 목록 안내 한 줄.
 - 고칠 곳: 문구·배치 → 위 템플릿, 복기·진척 화면 값 → `server/api/story_view.py`(표현 보조), 요청 분기 → `server/api/views.py`.
+- 복기 해설 LLM 요약(E-10-01): `review_panel.html`이 `review_narration.html`을 넣는다. 생성 중이면 2초마다 `GET /games/{id}/review/narration`(htmx, `outerHTML`)을 폴링하고, 확정되면 검사를 통과한 LLM 문장만 "마을 사람들의 속마음" 묶음에 보인다(전부 템플릿이면 묶음 숨김). 화면 값은 `story_view.narration_context`, 규칙은 도메인 `llm/review_narration.py`, 흐름은 응용 `server/app/review_narration.py`.
+- "Powered by Kanana": `asset_credits.html`(`{% asset_attribution %}`) 첫 줄 `.kanana-credit`, 기능(`REVIEW_LLM_URL`)이 켜졌을 때만. 문장별 표시 없음(11/11 사용자 결정). 판 화면(`meeting.html`)과 일반 복기 화면(`review.html`)에 같은 조각이 들어간다.
 
 B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
 
@@ -132,3 +135,7 @@ A-10-06·A-11-04의 확정 그림을 공개 사건에 연결했다. 앞 절의 �
 ### B-11-01 캐릭터·도움말 표시 보완 (2026-11-11)
 
 기존 `vn_scene.html`의 캐릭터 버튼과 `ui_help.html`의 도움말 대화상자가 `web/static/game.css`를 사용한다. 기존 `ui-vn.js`의 캐릭터 읽기·도움말 열기/닫기 처리는 그대로이며 새 URL·탭·스크립트는 추가하지 않았다. [검증](../docs/evidence/B-11-01.md).
+
+### 행적표 (B-10-07, 2026-11-11)
+
+기록 창 진술표 앞 행적표: `server/api/alibi_grid.py`(표현, 순수 함수 `build_alibi_grid`, PlayerView 공개 진술·실종·감금만 읽음) → `meeting_view.py`의 `alibi_grid`·`alibi_grid_duo` → `meeting_parts/alibi_grid.html`. VN은 무대 버튼(`vn_scene.html`, 기록 다음 `data-stage-open="meeting-alibi-grid"`) → `meeting.html`의 무대 패널 `#meeting-alibi-grid`(ui-stage.js가 다른 패널과 같은 창으로 만듦, 명령 뒤 `#meeting` 교체 때 함께 갱신). classic은 무대 버튼이 없어 records.html 진술표 앞에서 include. CSS는 `css/theme.css`(VN)와 `classic-game.css`(classic)에 같은 규칙. JS 없음(밤마다 `<details>`). 문구·칸 규칙은 alibi_grid.py, 배치는 템플릿을 고친다. 격자에는 진술 카드 속성(`data-record-*`, `.vn-source`)을 쓰지 않는다(ui-vn.js가 진술 카드로 모음).

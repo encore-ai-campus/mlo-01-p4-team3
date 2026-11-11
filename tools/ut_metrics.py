@@ -13,7 +13,8 @@
 지표 정의는 `DEFINITIONS`에 버전과 함께 둔다. 문서에 없던 정의(설문 응답률 분모, 자유 입력 묶음 지표, 추궁 국면 체류 시간)는
 11/8 사용자가 확정했다(`ut-metrics-1.0`). 같은 날 사용자 테스트를 11/10 13:00~18:00으로 옮기면서 18:00 클로즈를 스냅숏으로
 정해(`ut-metrics-1.1`) 마감 시각 기본값을 11/10 18:00 KST로 두고, 종료·입력·설문을 모두 그 시각에서 자르며, 그때까지 끝나지
-않은 판은 "미종료"로 따로 센다.
+않은 판은 "미종료"로 따로 센다. 11/11 사용자 결정(`ut-metrics-1.3`)으로 새로 시작으로 중단한 판(`reason=aborted`)은
+설문 응답률 분모에서 뺀다(끝 화면에 가지 않아 설문을 볼 수 없었음).
 """
 from __future__ import annotations
 
@@ -24,7 +25,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-DEFINITION_VERSION = "ut-metrics-1.2"
+DEFINITION_VERSION = "ut-metrics-1.3"
 KST = timezone(timedelta(hours=9))
 DEFAULT_CUTOFF = "2026-11-10T18:00:00+09:00"  # 정식 사용자 테스트 클로즈 = 스냅숏(11/8 사용자 결정)
 DEFAULT_OPEN = "2026-11-10T13:00:00+09:00"  # 정식 사용자 테스트 오픈. 그 전 판(리허설 등)은 기본으로 뺀다(Codex 지적 반영)
@@ -35,7 +36,7 @@ DEFINITIONS = {
     "completion_rate": {"text": "game_ended 시각이 마감 시각 이하이고 result.completed가 거짓이 아닌 판 ÷ 시작한 판"},
     "games_unfinished": {"text": "마감 시각까지 game_ended가 없는 판(진행 중이던 판. 마감 뒤에 끝난 판도 여기에 든다). 미완주와 따로 보고"},
     "game_minutes": {"text": "완주 판의 game_ended − game_started 시각(분). 중앙값·p90"},
-    "survey_response_rate": {"text": "마감 시각 이하에 제출된 skipped=false 설문 수 ÷ 마감 시각까지 끝난 판 수(계획서 7절 \"응답 수 ÷ 판 수\", 건너뜀은 분모에만. 11/8 사용자 결정으로 마감 뒤 종료·설문은 세지 않는다. 단 마감 전에 끝난 판의 서버 자동 건너뜀(reason=backfill, 마감 직후 backfill_surveys)은 이벤트 시각이 마감 뒤여도 센다, ut-metrics-1.2·B-09-07). 시작한 판 기준 값(response_rate_of_started)·설문 이벤트 수·건너뜀 수·설문 없는 끝난 판 수를 함께 보고"},
+    "survey_response_rate": {"text": "마감 시각 이하에 제출된 skipped=false 설문 수 ÷ 마감 시각까지 끝난 판 수(계획서 7절 \"응답 수 ÷ 판 수\", 건너뜀은 분모에만. 11/8 사용자 결정으로 마감 뒤 종료·설문은 세지 않는다. 단 마감 전에 끝난 판의 서버 자동 건너뜀(reason=backfill, 마감 직후 backfill_surveys)은 이벤트 시각이 마감 뒤여도 센다, ut-metrics-1.2·B-09-07). 11/11 사용자 결정(ut-metrics-1.3, D-10-01 10번): 새로 시작으로 중단한 판(result.reason=aborted, completed=false)은 끝 화면에 가지 않아 설문을 볼 수 없었으므로 분모·설문 이벤트 수에서 뺀다(중단 판 수 games_aborted는 따로 보고). 시작한 판 기준 값(response_rate_of_started)·설문 이벤트 수·건너뜀 수·설문 없는 끝난 판 수를 함께 보고"},
     "input_sentences": {"text": "intent_attempt 최초 이벤트(attempt_id별 1건, 재입력은 새 시도) 중 마스킹 후 문장이 비지 않은 수"},
     "desired_action_rate": {"text": "자유 입력 묶음(최초 시도 + superseded_by로 이어진 재입력) 중 마지막 반응이 confirm·edit(명령 수락 뒤에만 기록됨)인 묶음 ÷ 전체 묶음. 반응 없이 남은 묶음은 분모에 넣음"},
     "extra_selections": {"text": "묶음별 (재입력 수 + 마지막 반응이 edit이면 1)의 합과 실행된 묶음당 평균"},
@@ -210,6 +211,7 @@ def game_summary(game, cutoff=None):
     return {
         "game_id": game.get("game_id"), "player_pseudonym": game.get("player_pseudonym"),
         "started_at": start, "ended_at": end, "completed": completed, "unfinished": end is None,
+        "aborted": end is not None and result.get("reason") == "aborted",
         "ended_after_cutoff": ended_raw is not None and end is None,
         "minutes": (end - start).total_seconds() / 60 if completed and start else None,
         "play_seconds": (play_end - start).total_seconds() if play_end and start and play_end > start else 0.0,
@@ -239,7 +241,8 @@ def aggregate(summaries):
     done = [s for s in summaries if s["completed"]]
     minutes = [s["minutes"] for s in done if s["minutes"] is not None]
     ended = [s for s in summaries if s["ended_at"] is not None]  # 마감 시각까지 끝난 판(game_summary가 자름)
-    surveys = [s["survey"] for s in ended if s["survey"] is not None]
+    survey_base = [s for s in ended if not s.get("aborted")]  # 중단 판은 설문을 볼 수 없었음(ut-metrics-1.3)
+    surveys = [s["survey"] for s in survey_base if s["survey"] is not None]
     answered = sum(1 for p in surveys if p.get("skipped") is False)
     chains = [c for s in summaries for c in s["chains"]]
     finals = [c["final_reaction"] for c in chains]
@@ -272,8 +275,9 @@ def aggregate(summaries):
                                  "n": len(person_minutes)},
         "games_per_participant": round(started / len(by_player), 2) if by_player else None,
         "survey": {"events": len(surveys), "answered": answered, "skipped": len(surveys) - answered,
-                   "games_ended": len(ended), "ended_without_survey": len(ended) - len(surveys),
-                   "response_rate": _rate(answered, len(ended)), "response_rate_of_started": _rate(answered, started)},
+                   "games_ended": len(ended), "games_aborted": len(ended) - len(survey_base),
+                   "games_survey_base": len(survey_base), "ended_without_survey": len(survey_base) - len(surveys),
+                   "response_rate": _rate(answered, len(survey_base)), "response_rate_of_started": _rate(answered, started)},
         "input_sentences": sum(s["input_sentences"] for s in summaries),
         "free_input": {"chains": len(chains), "executed": len(executed),
                        "desired_action_rate": _rate(len(executed), len(chains)),

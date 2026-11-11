@@ -141,7 +141,7 @@ class ParticipantFormsTests(TestCase):
             self.assertContains(page, question)
         body = {"game_id": self.gid, "fun": 5, "unfair": 2, "npc_plausible": 4,
                 "comment": "person@example.com 010-1234-5678"}
-        self.assertContains(self.form("POST", "/survey", body), "설문을 기록했습니다")
+        self.assertContains(self.form("POST", "/survey", body), "응답을 저장했습니다.")
         replay = self.form("POST", "/survey", body)
         self.assertEqual(replay.status_code, 204)
         self.assertEqual(replay.headers["HX-Refresh"], "true")
@@ -149,7 +149,7 @@ class ParticipantFormsTests(TestCase):
         self.assertEqual(self.form("POST", "/survey", dict(body, fun=3)).status_code, 409)
         self.assertEqual(self.survey_json(dict(body, comment="other@example.com 010-9999-9999")).status_code, 409)
         page = self.client.get(self.url, HTTP_ACCEPT="text/html")
-        self.assertContains(page, "설문을 기록했습니다")
+        self.assertContains(page, "응답을 저장했습니다.")
         self.assertNotContains(page, 'name="fun"')
         events = [event for event in self.service.repository.unpublished(self.gid)
                   if event.event_type == "survey_submitted"]
@@ -266,7 +266,7 @@ class ParticipantFormsTests(TestCase):
         repository = self.service.repository
         with patch.object(repository, "append_events", wraps=repository.append_events) as append:
             self.assertContains(self.form("POST", "/survey", {"game_id": self.gid, "skipped": "true"}),
-                                "설문을 기록했습니다")
+                                "설문을 건너뛰었습니다.")
             self.assertEqual(self.survey_json(skip).status_code, 204)
             self.assertEqual(self.survey_json({"fun": 5, "unfair": 1, "npc_plausible": 4}).status_code, 409)
             self.assertEqual(append.call_count, 1)
@@ -275,7 +275,25 @@ class ParticipantFormsTests(TestCase):
         self.assertEqual(events[0].topic, "paldo.player")
         self.assertEqual(events[0].payload, {**skip, "mask_version": "b-mask-1"})
         self.assertEqual(self.view()["state_version"], version)
-        self.assertNotContains(self.client.get(self.url, HTTP_ACCEPT="text/html"), 'name="skipped"')
+        page = self.client.get(self.url, HTTP_ACCEPT="text/html")
+        self.assertNotContains(page, 'name="skipped"')
+        self.assertContains(page, "설문을 건너뛰었습니다.")
+
+    def test_native_survey_form_redirects_to_confirmed_state(self):
+        """스크립트 없는 브라우저가 같은 경로로 제출하고 저장이 확인된 화면을 다시 읽는다."""
+        self.play_until()
+        data = {"game_id": self.gid, "skipped": "true", "csrfmiddlewaretoken": self.token}
+        for _ in range(2):
+            response = self.client.post(self.url + "/survey", urlencode(data),
+                content_type="application/x-www-form-urlencoded", HTTP_ACCEPT="text/html")
+            self.assertEqual(response.status_code, 303)
+            self.assertEqual(response["Location"], self.url + "#survey")
+        page = self.client.get(self.url, HTTP_ACCEPT="text/html")
+        self.assertContains(page, "설문을 건너뛰었습니다.")
+        self.assertContains(page, 'href="#game-result"')
+        self.assertNotContains(page, "홈으로 이동하면 설문은 건너뛰기로 기록됩니다.")
+        self.assertEqual(len([e for e in self.service.repository.unpublished(self.gid)
+                              if e.event_type == "survey_submitted"]), 1)
 
     def test_survey_rejects_mixed_skip_and_response_inputs(self):
         """점수 일부·잘못된 불리언·건너뛸 때 남은 점수나 의견은 400이다."""

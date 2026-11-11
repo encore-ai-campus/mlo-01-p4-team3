@@ -73,7 +73,7 @@ class RoutineRandomness(unittest.TestCase):
 
     def _draw(self, n=4000):
         rng = random.Random(1)
-        return Counter(_routine_place(rng, self.ch, Slot.MIDNIGHT) for _ in range(n))
+        return Counter(_routine_place(rng, self.ch, Slot.MIDNIGHT, home=False) for _ in range(n))   # 콘텐츠 가중치 그대로(rule-0.8 한밤 집 ×0.25는 test_rule08)
 
     def test_zero_keeps_weights_and_one_is_uniform(self):
         params.apply(_params(routine_randomness=0.0))

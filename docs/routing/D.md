@@ -30,6 +30,7 @@
 | 씐 자 모델 로컬 첫 학습·평가 | `ml/suspicion/features.py`(실제 엔진→TrainingRow), `train.py`(게임 분할·학습·MLflow), `evaluate.py`(softmax·지표), `tests/test_suspicion.py`, `docs/evidence/D-07-02.md` |
 | 학습 미사용 씐 자 전략 평가 | `ml/suspicion/strategies.py`(거짓 행적 유형 고정), `train.py --heldout-rows`(판·seed 분리 및 별도 지표) |
 | 승인된 의도 예시로 CPU BERT 미세조정·기준선 비교 | `intent/finetune.py`, CLI `tools/perf/intent_finetune.py`, 증빙 `docs/evidence/D-07-03.md`, 모델·계보 기록 `mlruns/intent_bert/`(Git 제외) |
+| BERT 반례·사람 평가 | `intent/human_eval.py`, CLI `tools/perf/intent_human_eval.py`, 증빙 `docs/evidence/D-09-01.md` |
 | 플레이어 봇 실행·같은 시드 재현·지표 표·처리량 측정 | `engine/sim/`, CLI `tools/perf/sim_bench.py`, 테스트 `tests/sim/`, 증빙 `docs/evidence/D-06-01.md` |
 | 경매·과금·광고 판정 규칙 변경 | 광고 도메인 `ads/domain/`, `docs/contracts/ads.md` |
 | 광고 서버 실행·admin·HTTP 검사·지연 측정 | 표현 `ads/manage.py`·`ads/web/`, 응용 `ads/app/`, 설명 `docs/modules/ads.md`, 측정 `tools/perf/ads_bench.py` |
