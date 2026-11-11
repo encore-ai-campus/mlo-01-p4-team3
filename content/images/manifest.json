@@ -790,7 +790,7 @@
     ],
     "path": "content/images/ad/bujeok__300x250.png",
     "url": "/static/ads/bujeok__300x250.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "ad",
@@ -801,7 +801,7 @@
     ],
     "path": "content/images/ad/bujeok__728x90.png",
     "url": "/static/ads/bujeok__728x90.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "ad",
@@ -812,7 +812,7 @@
     ],
     "path": "content/images/ad/gat__300x250.png",
     "url": "/static/ads/gat__300x250.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "ad",
@@ -823,7 +823,7 @@
     ],
     "path": "content/images/ad/gukbap_a__300x250.png",
     "url": "/static/ads/gukbap_a__300x250.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "ad",
@@ -834,7 +834,7 @@
     ],
     "path": "content/images/ad/gukbap_a__728x90.png",
     "url": "/static/ads/gukbap_a__728x90.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "ad",
@@ -845,7 +845,7 @@
     ],
     "path": "content/images/ad/gukbap_b__300x250.png",
     "url": "/static/ads/gukbap_b__300x250.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "ad",
@@ -856,7 +856,7 @@
     ],
     "path": "content/images/ad/gukbap_b__728x90.png",
     "url": "/static/ads/gukbap_b__728x90.png",
-    "placeholder": true
+    "placeholder": false
   },
   {
     "kind": "ad",
@@ -867,6 +867,6 @@
     ],
     "path": "content/images/ad/yakcho__728x90.png",
     "url": "/static/ads/yakcho__728x90.png",
-    "placeholder": true
+    "placeholder": false
   }
 ]
