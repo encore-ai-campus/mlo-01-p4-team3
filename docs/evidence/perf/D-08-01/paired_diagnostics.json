@@ -1,0 +1,236 @@
+{
+  "task": "D-08-01",
+  "commit": "87fddf970869f89fd2d7553e981089c86741ba70",
+  "generated_at": "2026-11-10T08:53:58Z",
+  "source": "Consecutive 30-user/3-minute actual-engine baseline suspicion=None and logistic suspicion-logistic-9bbee626f29b; co-resident 1afb8f051c4e. nifi-01 server, WSL2 Ubuntu load VM. Caddy duration matched by per-request benchmark ID, Django server_total, simultaneous ICMP RTT and host CPU; original metrics before/after saved separately. Base local commit 87fddf9 with instrumentation fingerprint 29f9fe7d520934f71da1f0e2e97842930e9337674e6520af2269ed1dae185396. Interrupted attempt excluded. app/inference scope only.",
+  "metrics": {
+    "baseline_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "baseline_elapsed_seconds": {
+      "value": 181.433,
+      "unit": "s"
+    },
+    "baseline_requests": {
+      "value": 4933,
+      "unit": "count"
+    },
+    "baseline_finished_games": {
+      "value": 363,
+      "unit": "games"
+    },
+    "baseline_p95_ms": {
+      "value": 1644.163,
+      "unit": "ms"
+    },
+    "baseline_caddy_p95_ms": {
+      "value": 1624.001,
+      "unit": "ms"
+    },
+    "baseline_django_p95_ms": {
+      "value": 1425.066,
+      "unit": "ms"
+    },
+    "baseline_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_caddy_samples": {
+      "value": 4933,
+      "unit": "count"
+    },
+    "baseline_django_samples": {
+      "value": 4933,
+      "unit": "count"
+    },
+    "baseline_rtt_samples": {
+      "value": 181,
+      "unit": "count"
+    },
+    "baseline_rtt_p95_ms": {
+      "value": 1.12,
+      "unit": "ms"
+    },
+    "baseline_host_cpu_percent": {
+      "value": 92.492,
+      "unit": "%"
+    },
+    "baseline_cpu_samples": {
+      "value": 361,
+      "unit": "count"
+    },
+    "baseline_inference_calls": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_inference_failures": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_engine_fallback_decisions": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_engine_committed_fallbacks": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "model_elapsed_seconds": {
+      "value": 181.626,
+      "unit": "s"
+    },
+    "model_requests": {
+      "value": 4915,
+      "unit": "count"
+    },
+    "model_finished_games": {
+      "value": 398,
+      "unit": "games"
+    },
+    "model_p95_ms": {
+      "value": 1644.347,
+      "unit": "ms"
+    },
+    "model_caddy_p95_ms": {
+      "value": 1628.165,
+      "unit": "ms"
+    },
+    "model_django_p95_ms": {
+      "value": 1461.21,
+      "unit": "ms"
+    },
+    "model_errors": {
+      "value": 1,
+      "unit": "count"
+    },
+    "model_caddy_samples": {
+      "value": 4915,
+      "unit": "count"
+    },
+    "model_django_samples": {
+      "value": 4914,
+      "unit": "count"
+    },
+    "model_rtt_samples": {
+      "value": 180,
+      "unit": "count"
+    },
+    "model_rtt_p95_ms": {
+      "value": 1.27,
+      "unit": "ms"
+    },
+    "model_host_cpu_percent": {
+      "value": 90.759,
+      "unit": "%"
+    },
+    "model_cpu_samples": {
+      "value": 361,
+      "unit": "count"
+    },
+    "model_inference_calls": {
+      "value": 2338,
+      "unit": "count"
+    },
+    "model_inference_failures": {
+      "value": 101,
+      "unit": "count"
+    },
+    "model_engine_fallback_decisions": {
+      "value": 119,
+      "unit": "count"
+    },
+    "model_engine_committed_fallbacks": {
+      "value": 119,
+      "unit": "count"
+    },
+    "model_inference_p95_upper_ms": {
+      "value": 100.0,
+      "unit": "ms"
+    },
+    "model_fallback_percent": {
+      "value": 5.089820359281437,
+      "unit": "%"
+    },
+    "model_port_failure_percent": {
+      "value": 4.319931565440547,
+      "unit": "%"
+    },
+    "model_rss": {
+      "value": 1104.48828125,
+      "unit": "MiB"
+    },
+    "model_worker_count": {
+      "value": 4,
+      "unit": "count"
+    },
+    "model_reason_model_busy": {
+      "value": 97,
+      "unit": "count"
+    },
+    "model_reason_model_timeout": {
+      "value": 4,
+      "unit": "count"
+    },
+    "model_reason_unattributed": {
+      "value": 18,
+      "unit": "count"
+    },
+    "correlated_fallback_requests": {
+      "value": 55,
+      "unit": "count"
+    },
+    "correlated_fallback_vote": {
+      "value": 119,
+      "unit": "count"
+    },
+    "correlated_fallback_runoff": {
+      "value": 0,
+      "unit": "count"
+    },
+    "successful_port_return_engine_timeout": {
+      "value": 18,
+      "unit": "count"
+    },
+    "failed_port_return_engine_fallback": {
+      "value": 101,
+      "unit": "count"
+    },
+    "no_port_call_engine_fallback": {
+      "value": 0,
+      "unit": "count"
+    },
+    "fallback_requests_with_4_npc_calls": {
+      "value": 47,
+      "unit": "count"
+    },
+    "fallback_requests_with_2_npc_calls": {
+      "value": 8,
+      "unit": "count"
+    },
+    "fallback_request_wait_min": {
+      "value": 0.04,
+      "unit": "ms"
+    },
+    "fallback_request_wait_max": {
+      "value": 483.614,
+      "unit": "ms"
+    },
+    "fallback_request_wait_p95": {
+      "value": 394.061,
+      "unit": "ms"
+    },
+    "nifi_vcpu": {
+      "value": 2,
+      "unit": "count"
+    },
+    "nifi_ram": {
+      "value": 3398,
+      "unit": "MiB"
+    }
+  }
+}
