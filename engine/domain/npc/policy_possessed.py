@@ -241,7 +241,8 @@ def _mudang_ref(obs: ObservationSnapshot, used: set[str]) -> Optional[EvidenceRe
     pub, me = obs.public, obs.observer
     refs = [EvidenceRef(EvidenceType.DIVINATION, c.claim_id) for c in pub.claims
             if c.claim_type is ClaimType.DIVINATION_REVEAL and c.speaker == PLAYER_ID]
-    refs += [EvidenceRef(EvidenceType.VOTE, v.vote_id) for v in pub.votes if v.voter == PLAYER_ID]
+    refs += [EvidenceRef(EvidenceType.VOTE, v.vote_id) for v in pub.votes
+             if v.voter == PLAYER_ID and v.target is not None]   # 기권 기록(rule-0.9~)은 근거로 쓰지 않는다
     for ref in refs:
         if bl.repeat_key(me, PLAYER_ID, [ref]) not in used:
             return ref
@@ -271,6 +272,7 @@ def night_groups(obs: ObservationSnapshot, victims: list[str]) -> dict[str, set[
             continue
         witness |= {c.speaker for c in bl.live_claims(pub) if c.claim_type is ClaimType.WHEREABOUTS
                     and c.night == lie.night and c.slot is lie.slot and c.place is lie.place and c.speaker != obs.observer}
-    mudang_votes = {(v.day, v.round): v.target for v in pub.votes if v.voter == PLAYER_ID}
-    trusts = {v.voter for v in pub.votes if v.voter != PLAYER_ID and mudang_votes.get((v.day, v.round)) == v.target}
+    mudang_votes = {(v.day, v.round): v.target for v in pub.votes if v.voter == PLAYER_ID and v.target is not None}
+    trusts = {v.voter for v in pub.votes if v.voter != PLAYER_ID and v.target is not None
+              and mudang_votes.get((v.day, v.round)) == v.target}
     return {"accuser": accuser & vs, "witness": witness & vs, "trusts_mudang": trusts & vs}

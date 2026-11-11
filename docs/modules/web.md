@@ -88,6 +88,7 @@ B-09-02 분리 부하: 시험 서버가 `--intent-every` 간격을 교환 파일
 | `SESSION_COOKIE_AGE` | 1,209,600초 | 세션 유효 기간 | 새 세션의 기본 유효 기간이 바뀜 |
 | `PALDO_GAME_SERVICE_FACTORY` | 비어 있음. 운영 예: `server.infra.game_factory.build_game_service` | 운영 게임 서비스를 조립하는 함수 경로 | 운영 게임 API가 사용하는 서비스가 바뀜. 비어 있으면 게임 API를 쓸 수 없다 |
 | `PALDO_MONGO_URI` | 비어 있음 | Mongo 게임·진척·콘텐츠·회차·광고 가명 접속값. 운영 조립은 같은 DB에 보조 기록 `b_interactions`를 더한다 | DB 경로 생략 시 `paldo_web`을 사용한다. 콘텐츠 적재 도구·발행기와 같은 DB를 쓰도록 경로에 DB 이름을 넣는다. 미설정 시 Mongo 게임·회차 조립을 사용할 수 없다 |
+| `PALDO_RULE_BASE` | 비어 있음(= `rule-0.8`). 고를 수 있는 값 `rule-0.8`·`rule-0.9` | 회차 없는 일반 판의 규칙. `rule-0.9`는 투표 기권 규칙(11/11 사용자 결정 ②안) | 새 일반 판부터 규칙이 바뀜(이미 시작한 판은 판 메타 규칙 그대로). 허용 밖 값이면 일반 판 시작은 503(`rule_base_not_allowed`) |
 | `PALDO_CONTENT_VERSION` | 비어 있음. 운영 예: `content-1.0.1` | 회차 없는 일반 판의 판 메타 `content_version`(Mongo에 적재된 활성 버전) | 새 일반 판의 콘텐츠가 바뀜. 비어 있으면 일반 판 시작은 503, 적재되지 않은 버전이면 시작 시 503 |
 | `ASSET_MANIFEST` | `content/images/manifest.json` | 콘텐츠 ID, URL, 이미지 경로 목록 | 화면 조회와 정적 이미지 응답에 함께 적용 |
 | 출처 요약 | `content/images/SOURCES.md` 첫 비어 있지 않은 줄 | 게임 하단의 도구·이용 안내 | 다음 조회에 반영, 누락은 확인 필요 표시 |
