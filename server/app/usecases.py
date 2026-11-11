@@ -283,7 +283,11 @@ class GameService:
             raise ReviewNotReady
         if self.narration is None:
             return ReviewNarrationOutput("off", True)
-        return self.narration.status(state.meta.game_id)
+        try:
+            return self.narration.status(state.meta.game_id)
+        except Exception as exc:    # 작업 저장소 장애면 해설 묶음 없이 템플릿 복기만 보인다
+            LOGGER.warning("review_narration_status_failed %s", type(exc).__name__)
+            return ReviewNarrationOutput("off", True)
 
     def _review_timeline(self, state):
         """행동 시점 decision 이벤트(아웃박스)로 복기 항목을 만든다. 현재 믿음·상태에서 이유를 다시 계산하지 않는다."""

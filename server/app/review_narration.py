@@ -73,6 +73,9 @@ class ReviewJobStore(Protocol):
     def count_queued(self) -> int:
         """대기 중 작업 수."""
         ...
+    def delete(self, game_ids: list[str]) -> int:
+        """판 삭제와 함께 작업 문서를 지운다."""
+        ...
     def claim_next(self, now: float, lease_until: float, token: str) -> Optional[dict]:
         """가장 오래된 대기 작업이나 임대가 끝난 실행 작업을 토큰과 함께 잡는다."""
         ...
@@ -236,7 +239,8 @@ class ReviewNarrationService:
             doc.update(status=DONE, npcs=[])            # 요약할 NPC가 없는 판
         elif self.store.count_queued() >= self.settings.max_queued:
             doc.update(status=TIMEOUT, close_reason="overload")
-        self.store.insert_if_absent(doc)
+        if self.store.insert_if_absent(doc) and not self.game_exists(output.game_id):
+            self.store.delete([output.game_id])     # 등록 중 판이 지워졌으면 판에서 나온 입력을 남기지 않는다
 
     # ------------------------------------------------------------ 조회
     def status(self, game_id: str) -> ReviewNarrationOutput:
@@ -269,6 +273,9 @@ class ReviewNarrationService:
             return None
         game_id = doc["_id"]
         queue_ms = int((now - doc["created_at"]) * 1000)
+        if not self.game_exists(game_id):               # 지워진 판의 작업은 입력째 지운다
+            self.store.delete([game_id])
+            return ProcessOutcome(game_id, FAILED, queue_ms)
         if doc["attempts"] > st.max_attempts:
             self.store.close(game_id, FAILED, {"close_reason": "attempts"})
             return ProcessOutcome(game_id, FAILED, queue_ms)
@@ -307,7 +314,11 @@ class ReviewNarrationService:
         fields = {"npcs": _npcs_json(result), "fail_reasons": dict(result.rejects), "queue_ms": queue_ms,
                   "gen_ms": gen_ms, "tokens_in": tokens_in, "tokens_out": tokens_out, "model_version": model}
         # 삭제된 판에는 저장하지 않는다. 늦었거나 임대를 잃었으면 버린다(최종 고정).
-        outcome.saved = self.game_exists(game_id) and self.store.finish(game_id, token, self.clock(), fields)
+        if self.game_exists(game_id):
+            outcome.saved = self.store.finish(game_id, token, self.clock(), fields)
+        else:                                           # 생성 중 판이 지워졌으면 결과를 쓰지 않고 입력째 지운다
+            self.store.delete([game_id])
+            outcome.saved = False
         return outcome
 
     def _call(self, body: dict, deadline_at: float) -> NarratorReply:

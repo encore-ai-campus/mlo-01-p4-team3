@@ -40,10 +40,12 @@ class FakeNarrator:
     def __init__(self, clock, texts=None, cost=5.0, errors=()):
         self.clock, self.texts, self.cost, self.errors = clock, dict(texts or GOOD), cost, list(errors)
         self.bodies = []
+        self.on_call = lambda: None
 
     def complete(self, body, timeout):
         """정해 둔 응답이나 예외를 차례로 돌려주고 요청 본문을 기록한다."""
         self.bodies.append(body)
+        self.on_call()
         self.clock.now += self.cost
         if self.errors:
             raise self.errors.pop(0)
@@ -194,12 +196,21 @@ class NarrationService(UnitTestCase):
         outcome = self.service.process_next()
         self.assertEqual((outcome.llm_npcs, outcome.template_npcs, outcome.rejects), (1, 1, {"timeout": 1}))
 
-    def test_deleted_game_is_not_written(self):
-        """처리 중 판이 지워졌으면 결과를 쓰지 않는다."""
-        self.service.game_exists = lambda gid: False
+    def test_deleted_game_leaves_no_job(self):
+        """판이 지워지면 등록 중이든 처리 전이든 처리 중이든 작업 문서(판에서 나온 입력)가 남지 않는다."""
+        alive = {"g1": False}
+        self.service.game_exists = lambda gid: alive.get(gid, False)
+        self.service.ensure(review_output(), CONTENT, PublicRecord(), 1)        # 등록과 삭제가 겹침
+        self.assertIsNone(self.store.get("g1"))
+        alive["g1"] = True
         self.service.ensure(review_output(), CONTENT, PublicRecord(), 1)
+        alive["g1"] = False                                                     # 처리 전에 삭제
+        self.assertEqual(self.service.process_next().status, "failed")
+        self.assertIsNone(self.store.get("g1"))
+        alive["g1"] = True
+        self.service.ensure(review_output(), CONTENT, PublicRecord(), 1)
+        self.narrator.on_call = lambda: alive.update(g1=False)                  # 생성 중 삭제
         self.assertFalse(self.service.process_next().saved)
-        self.assertEqual(self.store.delete(["g1"]), 1)
         self.assertIsNone(self.store.get("g1"))
 
 
@@ -264,6 +275,20 @@ class NarrationAPI(TestCase):
         fragment = self.client.get(self.path, HTTP_HX_REQUEST="true").content.decode()
         self.assertNotIn("마을 사람들의 속마음", fragment)
         self.service.narration = None
+        self.assertEqual(self.client.get(self.path, HTTP_ACCEPT="application/json").json(),
+                         {"status": "off", "final": True, "npcs": []})
+
+    def test_store_failure_keeps_template_review(self):
+        """작업 저장소가 죽어도 복기 화면은 템플릿 해설로 열리고 해설 조회는 off다."""
+        self.finish()
+        broken = MemoryReviewJobStore()
+        def fail(*_args, **_kwargs):
+            raise ConnectionError("store down")
+        broken.get = broken.insert_if_absent = fail
+        self.service.narration.store = broken
+        page = self.client.get(f"/games/{self.gid}/review", HTTP_HX_REQUEST="true")
+        self.assertEqual(page.status_code, 200)
+        self.assertNotIn("마을 사람들의 속마음", page.content.decode())
         self.assertEqual(self.client.get(self.path, HTTP_ACCEPT="application/json").json(),
                          {"status": "off", "final": True, "npcs": []})
 
