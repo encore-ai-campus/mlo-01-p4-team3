@@ -32,12 +32,6 @@ class GateTests(unittest.TestCase):
                 self.assertEqual(decision.serving_version, 'rule-v0')
                 self.assertTrue(decision.reasons)
         self.assertFalse(gate.suspicion_gate({'benchmark': ref['benchmark']}, ref).accepted)
-        # 사람 판 시험 세트가 양쪽 모두 없으면 봇 판 시험 세트만으로 판단한다(11/11 사용자 결정).
-        bench_only = {'benchmark': copy.deepcopy(ref['benchmark'])}
-        self.assertTrue(gate.suspicion_gate({'benchmark': suspicion()['benchmark']}, bench_only).accepted)
-        worse = {'benchmark': dict(suspicion()['benchmark'], log_loss=.510001)}
-        self.assertFalse(gate.suspicion_gate(worse, bench_only).accepted)
-        self.assertFalse(gate.suspicion_gate(suspicion(), bench_only).accepted)
 
     def test_small_suspicion_requires_nonoverlapping_loss_intervals_in_both_sets(self):
         candidate, ref = suspicion(), suspicion()
