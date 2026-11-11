@@ -21,25 +21,30 @@ from server.tests.asgi_bench_metrics import observe_calls, observe_engine_estima
 model_version = os.environ.get("PALDO_BENCH_SUSPICION_VERSION")
 actual = bool(model_version) or os.environ.get("PALDO_BENCH_ACTUAL_BASELINE") == "1"
 if model_version:
+    from prometheus_client import Gauge, REGISTRY
     from ml.suspicion.features import FEATURE_VERSION
     from server.infra.model_selector import LocalModelSelector
     from server.infra.observed_models import ObservedSuspicionModel
-    from ml.adapters.suspicion_model import SharedModelStore
+    from ml.adapters.suspicion_model import SharedModelStore, SuspicionModelAdapter
 
     selector = LocalModelSelector(os.environ["PALDO_BENCH_MLRUNS"], suspicion_version=model_version,
                                   intent_version="", feature_version=FEATURE_VERSION)
     model_store = SharedModelStore()
     atexit.register(model_store.close)
-    def load_primary():
-        adapter = selector.suspicion_model(model_version)
-        adapter.wait_observer = record_wait
+    in_process = Gauge('paldo_bench_suspicion_in_process', 'Resident direct suspicion model', ['model_version'])
+
+    def load_version(version):
+        adapter = selector.suspicion_model(version, in_process_logistic=True)
+        if isinstance(adapter, SuspicionModelAdapter):
+            adapter.wait_observer = record_wait
+        else:
+            in_process.labels(version).set(1)
         return adapter
 
-    adapter = model_store.get(model_version, load_primary)
+    adapter = model_store.get(model_version, lambda: load_version(model_version))
     if secondary_version := os.environ.get('PALDO_BENCH_SECONDARY_SUSPICION_VERSION'):
-        model_store.get(secondary_version, lambda: selector.suspicion_model(secondary_version))
+        model_store.get(secondary_version, lambda: load_version(secondary_version))
 
-    from prometheus_client import REGISTRY
     from prometheus_client.core import GaugeMetricFamily
     from server.tests.multiproc_bench import resident_bytes
 

@@ -26,7 +26,7 @@ def participant_context(service, view):
         return {"participant_forms_available": False}
     with service.interactions.participant_records(view.game_id) as records:
         confidence = records.notebook.get("vote_confidence")
-        submitted = records.survey is not None
+        survey = records.survey
     return {
         "participant_forms_available": True,
         "notebook_entries": [NotebookEntryVM(npc, name, view.player.notebook.get(npc, 50), view.player.notebook.get(npc),
@@ -37,7 +37,8 @@ def participant_context(service, view):
         "notebook_mark_choices": [("100", "수상함"), ("50", "모르겠음"), ("0", "믿음")],
         "confidence_choices": [(0, "전혀 확신하지 않음"), (25, "조금 확신함"),
                                (50, "보통"), (75, "많이 확신함"), (100, "매우 확신함")],
-        "survey_submitted": submitted,
+        "survey_submitted": survey is not None,
+        "survey_skipped": survey.get("skipped", False) if survey is not None else False,
         "survey_questions": [("fun", "이번 판은 재미있었나요?"),
                              ("unfair", "이번 판의 결과가 억울하게 느껴졌나요?"),
                              ("npc_plausible", "마을 사람들의 말과 행동이 그럴듯했나요?")],

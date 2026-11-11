@@ -39,8 +39,10 @@ def update_history():
 @register.inclusion_tag('asset_credits.html')
 def asset_attribution():
     """게임 화면 하단에 출처 파일의 공개 요약을 표시한다."""
+    from django.conf import settings
     from .village_assets import image_source
-    return {'asset_source': image_source()}
+    # 복기 해설 LLM(E-10-01)이 켜진 환경이면 Kanana 표기를 출처 영역 첫 줄에 한 번 둔다(11/11 사용자 결정).
+    return {'asset_source': image_source(), 'kanana_credit': bool(getattr(settings, 'REVIEW_LLM_URL', ''))}
 
 ACTION_LABELS = {"advance": "다음으로", "suspect": "의심 제기", "defend": "변호", "silence": "지켜보기",
                  "interrogate": "캐묻기", "point_contradiction": "모순 지적", "reveal_divination": "점괘 공개",
@@ -107,6 +109,7 @@ UI_TIPS = {
     "stage_actions": "지금 할 수 있는 행동을 고릅니다",
     "stage_people": "마을 사람 현황을 봅니다",
     "stage_records": "진술·발언·투표 기록을 봅니다",
+    "stage_alibi_grid": "진술을 밤·시간대·장소별로 모아 봅니다",
     "stage_notebook": "내 수첩을 엽니다",
     "stage_map": "마을 지도와 인물 안내를 봅니다",
     "vn_full_close": "전신 그림을 닫고 대사로 돌아갑니다",
@@ -120,6 +123,7 @@ UI_TIPS = {
     "mark:50": "{name} · 모르겠음으로 수첩에 적습니다",
     "mark:0": "{name} · 믿음으로 수첩에 적습니다",
     "record_compare": "선택한 두 진술을 나란히 봅니다",
+    "record_filter_reset": "선택한 진술은 유지하고 필터를 초기화합니다",
     "record_clear": "진술 선택을 모두 풉니다",
     "overlay_close": "이 창을 닫습니다",
     "confirm_cancel": "행동을 보내지 않고 닫습니다",
@@ -136,6 +140,9 @@ UI_TIPS = {
     "end_tab_result": "판 결과를 봅니다",
     "end_tab_review": "그날의 선택을 돌아봅니다",
     "end_tab_clues": "원한 단서를 봅니다",
+    "end_tab_records": "행적표와 공개 기록을 봅니다",
+    "end_tab_survey": "판 종료 설문을 봅니다",
+    "end_lookup_retry": "내용을 다시 불러옵니다",
     "survey_submit": "설문 응답을 보냅니다",
     "survey_skip": "설문을 건너뜁니다",
     "action:suspect": "이 인물을 의심한다고 말합니다",

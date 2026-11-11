@@ -17,6 +17,7 @@ def game_scope(database, player, *, session=None):
         "ad_sessions": sorted({row["session_pseudonym"] for row in identities}),
         "progress": database.progress.count_documents({"_id": player}, session=session),
         "interactions": database.b_interactions.count_documents({"_id": {"$in": game_ids}}, session=session),
+        "review_jobs": database.review_jobs.count_documents({"_id": {"$in": game_ids}}, session=session),
         "test_sessions": database.b_test_sessions.count_documents({"participants": player}, session=session),
     }
 
@@ -32,6 +33,7 @@ def purge_games(database, player, expected_game_ids):
         by_id = {"_id": {"$in": before["game_ids"]}}
         counts = {
             "interactions": database.b_interactions.delete_many(by_id, session=session).deleted_count,
+            "review_jobs": database.review_jobs.delete_many(by_id, session=session).deleted_count,
             "progress": database.progress.delete_one({"_id": player}, session=session).deleted_count,
             "test_sessions": database.b_test_sessions.update_many(
                 {"participants": player}, {"$pull": {"participants": player}}, session=session

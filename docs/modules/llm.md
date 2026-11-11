@@ -76,6 +76,8 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | `TIMEOUT_S`(`llm/bench/free_answer_load.py`) | 30 | 요청 한 건(재생성 포함) 시간 제한. 넘으면 무한대로 센다 | E-11-12 3번과 같이 바꾼다 |
 | `LIMITS` / `DELETE_RATIO` / `MAX_MINUTES` / `GRACE_MINUTES`(`llm/bench/watch_pods.py`) | E $5·B $5·C $4.5·D $4.5 / 0.8 / s0 20·s1 90·s2 90 / 10 | 계정 한도(11/8 사용자 결정), 삭제선 비율, 단계별 Pod 상한(`run_pod.sh`와 같음), 시간 초과 삭제 여유 | 바꾸면 `run_pod.sh`·E-11-12 7번·런북을 같이 고친다 |
 | `KEY_ENV_PREFIX`(`llm/bench/watch_pods.py`) | `PALDO_RUNPOD_KEY_` | 계정별 API 키 환경 변수 이름 접두어. `--key-env`로 고른 변수 값만 자식 `runpodctl`에 `RUNPOD_API_KEY`로 넘기고 이 접두어의 다른 변수는 뺀다(11/8 사용자 결정으로 E가 네 계정 운영) | 값은 저장소 밖(`4th_private`), 출력하지 않음 |
+| `PROMPT_VERSION` / `GEN_SETTINGS` / `MAX_ITEMS` / `MAX_GAME_ITEMS` / `MAX_SENTENCE_CHARS`(`llm/review_narration.py`) | `review-v1` / temperature 0.3, top_p 0.9, max_tokens 900 / 3 / 10 / 70 | 복기 해설 LLM 요약(E-10-01): NPC당 요약 항목, 판 전체 항목 상한(넘으면 마지막이 아닌 투표부터 뺌), 문장 글자 수 상한 | 항목 상한을 올리면 3B 모델 출력이 요청 제한(90초)을 넘을 수 있다 |
+| `PALDO_REVIEW_LLM_URL` / `PALDO_REVIEW_DEADLINE_S`(게임 서버 환경 변수) | 비움 / 180 | 복기 해설 생성 서버 주소(비우면 기능·Kanana 표기 꺼짐), 작업 마감 | 주소 값은 저장소 밖. 운영 `ops/runbook/llm_gen.md` 7절 |
 
 ## 한계
 
@@ -109,4 +111,5 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | E-11-12 | 11/9 | 자유 대화 확장(사용자 결정): 자기소개 사실 `s1`·`s2`와 검사 예외, 프롬프트 `free-answer-v2`, 평가 세트 `free-answer-eval-2`(기존 75건 그대로 + 8턴 6건 + 자유 대화 5유형 40건, 새 문장 틀 17개 사용자 확인 전), 터미널 자유 대화 클라이언트 `llm/bench/free_chat.py`, 부하 결과 `qtype_mix` |
 | E-11-12 | 11/9 | 새 문장 틀 17개 사용자 승인: `APPROVED_CHAT_SENTENCES_SHA256` 지문 확정, 평가 세트 `chat_status` 확인 완료. 실행 날짜 11/10 18시 이후 → 11/11 |
 | E-06-02 | 11/7 | 의도 예시 변형 규칙 `llm/intent_variants.py`(프롬프트 `intent-variants-v1`, 보존 검사 사유 12종)와 생성·반영 `llm/bench/gen_intent_variants.py`(`generate`·`apply`), 테스트 `tests/llm/test_intent_variants.py`, 계층 검사 대상에 추가 |
+| E-10-01 | 11/11 | 복기 해설 LLM 요약 규칙 `llm/review_narration.py`(항목 선정·요청 스키마로 NPC·인용 고정·문장 검사 6종·NPC별 템플릿 대체), 계층 검사 대상에 추가. 흐름·저장·HTTP·작업 프로세스는 `server/` 쪽(라우팅 [E](../routing/E.md)) |
 | E-10-13 | 11/10 | 생성 수단 변경(사용자 결정): 템플릿 변형을 별도 CPU 기기의 Kanana 생성 서버(llama.cpp `llama-server`, 127.0.0.1 전용, SSH 터널)로 만든다. 운영 절차 `ops/runbook/llm_gen.md` 추가. 코드는 바꾸지 않음. 터널 경유 시험 짧은 답 1.11 s, 생성 17.8 tok/s |
