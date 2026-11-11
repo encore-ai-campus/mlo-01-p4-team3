@@ -214,3 +214,19 @@ python -m tools.assets.normalize --background meeting=<시안에서 꺼낸 meeti
 | `content/images/sprite/meosum__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T07:27:45.054701700Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/meosum.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
 | `content/images/sprite/yakcho__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T07:28:24.701994551Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/yakcho.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
 | `content/images/sprite/gwabu__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T07:28:57.018531525Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/gwabu.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+
+## 마을 지도 실제 그림 (11/11 사용자 결정)
+
+11/5 PM 결정 "지도는 시연까지 임시"를 11/11 사용자 결정으로 바꿔 외부 기증 그림의 장소 이름 글자 없는 판을 쓴다. 생성자는 외부 기증(이름 미기재)이고 받은 날짜는 2026-11-11이다. 기증자가 도구만 알려 주었고 프롬프트·모델·생성 시각은 받지 못했다. 장소 이름은 화면이 덧씌운다(`docs/assets/spec.md` 2절 지도).
+
+| 결과 파일 | 도구 | 모델·버전 | 프롬프트 전문 | 부정 프롬프트 | 시드 | 생성 시각 UTC | 가공 |
+|---|---|---|---|---|---|---|---|
+| `content/images/map/village.png` | Gemini(외부 기증) | 미제공 | 미제공 | 미제공 | 미제공 | 미제공(받은 날짜 2026-11-11) | 원본 1941×810을 1728×720으로 줄이고(LANCZOS) 256색 양자화(손실, 지도만 허용) |
+
+- 원본: 1941×810 RGB PNG, 3,583,826 bytes, SHA-256 `f46b3fc4d1b621a46b4b997904f944a0aa3609c1e88fcc4c2517b470ba78cd99`. 원본은 저장소에 넣지 않는다.
+- 결과: 1728×720 팔레트 PNG, 829,414 bytes, SHA-256 `cdb385bee07a0a666efc33828998cb60b81d4343b001f48365e2fbb9b28cddb4`.
+- 재현 명령(Pillow 12.3.0, 저장소 의존성 밖 도구):
+
+```powershell
+python -c "from PIL import Image; Image.open('<원본 PNG>').convert('RGB').resize((1728, 720), Image.Resampling.LANCZOS).quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG).save('content/images/map/village.png', 'PNG', optimize=True)"
+```

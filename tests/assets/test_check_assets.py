@@ -247,7 +247,7 @@ class MapRegionTest(_Repo):
     def test_regions_overlap_outside_and_missing_place(self):
         def fn(items):
             d = next(d for d in items if d["kind"] == "map")
-            d["regions"] = {"well": [0, 0, 200, 200], "shrine": [100, 100, 50, 50], "tavern": [1200, 0, 128, 128],
+            d["regions"] = {"well": [0, 0, 200, 200], "shrine": [100, 100, 50, 50], "tavern": [1650, 0, 128, 128],
                             "gate": [0, 600, 128, 128]}
         self.edit_manifest(fn)
         errs = check(self.repo, placeholder_mode=True).region_errors
