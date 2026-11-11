@@ -109,15 +109,29 @@ def _meeting_response(request, view, variant, status=200, previous_interrogation
         context.update(result_context(view, state.meta.ending_choice, state.meta.content_version))
     rendered = service.interactions.render_snapshot(view.game_id, request.player_pseudonym) if service.interactions else {}
     jobs = {speech.speech_id: speech.render_job_id for speech in view.public.speeches}
+    # NPC 대사 LLM(E-11-13). 꺼져 있으면 아무 속성도 더하지 않아 지금 화면 그대로다.
+    npc = _npc_flags(service, view, request.player_pseudonym)
     # 저장된 작업의 발언 ID까지 일치할 때만 문장을 연결한다.
     for speech in context["vm"].speeches:
         result = rendered.get(jobs.get(speech.speech_id))
         if result is not None and result.speech_id == speech.speech_id:
-            speech.text = result.text
+            speech.text = "…" if npc["npc_live"] and not result.final else result.text
             speech.pending_job_id = None if result.final else result.job_id
+    context.update(npc)
     return render(request, template, {**context, **participant_context(service, view), "rejected": status >= 400,
                                      "previous_interrogation": previous_interrogation or {},
                                      "mudang_portrait_id": f"portrait:mudang_{variant or 'f'}"}, status=status)
+
+
+def _npc_flags(service, view, player):
+    """다듬기 켬(선조회 경로를 화면에 붙임)·실시간 켬(캐묻기 답 "…"과 0.5초 폴링). 판이 끝났으면 둘 다 끔."""
+    lines = getattr(service, "npc_lines", None)
+    if lines is None or view.result is not None:
+        return {"npc_polish": False, "npc_live": False}
+    from .vn_script import attach_particles
+    polish = lines.prepare(view.game_id, player, display=attach_particles)
+    return {"npc_polish": polish, "npc_live": lines.live_on(),
+            "npc_finals": lines.fixed_polished(view.game_id, view.day) if polish else {}}
 
 
 def _previous_interrogation(command, before, view):

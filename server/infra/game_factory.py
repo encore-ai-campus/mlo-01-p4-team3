@@ -141,14 +141,34 @@ def narration_parts(database, prefix):
             lambda gid: games.count_documents({"_id": gid}, limit=1) > 0)
 
 
+def attach_npc_lines(service, store, narrator, settings):
+    """게임 서비스에 NPC 대사 LLM(E-11-13)을 끼우고, 실시간 생성 렌더러를 돌려준다. `narrator`가 None이면 늘 off."""
+    from server.app.npc_lines import NpcLineService
+    from server.infra.kanana_line_renderer import KananaLineRenderer
+    service.npc_lines = NpcLineService(service, store, narrator, settings)
+    return KananaLineRenderer(store, settings) if narrator is not None else None
+
+
+def npc_line_parts(database, prefix):
+    """설정 `NPC_LLM_URL`(상한 스위치)·`NPC_LLM_MODE`로 생성기·작업 저장소·운영 설정 읽기를 만든다. 같은 접두어."""
+    from django.conf import settings
+    from server.infra.kanana_narrator import KananaNarrator
+    from server.infra.npc_line_jobs import COLLECTION, MongoNpcLineStore
+    from server.infra.ops_settings import COLLECTION as OPS, MongoOpsSettings
+    url = getattr(settings, "NPC_LLM_URL", "")
+    return (MongoNpcLineStore(database[prefix + COLLECTION]), KananaNarrator(url) if url else None,
+            MongoOpsSettings(database[prefix + OPS], url, getattr(settings, "NPC_LLM_MODE", "")))
+
+
 def build_from_runtime(runtime, parser):
-    """B 실행 자원의 게임 서비스에 A 몫(보조 기록·해석기·렌더러·복기 해설)을 끼워 돌려준다. 같은 접두어."""
+    """B 실행 자원의 게임 서비스에 A 몫(보조 기록·해석기·렌더러·복기 해설·NPC 대사 LLM)을 끼워 돌려준다. 같은 접두어."""
     from server.infra.interaction_store import MongoInteractionStore
     service = runtime.factory_service()
     prefix = runtime_prefix(runtime)
     store = MongoInteractionStore(runtime.database[prefix + INTERACTIONS])
     attach_narration(service, *narration_parts(runtime.database, prefix))
-    return attach_interactions(service, store, parser)
+    renderer = attach_npc_lines(service, *npc_line_parts(runtime.database, prefix))
+    return attach_interactions(service, store, parser, renderer)
 
 
 def attach_model_versions(service, registry, suspicion_models=None, canary_ratio=lambda: 0.0):

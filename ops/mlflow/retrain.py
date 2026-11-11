@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from pipeline.spark.privacy_filter import load_tombstones
-from tools.ut_freeze import DEFAULT_CUTOFF, DEFAULT_OPEN, KST
+from tools.ut_freeze import DEFAULT_CUTOFF, DEFAULT_OPEN, FREEZE_DATA_VERSION, KST, freeze_data_version
 
 
 MODULES = {"intent": "intent.retrain", "suspicion": "ml.suspicion.retrain", "ad_ctr": "ml.ad_ctr"}
@@ -27,21 +27,31 @@ def evaluate(family, report):
 
 
 def validate(config):
-    """세 모델의 D 진입점과 명시한 Delta 입력 버전을 검증한다."""
+    """세 모델의 D 진입점과 명시한 입력 버전을 검증한다.
+
+    입력 버전은 `delta:<table>@<version>`이다. 의도 해석기만 사용자 테스트 동결 출처일 때
+    `freeze:<manifest sha256>`을 쓰고, 학습 명령의 `--freeze` 폴더와 해시가 같아야 한다(11/11 사용자 결정).
+    """
     if set(config["models"]) != set(MODULES):
         raise ValueError("three_model_families_required")
     if not re.fullmatch(r"[0-9a-f]{40}", config["code_commit"]):
         raise ValueError("full_code_commit_required")
     for family, spec in config["models"].items():
-        if not re.fullmatch(r"delta:\S+@\d+", spec["data_version"]):
+        command = spec["train"]
+        frozen = family == "intent" and FREEZE_DATA_VERSION.fullmatch(spec["data_version"])
+        if not frozen and not re.fullmatch(r"delta:\S+@\d+", spec["data_version"]):
             raise ValueError("versioned_delta_input_required")
         if not spec["feature_version"] or not re.fullmatch(r"[A-Za-z0-9_.-]+", spec["model"]):
             raise ValueError("feature_and_model_name_required")
-        command = spec["train"]
         if not isinstance(command, list) or command[:2] != ["-m", MODULES[family]]:
             raise ValueError("existing_d_training_entrypoint_required")
         if not all(isinstance(arg, str) and arg for arg in command):
             raise ValueError("invalid_training_arguments")
+        if frozen:
+            position = command.index("--freeze") + 1 if "--freeze" in command else len(command)
+            if (position >= len(command) or not (Path(command[position]) / "manifest.json").is_file()
+                    or freeze_data_version(command[position]) != spec["data_version"]):
+                raise ValueError("freeze_manifest_mismatch")
         if "--register" in command or "--registry-dir" in command:
             raise ValueError("candidate_registration_owned_by_runner")
         if family == "intent":
@@ -95,7 +105,7 @@ def record_candidate(family, spec, report, artifact, config):
             else:
                 mlflow.log_artifact(str(artifact), "model")
     client = mlflow.MlflowClient()
-    accepted = check_run(client, run_id, lambda _: (passed, reason))
+    accepted = check_run(client, run_id, lambda _: (passed, reason), allow_freeze=family == "intent")
     result = {"family": family, "run_id": run_id, "accepted": accepted}
     if accepted:
         source = client.get_run(run_id).info.artifact_uri.rstrip("/") + "/model"

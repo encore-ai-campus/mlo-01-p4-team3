@@ -21,6 +21,8 @@
 | POST `/games/{id}/utterances` | `ParseUtteranceInput` | `ParseUtteranceOutput` | `speech_cards` |
 | POST `/games/{id}/utterances/{attempt_id}` | `ResolveUtteranceInput` | `CommandOutput` 또는 `ParseUtteranceOutput` | `meeting` 또는 `speech_cards` |
 | GET `/games/{id}/renders/{job_id}` | `PollRenderInput` | `RenderOutput` | `speech_line` |
+| GET `/games/{id}/lines` | - | NPC 대사 선조회(2-0-2절) | - |
+| POST `/games/{id}/lines/{speech_id}/shown` | `{variant, job_rev}` | 고정값(2-0-2절) | - |
 | PUT `/games/{id}/notebook` | `SaveNotebookInput` | 204 | - |
 | POST `/games/{id}/survey` | `SubmitSurveyInput` | 204 | `survey_done` |
 | GET `/games/{id}/review` | - | `ReviewOutput`(종료 후만, 그 전에는 403) | `review` |
@@ -35,7 +37,12 @@
 ### 2-0-1. 복기 해설 LLM 요약 `ReviewNarrationOutput` (11/11, E-10-01)
 - `GET /games/{id}/review/narration` → `{status, final, npcs: [{npc, sentences: [{cite, text}], source}]}`. `status`는 `off`(기능 꺼짐)·`queued`·`running`·`done`·`failed`·`timeout`, `final`이 true면 다시 바뀌지 않는다. `npcs`는 `final`일 때만 채운다. `source`는 `llm`(검사 통과 문장) 또는 `template`(그 NPC는 템플릿 해설), `cite`는 `ReviewItem.item_id`.
 - 작업 등록: 기능이 켜진 환경(`PALDO_REVIEW_LLM_URL`)에서 `GET /games/{id}/review`를 처음 연 판만 멱등 등록한다(중단 판 제외). 마감(`PALDO_REVIEW_DEADLINE_S`, 기본 180초)이 지나면 템플릿으로 확정한다.
-- htmx: 복기 패널은 생성 중이면 "마을 사람들의 속마음" 묶음에 "족제비가 해설을 다듬고 있어요…"와 `hx-get="/games/{id}/review/narration" hx-trigger="every 2s" hx-swap="outerHTML"`를 둔다. 확정 조각에는 폴링 속성이 없고, `source=llm`인 NPC 문장만 보인다(모두 템플릿이면 묶음을 숨긴다. 실패를 알리지 않는다). 문장별 LLM 표시는 없다.
+- htmx: 복기 패널은 생성 중이면 "마을 사람들의 속마음" 묶음에 "족제비가 해설을 다듬고 있어요…"와 `hx-get="/games/{id}/review/narration" hx-trigger="every 2s" hx-swap="outerHTML"`를 둔다. 확정 조각에는 폴링 속성이 없고, `source=llm`인 NPC가 하나라도 있으면 요약 대상 NPC를 모두 같은 순서로 보인다(`llm`은 생성문, `template`은 템플릿 문장, 11/11 사용자 결정 "속마음 칸 ①"). 모두 템플릿이면 묶음을 숨긴다(실패를 알리지 않는다). 문장별 LLM 표시는 없다.
+
+### 2-0-2. NPC 대사 다듬기 선조회·고정 (11/11, E-11-13)
+- `GET /games/{id}/lines` → `{mode, lines: [{speech_id, status, text, final, job_rev}]}`. 현재 날의 회의 발언 다듬기 줄이다. `mode`는 `off`·`polish`·`live`이고 off면 `lines`가 비어 있다. `status`는 `pending`(대기·생성 중)·`ready`(다듬은 문장 있음, `text`에 문장)·`template`(실패·건너뜀·닫힘). `final`은 고정됐으면 `{variant: polished|template, text}`(템플릿이면 `text`는 null), 아니면 null. 이 요청은 고정하지 않는다. 같은 요청이 그날 대상 발언을 멱등 등록하고 이전 단계의 미고정 줄을 템플릿으로 고정한다.
+- `POST /games/{id}/lines/{speech_id}/shown` 본문 `{"variant": "polished"|"template", "job_rev": n}` → `{speech_id, variant, text}`. 대사창이 실제로 띄운 변형을 판 단위 첫 확정 1회로 고정한다. 이미 고정됐으면 고정값을 돌려준다. 모드가 off로 바뀌었거나 다듬은 문장이 없으면 `polished` 요청도 `template`으로 고정한다. JSON만 받고 CSRF 헤더가 필요하다.
+- 화면: 모드가 off면 회의 화면에 아무 속성도 붙지 않는다. 켜져 있으면 `#meeting`에 `data-npc-lines`(선조회 경로)·`data-npc-csrf`가, 다듬은 문장으로 고정된 발언의 대사 줄에 `data-npc-final`이 붙는다. 기록 패널·진술 비교·복기는 템플릿 원문을 쓴다.
 
 ### 2-1. 계정 (11/4 PM 결정, B-06-04)
 - 위 표의 모든 엔드포인트와 화면은 **로그인 필수**다. 비로그인 요청은 JSON이면 401, 화면 요청이면 로그인 화면으로 이동한다.
@@ -93,6 +100,7 @@
   - 버전 충돌: 409, `reject=state_version_conflict`. 현재 화면을 함께 보내며, 클라이언트는 화면을 바꿔 끼운다. 서버는 명령을 자동으로 재적용하지 않는다(ports.md 2절).
 
 ## 4. 자유 입력 수명주기
+- 서버 설정(11/11 사용자 결정): 환경 변수 `PALDO_FREE_TEXT_INPUT`(`on`/`off`, 기본 `off`). `off`이면 회의 화면(VN·클래식)에 직접 입력창을 그리지 않고, `POST /games/{id}/utterances`·`POST /games/{id}/utterances/{attempt_id}`는 로그인 확인 뒤 해석기를 부르지 않고 403 `{"error": "free_text_disabled"}`를 돌려준다(JSON·htmx 같음). `on`이면 아래 수명주기 그대로다. 해석기·`intent_attempt` 기록·재학습 경로는 바꾸지 않는다.
 1. 해석: `POST /utterances`를 보내면 `attempt_id`를 발급한다. 결과는 카드 0~N장과 실패 상태다. 이 단계에서는 **소비가 없다.** `intent_attempt` 이벤트를 기록한다.
 2. 카드: 다중 의도이면 카드가 여러 장 나오고, 플레이어는 **하나만** 고른다. 빠진 슬롯이 있는 카드는 실행 버튼을 비활성화하고, 해당 칸을 고르게 한다.
 3. 반응(`ResolveUtteranceInput.reaction`):
@@ -116,6 +124,7 @@
 ## 5. LLM 답변 폴링
 - `Powered by Kanana`는 답변 영역에 고정 표시하지 않고 게임 화면 밖 좌측 하단 출처 표시 영역에 한 번만 둔다(11/11 사용자 결정, 11/10 "추궁 답변에 표시"를 바꿈). 게임 추궁 문장은 템플릿과 Kanana 서버로 미리 생성·검수한 변형을 사용한다(런타임 호출 없음).
 - 캐묻기가 수락되면, 응답 화면의 해당 발언 자리에 폴백 문장이 먼저 표시된다. 그 자리에 `hx-get="/games/{id}/renders/{job_id}" hx-trigger="every 1s"` 조각이 붙는다.
+- 실시간 생성(11/11 사용자 결정, E-11-13, 모드 `live`일 때만): 폴백 대신 "…"만 보이고 `hx-trigger="every 500ms"`로 묻는다. 마감(기본 3000ms, 11/11 실측으로 확정) 안에 끝난 답이면 그 문장, 아니면 폴백 문장으로 한 번만 바뀐다. 마감 판정은 생성 완료 시각으로 하므로 마감 뒤 폴링이어도 마감 안에 끝난 답은 인정한다. `render_job` 이벤트에는 생성 본문을 넣지 않는다.
 - `RenderOutput.final`이 true이면(done, timeout, failed, cancelled, discarded) 폴링 속성이 없는 조각으로 바꿔 폴링을 멈춘다. done이 아니면 `text`는 폴백 문장이다.
 - 판이 다음 단계로 넘어가면 응용 계층이 미완료 작업을 취소한다. 그 뒤의 폴링 응답은 `final=true`(폴백)다.
 - 복기 해설은 이 렌더 폴링을 쓰지 않고 판 단위 요약 `GET /games/{id}/review/narration`(2-0-1절)을 쓴다(11/10 사용자 결정으로 11/4 #17을 바꿈: 판 단위 요약은 `RenderRequest` 모양과 다르다).

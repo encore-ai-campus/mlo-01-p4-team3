@@ -1,5 +1,5 @@
 {% load meeting %}
-<section id="meeting" data-phase="{{ vm.phase }}" data-state-version="{{ vm.state_version }}" data-game-id="{{ vm.game_id }}" data-day="{{ vm.day }}">
+<section id="meeting" data-phase="{{ vm.phase }}" data-state-version="{{ vm.state_version }}" data-game-id="{{ vm.game_id }}" data-day="{{ vm.day }}"{% if npc_polish %} data-npc-lines="/games/{{ vm.game_id }}/lines" data-npc-csrf="{{ csrf_token }}"{% endif %}>
   <h1 tabindex="-1">{{ vm.day }}일째 · {{ vm.phase|phase_label }}</h1>
   {% if rejected %}<p role="alert">행동을 적용하지 못했습니다. 현재 화면을 확인해 주세요.</p>{% endif %}
   {% if vm.ended %}
@@ -12,7 +12,7 @@
         {% if vm.phase == 'vote' or vm.phase == 'runoff' %}<p class="phase-notice">이번 투표는 비공개이며, 투표가 끝나면 모두의 표가 함께 공개됩니다.</p>{% endif %}
         {% if vm.phase == 'night' %}<p class="phase-notice player-notice">밤의 점치기입니다. 점괘는 나에게만 표시됩니다.</p>{% endif %}
         <p class="phase-notice result-lock-notice" data-result-lock-notice role="status" hidden>투표 결과를 먼저 확인하세요. 대사를 끝까지 넘기거나 모두 보기를 누르면 행동할 수 있습니다.</p>
-        <div class="command-bar" role="region" aria-label="명령">{% include "meeting_actions.html" %}{% include "utterance_input.html" %}</div>
+        <div class="command-bar" role="region" aria-label="명령">{% include "meeting_actions.html" %}{% if free_text_input %}{% include "utterance_input.html" %}{% endif %}</div>
       </section>
       <section id="stage-notebook" data-stage-panel="수첩">{% if participant_forms_available %}{% include "notebook.html" %}{% endif %}</section>
       <section id="stage-people" data-stage-panel="마을 사람">  <div class="meeting-tools"><h3>마을 사람 현황</h3><ul class="people" aria-label="인물">

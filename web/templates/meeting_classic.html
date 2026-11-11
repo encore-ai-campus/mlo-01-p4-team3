@@ -26,7 +26,7 @@
     {% if participant_forms_available %}{% include "notebook.html" %}{% endif %}
     <div class="command-bar" role="region" aria-label="명령">
       {% include "meeting_actions.html" %}
-      {% include "utterance_input.html" %}
+      {% if free_text_input %}{% include "utterance_input.html" %}{% endif %}
     </div>
   {% endif %}
   {% asset_attribution %}

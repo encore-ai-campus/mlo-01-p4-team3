@@ -4,12 +4,20 @@ from importlib import import_module
 import json
 import re
 
+from tools.ut_freeze import FREEZE_DATA_VERSION
 
-def check_run(client, run_id, evaluate):
-    """Delta 버전·특징 버전·커밋을 확인하고 D 평가의 결과를 기록한다."""
+
+def check_run(client, run_id, evaluate, *, allow_freeze=False):
+    """Delta 버전·특징 버전·커밋을 확인하고 D 평가의 결과를 기록한다.
+
+    `allow_freeze`는 동결 manifest 해시를 실제 입력과 대조한 의도 해석기 실행기만 켠다(11/11 사용자 결정).
+    CLI와 다른 모델은 `delta:`만 받는다.
+    """
     run = client.get_run(run_id)
     tags = run.data.tags
-    if (run.info.status != "FINISHED" or not re.fullmatch(r"delta:\S+", tags.get("data_version", ""))
+    version = tags.get("data_version", "")
+    version_ok = re.fullmatch(r"delta:\S+", version) or (allow_freeze and FREEZE_DATA_VERSION.fullmatch(version))
+    if (run.info.status != "FINISHED" or not version_ok
             or not tags.get("feature_version", "").strip()
             or not re.fullmatch(r"[0-9a-f]{40}", tags.get("code_commit", ""))):
         passed, reason = False, "required_run_metadata"

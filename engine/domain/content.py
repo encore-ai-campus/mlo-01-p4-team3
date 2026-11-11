@@ -75,6 +75,7 @@ class TemplateLine:
 
 @dataclass
 class ContentBundle:
+    """한 콘텐츠 버전의 묶음(content/bundle_v1.json). 확장 인물·비밀 목록은 `draw_pool`이 프리셋별로 쓴다."""
     content_version: str
     places: list[PlaceDef]
     temperaments: list[Temperament]
@@ -82,6 +83,19 @@ class ContentBundle:
     secrets: list[Secret]
     grudge_clues: list[GrudgeClue]
     templates: list[TemplateLine]
+    # 확장 인물·비밀(E-08-02, 11/11 사용자 결정). 주민 풀이 핵심 인물(확장 인물을 뺀 나머지) 수 이하인 프리셋은
+    # 핵심 인물·비밀에서만 뽑아 기존 판과 같은 배정을 낸다. 비어 있으면 전체가 핵심이다.
+    extra_npcs: list[str] = field(default_factory=list)
+    extra_secrets: list[str] = field(default_factory=list)
+
+
+def draw_pool(preset: Preset, content: ContentBundle) -> tuple[list[Character], list[Secret]]:
+    """이 프리셋의 배정에 쓸 인물·비밀. 핵심 인물만으로 주민 풀이 차면 확장 인물·비밀을 뺀다(목록 순서 유지)."""
+    extra_n, extra_s = set(content.extra_npcs), set(content.extra_secrets)
+    core = [c for c in content.characters if c.npc_id not in extra_n]
+    if preset.n_resident_pool_needed <= len(core):
+        return core, [s for s in content.secrets if s.secret_id not in extra_s]
+    return list(content.characters), list(content.secrets)
 
 
 # 프리셋별 필수 콘텐츠 수(domain.md 판 밖 상태). 주민 풀은 인원 이상, 비밀은 n_secret 이상이며 배정 가능해야 한다.

@@ -166,6 +166,26 @@ class AggregateTests(unittest.TestCase):
         self.assertEqual(len(m.scope_games(self.games, include_load_test=True, exclude={"pm"})), 4)
         self.assertEqual([g["game_id"] for g in m.scope_games(self.games, pseudonyms={"p2"})], ["g2", "g3"])
 
+    def test_aborted_games_leave_survey_denominator(self):
+        """ut-metrics-1.3(11/11 사용자 결정, D-10-01 10번): 새로 시작으로 중단한 판은 설문 분모·설문 이벤트 수에서 뺀다."""
+        backfill = {"skipped": True, "fun": None, "reason": "backfill"}
+        answered = game("g1", "p1", [ev("game_started", 0, 0), ev("game_ended", 10, 1),
+                                     ev("survey_submitted", 11, 2, payload={"skipped": False, "fun": 4})],
+                        result={"completed": True, "reason": "all_possessed_locked"})
+        aborted = game("g2", "p1", [ev("game_started", 12, 0), ev("game_ended", 15, 1),
+                                    ev("survey_submitted", 16, 2, payload=backfill)],
+                       result={"completed": False, "reason": "aborted"})
+        skipped = game("g3", "p1", [ev("game_started", 17, 0), ev("game_ended", 27, 1),
+                                    ev("survey_submitted", 28, 2, payload={"skipped": True, "fun": None})],
+                       result={"completed": True, "reason": "mudang_locked"})
+        rows = [m.game_summary(g) for g in (answered, aborted, skipped)]
+        self.assertEqual([r["aborted"] for r in rows], [False, True, False])
+        out = m.aggregate(rows)["survey"]
+        self.assertEqual((out["games_ended"], out["games_aborted"], out["games_survey_base"]), (3, 1, 2))
+        self.assertEqual((out["events"], out["answered"], out["skipped"], out["ended_without_survey"]), (2, 1, 1, 0))
+        self.assertEqual(out["response_rate"], 0.5)
+        self.assertEqual(out["response_rate_of_started"], round(1 / 3, 4))
+
     def test_metrics_numbers(self):
         scoped = m.scope_games(self.games, exclude={"pm"})
         out = m.aggregate([m.game_summary(g) for g in scoped])
@@ -175,6 +195,7 @@ class AggregateTests(unittest.TestCase):
         self.assertEqual(out["completion_rate"], round(2 / 3, 4))
         self.assertEqual(out["game_minutes"]["median"], 10.0)
         self.assertEqual(out["survey"], {"events": 2, "answered": 1, "skipped": 1, "games_ended": 2,
+                                         "games_aborted": 0, "games_survey_base": 2,
                                          "ended_without_survey": 0, "response_rate": 0.5,
                                          "response_rate_of_started": round(1 / 3, 4)})
         self.assertEqual(out["input_sentences"], 3)  # 빈 문장 b2 제외
@@ -274,7 +295,7 @@ class MetricsCliTests(unittest.TestCase):
         doc = json.loads(out.getvalue())
         self.assertEqual(doc["definition_version"], m.DEFINITION_VERSION)
         self.assertEqual(doc["metrics"]["games_completed"], 0)  # 13:00 시작, 14:10 종료 > 14:00 마감
-        self.assertEqual(doc["definition_version"], "ut-metrics-1.2")
+        self.assertEqual(doc["definition_version"], "ut-metrics-1.3")
         self.assertNotIn("needs_confirmation", doc)
         self.assertIn("give_up_rate", doc["definitions"])
 

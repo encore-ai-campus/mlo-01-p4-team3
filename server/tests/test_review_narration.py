@@ -301,3 +301,31 @@ class NarrationAPI(TestCase):
         with override_settings(REVIEW_LLM_URL="http://127.0.0.1:9"):
             html = render_to_string("asset_credits.html", asset_attribution())
             self.assertIn('<p class="kanana-credit">Powered by Kanana</p>', html)
+
+
+class NarrationContextRows(UnitTestCase):
+    """속마음 칸(11/11 사용자 결정 ①): LLM 문장이 하나라도 있으면 요약 대상 NPC를 모두 같은 순서로 보인다."""
+
+    def _context(self, sources):
+        from server.api.story_view import narration_context
+        from server.app.dto import NarrationNpc, NarrationSentence, ReviewNarrationOutput
+        npcs = [NarrationNpc(npc, [NarrationSentence(f"d{i}", f"{npc}-{source}")], source)
+                for i, (npc, source) in enumerate(sources)]
+        return narration_context(ReviewNarrationOutput("done", True, npcs), CONTENT, "g1")["narration"]
+
+    def test_partial_reject_shows_template_rows_in_order(self):
+        """일부 거부: 통과 NPC는 LLM 문장, 거부 NPC는 템플릿 문장으로 원래 순서대로 보인다."""
+        ctx = self._context([("hunjang", "llm"), ("meosum", "template"), ("jumo", "llm")])
+        self.assertTrue(ctx["show"])
+        self.assertEqual([row["sentences"] for row in ctx["npcs"]],
+                         [["hunjang-llm"], ["meosum-template"], ["jumo-llm"]])
+
+    def test_all_reject_hides_group(self):
+        """전부 거부(전부 템플릿): 묶음을 숨긴다(설계 7절, 실패를 알리지 않음)."""
+        ctx = self._context([("hunjang", "template"), ("jumo", "template")])
+        self.assertEqual((ctx["show"], ctx["npcs"]), (False, []))
+
+    def test_all_pass_shows_every_npc(self):
+        """전부 통과: 모든 NPC가 LLM 문장으로 보인다."""
+        ctx = self._context([("hunjang", "llm"), ("jumo", "llm")])
+        self.assertEqual([row["sentences"] for row in ctx["npcs"]], [["hunjang-llm"], ["jumo-llm"]])
