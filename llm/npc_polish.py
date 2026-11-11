@@ -98,15 +98,26 @@ def allowed_interjections(persona: str) -> frozenset[str]:
 
 
 def added_prefix(text: str, source: str) -> tuple[str, ...] | None:
-    """생성 문장이 원문 앞에 붙인 조각들. 원문 첫 두 어절 중 하나가 처음 나오는 곳 앞을 문장부호로 나눈다.
+    """생성 문장이 원문 앞에 붙인 조각들. 원문 첫 두 어절 중 하나로 시작해 원문 어절이 가장 길게 이어 맞는 곳 앞을
+    문장부호로 나눈다(앞말 안에 원문 첫 어절과 같은 낱말이 있어도 속지 않게).
 
     원문 시작을 찾지 못하면 None(앞부분을 바꾼 것이라 허용 목록으로 판단할 수 없다).
     """
-    src = _WORD.findall(source)[:2]
-    for m in _WORD.finditer(text):
-        if m.group() in src:
-            return tuple(x.strip() for x in _PIECE_SPLIT.split(text[:m.start()]) if x.strip())
-    return None
+    src = _WORD.findall(source)
+    words = list(_WORD.finditer(text))
+    best, best_len = None, 0
+    for i, m in enumerate(words):
+        for j in (0, 1):
+            if j >= len(src) or m.group() != src[j]:
+                continue
+            run = 0     # 이 자리부터 원문 어절이 몇 개 이어 맞는지. 가장 길게 맞는 곳(같으면 뒤쪽)을 원문 시작으로 본다
+            while i + run < len(words) and j + run < len(src) and words[i + run].group() == src[j + run]:
+                run += 1
+            if run >= best_len:
+                best, best_len = m, run
+    if best is None:
+        return None
+    return tuple(x.strip() for x in _PIECE_SPLIT.split(text[:best.start()]) if x.strip())
 
 
 def interjection_problem(text: str, source: str, persona: str) -> str | None:

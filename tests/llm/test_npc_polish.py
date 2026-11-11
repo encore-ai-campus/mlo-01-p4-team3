@@ -134,6 +134,10 @@ class InterjectionTest(unittest.TestCase):
         for out in ("에헝, 훈장이 수상하오.", "쳇. 훈장이 수상하오.", "어머나, 훈장이 수상하오."):
             with self.subTest(out=out):
                 self.assertIn(P.INTERJECTION, ok(out).reasons)
+        # 앞말에 원문 첫 어절과 같은 낱말("허")이 있어도 실제 원문 시작 앞을 본다(Codex 지적)
+        r = P.build_request("s3", "suspect", "허, 훈장이 수상하오.", STYLE, LEX)
+        self.assertEqual(P.added_prefix("허, 에헝, 훈장이 수상하오.", r.text), ("허", "에헝"))
+        self.assertIn(P.INTERJECTION, P.check("허, 에헝, 훈장이 수상하오.", r, LEX)[1].reasons)
 
     def test_stammer_family_and_source_start_kept(self):
         """더듬는 말투는 "예, 예…"를 붙일 수 있고, 원문이 이미 추임새로 시작하면 그 부분은 원문으로 본다."""
