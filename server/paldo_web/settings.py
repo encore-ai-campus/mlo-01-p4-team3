@@ -56,6 +56,11 @@ MODEL_CANARY_RATIO = float(os.environ.get("PALDO_MODEL_CANARY_RATIO", "0") or 0)
 SUSPICION_MODEL_VERSION = os.environ.get("PALDO_SUSPICION_MODEL_VERSION", "").strip()
 # 신뢰된 로컬 모델 산출물 폴더(`models.pkl`·`report.json`, D-08-04 인계 형식). 상대 경로는 웹 작업 폴더 기준.
 SUSPICION_MODEL_ROOT = os.environ.get("PALDO_MLRUNS_ROOT", "mlruns")
+# 복기 해설 LLM 요약(E-10-01). 생성 서버(OpenAI 호환) 주소, 예: 게임 서버에서 생성 기기로 가는 터널의 로컬 끝
+# `http://127.0.0.1:<port>`. 비어 있으면 기능 꺼짐(작업 미등록·템플릿 해설만·Kanana 표기 숨김). 실제 값은 저장소 밖.
+REVIEW_LLM_URL = os.environ.get("PALDO_REVIEW_LLM_URL", "").strip()
+# 복기 해설 작업 마감(초). 지나면 템플릿으로 확정한다.
+REVIEW_DEADLINE_S = float(os.environ.get("PALDO_REVIEW_DEADLINE_S", "180") or 180)
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",

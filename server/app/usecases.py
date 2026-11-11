@@ -13,7 +13,7 @@ from engine.ports import StoredCommand, VersionConflict
 from engine.domain.abandon import AlreadyEnded, abandon
 from engine.domain.progress import ending_available
 from engine.domain.review import TraceEvent, TraceInput, review_text, review_trace
-from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewOutput
+from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewNarrationOutput, ReviewOutput
 from .clue_notice import clue_notices
 from .progress import apply_progress, sweep_game
 
@@ -68,6 +68,8 @@ class GameService:
         self.release_game = None
         # 복기 템플릿 해설 문구 {phrase_id: [변형]}(E-10-10, `server/infra/review_lines.py`가 읽음). None이면 문장 없이 이유 코드만.
         self.review_lines = None
+        # 복기 해설 LLM 요약 작업(E-10-01, `review_narration.ReviewNarrationService`). None이면 기능 꺼짐.
+        self.narration = None
 
     def owned(self, game_id, player_pseudonym):
         """멱등 응답·버전 확인보다 먼저 판 소유권을 확인한다."""
@@ -259,8 +261,29 @@ class GameService:
         timeline = self._review_timeline(state)
         clues = [clue_id for clue_id, record in sorted(progress.clues.items())
                  if record.first_game_id == game_id]
-        return ReviewOutput(game_id, state.result, dict(truth.roles), dict(truth.secrets),
-                            timeline, clues_gained=clues)
+        output = ReviewOutput(game_id, state.result, dict(truth.roles), dict(truth.secrets),
+                              timeline, clues_gained=clues)
+        self._ensure_narration(output, state)
+        return output
+
+    def _ensure_narration(self, output, state):
+        """복기를 처음 연 판의 해설 작업을 멱등 등록한다(E-10-01, 설계 D5). 실패해도 복기는 템플릿으로 보인다."""
+        if self.narration is None or not self.narration.enabled:
+            return
+        try:
+            content = self.dependencies(state.meta).content
+            self.narration.ensure(output, content, state.public, state.meta.seed)
+        except Exception as exc:    # 작업 저장소·콘텐츠 장애가 복기 조회를 막지 않게 한다
+            LOGGER.warning("review_narration_register_failed %s", type(exc).__name__)
+
+    def review_narration(self, game_id, player_pseudonym):
+        """종료된 자기 판의 해설 요약 조회(`GET /games/{id}/review/narration`). 기능이 꺼져 있으면 `off`."""
+        state, _ = self.owned(game_id, player_pseudonym)
+        if state.result is None:
+            raise ReviewNotReady
+        if self.narration is None:
+            return ReviewNarrationOutput("off", True)
+        return self.narration.status(state.meta.game_id)
 
     def _review_timeline(self, state):
         """행동 시점 decision 이벤트(아웃박스)로 복기 항목을 만든다. 현재 믿음·상태에서 이유를 다시 계산하지 않는다."""

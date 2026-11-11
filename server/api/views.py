@@ -263,6 +263,25 @@ def review(request, game_id):
         from .story_view import review_context
         state, _ = service.owned(game_id, request.player_pseudonym)
         template = "review_panel.html" if request.headers.get("HX-Request") == "true" else "review.html"
-        return render(request, template, review_context(output, service.dependencies(state.meta).content,
-                                                          state.public))
+        content = service.dependencies(state.meta).content
+        context = review_context(output, content, state.public)
+        from .story_view import narration_context
+        context.update(narration_context(service.review_narration(game_id, request.player_pseudonym), content,
+                                         output.game_id))
+        return render(request, template, context)
+    return JsonResponse(to_jsonable(output))
+
+
+@game_request
+@require_GET
+def review_narration(request, game_id):
+    """복기 해설 LLM 요약(E-10-01). htmx는 폴링 조각, 그 밖에는 `ReviewNarrationOutput` JSON. 종료 전 403."""
+    service = get_game_service()
+    output = service.review_narration(game_id, request.player_pseudonym)
+    request.game_id = game_id
+    if request.headers.get("HX-Request") == "true":
+        from .story_view import narration_context
+        state, _ = service.owned(game_id, request.player_pseudonym)
+        return render(request, "review_narration.html",
+                      narration_context(output, service.dependencies(state.meta).content, state.meta.game_id))
     return JsonResponse(to_jsonable(output))

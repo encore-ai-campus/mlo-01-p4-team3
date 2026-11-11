@@ -13,5 +13,6 @@ urlpatterns = [
     path("games/<str:game_id>/notebook", interactions.save_notebook, name="game-notebook"),
     path("games/<str:game_id>/survey", interactions.submit_survey, name="game-survey"),
     path("games/<str:game_id>/review", views.review, name="game-review"),
+    path("games/<str:game_id>/review/narration", views.review_narration, name="game-review-narration"),
     path("players/me/progress", views.progress, name="player-progress"),
 ]

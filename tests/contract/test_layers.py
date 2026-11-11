@@ -35,7 +35,8 @@ class Layers(unittest.TestCase):
         self.check("contracts", {"contracts"})
 
     def test_app_no_django(self):
-        self.check("server/app", {"engine", "server", "ads"})
+        # llm: 복기 해설 규칙(`llm/review_narration.py`, 표준 라이브러리만 쓰는 도메인 규칙)을 응용이 부른다(E-10-01)
+        self.check("server/app", {"engine", "server", "ads", "llm"})
 
     def test_ads_domain_stdlib_only(self):
         self.check("ads/domain", {"ads"})
@@ -52,7 +53,7 @@ class Layers(unittest.TestCase):
         # llm/bench·llm/service는 대상 아님
         # E-08-13: 자유 질문 답변 규칙·평가 세트 생성기도 같은 계약
         for name in ("prompt.py", "validator.py", "eval_set.py", "mvp_metrics.py", "intent_variants.py",
-                     "free_answer.py", "free_answer_eval.py"):
+                     "free_answer.py", "free_answer_eval.py", "review_narration.py"):
             f = ROOT / "llm" / name
             self.assertTrue(f.exists(), str(f))
             for mod, level in imports(f):

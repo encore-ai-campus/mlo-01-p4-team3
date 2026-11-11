@@ -84,6 +84,8 @@ B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 �
 - 결과 탭: `game_result.html`(승패·종료 사유·결말 문안)·`result_banner`·종료 설문. 복기 탭: 열 때 `GET /games/{id}/review`(htmx) → `review_panel.html`(정체·숨긴 비밀·이 판 단서·`review_side`). 단서 탭: 열 때 `GET /players/me/progress`(htmx) → `progress_panel.html`.
 - 일반 요청은 그대로다: 복기는 `ReviewOutput` JSON, 진척은 로비용 전체 화면 `progress.html`. 복기 행동 목록은 `ReviewOutput.timeline`(E-10-10 `review_trace`, NPC 결정 단위)을 `story_view.review_context`가 화면 행으로 바꾼 것이다. 기록이 없는 옛 판은 빈 목록 안내 한 줄.
 - 고칠 곳: 문구·배치 → 위 템플릿, 복기·진척 화면 값 → `server/api/story_view.py`(표현 보조), 요청 분기 → `server/api/views.py`.
+- 복기 해설 LLM 요약(E-10-01): `review_panel.html`이 `review_narration.html`을 넣는다. 생성 중이면 2초마다 `GET /games/{id}/review/narration`(htmx, `outerHTML`)을 폴링하고, 확정되면 검사를 통과한 LLM 문장만 "마을 사람들의 속마음" 묶음에 보인다(전부 템플릿이면 묶음 숨김). 화면 값은 `story_view.narration_context`, 규칙은 도메인 `llm/review_narration.py`, 흐름은 응용 `server/app/review_narration.py`.
+- "Powered by Kanana": `asset_credits.html`(`{% asset_attribution %}`) 첫 줄 `.kanana-credit`, 기능(`REVIEW_LLM_URL`)이 켜졌을 때만. 문장별 표시 없음(11/11 사용자 결정). 판 화면(`meeting.html`)과 일반 복기 화면(`review.html`)에 같은 조각이 들어간다.
 
 B-08-01 버전 문안 경로: 기존 결과·진척 요청 → `server/api/story_view.py` → `server/story_catalog.json`의 해당 버전. 콘텐츠 갱신 뒤 전체 화면·htmx·반복 조회도 같은 결말 문안과 수집 단서 원문을 표시한다. URL·JSON DTO는 유지한다.
 
