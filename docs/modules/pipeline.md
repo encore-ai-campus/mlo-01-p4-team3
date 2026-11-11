@@ -53,3 +53,4 @@ malformed 입력은 스트림을 멈춘다. 조용히 skip하거나 정답을 �
 | C-08-02 | 11/11 | `ads_contract.ctr_cells`·`ctr_snapshot`, gold 내보내기에 `ctr_cells.json` 추가, `ops/ads_aggregate.sh`·systemd timer로 하루 1회 자동 실행(E 보강) |
 | C-08-03 | 11/8 | k3s Job·Kafka sink·5호스트 자원 재측정 |
 | C-08-04 | 11/8 | E 태그 archive·4th_private 전용 조회 계정 guard |
+| C-08-02 | 11/11 | 운영 집계 연결7개 공란·검증 Bronze 확인, 공식 경로/별도 lock/전용 SSH 사전 검증 및 적용·되돌림 절차 |
