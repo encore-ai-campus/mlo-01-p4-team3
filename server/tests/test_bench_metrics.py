@@ -10,6 +10,7 @@ class BenchTiming(TestCase):
     """운영 응답에 연결되지 않는 시험 전용 래퍼를 검사한다."""
 
     def test_npc_timeline_uses_the_actual_engine_clock_and_keeps_successful_late_returns(self):
+        """실제 엔진 마감과 늦은 성공 응답을 같은 NPC 타임라인에 남긴다."""
         from types import SimpleNamespace
         from engine.domain.model import Phase
         from engine.domain.npc import vote
@@ -67,6 +68,7 @@ class BenchTiming(TestCase):
         self.assertIsNone(CURRENT.get())
 
     def test_cancelled_request_keeps_safe_ids_and_partial_timings(self):
+        """취소된 요청도 안전한 식별자와 취소 전 계측만 남긴다."""
         from asyncio import CancelledError
         from server.tests.asgi_bench_metrics import FALLBACKS, record
 
@@ -95,6 +97,7 @@ class BenchTiming(TestCase):
 
 
     def test_fallback_correlates_a_successful_model_return_with_engine_timeout(self):
+        """포트 성공 뒤 엔진 마감 초과를 별도 폴백으로 대사한다."""
         from types import SimpleNamespace
         from engine.domain.events import DomainEvent, EventType
         from engine.domain.model import Phase

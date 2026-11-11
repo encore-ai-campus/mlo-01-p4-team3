@@ -12,6 +12,7 @@ class MongoComposition(SimpleTestCase):
     """접속 정보 노출과 시험 대역 자동 주입 없이 명시적인 설정만 받는다."""
 
     def test_open_game_query_is_bounded_to_ids_and_preserves_input_order(self):
+        """요청한 판 ID만 조회하며 입력 순서와 중복을 유지한다."""
         repository = object.__new__(WebMongoGameRepository)
         repository.collection = Mock()
         repository.collection.find.return_value = [{'_id': 'b'}, {'_id': 'a'}]
@@ -26,6 +27,7 @@ class MongoComposition(SimpleTestCase):
         repository.collection.find.assert_not_called()
 
     def test_service_uses_injected_open_query_without_loading_each_state(self):
+        """진행 판 목록은 주입한 조회로 얻고 전체 상태는 읽지 않는다."""
         from server.app.usecases import GameService
         state = SimpleNamespace(meta=SimpleNamespace(session_id=None), result=None)
         repository = SimpleNamespace(load=Mock(return_value=(state, None)))
@@ -37,6 +39,7 @@ class MongoComposition(SimpleTestCase):
         repository.load.assert_not_called()
 
     def test_mongo_runtime_connects_open_query(self):
+        """실제 Mongo 조립이 ID 조회 경로를 서비스에 연결한다."""
         database = Mock()
         database.__getitem__ = Mock(return_value=Mock())
         runtime = MongoRuntime(Mock(), database, object(), None, 'probe_')
