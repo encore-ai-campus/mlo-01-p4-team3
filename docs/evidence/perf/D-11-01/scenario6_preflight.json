@@ -1,0 +1,28 @@
+{
+  "task": "D-11-01",
+  "commit": "beb2af7edd9aae3d5878f74f24eb5818c24addcd",
+  "generated_at": "2026-11-11T00:55:07Z",
+  "source": "python -X utf8 out/d1101/replay_scenario6.py",
+  "metrics": {
+    "ctr_relative_error_max": {
+      "value": 0.031589939379737426,
+      "unit": ""
+    },
+    "correct_outcome_order": {
+      "value": 3,
+      "unit": "건"
+    },
+    "beta_log_loss": {
+      "value": 0.41647789789565304,
+      "unit": ""
+    },
+    "lightgbm_log_loss": {
+      "value": 0.3894708437378487,
+      "unit": ""
+    },
+    "lightgbm_ece": {
+      "value": 0.002808771467922165,
+      "unit": ""
+    }
+  }
+}

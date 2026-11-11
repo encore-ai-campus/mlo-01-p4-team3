@@ -1,0 +1,100 @@
+{
+  "task": "D-11-01",
+  "commit": "4d7c7c6e96b9c4960e9ffa804da026898add1024",
+  "generated_at": "2026-11-11T08:46:30Z",
+  "source": "tools.ad_scenarios.evaluate([1,2,3,4,5], [17,29,43], 12000, root=Path('out/d1101/dev_4d7c7c6'))",
+  "metrics": {
+    "s1_ctr_error_max": {
+      "value": 0.11990346580161025,
+      "unit": ""
+    },
+    "s1_online_ctr_error_max": {
+      "value": 0.12801565514429608,
+      "unit": ""
+    },
+    "s1_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s1_budget_error_max": {
+      "value": 0.0034999999999999476,
+      "unit": ""
+    },
+    "s2_ctr_error_max": {
+      "value": 0.1232067727954606,
+      "unit": ""
+    },
+    "s2_online_ctr_error_max": {
+      "value": 0.22077096316797107,
+      "unit": ""
+    },
+    "s2_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s2_expected_behavior_passes": {
+      "value": 3,
+      "unit": "건"
+    },
+    "s3_ctr_error_max": {
+      "value": 0.09284790708835819,
+      "unit": ""
+    },
+    "s3_online_ctr_error_max": {
+      "value": 0.12312755988373204,
+      "unit": ""
+    },
+    "s3_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s3_expected_behavior_passes": {
+      "value": 3,
+      "unit": "건"
+    },
+    "s4_ctr_error_max": {
+      "value": 0.0796761862207392,
+      "unit": ""
+    },
+    "s4_online_ctr_error_max": {
+      "value": 0.09690045003816836,
+      "unit": ""
+    },
+    "s4_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s4_expected_behavior_passes": {
+      "value": 3,
+      "unit": "건"
+    },
+    "s5_ctr_error_max": {
+      "value": 0.08187667418980944,
+      "unit": ""
+    },
+    "s5_online_ctr_error_max": {
+      "value": 0.07492710482585653,
+      "unit": ""
+    },
+    "s5_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "distinct_seeds": {
+      "value": 3,
+      "unit": "개"
+    },
+    "local_pass_runs": {
+      "value": 15,
+      "unit": "건"
+    },
+    "total_runs": {
+      "value": 60,
+      "unit": "회"
+    },
+    "requests": {
+      "value": 720000,
+      "unit": "건"
+    }
+  }
+}
