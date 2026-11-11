@@ -153,6 +153,8 @@ python ads/manage.py ad_update rollback-ctr --expected-version <활성-CTR-버�
 | PALDO_ADS_INTERNAL_URL | 내부 서비스 호스트. 로컬 기본 http://127.0.0.1:8001 |
 | PALDO_ADS_DB_CONN_MAX_AGE | DB 연결 재사용 초(기본 60, 0이면 요청마다 닫음). 운영 gunicorn gthread 고정 스레드에서만 효과가 있다(`CONN_HEALTH_CHECKS` 켬) |
 | `ads_server`(보호 JSON) / PALDO_ADS_SERVER | 광고 서버 실행 방식 `gunicorn`(기본)·`daphne`(되돌리기). `ops/mysql/service_runtime.py` |
+| `ads_threads`(보호 JSON) | gunicorn 작업 스레드 수(1~64, 기본 16). 스레드마다 DB 연결을 따로 가지므로 지연 비교 때 낮춰 본다 |
+| serve 단계 시간(`ad_http` 로그 `timing`) | serve 한 건의 단계별 ms(11/11 지연 원인 분리, `ads/infra/timing.py`): `connect`(연결 확보)·`new_connection`·`thread_first_connection`, `build_service`, `session_lock`, `stored_request`, `frequency_query`, `decide`(아래 단계 포함: `campaigns_load`, `campaign_lock`, `exposure_query`, `budget_check`, `budget_reserve`), `save`, `outbox`, `commit`, `db_queries`·`db_ms`, `thread`. 같은 단계가 여러 번이면 `<단계>_n`. 값만 남기고 세션 가명은 남기지 않는다 |
 | PALDO_ADS_DB_HOST·PORT·NAME·USER·PASSWORD | 광고 전용 MySQL. Compose는 127.0.0.1:3316, VM 기본 포트는 3306 |
 | PALDO_ADS_DB_TEST_NAME | 별도 테스트 스키마. 기본 test_paldo_ads |
 | PALDO_LOG_DIR | 기본 out/logs |

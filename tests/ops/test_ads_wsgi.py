@@ -129,6 +129,13 @@ class AdsRuntime(unittest.TestCase):
                          ["-b", "127.0.0.1", "-p", "8001", "ads.project.asgi:application"])
         self.assertEqual(self._run({}, {"PALDO_ADS_SERVER": "daphne"})[-1], "ads.project.asgi:application")
 
+    def test_thread_count_from_profile(self):
+        argv = self._run({"ads_threads": 4})
+        self.assertEqual(argv[argv.index("--threads") + 1], "4")
+        for bad in (0, 65, "4", 4.0, True):
+            with self.assertRaises(SystemExit, msg=bad):
+                self._run({"ads_threads": bad})
+
     def test_unknown_server_rejected(self):
         with self.assertRaises(SystemExit):
             self._run({"ads_server": "uwsgi"})

@@ -13,7 +13,7 @@ WEB_PORTS=(8000,8002)
 # 2프로세스 × 동시 serve 8(server/app/ads_port.py MAX_CONCURRENT)과 중계 호출을 받을 여유. 되돌리기: 프로필 ads_server="daphne"
 # 또는 환경 변수 PALDO_ADS_SERVER=daphne.
 ADS_SERVERS=('gunicorn','daphne')
-ADS_THREADS=16
+ADS_THREADS=16  # 기본값. 프로필 ads_threads(1~64)로 바꿀 수 있다(11/11 지연 비교용).
 
 
 def ads_command(config):
@@ -24,7 +24,10 @@ def ads_command(config):
     bind=config.get('bind','127.0.0.1')
     if server=='daphne':
         return ['-m','daphne','-b',bind,'-p','8001','ads.project.asgi:application']
-    return ['-m','gunicorn','--worker-class','gthread','--workers','1','--threads',str(ADS_THREADS),
+    threads=config.get('ads_threads',ADS_THREADS)
+    if type(threads) is not int or not 1<=threads<=64:
+        raise SystemExit('ads_threads는 1~64 정수다')
+    return ['-m','gunicorn','--worker-class','gthread','--workers','1','--threads',str(threads),
             '--bind',f'{bind}:8001','--timeout','30','--graceful-timeout','20','--keep-alive','5',
             '--error-logfile','-','ads.project.wsgi:application']
 

@@ -1,6 +1,7 @@
 """광고 요청 재생·유효 판정·공개 이벤트를 MySQL 트랜잭션으로 묶는다."""
 import hashlib
 import json
+import time
 from dataclasses import asdict
 
 from django.db import transaction
@@ -17,6 +18,7 @@ from ads.domain.model import (
 )
 from ads.domain.rules import GRACE_MS, JUDGE_VERSION, Judgement, ValidityState, charge_id, verify_token
 from ads.infra.outbox import enqueue
+from ads.infra.timing import phase, record as record_phase
 from ads.web.models import AdReceipt, AdSession, AdStoredRequest
 from ads.web.telemetry import LOGGER
 from engine.domain.model import PRESETS
@@ -67,14 +69,22 @@ def _lock_session(session_id, synthetic):
 class MySQLAdStore:
     """요청 단위 서비스의 공유 상태를 행 잠금 안에서 읽고 기록한다."""
 
-    @transaction.atomic
     def serve(self, service, req):
-        """응답·예약·serve 아웃박스를 함께 커밋하고 같은 요청을 재생한다."""
+        """응답·예약·serve 아웃박스를 함께 커밋하고 같은 요청을 재생한다. 커밋 시간은 따로 잰다."""
+        with transaction.atomic():
+            response = self._serve_locked(service, req)
+            body_done = time.perf_counter()
+        record_phase("commit", time.perf_counter() - body_done)
+        return response
+
+    def _serve_locked(self, service, req):
         started = service.clock()
-        _lock_session(req.session_pseudonym, req.source == "synthetic")
+        with phase("session_lock"):
+            _lock_session(req.session_pseudonym, req.source == "synthetic")
         request = _digest(asdict(req))
-        saved, _ = AdStoredRequest.objects.select_for_update().get_or_create(
-            pk=req.request_id, defaults={"request": request, "session_id": req.session_pseudonym})
+        with phase("stored_request"):
+            saved, _ = AdStoredRequest.objects.select_for_update().get_or_create(
+                pk=req.request_id, defaults={"request": request, "session_id": req.session_pseudonym})
         if saved.request != request:
             raise RequestConflict("request_id reused with different input")
         if saved.response is not None:
@@ -84,22 +94,27 @@ class MySQLAdStore:
             service.candidates[req.request_id] = [ServeCandidate(**row) for row in saved.candidates]
             return _response(saved.response)
 
-        frequencies = dict(AdStoredRequest.objects.filter(session_id=req.session_pseudonym, creative_id__isnull=False)
-                           .values("creative_id").annotate(total=Count("pk")).values_list("creative_id", "total"))
+        with phase("frequency_query"):
+            frequencies = dict(AdStoredRequest.objects.filter(session_id=req.session_pseudonym,
+                               creative_id__isnull=False)
+                               .values("creative_id").annotate(total=Count("pk")).values_list("creative_id", "total"))
         service.responses.pop(req.request_id, None)
         def exposures(campaign_id, day):
             # Sorted campaign order in _serve keeps these cross-session locks consistent.
-            _lock_session("exploration:" + campaign_id + ":" + day, campaign_id.startswith("syn:"))
+            with phase("campaign_lock"):
+                _lock_session("exploration:" + campaign_id + ":" + day, campaign_id.startswith("syn:"))
             counts = dict(impressions=0, explorations=0, creatives={})
-            rows = AdStoredRequest.objects.filter(impressed=True,
-                serve_data__record__campaign_id=campaign_id, serve_data__record__attribution_day=day)
-            for row in rows.values("creative_id", "serve_data__record__exploration").annotate(total=Count("pk")):
-                count, cr = row["total"], row["creative_id"]
-                counts["impressions"] += count
-                counts["explorations"] += count if row["serve_data__record__exploration"] is True else 0
-                counts["creatives"][cr] = counts["creatives"].get(cr, 0) + count
+            with phase("exposure_query"):
+                rows = AdStoredRequest.objects.filter(impressed=True,
+                    serve_data__record__campaign_id=campaign_id, serve_data__record__attribution_day=day)
+                for row in rows.values("creative_id", "serve_data__record__exploration").annotate(total=Count("pk")):
+                    count, cr = row["total"], row["creative_id"]
+                    counts["impressions"] += count
+                    counts["explorations"] += count if row["serve_data__record__exploration"] is True else 0
+                    counts["creatives"][cr] = counts["creatives"].get(cr, 0) + count
             return counts
-        response = service._serve(req, lambda creative_id: frequencies.get(creative_id, 0), exposures)
+        with phase("decide"):
+            response = service._serve(req, lambda creative_id: frequencies.get(creative_id, 0), exposures)
         claims, _ = verify_token(response.serve_token, service.key, started) if response.filled else (None, None)
         record = service.state.serves[claims.serve_id] if claims else None
         auction = service.auctions[req.request_id]
@@ -110,7 +125,8 @@ class MySQLAdStore:
         if record:
             saved.serve_id, saved.creative_id = record.serve_id, record.creative_id
             saved.serve_data = snapshot | {"record": asdict(record)}
-        saved.save(update_fields=["response", "candidates", "serve_id", "creative_id", "serve_data"])
+        with phase("save"):
+            saved.save(update_fields=["response", "candidates", "serve_id", "creative_id", "serve_data"])
         event_id = "serve:" + _digest(req.request_id)
         fields = _event_fields(event_id, req.request_id, record, snapshot, started,
                                record.served_at_ms if record else started)
@@ -120,11 +136,12 @@ class MySQLAdStore:
         context = asdict(req.context)
         if context["preset_id"] not in PRESETS:
             context["preset_id"] = None
-        enqueue(TOPIC_SERVE, AdServeEvent(
-            **fields, filled=response.filled, candidates=candidates, threshold_ecpm_mw=auction.threshold_ecpm_mw,
-            rank_ctr=record.rank_ctr if record else 0.0, capped=auction.capped, reserved_charge_id=cid,
-            reserved_mw=service.book.get(cid).amount_mw if cid else 0, context=context,
-            latency_ms=max(0, service.clock() - started)))
+        with phase("outbox"):
+            enqueue(TOPIC_SERVE, AdServeEvent(
+                **fields, filled=response.filled, candidates=candidates, threshold_ecpm_mw=auction.threshold_ecpm_mw,
+                rank_ctr=record.rank_ctr if record else 0.0, capped=auction.capped, reserved_charge_id=cid,
+                reserved_mw=service.book.get(cid).amount_mw if cid else 0, context=context,
+                latency_ms=max(0, service.clock() - started)))
         if service.ctr_lookup_count:
             LOGGER.info("ad_ctr_canary", extra={"fields": dict(component="ctr_canary", request_id=req.request_id,
                 version=service.ctr_canary_version, fallback=bool(service.ctr_lookup_misses),

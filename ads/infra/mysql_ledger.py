@@ -5,6 +5,7 @@ from django.utils import timezone
 from ads.domain.model import BillingType, ChargeState, LedgerRow
 from ads.domain.rules import REFUND_SUFFIX, RELEASE_AFTER_MS, charge_id, reservation_amount
 from ads.web.models import AdDailyBudget, AdLedgerEntry, AdOutbox
+from ads.infra.timing import phase
 
 
 def _dto(row):
@@ -37,11 +38,16 @@ class MySQLLedger:
 
     def can_reserve(self, campaign, day, amount_mw):
         """후보 필터용 조회. 실제 예산 상한 검사는 reserve에서 다시 수행한다."""
-        return self.committed_mw(campaign.campaign_id, day) + amount_mw <= campaign.daily_budget_mw
+        with phase("budget_check"):
+            return self.committed_mw(campaign.campaign_id, day) + amount_mw <= campaign.daily_budget_mw
+
+    def reserve(self, campaign, serve):
+        """실제 청구 금액을 예약한다. 중복 또는 일 예산 초과 시 False. 예산 행 잠금 대기를 포함해 잰다."""
+        with phase("budget_reserve"):
+            return self._reserve(campaign, serve)
 
     @transaction.atomic
-    def reserve(self, campaign, serve):
-        """실제 청구 금액을 예약한다. 중복 또는 일 예산 초과 시 False."""
+    def _reserve(self, campaign, serve):
         amount = reservation_amount(campaign, serve)
         cid = charge_id(serve.serve_id, serve.billing)
         table = AdDailyBudget._meta.db_table
