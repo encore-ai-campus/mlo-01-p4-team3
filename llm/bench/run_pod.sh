@@ -8,12 +8,14 @@
 # - 그다음 `runpodctl pod delete "$RUNPOD_POD_ID"`(정지가 아니라 삭제)를 최대 3회(5초 간격). 셋 다 실패하면 exit 3.
 #   Pod 범위 키로 자기 삭제가 되는지는 미확인(0단계 확인). 실패해도 노트북의 watch_pods.py가 시간 초과로 지운다.
 # - 로그(표준 출력·오류)는 key|token|authkey 가 들어간 값을 지워 내보낸다. 환경 변수 값은 출력하지 않는다.
+# - RUNPODCTL_DELETE: 삭제 하위 명령(기본 "pod delete"). Pod 안 runpodctl 버전이 다르면 예: "remove pod".
 # - 테스트용: RUNPODCTL(가짜 명령 경로), TICK_SECONDS(1분을 몇 초로 셀지, 기본 60), RETRY_SLEEP(기본 5).
 set -u
 
 RUNPODCTL="${RUNPODCTL:-runpodctl}"
 TICK_SECONDS="${TICK_SECONDS:-60}"
 RETRY_SLEEP="${RETRY_SLEEP:-5}"
+RUNPODCTL_DELETE="${RUNPODCTL_DELETE:-pod delete}"
 STAGE="${STAGE:-}"
 MAX_MINUTES="${MAX_MINUTES:-}"
 
@@ -59,7 +61,8 @@ else
 fi
 
 for i in 1 2 3; do
-  if "$RUNPODCTL" pod delete "$RUNPOD_POD_ID" > /dev/null 2>&1; then
+  # shellcheck disable=SC2086  # 하위 명령은 단어로 나눈다(예: "remove pod")
+  if "$RUNPODCTL" $RUNPODCTL_DELETE "$RUNPOD_POD_ID" > /dev/null 2>&1; then
     say "자기 삭제 요청 성공(${i}회째)"; exit 0
   fi
   say "자기 삭제 실패(${i}회째)"
