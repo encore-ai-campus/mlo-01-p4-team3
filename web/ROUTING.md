@@ -118,6 +118,7 @@ B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 �
 - 홈의 일반 판·고정 회차 시작 폼은 `ending_choice.html`을 포함한다. 퇴마는 항상, 한풀이는 해금된 것만 고를 수 있다. 판 구성 목록은 `presets_enabled.json`에 공개된 선택형 도전이 있을 때만 `선택형 도전` 묶음으로 보인다(`story_view.preset_choices`).
 - 판이 끝나면 기존 `GET /games/{id}` 전체 화면·회의 조각의 `#meeting` 안에 VN·classic 공통 `game_end.html`(탭 5개)을 넣는다. `game_end.js`가 탭을 켜기 전에는 기록과 설문을 본문에서 읽을 수 있다. 스타일은 `css/result.css`다.
 - 결과: `game_result.html`과 `result_banner`. 복기·원한 단서: `end_lookup.html` → 기존 `GET /games/{id}/review`와 `GET /players/me/progress`(htmx) → `review_panel.html`(`review_side` 포함), `progress_panel.html`. 실패 시 버튼으로 같은 GET을 다시 보낸다.
+- 복기 탭의 `review_side`는 `result.css`에서 PC 900px 이상일 때 소재가 있는 광고를 본문 오른쪽에 배치한다. 모바일은 본문 뒤에 표시한다. 지면 조각은 기존 `GET /ads/slot/review_side`를 사용한다.
 - 공개 기록: 행적표와 `meeting_parts/records.html` → `claim_cards.html`. `record_tools.js`가 기존 진술 비교·선택을 맡고 종료 화면에서만 안내와 필터 초기화를 더한다. 설문: 기존 `survey.html` → 기존 POST → `survey_done.html`. 스크립트 없이 제출하면 같은 판의 설문 위치로 돌아온다.
 - 일반 요청은 그대로다: 복기는 `ReviewOutput` JSON, 진척은 로비용 전체 화면 `progress.html`. 복기 행동 목록은 `ReviewOutput.timeline`(E-10-10 `review_trace`, NPC 결정 단위)을 `story_view.review_context`가 화면 행으로 바꾼 것이다. 기록이 없는 옛 판은 빈 목록 안내 한 줄.
 - 고칠 곳: 문구·배치 → 위 템플릿, 복기·진척 화면 값 → `server/api/story_view.py`(표현 보조), 요청 분기 → `server/api/views.py`.
