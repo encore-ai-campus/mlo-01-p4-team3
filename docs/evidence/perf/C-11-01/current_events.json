@@ -1,0 +1,36 @@
+{
+  "task": "C-11-01",
+  "commit": "65ad184c831b58d386b5c84219ff03392d52b6f5",
+  "generated_at": "2026-11-11T06:36:15Z",
+  "source": "098b077 four performance cohorts; Mongo event seq/hash export, read-only Kafka time-offset replay, official Delta read-only reconciliation; all load_test=true; pending outbox=0",
+  "metrics": {
+    "games": {
+      "value": 214,
+      "unit": "건"
+    },
+    "mongo_events": {
+      "value": 18389,
+      "unit": "건"
+    },
+    "kafka_unique_events": {
+      "value": 18389,
+      "unit": "건"
+    },
+    "delta_events": {
+      "value": 18389,
+      "unit": "건"
+    },
+    "missing": {
+      "value": 0,
+      "unit": "건"
+    },
+    "duplicates": {
+      "value": 0,
+      "unit": "건"
+    },
+    "hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}
