@@ -35,6 +35,7 @@ from engine.domain.content import ContentBundle
 from engine.domain.engine import BaselinePolicy, NpcPolicy, PaldoEngine
 from engine.domain.events import DomainEvent, EventEnvelope, topic_of
 from engine.domain.npc import RuleV0Policy
+from engine.domain.model import ENGINE_VERSION as MODEL_ENGINE_VERSION
 from engine.domain.model import CONTRACT_VERSION, PRESETS, CommandEnvelope, DataSource, GameMeta, GameState
 from engine.ports import EngineDeps, EventSink
 from engine.testing.fakes import FakeSuspicionModel, FixtureContentSource
@@ -43,7 +44,7 @@ from tools.jsonlog import log
 from tools.perf.engine_bench import bench_player_command
 
 COMPONENT = "run_engine_games"
-ENGINE_VERSION = "paldo-engine"                    # 봉투 engine_version. 규칙 재현은 rule_version으로 한다
+ENGINE_VERSION = MODEL_ENGINE_VERSION              # 봉투 engine_version(단일 출처 engine.domain.model, E-08-14)
 EVENTS_FILE = "events.jsonl"
 MANIFEST_FILE = "manifest.json"
 SEED_STRIDE = 1_000_000                            # 판 시드 = seed * SEED_STRIDE + i
@@ -133,13 +134,16 @@ def with_policy_versions(state: GameState, version: str) -> GameState:
 
 
 def run_game(engine: PaldoEngine, deps: EngineDeps, preset_id: str, seed: int, i: int, policy_version: str,
-             sink: EventSink) -> GameRun:
+             sink: EventSink, *, model_version: str = FakeSuspicionModel.model_version,
+             player_bot=None) -> GameRun:
     """판 하나를 끝까지 진행하며 전이마다 봉투를 `sink`에 넘긴다. 명령 거부·상한 초과는 RuntimeError."""
     content: ContentBundle = deps.content
     gseed = game_seed(seed, i)
     meta = GameMeta(f"eng_{preset_id}_{seed}_{i:05d}", PRESETS[preset_id], gseed, DataSource.BOT,
                     params.RULE_PARAMS_VERSION, ENGINE_VERSION, content.content_version,
-                    model_versions={"suspicion": FakeSuspicionModel.model_version})
+                    model_versions={"suspicion": model_version})
+    if player_bot is not None:
+        meta.model_versions["player_bot"] = player_bot.version
     r = engine.new_game(meta, deps)
     st = with_policy_versions(r.state, policy_version)
     tr = r.truth
@@ -150,7 +154,8 @@ def run_game(engine: PaldoEngine, deps: EngineDeps, preset_id: str, seed: int, i
     while st.result is None:
         if steps >= MAX_STEPS:
             raise RuntimeError(f"판이 {MAX_STEPS}명령 안에 끝나지 않음: {meta.game_id}")
-        cmd = bench_player_command(engine.player_view(st, content), rng)
+        view = engine.player_view(st, content)
+        cmd = bench_player_command(view, rng) if player_bot is None else player_bot.choose(view, rng)
         cid = f"c{st.state_version:04d}"
         r = engine.apply(st, tr, CommandEnvelope(meta.game_id, cid, st.state_version, cmd), deps)
         if not r.accepted:

@@ -1,0 +1,44 @@
+{
+  "task": "D-06-02",
+  "commit": "edae4616debc762282ae1e5c3d12c11ff7ee40cd",
+  "generated_at": "2026-11-07T14:53:32Z",
+  "source": "ads/manage.py test tests.ads.test_mysql_ledger tests.ads.test_worker_stack --keepdb (PALDO_ADS_TEST_KAFKA set)",
+  "metrics": {
+    "reserve_attempts": {
+      "value": 100,
+      "unit": "건"
+    },
+    "reserve_accepted": {
+      "value": 10,
+      "unit": "건"
+    },
+    "committed_mw": {
+      "value": 100,
+      "unit": "밀리원"
+    },
+    "refund_concurrent_rows": {
+      "value": 1,
+      "unit": "건"
+    },
+    "expired_after_restart": {
+      "value": 1,
+      "unit": "건"
+    },
+    "received": {
+      "value": 4,
+      "unit": "건"
+    },
+    "unique": {
+      "value": 3,
+      "unit": "건"
+    },
+    "refund_rows": {
+      "value": 1,
+      "unit": "건"
+    },
+    "net_mw": {
+      "value": 0,
+      "unit": "밀리원"
+    }
+  }
+}

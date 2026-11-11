@@ -1,0 +1,33 @@
+{% load meeting %}
+<section id="meeting" data-state-version="{{ vm.state_version }}">
+  <div class="player-portrait"><img src="{% asset_url mudang_portrait_id %}" alt="선택한 무당 모습" width="64" height="64"><span>무당</span></div>
+  <h1>{{ vm.day }}일째 · {{ vm.phase|phase_label }}</h1>
+  {% if vm.phase == 'vote' or vm.phase == 'runoff' %}
+    <p>이번 투표는 비공개이며, 투표가 끝나면 모두의 표가 함께 공개됩니다.</p>
+  {% endif %}
+  {% if rejected %}<p role="alert">행동을 적용하지 못했습니다. 현재 화면을 확인해 주세요.</p>{% endif %}
+  <ul class="people" aria-label="인물">
+    {% for person in vm.people %}
+      <li>
+        {% if person.npc_id != 'mudang' %}
+          {% with portrait_id="portrait:"|add:person.npc_id %}
+            <img src="{% asset_url portrait_id %}" alt="" width="64" height="64">
+          {% endwith %}
+        {% endif %}
+        {{ person.name|display_name }} · {{ person.status|status_label }}
+      </li>
+    {% endfor %}
+  </ul>
+  {% if vm.phase != 'night' %}{% village_guide %}{% endif %}
+  {% include "meeting_parts/records.html" with classic_mode=True %}
+  {% if vm.ended %}
+    {% include "game_end.html" %}
+  {% else %}
+    {% if participant_forms_available %}{% include "notebook.html" %}{% endif %}
+    <div class="command-bar" role="region" aria-label="명령">
+      {% include "meeting_actions.html" %}
+      {% include "utterance_input.html" %}
+    </div>
+  {% endif %}
+  {% asset_attribution %}
+</section>

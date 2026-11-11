@@ -1,0 +1,28 @@
+{
+  "task": "C-06-03",
+  "commit": "597e5974538748c1e111c83e427586fb848e35db",
+  "generated_at": "2026-11-08T06:34:25Z",
+  "source": "python -m ops.mysql.replication_check --role replica --channel pj4 --marker c06_pj4_post_restart_20261108; actual web/ads TLS migrations and HTTP smoke",
+  "metrics": {
+    "probe_replicated": {
+      "value": 1,
+      "unit": "건"
+    },
+    "io_running": {
+      "value": 1,
+      "unit": ""
+    },
+    "sql_running": {
+      "value": 1,
+      "unit": ""
+    },
+    "lag_seconds": {
+      "value": 0,
+      "unit": "s"
+    },
+    "ad_pending": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

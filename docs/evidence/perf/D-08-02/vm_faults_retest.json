@@ -1,0 +1,166 @@
+{
+  "task": "D-08-02",
+  "commit": "44a62065ae3e2274b5c1e5e2788d0ad2f2b78977",
+  "generated_at": "2026-11-09T16:54:25.868744+09:00",
+  "source": "Operator-pasted final run.log JSON from the app-01 dev44a6206 retest",
+  "package_sha256": "5c895cc4592d833d1bf8f2cb899085c763cf9a398f0dc87f7986818e9aff5363",
+  "app_deployment_updated": false,
+  "environment": "isolated Daphne on app-01",
+  "mongo": "isolated replica set on app-01",
+  "normal_target": "actual ad-01 synthetic load",
+  "fault_target": "loopback fault listeners",
+  "users": 10,
+  "minutes_per_case": 5,
+  "passed": true,
+  "scenarios": {
+    "normal": {
+      "p95_ms": 145.543,
+      "p95_increase_ms": 0.0,
+      "before_p95_ms": 179.71,
+      "before_p95_increase_ms": 0.0,
+      "requests": 3000,
+      "game_errors": 0,
+      "elapsed_seconds": 301.355,
+      "finished_games": 230,
+      "game_load_calls": 3000,
+      "click_outcomes": {
+        "landing": 2654,
+        "unavailable": 356,
+        "home": 0,
+        "other": 0
+      },
+      "beacon_acks": 3010,
+      "beacon_relayed": 2706,
+      "beacon_failed": 304,
+      "relay_circuit_open": 605,
+      "error_rate_increase": 0,
+      "passed": true
+    },
+    "stopped": {
+      "p95_ms": 126.797,
+      "p95_increase_ms": -18.746,
+      "before_p95_ms": 722.512,
+      "before_p95_increase_ms": 542.802,
+      "requests": 3000,
+      "game_errors": 0,
+      "elapsed_seconds": 300.332,
+      "finished_games": 230,
+      "game_load_calls": 3000,
+      "click_outcomes": {
+        "landing": 0,
+        "unavailable": 3009,
+        "home": 0,
+        "other": 0
+      },
+      "beacon_acks": 3009,
+      "beacon_relayed": 0,
+      "beacon_failed": 3009,
+      "relay_circuit_open": 6010,
+      "error_rate_increase": 0,
+      "passed": true
+    },
+    "unresponsive": {
+      "p95_ms": 105.303,
+      "p95_increase_ms": -40.24,
+      "before_p95_ms": 804.192,
+      "before_p95_increase_ms": 624.482,
+      "requests": 3000,
+      "game_errors": 0,
+      "elapsed_seconds": 301.256,
+      "finished_games": 230,
+      "game_load_calls": 3000,
+      "click_outcomes": {
+        "landing": 0,
+        "unavailable": 3008,
+        "home": 0,
+        "other": 0
+      },
+      "beacon_acks": 3008,
+      "beacon_relayed": 0,
+      "beacon_failed": 3008,
+      "relay_circuit_open": 6004,
+      "error_rate_increase": 0,
+      "passed": true
+    },
+    "delay": {
+      "p95_ms": 130.498,
+      "p95_increase_ms": -15.045,
+      "before_p95_ms": 845.942,
+      "before_p95_increase_ms": 666.232,
+      "requests": 3000,
+      "game_errors": 0,
+      "elapsed_seconds": 301.27,
+      "finished_games": 230,
+      "game_load_calls": 3000,
+      "click_outcomes": {
+        "landing": 0,
+        "unavailable": 3009,
+        "home": 0,
+        "other": 0
+      },
+      "beacon_acks": 3009,
+      "beacon_relayed": 0,
+      "beacon_failed": 3009,
+      "relay_circuit_open": 6006,
+      "error_rate_increase": 0,
+      "passed": true
+    },
+    "error": {
+      "p95_ms": 131.294,
+      "p95_increase_ms": -14.249,
+      "before_p95_ms": 835.472,
+      "before_p95_increase_ms": 655.762,
+      "requests": 3000,
+      "game_errors": 0,
+      "elapsed_seconds": 300.337,
+      "finished_games": 230,
+      "game_load_calls": 3000,
+      "click_outcomes": {
+        "landing": 0,
+        "unavailable": 3006,
+        "home": 0,
+        "other": 0
+      },
+      "beacon_acks": 3006,
+      "beacon_relayed": 0,
+      "beacon_failed": 3006,
+      "relay_circuit_open": 6003,
+      "error_rate_increase": 0,
+      "passed": true
+    }
+  },
+  "metrics": {
+    "normal_p95_increase_ms": {
+      "unit": "ms",
+      "value": 0.0
+    },
+    "stopped_p95_increase_ms": {
+      "unit": "ms",
+      "value": -18.746
+    },
+    "unresponsive_p95_increase_ms": {
+      "unit": "ms",
+      "value": -40.24
+    },
+    "delay_p95_increase_ms": {
+      "unit": "ms",
+      "value": -15.045
+    },
+    "error_p95_increase_ms": {
+      "unit": "ms",
+      "value": -14.249
+    },
+    "game_requests": {
+      "unit": "건",
+      "value": 15000
+    },
+    "game_errors": {
+      "unit": "건",
+      "value": 0
+    },
+    "matched_web_ad_log_rows": {
+      "unit": "건",
+      "value": 8
+    }
+  }
+}

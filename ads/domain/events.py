@@ -58,7 +58,7 @@ class AdServeEvent(AdEventBase):
     rank_ctr: float = 0.0           # 승자의 순위 CTR(가격 환산에 씀)
     capped: bool = False
     reserved_charge_id: Optional[str] = None
-    reserved_mw: int = 0
+    reserved_mw: int = 0           # 예약액 = 확정액(CPC 단가, CPM floor(단가/1000), ads-0.6)
     latency_ms: int = 0
     # 요청 맥락(AdRequest.context 복사). 노출·클릭에는 싣지 않고 silver가 serve_id로 조인한다(시나리오 6·광고 CTR 학습)
     context: Optional[AdContext] = None
@@ -66,11 +66,12 @@ class AdServeEvent(AdEventBase):
 
 @dataclass
 class AdJudgedEvent(AdEventBase):
+    """판정이 붙는 노출·클릭 이벤트의 공통 필드. 확정했으면 charge_id와 1건 금액 charge_mw(= 예약액)를 싣는다."""
     status: JudgeStatus = JudgeStatus.PENDING
     invalid_reason: Optional[InvalidReason] = None
     judge_version: str = ""
     charge_id: Optional[str] = None         # 이 이벤트가 확정한 과금. 확정이 없으면 None
-    charge_mw: int = 0
+    charge_mw: int = 0                      # 확정액. 같은 건의 예약액과 같다(ads-0.6, 나머지 이월 없음)
     source_event_id: Optional[str] = None   # 재판정·환입이면 원본 이벤트 ID
 
 
@@ -93,7 +94,8 @@ class AdRejudgeEvent:
 
     광고 서버 아웃박스가 아니라 Spark 재판정 작업(C-08-02)이 발행한다. event_id는 `rj:<charge_id>:<judge_version>`.
 
-    소비자(환입 소비자)는 원래 원장 행을 두고 음수 환입 행(`<charge_id>:refund`)을 추가한다(ads.md 5절).
+    소비자(환입 소비자)는 원래 원장 행을 두고 음수 환입 행(`<charge_id>:refund`, 금액 = -원래 금액, 원과금당 1회)을
+    추가한다(ads.md 5절).
     """
     event_id: str                   # 전역 유일. 소비자 멱등 키
     source_event_id: str            # 원래 확정한 노출·클릭 이벤트 ID

@@ -6,6 +6,7 @@
 - 결정: 성향 가중 확률(기여값에 `Temperament.group_weights`를 곱해 로그 오즈를 고친 확률)
   + 동조(`Temperament.conformity`) × 예상 득표(오늘 그 후보를 공개 의심한 다른 투표자 비율) + 잡음. 최댓값을 고른다.
 - 안전: 합법 후보(자기 아님)만 두고 확정 명제(`not_possessed`)로 무고가 확정된 사람과 고백자를 뺀다.
+  무당은 신뢰도가 `MODEL_MUDANG_VOTE_TRUST` 이상이고 다른 후보가 남아 있으면 뺀다(`skip_trusted_mudang`, A-09-06).
   전부 빠지면 합법 후보 중 추정 의심도 최댓값으로 돌아간다.
 
 실패 처리(ports.md 3): 모델이 `ModelUnavailable`·`FeatureVersionMismatch`를 내거나, 호출 경과 시간이 100ms를 넘거나,
@@ -38,8 +39,14 @@ from ..observation import Decision, ReasonCode
 from . import beliefs as bl
 
 SUSPICION_TIMEOUT_S = 0.1     # 엔진 측 시간 초과(ports.md 3, 100ms)
-CONFORMITY_SCALE = 0.2        # 동조 항 크기: conformity 1.0·예상 득표 100%일 때 확률 0.2만큼(잠정, A-08-03 조정)
-VOTE_NOISE_P = 0.02           # 결정 층 잡음 폭(확률 단위 ±, 잠정)
+# 모델 경로 투표에서 무당을 후보로 두는 신뢰도 상한(A-09-06, 11/9 사용자 결정). 신뢰도가 이 값 이상이고 다른 후보가 있으면 뺀다.
+# 시작 신뢰도가 50이므로 "공개된 일(틀린 지적·맑음 공개 실수·다른 주민의 무당 의심)로 신뢰가 시작값 아래로 떨어진 무당만 후보"다.
+# 규칙 v0 대체 경로(`policy_villager.MUDANG_VOTE_TRUST`, 20)도 같은 규칙 "신뢰도가 문턱 이상인 무당은 후보에서 뺀다"이고
+# 값만 다르다: 모델 경로는 무당 의심도 q가 이미 신뢰도를 반영하므로 시작값부터, 대체 경로는 무당 점수(100 − 신뢰도)가
+# 주민 의심도와 같은 척도라 더 낮은 신뢰도에서만 후보로 둔다(대체 경로가 더 보수적). 두 경로 모두 같은 이유 코드를 남긴다.
+MODEL_MUDANG_VOTE_TRUST = 50.0
+# 동조 항 크기(params.CONFORMITY_SCALE)·결정 층 잡음 폭(params.VOTE_NOISE)·q_max(params.Q_MAX)는
+# `decision_params.json`(A-08-03)에서 읽고, 호출할 때마다 params 모듈 값을 쓴다(탐색 도구가 바꿀 수 있게).
 PROB_EPS = 1e-6               # 로그 오즈 계산에서 0·1을 피하는 경계
 PROB_SUM_TOL = 1e-3           # 확률 합(= 남은 창귀 수) 검사 허용 오차
 FALLBACK_SUFFIX = "-fallback"
@@ -116,8 +123,10 @@ def valid_estimate(est: SuspicionEstimate, obs: ObservationSnapshot) -> bool:
     return all(isinstance(g, dict) and all(_finite(v) for v in g.values()) for g in contrib.values())
 
 
-def mudang_q(trust_in_mudang: float, q_max: float = params.Q_MAX) -> float:
-    """무당 의심도 q = q_max × (100 − trust)/100(ports.md 3). trust는 0~100으로 자른다."""
+def mudang_q(trust_in_mudang: float, q_max: Optional[float] = None) -> float:
+    """무당 의심도 q = q_max × (100 − trust)/100(ports.md 3). trust는 0~100으로 자른다. q_max 생략 시 params.Q_MAX."""
+    if q_max is None:
+        q_max = params.Q_MAX
     t = min(100.0, max(0.0, trust_in_mudang))
     return q_max * (100.0 - t) / 100.0
 
@@ -146,7 +155,7 @@ def weighted_probs(est: SuspicionEstimate, temp: Optional[Temperament]) -> dict[
 
 
 def combined_suspicion(probs: dict[str, float], trust_in_mudang: float,
-                       q_max: float = params.Q_MAX) -> dict[str, float]:
+                       q_max: Optional[float] = None) -> dict[str, float]:
     """무당 결합: 주민 후보 (1 − q) × p, 무당(`PLAYER_ID`) q."""
     q = mudang_q(trust_in_mudang, q_max)
     out = {c: (1.0 - q) * p for c, p in probs.items()}
@@ -170,15 +179,24 @@ def expected_votes(obs: ObservationSnapshot) -> dict[str, float]:
 
 
 def decision_scores(susp: dict[str, float], expected: dict[str, float], conformity: float,
-                    rng: random.Random, noise: float = VOTE_NOISE_P) -> dict[str, float]:
-    """결정 점수 = 의심도 + CONFORMITY_SCALE × conformity × 예상 득표 + 잡음(±noise). 후보 ID 순으로 잡음을 뽑는다."""
-    return {c: susp[c] + CONFORMITY_SCALE * conformity * expected.get(c, 0.0) + rng.uniform(-noise, noise)
+                    rng: random.Random, noise: Optional[float] = None) -> dict[str, float]:
+    """결정 점수 = 의심도 + params.CONFORMITY_SCALE × conformity × 예상 득표 + 잡음(±noise, 생략 시 params.VOTE_NOISE).
+
+    후보 ID 순으로 잡음을 뽑는다.
+    """
+    if noise is None:
+        noise = params.VOTE_NOISE
+    scale = params.CONFORMITY_SCALE
+    return {c: susp[c] + scale * conformity * expected.get(c, 0.0) + rng.uniform(-noise, noise)
             for c in sorted(susp)}
 
 
 # ---------------------------------------------------------------- 3층: 안전
 def safe_pool(obs: ObservationSnapshot, b: Beliefs, candidates: Iterable[str]) -> tuple[list[str], list[ReasonCode]]:
-    """합법(자기 아님) 후보에서 확정 명제 무고와 고백자를 뺀다. 남는 사람이 없으면 빈 목록(호출자가 폴백)."""
+    """합법(자기 아님) 후보에서 확정 명제 무고와 고백자, 신뢰받는 무당(다른 후보가 있을 때)을 뺀다.
+
+    남는 사람이 없으면 빈 목록(호출자가 폴백).
+    """
     legal = [c for c in candidates if c != obs.observer]
     codes: list[ReasonCode] = []
     cleared = bl.cleared_by_proposition(b)
@@ -189,6 +207,9 @@ def safe_pool(obs: ObservationSnapshot, b: Beliefs, candidates: Iterable[str]) -
     kept = [c for c in pool if c in allowed]
     if len(kept) < len(pool):
         codes.append(ReasonCode.SKIP_CONFESSED)
+    if PLAYER_ID in kept and len(kept) > 1 and b.trust_in_mudang >= MODEL_MUDANG_VOTE_TRUST:
+        kept = [c for c in kept if c != PLAYER_ID]
+        codes.append(ReasonCode.SKIP_TRUSTED_MUDANG)
     return kept, codes
 
 
@@ -199,10 +220,13 @@ def _argmax(scores: dict[str, float], rng: random.Random) -> tuple[str, bool]:
 
 
 def choose_target(obs: ObservationSnapshot, b: Beliefs, candidates: list[str], est: SuspicionEstimate,
-                  temp: Optional[Temperament], rng: random.Random) -> tuple[str, list[ReasonCode]]:
-    """세 층을 차례로 적용해 (대상, 이유 코드)를 낸다. 의심 추정은 이미 성공한 상태(est)라고 본다."""
+                  temp: Optional[Temperament], rng: random.Random,
+                  q_max: Optional[float] = None) -> tuple[str, list[ReasonCode]]:
+    """세 층을 차례로 적용해 (대상, 이유 코드)를 낸다. 의심 추정은 이미 성공한 상태(est)라고 본다.
+
+    `q_max`는 정책이 고정한 무당 의심 상한(이전 규칙 판용, `RuleV0Policy(q_max=...)`). 생략하면 `params.Q_MAX`."""
     legal = [c for c in candidates if c != obs.observer]
-    susp = combined_suspicion(weighted_probs(est, temp), b.trust_in_mudang)
+    susp = combined_suspicion(weighted_probs(est, temp), b.trust_in_mudang, q_max)
     susp = {c: susp.get(c, 0.0) for c in legal}          # 후보에 없는 합법 대상(결선 등)은 0
     expected = expected_votes(obs)
     scores = decision_scores(susp, expected, temp.conformity if temp else 0.0, rng)

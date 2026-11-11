@@ -1,0 +1,48 @@
+{
+  "task": "D-08-01",
+  "commit": "a3d241cf6cc1c3a99163be8d36f528333550adea",
+  "generated_at": "2026-11-09T00:18:48Z",
+  "source": "model50 base6 seed 1 with PALDO_SUSPICION_MODEL_PATH and same-seed tools.run_engine_games rule-v0 baseline",
+  "metrics": {
+    "games": {
+      "value": 50,
+      "unit": "판"
+    },
+    "inference_p95": {
+      "value": 1.595200039446354,
+      "unit": "ms"
+    },
+    "legal_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "inference_violations": {
+      "value": 0,
+      "unit": "건"
+    },
+    "suspicion_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "model_calls": {
+      "value": 243,
+      "unit": "건"
+    },
+    "model_successes": {
+      "value": 243,
+      "unit": "건"
+    },
+    "model_village_win_rate": {
+      "value": 36.0,
+      "unit": "%"
+    },
+    "rule_v0_village_win_rate": {
+      "value": 28.0,
+      "unit": "%"
+    },
+    "village_win_rate_delta": {
+      "value": 8.0,
+      "unit": "%p"
+    }
+  }
+}

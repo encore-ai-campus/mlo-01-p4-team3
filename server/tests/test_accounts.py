@@ -23,11 +23,16 @@ from django.test import Client, RequestFactory, TestCase, TransactionTestCase, o
 from django.utils import timezone
 
 from engine.domain.serde import dumps
+from ads.domain.model import AdSlot
+from ads.testing.fakes import FakeAdProvider
+from server.app.ads_port import AdGateway
+from server.app.test_sessions import TestSessionService
 from server.accounts.lockout import counter_key, login_user
 from server.accounts.models import AccountProfile, LoginLock
-from server.paldo_web.composition import configure_game_service
+from server.paldo_web.composition import configure_ad_gateway, configure_game_service, configure_session_service
 from server.paldo_web.middleware import JsonFormatter, LOGGER
 from .support import make_service
+from .session_store import MemorySessionStore
 
 PASSWORD = secrets.token_hex(12) + "a1!"
 WRONG_PASSWORD = secrets.token_hex(12) + "b2!"
@@ -297,7 +302,7 @@ class Accounts(TestCase):
                 self.assertTrue(self.client.get("/").wsgi_request.user.is_authenticated)
 
     def test_credentials_absent_from_logs_outbox_and_metrics(self):
-        """계정 성공·실패와 녹화 판 완주 후 실제 로그·이벤트·지표에 인증 입력이 없다."""
+        """계정 성공·실패와 판 완주 후 로그·이벤트·지표·광고 포트에 인증 입력이 없다."""
         username = "privacy-" + secrets.token_hex(12)
         absent_username = "absent-" + secrets.token_hex(12)
         password = secrets.token_hex(24) + "a1!"
@@ -308,6 +313,15 @@ class Accounts(TestCase):
         service = make_service()
         configure_game_service(service)
         self.addCleanup(configure_game_service, None)
+        sessions = TestSessionService(MemorySessionStore())
+        configure_session_service(sessions)
+        self.addCleanup(configure_session_service, None)
+        provider = self.privacy_provider()
+        gateway = AdGateway(provider)
+        configure_ad_gateway(gateway)
+        self.addCleanup(configure_ad_gateway, None)
+        self.addCleanup(gateway._pool.shutdown, wait=True)
+        self.addCleanup(gateway._relay_pool.shutdown, wait=True)
         log_directory = TemporaryDirectory(prefix="paldo-file-log-")
         log_root = Path(log_directory.name).resolve()
         self.assertEqual(log_root.parent, Path(gettempdir()).resolve())
@@ -325,6 +339,14 @@ class Accounts(TestCase):
             self.assertEqual(self.client.post("/accounts/signup", signup_data).status_code, 302)
             self.assertEqual(self.client.post("/accounts/logout").status_code, 302)
             self.assertEqual(self.client.post("/accounts/login", {"username": username.upper(), "password": password}).status_code, 302)
+            login_session_key = self.client.session.session_key
+            # 요청 경계에서 위조한 계정·판 식별자도 광고 DTO로 옮기지 않는다.
+            for ad_slot in AdSlot:
+                ad_response = self.client.get(f"/ads/slot/{ad_slot.value}", {
+                    "username": username, "player_pseudonym": "forged-player", "game_id": "forged-game",
+                })
+                self.assertEqual(ad_response.status_code, 200)
+                self.assertEqual(provider.calls[-1].request_id, ad_response["X-Request-ID"])
             response = self.client.post(
                 "/games", data=json.dumps({"preset_id": "base6", "session_id": "test-session", "mudang_variant": "f"}),
                 content_type="application/json", HTTP_ACCEPT="application/json",
@@ -341,12 +363,16 @@ class Accounts(TestCase):
                 )
                 self.assertEqual(response.status_code, 200)
             self.assertIsNotNone(response.json()["view"]["result"])
+            self.assertEqual(self.client.get("/ads/slot/result_banner").status_code, 200)
             self.assertEqual(self.client.post("/accounts/signup", dict(signup_data, username=username.upper())).status_code, 400)
             self.client.post("/accounts/logout")
             for _ in range(5):
                 self.assertEqual(self.client.post("/accounts/login", {"username": username, "password": wrong_password}).status_code, 400)
             self.assertEqual(self.client.post("/accounts/login", {"username": username, "password": password}).status_code, 400)
             self.assertEqual(self.client.post("/accounts/login", {"username": absent_username, "password": wrong_password}).status_code, 400)
+            calls_before = len(provider.calls)
+            self.assertEqual(self.client.get("/ads/slot/lobby_banner", HTTP_ACCEPT="application/json").status_code, 401)
+            self.assertEqual(len(provider.calls), calls_before)
             with patch(
                 "django.contrib.auth.management.commands.changepassword.getpass.getpass", return_value=invalid_reset,
             ), self.assertRaises(CommandError):
@@ -366,10 +392,37 @@ class Accounts(TestCase):
         self.assertTrue(pseudonym in logs)
         metrics = metrics_response.content.decode()
         self.assertTrue("paldo_auth_login_total" in metrics)
+        self.assertEqual(len(provider.calls), len(AdSlot) + 1)
+        ad_identities = {request.session_pseudonym for request in provider.calls}
+        self.assertEqual(len(ad_identities), 1)
+        self.assertEqual(sessions.store.ad_identities(pseudonym), list(ad_identities))
+        self.assertNotIn(pseudonym, ad_identities)
+        self.assertEqual(uuid.UUID(next(iter(ad_identities))).version, 4)
+        ad_requests = json.loads(dumps(provider.calls))
+        for request in ad_requests:
+            self.assertEqual(set(request), {"request_id", "slot", "session_pseudonym", "context", "source", "load_test"})
+            self.assertEqual(request["source"], "human")
+            self.assertFalse(request["load_test"])
+            self.assertIsNone(request["context"]["preset_id"])
+            self.assertIsNone(request["context"]["outcome"])
+        self.assertNotIn(pseudonym, dumps(provider.calls))
+        self.assertNotIn(login_session_key, dumps(provider.calls))
+        self.assertNotIn(game_id, dumps(provider.calls))
+        self.assertNotIn("forged-player", dumps(provider.calls))
+        self.assertNotIn("forged-game", dumps(provider.calls))
         forbidden = (username, username.upper(), absent_username, password, wrong_password, invalid_reset, invite, wrong_invite)
-        for output_name, output in (("file_log", logs), ("outbox", dumps(events)), ("metrics", metrics)):
+        for output_name, output in (("file_log", logs), ("outbox", dumps(events)), ("metrics", metrics),
+                                    ("ad_provider_requests", dumps(provider.calls))):
             with self.subTest(output=output_name):
                 self.assertFalse(any(value in output for value in forbidden), "인증 입력이 외부 기록에 노출되었습니다.")
+        self.check_ad_http_privacy(provider, forbidden, (pseudonym, login_session_key, game_id))
+
+    def privacy_provider(self):
+        """같은 인증 시나리오에 포트 대역 또는 별도 실제 광고 HTTP 제공자를 연결한다."""
+        return FakeAdProvider()
+
+    def check_ad_http_privacy(self, provider, forbidden, identities):
+        """기본 포트 시험은 위 DTO까지 검사한다. HTTP 수신 시험은 별도 클래스가 확장한다."""
 
 
 class AccountConcurrency(TransactionTestCase):

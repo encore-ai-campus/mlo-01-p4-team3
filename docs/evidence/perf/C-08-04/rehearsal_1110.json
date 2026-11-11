@@ -1,0 +1,40 @@
+{
+  "task": "C-08-04",
+  "commit": "2d1f268ae6a4fbfa44b17cdd78e6d2ab5c87015c",
+  "generated_at": "2026-11-10T02:42:15Z",
+  "source": "46eeb1a app-01 격리 api_bench.py --compare-asgi --users 30 --minutes 3 --web-processes 2,1 --channel-layer memory --front binary",
+  "metrics": {
+    "two_process_p95": {
+      "value": 218.762,
+      "unit": "ms"
+    },
+    "two_process_requests": {
+      "value": 5400,
+      "unit": "건"
+    },
+    "two_process_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "two_process_beacon_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "one_process_p95": {
+      "value": 400.064,
+      "unit": "ms"
+    },
+    "one_process_requests": {
+      "value": 5400,
+      "unit": "건"
+    },
+    "one_process_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "one_process_beacon_errors": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

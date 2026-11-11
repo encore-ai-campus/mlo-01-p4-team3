@@ -30,6 +30,7 @@
 | sprite | 인물 전신 그림 | 512×1280 | portrait와 같은 인물 13종 | `content/images/sprite/<id>.png` | `/static/assets/sprite/<id>.png` |
 | background | 장면 배경 | 1280×720 | `meeting`·`night` 2장 | `content/images/background/<id>.png` | `/static/assets/background/<id>.png` |
 | mascot | 마스코트 | 512×512 | `kkachi`(까치)·`jokjebi`(족제비) 2장 | `content/images/mascot/<id>.png` | `/static/assets/mascot/<id>.png` |
+| branding | 판 시작 전 로고 | 512×512 | `tiger_emblem` 1장, RGBA | `content/images/branding/<id>.png` | `/static/assets/branding/<id>.png` |
 | place | 장소 아이콘 | 128×128 | `engine.domain.model.Place` 값 5개 | `content/images/place/<id>.png` | `/static/assets/place/<id>.png` |
 | ui | UI 아이콘 | 128×128 | 아래 3절 목록 10개 | `content/images/ui/<id>.png` | `/static/assets/ui/<id>.png` |
 | map | 마을 지도 | 1280×720 | `village` 1장 | `content/images/map/<id>.png` | `/static/assets/map/<id>.png` |
@@ -41,8 +42,9 @@
 - **마스코트**(11/5 PM 결정 P-21): 까치 `kkachi`(아침 희생자 발표 장면)와 족제비 `jokjebi`(무당의 짝, 안내·도움말)다. 512×512 RGBA 바탕 투명, 표정 없음. 연출·안내만 하고 새 게임 정보를 주지 않는다(스타일 가이드 6절).
 - **초상은 sprite에서 파생**한다: sprite에서 인물별 크롭 위 y(6절)부터 512×512를 잘라 먹남(`#2E344A`) 위에 알파 합성한다(6절). 한 인물은 sprite 1장만 만들고, 초상은 `make_placeholders`가 만든다. manifest의 초상 항목에 `"derived_from": "sprite:<id>"`가 붙고, 쌍의 `placeholder`는 같아야 한다(4절).
 - **장면 배경**: 회의 `meeting`(회의 장소 고정 1장, 장소는 B-09-06이 정함), 밤 `night`(밤 마을 공통 1장). 장소별 배경은 만들지 않는다(7절).
+- **로고**(11/9 사용자 결정): 판 시작 전 로그인·홈 화면에만 쓰는 호랑이 로고다. 원본은 B의 시안 공유 폴더 `branding/`의 호랑이 엠블럼(시안 로그인 화면 머리에 쓴 파일, B-10-08이 정해 `SOURCES.md`에 적음)이고, 게임 장면(회의·밤)에는 쓰지 않는다(기획서 1.4 세계관). 이미지 안 글자 금지는 다른 유형과 같다. ID는 `branding:tiger_emblem`, 크기 512×512 RGBA, 파일 `content/images/branding/tiger_emblem.png`, url `/static/assets/branding/tiger_emblem.png`이다. 위 표의 `branding` 행은 표를 읽는 도구가 그 유형을 알게 되는 B-10-08에서 `tools/assets/spec.py` `KINDS`·검사와 함께 더한다(그 전에 행만 넣으면 에셋 도구가 알 수 없는 유형으로 멈춤).
 - **광고**: 크기는 계약 `ads/domain/model.py`의 `SLOT_SIZES`(728×90: `lobby_banner`·`result_banner`, 300×250: `review_side`)를 그대로 쓴다. 파일명은 `slot_image_path(image_path, slot)`의 마지막 조각이다(예: `/static/ads/gat.png`, `review_side` → `content/images/ad/gat__300x250.png`, url `/static/ads/gat__300x250.png`). 한 소재의 두 지면이 같은 규격이면 파일은 1장이다. 합성 캠페인(`syn:`)은 같은 파일을 가리키고 따로 만들지 않는다.
-- **지도**: ID는 `village`다. 11/5 PM 결정으로 지도는 **시연까지 임시 에셋**이다. 장소 5곳의 영역 좌표는 E-08-07이 임시 지도용 안내 고정값(정보가 없는 균등 배치)으로 manifest에 넣는다(B-10-02 아이콘 배치용). 현재 임시 지도에는 좌표가 없다.
+- **지도**: ID는 `village`다. 11/5 PM 결정으로 지도는 **시연까지 임시 에셋**이다. 장소 5곳의 영역 좌표는 E-08-07이 임시 지도용 안내 고정값(정보가 없는 균등 배치)으로 manifest 지도 항목의 `regions`에 넣었다(B-10-02 아이콘 배치용). 계약 `Place` 순서대로 지도 가로를 장소 수로 나눈 칸의 가운데, 세로 가운데에 장소 아이콘 크기(128×128) 상자다(`spec.map_regions`). 위치는 장소 사이 거리·방향을 뜻하지 않는다.
 - **정적 파일 연결**(B-05-03 5번): `/static/assets/<kind>/…` → `content/images/<kind>/…`, `/static/ads/…` → `content/images/ad/…`.
 
 ## 3. UI 아이콘 목록
@@ -87,6 +89,7 @@
 | `placeholder` | 임시 파일이면 `true`. 실제 파일로 덮어쓰면 `false` |
 | `derived_from` | 초상만. 원본 sprite 키(`sprite:<id>`). 쌍의 `placeholder`가 다르면 대조가 `pair_mismatch`로 실패한다 |
 | `edited_from` | 표정 변형 sprite만. 편집 입력으로 쓴 기본 sprite 키(`sprite:<인물 id>`). 둘 다 실제면(또는 표정만 실제면) 얼굴 영역 밖이 같아야 한다(6절). 기본이 실제이고 표정이 임시인 것은 표정 작업 전 정상 상태다 |
+| `regions` | 지도만. `{장소 id: [x, y, 가로, 세로]}`(지도 픽셀). 장소 id 전부를 한 번씩, 지도 안의 겹치지 않는 상자로 둔다(`check_assets.py`가 검사, E-08-07 6번) |
 
 - B는 `asset_url(content_id)`처럼 manifest를 조회해서만 이미지를 넣는다(B-05-03 4번). D는 캠페인의 `image_path`와 `slot_image_path`로만 소재를 가리킨다(D-05-03 7번). 경로 문자열을 코드에 쓰지 않는다.
 
@@ -154,7 +157,7 @@
 | 전신 컷 | sprite 전체를 0.5배 축소해 256×640, 가로 가운데(x 512~768), 위 y 40. 컷 동안 대사창을 숨기고, 클릭하면 대사창이 돌아온다 |
 | 전신 컷 조건 | 첫 등장(자기소개), 추방·처형 결과, 엔딩, 밤 습격 결과(아침 회의에서 피해자를 발표할 때) |
 | 대사창 | 무대 아래 180px(1/4)를 덮는다. 표시 방식만이며 글자는 화면(HTML)이 쓴다 |
-| 선택지 | 무대 밖 아래 패널(무대와 겹치지 않음) |
+| 선택지 | 무대 안 패널(대사창 옆 또는 위, 11/9 사용자 원칙: 조작은 플레이 화면 안에서, B-10-07 7번). 진술표·수첩·투표 결과·내 점괘는 무대 위 창 |
 | 밤 | sprite 0명(밤 실행자 노출 금지). 무당 독백은 대사창만 |
 | 엔딩 | 평소와 같은 그림. 정체는 글로만 밝힌다 |
 | 투명 sprite 실패 시 | 불투명 흉상(초상)을 액자처럼 무대 가운데에 둔다(A-08-04 시험 결과로 결정) |
@@ -165,14 +168,14 @@
 - 역할(씐 자 여부), 거짓 진술 여부, 숨은 행적·의심도 같은 비공개 상태로 표정을 고르지 않는다. 같은 사건이면 누구든 같은 표정이다.
 - 표정은 인물의 최신 서버 상태가 아니라 **표시 중인 대사·사건(사건 ID)**에 묶는다. 아직 읽지 않은 뒤 사건(고백·투표 결과 등)의 표정을 앞 대사에서 미리 보이지 않는다. 넘김·건너뛰기·새로고침·재접속에서도 같은 사건이면 같은 표정이다.
 - 기색은 "판정을 했다"가 아니라 **"기색이 나타났다"고 화면에 표시된 결과**에만 반응한다(판정 여부 자체를 표정으로 드러내지 않는다).
-- 표정은 그 사건의 대사 1개 동안만 유지하고 다음 대사에서 평상시로 돌아온다. 한 대사에 여러 사건이 겹치면 우선순위 슬픔 > 당황 > 기쁨 > 평상시.
+- 표정은 그 사건의 대사 1개 동안만 유지하고 다음 대사에서 평상시로 돌아온다. 한 대사에 여러 사건이 겹치면 우선순위 슬픔 > 당황 > 기쁨 > 평상시. 예외(11/9 사용자 승인, B-10-07 1-3): 투표 생존 기쁨이 희생자 발표 뒤 그날 첫 대사 슬픔과 겹치면 그 한 대사는 기쁨을 우선한다.
 - 화면에는 한 번에 1명(화자 또는 전신 컷 대상)만 서므로, 반응 인물이 지금 선 사람일 때만 표정을 바꾼다.
 
 | 표정 | id | 공개 사건 | 반응 인물 |
 |---|---|---|---|
 | 평상시 | (기본) | 그 밖의 모든 대사 | — |
-| 기쁨 | `joy` | 감싸기 발언 / 투표 결과 발표 직후(표를 받았지만 추방되지 않음) | 감싸기 발언의 화자 / 표를 받고 남은 인물의 그 직후 첫 대사 |
-| 당황 | `flustered` | 의심하기 발언의 대상이 됨 / 자기 주장에 "기색이 나타났다"가 표시됨 | 의심 대상의 바로 다음 자기 대사 / 그 주장 화자의 기색 표시 대사 |
+| 기쁨 | `joy` | 감싸기 발언 / 감금 결과 발표 뒤 투표 생존(표를 받았지만 감금되지 않음) | 감싸진 대상의 다음 자기 대사 / 표를 받고 남은 인물의 감금 결과 뒤 첫 대사 하나. 아침 첫 대사 슬픔과 겹치면 그 한 줄은 기쁨 우선 |
+| 당황 | `flustered` | 의심·모순 지적의 대상이 됨 / 점괘 공개의 결과가 "씐 자"(탁함) / 자기 주장에 "기색이 나타났다"가 표시됨 | 지목된 대상 또는 공개 점괘 대상의 사건 뒤 다음 자기 대사 / 그 주장 화자의 기색 표시 대사. 점괘는 공개한 결과만 쓰며 비공개 실제 결과로 고르지 않음 |
 | 슬픔 | `sad` | 희생자 발표(아침) / 고백 / 추방 결과 | 발표 직후 각 인물의 그날 첫 대사 / 고백하는 화자 / 추방 결과 전신 컷의 당사자 |
 
 - 검수용 합성: `python -m tools.assets.preview_vn --bg meeting --id hunjang [--expr joy] [--mode normal|full] [--mascot kkachi] --out <파일>`(저장소 밖 또는 `out/` 아래만). 배경 + sprite + 마스코트 + 대사창 사각형을 겹친 1280×720 PNG를 쓴다. `--bg night`에 `--id`나 `--mascot`을 주면 오류다.
@@ -190,6 +193,7 @@
 | place, ui, map, ad | 임시 허용(`placeholder: true`) | `check_assets.py --allow-placeholder place,ui,map,ad`(E-08-07 7번). 실제 필수 유형의 검사는 생략하지 않는다 |
 
 - 임시 아이콘은 도형뿐이므로 화면이 기능·장소 이름 텍스트를 함께 쓴다(B-10-02).
+- 실제 세트 검사 명령: 임시 세트 `python -m tools.assets.check_assets --placeholder`, 시연 기준 `python -m tools.assets.check_assets --allow-placeholder place,ui,map,ad`, 모든 유형 실제 `python -m tools.assets.check_assets`. 어느 모드든 실제 파일(`placeholder: false`)은 에셋2(`SOURCES.md` 기록 행)~4를 모두 본다.
 - 광고 소재가 임시라 사람 클릭률은 소재 효과로 해석하지 않는다. 합성 CTR 검증(D)은 그림과 무관하다.
 
 ## 8. 표정 목록

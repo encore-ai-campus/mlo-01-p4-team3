@@ -1,0 +1,13 @@
+<details id="update-history" class="update-history">
+  <summary>업데이트 내역</summary>
+  <p>창귀가 무당들의 수법을 기억했다</p>
+  {% if records %}
+    <ul>
+      {% for record in records %}
+        <li data-model="{{ record.model }}" data-stage="{{ record.stage }}">{{ record.at|slice:":10" }} · {{ record.label }} · {{ record.version }}{% if record.stage_label %} · {{ record.stage_label }}{% endif %}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>아직 기록된 업데이트가 없습니다.</p>
+  {% endif %}
+</details>

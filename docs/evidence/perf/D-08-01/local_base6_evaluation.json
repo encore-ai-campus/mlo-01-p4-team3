@@ -1,0 +1,84 @@
+{
+  "task": "D-08-01",
+  "commit": "cefb2be551edbe9aef1621b358059db34c34c6a0",
+  "generated_at": "2026-11-08T02:36:00Z",
+  "source": "python evaluate_base6.py (D-07-02 pm-data manifest hash + fixed test split; local only)",
+  "metrics": {
+    "logistic_log_loss": {
+      "value": 0.8664932104486585,
+      "unit": ""
+    },
+    "logistic_top1_accuracy": {
+      "value": 0.6146788990825688,
+      "unit": ""
+    },
+    "logistic_ece": {
+      "value": 0.04973804115681837,
+      "unit": ""
+    },
+    "rule_v0_log_loss": {
+      "value": 1.183387376251795,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy": {
+      "value": 0.45688073394495415,
+      "unit": ""
+    },
+    "rule_v0_ece": {
+      "value": 0.05686223359862509,
+      "unit": ""
+    },
+    "test_games": {
+      "value": 30,
+      "unit": "판"
+    },
+    "logistic_log_loss_ci_low": {
+      "value": 0.7270663517243564,
+      "unit": ""
+    },
+    "logistic_log_loss_ci_high": {
+      "value": 1.0504024676846073,
+      "unit": ""
+    },
+    "logistic_top1_accuracy_ci_low": {
+      "value": 0.45286506469500926,
+      "unit": ""
+    },
+    "logistic_top1_accuracy_ci_high": {
+      "value": 0.7422303473491774,
+      "unit": ""
+    },
+    "logistic_ece_ci_low": {
+      "value": 0.02691372271331161,
+      "unit": ""
+    },
+    "logistic_ece_ci_high": {
+      "value": 0.10074127365635407,
+      "unit": ""
+    },
+    "rule_v0_log_loss_ci_low": {
+      "value": 1.085879076152068,
+      "unit": ""
+    },
+    "rule_v0_log_loss_ci_high": {
+      "value": 1.2907384318287924,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy_ci_low": {
+      "value": 0.35934664246823955,
+      "unit": ""
+    },
+    "rule_v0_top1_accuracy_ci_high": {
+      "value": 0.5538720538720538,
+      "unit": ""
+    },
+    "rule_v0_ece_ci_low": {
+      "value": 0.04313444993297024,
+      "unit": ""
+    },
+    "rule_v0_ece_ci_high": {
+      "value": 0.09921644763745363,
+      "unit": ""
+    }
+  }
+}

@@ -15,7 +15,18 @@ _ad_lock = Lock()
 
 
 def get_ad_gateway():
-    """명시적으로 조립한 광고 게이트웨이만 반환한다."""
+    """명시적 주입을 우선하고 내부 광고 출처 설정이 있으면 HTTP 게이트웨이를 조립한다."""
+    global _ad_gateway
+    if _ad_gateway is None and settings.ADS_INTERNAL_URL:
+        with _ad_lock:
+            if _ad_gateway is None:
+                from server.app.ads_port import AdGateway
+                from server.infra.ad_client import HTTPAdProvider
+                try:
+                    provider = HTTPAdProvider(settings.ADS_INTERNAL_URL)
+                except ValueError:
+                    raise GameServiceUnavailable('invalid_ads_origin') from None
+                _ad_gateway = AdGateway(provider)
     if _ad_gateway is None:
         raise GameServiceUnavailable("ad_gateway_not_configured")
     return _ad_gateway
@@ -40,17 +51,32 @@ def get_game_service():
             if _game_service is None:
                 service = import_string(settings.GAME_SERVICE_FACTORY)()
                 _configure_parser(service)
+                _configure_engine_metrics(service)
                 _game_service = service
     if _game_service is None:
         raise GameServiceUnavailable("game_service_not_configured")
     service = _game_service
     if service.prepare_start is None:
-        service.prepare_start = partial(_prepare_fixed_start, load_game=service.repository.load)
+        service.prepare_start = start_policy(partial(_prepare_fixed_start, load_game=service.repository.load),
+                                             service.repository.load)
     return service
 
 
 def _prepare_fixed_start(data, player, load_game):
     return get_session_service().prepare(data, player, load_game)
+
+
+def open_start_versions():
+    """일반 판 버전: 배포 코드의 규칙·엔진 버전과 설정의 운영 활성 콘텐츠 버전(E-08-14)."""
+    from engine.domain import params
+    from server.app.open_start import deployed_versions
+    return deployed_versions(lambda: params.RULE_PARAMS_VERSION, settings.ACTIVE_CONTENT_VERSION)
+
+
+def start_policy(session_prepare, load_game):
+    """회차 판은 회차 정책, 회차 없는 판은 랜덤 시드 일반 판으로 시작하는 정책을 만든다."""
+    from server.app.open_start import StartPolicy
+    return StartPolicy(session_prepare, open_start_versions, load_game)
 
 
 def configure_game_service(service):
@@ -59,7 +85,15 @@ def configure_game_service(service):
     with _lock:
         if service is not None:
             _configure_parser(service)
+            _configure_engine_metrics(service)
         _game_service = service
+
+
+def _configure_engine_metrics(service):
+    """저장된 엔진 결과 이벤트로 폴백 지표를 올리게 한다(B-09-01). 이미 관측 함수가 있으면 두고 간다."""
+    if hasattr(service, "observe_events") and service.observe_events is None:
+        from .engine_metrics import observe_engine_events
+        service.observe_events = observe_engine_events
 
 
 def _configure_parser(service):

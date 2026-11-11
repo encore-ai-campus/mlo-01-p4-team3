@@ -1,0 +1,24 @@
+{
+  "task": "B-06-04",
+  "commit": "26ced67ae4e6d02007ee597c8167fb18876aef87",
+  "generated_at": "2026-11-07T18:51:13Z",
+  "source": "python -B -m out.handoff.run_pr_mysql; python -B server/manage.py test server.tests.mongo_game_sessions server.tests.mongo_sessions --settings=server.paldo_web.mongo_test_settings --noinput --verbosity=2",
+  "metrics": {
+    "ad_port_requests": {
+      "value": 4,
+      "unit": "count"
+    },
+    "credential_matches": {
+      "value": 0,
+      "unit": "count"
+    },
+    "mysql_tests": {
+      "value": 156,
+      "unit": "count"
+    },
+    "mongo_tests": {
+      "value": 8,
+      "unit": "count"
+    }
+  }
+}

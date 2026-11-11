@@ -43,7 +43,7 @@ paldo/
 │  │  ├─ mongo_repo.py, content_store.py   [C-06-01]
 │  │  ├─ outbox_publisher.py       [C-06-02]
 │  │  ├─ llm_renderer.py           LineRenderer 구현 [E-08-09, 11/7 P-31 (나)로 취소]
-│  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03]
+│  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03, 11/7 취소]
 │  │  ├─ ad_client.py              AdProvider HTTP 구현(serve·비콘·클릭·랜딩 중계) [B-08-03] 결정 #2·#6
 │  │  └─ model_selector.py         ModelSelector 최소 구현 [D-08-04] → 카나리아·고정 [B-09-01], 레지스트리 [C-09-01] 결정 #5
 │  └─ tests/                       Django 테스트: test_api.py [B-05-02], test_idempotency.py [B-06-02], test_accounts.py [B-06-04], test_ws.py [B-07-05]
@@ -58,9 +58,9 @@ paldo/
 │  │                               expire_reservations.py, refund_consumer.py [D-06-02]
 │  │                               ctr_update.py, pacing_update.py [D-08-02]
 │  │                               bid_update.py [D-10-02]
-│  ├─ infra/                       mysql_ledger.py, outbox.py, schema.sql [D-06-02]
+│  ├─ infra/                       mysql_ledger.py, mysql_store.py, outbox.py, schema.sql [D-06-02], optimization.py [D-08-02]
 │  ├─ web/                         Django 앱(내부 API, 비콘, 클릭, 가상 랜딩, admin) [D-05-03]
-│  └─ testing/fakes.py             FakeAdProvider (있음)
+│  └─ testing/                     fakes.py(FakeAdProvider), traffic_server.py(D-06-03 격리 HTTP 시험 호스트)
 │
 ├─ intent/                         의도 해석기 · D
 │  ├─ baseline.py, matcher.py, parser.py   [D-05-01]
@@ -69,7 +69,9 @@ paldo/
 │  ├─ suspicion/                   features.py, train.py, evaluate.py [D-07-02]
 │  ├─ adapters/suspicion_model.py  SuspicionModel 구현 [D-08-01]
 │  ├─ adapters/run_model_games.py  모델 v0 판 실행 진입점 [D-08-01]
-│  ├─ gate.py, bandit.py           [D-09-02]
+│  ├─ adapters/reproduce_model_games.py  같은 모델·시드 두 실행 재현 비교 [D-08-04]
+│  ├─ gate.py, bandit.py           평가 관문·P-16 보상·버전 고정 공급자 [D-09-02]
+│  ├─ mongo_bandit.py              전체 이벤트 export 배치·Mongo CAS·C 삭제 인계 [D-09-02]
 │  └─ ad_ctr.py                    광고 CTR LightGBM [D-10-02]
 ├─ llm/                            LLM · E
 │  ├─ bench/run_bench.py           [E-06-07]
@@ -112,6 +114,7 @@ paldo/
 │  ├─ load_content.py [C-06-01] 결정 #8, replay_progress.py [C-09-04] 결정 #19
 │  ├─ reconcile_game_events.py [C-07-02], ml_gate.py [C-09-01], privacy_delete.py, privacy_retention.py [C-09-02]
 │  ├─ ad_traffic_sim.py [D-06-03], ad_scenarios.py [D-08-02], demo_retrain.sh [D-10-01]
+│  ├─ ad_ctr_scenario.py [D-10-02]   시나리오 6 이벤트 재생 입력과 정답 채점
 │  ├─ build_llm_bundle.py [E-07-06] LLM MVP 제출 묶음 zip(out/llm_mvp/, 커밋 제외)
 │  ├─ perf/                        engine_bench.py [A-05-01], vm_probe.sh [C-05-01], api_bench.py [B-06-02], ad_fault_test.py [B-08-03]
 │  └─ assets/                      make_placeholders.py [E-05-05], check_assets.py [E-08-07], cutout.py [A-08-04]
@@ -122,7 +125,7 @@ paldo/
 │  └─ fixtures/secrets/            탐지 시험용 가짜 값(검사 제외 경로). 개별 예외는 tools/secrets_allowlist.txt [E-05-02]
 │
 ├─ docs/                           문서 (3절)
-└─ out/                            실행 산출물(커밋 제외): logs/, perf/, handoff/a06/, ad_scenarios/, ad_truth/(합성 광고 정답, 평가 전용 [D-06-03])
+└─ out/                            실행 산출물(커밋 제외): logs/, perf/, handoff/a06/, ad_scenarios/, ad_truth/(합성 광고 정답, 평가 전용 [D-06-03]), ad_traffic/(HTTP 관측 이벤트·요약 [D-06-03])
 ```
 
 ## 2. 폴더별 계층·담당 요약
@@ -139,7 +142,7 @@ paldo/
 | `pipeline/` | 인프라(배치) | C | spark-master-01, spark-worker-01 |
 | `ops/` | 배포·관측 설정 | C | 각 VM |
 | `content/` | 데이터 | E | `tools/load_content.py`로 Mongo에 적재해 사용(결정 #8) |
-| `content/images/` 실제 파일, `tools/assets/cutout.py` | 데이터(에셋) | A 흐름 `[에셋]` 태스크(실제 에셋 제작, 11/5 B에서 이전. 담당 D, 11/5 PM 결정으로 담당 변경). 규격·임시·검사는 E | 정적 파일 |
+| `content/images/` 실제 파일, `tools/assets/cutout.py` | 데이터(에셋) | A 흐름 `[에셋]` 태스크(실제 에셋 제작, 11/5 B에서 이전. 담당 D, 11/5 PM 결정으로 담당 변경. 남은 표정·추가 주민·재생성은 11/10 사용자 결정으로 B). 규격·임시·검사는 E | 정적 파일 |
 | `contracts/`, `fixtures/` | 계약·생성물 | 공용 | - |
 | `tools/` | 도구 | 공용 | 개발 PC, Bastion |
 
@@ -245,6 +248,7 @@ ops/prometheus/**
 ops/grafana/**
 ops/k3s/**
 ops/mlflow/**
+ops/privacy/**
 ops/aws/**
 ops/runbook/**
 content/**

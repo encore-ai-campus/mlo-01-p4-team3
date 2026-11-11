@@ -1,4 +1,14 @@
-Codex 내장 image_gen · 비상업 교육 프로젝트용 생성물
+Codex 내장 image_gen · ChatGPT(gpt-image) · 비상업 교육 프로젝트용 생성물
+
+## B-10-08 판 시작 전 호랑이 로고
+
+11/9 확정 시안 인수 예외를 따른다. 원본은 시안 공유 폴더 `branding/tiger-emblem-v3.png`이며 SHA-256은 `cfb48d7618733b9ad8601e44d2268cd62cdfb85bbe4c0539364db0070c9e9bf4`다. 원본 그림은 재생성하지 않았다. 최종 검수에서 원본 PNG의 C2PA `caBX` 안 `c2pa.created`·`softwareAgent`를 확인해 도구·모델·생성 시각을 기록했다(서명 검증은 하지 않음). 시안 기록 `tiger-v7-assets.json`의 11/7 날짜와 달리 아래 시각은 UTC다. 판 시작 전 로그인·가입·홈의 로고로만 쓴다.
+
+| 결과 파일 | 도구 | 모델·버전 | 프롬프트 전문 | 부정 프롬프트 | 시드 | 생성 시각 UTC | 가공 |
+|---|---|---|---|---|---|---|---|
+| `content/images/branding/tiger_emblem.png` | ChatGPT 이미지 생성(C2PA 기록) | gpt-image(C2PA 기록) | 확인 불가(11/9 시안 인수 예외) | 확인 불가(같은 예외) | 도구 미제공 | 2026-11-06T16:22:19.474861855Z | `python -m tools.assets.branding <원본 PNG>`: 알파를 곱한 면적 평균 단일 배율 축소, 정사각 투명 여백 중앙 정렬, 필터 선택·zlib9 무손실 인코딩 |
+
+정규화 결과는 512×512 RGBA·373100 bytes이며 SHA-256은 `da8e0aa3e721e602c3b46c5b686e0af61c5e36c1bef7cf1c6d76c55d1bc2235f`다. 등록 태스크는 B-10-08이며 인물·배경의 에셋 태스크 완료로 계산하지 않는다.
 
 ## A-08-04 시험 기록
 
@@ -111,3 +121,96 @@ Create ONE fully rendered MALE Korean shaman full-body game sprite, age32. REFER
 ## 반복 시험과 원본 보관
 
 첫 여성 원본과 repeat는 프롬프트·참고 이미지 입력 없음·transparent_background=false가 같다. 요청은 `out/assets/A-08-04/independent/requests/*-request.json`, 시간은 `*-timing.json`이다. 두 원본·최종 파일 해시와 화풍 비교·생성 시간은 [A-08-04 증빙](../../docs/evidence/A-08-04.md)에 있다. 원본·참고 이미지·측정 스크립트와 미리보기는 저장소 밖 전달 폴더에도 복사한다.
+
+## A-09-05 실제 에셋 (첫 플레이 sprite 8·마스코트 2)
+
+B(김영주)가 생성해 팀 공유 폴더 `2.asset 개선안 및 게임 UI 구성(김영주)/`에 올린 원본(바탕 투명 RGBA 793×1983, 마스코트 1254×1254)을 E가 규격에 맞췄다(A-09-05, 11/9 담당 D → E). 원본은 저장소에 넣지 않는다.
+
+- 도구·모델·생성 시각은 원본 PNG의 콘텐츠 자격 증명(C2PA `caBX` 청크)에 적힌 값이다(`ChatGPT`, `gpt-image`, `c2pa.created`). 서명 검증은 하지 않았다. 정규화한 파일은 다시 인코딩해서 이 청크가 없다.
+- 시드는 ChatGPT가 제공하지 않는다. 프롬프트 전문·금지 지시는 받지 않고 "확인 불가"로 적는다(11/9 사용자 결정, 에셋2 예외: 다른 사람이 만든 원본이라 프롬프트를 확인할 수 없으면 파일 안 생성 기록으로 도구·모델·생성 시각을 확인해 적는다). 이 기록으로 에셋2를 충족한 것으로 본다.
+- 무당 여는 기본 `mudang_f.png`를 썼다. 변형(`-v2`·`-v3`·`-legacy-v4`·`-legacy-v5`)과 `branding/`은 쓰지 않았다.
+- 처리: 인물별 머리카락 윗선(`tools/assets/normalize.py`의 `HAIR_TOP`, 원본 좌표)과 보이는 발끝으로 단일 배율을 정해 키 등급 머리 꼭대기·발끝 y=1248·가로 가운데 256에 둔다(면적 평균 축소, 가로·세로 같은 배율). 마스코트는 단일 배율로 512×512 가운데, 발끝 기준선 y=480, 위 여백 32 이상. 초상은 `make_placeholders`로 파생. 인물별 배율·결과 위치는 [A-09-05 증빙](../../docs/evidence/A-09-05.md).
+
+| 항목 | 결과 파일 | 원본 파일(공유 폴더) | 도구 | 모델·버전 | 시드 | 생성 시각 UTC | 프롬프트 전문 | 부정 프롬프트·금지 지시 | 처리 |
+|---|---|---|---|---|---|---|---|---|---|
+| sprite:mudang_f | `content/images/sprite/mudang_f.png` | `characters/mudang_f.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:03:17Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:mudang_m | `content/images/sprite/mudang_m.png` | `characters/mudang_m.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:04:57Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:hunjang | `content/images/sprite/hunjang.png` | `characters/hunjang.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:05:01Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:meosum | `content/images/sprite/meosum.png` | `characters/meosum.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:05:40Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:yakcho | `content/images/sprite/yakcho.png` | `characters/yakcho.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:07Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:jumo | `content/images/sprite/jumo.png` | `characters/jumo.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:29Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:gwabu | `content/images/sprite/gwabu.png` | `characters/gwabu.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:06:39Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| sprite:blacksmith | `content/images/sprite/blacksmith.png` | `characters/blacksmith.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:07:39Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| mascot:kkachi | `content/images/mascot/kkachi.png` | `mascots/kkachi-v2.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:38:47Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+| mascot:jokjebi | `content/images/mascot/jokjebi.png` | `mascots/jokjebi-v2.png` | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T14:40:05Z | 확인 불가 | 확인 불가 | `python -m tools.assets.normalize` |
+
+```powershell
+python -m tools.assets.normalize <원본 폴더 사본>
+python -m tools.assets.make_placeholders
+```
+
+## 11/9 사용자 확정 v5 여성 무당 교체
+
+B-ui-apply에서 사용자가 `mudang_f-legacy-v5.png`를 최종 v5로 지정했다. 위 A-09-05의 최초 입력 기록은 이력으로 보존하며 현재 여성 무당 전신·초상은 아래 입력을 따른다. 다른 17개 등록 그림과 manifest ID·크기는 유지한다. 재생성·화풍 리터칭은 하지 않았다.
+
+- 입력(정식 PR에는 원화 미포함, 로컬 보존 브랜치 backup/B-ui-apply-full-20261109, 커밋 e22034e): `web/static/design-preview/assets/proposals/characters/mudang_f-legacy-v5.png`(793×1983 RGBA). SHA-256 `2f23c1c15e25d3a033b9e300fe2ede44456ca098fa544a5bb55b992fc867dee4`.
+- 출처: 기존 B UI 원화, ChatGPT 이미지 생성. 모델 세부 버전·생성 시각·프롬프트 전문·금지 지시는 이 교체 작업에서 검증하지 않아 확인 불가로 기록한다. 이미지 생성은 이번 작업에서 실행하지 않았다.
+- 처리: `tools.assets.cutout.fit_sprite(width, rows, 'mudang_f', 203)`. v5 눈 중심 y=338·턱 끝 y=448, 갓에 가린 머리 윗선은 기존 추정 방식 338−1.23×(448−338)≈203. 최초 원본용 HAIR_TOP=287은 사용하지 않는다. 단일 배율로 키 등급·발끝 1248·가운데 256을 맞춘다.
+- 초상: `portrait_art.crop_portrait(512, sprite_rows, vn.portrait_top('mudang_f'))`의 RGB를 `png.encode_rgb(..., optimize=True)`로 인코딩한다. 전신은 RGBA. 초상을 따로 그리지 않는다.
+- 출력: sprite 820482 bytes, SHA-256 `9181e7f15244e141bea0408c30596a64bb70764b0b408518b48c885bc162fe8d`; portrait 164120 bytes, SHA-256 `79f85c206a20a922aaae8d07c4be365f80eadc538d1c07dc5f237ce38008599b`.
+- 여성 표정 3종은 아직 임시이므로 승인된 실제 표정으로 계산하지 않는다. 실제 표정 제작 시 이 v5 기본 sprite와 edited_from_sha256을 기준으로 얼굴 영역만 편집해야 한다.
+
+## A-10-05 실제 에셋 (장면 배경 회의·밤)
+
+B(김영주)가 11/7 화면 설계 시안(팀 공유 폴더 `2.asset 개선안 및 게임 UI 구성(김영주)/창귀_화면설계_디자인시안.html`)에 넣어 둔 배경 그림을 E가 규격에 맞췄다(A-10-05, 11/9 담당 D → E). 시안 HTML 안의 이미지 키가 `background:meeting`·`background:night`인 그림이고(1672×941 불투명 RGB), 시안에서 꺼낸 원본 PNG의 MD5 앞 8자리는 meeting `9a9cda47`, night `9d1c47ff`다. 원본과 시안은 저장소에 넣지 않는다. 같은 시안의 `background:dusk-proposal`은 규격 2장 범위 밖이라 쓰지 않았다.
+
+- 도구·모델·생성 시각은 원본 PNG의 콘텐츠 자격 증명(C2PA `caBX` 청크)에 적힌 값이다(`ChatGPT`, `gpt-image`, `c2pa.created`). 서명 검증은 하지 않았다. 정규화한 파일은 다시 인코딩해서 이 청크가 없다.
+- 시드는 ChatGPT가 제공하지 않는다. 프롬프트 전문·금지 지시는 확인할 수 없다. B가 화면 설계 시안용으로 생성한 그림이고 프롬프트 기록이 남아 있지 않으며, 11/9 사용자 결정으로 B에게 따로 받지 않는다. 도구·모델·생성 시각은 위 C2PA 기록으로 확인했다.
+- 처리: 가운데 기준으로 정확한 16:9(1664×936, 왼쪽 4·위 2부터)로 자른 뒤 면적 평균으로 1280×720까지 줄였다(가로·세로 배율 0.76923). 수치는 [A-10-05 증빙](../../docs/evidence/A-10-05.md).
+
+| 항목 | 결과 파일 | 원본 파일(공유 폴더) | 도구 | 모델·버전 | 시드 | 생성 시각 UTC | 프롬프트 전문 | 부정 프롬프트·금지 지시 | 처리 |
+|---|---|---|---|---|---|---|---|---|---|
+| background:meeting | `content/images/background/meeting.png` | `창귀_화면설계_디자인시안.html` 안 `background:meeting`(MD5 9a9cda47) | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T15:07:05Z | 확인 불가(B가 화면 설계 시안용으로 생성, 도구·모델·시각은 C2PA로 확인) | 확인 불가(B가 화면 설계 시안용으로 생성, 도구·모델·시각은 C2PA로 확인) | `python -m tools.assets.normalize --background` |
+| background:night | `content/images/background/night.png` | `창귀_화면설계_디자인시안.html` 안 `background:night`(MD5 9d1c47ff) | ChatGPT 이미지 생성 | gpt-image(C2PA 기록) | 도구 미제공 | 2026-11-06T15:06:40Z | 확인 불가(B가 화면 설계 시안용으로 생성, 도구·모델·시각은 C2PA로 확인) | 확인 불가(B가 화면 설계 시안용으로 생성, 도구·모델·시각은 C2PA로 확인) | `python -m tools.assets.normalize --background` |
+
+```powershell
+python -m tools.assets.normalize --background meeting=<시안에서 꺼낸 meeting 원본> --background night=<시안에서 꺼낸 night 원본>
+```
+
+## A-10-06 확정 표정 생성 기록 복구 (2026-11-10)
+
+선택된 결과 16장과 생성 단계 19개의 원문 프롬프트·입력 관계·도구·모델 표기·생성 시각을 과거 대화의 도구 호출, 반환 PNG의 C2PA, 보존된 조립 스크립트에서 복구했다. 최종 결과 SHA와 원본 SHA는 [선택된 생성·조립 기록](../../docs/evidence/A-10-06-sources.json)에 있다. 이 JSON의 selected_generation_stages와 assembly_recipes가 최종 사용 단계이며, retained_related_instructions는 참고 이력으로 구분한다. C2PA 서명 유효성은 검증하지 않았고 시드는 도구 미제공, 부정 프롬프트는 별도 필드 미지원이라 원문 안 금지 지시에 포함된다. 버려진 모든 시안의 전체 이력을 제출 완료 조건에 추가하지 않는다.
+
+| 결과 파일 | 도구 | 모델·버전 | 프롬프트 전문 | 부정 프롬프트 | 시드 | 생성 시각 UTC | 편집 입력·가공 |
+|---|---|---|---|---|---|---|---|
+| `content/images/sprite/mudang_f__joy.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T03:44:52.565751845Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/mudang_f.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/mudang_m__joy.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T03:52:01.057616892Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/mudang_m.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/hunjang__joy.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T04:17:50.951990556Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/hunjang.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/jumo__joy.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T04:18:27.537415280Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/jumo.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/blacksmith__joy.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T04:19:19.794694011Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/blacksmith.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/meosum__joy.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T04:20:01.476433140Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/meosum.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/yakcho__joy.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T04:20:42.881930395Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/yakcho.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/gwabu__joy.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T04:21:23.295461850Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/gwabu.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/mudang_f__flustered.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T04:43:00.586439170Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/mudang_f.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/mudang_m__flustered.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T05:24:43.454748019Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/mudang_m.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/hunjang__flustered.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T05:51:02.294904625Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/hunjang.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/jumo__flustered.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T05:50:03.235061486Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/jumo.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/blacksmith__flustered.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T06:01:37.156631284Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/blacksmith.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/meosum__flustered.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T06:02:01.473334466Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/meosum.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/yakcho__flustered.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T05:52:03.649388919Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/yakcho.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/gwabu__flustered.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-10-06-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T05:50:34.341125419Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/gwabu.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+
+## A-11-04 확정 표정 생성 기록 복구 (2026-11-10)
+
+선택된 결과 8장과 생성 단계 20개의 원문 프롬프트·입력 관계·도구·모델 표기·생성 시각을 과거 대화의 도구 호출, 반환 PNG의 C2PA, 보존된 조립 스크립트에서 복구했다. 최종 결과 SHA와 원본 SHA는 [선택된 생성·조립 기록](../../docs/evidence/A-11-04-sources.json)에 있다. 이 JSON의 selected_generation_stages와 assembly_recipes가 최종 사용 단계이며, retained_related_instructions는 참고 이력으로 구분한다. C2PA 서명 유효성은 검증하지 않았고 시드는 도구 미제공, 부정 프롬프트는 별도 필드 미지원이라 원문 안 금지 지시에 포함된다. 버려진 모든 시안의 전체 이력을 제출 완료 조건에 추가하지 않는다.
+
+| 결과 파일 | 도구 | 모델·버전 | 프롬프트 전문 | 부정 프롬프트 | 시드 | 생성 시각 UTC | 편집 입력·가공 |
+|---|---|---|---|---|---|---|---|
+| `content/images/sprite/mudang_f__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T06:27:52.049679749Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/mudang_f.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/mudang_m__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T06:39:47.143711118Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/mudang_m.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/hunjang__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T07:04:41.279426198Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/hunjang.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/jumo__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T07:30:47.289142568Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/jumo.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/blacksmith__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T07:27:07.377623958Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/blacksmith.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/meosum__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T07:27:45.054701700Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/meosum.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/yakcho__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T07:28:24.701994551Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/yakcho.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |
+| `content/images/sprite/gwabu__sad.png` | Codex 내장 image_gen / C2PA softwareAgent ChatGPT | gpt-image (C2PA 기록) | A-11-04-sources.json 해당 id·emotion selected_generation_stages[].prompt 전문 | 별도 필드 미지원; 원문 내 금지 지시 | 도구 미제공 | 2026-11-10T07:28:57.018531525Z (최종 사용 생성 단계; 합성 시각 아님) | `content/images/sprite/gwabu.png`; 입력 커밋 9d4b8dbe5f82b148bebe73ee0117ef0102ac2f63, 기본·결과 SHA 및 합성 스크립트 전문은 같은 JSON |

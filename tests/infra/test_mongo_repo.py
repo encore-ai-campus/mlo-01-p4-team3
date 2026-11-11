@@ -47,6 +47,37 @@ class MongoContractTests(unittest.TestCase):
         event=serde.from_jsonable(EventEnvelope,load_jsonl('fixtures/events/sample_events.jsonl')[0])
         return state,truth,replace(event,game_id=state.meta.game_id)
 
+    def test_replay_recovers_published_and_pending_confessions(self):
+        """실제 아웃박스를 두 번 읽어 단서와 해금을 한 번씩 복구한다."""
+        from server.infra.replay_progress import replay_games
+        from tests.engine import test_progress as scenario
+        from server.infra.mongo_repo import MongoGameRepository
+        from server.infra.progress_store import MongoProgressRepository
+        from server.infra.content_store import MongoContentSource
+
+        names = [self.prefix + uuid.uuid4().hex + "_" + suffix for suffix in ("games", "progress", "content")]
+        games = MongoGameRepository(self.database[names[0]], self.histogram)
+        progress = MongoProgressRepository(self.database[names[1]])
+        content = MongoContentSource(self.database[names[2]])
+        try:
+            content.insert(scenario.CONTENT)
+            failing = scenario.FailingProgress(progress, "add_clue")
+            service = scenario.make_service([scenario.SEED_TWO_CLUES, scenario.SEED_TARGET_CLUE], games, failing)
+            with self.assertLogs("paldo.progress", "ERROR"):
+                first_game = scenario.play(service, scenario.SEED_TWO_CLUES)
+                second_game = scenario.play(service, scenario.SEED_TARGET_CLUE)
+            games.collection.update_one({"_id": first_game}, {"$set": {"outbox.$[].published": True}})
+            query = {"_id": {"$in": [first_game, second_game]}}
+            self.assertEqual(progress.load(scenario.PLAYER).clues, {})
+            first = replay_games(games.collection, progress, content, query)
+            self.assertEqual((first["games"], first["clues_added"], first["endings_unlocked"]), (2, 3, 1))
+            second = replay_games(games.collection, progress, content, query)
+            self.assertEqual((second["games"], second["clues_added"], second["endings_unlocked"]), (2, 0, 0))
+            self.assertIn("haewon:h1", progress.load(scenario.PLAYER).endings_unlocked)
+        finally:
+            for name in names:
+                self.database.drop_collection(name)
+
     def test_cas_outbox_response_and_copy_semantics(self):
         state,truth,event=self.make_game();game=state.meta.game_id
         next_state=replace(state,state_version=1)
@@ -133,6 +164,25 @@ class MongoContractTests(unittest.TestCase):
         self.assertEqual(result.testsRun,3)
         self.assertEqual(result.errors+result.failures,[])
 
+    def test_progress_failure_recovery_with_mongo_implementations(self):
+        """E-09-08 4번: 진척 장애 주입·재처리 복구·중복 0을 Mongo 판·진척 저장소로 다시 돌린다."""
+        from unittest.mock import patch
+        from server.infra.mongo_repo import MongoGameRepository
+        from server.infra.progress_store import MongoProgressRepository
+        from tests.engine import test_progress
+        def game_repository():
+            return MongoGameRepository(self.database[self.prefix+'e0908_games_'+uuid.uuid4().hex],self.histogram)
+        def progress_repository():
+            return MongoProgressRepository(self.database[self.prefix+'e0908_progress_'+uuid.uuid4().hex])
+        loader=unittest.TestLoader()
+        suite=unittest.TestSuite([loader.loadTestsFromTestCase(test_progress.ApplyProgress),
+                                  loader.loadTestsFromTestCase(test_progress.GameFlow),
+                                  loader.loadTestsFromTestCase(test_progress.FailureRecovery)])
+        with patch.object(test_progress,'GAME_FACTORY',side_effect=game_repository),              patch.object(test_progress,'PROGRESS_FACTORY',side_effect=progress_repository):
+            result=unittest.TestResult();suite.run(result)
+        self.assertEqual(result.testsRun,suite.countTestCases())
+        self.assertEqual(result.errors+result.failures,[])
+
     def test_content_version_is_pinned_for_running_game(self):
         from engine.domain.engine import PaldoEngine
         from engine.domain.model import DataSource, GameMeta, PRESETS
@@ -158,7 +208,7 @@ class MongoContractTests(unittest.TestCase):
         import tempfile
         from server.infra.load_content import main
         client=Mock()
-        client.get_default_database.return_value={'content_bundles':self.database[self.prefix+'cli_content']}
+        client.get_default_database.return_value={'content':self.database[self.prefix+'cli_content']}
         from tools.check_content import load_bundle
         bundle=replace(load_bundle(Path(__file__).resolve().parents[2]/'content/bundle_v1.json'),content_version='cli-'+uuid.uuid4().hex)
         with tempfile.TemporaryDirectory() as directory:

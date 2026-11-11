@@ -1,5 +1,10 @@
 # 기준선 의도 해석기 B 인계 — D-07-01
 
+D-09-02의 로컬 BERT 후보는 `intent.bert.BertIntentParser(run_dir)`다. 검증한 D-07-03 아티팩트로 생성해
+기존 `build_from_runtime(runtime, parser)`에 주입한다. 11/9 실제 체크포인트와 통합 테스트 4개로 연결 검증을 통과했다.
+기본 운영 조립은 기준선을 유지하며 B가 후보를 주입해 실제 웹/API를 검증한다. 상세 아티팩트·판 버전 고정·B 수신 검증은
+[D-09-02 인계](../docs/reports/D-09-02-handoff.md)를 따른다. 사람 평가는 D-09-01 범위다.
+
 실제 구현은 `intent.parser.BaselineIntentParser`, 포트는 `engine.ports.IntentParser`다. `parse(text, ParseContext)`는 확인용 후보를 반환하며 명령을 실행하거나 행동을 소비하지 않는다. 후보의 `needs_confirmation`은 항상 true다.
 
 ## 한 줄 전환

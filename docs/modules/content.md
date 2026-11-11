@@ -13,7 +13,7 @@
 |---|---|---|
 | 인물·성향·비밀·원한 단서·장소(`content/bundle_v1.json`) | `tools/check_content.py` | E-05-03 |
 | 템플릿 대사(같은 파일의 `templates`, 47개) | `tools/check_templates.py` | E-06-01 |
-| 의도 해석 학습 예시(`content/intent/examples_v1.jsonl`, 사람 작성 280행) | `tools/intent_examples.py` | E-06-02 |
+| 의도 해석 학습 예시(`content/intent/examples_v1.jsonl`, 사람 작성 280행 + LLM 변형 252행(검수 전)) | `tools/intent_examples.py` | E-06-02 |
 | 결말 문안(`content/endings_v1.json`, 퇴마·한풀이 2개) | `tools/check_endings.py` | E-07-05 |
 
 - 템플릿: 회의 발언 5종(의심·감싸기·모순 지적·해명·침묵)과 캐묻기 반응 4종(해명·회피·역공·고백)을 공용 1개 + 성향 4종마다 1개(36개)로 둔다. 점괘 공개와 행적 진술(`t_whereabouts`)은 공용만 둔다. 템플릿마다 변형 2개 이상. 엔진은 지금 (행동 유형, 반응)이 맞는 첫 공용 템플릿의 `variants[0]`만 쓴다.
@@ -52,7 +52,7 @@ python -m unittest tests.tools.test_check_templates tests.tools.test_check_endin
 
 | 이름 | 기본값 | 뜻 | 바꿀 때 영향 |
 |---|---|---|---|
-| `content_version` | `content-1.0` | 첫 플레이 버전 묶음 | 내용을 바꾸면 올린다 |
+| `content_version` | `content-1.1` | 7·8인 판 주민 2명 추가(E-08-02, `content-1.0.1`에서 올림). `content-1.0.1`은 11/9 hothead 해명 변형 어조 한 줄 수정으로 `content-1.0`에서 올린 첫 플레이 버전 묶음 | 내용을 바꾸면 올린다. 결과·진척 화면 문안 `server/story_catalog.json`에 같은 버전 키를 둔다 |
 | 묶음 크기 | 인물 6·성향 4·비밀 6·원한 단서 4·장소 5·템플릿 47 | 6인 판 `base6`과 5인 판 `short5`를 채운다 | 7·8인 판 인물 2명은 E-08-02에서 추가 |
 | `--bundle` | `content/bundle_v1.json` | 검사할 묶음(저장소 기준 경로) | - |
 | `--preset` | 없음 | 배정 검증할 프리셋 ID(예: `base6`) | 없으면 구조 검사만 |
@@ -70,7 +70,7 @@ python -m unittest tests.tools.test_check_templates tests.tools.test_check_endin
 
 - 성향 값은 콘텐츠 픽스처와 같은 초안이고, 시뮬레이션(A-08-03)으로 조정하기 전이다.
 - 엔진은 지금 첫 공용 템플릿의 `variants[0]`만 쓴다. 성향별 템플릿 선택은 A-07-01(규칙 v0, 7번)에서 들어오고, 2번째 변형부터는 고르는 경로가 아직 없다(검사만 미리 한다).
-- 의도 예시는 사람 작성 1단계만 있다. 로컬 LLM 변형 생성과 D 검수(E-06-02 조건 2)는 E-08-10 뒤에 하며, 그때 인물 이름이 섞인 잡담 변형을 늘려 이름만 보고 의심·감싸기로 오분류하는 것을 줄인다. 그래서 E-06-02 증빙은 `상태: 실패`(이슈 `evidence-fail`)다.
+- 의도 예시 변형 252행(11/7 생성, `llm/bench/gen_intent_variants.py`)은 `label_source: generated`(검수 전)다. 학습에는 검수자 D가 통과시킨 `generated_reviewed`만 쓴다(D 판정 전에는 사람 작성 280행만). 그래서 E-06-02 증빙은 아직 `상태: 실패`(이슈 `evidence-fail`)다. 원본의 57%(159개)만 변형이 붙었고 침묵·해명·모순 지적 라벨이 적다(자동 검사 탈락이 많음).
 - 의도 예시의 점괘 슬롯은 시드와 같은 평평한 구조라 `night`가 선택이다. 계약 `intent.md` 1절의 `divination(target, night, result)` 표기와 문구가 다르다(PM이 계약 문구로 맞출 예정).
 - 인용 질문형 중 "~라고?"·"~다니?" 꼴은 해석기 규칙(`intent/parser.py`의 인용형 정규식)이 아직 잡지 않아 모델 예측에만 맡겨진다(D 후속).
 - 배정 검증은 엔진의 배정기(`engine.domain.engine.make_setup`)가 있어야 돈다.
@@ -86,3 +86,5 @@ python -m unittest tests.tools.test_check_templates tests.tools.test_check_endin
 | E-06-01 | 11/6 | 템플릿 47개(회의 발언 5종·캐묻기 반응 4종 × 공용 + 성향 4종, 점괘 공개·행적 진술 공용, 변형 2개 이상)와 `check_templates`(필수 조합·자리표시자·쓰임별 허용·`{fact}`·엔진 인자 `format`·변형 수) |
 | E-06-02 | 11/6 | 의도 예시 `content/intent/examples_v1.jsonl` 사람 작성 280행(라벨 10종, 대조쌍, 해소 유형 표기, 역할 단어 행, 현대어 입력 행 `register=modern`)과 `intent_examples` 검사·집계. 변형 생성·D 검수는 E-08-10 뒤 |
 | E-07-05 | 11/7 | 원한 단서 4개 문장 다듬기(삼돌·김 훈장, 신원 단서 2개가 각자 신원을 밝힘), 대상 단서 ID `clue_tiger` → `clue_gate`, 결말 문안 `content/endings_v1.json`(퇴마 6줄·한풀이 8줄)과 `check_endings`, 계약 `content.md` 1절 `Ending` |
+| E-06-02 | 11/7 | 2단계: 로컬 LLM 변형 252행을 `generated`(검수 전)로 원본 뒤에 추가(계보 `<원본>_vN`, 위반·중복 0), D 검수 시트 `docs/evidence/perf/E-06-02/variants_review.csv`. 생성·반영 도구는 `llm` 모듈 |
+| E-08-10 | 11/9 | 사전 테스트 대사 확인(사용자): `t_ans_explain_hothead` 변형 "{fact} 됐냐?" → "{fact} 됐나?", `content_version` `content-1.0.1`(결말 파일·`server/story_catalog.json` 같은 버전 키) |

@@ -134,7 +134,20 @@ class EstimateLayer(unittest.TestCase):
 
 
 # ---------------------------------------------------------------- 조건 1·2: 결정 층과 무당 결합
+RULE_V0_DECISION = params.DecisionParams("decision-0", conformity_scale=0.2, vote_noise=0.02, q_max=0.5,
+                                         witness_prob=0.7, tell_prob=0.5, routine_randomness=0.0)
+
+
 class DecisionLayer(unittest.TestCase):
+    """층 단위 계산은 규칙 v0 기준값(decision-0)으로 고정해 확인한다(조정 값은 decision_params.json, A-08-03)."""
+
+    def setUp(self):
+        self._saved = params.current()
+        params.apply(RULE_V0_DECISION)
+
+    def tearDown(self):
+        params.apply(self._saved)
+
     def test_temperament_weights_shift_log_odds(self):
         e = est({"b": 0.4, "c": 0.4}, {"b": {EvidenceGroup.WITNESS: 1.0}, "c": {EvidenceGroup.SOCIAL: 1.0}})
         self.assertEqual(vt.weighted_probs(e, None), {"b": 0.4, "c": 0.4})                 # 성향 없음: 그대로
@@ -187,7 +200,7 @@ class DecisionLayer(unittest.TestCase):
         s2 = vt.decision_scores(susp, {}, 0.0, random.Random(7))
         self.assertEqual(s1, s2)
         for c in susp:
-            self.assertLessEqual(abs(s1[c] - susp[c]), vt.VOTE_NOISE_P)
+            self.assertLessEqual(abs(s1[c] - susp[c]), params.VOTE_NOISE)
 
     def test_mudang_chosen_when_trust_low(self):
         e = est({"b": 0.34, "c": 0.33, "d": 0.33})
@@ -203,9 +216,36 @@ class DecisionLayer(unittest.TestCase):
 class SafetyLayer(unittest.TestCase):
     def test_excludes_self_cleared_and_confessed(self):
         s = snap(candidates=("c", "d"), confessions=[ConfessionRecord(1, "b", "s1")])
-        pool, codes = vt.safe_pool(s, Beliefs(propositions=[cleared("c")]), ["a", "b", "c", "d", PLAYER_ID])
+        b = Beliefs(trust_in_mudang=40.0, propositions=[cleared("c")])   # 신뢰가 문턱 아래라 무당도 후보
+        pool, codes = vt.safe_pool(s, b, ["a", "b", "c", "d", PLAYER_ID])
         self.assertEqual(pool, ["d", PLAYER_ID])
         self.assertEqual(codes, [ReasonCode.EXCLUDE_PROPOSITION, ReasonCode.SKIP_CONFESSED])
+
+    def test_trusted_mudang_excluded_from_pool(self):
+        """A-09-06: 신뢰도가 문턱(50) 이상이면 다른 후보가 있을 때 무당을 빼고 이유 코드를 남긴다."""
+        s = snap()
+        for trust in (vt.MODEL_MUDANG_VOTE_TRUST, 90.0):
+            pool, codes = vt.safe_pool(s, Beliefs(trust_in_mudang=trust), ["b", "c", PLAYER_ID])
+            self.assertNotIn(PLAYER_ID, pool)
+            self.assertIn(ReasonCode.SKIP_TRUSTED_MUDANG, codes)
+        pool, codes = vt.safe_pool(s, Beliefs(trust_in_mudang=vt.MODEL_MUDANG_VOTE_TRUST - 1), ["b", "c", PLAYER_ID])
+        self.assertIn(PLAYER_ID, pool)
+        self.assertNotIn(ReasonCode.SKIP_TRUSTED_MUDANG, codes)
+
+    def test_trusted_mudang_kept_when_only_candidate(self):
+        """남은 후보가 무당 하나면 빼지 않는다(결선 등)."""
+        s = snap(candidates=())
+        pool, codes = vt.safe_pool(s, Beliefs(trust_in_mudang=90.0), [PLAYER_ID])
+        self.assertEqual(pool, [PLAYER_ID])
+        self.assertNotIn(ReasonCode.SKIP_TRUSTED_MUDANG, codes)
+
+    def test_trusted_mudang_not_voted_even_if_top_score(self):
+        """무당 점수가 가장 커도(q_max 0.7·신뢰 50 → q 0.35) 신뢰가 시작값 이상이면 주민에게 표가 간다."""
+        e = est({"b": 0.34, "c": 0.33, "d": 0.33})
+        t, codes = vt.choose_target(snap(), Beliefs(trust_in_mudang=50.0), ["a", "b", "c", "d", PLAYER_ID], e, None,
+                                    random.Random(0))
+        self.assertNotEqual(t, PLAYER_ID)
+        self.assertIn(ReasonCode.SKIP_TRUSTED_MUDANG, codes)
 
     def test_cleared_top_suspect_is_not_voted(self):
         e = est({"b": 0.8, "c": 0.1, "d": 0.1})

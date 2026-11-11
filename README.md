@@ -52,6 +52,7 @@ server/infra (인프라) → engine (포트 구현)
 | `tests/tools/` | 테스트 | 공용 | 도구 테스트(태스크 파서·이슈 동기화·임시 운영 흐름은 임시 git 저장소와 임시 폴더로) |
 | `docs/evidence/` | 문서(증빙) | 각 흐름 | 태스크 증빙 `<ID>.md`, 측정 결과 JSON `perf/<ID>/<이름>.json`(`tools/evidence_result.py`로만 쓴다) |
 | `docs/modules/`, `docs/troubles/` | 문서 | 각 흐름 | 모듈 문서, 흐름별 트러블 기록(양식 `_template.md`) |
+| `ops/privacy/` | 운영 설정 | C | 보존 대상 목록을 생성하는 systemd 단위 |
 
 "예정"인 폴더는 담당 흐름이 처음 코드를 넣을 때 만든다.
 
@@ -61,7 +62,9 @@ server/infra (인프라) → engine (포트 구현)
 |---|---|
 | 이벤트나 학습 데이터 형식 변경 | `engine/domain/events.py`, `contracts/datasets.py`, `docs/contracts/events.md` |
 | 개인정보 처리 | `docs/contracts/privacy.md` |
+| 삭제·보존 운영 | `ops/runbook/privacy.md`, `ops/privacy/`, `tools/privacy_delete.py`, `tools/privacy_retention.py` |
 | 서버와 버전 | `docs/contracts/tech_stack.md`, `ops/runbook/vm_roles.md` |
+| 모델 추적과 등록 관문 | `ops/mlflow/`, `tools/ml_gate.py`, `docs/modules/ml_ops.md` |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
 | 새 파일·폴더를 어디에 만들지 | `docs/contracts/structure.md`(1절 트리, 6절 허용 폴더 목록) |
 | 새 폴더 만들기(허용 목록 밖) | PM 승인 → `docs/contracts/structure.md` 6절·1절 먼저 고침 → 검사 `python -m tools.check_structure --diff <base>`(로컬 CI `core`, GitHub CI `core`는 `--all`) |
@@ -71,16 +74,19 @@ server/infra (인프라) → engine (포트 구현)
 | 태스크 문서화(트러블·docstring은 태스크마다, 모듈 문서는 흐름별 하루 1회 일괄 갱신) | `docs/tasks/README.md` 10절 → `docs/modules/`, `docs/troubles/` |
 | 이슈 만들기·동기화, 오늘 열린 태스크 보기 | `python -m tools.tasks_to_issues --dry-run`, `docs/tasks/README.md` 11절 |
 | dev 받기·충돌 풀기, 여럿이 고치는 파일(README 표 등)에 행 넣기 | `docs/tasks/README.md` 3절 "브랜치 모델" |
-| 로컬 검사(precheck)·증빙·문서화·비밀정보 검사 규칙 바꾸기 | 표현 `.githooks/pre-push`, 응용 `tools/precheck.py`, 규칙 `tools/check_evidence.py`·`check_docs.py`·`check_secrets.py`·`check_structure.py`, 예외 `tools/secrets_allowlist.txt`, 설명 `docs/modules/ci.md` |
+| 로컬 검사(precheck)·증빙·문서화·비밀정보 검사 규칙 바꾸기 | 표현 `.githooks/pre-push`, 응용 `tools/precheck.py`(테스트 대상 고르기·무거운 테스트 목록 도메인 `tools/precheck_scope.py`, 테스트 빼고 실행 `tools/run_tests.py`), 규칙 `tools/check_evidence.py`·`check_docs.py`·`check_secrets.py`·`check_structure.py`, 예외 `tools/secrets_allowlist.txt`, 설명 `docs/modules/ci.md` |
 | 저장소 배정 전 제출·병합(NAS 번들, 로컬 CI, 원장, 진행표) | 표현·응용 `tools/interim.py`, 규칙(도메인) `tools/interim_rules.py`, 기록 `docs/ops/interim_ledger.md`, 절차 `docs/tasks/README.md` 10-1절 |
 | 태스크 조건 바꾸기 | `docs/tasks/<흐름>.md`를 고치는 PR(이슈 본문은 직접 고치지 않음) |
 | 로그·지표 이름 정하기 | `docs/tasks/README.md` 5절 |
+| 사용자 테스트 지표·회차 등록 가명 ID·`test_human` 동결 | 인프라(읽기 전용 내보내기) `server/infra/ut_export.py` → 도메인·CLI `tools/ut_metrics.py`·`tools/ut_freeze.py`, 지표 정의 변경은 `tools/ut_metrics.py` `DEFINITIONS`, 설명 `docs/modules/user_test.md` |
 
 ## 명령
 
 ```
 git config core.hooksPath .githooks                       # 처음 한 번: push 때 precheck 자동 실행
-python -m tools.precheck                                  # 로컬 검사(구조·비밀·테스트(assets 제외)·문서·증빙). PR 본문에 마지막 줄
+python -m tools.precheck --quick                          # 작업 중 확인(기본과 같은 대상, 기록 없음, PR에는 못 붙임)
+python -m tools.precheck                                  # 로컬 검사(구조·비밀·바뀐 파일과 이어진 테스트(assets 제외)·문서·증빙). PR 직전 1회, 본문에 마지막 줄
+python -m tools.precheck --full-tests                     # 테스트 폴더 전체. PM이 배포 후보 전 dev에서 1회(--all-slow면 무거운 테스트까지)
 git fetch origin && git merge origin/dev                  # PR 직전에 dev 받기(시작 때는 fetch 후 origin/dev에서 브랜치). 리베이스·강제 푸시 금지
 python -m tools.precheck --pr-body pr.md                  # PR 본문(Task·Closes/Refs)까지. 에셋을 바꿨으면 --with-assets
 python -m unittest discover -s tests -t .                 # 계약 테스트
@@ -88,7 +94,7 @@ python -m tools.build_fixtures                            # 픽스처 재생성(
 python -m tools.gen_synthetic --games 50 --seed 7 --ads 20000 --out out/synthetic
 python -m tools.tasks_to_issues --dry-run                 # 태스크 → 이슈 계획(실제 생성은 --apply --repo)
 python -m tools.tasks_to_issues --hours                   # 흐름별 일별 시간(문서화·일괄 갱신 포함, 흐름별 한도, 발표 트랙은 별도 줄)
-# 브랜치: 통합 dev(모든 PR 대상, 기본 브랜치) / 배포 main(사용자 테스트 전·시연 전 승격만). docs/tasks/README.md 3절
+# 브랜치: 통합 dev(모든 PR 대상, 기본 브랜치) / 배포 main(최종 배포 전 승격만, 11/10 사용자 테스트는 리허설 태그). docs/tasks/README.md 3절
 ```
 
 텍스트 파일은 UTF-8(BOM 없음), 줄바꿈 LF다(`.gitattributes`가 고정, Windows 스크립트 `.ps1`·`.bat`·`.cmd`만 CRLF).

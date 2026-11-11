@@ -23,6 +23,7 @@ from engine.domain.model import (PLAYER_ID, Claim, ClaimType, Command, CommandKi
 from engine.domain.serde import to_jsonable
 from engine.ports import ParseContext, ParseFailure
 from intent.parser import BaselineIntentParser
+from tools.intent_examples import note_info
 
 _PEOPLE = {"<P1>": "hunjang", "<P2>": "jumo"}
 _NAMES = {"<P1>": "훈장", "<P2>": "주모"}
@@ -34,9 +35,10 @@ _INTERROGATIONS = {"interrogate_whereabouts": InterrogationKind.WHEREABOUTS,
 def reference_case(row: IntentExample) -> tuple[str, ParseContext, Command | None]:
     """Expand seed gold slots under one public scenario, independent of the predicted label.
 
-    P1=hunjang, P2=jumo; selected=P1, previous speaker=P2, latest public night=0,
-    two selected public claims. Seed omissions remain missing except the documented last-night
-    divination default and the literal '어젯밤' reference in seed_034.
+    P1=hunjang, P2=jumo; default selected=P1, previous speaker=P2, latest public night=0,
+    two selected public claims. Authored notes.ctx overrides only the supplied public context,
+    identically for all classifiers. Gold slots are never used to choose that context.
+    Seed omissions remain missing except the last-night divination default and literal '어젯밤'.
     """
     aliases = {"hunjang": ["훈장"], "jumo": ["주모"], "meosum": ["머슴"]}
     public = PublicRecord(claims=[
@@ -45,6 +47,21 @@ def reference_case(row: IntentExample) -> tuple[str, ParseContext, Command | Non
     ], speeches=[Speech("eval_s1", 1, Phase.ROUND1, "jumo", CommandKind.SUSPECT, target="hunjang")])
     cards = [EvidenceRef(EvidenceType.CLAIM, "eval_c1"), EvidenceRef(EvidenceType.CLAIM, "eval_c2")]
     ctx = ParseContext("intent_eval", 1, Phase.ROUND1, public, aliases, "hunjang", cards, "jumo")
+    hint = note_info(row.notes).get("ctx", "")
+    if hint:
+        kind, _, who = hint.partition(":")
+        if who not in _PEOPLE:
+            raise ValueError("unknown evaluation context person")
+        person = _PEOPLE[who]
+        if kind == "selected_npc":
+            ctx.selected_npc, ctx.last_addressee = person, None
+        elif kind == "last_addressee":
+            ctx.selected_npc, ctx.last_addressee = None, person
+        elif kind == "quoted_speaker":
+            ctx.last_addressee = person
+            public.speeches[0].speaker = person
+        else:
+            raise ValueError("unknown evaluation context hint")
     text = row.text
     for key, name in _NAMES.items():
         text = text.replace(key, name)

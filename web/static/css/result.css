@@ -1,0 +1,37 @@
+/* 판 종료 화면(결과·설문·복기·원한 단서, B-08-01·B-10-01). B의 11/7 화면 설계 시안의 결말·설문·복기 화면을 따른다.
+   색·글꼴은 공통 테마 토큰(theme.css, B-10-07)을 쓰고, 토큰이 없을 때를 위해 같은 값을 대체값으로 둔다. */
+.end-screen { margin: 1.25rem 0; font-family: var(--pd-sans, "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif); }
+.end-tabs { display: flex; gap: .5rem; flex-wrap: wrap; border-bottom: 1px solid var(--pd-line, #9e8555); margin-bottom: 1rem; }
+.end-tabs [role=tab] { min-height: var(--pd-button-min, 44px); padding: .45rem 1.1rem; border: 1px solid var(--pd-line, #9e8555); border-bottom: 0;
+  border-radius: var(--pd-radius, 3px) var(--pd-radius, 3px) 0 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.end-tabs [role=tab][aria-selected=true] { background: var(--pd-ink, #1f2433); color: var(--pd-paper, #e8dfc8); font-weight: 700;
+  box-shadow: inset 0 -3px var(--pd-red, #b04a3a); }
+.end-tabs [role=tab]:focus-visible, .end-screen a:focus-visible, .end-screen button:focus-visible { outline: 3px solid var(--pd-focus, #e4c76d); outline-offset: 3px; }
+.end-card { background: var(--pd-paper, #e8dfc8); color: var(--pd-text, #242b28); border: 1px solid var(--pd-line, #9e8555);
+  border-radius: var(--pd-radius, 3px); box-shadow: var(--pd-shadow, 0 18px 60px rgba(0, 0, 0, .35)); padding: 2rem 2.25rem; margin: 0 0 1rem; }
+.end-card h2, .end-card h3 { font-family: var(--pd-serif, Batang, "Noto Serif KR", Georgia, serif); line-height: 1.4; }
+.end-card h3 { margin: 1.4rem 0 .5rem; font-size: 1.1rem; }
+.end-result { text-align: center; }
+.end-result h2 { font-size: clamp(1.8rem, 5vw, 2.6rem); margin: .25rem 0 .5rem; }
+.end-kicker, .end-hint, .end-card small, .end-loading { color: var(--pd-muted, #5d594e); font-size: .9rem; }
+.end-reason { font-family: var(--pd-serif, Batang, "Noto Serif KR", Georgia, serif); font-size: 1.1rem; }
+.end-ending { border-top: 1px solid var(--pd-line-soft, #c6b99f); margin-top: 1.25rem; padding-top: .5rem;
+  font-family: var(--pd-serif, Batang, "Noto Serif KR", Georgia, serif); }
+.end-panel #survey { background: var(--pd-paper, #e8dfc8); color: var(--pd-text, #242b28); border: 1px solid var(--pd-line, #9e8555);
+  border-radius: var(--pd-radius, 3px); padding: 1.25rem 1.5rem; margin: 1rem 0; }
+.end-panel #survey label { display: inline-flex; align-items: center; gap: .35rem; min-height: var(--pd-button-min, 44px); padding: 0 .6rem;
+  border: 1px solid var(--pd-line-soft, #c6b99f); margin: .25rem; }
+.end-panel #survey textarea { margin-top: .35rem; }
+.end-panel #survey button { min-height: var(--pd-button-min, 44px); }
+.review-residents, .review-reasons, .review-clues, .progress-clues, .progress-endings { list-style: none; padding: 0; margin: 0; }
+.review-residents li, .review-reasons li, .review-clues li, .progress-clues li, .progress-endings li {
+  border-top: 1px solid var(--pd-line-soft, #c6b99f); padding: .7rem 0; overflow-wrap: anywhere; }
+.review-residents li.is-possessed strong { color: var(--pd-red, #b04a3a); }
+.review-residents small, .progress-clues small { display: block; }
+.end-home { margin: 1rem 0; }
+@media (max-width: 600px) {
+  .end-card { padding: 1.25rem 1rem; }
+  .end-tabs [role=tab] { flex: 1; padding: .4rem .5rem; }
+  .end-panel #survey { padding: 1rem .75rem; }
+  .end-panel #survey label { display: flex; }
+}

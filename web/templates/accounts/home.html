@@ -1,14 +1,56 @@
 {% extends "accounts/base.html" %}
 {% load l10n %}
-{% load ad_slots %}
+{% load ad_slots %}{% load meeting %}
 {% block content %}
-<h1>팔도무록</h1>
+<div class="account-home auth-layout">
+
+{% include "accounts/scene_intro.html" %}
+<div class="home-content auth-content">
 {% if request.user.is_authenticated %}
-  {% if player_id %}<p>내 가명 ID <code>{{ player_id }}</code></p>{% endif %}
   {% if request.user.is_staff %}<p><a href="{% url 'admin:index' %}">운영자 화면</a> · <a href="{% url 'test-sessions' %}">테스트 세션 관리</a></p>{% endif %}
+  {% if open_presets or open_games or open_unavailable %}
+    <details class="start-mode" name="account-start" data-start-mode{% if not test_round_pending or open_blocked %} open{% endif %}>
+    <summary>일반 게임<span>원할 때 새 판을 시작하거나 이어 하기</span></summary>
+    <section id="open-game" class="session-card">
+      <h2>일반 게임</h2>
+      {% if open_unavailable %}<p>지금은 게임을 시작할 수 없습니다.</p>{% else %}
+        {% if open_games %}<p class="open-notice"{% if open_blocked %} role="status"{% endif %}>{{ open_game_text.notice }}</p>{% endif %}
+        {% if open_games and not open_presets %}<p><a href="{% url 'game-detail' game_id=open_games.0 %}">{{ open_game_text.resume }}</a></p>{% endif %}
+        {% if open_presets %}
+        <form method="post" action="{% url 'game-start' %}">
+          {% csrf_token %}
+          <input type="hidden" name="start_token" value="{{ open_start_token }}">
+          {% if open_presets|length == 1 %}<input type="hidden" name="preset_id" value="{{ open_presets.0 }}">
+          {% else %}<label>판 구성 <select name="preset_id">{% for preset_id in open_base_presets %}<option value="{{ preset_id }}">{{ preset_id }}</option>{% endfor %}
+            {% if open_challenges %}<optgroup label="선택형 도전">{% for challenge in open_challenges %}<option value="{{ challenge.value }}">{{ challenge.label }}</option>{% endfor %}</optgroup>{% endif %}
+          </select></label>{% endif %}
+          {% include 'accounts/portrait_choice.html' %}
+          {% include "ending_choice.html" %}
+          {% include "accounts/open_start_actions.html" %}
+        </form>
+        {% endif %}
+      {% endif %}
+    </section>
+    </details>
+  {% endif %}
+{% else %}
+  <h1>마을에 들어가기</h1>
+  <p class="welcome-lead">주민의 말을 비교해 숨은 씐 자를 찾는 추리 게임입니다.</p>
+  <div class="welcome-actions"><a href="{% url 'accounts:signup' %}">가입하고 시작하기</a><a href="{% url 'accounts:login' %}">로그인</a></div>
+  <p class="account-help">이미 계정이 있다면 로그인하세요. 진행 중인 판은 이어 할 수 있습니다.</p>
+  <h2 class="start-guide-title">처음이라면 이렇게 시작하세요</h2>
+  <ol class="start-guide" aria-label="게임 시작 방법">
+    <li><strong>가입하고 로그인하기</strong><span>기록 수집 안내를 읽고 동의한 뒤 계정을 만드세요.</span></li>
+    <li><strong>새 게임 시작하기</strong><span>로그인 후 무당 모습과 열린 결말을 고르고 판을 시작하세요.</span></li>
+    <li><strong>진술을 비교하며 추리하기</strong><span>회의에서 주민의 말을 살피고, 투표와 밤의 점치기로 진실에 다가가세요.</span></li>
+  </ol>
+{% endif %}
+{% if request.user.is_authenticated %}<div class="session-list">
+  {% if assignments or assignments_unavailable %}<details class="start-mode" name="account-start" data-start-mode{% if test_round_pending and not open_blocked %} open{% endif %}>
+  <summary>배정된 테스트 참여<span>운영자가 배정한 순서대로 진행</span></summary>
   {% if assignments_unavailable %}<p>지금은 테스트 회차를 조회할 수 없습니다.</p>{% endif %}
   {% for assignment in assignments %}
-    <section>
+    <section class="session-card">
       <h2>테스트 회차 {{ assignment.session_id }}</h2>
       {% with plan=assignment.plan %}
         {% if not plan %}
@@ -21,20 +63,18 @@
             <input type="hidden" name="session_id" value="{{ assignment.session_id }}">
             <input type="hidden" name="preset_id" value="{{ plan.preset_id }}">
             <input type="hidden" name="seed" value="{{ plan.seed|unlocalize }}">
-            <label>무당 초상
-              <select name="mudang_variant"><option value="f">여성</option><option value="m">남성</option></select>
-            </label>
-            <button>{{ plan.number }}번째 판 시작</button>
+            {% include 'accounts/portrait_choice.html' %}
+            {% include "ending_choice.html" %}
+            <button class="start-round">{{ plan.number }}번째 판 시작</button>
           </form>
         {% endif %}
       {% endwith %}
     </section>
   {% empty %}
-    {% if assignments is not None and not assignments_unavailable %}<p>배정된 테스트 회차가 없습니다.</p>{% endif %}
   {% endfor %}
+  </details>{% endif %}
+  {% if player_id %}<p class="player-identity">내 가명 ID <code>{{ player_id }}</code></p>{% endif %}
+  <p><a href="{% url 'player-progress' %}">모은 원한 단서 보기</a></p>
   <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button>로그아웃</button></form>
-  {% ad_slot 'lobby_banner' %}
-{% else %}
-  <p><a href="{% url 'accounts:signup' %}">가입</a> · <a href="{% url 'accounts:login' %}">로그인</a></p>
-{% endif %}
+</div>{% endif %}</div></div>{% if request.user.is_authenticated %}{% ad_slot 'lobby_banner' %}{% endif %}
 {% endblock %}

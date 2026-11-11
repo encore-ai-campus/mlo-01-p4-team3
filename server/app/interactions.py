@@ -6,15 +6,17 @@ import re
 import secrets
 import uuid
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from typing import ContextManager, Protocol
 
 from engine.domain.events import DomainEvent, EventType
-from engine.domain.model import CommandKind, PLAYER_ID
+from engine.domain.model import Command, CommandKind, PLAYER_ID, Phase, is_legal_kind
 from engine.domain.serde import to_jsonable
-from engine.ports import ParseContext, ParseFailure, RenderStatus
+from engine.ports import CommandCandidate, ParseContext, ParseFailure, RenderStatus
 from .dto import (CommandOutput, ParseUtteranceInput, ParseUtteranceOutput, RenderOutput, ResolveUtteranceInput,
                   SubmitCommandInput, UtteranceReaction)
+from .model_versions import warn_parse_version_mismatch
 from .usecases import ResourceNotFound
 
 
@@ -60,6 +62,41 @@ def mask_text(text):
     return text
 
 
+def phase_cards(candidates, phase, runoff_candidates=()):
+    """해석기 후보 중 현재 단계에서 플레이어가 낼 수 있는 카드만 남긴다.
+
+    투표·결선 단계의 의심(`suspect`)은 같은 대상의 투표 카드로 바꾸고(결선이면 결선 후보만, 대상이 빠진 후보는 그대로 남김),
+    변호처럼 투표로 바꾸면 뜻이 뒤집히는 후보와 단계에 맞지 않는 후보는 버린다.
+    같은 명령 종류·대상 카드는 한 장만 남긴다. 해석기 원래 후보는 바꾸지 않는다.
+    """
+    voting = phase in (Phase.VOTE, Phase.RUNOFF)
+    cards, seen = [], set()
+    for candidate in candidates:
+        command = candidate.command
+        if voting and command.kind is CommandKind.SUSPECT:
+            # 대상이 빠진 후보는 남겨 카드 수정에서 고르게 한다(결선이면 대상 목록이 결선 후보뿐).
+            if phase is Phase.RUNOFF and command.target is not None and command.target not in runoff_candidates:
+                continue
+            candidate = CommandCandidate(Command(CommandKind.VOTE, command.actor, target=command.target),
+                                         candidate.intent_score, candidate.form,
+                                         [slot for slot in candidate.missing_slots if slot == "target"],
+                                         {k: v for k, v in candidate.slot_scores.items() if k == "target"})
+        elif not is_legal_kind(phase, command.kind, True):
+            continue
+        key = (candidate.command.kind, candidate.command.target, candidate.command.addressee,
+               candidate.command.interrogation_kind)
+        if candidate.command.kind in (CommandKind.VOTE, CommandKind.SUSPECT, CommandKind.DEFEND) and key in seen:
+            continue
+        seen.add(key)
+        cards.append(candidate)
+    return cards
+
+
+def player_kinds(phase):
+    """실패 안내에 보일 현재 단계의 플레이어 행동 종류(자동 진행 제외)."""
+    return [kind.value for kind in CommandKind if kind is not CommandKind.ADVANCE and is_legal_kind(phase, kind, True)]
+
+
 class InteractionService:
     """공통 DTO와 append_events로 상태 버전을 소비하지 않는 API를 처리한다."""
 
@@ -69,6 +106,33 @@ class InteractionService:
     def _event(self, state, kind, payload, key):
         event = DomainEvent(kind, state.day, state.phase, payload)
         self.game.repository.append_events(state.meta.game_id, self.game._events(state, [event]), key)
+
+    def _restore_participant(self, game_id, name, records):
+        with self.store.edit_effects(game_id) as effects:
+            plan = copy.deepcopy(effects.get('participant:' + name))
+        if plan is None or getattr(records, name) == plan['value']:
+            return
+        try:
+            self.game.repository.append_events(game_id, plan['events'], plan['key'])
+        except (ConnectionError, TimeoutError):
+            raise InteractionUnavailable('participant_append_unavailable') from None
+        setattr(records, name, copy.deepcopy(plan['value']))
+
+    @contextmanager
+    def participant_records(self, game_id):
+        """판별 잠금 안에서 수첩·설문의 미완료 저장을 동일 이벤트 키로 복구한다."""
+        with self.store.edit(game_id) as records:
+            for name in ('notebook', 'survey'):
+                self._restore_participant(game_id, name, records)
+            yield records
+
+    def _save_participant(self, state, name, kind, payload, value, records):
+        # 보조 상태의 롤백과 독립된 계획을 먼저 저장한다. 성공한 계획도 마지막 값 복구용으로 유지한다.
+        event = DomainEvent(kind, state.day, state.phase, payload)
+        with self.store.edit_effects(state.meta.game_id) as effects:
+            effects['participant:' + name] = dict(value=copy.deepcopy(value),
+                events=self.game._events(state, [event]), key=name + ':' + str(uuid.uuid4()))
+        self._restore_participant(state.meta.game_id, name, records)
 
     def prepare_command_effects(self, command_id, response_json, previous, current, requests):
         """게임 commit 전에 복구 재료만 보존한다. 렌더 실행은 저장 확인 뒤다."""
@@ -121,8 +185,15 @@ class InteractionService:
         ctx = ParseContext(data.game_id, state.state_version, state.phase, copy.deepcopy(view.public), aliases,
                            data.selected_npc, data.selected_cards, last_addressee)
         result = self.parser.parse(data.text, ctx)
-        output = ParseUtteranceOutput(str(uuid.uuid4()), state.state_version, result.candidates,
-                                      result.failure, True)
+        warn_parse_version_mismatch(state.meta, result.versions)
+        # 화면 카드만 현재 단계로 거른다. 시도 기록(payload)에는 해석기 원래 후보·실패를 남긴다.
+        cards = phase_cards(result.candidates, state.phase, state.runoff_candidates)
+        failure, suggestions = result.failure, []
+        if not cards and result.candidates:
+            failure = result.failure or ParseFailure.UNSUPPORTED_INTENT
+        if not cards and failure is ParseFailure.UNSUPPORTED_INTENT:
+            suggestions = player_kinds(state.phase)
+        output = ParseUtteranceOutput(str(uuid.uuid4()), state.state_version, cards, failure, True, suggestions)
         payload = {"attempt_id": output.attempt_id, "superseded_by": None, "text": mask_text(data.text),
                    "mask_version": "b-mask-1", "state_version": state.state_version, "phase": state.phase.value,
                    "candidates": to_jsonable(result.candidates), "failure": to_jsonable(result.failure),
@@ -226,13 +297,12 @@ class InteractionService:
         if set(data.entries) - set(view.names) or "mudang" in data.entries:
             raise ValueError("unknown_npc")
         payload = {"entries": dict(data.entries), "vote_confidence": data.vote_confidence}
-        with self.store.edit(data.game_id) as records:
+        with self.participant_records(data.game_id) as records:
             state, _ = self.game.owned(data.game_id, player)
             stored = {**payload, "_saved_context": {"day": state.day, "phase": state.phase.value}}
             if records.notebook == stored:
                 return
-            self._event(state, EventType.NOTEBOOK_UPDATED, payload, "notebook:" + str(uuid.uuid4()))
-            records.notebook = stored
+            self._save_participant(state, 'notebook', EventType.NOTEBOOK_UPDATED, payload, stored, records)
 
     def survey(self, data, player, comment_digest):
         """종료된 판의 설문을 한 번 저장하고 최초 저장 여부를 반환한다."""
@@ -242,7 +312,12 @@ class InteractionService:
         payload = {"skipped": data.skipped, "fun": data.fun, "unfair": data.unfair,
                    "npc_plausible": data.npc_plausible,
                    "comment": mask_text(data.comment), "mask_version": "b-mask-1"}
-        with self.store.edit(data.game_id) as records:
+        with self.participant_records(data.game_id) as records:
+            if records.survey is not None and records.survey.get("reason"):
+                # 서버가 자동으로 채운 건너뜀(홈·일괄 보완) 뒤에는 같은 건너뜀만 재전송으로 받고 응답은 받지 않는다(판당 1건).
+                if data.skipped:
+                    return False
+                raise InteractionConflict
             if records.survey is not None:
                 previous = dict(records.survey)
                 previous.setdefault("skipped", False)
@@ -250,9 +325,54 @@ class InteractionService:
                 if previous != payload or not secrets.compare_digest(previous_digest, comment_digest):
                     raise InteractionConflict
                 return False
-            self._event(state, EventType.SURVEY_SUBMITTED, payload, "survey:submitted")
-            records.survey = {**payload, "comment_digest": comment_digest}
+            self._save_participant(state, 'survey', EventType.SURVEY_SUBMITTED, payload,
+                                   {**payload, 'comment_digest': comment_digest}, records)
             return True
+
+    def skip_survey(self, game_id, player, reason, state=None):
+        """끝난 판에 설문 이벤트(응답·건너뜀)가 없으면 건너뜀 1건을 남긴다(B-09-07 9번).
+
+        reason은 채운 경로(`backfill`: 같은 참가자의 다음 홈 요청 또는 18:00 마감 직후 일괄 보완).
+        이미 설문 이벤트가 있거나 판이 끝나지 않았으면 아무것도 남기지 않고 False.
+        state는 같은 요청에서 이미 읽은 판 상태(소유권 확인 끝난 것)를 넘길 때만 쓴다.
+        """
+        if state is None:
+            state, _ = self.game.owned(game_id, player)
+        if state.result is None or state.meta.player_pseudonym != player:
+            return False
+        payload = {"skipped": True, "fun": None, "unfair": None, "npc_plausible": None,
+                   "comment": "", "mask_version": "b-mask-1", "reason": reason}
+        with self.participant_records(game_id) as records:
+            if records.survey is not None:
+                return False
+            self._save_participant(state, 'survey', EventType.SURVEY_SUBMITTED, payload,
+                                   {**payload, 'comment_digest': ""}, records)
+            return True
+
+    def backfill_skipped_surveys(self, player, game_ids, load_game):
+        """참가자의 끝난 판 중 설문 이벤트가 없는 판을 건너뜀(`backfill`)으로 채우고 채운 수를 반환한다.
+
+        game_ids·load_game은 호출한 요청이 이미 읽은 진척의 판 목록과 같은 요청 안 판 조회(중복 조회를 늘리지 않음).
+        """
+        filled = 0
+        for game_id in list(game_ids):
+            try:
+                state, _ = load_game(game_id)
+            except KeyError:
+                continue
+            filled += self.skip_survey(game_id, player, "backfill", state)
+        return filled
+
+    def backfill_all_skipped_surveys(self, players):
+        """마감 직후 일괄 보완: 참가자마다 진척의 판 목록으로 `backfill_skipped_surveys`를 부르고 채운 판 수를 반환한다.
+
+        다시 오지 않은 참가자의 끝난 판도 설문 이벤트 1건을 갖게 한다. 이미 설문 이벤트가 있는 판은 건너뛴다.
+        """
+        filled = 0
+        for player in players:
+            game_ids = self.game.progress.load(player).game_ids
+            filled += self.backfill_skipped_surveys(player, game_ids, self.game.repository.load)
+        return filled
 
     def register_renders(self, state, requests):
         """수락·저장된 전이의 렌더 요청만 등록한다. 외부 실패는 폴백으로 닫는다."""

@@ -31,7 +31,7 @@ python -m unittest tests.infra.test_outbox_publisher -v
 
 ## 한계
 
-운영 전용 Mongo DB·계정 생성은 관리자 인증 위치 확인이 남았다. 기존 권한의 고유 검증 컬렉션 시험과 구분한다. 한 문서 Outbox는 Mongo 용량 한도를 가지며 보관 정책이 필요하다. 발행은 at-least-once이며 프로세스 정지·lease 경계의 중복은 소비자가 제거한다. 광고 DB 발행은 D 담당이다. P-31로 상시 LLM 배정은 없고 RunPod는 E-10-12 지연 측정 범위다. [런북](../../ops/runbook/runpod.md)을 따른다.
+11/8 정상 관리자 보호 파일 인증으로 전용 paldo_web DB·대상 DB readWrite 계정을 만들고 6개 컬렉션 24문서를 백업·hash 대조 후 전환했다. 기존 검증 컬렉션 벤치마크와 구분하며 상세는 ops/mongo.md다. 한 문서 Outbox는 Mongo 용량 한도를 가지며 보관 정책이 필요하다. 발행은 at-least-once이며 프로세스 정지·lease 경계의 중복은 소비자가 제거한다. 광고 DB 발행은 D 담당이다. P-31로 상시 LLM 배정은 없고 RunPod는 E-11-12 GPU 서비스 시연(게임 미연결) 범위다. [런북](../../ops/runbook/runpod.md)을 따른다.
 
 ## 변경 이력
 
@@ -41,3 +41,4 @@ python -m unittest tests.infra.test_outbox_publisher -v
 | C-06-02 | 11/6 | 별도 Outbox 발행·실패 재시도·lease·지표, Kafka 실제 소비 확인 |
 | C-06-03 | 11/6 | 본 모듈 변경 없음, 광고·계정 MySQL 분리는 ops/mysql 인계 |
 | C-06-04 | 11/6 | 당일 모듈 문서 일괄 갱신, P-31 상시 LLM 취소·오프라인 생성·RunPod 측정 범위 구분 |
+| E-09-09 | 11/9 | 콘텐츠 번들 버전별 프로세스 캐시(`MongoContentSource.load`, 첫 조회만 Mongo, 없는 버전·조회 실패는 캐시 안 함) |

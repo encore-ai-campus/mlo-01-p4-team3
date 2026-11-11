@@ -1,0 +1,10 @@
+{
+  "version": "decision-2",
+  "note": "A-10-01 1번 rule-0.8 후보 1(11/10 사용자 결정, 기준: 알리바이 봇 마을 승률 0.40~0.60·RandomBot이 확실히 낮음). decision-1(A-08-03)에서 q_max 0.7→1.0, witness_prob 0.5→0.7, tell_prob 0.4→0.2. 측정: 시드 41, 봇마다 1000판, 알리바이 봇 0.568·RandomBot 0.469",
+  "conformity_scale": 0.1,
+  "vote_noise": 0.02,
+  "q_max": 1.0,
+  "witness_prob": 0.7,
+  "tell_prob": 0.2,
+  "routine_randomness": 0.0
+}

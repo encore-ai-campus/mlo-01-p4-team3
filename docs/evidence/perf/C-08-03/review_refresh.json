@@ -1,0 +1,28 @@
+{
+  "task": "C-08-03",
+  "commit": "c61c87d6ebe5909472367ed995b1148b95a0194e",
+  "generated_at": "2026-11-08T22:45:35Z",
+  "source": "2026-11-09 07:41~07:44 KST 실제 kubectl nodes/jobs·Prometheus node mTLS 수집·Windows CIM 조회 및 git merge 충돌 해결",
+  "metrics": {
+    "ready_nodes": {
+      "value": 2,
+      "unit": "노드"
+    },
+    "project_vms_up": {
+      "value": 19,
+      "unit": "대"
+    },
+    "project_vms_total": {
+      "value": 20,
+      "unit": "대"
+    },
+    "mysql03_host_free_ram_gib": {
+      "value": 5.02,
+      "unit": "GiB"
+    },
+    "resolved_document_conflicts": {
+      "value": 2,
+      "unit": "개"
+    }
+  }
+}

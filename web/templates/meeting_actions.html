@@ -1,12 +1,14 @@
 {% load meeting %}
-<section id="meeting-actions" aria-labelledby="meeting-actions-title">
+<section class="control-panel" id="meeting-actions" aria-labelledby="meeting-actions-title">
   <h2 id="meeting-actions-title">행동 선택</h2>
   <p id="command-status" role="status" aria-live="polite"></p>
   {% url 'game-command' vm.game_id as command_url %}
   {% if 'vote' in vm.allowed_actions %}<h3>투표할 대상</h3>{% endif %}
   {% if 'divine' in vm.allowed_actions %}<h3>점칠 대상</h3>{% endif %}
+  <div class="action-grid">
   {% for action in actions %}
     {% with kind=action.kind %}
+    {% if kind == 'suspect' or kind == 'defend' or kind == 'interrogate' or kind == 'point_contradiction' or kind == 'reveal_divination' %}<details class="action-sheet"><summary><span data-action-symbol="{{ kind }}"></span>{{ kind|action_label }}</summary>{% endif %}
     <form class="command-form{% if action.target %} target-form{% endif %}" method="post"
           action="{{ command_url }}" hx-post="{{ command_url }}" hx-target="#meeting"
           hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
@@ -30,18 +32,19 @@
         <label>대상
           <select name="addressee" required>
             {% for person in active_targets %}
-              <option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>
+              <option value="{{ person.npc_id }}"{% if person.npc_id == previous_interrogation.addressee %} selected{% endif %}>{{ person.name|display_name }}</option>
             {% endfor %}
           </select>
         </label>
         <label>질문
           <select name="interrogation_kind">
             <option value="whereabouts">어디 있었는가</option>
-            <option value="suspicion_reason">왜 의심하는가</option>
-            <option value="contradiction">왜 말이 다른가</option>
+            <option value="suspicion_reason"{% if previous_interrogation.interrogation_kind == 'suspicion_reason' %} selected{% endif %}>왜 의심하는가</option>
+            <option value="contradiction"{% if not contradiction_ready %} disabled{% elif previous_interrogation.interrogation_kind == 'contradiction' %} selected{% endif %}>왜 말이 다른가</option>
           </select>
         </label>
-        <label>밤 <input type="number" name="night" value="0" min="0" required></label>
+        <label>밤 <select name="night" required>{% for night in past_nights %}<option value="{{ night }}">{{ night }}일째 밤</option>{% empty %}<option value="">지난 밤이 없습니다</option>{% endfor %}</select></label>
+        <p class="interrogation-guidance" role="status">어디 있었는가는 지난 밤만 물을 수 있습니다. 왜 말이 다른가는 관련 진술 두 개를 고른 뒤 보낼 수 있습니다.</p>
         <label>시간
           <select name="slot">
             <option value="evening">초저녁</option>
@@ -51,15 +54,17 @@
       {% endif %}
       {% if claims %}
         {% if kind == 'interrogate' or kind == 'point_contradiction' or kind == 'suspect' or kind == 'defend' %}
-          <fieldset>
-            <legend>관련 진술</legend>
-            {% for claim in claims %}
-              {% if claim.card.selectable %}
-                <label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}">
-                  {{ claim.card.speaker_name|display_name }}: {{ claim.card.text }}</label>
-              {% endif %}
-            {% endfor %}
-          </fieldset>
+          <details class="evidence-picker">
+            <summary>관련 진술 <span class="evidence-count">0</span>개 고름</summary>
+            <fieldset>
+              {% for claim in claims %}
+                {% if claim.card.selectable %}
+                  <label><input type="checkbox" name="evidence" value="{{ claim.evidence_value }}"{% if claim.slot %} data-night="{{ claim.night }}" data-slot="{{ claim.slot }}"{% endif %}>
+                    {{ claim.card.speaker_name|display_name }}: {{ claim.card.text }}</label>
+                {% endif %}
+              {% endfor %}
+            </fieldset>
+          </details>
         {% endif %}
       {% endif %}
       {% if kind == 'reveal_divination' %}
@@ -74,15 +79,16 @@
           </select>
         </label>
       {% endif %}
-      <button type="submit">
+      <button type="submit"{% tip "action:"|add:kind %}>
         {% with icon=kind|action_icon %}
           {% if icon %}<img src="{% asset_url icon %}" alt="" width="20" height="20">{% endif %}
         {% endwith %}
-        {% if action.target %}{{ action.target.name|display_name }} {% endif %}{{ kind|action_label }}
+        {% if action.target %}{% if vm.phase != 'night' %}{% with key='portrait:'|add:action.target.npc_id %}<img class="target-portrait review-portrait" src="{% review_asset key %}" alt="" width="64" height="64">{% endwith %}{% endif %}{{ action.target.name|display_name }} {% endif %}{{ kind|action_label }}
       </button>
     </form>
+    {% if kind == 'suspect' or kind == 'defend' or kind == 'interrogate' or kind == 'point_contradiction' or kind == 'reveal_divination' %}</details>{% endif %}
     {% endwith %}
   {% empty %}
     <p>지금 선택할 행동이 없습니다.</p>
   {% endfor %}
-</section>
+</div></section>

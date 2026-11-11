@@ -5,15 +5,16 @@ from uuid import UUID
 
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
 from django.shortcuts import redirect, render
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_GET, require_http_methods
 
-from engine.domain.model import EvidenceType, RejectCode
+from engine.domain.model import CommandKind, EvidenceType, RejectCode
 from engine.domain.serde import SchemaError, to_jsonable
 from server.app.dto import StartGameInput, SubmitCommandInput
 from server.app.interactions import InteractionConflict, InteractionUnavailable
-from server.app.usecases import ConsentRequired, ResourceNotFound, ReviewNotReady, StartUnavailable
+from server.app.usecases import ConsentRequired, OpenGameInProgress, ResourceNotFound, ReviewNotReady, StartUnavailable
 from server.paldo_web.composition import GameServiceUnavailable, get_game_service
 from .consent import player_context
 from .input_validation import parse_game_input
@@ -54,6 +55,9 @@ def game_request(view):
             response = JsonResponse({"error": "invalid_input"}, status=400)
         except StartUnavailable:
             response = JsonResponse({"error": "start_policy_unavailable"}, status=503)
+        except OpenGameInProgress as exc:
+            # 진행 중인 일반 판이 있으면 새 판을 만들지 않는다. 이어 할 판 ID만 알려 준다(11/10 사용자 결정).
+            response = JsonResponse({"error": "open_game_in_progress", "game_id": exc.game_id}, status=409)
         except InteractionUnavailable:
             response = JsonResponse({"error": "interaction_service_unavailable"}, status=503)
         except InteractionConflict:
@@ -92,12 +96,17 @@ def _wants_meeting(request):
     ) == "text/html"
 
 
-def _meeting_response(request, view, variant, status=200):
+def _meeting_response(request, view, variant, status=200, previous_interrogation=None):
     from .participant_forms import participant_context
 
     template = "meeting.html" if request.headers.get("HX-Request") == "true" else "game.html"
-    context = meeting_context(view)
     service = get_game_service()
+    first_game, guide_k, clue_notices = service.guide_info(view.game_id, request.player_pseudonym)
+    context = meeting_context(view, guide_k, first_game, clue_notices, service.temperaments(view.game_id, request.player_pseudonym))
+    if view.result is not None:
+        from .story_view import result_context
+        state, _ = service.owned(view.game_id, request.player_pseudonym)
+        context.update(result_context(view, state.meta.ending_choice, state.meta.content_version))
     rendered = service.interactions.render_snapshot(view.game_id, request.player_pseudonym) if service.interactions else {}
     jobs = {speech.speech_id: speech.render_job_id for speech in view.public.speeches}
     # 저장된 작업의 발언 ID까지 일치할 때만 문장을 연결한다.
@@ -107,7 +116,16 @@ def _meeting_response(request, view, variant, status=200):
             speech.text = result.text
             speech.pending_job_id = None if result.final else result.job_id
     return render(request, template, {**context, **participant_context(service, view), "rejected": status >= 400,
+                                     "previous_interrogation": previous_interrogation or {},
                                      "mudang_portrait_id": f"portrait:mudang_{variant or 'f'}"}, status=status)
+
+
+def _previous_interrogation(command, before, view):
+    """같은 날·단계에 다시 그린 심문 양식이 직전 대상·질문 종류를 기본으로 고르게 한다."""
+    if command.kind is not CommandKind.INTERROGATE or (before.day, before.phase) != (view.day, view.phase):
+        return None
+    return {"addressee": command.addressee or "",
+            "interrogation_kind": command.interrogation_kind.value if command.interrogation_kind else ""}
 
 
 def _meeting_command_body(form):
@@ -140,9 +158,14 @@ def start_game(request):
     from_form = request.content_type == "application/x-www-form-urlencoded"
     if from_form:
         form = request.POST
-        if set(form) - {"csrfmiddlewaretoken", "preset_id", "session_id", "mudang_variant", "seed"}:
+        if set(form) - {"csrfmiddlewaretoken", "preset_id", "session_id", "mudang_variant", "seed", "start_token", "ending_choice",
+                        "replace_open"}:
             raise ValueError("unknown_field")
-        body = {key: form.get(key) for key in ("preset_id", "session_id", "mudang_variant")}
+        body = {key: form.get(key) for key in ("preset_id", "session_id", "mudang_variant", "start_token")}
+        if form.get("replace_open") == "1":
+            body["replace_open"] = True
+        if "ending_choice" in form:
+            body["ending_choice"] = form["ending_choice"]
         if "seed" in form:
             body["seed"] = int(form["seed"])
     else:
@@ -150,8 +173,16 @@ def start_game(request):
     if "player_pseudonym" in body:
         raise ValueError("server_field")
     body["player_pseudonym"] = request.player_pseudonym
+    if body.get("session_id") in (None, ""):
+        body["session_id"] = None   # 생략·null·빈 문자열 = 회차 없는 일반 판(E-08-14)
     data = parse_game_input(StartGameInput, body)
-    output = get_game_service().start(data, request.player_pseudonym, request.consented)
+    try:
+        output = get_game_service().start(data, request.player_pseudonym, request.consented)
+    except OpenGameInProgress:
+        if from_form and request.headers.get("HX-Request") != "true":
+            # 홈으로 돌려 이어 하기 / 중단하고 새로 시작을 고르게 한다.
+            return redirect(f"{reverse('home')}?open=choose")
+        raise
     request.game_id = output.view.game_id
     if from_form and request.headers.get("HX-Request") != "true":
         return redirect("game-detail", game_id=output.view.game_id)
@@ -176,7 +207,7 @@ def game_detail(request, game_id):
 def submit_command(request, game_id):
     """소유권 확인 뒤 URL·본문의 판 ID와 명령 DTO를 검증한다."""
     service = get_game_service()
-    state, _ = service.owned(game_id, request.player_pseudonym)
+    state, truth = service.owned(game_id, request.player_pseudonym)
     request.game_id = state.meta.game_id
     wants_meeting = _wants_meeting(request)
     if wants_meeting and request.content_type == "application/x-www-form-urlencoded":
@@ -188,31 +219,49 @@ def submit_command(request, game_id):
         raise ValueError("invalid_command")
     UUID(data.command_id)
     if data.intent_attempt_id is None:
-        output = service.command(data, request.player_pseudonym)
+        output = service.command_from_owned(data, request.player_pseudonym, state, truth)
     else:
         if service.interactions is None:
             raise InteractionUnavailable
         output = service.interactions.submit_linked(data, request.player_pseudonym)
+    if not output.accepted and not output.replayed:
+        request.command_reject = output.reject
     if not wants_meeting:
         return command_response(output)
     if output.replayed:
         # HTML만 최신 상태로 다시 그린다. JSON은 계약대로 저장 응답을 재생한다.
         current = service.detail(game_id, request.player_pseudonym)
         return _meeting_response(request, current.view, current.mudang_variant)
-    return _meeting_response(request, output.view, state.meta.mudang_variant, _command_status(output))
+    return _meeting_response(request, output.view, state.meta.mudang_variant, _command_status(output),
+                             _previous_interrogation(data.command, state, output.view))
 
 
 @game_request
 @require_GET
 def progress(request):
-    """로그인 계정의 진척을 JSON으로 반환한다."""
-    return JsonResponse(to_jsonable(get_game_service().player_progress(request.player_pseudonym)))
+    """본인의 진척을 JSON 또는 수집한 단서만 포함한 전체 화면으로 반환한다."""
+    output = get_game_service().player_progress(request.player_pseudonym)
+    if _wants_meeting(request):
+        from .story_view import progress_context
+        # htmx는 판 화면 안 '원한 단서' 패널(B-10-01, 11/9 사용자 결정)이 쓰는 조각, 일반 요청은 로비의 전체 화면이다.
+        template = "progress_panel.html" if request.headers.get("HX-Request") == "true" else "progress.html"
+        return render(request, template, progress_context(output.progress))
+    return JsonResponse(to_jsonable(output))
 
 
 @game_request
 @require_GET
 def review(request, game_id):
-    """종료된 자기 판에서 공개 가능한 복기 DTO만 반환한다."""
-    output = get_game_service().review(game_id, request.player_pseudonym)
+    """종료된 자기 판에서 공개 가능한 복기 DTO만 반환한다.
+
+    htmx 요청은 판 화면 안 복기 패널 조각(`review_panel.html`, B-10-01)을 받는다. 종료 전에는 어느 표현이든 403이다.
+    """
+    service = get_game_service()
+    output = service.review(game_id, request.player_pseudonym)
     request.game_id = output.game_id
+    if _wants_meeting(request):
+        from .story_view import review_context
+        state, _ = service.owned(game_id, request.player_pseudonym)
+        template = "review_panel.html" if request.headers.get("HX-Request") == "true" else "review.html"
+        return render(request, template, review_context(output, service.dependencies(state.meta).content))
     return JsonResponse(to_jsonable(output))

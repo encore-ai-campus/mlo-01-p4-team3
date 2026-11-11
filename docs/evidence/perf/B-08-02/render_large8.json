@@ -1,0 +1,24 @@
+{
+  "task": "B-08-02",
+  "commit": "c15cbab2b62abf532bba83d5b11293e2b80fe748",
+  "generated_at": "2026-11-08T14:19:20Z",
+  "source": "python -B -m server.tests.preset_render_bench",
+  "metrics": {
+    "screen_p50": {
+      "value": 12.031,
+      "unit": "ms"
+    },
+    "screen_p95": {
+      "value": 20.179,
+      "unit": "ms"
+    },
+    "screens": {
+      "value": 15,
+      "unit": ""
+    },
+    "renders": {
+      "value": 150,
+      "unit": ""
+    }
+  }
+}

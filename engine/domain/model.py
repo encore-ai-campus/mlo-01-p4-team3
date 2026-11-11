@@ -12,6 +12,7 @@ from typing import Optional
 
 PLAYER_ID = "mudang"  # 플레이어(무당)의 참가자 ID. 주민 NPC ID와 겹치지 않는다.
 CONTRACT_VERSION = "contract-0.3"
+ENGINE_VERSION = "paldo-engine"   # 판 메타·봉투 engine_version의 단일 출처(E-08-14). 규칙 재현은 rule_version으로 한다
 
 
 # ---------------------------------------------------------------- 열거형
@@ -134,9 +135,11 @@ class EvidenceSource(str, enum.Enum):
 
 
 class EndReason(str, enum.Enum):
+    """판 종료 사유. 앞의 셋은 check_end 판정, ABORTED는 새로 시작에 따른 중단(completed=False)."""
     ALL_POSSESSED_LOCKED = "all_possessed_locked"   # 1. G = 0
     MUDANG_LOCKED = "mudang_locked"                 # 2. 무당 감금
     POSSESSED_PARITY = "possessed_parity"           # 3. G >= V + M
+    ABORTED = "aborted"                             # 플레이어가 새 판을 시작하며 중단(11/10 사용자 결정, completed=False)
 
 
 class DataSource(str, enum.Enum):
@@ -154,15 +157,24 @@ class LoadTestTag(str, enum.Enum):
 # ---------------------------------------------------------------- 프리셋
 @dataclass(frozen=True)
 class Preset:
+    """판 구성(인원·창귀 수·비밀 수)과 선택형 도전 옵션. 도전 필드가 기본값이면 일반 프리셋과 같다."""
     preset_id: str
     n_active: int        # 1일째 활동 인원(무당 포함)
     n_possessed: int     # K
     n_secret: int        # 비밀 있는 주민 수(고정)
     status: str = "candidate"   # candidate | validated | test_default
+    # 선택형 도전 옵션(E-09-08, 기획서 "선택형 도전"). 기본값이면 일반 프리셋과 규칙·난수 소비가 같다.
+    challenge: Optional[str] = None          # None | "divination_once" | "secret3" | "fewer_sightings"
+    divination_limit: Optional[int] = None   # 판 전체에서 결과를 받는 점 횟수. None = 밤마다
+    witness_scale: float = 1.0               # 목격 확률 배율(WITNESS_PROB × 배율). 1.0 = 일반
 
     def __post_init__(self) -> None:
         if self.n_active < 5:
             raise ValueError("n_active는 5 이상")
+        if self.divination_limit is not None and self.divination_limit < 0:
+            raise ValueError("divination_limit은 0 이상")
+        if not 0.0 <= self.witness_scale <= 1.0:
+            raise ValueError("witness_scale은 0~1")
         if self.n_possessed not in (1, 2):
             raise ValueError("n_possessed는 1 또는 2")
         if self.n_possessed == 2 and self.n_active not in (9, 11):
@@ -186,8 +198,13 @@ PRESETS: dict[str, Preset] = {
         Preset("large8", 8, 1, 3),
         Preset("duo9", 9, 2, 3),
         Preset("duo11", 11, 2, 4),
+        # 선택형 도전 3종(E-09-08): 기본 6인을 바탕으로 한 가지씩만 바꾼다. 공개 여부는 P-08(11/8) 기준.
+        Preset("base6_div1", 6, 1, 2, challenge="divination_once", divination_limit=1),
+        Preset("base6_secret3", 6, 1, 3, challenge="secret3"),
+        Preset("base6_sight", 6, 1, 2, challenge="fewer_sightings", witness_scale=0.5),
     )
 }
+CHALLENGE_PRESET_IDS: tuple[str, ...] = tuple(pid for pid, p in PRESETS.items() if p.challenge)
 
 
 # ---------------------------------------------------------------- 공개 기록(②)
@@ -432,6 +449,9 @@ def night_runs(after_lock_end: Optional[EndReason]) -> bool:
 
 
 def winner_of(reason: EndReason) -> Faction:
+    """종료 사유의 승리 진영. 중단(ABORTED)에는 승자가 없어 ValueError."""
+    if reason is EndReason.ABORTED:
+        raise ValueError("중단된 판에는 승자가 없다")
     return Faction.VILLAGE if reason is EndReason.ALL_POSSESSED_LOCKED else Faction.CHANGGWI
 
 
@@ -669,7 +689,8 @@ class GameMeta:
 
 @dataclass
 class GameResult:
-    winner: Faction
+    """판 결과. completed=False(중단)면 승자 없음·라벨 없음."""
+    winner: Optional[Faction]   # 중단(ABORTED)이면 None
     reason: EndReason
     day: int
     completed: bool = True      # False = 중단

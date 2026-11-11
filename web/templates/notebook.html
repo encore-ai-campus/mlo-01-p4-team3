@@ -1,31 +1,39 @@
 {% load meeting %}
 <section id="notebook" aria-labelledby="notebook-title">
   <h2 id="notebook-title">수첩</h2>
-  <p>의심도는 0(의심하지 않음)부터 100(매우 의심함)까지입니다. 저장 버튼을 눌러 기록하세요.</p>
-  <form class="participant-form" hx-put="{% url 'game-notebook' vm.game_id %}" hx-swap="none"
-        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-disabled-elt="find button"
+  <p>주민 창이나 아래 목록에서 인물 옆 버튼(수상함·모르겠음·믿음)을 누르면 바로 수첩에 적힙니다. 내 메모일 뿐 게임 진행에는 영향이 없습니다.</p>
+  <form class="participant-form" data-notebook-form hx-put="{% url 'game-notebook' vm.game_id %}" hx-swap="none"
+        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-disabled-elt="find button[type=submit]"
         x-data="{ saved: false, failed: false }"
         @input="saved = false; failed = false"
         @htmx:after-request.camel="saved = $event.detail.successful; failed = !saved">
     {% csrf_token %}
     <input type="hidden" name="game_id" value="{{ vm.game_id }}">
+    <ul class="notebook-list">
     {% for entry in notebook_entries %}
-      <label x-data="{ value: {{ entry.value }} }">{{ entry.name|display_name }}
-        <input type="range" name="entry:{{ entry.npc_id }}" min="0" max="100" value="{{ entry.value }}" x-model="value">
-        <output x-text="value">{{ entry.value }}</output>
-      </label>
+      <li><input type="hidden" name="entry:{{ entry.npc_id }}" value="{{ entry.value }}" data-notebook-entry="{{ entry.npc_id }}"><span>{{ entry.name|display_name }}</span>{% if entry.active %}{% include "notebook_marks.html" with mark_npc=entry.npc_id mark_name=entry.name mark_value=entry.saved %}{% endif %}</li>
     {% endfor %}
+    </ul>
+    <p class="mark-status" role="status" data-mark-status></p>
     {% if vm.phase == 'vote' or vm.phase == 'runoff' %}
-      <label x-data="{ value: {{ vote_confidence|default_if_none:50 }} }">투표 직전 확신도
-        <input type="range" name="vote_confidence" min="0" max="100" value="{{ vote_confidence|default_if_none:50 }}" x-model="value">
-        <output x-text="value">{{ vote_confidence|default_if_none:50 }}</output>
-      </label>
-      <p>0은 전혀 확신하지 않음, 100은 매우 확신함입니다. 투표 전에 저장해 주세요.</p>
+      <fieldset aria-describedby="confidence-help">
+        <legend>투표 직전 확신도</legend>
+        <div class="confidence-choices">
+          {% for value, label in confidence_choices %}
+          <label class="confidence-choice">
+            <input type="radio" name="vote_confidence" value="{{ value }}" required{% if vote_confidence == value %} checked{% endif %}>
+            <span>{{ value }} · {{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <p id="confidence-help">5단계 중 하나를 선택하고 투표 전에 저장해 주세요.</p>
+        {% if vote_confidence != None %}<p>최근 저장한 확신도: {{ vote_confidence }}</p>{% endif %}
+      </fieldset>
+      <button type="submit"{% tip "notebook_save" %}>확신도 저장</button>
+      <p role="status" x-show="saved" style="display: none">저장했습니다.</p>
+      <p role="alert" x-show="failed" style="display: none">저장하지 못했습니다. 입력을 확인하고 다시 저장해 주세요.</p>
     {% else %}
       <input type="hidden" name="vote_confidence" value="{{ vote_confidence|default_if_none:'' }}">
     {% endif %}
-    <button type="submit">{% if vm.phase == 'vote' or vm.phase == 'runoff' %}수첩·확신도 저장{% else %}수첩 저장{% endif %}</button>
-    <p role="status" x-show="saved" style="display: none">저장했습니다.</p>
-    <p role="alert" x-show="failed" style="display: none">저장하지 못했습니다. 입력을 확인하고 다시 저장해 주세요.</p>
   </form>
 </section>

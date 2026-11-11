@@ -1,0 +1,194 @@
+{
+  "commit": "0edbe4b201f0b6885e827a0a40d0e1b68a37bb11",
+  "environment": "Windows; Python 3.14.6; Django 6.1.2; temporary SQLite; Daphne; Chrome/Playwright; recorded game",
+  "source_sha256": "12dca551d12090cfa4cdb1993c4b452157892a25a0656e3d8d140e48adb5ab64",
+  "browser_checks": 44,
+  "browser_failures": 0,
+  "server_tests": 60,
+  "server_failures": 0,
+  "viewports": [
+    "1440x900",
+    "360x800",
+    "390x844"
+  ],
+  "checks": [
+    {
+      "name": "game route",
+      "passed": true
+    },
+    {
+      "name": "game title",
+      "passed": true
+    },
+    {
+      "name": "pc reproduces hover fill",
+      "passed": true
+    },
+    {
+      "name": "pc transparent hover",
+      "passed": true
+    },
+    {
+      "name": "pc keyboard outline",
+      "passed": true
+    },
+    {
+      "name": "pc transparent active",
+      "passed": true
+    },
+    {
+      "name": "pc help content preserved",
+      "passed": true
+    },
+    {
+      "name": "pc no horizontal clipping",
+      "passed": true
+    },
+    {
+      "name": "pc close inside dialog",
+      "passed": true
+    },
+    {
+      "name": "pc heading controls no overlap",
+      "passed": true
+    },
+    {
+      "name": "desktop mascot layout unchanged",
+      "passed": true
+    },
+    {
+      "name": "pc close button works",
+      "passed": true
+    },
+    {
+      "name": "pc Escape closes",
+      "passed": true
+    },
+    {
+      "name": "pc no broken images",
+      "passed": true
+    },
+    {
+      "name": "mobile reproduces hover fill",
+      "passed": true
+    },
+    {
+      "name": "mobile transparent hover",
+      "passed": true
+    },
+    {
+      "name": "mobile keyboard outline",
+      "passed": true
+    },
+    {
+      "name": "mobile transparent active",
+      "passed": true
+    },
+    {
+      "name": "mobile help content preserved",
+      "passed": true
+    },
+    {
+      "name": "mobile no horizontal clipping",
+      "passed": true
+    },
+    {
+      "name": "mobile close inside dialog",
+      "passed": true
+    },
+    {
+      "name": "mobile heading controls no overlap",
+      "passed": true
+    },
+    {
+      "name": "mobile mascot not floated",
+      "passed": true
+    },
+    {
+      "name": "mobile text below mascot",
+      "passed": true
+    },
+    {
+      "name": "mobile close button works",
+      "passed": true
+    },
+    {
+      "name": "mobile Escape closes",
+      "passed": true
+    },
+    {
+      "name": "mobile no broken images",
+      "passed": true
+    },
+    {
+      "name": "mobile390 reproduces hover fill",
+      "passed": true
+    },
+    {
+      "name": "mobile390 transparent hover",
+      "passed": true
+    },
+    {
+      "name": "mobile390 keyboard outline",
+      "passed": true
+    },
+    {
+      "name": "mobile390 transparent active",
+      "passed": true
+    },
+    {
+      "name": "mobile390 help content preserved",
+      "passed": true
+    },
+    {
+      "name": "mobile390 no horizontal clipping",
+      "passed": true
+    },
+    {
+      "name": "mobile390 close inside dialog",
+      "passed": true
+    },
+    {
+      "name": "mobile390 heading controls no overlap",
+      "passed": true
+    },
+    {
+      "name": "mobile390 mascot not floated",
+      "passed": true
+    },
+    {
+      "name": "mobile390 text below mascot",
+      "passed": true
+    },
+    {
+      "name": "mobile390 close button works",
+      "passed": true
+    },
+    {
+      "name": "mobile390 Escape closes",
+      "passed": true
+    },
+    {
+      "name": "mobile390 no broken images",
+      "passed": true
+    },
+    {
+      "name": "200% help has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "200% close reachable",
+      "passed": true
+    },
+    {
+      "name": "no JS console errors",
+      "passed": true
+    },
+    {
+      "name": "no HTTP errors",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "bad_http": []
+}

@@ -1,11 +1,11 @@
 {
   "task": "E-06-02",
-  "commit": "e4bc6f751e7ea2a2b167106502261b7331f66f23",
-  "generated_at": "2026-11-06T08:17:23Z",
+  "commit": "edae77caaa794eb2009bd6d66e5d1d8eb432b0c6",
+  "generated_at": "2026-11-07T12:41:49Z",
   "source": "python -m tools.intent_examples --write examples_v1",
   "metrics": {
     "rows": {
-      "value": 280,
+      "value": 532,
       "unit": "개"
     },
     "authored": {
@@ -13,7 +13,7 @@
       "unit": "개"
     },
     "generated": {
-      "value": 0,
+      "value": 252,
       "unit": "개"
     },
     "generated_reviewed": {

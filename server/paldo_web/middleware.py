@@ -3,9 +3,12 @@ import json
 import logging
 import time
 import uuid
+import traceback
+from pathlib import Path
 from datetime import datetime, timezone
 
 from prometheus_client import Counter, Histogram
+from engine.domain.model import RejectCode
 
 REQUESTS = Counter("paldo_http_requests_total", "HTTP requests", ["route", "method", "status"])
 DURATION = Histogram("paldo_http_request_duration_seconds", "HTTP latency", ["route", "method", "status"])
@@ -47,8 +50,19 @@ class RequestTelemetryMiddleware:
         DURATION.labels(*labels).observe(seconds)
         fields = {"request_id": request.request_id, "path": route, "status": response.status_code,
                   "duration_ms": round(seconds * 1000, 3), "game_id": getattr(request, "game_id", None)}
+        reject = getattr(request, 'command_reject', None)
+        if response.status_code == 422 and isinstance(reject, RejectCode):
+            fields['reject'] = reject.value
         if response.status_code >= 500:
-            fields["error_type"] = "http_server_error"
+            fields["error_type"] = getattr(request, '_safe_error_type', 'http_server_error')
+            if hasattr(request,'_safe_error_frames'):fields['error_frames']=request._safe_error_frames
         LOGGER.log(logging.ERROR if response.status_code >= 500 else logging.INFO,
                    "http_request", extra={"fields": fields})
         return response
+
+    def process_exception(self, request, exception):
+        """예외 본문·로컬 변수 없이 종류와 마지막 코드 위치만 보존한다."""
+        request._safe_error_type=type(exception).__name__
+        request._safe_error_frames=[{'file':Path(frame.filename).name,'function':frame.name,'line':frame.lineno}
+            for frame in traceback.extract_tb(exception.__traceback__)[-3:]]
+        return None

@@ -40,7 +40,8 @@ class BaselineIntentParser:
     def parse(self, text: str, ctx: ParseContext) -> ParseResult:
         """Return score-sorted candidates and missing slots without mutating the context."""
         alias_data = json.dumps(ctx.aliases, ensure_ascii=False, sort_keys=True)
-        versions = {"model": self.model.model_version, "tokenizer": TOKENIZER_VERSION,
+        versions = {"model": self.model.model_version,
+                    "tokenizer": getattr(self.model, "tokenizer_version", TOKENIZER_VERSION),
                     "alias_dict": hashlib.sha256(alias_data.encode()).hexdigest()[:12],
                     "matcher": MATCHER_VERSION, "threshold": f"max-prob-{self.model.threshold:g}-v1"}
         if not text.strip():
