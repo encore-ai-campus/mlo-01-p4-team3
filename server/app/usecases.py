@@ -12,7 +12,7 @@ from engine.domain.serde import dumps, from_jsonable
 from engine.ports import StoredCommand, VersionConflict
 from engine.domain.abandon import AlreadyEnded, abandon
 from engine.domain.progress import ending_available
-from engine.domain.review import TraceEvent, TraceInput, review_text, review_trace
+from engine.domain.review import TraceEvent, TraceInput, basis_text, review_text, review_trace, suspect_basis
 from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewNarrationOutput, ReviewOutput
 from .clue_notice import clue_notices
 from .progress import apply_progress, sweep_game
@@ -265,21 +265,21 @@ class GameService:
         game_id = state.meta.game_id
         self._sweep_saved(player_pseudonym, state)
         progress = self.progress.load(player_pseudonym)
-        timeline = self._review_timeline(state)
+        timeline, bases = self._review_items(state)
         clues = [clue_id for clue_id, record in sorted(progress.clues.items())
                  if record.first_game_id == game_id]
         output = ReviewOutput(game_id, state.result, dict(truth.roles), dict(truth.secrets),
                               timeline, clues_gained=clues)
-        self._ensure_narration(output, state)
+        self._ensure_narration(output, state, bases)
         return output
 
-    def _ensure_narration(self, output, state):
+    def _ensure_narration(self, output, state, bases=None):
         """복기를 처음 연 판의 해설 작업을 멱등 등록한다(E-10-01, 설계 D5). 실패해도 복기는 템플릿으로 보인다."""
         if self.narration is None or not self.narration.enabled:
             return
         try:
             content = self.dependencies(state.meta).content
-            self.narration.ensure(output, content, state.public, state.meta.seed)
+            self.narration.ensure(output, content, state.public, state.meta.seed, bases=bases)
         except Exception as exc:    # 작업 저장소·콘텐츠 장애가 복기 조회를 막지 않게 한다
             LOGGER.warning("review_narration_register_failed %s", type(exc).__name__)
 
@@ -298,6 +298,12 @@ class GameService:
 
     def _review_timeline(self, state):
         """행동 시점 decision 이벤트(아웃박스)로 복기 항목을 만든다. 현재 믿음·상태에서 이유를 다시 계산하지 않는다."""
+        return self._review_items(state)[0]
+
+    def _review_items(self, state):
+        """(복기 항목, {항목 ID: 의심 근거 풀이 문장}). 의심 항목의 근거 풀이는 템플릿 문장 뒤에 붙인다(11/11 사용자 승인).
+
+        풀이는 판 종료 뒤 기록(공개 기록과 의심한 NPC의 개인 지식)으로 근거 주장을 다시 따진 것이고, 이유 코드는 바꾸지 않는다."""
         meta = state.meta
         envelopes = self.repository.events(meta.game_id)
         trace = review_trace(TraceInput(meta.game_id, meta.rule_version, meta.seed,
@@ -308,11 +314,18 @@ class GameService:
         except (LookupError, RuntimeError):    # 판 콘텐츠 버전을 못 읽을 때만(저장소 KeyError, 웹 조립의
             names = {}                         # GameServiceUnavailable). 이름 대신 ID로 보이고 이유 코드는 그대로
         lines = self.review_lines or {}
-        return [ReviewItem(item.item_id, item.actor, item.day, item.phase, item.kind, list(item.reason_codes),
-                           list(item.evidence), item.phrase_id, review_text(item, lines, names, meta.seed),
-                           item.speech_id, item.target_npc, item.reaction, item.executor, item.victim,
-                           item.policy_version)
-                for item in trace.items]
+        items, bases = [], {}
+        for item in trace.items:
+            text = review_text(item, lines, names, meta.seed)
+            npc = state.npcs.get(item.actor)
+            basis = basis_text(item, suspect_basis(item, state.public, npc.private if npc else None), lines, names)
+            if basis:
+                bases[item.item_id] = basis
+                text = f"{text} {basis}" if text else basis
+            items.append(ReviewItem(item.item_id, item.actor, item.day, item.phase, item.kind, list(item.reason_codes),
+                                    list(item.evidence), item.phrase_id, text, item.speech_id, item.target_npc,
+                                    item.reaction, item.executor, item.victim, item.policy_version))
+        return items, bases
 
     def command(self, data, player_pseudonym):
         """중복 → 버전 → 엔진 → 원자 저장 → 경합 처리 순서를 지킨다."""

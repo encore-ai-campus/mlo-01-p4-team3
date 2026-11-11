@@ -18,7 +18,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from .model import PLAYER_ID, CommandKind, EvidenceRef, EvidenceType, PublicRecord
+from .model import (PLAYER_ID, ClaimType, CommandKind, EvidenceRef, EvidenceType, Place, Polarity,
+                    PrivateKnowledge, PublicRecord)
 from .observation import NO_EVIDENCE_CODES, ReasonCode
 
 TALK_KINDS = frozenset(k.value for k in (CommandKind.SUSPECT, CommandKind.DEFEND, CommandKind.POINT_CONTRADICTION,
@@ -194,6 +195,69 @@ def review_text(item: ReviewTraceItem, lines: dict[str, list[str]], names: dict[
     names = {PLAYER_ID: PLAYER_NAME, **names}
     filled = {k: (names.get(v, v) if v else SLOT_DEFAULTS[k]) for k, v in slots.items()}
     return attach_josa(template.format(**filled))
+
+
+# ---------------------------------------------------------------- 의심 근거 풀이(11/11 사용자 승인)
+# 회의 의심(kind=suspect)의 근거가 행적·목격 주장일 때, 그 주장이 왜 수상했는지를 판 종료 뒤 기록으로 다시 따진다.
+# 판정은 `npc.beliefs`가 의심도를 올리는 세 규칙과 같다. 여럿이 맞으면 그 규칙의 가중치(W)가 큰 쪽을 고른다.
+BASIS_OWN_WITNESS_LIE = "own_witness_lie"                    # 의심한 NPC가 그 밤 대상을 다른 곳에서 봄(W 35)
+BASIS_CLAIMED_SEEING_ME_FALSELY = "claimed_seeing_me_falsely"  # 대상이 의심한 NPC를 봤다고 했지만 그는 거기 없었음(W 35)
+BASIS_AT_CRIME_SCENE = "at_crime_scene"                      # 대상이 실종 장소·시간대에 있었다고 스스로 말함(W 8)
+BASIS_PREFIX = "rv_basis_"
+
+
+@dataclass(frozen=True)
+class SuspectBasis:
+    """의심 근거 풀이 하나: 규칙 ID와 문장 자리(실종자는 ①에서만)."""
+    basis: str
+    victim: Optional[str] = None
+
+
+def suspect_basis(item: ReviewTraceItem, public: Optional[PublicRecord],
+                  private: Optional[PrivateKnowledge]) -> Optional[SuspectBasis]:
+    """의심 항목(이유 코드 rule_suspect)의 근거 주장이 세 규칙 중 무엇에 걸렸는지. 해당 없음·근거 없음이면 None.
+
+    `private`는 의심한 NPC의 개인 지식(판 종료 뒤라 복기에서 써도 된다). 근거 주장의 대상이 의심 대상과 같을 때만 본다.
+    """
+    if (item.kind != CommandKind.SUSPECT.value or ReasonCode.RULE_SUSPECT.value not in item.reason_codes
+            or public is None or not item.target_npc):
+        return None                       # 마을 사람 의심(rule_suspect)만. 씐 자 누명(frame_*)은 믿음 규칙을 쓰지 않는다
+    by_id = {c.claim_id: c for c in public.claims}
+    claims = [by_id[r.record_id] for r in item.evidence if r.type is EvidenceType.CLAIM and r.record_id in by_id]
+    me, target = item.actor, item.target_npc
+    found: list[SuspectBasis] = []
+    for c in claims:
+        if c.speaker == me or c.polarity is not Polarity.AFFIRM:   # 부정 주장은 문장("있었다"·"봤다")과 맞지 않아 뺀다
+            continue
+        if c.claim_type is ClaimType.WHEREABOUTS and c.subject == target and private is not None:
+            if any(target in s.seen and s.night == c.night and s.slot is c.slot and s.place is not c.place
+                   for s in private.witnessed):
+                found.append(SuspectBasis(BASIS_OWN_WITNESS_LIE))
+        if c.claim_type is ClaimType.SIGHTING and c.speaker == target and me in c.seen and private is not None:
+            actual = private.whereabouts.get(c.night, {}).get(c.slot)
+            if actual is not None and actual is not c.place:
+                found.append(SuspectBasis(BASIS_CLAIMED_SEEING_ME_FALSELY))
+        if c.claim_type is ClaimType.WHEREABOUTS and c.subject == target and c.place is not Place.HOME:
+            for rec in public.disappearances:
+                if rec.night == c.night and rec.slot is c.slot and rec.place is c.place:
+                    found.append(SuspectBasis(BASIS_AT_CRIME_SCENE, rec.victim))
+                    break
+    order = (BASIS_OWN_WITNESS_LIE, BASIS_CLAIMED_SEEING_ME_FALSELY, BASIS_AT_CRIME_SCENE)
+    return min(found, key=lambda b: order.index(b.basis)) if found else None
+
+
+def basis_text(item: ReviewTraceItem, basis: Optional[SuspectBasis], lines: dict[str, list[str]],
+               names: dict[str, str]) -> str:
+    """근거 풀이 문장(문구가 없거나 풀이가 없으면 ""). 자리: {actor}=의심한 NPC, {target}=대상, {victim}=실종자."""
+    if basis is None:
+        return ""
+    variants = lines.get(BASIS_PREFIX + basis.basis) or []
+    if not variants:
+        return ""
+    names = {PLAYER_ID: PLAYER_NAME, **names}
+    slots = {"actor": item.actor, "target": item.target_npc, "victim": basis.victim}
+    filled = {k: (names.get(v, v) if v else SLOT_DEFAULTS[k]) for k, v in slots.items()}
+    return attach_josa(variants[0].format(**filled))
 
 
 def missing_phrases(lines: dict[str, list[str]]) -> list[str]:

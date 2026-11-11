@@ -116,3 +116,4 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | E-10-13 | 11/10 | 생성 수단 변경(사용자 결정): 템플릿 변형을 별도 CPU 기기의 Kanana 생성 서버(llama.cpp `llama-server`, 127.0.0.1 전용, SSH 터널)로 만든다. 운영 절차 `ops/runbook/llm_gen.md` 추가. 코드는 바꾸지 않음. 터널 경유 시험 짧은 답 1.11 s, 생성 17.8 tok/s |
 | E-09-02 | 11/10 | 11/10 일괄 갱신: 필수 절 6개 확인. 대상(E-10-10·B-10-01·B-10-07)은 이 모듈을 바꾸지 않아 고칠 내용 없음 |
 | E-11-13 | 11/11 | 회의 발언 다듬기 규칙 `llm/npc_polish.py` 추가(요청 조립은 공개 문자열만, 프롬프트 `meeting-polish-v3`, 검사 `meeting-polish-check-v2`(감탄사 허용 목록 포함, 11/11 사용자 승인), 결과 선택). 실시간 캐묻기 답은 기존 `prompt.py`·`validator.py` 그대로 쓰고 프롬프트 캐시를 켬 |
+| E-10-10 | 11/11 | 복기 해설 프롬프트 `review-v2`: 항목에 의심 근거 풀이(`NarrationItem.basis`, 승인 문구)를 `풀이` 칸으로 넣고, 풀이에 나온 이름·낱말은 문장 검사(인물·인과·시간)에서 근거와 같이 허용 |

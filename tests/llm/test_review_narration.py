@@ -216,3 +216,34 @@ class ViolationTable(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SuspectBasis(unittest.TestCase):
+    """11/11: 의심 근거 풀이(승인 문구)를 사실로 넘기고, 풀이를 반영한 문장은 검사를 통과한다."""
+    sus = rn.NarrationItem("d5", 2, "round1", "hunjang", "suspect", "rule_suspect", target="머슴",
+                           evidence=("머슴의 말: 1일째 밤 한밤에 우물가에 있었다",),
+                           template="훈장은 근거를 들어 머슴을 의심했습니다.",
+                           basis="머슴은 약초꾼이 사라진 그때 그 자리에 자기도 있었다고 말했습니다.")
+
+    def test_prompt_has_basis_line_and_version(self):
+        b = block([self.sus], name="훈장", npc="hunjang")
+        text = json.dumps(rn.request_body([b], "마을 승리", 1)["messages"], ensure_ascii=False)
+        self.assertIn("풀이: 머슴은 약초꾼이 사라진 그때 그 자리에 자기도 있었다고 말했습니다.", text)
+        self.assertEqual(rn.PROMPT_VERSION, "review-v2")
+
+    def test_sentence_using_basis_passes(self):
+        b = block([self.sus], name="훈장", npc="hunjang")
+        for text in ("훈장은 약초꾼이 사라진 그 자리에 있었다고 말한 머슴을 의심했습니다.",
+                     "훈장은 약초꾼이 사라진 그때 우물가에 있었다는 머슴의 말을 근거로 머슴을 의심했습니다."):
+            self.assertIsNone(rn.check_sentence(text, self.sus, b, LEX), text)
+
+    def test_without_basis_victim_name_is_still_forbidden(self):
+        it = rn.NarrationItem(**{**self.sus.__dict__, "basis": ""})
+        b = block([it], name="훈장", npc="hunjang")
+        self.assertEqual(rn.check_sentence("훈장은 약초꾼이 사라진 그 자리에 있었다고 말한 머슴을 의심했습니다.", it, b, LEX),
+                         rn.FORBIDDEN_ENTITY)
+
+    def test_template_fallback_keeps_basis_in_template(self):
+        b = block([rn.NarrationItem(**{**self.sus.__dict__, "template": self.sus.template + " " + self.sus.basis})],
+                  name="훈장", npc="hunjang")
+        self.assertIn("사라진 그때", rn.template_summary(b).sentences[0][1])

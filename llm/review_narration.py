@@ -5,7 +5,7 @@
 검사에 걸린 NPC는 그 NPC 전체를 템플릿 요약으로 두고, JSON이 깨지거나 잘리면 판 전체를 템플릿으로 둔다.
 
 입력은 판 종료 뒤 공개되는 정보만이다(3.2): NPC 이름·성향, 진짜 역할(종료 뒤 공개), 복기 항목(날짜·단계·행동·
-대상 이름·대표 이유 코드의 한국어 뜻·근거 진술의 공개 문장), 판 결과. 가명·세션·명령 ID, 믿음 수치, 플레이어
+대상 이름·대표 이유 코드의 한국어 뜻·근거 진술의 공개 문장·의심 근거 풀이(승인 문구)), 판 결과. 가명·세션·명령 ID, 믿음 수치, 플레이어
 자유 입력, 템플릿 해설 문장 자체는 넣지 않는다.
 
 계층: 도메인 성격의 순수 함수. 표준 라이브러리와 `llm`만 쓴다(`tests/contract/test_layers.py`).
@@ -20,7 +20,7 @@ from typing import Optional
 from llm.free_answer import noun_candidates
 from llm.validator import _BAD_CHARS_RE, _HANJA_KANA_RE, _LABEL_RE, _LATIN_RE, Lexicon, find_mentions
 
-PROMPT_VERSION = "review-v1"
+PROMPT_VERSION = "review-v2"   # 11/11: 의심 근거 풀이(풀이 칸) 추가
 MAX_ITEMS = 3                 # NPC당 요약 항목 상한(4.1)
 MAX_GAME_ITEMS = 10           # 판 전체 요약 항목 상한(출력 토큰·시간 제한, `_trim`)
 MAX_SENTENCE_CHARS = 70       # 문장당 글자 수 상한(4.3 format_length)
@@ -146,6 +146,7 @@ class NarrationItem:
     reaction: Optional[str] = None
     evidence: tuple[str, ...] = ()        # 근거 진술의 공개 문장
     template: str = ""                    # 그 항목의 템플릿 해설(대체 요약용, LLM에는 보내지 않음)
+    basis: str = ""                       # 의심 근거 풀이 문장(승인 문구, 판 종료 뒤 기록으로 판정). 사실로 넘긴다
 
 
 @dataclass
@@ -253,6 +254,7 @@ SYSTEM_PROMPT = "\n".join((
     "규칙:",
     "1. 문장은 그 사람 이름으로 시작하고 '~했습니다.'처럼 '습니다.'로 끝냅니다.",
     "2. 행동에 나온 대상 이름을 꼭 넣고, 이유의 뜻을 바꾸지 않습니다. 근거가 있으면 근거의 요지를 짧게 넣습니다.",
+    "   풀이가 있으면 근거가 왜 수상했는지를 풀이의 뜻 그대로 짧게 이유로 넣습니다.",
     "3. 항목에 없는 사람·장소·시간·사건을 지어내지 않습니다. 쌍점·괄호·따옴표·목록을 쓰지 않습니다.",
     "4. 한 문장은 70자 이하입니다.",
     "예시(갑순·을동·나루터는 예시용이라 실제 문장에 쓰지 않습니다):",
@@ -260,6 +262,9 @@ SYSTEM_PROMPT = "\n".join((
     "  ⇒ 갑순은 다른 사람들이 찍을 것 같은 을동에게 따라서 표를 던졌습니다.",
     "- 행동: 을동을 의심했다 / 이유: 근거를 들어 상대를 의심했다 / 근거: 을동의 말: 1일째 밤 한밤에 나루터에 있었다",
     "  ⇒ 갑순은 한밤에 나루터에 있었다는 을동의 말을 근거로 을동을 의심했습니다.",
+    "- 행동: 을동을 의심했다 / 이유: 근거를 들어 상대를 의심했다 / 근거: 을동의 말: 1일째 밤 한밤에 나루터에 있었다"
+    " / 풀이: 갑순은 그날 을동을 다른 곳에서 봤기 때문에 그 말을 믿지 않았습니다.",
+    "  ⇒ 갑순은 그날 을동을 다른 곳에서 봤기에 나루터에 있었다는 을동을 의심했습니다.",
     "- 행동: 그날 밤 을동을 노렸다 / 이유: 자기를 지목한 사람을 밤에 노렸다",
     "  ⇒ 갑순은 자기를 지목한 을동을 그날 밤 노렸습니다.",
     '출력은 JSON 하나입니다: {"npcs":[{"npc":ID,"sentences":[{"cite":항목번호,"text":문장}]}]}',
@@ -306,6 +311,8 @@ def _item_line(item: NarrationItem, actor_name: str = "") -> str:
              f"  이유: {REASON_DESC.get(item.code, item.code)}"]
     if item.evidence:
         lines.append("  근거: " + " / ".join(item.evidence))
+    if item.basis:
+        lines.append("  풀이: " + item.basis)
     return "\n".join(lines)
 
 
@@ -461,7 +468,7 @@ def _days(text: str) -> set[int]:
 
 def _time_reason(text: str, item: NarrationItem) -> Optional[str]:
     """문장의 날짜는 그 항목의 날이거나 근거 진술에 나온 날(예: "1일째 밤 한밤에")이어야 한다."""
-    allowed = {item.day} | _days(" ".join(item.evidence))
+    allowed = {item.day} | _days(" ".join((*item.evidence, item.basis)))
     return TIME_MISMATCH if _days(text) - allowed else None
 
 
@@ -475,7 +482,8 @@ def _allowed_names(block: NpcBlock, item: NarrationItem) -> set[str]:
 
 def _vocab(block: NpcBlock, item: NarrationItem) -> set[str]:
     words = set(BASE_WORDS)
-    sources = [REASON_DESC.get(item.code, ""), KIND_KO.get(item.kind, ""), *item.evidence, block.role, block.temperament]
+    sources = [REASON_DESC.get(item.code, ""), KIND_KO.get(item.kind, ""), *item.evidence, item.basis, block.role,
+               block.temperament]
     for s in sources:
         words.update(noun_candidates(s))
         words.update(re.findall(r"[가-힣]{2,}", s))
@@ -486,7 +494,7 @@ def _vocab(block: NpcBlock, item: NarrationItem) -> set[str]:
 
 def _entity_reason(text: str, item: NarrationItem, block: NpcBlock, lexicon: Lexicon) -> Optional[str]:
     allowed_names = _allowed_names(block, item)
-    evidence_text = " ".join(item.evidence)
+    evidence_text = " ".join((*item.evidence, item.basis))
     for m in find_mentions(text, lexicon):       # 역할어(창귀·씐 자)는 판 종료 뒤 공개 정보라 따지지 않는다
         if m.kind == "name" and m.key not in allowed_names and m.key not in evidence_text:
             return FORBIDDEN_ENTITY
@@ -509,7 +517,7 @@ def _cause_reason(text: str, item: NarrationItem, block: NpcBlock) -> Optional[s
     if unknown:
         return INVENTED_CAUSE
     # 이유 구절의 낱말(2글자 이상)은 앞 두 글자가 항목의 이유·근거·행동·이름에 나와야 한다("돈을 훔쳐서" 같은 새 사건 거부)
-    known = " ".join((REASON_DESC.get(item.code, ""), action_phrase(item, block.name), *item.evidence,
+    known = " ".join((REASON_DESC.get(item.code, ""), action_phrase(item, block.name), *item.evidence, item.basis,
                       block.name, " ".join(BASE_WORDS), " ".join(CAUSE_LINK_WORDS)))
     for tok in re.findall(r"[가-힣]{2,}", head)[1:]:              # 첫 낱말은 주어
         if tok[:2] not in known:
