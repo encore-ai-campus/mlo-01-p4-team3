@@ -172,14 +172,15 @@ def inference_metrics(scrapes, version) -> dict:
 
 def model_load_passed(row) -> bool:
     """실제 게임 완료와 모든 프로세스의 추론을 확인하고 지연·오류 관문을 적용한다."""
-    if row.get('secondary_model_version') and any(
-            m['web_rss_bytes'] is None or m['web_rss_bytes'] <= 0 or len(m['worker_rss_bytes']) != 2
-            or any(rss <= 0 for rss in m['worker_rss_bytes'].values())
-            for m in row.get('memory_by_process', {}).values()):
-        return False
-    if row.get('secondary_model_version') and set(row.get('memory_by_process', {})) != set(
-            row['inference_calls_by_process']):
-        return False
+    if row.get('secondary_model_version'):
+        memories = row.get('memory_by_process', {})
+        versions = {row['model_version'], row['secondary_model_version']}
+        if set(memories) != set(row['inference_calls_by_process']) or any(
+                not m['web_rss_bytes'] or m['web_rss_bytes'] < 0
+                or set(m['worker_rss_bytes']).union(m.get('in_process_versions', ())) != versions
+                or any(rss <= 0 for rss in m['worker_rss_bytes'].values())
+                for m in memories.values()):
+            return False
     return (row["errors"] == 0 and row["finished_games"] > 0
             and row["beacon_errors"] == 0 and row["beacon_acks"] > 0 and row["p95_ms"] <= 1000
             and row["inference_calls"] > 0 and max(row["inference_failures"], row.get("engine_fallback_decisions", 0),
@@ -200,18 +201,22 @@ def resident_bytes(pid):
 
 
 def memory_metrics(scrapes):
-    """웹과 worker의 RSS를 프로세스별로 보존한다. RSS는 공유 페이지를 중복 포함한다."""
+    """프로세스별 상주 모델과 RSS를 보존한다. RSS는 공유 페이지를 중복 포함한다."""
     from prometheus_client.parser import text_string_to_metric_families
     rows = {}
     for port, scrape in scrapes.items():
         web, workers = None, {}
+        direct_versions = []
         for family in text_string_to_metric_families(scrape):
             for sample in family.samples:
                 if sample.name == 'process_resident_memory_bytes':
                     web = sample.value
                 elif sample.name == 'paldo_suspicion_worker_resident_memory_bytes':
                     workers[sample.labels['model_version']] = sample.value
-        rows[port] = dict(web_rss_bytes=web, worker_rss_bytes=workers)
+                elif sample.name == 'paldo_bench_suspicion_in_process' and sample.value == 1:
+                    direct_versions.append(sample.labels['model_version'])
+        rows[port] = dict(web_rss_bytes=web, worker_rss_bytes=workers,
+                          in_process_versions=sorted(direct_versions))
     return rows
 
 
@@ -488,14 +493,14 @@ def run_case(args, name, processes, layer, uri, users, steps, folder):
                    mongo_version=runtime.client.server_info()["version"])
         if args.serve_dir or args.suspicion_version:
             row.update(inference_metrics(scrapes, args.suspicion_version), model_version=args.suspicion_version or None)
-        if args.suspicion_version:
-            row['inference_fallback_percent'] = (100 * row['engine_fallback_decisions'] / row['inference_calls']
-                                                 if row['inference_calls'] else 100)
             row['memory_by_process'] = memory_metrics(scrapes)
             memories = row['memory_by_process'].values()
             row['resident_memory_bytes'] = sum((m['web_rss_bytes'] or 0) + sum(m['worker_rss_bytes'].values())
                                                for m in memories)
             row['worker_count'] = sum(len(m['worker_rss_bytes']) for m in row['memory_by_process'].values())
+        if args.suspicion_version:
+            row['inference_fallback_percent'] = (100 * row['engine_fallback_decisions'] / row['inference_calls']
+                                                 if row['inference_calls'] else 100)
             row['secondary_model_version'] = args.secondary_suspicion_version or None
             recovery = {}
             for port in ports:

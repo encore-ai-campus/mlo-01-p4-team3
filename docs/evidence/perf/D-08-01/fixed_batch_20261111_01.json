@@ -1,0 +1,88 @@
+{
+  "task": "D-08-01",
+  "commit": "5156dec523cbe8b70fb22d3a9d41b00f5bdf046e",
+  "generated_at": "2026-11-11T01:06:10.843039Z",
+  "source": "Pre-registered fixed batch D-08-01-20261111-01, nifi-01 + external WSL2; app/inference only, isolated DB; 2vCPU/3398MiB matches app-01. Baseline completed; model-1 aborted before load on benchmark_server_timeout, no model rate/RSS/recovery result; model-2 not started. No reroll. Raw out/d08-01/1111-fixed-batch SHA manifest cefacb553d2ec64cb3744cacfdfeb0e0ab26e5e4f3deb4653b3f72140235e05b; startup-only diagnostics archive SHA256 839ba4f89d19c4ea476bcfb7bfc3c8fbbe4e3631e8b39ad60683316ee8298f09. No-load diagnostics (not official rounds) could not reproduce the startup timeout: imports/two versions4.003s; full web ready9.954s. Root cause of original abort remains unknown.",
+  "metrics": {
+    "baseline_elapsed_seconds": {
+      "value": 180.359,
+      "unit": "s"
+    },
+    "baseline_users": {
+      "value": 30,
+      "unit": "count"
+    },
+    "baseline_requests": {
+      "value": 5400,
+      "unit": "count"
+    },
+    "baseline_finished_games": {
+      "value": 372,
+      "unit": "count"
+    },
+    "baseline_p95_ms": {
+      "value": 345.742,
+      "unit": "ms"
+    },
+    "baseline_caddy_p95_ms": {
+      "value": 327.905,
+      "unit": "ms"
+    },
+    "baseline_django_p95_ms": {
+      "value": 304.331,
+      "unit": "ms"
+    },
+    "baseline_rtt_p95_ms": {
+      "value": 2.23,
+      "unit": "ms"
+    },
+    "baseline_host_cpu_percent": {
+      "value": 60.826,
+      "unit": "%"
+    },
+    "baseline_errors": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_inference_calls": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_inference_failures": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_engine_fallback_decisions": {
+      "value": 0,
+      "unit": "count"
+    },
+    "baseline_warmup_seconds": {
+      "value": 7.041,
+      "unit": "s"
+    },
+    "model_1_startup_aborts": {
+      "value": 1,
+      "unit": "count"
+    },
+    "model_1_min_available_mib": {
+      "value": 967,
+      "unit": "MiB"
+    },
+    "completed_model_rounds": {
+      "value": 0,
+      "unit": "count"
+    },
+    "model_2_load_started": {
+      "value": 0,
+      "unit": "count"
+    },
+    "diagnostic_import_load_seconds": {
+      "value": 4.002878056024201,
+      "unit": "s"
+    },
+    "diagnostic_web_ready_seconds": {
+      "value": 9.953557507018559,
+      "unit": "s"
+    }
+  }
+}
