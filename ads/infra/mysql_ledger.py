@@ -1,5 +1,5 @@
-"""MySQL 예산 원장. 예산 행 잠금과 원장·아웃박스 변경을 한 트랜잭션에 둔다."""
-from django.db import IntegrityError, connection, transaction
+"""MySQL 예산 원장. 예산 합계를 바꾸는 쓰기는 예산 행 잠금과 원장·아웃박스 변경을 한 트랜잭션에 둔다."""
+from django.db import DEFAULT_DB_ALIAS, IntegrityError, connections, transaction
 from django.utils import timezone
 
 from ads.domain.model import BillingType, ChargeState, LedgerRow
@@ -14,9 +14,9 @@ def _dto(row):
                      BillingType(row.billing), row.price_mw, row.release_after_ms)
 
 
-def _audit(row, action):
+def _audit(row, action, using=DEFAULT_DB_ALIAS):
     # 상태 변경은 로컬에 보존한다. 공개 Kafka 토픽은 광고 이벤트 계약의 세 가지뿐이다.
-    AdOutbox.objects.create(event_id=f"ledger:{row.charge_id}:{action}", message_key=row.charge_id,
+    AdOutbox.objects.using(using).create(event_id=f"ledger:{row.charge_id}:{action}", message_key=row.charge_id,
                             published_at=timezone.now(), payload={
                                 "action": action, "charge_id": row.charge_id, "amount_mw": row.amount_mw,
                                 "source_event_id": row.source_event_id,
@@ -24,7 +24,15 @@ def _audit(row, action):
 
 
 class MySQLLedger:
-    """정수 밀리원 원장. 동일 예산을 변경하는 모든 쓰기는 예산 행부터 잠근다."""
+    """정수 밀리원 원장. 예산 합계(`committed_mw`)를 바꾸는 쓰기는 예산 행부터 잠근다.
+
+    `reserve_using`: 예약 트랜잭션을 실행할 DB 연결 별칭. 운영 serve는 응답 저장과 다른 연결을 넘겨,
+    예약이 그 자리에서 커밋되고 예산 행 잠금이 응답 트랜잭션 커밋까지 이어지지 않게 한다(11/11 사용자 결정).
+    그 뒤 응답 트랜잭션이 실패하면 예약만 남고, 해제 시각(serve + 32분)에 `release_expired`가 원장만으로 해제한다.
+    """
+
+    def __init__(self, reserve_using=DEFAULT_DB_ALIAS):
+        self.reserve_using = reserve_using
 
     def get(self, cid):
         """과금 또는 환입 행의 현재 스냅샷을 반환한다."""
@@ -46,33 +54,34 @@ class MySQLLedger:
         with phase("budget_reserve"):
             return self._reserve(campaign, serve)
 
-    @transaction.atomic
     def _reserve(self, campaign, serve):
+        db = self.reserve_using
         amount = reservation_amount(campaign, serve)
         cid = charge_id(serve.serve_id, serve.billing)
         table = AdDailyBudget._meta.db_table
-        with connection.cursor() as cursor:
-            cursor.execute(
-                f"INSERT INTO {table} (campaign_id, attribution_day, committed_mw) VALUES (%s, %s, 0) "
-                "ON DUPLICATE KEY UPDATE id = id", [campaign.campaign_id, serve.attribution_day])
-        budget = AdDailyBudget.objects.select_for_update().get(
-            campaign_id=campaign.campaign_id, attribution_day=serve.attribution_day)
-        if budget.committed_mw + amount > campaign.daily_budget_mw:
-            return False
-        try:
-            with transaction.atomic():
-                row = AdLedgerEntry.objects.create(
-                    charge_id=cid, budget=budget, amount_mw=amount, state=ChargeState.RESERVED,
-                    source=serve.source, kind="charge", slot=serve.slot, billing=serve.billing,
-                    price_mw=serve.price_mw, release_after_ms=serve.served_at_ms + RELEASE_AFTER_MS)
-        except IntegrityError as exc:
-            if exc.__cause__.args[0] == 1062:
+        with transaction.atomic(using=db):
+            with connections[db].cursor() as cursor:
+                cursor.execute(
+                    f"INSERT INTO {table} (campaign_id, attribution_day, committed_mw) VALUES (%s, %s, 0) "
+                    "ON DUPLICATE KEY UPDATE id = id", [campaign.campaign_id, serve.attribution_day])
+            budget = AdDailyBudget.objects.using(db).select_for_update().get(
+                campaign_id=campaign.campaign_id, attribution_day=serve.attribution_day)
+            if budget.committed_mw + amount > campaign.daily_budget_mw:
                 return False
-            raise
-        budget.committed_mw += amount
-        budget.save(update_fields=["committed_mw"])
-        _audit(row, "reserve")
-        return True
+            try:
+                with transaction.atomic(using=db):
+                    row = AdLedgerEntry.objects.using(db).create(
+                        charge_id=cid, budget=budget, amount_mw=amount, state=ChargeState.RESERVED,
+                        source=serve.source, kind="charge", slot=serve.slot, billing=serve.billing,
+                        price_mw=serve.price_mw, release_after_ms=serve.served_at_ms + RELEASE_AFTER_MS)
+            except IntegrityError as exc:
+                if exc.__cause__.args[0] == 1062:
+                    return False
+                raise
+            budget.committed_mw += amount
+            budget.save(using=db, update_fields=["committed_mw"])
+            _audit(row, "reserve", db)
+            return True
 
     def _locked_charge(self, cid):
         budget_id = AdLedgerEntry.objects.filter(pk=cid, kind="charge").values_list("budget_id", flat=True).first()
@@ -85,8 +94,12 @@ class MySQLLedger:
 
     @transaction.atomic
     def confirm(self, cid, source_event_id):
-        """예약 금액을 변경 없이 확정하며 재확정은 무효과다."""
-        row = self._locked_charge(cid)
+        """예약 금액을 변경 없이 확정하며 재확정은 무효과다.
+
+        확정은 예산 합계를 바꾸지 않으므로 원장 행만 잠근다(11/11). 해제·환입과는 같은 원장 행 잠금으로 직렬화되고,
+        예산 행을 잡지 않아 비콘·클릭 트랜잭션이 커밋될 때까지 같은 캠페인의 예약을 막지 않는다.
+        """
+        row = AdLedgerEntry.objects.select_for_update().filter(pk=cid, kind="charge").first()
         if row is None or row.state != ChargeState.RESERVED:
             return False
         row.state, row.source_event_id = ChargeState.CONFIRMED, source_event_id

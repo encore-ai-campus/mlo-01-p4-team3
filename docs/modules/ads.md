@@ -151,6 +151,7 @@ python ads/manage.py ad_update rollback-ctr --expected-version <활성-CTR-버�
 | DJANGO_SECRET_KEY | 필수. 광고 Django 서명용. 저장소에 기록하지 않는다 |
 | PALDO_ADS_TOKEN_KEY | 필수. 광고 HMAC 키. 저장소에 기록하지 않는다 |
 | PALDO_ADS_INTERNAL_URL | 내부 서비스 호스트. 로컬 기본 http://127.0.0.1:8001 |
+| 예약 전용 DB 연결(`ads_reserve`, `ADS_RESERVE_DB`) | serve의 예산 예약을 커밋하는 별도 연결(11/11 사용자 결정). `default`와 같은 접속 설정을 복사하므로 따로 주입할 값은 없다. 스레드마다 연결이 하나 더 생긴다(gunicorn 스레드 16이면 최대 32) |
 | PALDO_ADS_DB_CONN_MAX_AGE | DB 연결 재사용 초(기본 60, 0이면 요청마다 닫음). 운영 gunicorn gthread 고정 스레드에서만 효과가 있다(`CONN_HEALTH_CHECKS` 켬) |
 | `ads_server`(보호 JSON) / PALDO_ADS_SERVER | 광고 서버 실행 방식 `gunicorn`(기본)·`daphne`(되돌리기). `ops/mysql/service_runtime.py` |
 | `ads_threads`(보호 JSON) | gunicorn 작업 스레드 수(1~64, 기본 16). 스레드마다 DB 연결을 따로 가지므로 지연 비교 때 낮춰 본다 |
@@ -193,3 +194,4 @@ python ads/manage.py ad_update rollback-ctr --expected-version <활성-CTR-버�
 | B-08-03 | 11/11 | 광고 서버 실행을 daphne → gunicorn gthread(프로세스 1·스레드 16)로 바꾸고 DB 연결 60초 재사용(사용자 결정). 운영 실측에서 요청마다 원격 MySQL TLS 연결을 새로 맺어 첫 조회 약 230ms(이후 1~9ms)였고 게임 웹 300ms 제한을 자주 넘었다. 프로세스 1개는 지표 레지스트리·서비스 상태가 프로세스 안에 있어서. `ads_server: daphne`로 되돌림(E 보완) |
 | B-08-03 | 11/11 | 캠페인 시간 조건(`targeting.hours`)을 서울 시각 기준으로 통일. 게임 웹이 서버 시간대(UTC)와 무관하게 서울 시각을 보냄. 운영 갓 캠페인 값도 같은 배포에서 서울 홀수 시로 바꿈(E 보완) |
 | B-08-03 | 11/11 | 광고 소재 실제 그림(Gemini, 사용자 생성)으로 교체. 그림 주소를 `/static/promo/<id>__wide.png`(728×90)·`__box.png`(300×250)로 바꿈(브라우저 광고 차단이 `/static/ads/`·`_728x90` 표기를 막음). 옛 기본 경로·옛 주소는 전환 동안 호환, 마이그레이션 0006(검증식만, DB 변경 없음)(E 보완) |
+| B-08-03 | 11/11 | serve의 예산 예약을 별도 DB 연결의 짧은 트랜잭션으로 분리(사용자 결정). 운영 측정에서 예산 행 잠금 대기가 최대 467ms였고, 잠금이 응답 트랜잭션 커밋(46~210ms)까지 이어졌다. 응답 트랜잭션이 실패하면 남은 예약은 32분 뒤 기존 만료 작업이 해제. 확정은 예산 합계를 바꾸지 않아 원장 행만 잠금. 마이그레이션 없음(E 보완) |

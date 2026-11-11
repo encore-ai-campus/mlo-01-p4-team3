@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from ads.infra.optimization import OptimizationCache, save_version
 from ads.web.models import AdOptimizationVersion, AdOutbox, Campaign, Creative
@@ -77,6 +77,9 @@ class VersionTests(TestCase):
             self.assertEqual(cache.get()["ctr"].version, row.version)
 
 
+# TestCase는 시험 전체를 커밋하지 않는 트랜잭션으로 감싸서 별도 연결이 시험 데이터를 보지 못한다.
+# 예약 별도 연결 동작은 tests/ads/test_mysql_ledger.py의 TransactionTestCase에서 따로 검증한다.
+@override_settings(ADS_RESERVE_DB="default")
 class ContextAndBidHTTPTests(TestCase):
     """Observe bids, rollout and rollback through HTTP and the MySQL outbox."""
 

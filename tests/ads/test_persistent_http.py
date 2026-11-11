@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 
 from ads.domain.events import TOPIC_CLICK, TOPIC_IMPRESSION, TOPIC_SERVE
 from ads.app.expire_reservations import expire_once
@@ -17,6 +17,9 @@ from ads.web.models import AdLedgerEntry, AdOutbox, AdStoredRequest, Campaign, C
 from tests.ads.test_http import BASE_MS
 
 
+# TestCase는 시험 전체를 커밋하지 않는 트랜잭션으로 감싸서 별도 연결이 시험 데이터를 보지 못한다.
+# 예약 별도 연결 동작은 tests/ads/test_mysql_ledger.py의 TransactionTestCase에서 따로 검증한다.
+@override_settings(ADS_RESERVE_DB="default")
 class PersistentHTTPTests(TestCase):
     """HTTP 호출마다 새 서비스를 구성해 프로세스 메모리에 의존하지 않는지 확인한다."""
 
