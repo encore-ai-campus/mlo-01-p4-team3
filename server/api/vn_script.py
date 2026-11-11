@@ -36,7 +36,7 @@ SPEAKER_DIVINATION = "무당"
 VOTE_SUMMARY = {"main": "투표 결과 — {tally}", "runoff": "결선 결과 — {tally}"}
 VOTE_TALLY_ITEM = "{name} {count}표"
 RUNOFF_NOTICE = "{names}의 표가 같아 결선 투표로 넘어갑니다."
-# 투표 기권(rule-0.9, 11/11 사용자 결정 ②안) 문장. 승인 대기. 이전 규칙 판에는 기권표가 없어 나오지 않는다.
+# 투표 기권(rule-0.9, 11/11 사용자 결정 ②안) 문장. 승인됨(11/11 사용자). 이전 규칙 판에는 기권표가 없어 나오지 않는다.
 VOTE_ABSTAIN_TARGET = "표 안 던짐"                        # 개별 표 줄에서 기권한 사람의 대상 자리
 VOTE_ABSTAIN_LINE = "{names}은(는) 표를 던지지 않았소."    # 득표 요약 뒤 기권자 공개
 VOTE_TALLY_NONE = "아무도 표를 던지지 않았소"             # 모두 기권해 득표가 없을 때 요약 자리

@@ -308,7 +308,7 @@ class SightingTemplates(SimpleTestCase):
 
 
 class AbstainLines(SimpleTestCase):
-    """투표 기권(rule-0.9, 11/11 ②안): 기권표는 득표에서 빠지고, 기권자는 따로 한 줄로 공개된다(문장 승인 대기)."""
+    """투표 기권(rule-0.9, 11/11 ②안): 기권표는 득표에서 빠지고, 기권자는 따로 한 줄로 공개된다(문장 승인됨, 11/11 사용자)."""
 
     def test_abstainers_listed_and_not_counted(self):
         """기권표는 득표 요약에 없고 '표를 던지지 않았소' 줄과 개별 표 줄의 '표 안 던짐'으로 보인다."""
