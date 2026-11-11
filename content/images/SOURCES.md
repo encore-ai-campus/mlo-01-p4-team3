@@ -1,4 +1,4 @@
-Codex 내장 image_gen · ChatGPT(gpt-image) · 비상업 교육 프로젝트용 생성물
+Codex 내장 image_gen · ChatGPT(gpt-image) · Gemini(외부 기증 지도) · 비상업 교육 프로젝트용 생성물
 
 ## B-10-08 판 시작 전 호랑이 로고
 
