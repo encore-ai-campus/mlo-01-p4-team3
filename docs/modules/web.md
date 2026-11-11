@@ -63,6 +63,8 @@ python -B server/preview.py --port 8769
 
 ## B-10-07 UI 인계
 
+PALDO_FREE_TEXT_INPUT=off(기본)이면 회의 화면에 직접 입력창(`utterance_input.html`)을 그리지 않고 해석 요청은 403 `free_text_disabled`다. on이면 기존과 같다(설정 → `paldo_web/ui_flags.py` 템플릿 값 `free_text_input`, 요청 거부는 `api/interactions.py`). 발표·재학습 시연 때 운영 환경 파일에 on을 넣고 웹 프로세스 2개를 재시작한다.
+
 PALDO_GAME_UI=vn(기본)은 확정 VN 화면, classic(선택)은 기존 화면이다. 모드별 템플릿 캐시를 분리한다. 공개 UI 모델은 PlayerView를 보강하며 API·도메인 DTO·명령·DB는 유지한다. 무대 창은 원래 폼을 이동하고 자동 명령을 만들지 않는다. 대사창 25%, 전체 발언 펼침·전신 건너뛰기·탭 읽기 보존을 연결한다. 여성 무당은 사용자 확정 v5를 공식 sprite/portrait ID에 함께 반영했다.
 
 [PM 검토](../../web/PM_UI_REVIEW.md) · [되돌림](../../ops/proxy/README.md#게임-ui-선택과-되돌림) · [증빙](../evidence/B-10-07.md). 첫 등장·추방/처형·엔딩 컷과 표정은 E 인수 잔여이며 제목·호랑이는 이번 범위에서 제외하고 모바일은 900px 미만 무대 아래 배치로 확정됐다. 전체 종료 대신 Refs로 연결한다.
@@ -113,6 +115,7 @@ D-08-01 부하 최적화에서 Mongo 조립은 계정 진척의 판 ID 집합 �
 
 | 태스크 | 날짜 | 바뀐 점 |
 |---|---|---|
+| E-11-01 | 11/11 | 직접 입력창 서버 설정 `PALDO_FREE_TEXT_INPUT`(기본 off, 11/11 사용자 결정): 끄면 VN·클래식 회의 화면에서 입력창을 그리지 않고 해석·카드 반응 요청 403 `free_text_disabled`. 켜면 기존 그대로 |
 | D-08-01 | 11/10 | 일반 판 시작의 과거 판 순회 대신 Mongo 진행 판 ID 조회를 내부 조립에 연결. 실제 Mongo의 기존 판정과 동등성·갱신 반영 검증 |
 | B-09-01 | 11/9 | 판 시작 모델 버전 고정(`GameMeta.model_versions`, 롤백 뒤 진행 중 판 유지)·회차 판 카나리아 끔·해석 모델 버전 불일치 경보·`paldo_engine_suspicion_fallback_total`·게임 화면 안 업데이트 내역 패널. 레지스트리는 C-09-01 전 임시 구현(E 담당, 11/9 PM 결정) |
 | B-09-01 | 11/10 | 프로세스별 의심 모델 보관소(`ProcessSuspicionModels`, 버전당 worker 하나·판 종료 `release`·영구 불가 판 끝까지 폴백)와 `PALDO_SUSPICION_MODEL_VERSION`·`PALDO_MLRUNS_ROOT`로 실제 모델 켜기(없거나 못 띄우면 규칙 의심도) |
