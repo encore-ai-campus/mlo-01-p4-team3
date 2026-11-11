@@ -187,7 +187,9 @@ class InteractionsAPI(TestCase):
         req = RenderRequest("deadline", self.gid, 0, "s", "npc", "", next(iter(ReactionIntent)), "사실", [], "대체", deadline_ms=10)
         with patch("server.app.interactions.time.time", return_value=100):
             self.service.interactions.register_renders(state, [req])
-        with patch("server.app.interactions.time.time", return_value=101):
+        # 마감은 결과의 완료 시각으로 판정한다(E-11-13): 마감이 지나도 아직 처리 중이면 시간 초과로 닫는다.
+        running = RenderResult("deadline", RenderStatus.RUNNING, None)
+        with patch("server.app.interactions.time.time", return_value=101),                 patch.object(self.service.interactions.renderer, "poll", return_value=running):
             output = self.client.get(self.base + "/renders/deadline", HTTP_ACCEPT="application/json").json()
         self.assertEqual(output["status"], "timeout")
         with patch.object(self.service.interactions.renderer, "submit", side_effect=ConnectionError):
@@ -195,6 +197,24 @@ class InteractionsAPI(TestCase):
         output = self.client.get(self.base + "/renders/submit-failed", HTTP_ACCEPT="application/json").json()
         self.assertEqual(output["status"], "failed")
         self.assertEqual(len([e for e in self.service.repository.unpublished(self.gid) if e.event_type == "render_job"]), 2)
+
+    def test_render_done_within_deadline_is_kept_and_event_has_no_text(self):
+        """완료 시각으로 마감을 지키는 렌더러면 마감 뒤 폴링이어도 결과를 인정하고, 그 밖의 렌더러는 기존대로 시간 초과다.
+        render_job 이벤트에는 생성 본문을 넣지 않는다(E-11-13)."""
+        state, _ = self.service.repository.load(self.gid)
+        renderer = self.service.interactions.renderer
+        done = RenderResult("x", RenderStatus.DONE, "다듬은 사실이오.")
+        for job, enforces, expect in (("late-other", False, "timeout"), ("late-kanana", True, "done")):
+            req = RenderRequest(job, self.gid, 0, "s", "npc", "", next(iter(ReactionIntent)), "사실", [], "대체", deadline_ms=10)
+            with patch("server.app.interactions.time.time", return_value=100):
+                self.service.interactions.register_renders(state, [req])
+            with patch("server.app.interactions.time.time", return_value=105),                     patch.object(renderer, "poll", return_value=done),                     patch.object(type(renderer), "enforces_deadline", enforces, create=True):
+                output = self.client.get(self.base + f"/renders/{job}", HTTP_ACCEPT="application/json").json()
+            self.assertEqual(output["status"], expect, job)
+            self.assertEqual(output["text"], "다듬은 사실이오." if enforces else "대체")
+        events = [e for e in self.service.repository.unpublished(self.gid) if e.event_type == "render_job"]
+        self.assertTrue(events)
+        self.assertTrue(all("text" not in e.payload for e in events))
 
     def test_linked_command_uses_attempt_and_load_test_flag_is_server_only(self):
         """commands의 시도 연결을 검사하고 부하 표시는 서버 설정만으로 기록한다."""

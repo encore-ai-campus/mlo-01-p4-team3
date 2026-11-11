@@ -19,14 +19,14 @@
     {% endfor %}
   </ul>
   {% if vm.phase != 'night' %}{% village_guide %}{% endif %}
-  {% include "meeting_parts/records.html" with classic_mode=True %}
   {% if vm.ended %}
-    {% include "game_end.html" %}
+    {% include "game_end.html" with classic_mode=True %}
   {% else %}
+    {% include "meeting_parts/records.html" with classic_mode=True %}
     {% if participant_forms_available %}{% include "notebook.html" %}{% endif %}
     <div class="command-bar" role="region" aria-label="명령">
       {% include "meeting_actions.html" %}
-      {% include "utterance_input.html" %}
+      {% if free_text_input %}{% include "utterance_input.html" %}{% endif %}
     </div>
   {% endif %}
   {% asset_attribution %}

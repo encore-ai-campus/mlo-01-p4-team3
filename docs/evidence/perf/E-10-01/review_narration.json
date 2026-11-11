@@ -1,0 +1,140 @@
+{
+  "task": "E-10-01",
+  "commit": "3f1d8d7f222b54c1d81c88b7c0f688f7f25b1708",
+  "generated_at": "2026-11-11T01:15:20Z",
+  "source": "server/accounts/management/commands/review_narration_perf.py",
+  "metrics": {
+    "games_sequential": {
+      "value": 12,
+      "unit": "판"
+    },
+    "games_burst": {
+      "value": 4,
+      "unit": "판"
+    },
+    "jobs_done": {
+      "value": 16,
+      "unit": "건"
+    },
+    "jobs_failed_or_timeout": {
+      "value": 0,
+      "unit": "건"
+    },
+    "gen_seconds_mean": {
+      "value": 29.91,
+      "unit": "s"
+    },
+    "gen_seconds_p50": {
+      "value": 29.29,
+      "unit": "s"
+    },
+    "gen_seconds_p95": {
+      "value": 31.92,
+      "unit": "s"
+    },
+    "gen_seconds_max": {
+      "value": 37.05,
+      "unit": "s"
+    },
+    "tokens_in_mean": {
+      "value": 2186.8,
+      "unit": "tok/판"
+    },
+    "tokens_out_mean": {
+      "value": 316.3,
+      "unit": "tok/판"
+    },
+    "output_tokens_per_second_mean": {
+      "value": 10.58,
+      "unit": "tok/s"
+    },
+    "npcs_llm": {
+      "value": 42,
+      "unit": "명"
+    },
+    "npcs_template": {
+      "value": 38,
+      "unit": "명"
+    },
+    "npc_llm_ratio": {
+      "value": 52.5,
+      "unit": "%"
+    },
+    "whole_game_template": {
+      "value": 0,
+      "unit": "판"
+    },
+    "burst_queue_seconds_max": {
+      "value": 90.0,
+      "unit": "s"
+    },
+    "burst_total_seconds_max": {
+      "value": 121.9,
+      "unit": "s"
+    },
+    "burst_within_deadline": {
+      "value": 4,
+      "unit": "판"
+    },
+    "deadline_seconds": {
+      "value": 180.0,
+      "unit": "s"
+    },
+    "server_total_slots": {
+      "value": 2,
+      "unit": "개"
+    },
+    "server_ctx_per_slot": {
+      "value": 4096,
+      "unit": "tok"
+    },
+    "reject_format_length": {
+      "value": 0,
+      "unit": "명"
+    },
+    "reject_cite_mismatch": {
+      "value": 0,
+      "unit": "명"
+    },
+    "reject_forbidden_entity": {
+      "value": 4,
+      "unit": "명"
+    },
+    "reject_action_mismatch": {
+      "value": 25,
+      "unit": "명"
+    },
+    "reject_time_mismatch": {
+      "value": 0,
+      "unit": "명"
+    },
+    "reject_invented_cause": {
+      "value": 9,
+      "unit": "명"
+    },
+    "reject_parse_failed": {
+      "value": 0,
+      "unit": "명"
+    },
+    "reject_timeout": {
+      "value": 0,
+      "unit": "명"
+    },
+    "burst_1_total_seconds": {
+      "value": 30.3,
+      "unit": "s"
+    },
+    "burst_2_total_seconds": {
+      "value": 59.4,
+      "unit": "s"
+    },
+    "burst_3_total_seconds": {
+      "value": 90.7,
+      "unit": "s"
+    },
+    "burst_4_total_seconds": {
+      "value": 121.9,
+      "unit": "s"
+    }
+  }
+}

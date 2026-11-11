@@ -207,6 +207,7 @@ def sample_slots(st, kind: CommandKind) -> dict:
         CommandKind.DIVINE: {"target": npc},
         CommandKind.NIGHT_PLAN: {"night_plan": NightPlan(npc, npc)},
         CommandKind.ADVANCE: {},
+        CommandKind.ABSTAIN: {},          # rule-0.8 판에서는 모든 단계에서 ILLEGAL_PHASE(투표 기권은 rule-0.9~)
     }[kind]
 
 

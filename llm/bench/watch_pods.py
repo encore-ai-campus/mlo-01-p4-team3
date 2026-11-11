@@ -149,8 +149,10 @@ class RunpodCtl:
     """`runpodctl` 호출. 명령 앞부분(`bin`)을 바꾸면 가짜 명령으로 테스트한다."""
 
     def __init__(self, bin_cmd: str = "runpodctl", list_cmd: str = "pod list -o json",
-                 fields: tuple[str, str, str] = ("id", "name", "costPerHr"), env: dict[str, str] | None = None):
+                 fields: tuple[str, str, str] = ("id", "name", "costPerHr"), env: dict[str, str] | None = None,
+                 delete_cmd: str = "pod delete"):
         self.bin, self.list_args, self.fields, self.env = shlex.split(bin_cmd), shlex.split(list_cmd), fields, env
+        self.delete_args = shlex.split(delete_cmd)
 
     def list_pods(self) -> list[dict]:
         """Pod 목록. 명령 실패면 RuntimeError."""
@@ -160,10 +162,10 @@ class RunpodCtl:
         return parse_pod_list(r.stdout, self.fields)
 
     def delete_pod(self, pod_id: str, retries: int = DELETE_RETRIES, sleep: Callable[[float], None] = time.sleep) -> bool:
-        """`pod delete <id>`(정지가 아니라 삭제)를 최대 retries번. 성공하면 True."""
+        """삭제 명령(기본 `pod delete`, 정지가 아니라 삭제) + `<id>`를 최대 retries번. 성공하면 True."""
         for i in range(retries):
             try:
-                r = subprocess.run([*self.bin, "pod", "delete", pod_id], capture_output=True, text=True, timeout=60,
+                r = subprocess.run([*self.bin, *self.delete_args, pod_id], capture_output=True, text=True, timeout=60,
                                    env=self.env)
                 if r.returncode == 0:
                     return True
@@ -231,6 +233,8 @@ def main(argv: list[str] | None = None, input_fn: Callable[[str], str] = input) 
     p.add_argument("--interval", type=float, default=INTERVAL_S)
     p.add_argument("--runpodctl", default="runpodctl", help="명령 앞부분(테스트에서 가짜 명령)")
     p.add_argument("--list-cmd", default="pod list -o json")
+    p.add_argument("--delete-cmd", default="pod delete",
+                   help="삭제 하위 명령(설치된 runpodctl이 다르면 예: 'remove pod'). 뒤에 Pod ID가 붙는다")
     p.add_argument("--fields", nargs=3, default=("id", "name", "costPerHr"), metavar=("ID", "NAME", "COST"))
     p.add_argument("--key-env", default=None, help=f"그 계정 API 키가 든 환경 변수 이름(예: {KEY_ENV_PREFIX}B). 값은 출력하지 않음")
     a = p.parse_args(argv)
@@ -244,7 +248,7 @@ def main(argv: list[str] | None = None, input_fn: Callable[[str], str] = input) 
         return 2
     ledger = Path(a.ledger or f"out/runpod/ledger_{a.account}.json")
     try:
-        watch(RunpodCtl(a.runpodctl, a.list_cmd, tuple(a.fields), env), ledger, a.account, a.once, a.interval)
+        watch(RunpodCtl(a.runpodctl, a.list_cmd, tuple(a.fields), env, a.delete_cmd), ledger, a.account, a.once, a.interval)
     except ValueError as exc:   # 장부 계정 불일치: 파일을 건드리지 않고 멈춤
         log(str(exc), level="error")
         return 2

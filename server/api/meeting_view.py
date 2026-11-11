@@ -3,13 +3,12 @@ from dataclasses import dataclass, replace
 
 from engine.domain.model import PLAYER_ID, ClaimType, CommandKind, DivinationResult, Phase, ReactionIntent
 from engine.ports import PlayerView
+from .alibi_grid import build_alibi_grid
 from .viewmodels import PLACE_KO, ClaimCardVM, DisappearanceVM, PersonVM, build_meeting_vm
 from .ui_viewmodels import build_ui_vm
 from .tutorial_script import CLUE_DUPLICATE, CLUE_NEW, CLUE_UNLOCK, FIRST_GAME_END, GUIDE_SPEAKER, guide_lines
-from .vn_script import VNLine, announcement_lines, build_vn_lines, claim_card_text, reaction_lines
+from .vn_script import DIVINATION_KO, VNLine, announcement_lines, build_vn_lines, claim_card_text, reaction_lines
 from .vn_expressions import TELL_NOTICE, expression_cues
-
-DIVINATION_KO = {DivinationResult.CLEAR: "맑음", DivinationResult.MURKY: "탁함"}
 
 
 @dataclass(frozen=True)
@@ -47,7 +46,7 @@ class PublishedVote:
     day: int
     round: str
     voter: str
-    target: str
+    target: str | None   # None = 기권(rule-0.9~)
 
 
 @dataclass(frozen=True)
@@ -143,7 +142,7 @@ def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bo
             )
     published_votes = [
         PublishedVote(vote.day, vote.round, view.names.get(vote.voter, vote.voter),
-                      view.names.get(vote.target, vote.target))
+                      view.names.get(vote.target, vote.target) if vote.target is not None else None)
         for vote in view.public.votes
     ]
     published_locks = [
@@ -189,5 +188,7 @@ def meeting_context(view: PlayerView, guide_k: int | None = None, first_game: bo
             "first_game": first_game, "guide_pool": guide_lines(guide_k, replay=True) if guide_k is not None else [],
             "guide_end": FIRST_GAME_END if guide_k is not None else (), "guide_available": guide_k is not None,
             "guide_speaker": GUIDE_SPEAKER, "guide_mascot": GUIDE_MASCOT,
+            # 행적표(11/10 사용자 결정): 공개 진술을 밤·시간대·장소 칸에 모은 읽기 전용 요약. 안내 줄 3은 창귀 2명 판에만.
+            "alibi_grid": build_alibi_grid(view), "alibi_grid_duo": guide_k == 2,
             "actions": actions, "past_nights": list(range(max(0, view.day))),
             "contradiction_ready": sum(item.card.selectable and item.evidence_value.startswith('claim:') for item in claims) >= 2}

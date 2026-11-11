@@ -12,7 +12,7 @@ def main(argv=None):
     arguments=sys.argv[1:] if argv is None else argv
     if '--proxy-profile' in arguments:
         module='server.tests.proxy_bench'
-    elif any(a=='--web-processes' or a.startswith('--web-processes=') for a in arguments):
+    elif any(a.split('=', 1)[0] in ('--web-processes', '--serve-dir', '--load-dir') for a in arguments):
         module='server.tests.multiproc_bench'
     else:
         module='server.tests.api_bench'

@@ -22,6 +22,7 @@ from threading import Barrier, Event
 import time
 import uuid
 from urllib.error import HTTPError
+from urllib.parse import urlsplit
 from urllib.request import HTTPCookieProcessor, Request, build_opener
 
 from .api_bench import mongo_uri, percentile
@@ -39,7 +40,7 @@ def actual_command(public_view, rng):
             "command": to_jsonable(bench_player_command(view, rng))}
 
 
-def measure_game(origin, cookie, steps, minutes, barrier, *, intent_every=0):
+def measure_game(origin, cookie, steps, minutes, barrier, *, intent_every=0, diagnostics=False):
     """독립 판을 초당 한 주기로 진행한다. steps=None이면 실제 공개 상태를 따른다."""
     csrf = secrets.token_hex(16)
     opener = build_opener(HTTPCookieProcessor(CookieJar()))
@@ -52,21 +53,32 @@ def measure_game(origin, cookie, steps, minutes, barrier, *, intent_every=0):
     def send(route, path, body):
         # 해석·취소도 오류 표본까지 전체 게임 API p95에 포함한다.
         started = time.monotonic()
+        started_at = time.time()
         server_timing = {}
+        bench_id = uuid.uuid4().hex if diagnostics else None
+        request_id = None
+        if bench_id:
+            headers['X-Paldo-Bench-Request-ID'] = bench_id
         try:
             with opener.open(Request(origin + path, json.dumps(body).encode(), headers), timeout=5) as response:
+                request_id = response.headers.get('X-Request-ID')
                 status, data = response.status, json.load(response)
                 server_timing = json.loads(response.headers.get('X-Paldo-Bench-Timing', '{}'))
                 if not isinstance(data, dict):
                     data = {}
         except HTTPError as error:
+            request_id = error.headers.get('X-Request-ID')
             status, data = error.code, {}
             error.close()
         except (OSError, ValueError):
             status, data = 0, {}
         elapsed = (time.monotonic() - started) * 1000
         samples.append(elapsed)
-        request_timings.append(dict(route=route, client_ms=round(elapsed, 3), stages=server_timing))
+        timing = dict(route=route, client_ms=round(elapsed, 3), stages=server_timing)
+        if bench_id:
+            timing.update(bench_id=bench_id, request_id=request_id, status=status,
+                          started_at=started_at, ended_at=time.time())
+        request_timings.append(timing)
         by_route[route].append(elapsed)
         statuses[str(status)] = statuses.get(str(status), 0) + 1
         return status, data
@@ -117,11 +129,11 @@ def measure_game(origin, cookie, steps, minutes, barrier, *, intent_every=0):
 
 def beacon_load(origin, cookie, stop, ready, token=None):
     """사용자별 인증 소켓에서 초당 비콘 한 개를 보내 ack를 확인한다."""
-    host = origin.removeprefix("http://")
-    port = int(host.split(":")[1])
+    endpoint = urlsplit(origin)
+    host, port = endpoint.netloc, endpoint.port
     counts = {"acks": 0, "relayed": 0, "failed": 0, "errors": 0}
     try:
-        with socket.create_connection(("127.0.0.1", port), timeout=5) as sock:
+        with socket.create_connection((endpoint.hostname, port), timeout=5) as sock:
             key = base64.b64encode(secrets.token_bytes(16)).decode()
             sock.sendall((f"GET /ws/game/ HTTP/1.1\r\nHost: {host}\r\nOrigin: {origin}\r\n"
                           "Upgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Version: 13\r\n"

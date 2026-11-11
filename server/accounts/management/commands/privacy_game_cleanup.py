@@ -105,8 +105,8 @@ class Command(BaseCommand):
                 scope = game_scope(database, player)
                 remaining_interactions = database.b_interactions.count_documents(
                     {"_id": {"$in": plan["game_ids"]}}
-                )
-                if any(scope[key] for key in ("game_ids", "progress", "interactions", "test_sessions")) or remaining_interactions:
+                ) + database.review_jobs.count_documents({"_id": {"$in": plan["game_ids"]}}) +                     database.npc_line_jobs.count_documents({"game_id": {"$in": plan["game_ids"]}})
+                if any(scope[key] for key in ("game_ids", "progress", "interactions", "review_jobs", "npc_line_jobs", "test_sessions")) or remaining_interactions:
                     raise CommandError("privacy_game_data_remaining")
                 if not set(scope["ad_sessions"]).issubset(plan["ad_sessions"]):
                     raise CommandError("privacy_ad_mapping_scope_changed")
@@ -120,7 +120,7 @@ class Command(BaseCommand):
                 scope = game_scope(database, player)
                 remaining_interactions = database.b_interactions.count_documents(
                     {"_id": {"$in": plan["game_ids"]}}
-                )
+                ) + database.review_jobs.count_documents({"_id": {"$in": plan["game_ids"]}}) +                     database.npc_line_jobs.count_documents({"game_id": {"$in": plan["game_ids"]}})
                 if any(scope.values()) or remaining_interactions:
                     raise CommandError("privacy_game_data_remaining")
                 username = normalize_login_id(account.get_username())
