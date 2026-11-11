@@ -74,6 +74,7 @@ class GameService:
         self.narration = None
         # NPC 대사 LLM(E-11-13, `npc_lines.NpcLineService`). None이면 기능 꺼짐(템플릿 대사만).
         self.npc_lines = None
+        self.win_probability = None  # 종료 판의 TraceInput·GameMeta → 날짜별 확률 또는 None
 
     def owned(self, game_id, player_pseudonym):
         """멱등 응답·버전 확인보다 먼저 판 소유권을 확인한다."""
@@ -265,11 +266,12 @@ class GameService:
         game_id = state.meta.game_id
         self._sweep_saved(player_pseudonym, state)
         progress = self.progress.load(player_pseudonym)
-        timeline, bases = self._review_items(state)
+        trace = self._review_trace(state)
+        timeline, bases = self._review_items(state, trace)
         clues = [clue_id for clue_id, record in sorted(progress.clues.items())
                  if record.first_game_id == game_id]
         output = ReviewOutput(game_id, state.result, dict(truth.roles), dict(truth.secrets),
-                              timeline, clues_gained=clues)
+                              timeline, clues_gained=clues, win_prob=trace.win_prob)
         self._ensure_narration(output, state, bases)
         return output
 
@@ -296,19 +298,22 @@ class GameService:
             LOGGER.warning("review_narration_status_failed %s", type(exc).__name__)
             return ReviewNarrationOutput("off", True)
 
+    def _review_trace(self, state):
+        """저장된 행동 시점 이벤트와 선택 승률 모델로 복기 자료를 만든다."""
+        meta = state.meta
+        inp = TraceInput(meta.game_id, meta.rule_version, meta.seed,
+                         [TraceEvent(e.seq, e.day, e.phase, e.state_version, e.event_type, e.payload)
+                          for e in self.repository.events(meta.game_id)], state.public)
+        probabilities = self.win_probability(inp, meta) if self.win_probability is not None else None
+        return review_trace(inp, probabilities)
+
     def _review_timeline(self, state):
-        """행동 시점 decision 이벤트(아웃박스)로 복기 항목을 만든다. 현재 믿음·상태에서 이유를 다시 계산하지 않는다."""
         return self._review_items(state)[0]
 
-    def _review_items(self, state):
-        """(복기 항목, {항목 ID: 의심 근거 풀이 문장}). 의심 항목의 근거 풀이는 템플릿 문장 뒤에 붙인다(11/11 사용자 승인).
-
-        풀이는 판 종료 뒤 기록(공개 기록과 의심한 NPC의 개인 지식)으로 근거 주장을 다시 따진 것이고, 이유 코드는 바꾸지 않는다."""
+    def _review_items(self, state, trace=None):
+        """행동 시점 decision 이벤트로 항목을 만든다. 현재 믿음에서 이유를 다시 계산하지 않는다."""
         meta = state.meta
-        envelopes = self.repository.events(meta.game_id)
-        trace = review_trace(TraceInput(meta.game_id, meta.rule_version, meta.seed,
-                                        [TraceEvent(e.seq, e.day, e.phase, e.state_version, e.event_type, e.payload)
-                                         for e in envelopes], state.public))
+        trace = trace if trace is not None else self._review_trace(state)
         try:
             names = {c.npc_id: c.name_ko for c in self.dependencies(meta).content.characters}
         except (LookupError, RuntimeError):    # 판 콘텐츠 버전을 못 읽을 때만(저장소 KeyError, 웹 조립의

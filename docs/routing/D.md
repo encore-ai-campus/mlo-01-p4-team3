@@ -23,6 +23,7 @@
 
 | 하려는 일 | 볼 곳 |
 |---|---|
+| 마을 승리 확률 오프라인 학습·프리셋 통계 | ml/win_probability.py, docs/reports/presets.md, docs/evidence/D-10-03.md |
 | 모델 교체·승격·롤백 | `docs/contracts/ml_lifecycle.md` |
 | 사람 의도 재학습·대역 봇 보정·격리 롤백 | `tools/demo_retrain.sh`, `ml/suspicion/player_calibration.py`, `ml/lifecycle_demo.py`, [D-10-01 증빙](../evidence/D-10-01.md) |
 | 평가 관문·전략 밴딧 배치·B/C 연결 | `ml/gate.py`, `ml/bandit.py`, `ml/mongo_bandit.py`, `docs/reports/D-09-02-handoff.md`, 증빙 `docs/evidence/D-09-02.md` |
@@ -40,3 +41,4 @@
 | 합성 광고 HTTP 트래픽·피로·무효 클릭·재처리 검증 | `tools/ad_traffic_sim.py`, `ads/testing/traffic_server.py`, `tools/perf/ad_traffic_bench.py`, `tests/tools/test_ad_traffic_sim.py`, 설명 `docs/modules/ads.md` |
 | 모델 포트·모델 판 실행·폴백 검사 | `ml/adapters/suspicion_model.py`, `ml/adapters/run_model_games.py`, `tests/sim/test_suspicion_adapter.py`, 증빙 `docs/evidence/D-08-01.md` |
 | 실제 모델 웹 2프로세스 부하 | `tools/perf/api_bench.py --web-processes 2 --mlruns <디렉터리> --suspicion-version <버전>`, `server/tests/multiproc_bench.py` |
+| 자기 대전·프리셋·복기 승률 | `ml/selfplay.py`, `ml/preset_report.py`, `ml/win_probability.py`, `server/infra/win_probability.py`, 증빙 `docs/evidence/D-10-03.md` |

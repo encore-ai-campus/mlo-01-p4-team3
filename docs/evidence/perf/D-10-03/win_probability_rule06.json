@@ -1,0 +1,48 @@
+{
+  "task": "D-10-03",
+  "commit": "46eeb1add7f6602c84c7000d16ffd5b0f676a344",
+  "generated_at": "2026-11-10T02:16:42Z",
+  "source": "python -m ml.win_probability --events <D-08-01 official events.jsonl> --out <new directory> --seed 7 --record; sha256=9f4deaa5af3ef4fa0b66e2562899de6758ebe937f70291ee7ed2060b779c6e05",
+  "metrics": {
+    "train_games": {
+      "value": 3120,
+      "unit": "판"
+    },
+    "test_games": {
+      "value": 780,
+      "unit": "판"
+    },
+    "model_log_loss": {
+      "value": 0.3401582530886119,
+      "unit": "ratio"
+    },
+    "model_ece": {
+      "value": 0.00896391129054081,
+      "unit": "ratio"
+    },
+    "model_predicted_mean": {
+      "value": 0.8781810392704449,
+      "unit": "ratio"
+    },
+    "model_actual_rate": {
+      "value": 0.8822605965463108,
+      "unit": "ratio"
+    },
+    "baseline_log_loss": {
+      "value": 0.3623978427645386,
+      "unit": "ratio"
+    },
+    "baseline_ece": {
+      "value": 0.0005125245668766951,
+      "unit": "ratio"
+    },
+    "baseline_predicted_mean": {
+      "value": 0.8817480719794345,
+      "unit": "ratio"
+    },
+    "baseline_actual_rate": {
+      "value": 0.8822605965463108,
+      "unit": "ratio"
+    }
+  }
+}

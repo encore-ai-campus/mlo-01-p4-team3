@@ -283,6 +283,19 @@ class AssemblyUnits(unittest.TestCase):
         self.assertIsInstance(built.interactions.store, MongoInteractionStore)
         self.assertIs(built.interactions.parser, parser)
 
+    @override_settings(WIN_PROBABILITY_MODEL="local-win-model.json")
+    def test_build_attaches_the_configured_win_probability_model(self):
+        """운영 조립이 설정된 JSON 모델을 한 번 읽어 복기 공급자로 주입한다."""
+        runtime = MagicMock(collection_names=["games", "progress", "content", "b_test_sessions", "b_ad_identities"])
+        runtime.factory_service.return_value.interactions = None
+        model = object()
+        with patch("server.paldo_web.mongo.open_mongo_runtime", return_value=runtime), \
+                patch("intent.parser.BaselineIntentParser", return_value=MagicMock()), \
+                patch("server.infra.win_probability.WinProbabilityModel.from_path", return_value=model) as load:
+            built = build_game_service()
+        load.assert_called_once_with("local-win-model.json")
+        self.assertIs(built.win_probability, model)
+
     def test_interactions_collection_follows_b_prefix(self):
         """시험 접두어를 주면 보조 기록 컬렉션도 같은 접두어를 쓴다."""
         runtime = MagicMock(collection_names=["t_games", "t_progress", "t_content", "t_b_test_sessions", "t_b_ad_identities"])

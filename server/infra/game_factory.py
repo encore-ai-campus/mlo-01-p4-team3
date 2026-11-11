@@ -234,6 +234,9 @@ def build_game_service():
     runtime = open_mongo_runtime(engine=engine, suspicion=fake)
     parser = BaselineIntentParser()
     service = build_from_runtime(runtime, parser)
+    if path := getattr(settings, "WIN_PROBABILITY_MODEL", ""):
+        from server.infra.win_probability import WinProbabilityModel
+        service.win_probability = WinProbabilityModel.from_path(path)
     intent_version = getattr(getattr(parser, "model", None), "model_version", "")
     registry = StaticModelRegistry({INTENT_KEY: intent_version, SUSPICION_KEY: production})
     service.release_game = store.release

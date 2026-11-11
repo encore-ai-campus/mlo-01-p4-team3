@@ -1,0 +1,104 @@
+{
+  "task": "D-10-03",
+  "commit": "098b0777c1a7a1b8e0284e8c9b6a50f6d28b5a82",
+  "generated_at": "2026-11-11T05:10:19Z",
+  "source": "python -m ml.preset_report --games 500 --seed 1112 --out <new directory> --model <trusted models.pkl> --training-events <official D-08-01 events.jsonl> --record",
+  "metrics": {
+    "short5_games": {
+      "value": 500,
+      "unit": "count"
+    },
+    "short5_village_win_rate": {
+      "value": 0.708,
+      "unit": "ratio"
+    },
+    "short5_no_lock_day_limit": {
+      "value": 3,
+      "unit": "count"
+    },
+    "short5_unseen_log_loss": {
+      "value": 0.6125695765113344,
+      "unit": "ratio"
+    },
+    "short5_unseen_top1_accuracy": {
+      "value": 0.6839017235056839,
+      "unit": "ratio"
+    },
+    "short5_unseen_ece": {
+      "value": 0.03940564465682109,
+      "unit": "ratio"
+    },
+    "base6_games": {
+      "value": 500,
+      "unit": "count"
+    },
+    "base6_village_win_rate": {
+      "value": 0.472,
+      "unit": "ratio"
+    },
+    "base6_no_lock_day_limit": {
+      "value": 4,
+      "unit": "count"
+    },
+    "base6_unseen_log_loss": {
+      "value": 0.7162413980564034,
+      "unit": "ratio"
+    },
+    "base6_unseen_top1_accuracy": {
+      "value": 0.6270702455739577,
+      "unit": "ratio"
+    },
+    "base6_unseen_ece": {
+      "value": 0.009975457184122493,
+      "unit": "ratio"
+    },
+    "base7_games": {
+      "value": 500,
+      "unit": "count"
+    },
+    "base7_village_win_rate": {
+      "value": 0.496,
+      "unit": "ratio"
+    },
+    "base7_no_lock_day_limit": {
+      "value": 5,
+      "unit": "count"
+    },
+    "base7_unseen_log_loss": {
+      "value": 0.9067750132024264,
+      "unit": "ratio"
+    },
+    "base7_unseen_top1_accuracy": {
+      "value": 0.5720643268939011,
+      "unit": "ratio"
+    },
+    "base7_unseen_ece": {
+      "value": 0.017832394826876163,
+      "unit": "ratio"
+    },
+    "large8_games": {
+      "value": 500,
+      "unit": "count"
+    },
+    "large8_village_win_rate": {
+      "value": 0.422,
+      "unit": "ratio"
+    },
+    "large8_no_lock_day_limit": {
+      "value": 6,
+      "unit": "count"
+    },
+    "large8_unseen_log_loss": {
+      "value": 0.9752757985317368,
+      "unit": "ratio"
+    },
+    "large8_unseen_top1_accuracy": {
+      "value": 0.5481591169145857,
+      "unit": "ratio"
+    },
+    "large8_unseen_ece": {
+      "value": 0.010042990309709815,
+      "unit": "ratio"
+    }
+  }
+}

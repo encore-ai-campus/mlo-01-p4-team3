@@ -136,3 +136,4 @@ n = fallback_count(res2.events)             # engine.domain.npc.vote. B가 paldo
 | E-10-10 | 11/10 | `review.py`(`review_trace`·`review_text`) 추가, 포트 `GameRepository.events`(가짜 저장소 구현 포함), 문구 파일 `content/review_lines_v1.json`(이유 코드 39개, 11/11 사용자 승인). 엔진 규칙·상태·난수는 바꾸지 않음 |
 | E-08-02 | 11/11 | 확장 인물·비밀(`ContentBundle.extra_npcs`·`extra_secrets`, 기본 빈 목록)과 `draw_pool`: 주민 풀이 핵심 인물 수 이하인 프리셋은 핵심 인물·비밀에서만 뽑아 같은 시드 배정이 확장 전과 같다(11/11 사용자 결정, short5·base6 dev와 200/200 일치) |
 | E-10-10 | 11/11 | 의심 근거 풀이 `suspect_basis`·`basis_text`(`review.py`): 마을 사람 의심(rule_suspect)의 근거 주장이 믿음 규칙 셋(직접 본 것과 다름·자기를 봤다는 말이 틀림·실종 장소에 있었다고 말함) 중 무엇에 걸렸는지 판 종료 뒤 기록으로 다시 따진다(가중치 큰 쪽). 셋 다 아니면 근거 종류로 기색(공개된 것만)·말이 어긋남·다른 사람들 의견 중 하나. 문구 `basis_lines` 6종(11/11 사용자 승인). 엔진 규칙·이벤트·저장 형식은 바꾸지 않음 |
+| D-10-03 | 11/10 | 날짜 최초 공개 승률 특징과 선택 win_prob를 review_trace에 연결, 기존 None 호환 |

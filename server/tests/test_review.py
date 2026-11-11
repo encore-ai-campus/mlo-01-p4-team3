@@ -75,7 +75,7 @@ class ReviewAPI(TestCase):
         response = self.client.get(self.path, HTTP_ACCEPT="application/json")
         self.assertEqual(response.status_code, 200)
         output = response.json()
-        self.assertEqual(set(output), {"game_id", "result", "roles", "secrets", "timeline", "explanation_job_id", "clues_gained"})
+        self.assertEqual(set(output), {"game_id", "result", "roles", "secrets", "timeline", "explanation_job_id", "clues_gained", "win_prob"})
         self.assertEqual(output["roles"], {"blacksmith": "possessed", "jumo": "villager"})
         self.assertEqual(output["secrets"], {"jumo": "private-secret"})
         self.assertEqual(output["clues_gained"], ["this-clue"])
@@ -150,3 +150,41 @@ class ReviewAPI(TestCase):
         with self.assertRaises(ValueError):
             self.service._review_timeline(self.document["state"])
 
+
+
+    def test_win_probability_is_connected_to_owned_finished_review_and_graph_stays_hidden(self):
+        """종료 후 모델 확률은 JSON으로 반환하고 D3의 화면 숨김을 적용한다."""
+        self.finish()
+        import math
+        from server.infra.win_probability import WinProbabilityModel
+
+        meta = self.document["state"].meta
+        template = self.document["outbox"][0]
+        self.service.repository._append(self.document, [
+            replace(template, event_type="observation", day=1, phase="round1", payload={"snapshot": {
+                "public": {"locks": [], "confessions": [], "disappearances": []}, "private": {}}}),
+            replace(template, event_type="game_ended", day=1, phase="ended", payload={"winner": "village"}),
+        ])
+        before = deepcopy(self.document)
+        expected = [dict(day=1, probability=.65)]
+        self.service.win_probability = WinProbabilityModel(dict(
+            format="win-logistic-v1", feature_version="win-public-v1",
+            coefficients={"day": 0}, intercept=math.log(.65 / .35),
+            versions={"rule_version": [meta.rule_version], "content_version": [meta.content_version],
+                      "preset_id": [meta.preset.preset_id]},
+            evaluation={"test_games": 10, "model": {"predicted_mean": .65, "actual_rate": .5}},
+        ), "test-win-model")
+        self.addCleanup(setattr, self.service, 'win_probability', None)
+        response = self.client.get(self.path, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.json()['win_prob'], expected)
+        self.assertEqual(self.document, before)
+        html = self.client.get(self.path, HTTP_HX_REQUEST="true").content.decode()
+        self.assertNotIn('win_prob', html)
+
+    def test_unfinished_review_does_not_call_win_probability_model(self):
+        """종료 전 거부는 모델 호출보다 먼저 실행한다."""
+        def fail(inp, meta):
+            raise AssertionError('must finish before predicting')
+        self.service.win_probability = fail
+        self.addCleanup(setattr, self.service, 'win_probability', None)
+        self.assertEqual(self.client.get(self.path, HTTP_ACCEPT="application/json").status_code, 403)
