@@ -230,3 +230,12 @@ python -m tools.assets.normalize --background meeting=<시안에서 꺼낸 meeti
 ```powershell
 python -c "from PIL import Image; Image.open('<원본 PNG>').convert('RGB').resize((1728, 720), Image.Resampling.LANCZOS).quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG).save('content/images/map/village.png', 'PNG', optimize=True)"
 ```
+
+## A-11-04 7·8인 판 추가 주민 기본 그림 (2026-11-11)
+
+사냥꾼과 떠돌이 스님의 평상시 전신을 정규화하고 규격에 따라 초상을 파생했다. PNG는 Zopfli로 무손실 압축했다. [생성 원문·입력·파일 SHA-256](../../docs/evidence/A-11-04-extra-resident-sources.json).
+
+| 파일 | 도구 | 모델·버전 | 프롬프트 전문 | 부정 프롬프트 | 시드 | 생성일 |
+|---|---|---|---|---|---|---|
+| `content/images/sprite/hunter.png` | Codex 내장 ImageGen | gpt-image, 세부 버전 미표시 | 생성 기록 JSON의 hunter | 별도 필드 미지원, 원문에 금지 지시 포함 | 도구 미제공 | 2026-11-11 |
+| `content/images/sprite/monk.png` | Codex 내장 ImageGen | gpt-image, 세부 버전 미표시 | 생성 기록 JSON의 monk | 별도 필드 미지원, 원문에 금지 지시 포함 | 도구 미제공 | 2026-11-11 |
