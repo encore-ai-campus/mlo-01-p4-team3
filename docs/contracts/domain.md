@@ -26,8 +26,10 @@
 | round1 | suspect, defend, point_contradiction, explain, silence, reveal_divination | 말 행동 5종 | 모두 1행동씩 한 뒤 interrogation |
 | interrogation | interrogate, advance | 없음(대답은 엔진 반응) | advance를 하면 round2 |
 | round2 | round1과 같다 | 같다 | vote |
-| vote | vote | vote | 동점이면 runoff, 아니면 감금 → 종료 판정 → night 또는 ended |
-| runoff | vote(동점자만 대상) | vote | 감금 또는 무감금 → 종료 판정 |
+| vote | vote (rule-0.9~: abstain도) | vote | 동점이면 runoff, 아니면 감금 → 종료 판정 → night 또는 ended |
+| runoff | vote(동점자만 대상) (rule-0.9~: abstain도) | vote | 감금 또는 무감금 → 종료 판정 |
+
+- `abstain`(투표 기권)은 `PHASE_RULES`에 없고, 판 메타의 규칙 버전이 `rule-0.9` 이상인 판의 vote·runoff 단계에서만 엔진(`legal_player_kinds`)이 합법 종류에 더한다(11/11 사용자 결정 ②안). 그 밖의 판·단계에서는 `illegal_phase`로 거부한다.
 | night | divine | night_plan(씐 자) | 일괄 처리 → 종료 판정 → morning 또는 ended |
 | ended | 없음 | 없음 | - |
 
@@ -42,7 +44,7 @@
 | 점괘 공개 | 낮마다 1회 | 아침 |
 | 말 행동(점괘 공개 포함) | 라운드마다 1회 | 라운드 시작 |
 | 점 | 밤마다 1명 | - |
-| 투표 | 투표 회차마다 1표, 자기 자신 금지 | - |
+| 투표 | 투표 회차마다 1표, 자기 자신 금지. rule-0.9~ 판은 표 대신 기권 가능 | - |
 
 - **소비는 엔진이 명령을 수락하고 저장소 커밋이 성공한 순간에만 일어난다.** 다음은 아무것도 소비하지 않는다: 해석, 카드 수정·취소·재시도, 엔진 거부(`RejectCode` 전부), 버전 충돌.
 - 캐묻기는 LLM 결과와 무관하게 수락 시점에 소비된다. 폴백 문장에도 같은 정보가 담긴다.
@@ -54,6 +56,8 @@
    - 최다 득표자가 한 명이면 그 사람을 가둔다.
    - 동점이면 동점자만 후보(`runoff_candidates`)로 결선 투표를 한다.
    - 결선도 동점이면 아무도 가두지 않는다.
+   - 투표 기권(`rule-0.9`~, 11/11 사용자 결정 ②안): 무당은 `abstain` 명령으로, 마을 주민 NPC는 1·2위 결정 점수 차가 기권 문턱(`params.ABSTAIN_MARGIN`, 확률 단위. 규칙 v0 의심도 0~100은 100으로 나눠 같은 문턱) 이하일 때 기권한다. 씐 자는 기권하지 않는다. 기권표는 공개 기록(`VoteRecord.target`)과 `votes_revealed`의 표에 `null`로 남고 집계(`counts`)에서 빠진다. 과반 기준은 없고 남은 표의 최다 득표로 정한다. 모두 기권하면(득표 0) 결선 없이 무감금이다. 기권 결정의 이유 코드는 `abstain_uncertain`(맨 앞, 근거 없음)이고 `decision` 이벤트의 `target`은 `null`이다.
+   - 새 일반 판의 규칙은 서버 설정 `PALDO_RULE_BASE`(비우면 `rule-0.8`)로 고르고, 이미 시작한 판은 판 메타의 규칙 버전으로 이어 간다. `rule-0.8` 판은 기권이 없고 결과가 이전 엔진과 바이트 단위로 같다(`tests/engine/test_vote_abstain.py`).
 3. 감금 직후 `check_end`로 종료를 판정한다. 끝났으면 밤을 실행하지 않는다(`night_runs`). 마지막 씐 자를 가둔 경우도 마찬가지다.
 4. 밤에는 플레이어 점 대상과 씐 자의 `NightPlan`을 비공개로 정한 뒤 다음 순서로 일괄 처리한다.
    1. 밤 시작 참가자 집합과 점 대상의 상태를 고정한다.

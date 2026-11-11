@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import copy
 import random
+import re
 from dataclasses import dataclass
 from typing import Optional, Protocol
 
@@ -174,6 +175,20 @@ def home_alibi(rule_version: str) -> bool:
     목격·기색 확률 decision-2 이후)을 쓰는가. `rule-0.7` 이하(`LEGACY_ALIBI_RULES`)로 시작한 판·회차는 배포 뒤에도
     이전 규칙과 `params.LEGACY_DECISION`의 목격·기색 확률로 이어 간다. 모르는 버전은 현재 규칙이다."""
     return _rule_base(rule_version) not in LEGACY_ALIBI_RULES
+
+
+def abstains(rule_version: str) -> bool:
+    """판 메타의 규칙 버전이 투표 기권 규칙(`rule-0.9`~, `params.ABSTAIN_RULE_BASE`)을 쓰는가.
+
+    다른 규칙 판단과 달리 운영 기본값(rule-0.8)보다 새 규칙이라, 읽을 수 없는 버전(시험용 `rule-test` 등)은 기권 없음이다.
+    """
+    m = re.fullmatch(r"rule-(\d+)\.(\d+)", _rule_base(rule_version))
+    return m is not None and (int(m.group(1)), int(m.group(2))) >= (0, 9)
+
+
+def abstain_margin_of(rule_version: str) -> Optional[float]:
+    """판 규칙 버전의 NPC 기권 문턱. 기권 규칙이 아니면 None(NPC는 기권하지 않는다)."""
+    return params.ABSTAIN_MARGIN if abstains(rule_version) else None
 
 
 def decision_of(rule_version: str) -> params.DecisionParams:
@@ -455,7 +470,15 @@ def legal_player_kinds(state: GameState) -> list[CommandKind]:
     """지금 단계에서 플레이어가 낼 수 있는 명령 종류(`PHASE_RULES` − 횟수 제한에 걸린 것)."""
     if state.result is not None:
         return []
-    return [k for k in PHASE_RULES[state.phase].player_kinds if check_player_limits(state.player, k) is None]
+    kinds = [k for k in PHASE_RULES[state.phase].player_kinds if check_player_limits(state.player, k) is None]
+    if _abstain_open(state):
+        kinds.append(CommandKind.ABSTAIN)
+    return kinds
+
+
+def _abstain_open(state: GameState) -> bool:
+    """지금 무당이 기권할 수 있는가: 기권 규칙 판(rule-0.9~)의 투표·결선 단계."""
+    return state.phase in (Phase.VOTE, Phase.RUNOFF) and abstains(state.meta.rule_version)
 
 
 def validate_command(state: GameState, truth: GameTruth, env: CommandEnvelope) -> Optional[tuple[RejectCode, str]]:
@@ -470,7 +493,10 @@ def validate_command(state: GameState, truth: GameTruth, env: CommandEnvelope) -
         return RejectCode.GAME_ENDED, ""
     if cmd.actor != PLAYER_ID:
         return RejectCode.NOT_YOUR_TURN, f"플레이어 명령만 받는다: {cmd.actor}"
-    if not is_legal_kind(state.phase, cmd.kind, True):
+    if cmd.kind is CommandKind.ABSTAIN:
+        if not _abstain_open(state):
+            return RejectCode.ILLEGAL_PHASE, f"{state.phase.value}에서 {cmd.kind.value} 불가"
+    elif not is_legal_kind(state.phase, cmd.kind, True):
         return RejectCode.ILLEGAL_PHASE, f"{state.phase.value}에서 {cmd.kind.value} 불가"
     if state.phase in ROUND_PHASES and (state.turn_index >= len(state.turn_order)
                                         or state.turn_order[state.turn_index] != PLAYER_ID):
@@ -820,7 +846,7 @@ class _Tx:
         return new_ids, fact
 
     # ---- 투표
-    def npc_votes(self, candidates: list[str], round_: str) -> dict[str, str]:
+    def npc_votes(self, candidates: list[str], round_: str) -> dict[str, Optional[str]]:
         """vote·runoff 단계에 들어갈 때 NPC 표를 정한다(플레이어 표를 보지 않는다, domain.md 5절 1)."""
         st = self.st
         out = {}
@@ -829,6 +855,9 @@ class _Tx:
                 continue
             rng = self.rng(f"vote:{round_}:{npc}")
             t = self.decide(npc, [CommandKind.VOTE], lambda o: self.policy_vote(o, list(candidates), rng)).value
+            if t is None and abstains(st.meta.rule_version):
+                out[npc] = None                                  # 기권(rule-0.9~)
+                continue
             if t == npc or t not in candidates:
                 raise ValueError(f"NPC 정책이 불법 표를 냄: {npc} -> {t}")
             out[npc] = t
@@ -847,7 +876,7 @@ class _Tx:
         st.runoff_candidates = []
         st.pending_votes = self.npc_votes(list(st.active), "main")
 
-    def reveal(self, round_: str) -> dict[str, str]:
+    def reveal(self, round_: str) -> dict[str, Optional[str]]:
         st = self.st
         ballots = {v: st.pending_votes[v] for v in st.active}
         base = sum(1 for v in st.public.votes if v.day == st.day)
@@ -856,13 +885,15 @@ class _Tx:
         st.pending_votes = {}
         return ballots
 
-    def vote(self, cmd: Command) -> None:
+    def vote(self, cmd: Command, abstain: bool = False) -> None:
+        """무당 표(abstain이면 기권, rule-0.9~)를 넣고 표를 공개해 결과를 낸다."""
         st = self.st
-        st.pending_votes[PLAYER_ID] = cmd.target
+        st.pending_votes[PLAYER_ID] = None if abstain else cmd.target
         voters = list(st.active)
+        allow = abstains(st.meta.rule_version)
         if st.phase is Phase.VOTE:
             main = self.reveal("main")
-            out = resolve_vote(main, voters=voters)
+            out = resolve_vote(main, voters=voters, abstain=allow)
             self.emit(EventType.VOTES_REVEALED, {"round": "main", "votes": main, "counts": out.counts,
                                                  "runoff_candidates": out.runoff_candidates})
             if out.runoff_candidates:
@@ -873,7 +904,7 @@ class _Tx:
         else:
             main = {v.voter: v.target for v in st.public.votes if v.day == st.day and v.round == "main"}
             runoff = self.reveal("runoff")
-            out = resolve_vote(main, runoff, voters=voters)
+            out = resolve_vote(main, runoff, voters=voters, abstain=allow)
             self.emit(EventType.VOTES_REVEALED, {"round": "runoff", "votes": runoff, "counts": out.counts,
                                                  "runoff_candidates": []})
         self.lock(out.locked)
@@ -1184,6 +1215,8 @@ class PaldoEngine:
             tx.interrogate(cmd)
         elif k is CommandKind.VOTE:
             tx.vote(cmd)
+        elif k is CommandKind.ABSTAIN:
+            tx.vote(cmd, abstain=True)
         elif k is CommandKind.DIVINE:
             tx.divine(cmd)
         else:  # pragma: no cover - PHASE_RULES가 막는다

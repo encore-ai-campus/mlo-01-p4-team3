@@ -1,0 +1,656 @@
+{
+  "task": "A-10-01",
+  "commit": "c7f2a1c6305219daa1ea58f07fcbd1dd131daaa4",
+  "generated_at": "2026-11-11T03:47:51Z",
+  "source": "python -m tools.perf.abstain_balance --games 1000 --seed 41 --presets base6 --margins none 0.02 0.05 0.1 0.15 0.2 --bots alibi random logic",
+  "metrics": {
+    "base6_none_alibi_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_none_alibi_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_none_alibi_village_win": {
+      "value": 0.568,
+      "unit": ""
+    },
+    "base6_none_alibi_ci95_low": {
+      "value": 0.537,
+      "unit": ""
+    },
+    "base6_none_alibi_ci95_high": {
+      "value": 0.598,
+      "unit": ""
+    },
+    "base6_none_alibi_npc_abstain_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "base6_none_alibi_no_lock_day_rate": {
+      "value": 0.057,
+      "unit": ""
+    },
+    "base6_none_alibi_mudang_locked_end": {
+      "value": 0.419,
+      "unit": ""
+    },
+    "base6_none_alibi_mean_days": {
+      "value": 1.644,
+      "unit": "일"
+    },
+    "base6_none_random_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_none_random_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_none_random_village_win": {
+      "value": 0.469,
+      "unit": ""
+    },
+    "base6_none_random_ci95_low": {
+      "value": 0.438,
+      "unit": ""
+    },
+    "base6_none_random_ci95_high": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "base6_none_random_npc_abstain_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "base6_none_random_no_lock_day_rate": {
+      "value": 0.055,
+      "unit": ""
+    },
+    "base6_none_random_mudang_locked_end": {
+      "value": 0.445,
+      "unit": ""
+    },
+    "base6_none_random_mean_days": {
+      "value": 1.84,
+      "unit": "일"
+    },
+    "base6_none_logic_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_none_logic_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_none_logic_village_win": {
+      "value": 0.5,
+      "unit": ""
+    },
+    "base6_none_logic_ci95_low": {
+      "value": 0.469,
+      "unit": ""
+    },
+    "base6_none_logic_ci95_high": {
+      "value": 0.531,
+      "unit": ""
+    },
+    "base6_none_logic_npc_abstain_rate": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "base6_none_logic_no_lock_day_rate": {
+      "value": 0.037,
+      "unit": ""
+    },
+    "base6_none_logic_mudang_locked_end": {
+      "value": 0.485,
+      "unit": ""
+    },
+    "base6_none_logic_mean_days": {
+      "value": 1.655,
+      "unit": "일"
+    },
+    "base6_m002_alibi_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m002_alibi_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m002_alibi_village_win": {
+      "value": 0.569,
+      "unit": ""
+    },
+    "base6_m002_alibi_ci95_low": {
+      "value": 0.538,
+      "unit": ""
+    },
+    "base6_m002_alibi_ci95_high": {
+      "value": 0.599,
+      "unit": ""
+    },
+    "base6_m002_alibi_npc_abstain_rate": {
+      "value": 0.105,
+      "unit": ""
+    },
+    "base6_m002_alibi_no_lock_day_rate": {
+      "value": 0.044,
+      "unit": ""
+    },
+    "base6_m002_alibi_mudang_locked_end": {
+      "value": 0.419,
+      "unit": ""
+    },
+    "base6_m002_alibi_mean_days": {
+      "value": 1.633,
+      "unit": "일"
+    },
+    "base6_m002_random_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m002_random_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m002_random_village_win": {
+      "value": 0.45,
+      "unit": ""
+    },
+    "base6_m002_random_ci95_low": {
+      "value": 0.419,
+      "unit": ""
+    },
+    "base6_m002_random_ci95_high": {
+      "value": 0.481,
+      "unit": ""
+    },
+    "base6_m002_random_npc_abstain_rate": {
+      "value": 0.121,
+      "unit": ""
+    },
+    "base6_m002_random_no_lock_day_rate": {
+      "value": 0.057,
+      "unit": ""
+    },
+    "base6_m002_random_mudang_locked_end": {
+      "value": 0.466,
+      "unit": ""
+    },
+    "base6_m002_random_mean_days": {
+      "value": 1.855,
+      "unit": "일"
+    },
+    "base6_m002_logic_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m002_logic_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m002_logic_village_win": {
+      "value": 0.498,
+      "unit": ""
+    },
+    "base6_m002_logic_ci95_low": {
+      "value": 0.467,
+      "unit": ""
+    },
+    "base6_m002_logic_ci95_high": {
+      "value": 0.529,
+      "unit": ""
+    },
+    "base6_m002_logic_npc_abstain_rate": {
+      "value": 0.133,
+      "unit": ""
+    },
+    "base6_m002_logic_no_lock_day_rate": {
+      "value": 0.034,
+      "unit": ""
+    },
+    "base6_m002_logic_mudang_locked_end": {
+      "value": 0.489,
+      "unit": ""
+    },
+    "base6_m002_logic_mean_days": {
+      "value": 1.667,
+      "unit": "일"
+    },
+    "base6_m005_alibi_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m005_alibi_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m005_alibi_village_win": {
+      "value": 0.566,
+      "unit": ""
+    },
+    "base6_m005_alibi_ci95_low": {
+      "value": 0.535,
+      "unit": ""
+    },
+    "base6_m005_alibi_ci95_high": {
+      "value": 0.596,
+      "unit": ""
+    },
+    "base6_m005_alibi_npc_abstain_rate": {
+      "value": 0.207,
+      "unit": ""
+    },
+    "base6_m005_alibi_no_lock_day_rate": {
+      "value": 0.049,
+      "unit": ""
+    },
+    "base6_m005_alibi_mudang_locked_end": {
+      "value": 0.42,
+      "unit": ""
+    },
+    "base6_m005_alibi_mean_days": {
+      "value": 1.628,
+      "unit": "일"
+    },
+    "base6_m005_random_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m005_random_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m005_random_village_win": {
+      "value": 0.42,
+      "unit": ""
+    },
+    "base6_m005_random_ci95_low": {
+      "value": 0.39,
+      "unit": ""
+    },
+    "base6_m005_random_ci95_high": {
+      "value": 0.451,
+      "unit": ""
+    },
+    "base6_m005_random_npc_abstain_rate": {
+      "value": 0.21,
+      "unit": ""
+    },
+    "base6_m005_random_no_lock_day_rate": {
+      "value": 0.06,
+      "unit": ""
+    },
+    "base6_m005_random_mudang_locked_end": {
+      "value": 0.483,
+      "unit": ""
+    },
+    "base6_m005_random_mean_days": {
+      "value": 1.879,
+      "unit": "일"
+    },
+    "base6_m005_logic_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m005_logic_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m005_logic_village_win": {
+      "value": 0.485,
+      "unit": ""
+    },
+    "base6_m005_logic_ci95_low": {
+      "value": 0.454,
+      "unit": ""
+    },
+    "base6_m005_logic_ci95_high": {
+      "value": 0.516,
+      "unit": ""
+    },
+    "base6_m005_logic_npc_abstain_rate": {
+      "value": 0.232,
+      "unit": ""
+    },
+    "base6_m005_logic_no_lock_day_rate": {
+      "value": 0.04,
+      "unit": ""
+    },
+    "base6_m005_logic_mudang_locked_end": {
+      "value": 0.499,
+      "unit": ""
+    },
+    "base6_m005_logic_mean_days": {
+      "value": 1.682,
+      "unit": "일"
+    },
+    "base6_m010_alibi_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m010_alibi_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m010_alibi_village_win": {
+      "value": 0.58,
+      "unit": ""
+    },
+    "base6_m010_alibi_ci95_low": {
+      "value": 0.549,
+      "unit": ""
+    },
+    "base6_m010_alibi_ci95_high": {
+      "value": 0.61,
+      "unit": ""
+    },
+    "base6_m010_alibi_npc_abstain_rate": {
+      "value": 0.339,
+      "unit": ""
+    },
+    "base6_m010_alibi_no_lock_day_rate": {
+      "value": 0.08,
+      "unit": ""
+    },
+    "base6_m010_alibi_mudang_locked_end": {
+      "value": 0.388,
+      "unit": ""
+    },
+    "base6_m010_alibi_mean_days": {
+      "value": 1.669,
+      "unit": "일"
+    },
+    "base6_m010_random_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m010_random_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m010_random_village_win": {
+      "value": 0.399,
+      "unit": ""
+    },
+    "base6_m010_random_ci95_low": {
+      "value": 0.369,
+      "unit": ""
+    },
+    "base6_m010_random_ci95_high": {
+      "value": 0.43,
+      "unit": ""
+    },
+    "base6_m010_random_npc_abstain_rate": {
+      "value": 0.307,
+      "unit": ""
+    },
+    "base6_m010_random_no_lock_day_rate": {
+      "value": 0.075,
+      "unit": ""
+    },
+    "base6_m010_random_mudang_locked_end": {
+      "value": 0.473,
+      "unit": ""
+    },
+    "base6_m010_random_mean_days": {
+      "value": 1.915,
+      "unit": "일"
+    },
+    "base6_m010_logic_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m010_logic_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m010_logic_village_win": {
+      "value": 0.489,
+      "unit": ""
+    },
+    "base6_m010_logic_ci95_low": {
+      "value": 0.458,
+      "unit": ""
+    },
+    "base6_m010_logic_ci95_high": {
+      "value": 0.52,
+      "unit": ""
+    },
+    "base6_m010_logic_npc_abstain_rate": {
+      "value": 0.336,
+      "unit": ""
+    },
+    "base6_m010_logic_no_lock_day_rate": {
+      "value": 0.078,
+      "unit": ""
+    },
+    "base6_m010_logic_mudang_locked_end": {
+      "value": 0.471,
+      "unit": ""
+    },
+    "base6_m010_logic_mean_days": {
+      "value": 1.749,
+      "unit": "일"
+    },
+    "base6_m015_alibi_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m015_alibi_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m015_alibi_village_win": {
+      "value": 0.601,
+      "unit": ""
+    },
+    "base6_m015_alibi_ci95_low": {
+      "value": 0.57,
+      "unit": ""
+    },
+    "base6_m015_alibi_ci95_high": {
+      "value": 0.631,
+      "unit": ""
+    },
+    "base6_m015_alibi_npc_abstain_rate": {
+      "value": 0.419,
+      "unit": ""
+    },
+    "base6_m015_alibi_no_lock_day_rate": {
+      "value": 0.113,
+      "unit": ""
+    },
+    "base6_m015_alibi_mudang_locked_end": {
+      "value": 0.352,
+      "unit": ""
+    },
+    "base6_m015_alibi_mean_days": {
+      "value": 1.709,
+      "unit": "일"
+    },
+    "base6_m015_random_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m015_random_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m015_random_village_win": {
+      "value": 0.395,
+      "unit": ""
+    },
+    "base6_m015_random_ci95_low": {
+      "value": 0.365,
+      "unit": ""
+    },
+    "base6_m015_random_ci95_high": {
+      "value": 0.426,
+      "unit": ""
+    },
+    "base6_m015_random_npc_abstain_rate": {
+      "value": 0.374,
+      "unit": ""
+    },
+    "base6_m015_random_no_lock_day_rate": {
+      "value": 0.098,
+      "unit": ""
+    },
+    "base6_m015_random_mudang_locked_end": {
+      "value": 0.445,
+      "unit": ""
+    },
+    "base6_m015_random_mean_days": {
+      "value": 1.95,
+      "unit": "일"
+    },
+    "base6_m015_logic_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m015_logic_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m015_logic_village_win": {
+      "value": 0.517,
+      "unit": ""
+    },
+    "base6_m015_logic_ci95_low": {
+      "value": 0.486,
+      "unit": ""
+    },
+    "base6_m015_logic_ci95_high": {
+      "value": 0.548,
+      "unit": ""
+    },
+    "base6_m015_logic_npc_abstain_rate": {
+      "value": 0.406,
+      "unit": ""
+    },
+    "base6_m015_logic_no_lock_day_rate": {
+      "value": 0.115,
+      "unit": ""
+    },
+    "base6_m015_logic_mudang_locked_end": {
+      "value": 0.417,
+      "unit": ""
+    },
+    "base6_m015_logic_mean_days": {
+      "value": 1.811,
+      "unit": "일"
+    },
+    "base6_m020_alibi_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m020_alibi_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m020_alibi_village_win": {
+      "value": 0.652,
+      "unit": ""
+    },
+    "base6_m020_alibi_ci95_low": {
+      "value": 0.622,
+      "unit": ""
+    },
+    "base6_m020_alibi_ci95_high": {
+      "value": 0.681,
+      "unit": ""
+    },
+    "base6_m020_alibi_npc_abstain_rate": {
+      "value": 0.473,
+      "unit": ""
+    },
+    "base6_m020_alibi_no_lock_day_rate": {
+      "value": 0.147,
+      "unit": ""
+    },
+    "base6_m020_alibi_mudang_locked_end": {
+      "value": 0.275,
+      "unit": ""
+    },
+    "base6_m020_alibi_mean_days": {
+      "value": 1.752,
+      "unit": "일"
+    },
+    "base6_m020_random_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m020_random_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m020_random_village_win": {
+      "value": 0.371,
+      "unit": ""
+    },
+    "base6_m020_random_ci95_low": {
+      "value": 0.342,
+      "unit": ""
+    },
+    "base6_m020_random_ci95_high": {
+      "value": 0.401,
+      "unit": ""
+    },
+    "base6_m020_random_npc_abstain_rate": {
+      "value": 0.422,
+      "unit": ""
+    },
+    "base6_m020_random_no_lock_day_rate": {
+      "value": 0.127,
+      "unit": ""
+    },
+    "base6_m020_random_mudang_locked_end": {
+      "value": 0.396,
+      "unit": ""
+    },
+    "base6_m020_random_mean_days": {
+      "value": 1.997,
+      "unit": "일"
+    },
+    "base6_m020_logic_games": {
+      "value": 1000,
+      "unit": "판"
+    },
+    "base6_m020_logic_assign_fail": {
+      "value": 0,
+      "unit": "판"
+    },
+    "base6_m020_logic_village_win": {
+      "value": 0.57,
+      "unit": ""
+    },
+    "base6_m020_logic_ci95_low": {
+      "value": 0.539,
+      "unit": ""
+    },
+    "base6_m020_logic_ci95_high": {
+      "value": 0.6,
+      "unit": ""
+    },
+    "base6_m020_logic_npc_abstain_rate": {
+      "value": 0.458,
+      "unit": ""
+    },
+    "base6_m020_logic_no_lock_day_rate": {
+      "value": 0.148,
+      "unit": ""
+    },
+    "base6_m020_logic_mudang_locked_end": {
+      "value": 0.333,
+      "unit": ""
+    },
+    "base6_m020_logic_mean_days": {
+      "value": 1.867,
+      "unit": "일"
+    }
+  }
+}

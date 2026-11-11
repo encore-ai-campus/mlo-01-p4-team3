@@ -67,10 +67,16 @@ def _prepare_fixed_start(data, player, load_game):
 
 
 def open_start_versions():
-    """일반 판 버전: 배포 코드의 규칙·엔진 버전과 설정의 운영 활성 콘텐츠 버전(E-08-14)."""
+    """일반 판 버전: 설정의 규칙(`PALDO_RULE_BASE`, 비우면 배포 코드 기본)·엔진 버전과 운영 활성 콘텐츠 버전(E-08-14)."""
     from engine.domain import params
-    from server.app.open_start import deployed_versions
-    return deployed_versions(lambda: params.RULE_PARAMS_VERSION, settings.ACTIVE_CONTENT_VERSION)
+    from server.app.open_start import StartUnavailable, deployed_versions
+
+    def rule_version():
+        try:
+            return params.rule_params_version(getattr(settings, "ACTIVE_RULE_BASE", ""))
+        except ValueError:
+            raise StartUnavailable("rule_base_not_allowed") from None   # 콘텐츠 버전 미설정과 같이 시작만 막는다
+    return deployed_versions(rule_version, settings.ACTIVE_CONTENT_VERSION)
 
 
 def start_policy(session_prepare, load_game):

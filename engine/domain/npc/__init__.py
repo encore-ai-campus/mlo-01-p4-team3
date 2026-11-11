@@ -23,13 +23,14 @@ class RuleV0Policy:
     """NPC 규칙 v0. 씐 자 관찰자는 `PossessedPolicy`, 그 밖(마을 주민)은 `VillagerPolicy`로 보낸다.
 
     content는 인물 성향·동선(공개 콘텐츠)을 찾는 데만 쓴다. mix_source는 씐 자 전략 혼합 비율 공급자(D-09-02 밴딧).
+    abstain_margin은 마을 주민 투표 기권 문턱(rule-0.9~ 판만, 엔진 `abstain_margin_of`). 씐 자는 기권하지 않는다.
     """
 
     version = "rule-v0"
 
     def __init__(self, content: Optional[ContentBundle] = None, mix_source: Optional[MixSource] = None,
-                 q_max: Optional[float] = None):
-        self.villager = VillagerPolicy(content, q_max)
+                 q_max: Optional[float] = None, abstain_margin: Optional[float] = None):
+        self.villager = VillagerPolicy(content, q_max, abstain_margin)
         self.possessed = PossessedPolicy(content, mix_source)
 
     def _for(self, obs: ObservationSnapshot):
