@@ -113,3 +113,4 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | E-06-02 | 11/7 | 의도 예시 변형 규칙 `llm/intent_variants.py`(프롬프트 `intent-variants-v1`, 보존 검사 사유 12종)와 생성·반영 `llm/bench/gen_intent_variants.py`(`generate`·`apply`), 테스트 `tests/llm/test_intent_variants.py`, 계층 검사 대상에 추가 |
 | E-10-01 | 11/11 | 복기 해설 LLM 요약 규칙 `llm/review_narration.py`(항목 선정·요청 스키마로 NPC·인용 고정·문장 검사 6종·NPC별 템플릿 대체), 계층 검사 대상에 추가. 흐름·저장·HTTP·작업 프로세스는 `server/` 쪽(라우팅 [E](../routing/E.md)) |
 | E-10-13 | 11/10 | 생성 수단 변경(사용자 결정): 템플릿 변형을 별도 CPU 기기의 Kanana 생성 서버(llama.cpp `llama-server`, 127.0.0.1 전용, SSH 터널)로 만든다. 운영 절차 `ops/runbook/llm_gen.md` 추가. 코드는 바꾸지 않음. 터널 경유 시험 짧은 답 1.11 s, 생성 17.8 tok/s |
+| E-09-02 | 11/10 | 11/10 일괄 갱신: 필수 절 6개 확인. 대상(E-10-10·B-10-01·B-10-07)은 이 모듈을 바꾸지 않아 고칠 내용 없음 |
