@@ -538,5 +538,7 @@
         "{fact}"
       ]
     }
-  ]
+  ],
+  "extra_npcs": [],
+  "extra_secrets": []
 }
