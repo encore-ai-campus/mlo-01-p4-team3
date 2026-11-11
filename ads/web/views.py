@@ -15,6 +15,7 @@ from ads.app.click import handle_click
 from ads.app.serve import RequestConflict
 from ads.domain.model import AdContext, AdRequest, AdSlot, GameOutcome
 from ads.domain.rules import charge_id, verify_token
+from ads.infra import timing
 from ads.project.composition import get_service
 from ads.web.models import Creative
 from ads.web.telemetry import CLICK, DURATION, IMPRESSION, REGISTRY, SERVES
@@ -74,11 +75,13 @@ def serve(request):
                         ctx, source, _boolean(d.get("load_test", False)))
     except (ValueError, TypeError, UnicodeDecodeError):
         return JsonResponse({"error": "invalid_request"}, status=400)
-    service = get_service()
-    try:
-        out = service.serve(req)
-    except RequestConflict:
-        return JsonResponse({"error": "request_id_conflict"}, status=409)
+    with timing.collect() as spent:
+        with timing.phase("build_service"):
+            service = get_service()
+        try:
+            out = service.serve(req)
+        except RequestConflict:
+            return JsonResponse({"error": "request_id_conflict"}, status=409)
     if out.filled:
         claims, _ = verify_token(out.serve_token, service.key, service.clock())
         record = service.state.serves[claims.serve_id]
@@ -87,6 +90,8 @@ def serve(request):
     else:
         request.ad_fields = dict(filled=False)
     request.ad_fields["candidates"] = [asdict(c) for c in service.candidates[req.request_id]]
+    # 단계별 소요 시간(11/11 지연 원인 분리). 값만 담고 세션 가명은 담지 않는다.
+    request.ad_fields["timing"] = spent.fields()
     SERVES.labels(str(out.filled).lower()).inc()
     DURATION.labels("serve", "200").observe(time.perf_counter() - started)
     return JsonResponse(asdict(out))

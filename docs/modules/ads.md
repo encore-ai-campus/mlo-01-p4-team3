@@ -151,6 +151,10 @@ python ads/manage.py ad_update rollback-ctr --expected-version <활성-CTR-버�
 | DJANGO_SECRET_KEY | 필수. 광고 Django 서명용. 저장소에 기록하지 않는다 |
 | PALDO_ADS_TOKEN_KEY | 필수. 광고 HMAC 키. 저장소에 기록하지 않는다 |
 | PALDO_ADS_INTERNAL_URL | 내부 서비스 호스트. 로컬 기본 http://127.0.0.1:8001 |
+| PALDO_ADS_DB_CONN_MAX_AGE | DB 연결 재사용 초(기본 60, 0이면 요청마다 닫음). 운영 gunicorn gthread 고정 스레드에서만 효과가 있다(`CONN_HEALTH_CHECKS` 켬) |
+| `ads_server`(보호 JSON) / PALDO_ADS_SERVER | 광고 서버 실행 방식 `gunicorn`(기본)·`daphne`(되돌리기). `ops/mysql/service_runtime.py` |
+| `ads_threads`(보호 JSON) | gunicorn 작업 스레드 수(1~64, 기본 16). 스레드마다 DB 연결을 따로 가지므로 지연 비교 때 낮춰 본다 |
+| serve 단계 시간(`ad_http` 로그 `timing`) | serve 한 건의 단계별 ms(11/11 지연 원인 분리, `ads/infra/timing.py`): `connect`(DB 저장소가 트랜잭션 직전에 하는 상태 확인·연결 확보)·`new_connection`·`stale_connection_replaced`·`thread_first_connection`, `build_service`, `session_lock`, `stored_request`, `frequency_query`, `decide`(아래 단계 포함: `campaigns_load`, `campaign_lock`, `exposure_query`, `budget_check`, `budget_reserve`), `save`, `outbox`, `commit`, `db_queries`·`db_ms`, `thread`. 같은 단계가 여러 번이면 `<단계>_n`. 값만 남기고 세션 가명은 남기지 않는다 |
 | PALDO_ADS_DB_HOST·PORT·NAME·USER·PASSWORD | 광고 전용 MySQL. Compose는 127.0.0.1:3316, VM 기본 포트는 3306 |
 | PALDO_ADS_DB_TEST_NAME | 별도 테스트 스키마. 기본 test_paldo_ads |
 | PALDO_LOG_DIR | 기본 out/logs |
@@ -186,4 +190,6 @@ python ads/manage.py ad_update rollback-ctr --expected-version <활성-CTR-버�
 | C-08-02 | 11/11 | 하루 집계 자동화: `ad_export_ledger`(원장·일 예산 내보내기), `ctr_cells.json` → `ad_update ctr`, ad-01 timer(E 보강) |
 | D-06-03 | 11/11 | 합성 트래픽 시험 호스트 대기 한도를 시작 180초·제어 30초로 나눔(E 보완, 병렬 검사 중 시작 시간 초과 수정) |
 | B-08-03 | 11/11 | 지면 빈도 제한 3 → 1000(사실상 해제, 사용자 결정). 소재가 지면당 1~3개라 한 로그인 몇 판 만에 빈 응답. 운영 ad-01 픽스처도 같은 값으로 바꿈(E 보완) |
+| B-08-03 | 11/11 | 광고 서버 실행을 daphne → gunicorn gthread(프로세스 1·스레드 16)로 바꾸고 DB 연결 60초 재사용(사용자 결정). 운영 실측에서 요청마다 원격 MySQL TLS 연결을 새로 맺어 첫 조회 약 230ms(이후 1~9ms)였고 게임 웹 300ms 제한을 자주 넘었다. 프로세스 1개는 지표 레지스트리·서비스 상태가 프로세스 안에 있어서. `ads_server: daphne`로 되돌림(E 보완) |
+| B-08-03 | 11/11 | 캠페인 시간 조건(`targeting.hours`)을 서울 시각 기준으로 통일. 게임 웹이 서버 시간대(UTC)와 무관하게 서울 시각을 보냄. 운영 갓 캠페인 값도 같은 배포에서 서울 홀수 시로 바꿈(E 보완) |
 | B-08-03 | 11/11 | 광고 소재 실제 그림(Gemini, 사용자 생성)으로 교체. 그림 주소를 `/static/promo/<id>__wide.png`(728×90)·`__box.png`(300×250)로 바꿈(브라우저 광고 차단이 `/static/ads/`·`_728x90` 표기를 막음). 옛 기본 경로·옛 주소는 전환 동안 호환, 마이그레이션 0006(검증식만, DB 변경 없음)(E 보완) |
