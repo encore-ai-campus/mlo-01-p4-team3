@@ -1,0 +1,45 @@
+{% extends "admin/base_site.html" %}
+{% load tz %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumbs">
+  <li><a href="{% url 'admin:index' %}">홈</a></li>
+  <li><a href="{% url 'admin:ads_web_campaign_changelist' %}">캠페인</a></li>
+  <li aria-current="page">운영 조회</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="report-filters">
+  {{ form.as_p }}
+  <button type="submit">조회</button>
+</form>
+<p>조회 기준 {% localtime off %}{{ as_of|date:"Y-m-d H:i:s" }}{% endlocaltime %} 서울 시각 · 귀속일은 광고 응답 시각의 서울 날짜입니다.</p>
+<p>금액 단위는 밀리원이며 1원 = 1,000밀리원입니다. 일 예산은 캠페인의 현재 설정값입니다.</p>
+<div class="report-scroll" role="region" aria-label="캠페인별 운영 실적" tabindex="0">
+<table class="report-table">
+  <caption>현재 저장된 온라인 판정·원장 합계</caption>
+  <thead><tr>
+    <th scope="col">귀속일</th><th scope="col">광고주 / 캠페인</th><th scope="col">트래픽</th>
+    <th scope="col">일 예산</th><th scope="col">대기 예약액</th><th scope="col">확정 과금액</th>
+    <th scope="col">환입액</th><th scope="col">확정 순사용액</th><th scope="col">가용 예산</th>
+    <th scope="col">유효 노출</th><th scope="col">유효 클릭</th><th scope="col">CTR</th>
+  </tr></thead>
+  <tbody>{% for row in rows %}<tr>
+    <td>{{ row.attribution_day|date:"Y-m-d" }}</td>
+    <th scope="row">{{ row.name }}<br><small>{{ row.advertiser_id }} / {{ row.campaign_id }}</small>
+      {% if not row.balanced %}<p class="errornote">원장 합계와 예산 누계가 일치하지 않습니다.</p>{% endif %}</th>
+    <td>{% if row.source == "human" %}사람{% else %}합성{% endif %}</td>
+    <td>{{ row.daily_budget_mw|default_if_none:"—" }}</td><td>{{ row.reserved_mw }}</td>
+    <td>{{ row.charged_mw }}</td><td>{{ row.refunded_mw }}</td><td>{{ row.net_mw }}</td>
+    <td>{{ row.available_mw|default_if_none:"—" }}</td><td>{{ row.impressions }}</td><td>{{ row.clicks }}</td>
+    <td>{% if row.ctr_percent != None %}{{ row.ctr_percent|floatformat:2 }}%{% else %}—{% endif %}</td>
+  </tr>{% empty %}<tr><td colspan="12">조회 조건에 해당하는 기록이 없습니다.</td></tr>{% endfor %}</tbody>
+</table>
+</div>
+<div class="report-notes">
+  <p>실시간 조회는 대기 예약을 포함합니다. 고아 예약은 광고 응답 기록이 실패했어도 응답 시각 + 32분의 해제 시각까지 남을 수 있습니다.</p>
+  <p>확정 배치 집계는 서울 시각 매일 00:40에 실행하며 00:32 확정 마감 이후의 확정 순액을 사용합니다. 이 화면은 현재 원장과 온라인 유효 판정을 조회합니다.</p>
+  <p>유효 노출·클릭은 원 serve별로 한 번씩 집계하며 클릭으로 인정한 노출을 포함합니다. 개인정보 삭제로 제거된 기록은 조회에 포함되지 않습니다. 과거 귀속일의 일 예산도 현재 캠페인 설정값을 사용하며, 삭제된 캠페인의 예산과 가용 예산은 —로 표시합니다.</p>
+</div>
+{% endblock %}
