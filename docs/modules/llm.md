@@ -79,6 +79,7 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | `KEY_ENV_PREFIX`(`llm/bench/watch_pods.py`) | `PALDO_RUNPOD_KEY_` | 계정별 API 키 환경 변수 이름 접두어. `--key-env`로 고른 변수 값만 자식 `runpodctl`에 `RUNPOD_API_KEY`로 넘기고 이 접두어의 다른 변수는 뺀다(11/8 사용자 결정으로 E가 네 계정 운영) | 값은 저장소 밖(`4th_private`), 출력하지 않음 |
 | `PROMPT_VERSION` / `GEN_SETTINGS` / `MAX_ITEMS` / `MAX_GAME_ITEMS` / `MAX_SENTENCE_CHARS`(`llm/review_narration.py`) | `review-v1` / temperature 0.3, top_p 0.9, max_tokens 900 / 3 / 10 / 70 | 복기 해설 LLM 요약(E-10-01): NPC당 요약 항목, 판 전체 항목 상한(넘으면 마지막이 아닌 투표부터 뺌), 문장 글자 수 상한 | 항목 상한을 올리면 3B 모델 출력이 요청 제한(90초)을 넘을 수 있다 |
 | `PALDO_REVIEW_LLM_URL` / `PALDO_REVIEW_DEADLINE_S`(게임 서버 환경 변수) | 비움 / 180 | 복기 해설 생성 서버 주소(비우면 기능·Kanana 표기 꺼짐), 작업 마감 | 주소 값은 저장소 밖. 운영 `ops/runbook/llm_gen.md` 7절 |
+| `PALDO_LLM_METRIC_FILE`(게임 서버 환경 변수, E-12-01) | 비움 | LLM 작업 프로세스 지표 파일(Prometheus 텍스트 형식) 경로. `{worker}`는 `npc_line`·`review`로 바뀌고, 없으면 파일 이름 앞에 `<worker>_`를 붙인다 | 비우면 쓰지 않는다. 지표 이름·라벨(`paldo_llm_*`)은 C-12-03 대시보드와의 계약이라 바꾸면 대시보드도 고친다 |
 
 ## 한계
 
@@ -117,3 +118,4 @@ STAGE=s1 MAX_MINUTES=90 EXPORT_CMD='<반출 명령>' bash llm/bench/run_pod.sh <
 | E-09-02 | 11/10 | 11/10 일괄 갱신: 필수 절 6개 확인. 대상(E-10-10·B-10-01·B-10-07)은 이 모듈을 바꾸지 않아 고칠 내용 없음 |
 | E-11-13 | 11/11 | 회의 발언 다듬기 규칙 `llm/npc_polish.py` 추가(요청 조립은 공개 문자열만, 프롬프트 `meeting-polish-v3`, 검사 `meeting-polish-check-v2`(감탄사 허용 목록 포함, 11/11 사용자 승인), 결과 선택). 실시간 캐묻기 답은 기존 `prompt.py`·`validator.py` 그대로 쓰고 프롬프트 캐시를 켬 |
 | E-10-10 | 11/11 | 복기 해설에 의심 근거 풀이(`NarrationItem.basis`, 승인 문구)를 더함. LLM에는 보내지 않고(프롬프트 `review-v1` 그대로) 최종 문장(LLM·템플릿) 뒤에 고치지 않고 붙인다(`with_basis`). 문장 글자 수 상한 70자는 LLM 문장에만 적용 |
+| E-12-01 | 11/12 | LLM 작업 프로세스 지표(코드 동결 예외): `npc_line_worker`·`review_worker`가 `PALDO_LLM_METRIC_FILE`에 `paldo_llm_jobs_total{worker,outcome}`·`paldo_llm_lines_total{worker,source}`·`paldo_llm_worker_loop_errors_total`·대기/생성 시간 히스토그램·대기 건수·마지막 갱신 시각을 쓴다. 분류·렌더 `server/app/llm_metrics.py`, 쓰기 `server/infra/metric_file.py` |
