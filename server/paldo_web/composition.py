@@ -59,7 +59,21 @@ def get_game_service():
     if service.prepare_start is None:
         service.prepare_start = start_policy(partial(_prepare_fixed_start, load_game=service.repository.load),
                                              service.repository.load)
+    if getattr(service, "prepare_tutorial", "") is None:
+        service.prepare_tutorial = tutorial_policy()
+    if hasattr(service, "free_text_input"):
+        service.free_text_input = _free_text_input   # 직접 입력창 설정(튜토리얼 자유 입력 단계의 카드/버튼 분기)
     return service
+
+
+def _free_text_input():
+    return settings.FREE_TEXT_INPUT
+
+
+def tutorial_policy():
+    """튜토리얼 판 정책: 운영 활성 콘텐츠 버전만 설정에서 읽는다. 시드·프리셋·규칙은 도메인 상수(engine/domain/tutorial.py)."""
+    from server.app.tutorial_start import TutorialStartPolicy
+    return TutorialStartPolicy(lambda: settings.ACTIVE_CONTENT_VERSION)
 
 
 def _prepare_fixed_start(data, player, load_game):

@@ -45,3 +45,8 @@ class MongoProgressRepository:
         """동시 판 추가가 서로를 덮어쓰지 않게 집합으로 갱신한다."""
         self._ensure(player_pseudonym)
         self.collection.update_one({'_id':player_pseudonym},{'$addToSet':{'progress.game_ids':game_id}})
+
+    def mark_tutorial_completed(self, player_pseudonym):
+        """튜토리얼 시작 표시. 다른 칸을 덮어쓰지 않게 이 칸만 원자적으로 켠다(멱등)."""
+        self._ensure(player_pseudonym)
+        self.collection.update_one({'_id':player_pseudonym},{'$set':{'progress.tutorial_completed':True}})

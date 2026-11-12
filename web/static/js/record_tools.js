@@ -69,7 +69,8 @@
       for(const card of chosen) { const p=document.createElement('p'); p.textContent=`${card.querySelector('strong').textContent} · ${card.querySelector('.claim-meta')?.textContent.trim() || ''} — ${card.querySelector('.claim-meta + p').textContent}`; target.append(p); }
       const comparison=target.closest('[data-record-comparison]');
       comparison.hidden=false;
-      if(comparison.closest('dialog'))comparison.scrollIntoView({block:'start'});
+      // 비교 결과는 목록 아래에 생기므로 보이는 곳으로 끌어온다(11/11 튜토리얼 시운전: 눌러도 변화가 안 보임).
+      comparison.scrollIntoView?.({block:comparison.closest('dialog')?'start':'nearest'});
     });
     filter();
     if (selectionGuide) updateSelection();

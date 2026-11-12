@@ -6,6 +6,7 @@ from . import npc_lines_view
 
 urlpatterns = [
     path("games", views.start_game, name="game-start"),
+    path("tutorial", views.start_tutorial, name="tutorial-start"),
     path("games/<str:game_id>", views.game_detail, name="game-detail"),
     path("games/<str:game_id>/commands", views.submit_command, name="game-command"),
     path("games/<str:game_id>/utterances", interactions.parse_utterance, name="game-utterance"),

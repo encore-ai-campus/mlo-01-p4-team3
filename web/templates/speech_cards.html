@@ -11,13 +11,13 @@
       <h3>{{ card.kind|action_label }}</h3>
       <p>{% if card.target %}대상: {{ card.target_name|display_name }}{% endif %}{% if card.addressee %}{% if card.target %} · {% endif %}질문 상대: {{ card.addressee_name|display_name }}{% endif %}</p>
       {% if card.missing %}<p>빠진 항목: {% for slot in card.missing %}{{ slot|slot_label }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
-      <form class="command-form" hx-post="/games/{{ vm.game_id }}/utterances/{{ attempt_id }}" hx-target="#speech-cards" hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
+      <form class="command-form" data-card-confirm hx-post="/games/{{ vm.game_id }}/utterances/{{ attempt_id }}" hx-target="#speech-cards" hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
         {% csrf_token %}<input type="hidden" name="game_id" value="{{ vm.game_id }}"><input type="hidden" name="attempt_id" value="{{ attempt_id }}">
         <input type="hidden" name="state_version" value="{{ attempt_version }}"><input type="hidden" name="command_id">
         <input type="hidden" name="reaction" value="confirm"><input type="hidden" name="chosen_index" value="{{ card.index }}">
         <button type="submit"{% tip "card_run" %} {% if card.missing or card.ambiguous_evidence %}disabled{% endif %}>이 카드 하나 실행</button>
       </form>
-      <details><summary @click="editing = !editing">카드 수정</summary>
+      <details data-card-edit><summary @click="editing = !editing">카드 수정</summary>
         <form class="command-form" hx-post="/games/{{ vm.game_id }}/utterances/{{ attempt_id }}" hx-target="#speech-cards" hx-swap="outerHTML" hx-sync="#meeting:drop" hx-disabled-elt="find button">
           {% csrf_token %}<input type="hidden" name="game_id" value="{{ vm.game_id }}"><input type="hidden" name="attempt_id" value="{{ attempt_id }}">
           <input type="hidden" name="state_version" value="{{ attempt_version }}"><input type="hidden" name="command_id">

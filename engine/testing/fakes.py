@@ -214,6 +214,7 @@ class InMemoryGameRepository:
 
 
 class InMemoryProgressRepository:
+    """메모리 진척 저장소(시험용 가짜 구현)."""
     def __init__(self) -> None:
         self.items: dict[str, PlayerProgress] = {}
         self.applied: dict[str, set[str]] = {}
@@ -247,6 +248,10 @@ class InMemoryProgressRepository:
         p = self._get(player_pseudonym)
         if game_id not in p.game_ids:
             p.game_ids.append(game_id)
+
+    def mark_tutorial_completed(self, player_pseudonym: str) -> None:
+        """튜토리얼 완료 표시를 켠다(멱등)."""
+        self._get(player_pseudonym).tutorial_completed = True
 
 
 class FixtureContentSource:
