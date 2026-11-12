@@ -9,6 +9,8 @@
 - 카나리아는 회차 없는 일반 판에서만, 설정 비율(시작값 0, 운영에서 정함)로 배정한다. 사용자 테스트 회차 판은
   항상 끈다. 배정은 판 ID 해시로 정해 같은 판의 재전송에도 같은 결과가 나온다.
 - 해석 결과의 모델 버전이 판 메타의 의도 해석기 버전과 다르면 경보 로그(`level=warning`)를 남긴다. 해석은 막지 않는다.
+- 씐 자 전략 밴딧(11/12): 스위치가 켜져 있으면 회차 없는 일반 사람 판(부하 시험 아님)에만 밴딧 버전과 팔을
+  `model_versions`의 `bandit`·`bandit_arm`에 고정한다. 고르기에 실패하면 판 시작을 막지 않고 기록 없이(균등 비율) 시작한다.
 """
 from __future__ import annotations
 
@@ -17,13 +19,14 @@ import logging
 from dataclasses import dataclass, replace
 from typing import Callable, Optional, Protocol
 
-from engine.domain.model import GameMeta
+from engine.domain.model import DataSource, GameMeta
 
 LOGGER = logging.getLogger("paldo.web.model_versions")
 
 INTENT_KEY = "intent"          # model_versions 안의 의도 해석기 버전 키(FakeModelSelector와 같은 이름)
 SUSPICION_KEY = "suspicion"    # 의심 모델 버전 키
-BANDIT_KEY = "bandit"          # 광고·밴딧 비율 버전 키(D-09-02)
+BANDIT_KEY = "bandit"          # 씐 자 전략 밴딧 버전 키(D-09-02, 11/12 운영 연결)
+BANDIT_ARM_KEY = "bandit_arm"  # 그 판에 고른 씐 자 전략 팔 ID(`ml/bandit_arms.json`)
 CANARY_BUCKETS = 10_000
 
 
@@ -129,3 +132,45 @@ def update_history(registry: Optional[ModelRegistry], limit: int = 20) -> list[P
     if registry is None:
         return []
     return sorted(registry.promotions(), key=lambda r: (r.at, r.model, r.version), reverse=True)[:limit]
+
+
+class BanditChooser(Protocol):
+    """씐 자 전략 밴딧 팔 고르기 포트. 실제 구현은 인프라(`server/infra/possessed_bandit.py`, Mongo 게시 상태)."""
+
+    def choose(self, game_id: str) -> tuple[str, str]:
+        """(밴딧 버전, 팔 ID). 같은 판 ID와 같은 게시 상태면 같은 값이다."""
+        ...
+
+
+class BanditPinning:
+    """`VersionPinning` 뒤에 붙여 새 판 메타에 씐 자 전략 밴딧 버전·팔을 고정한다.
+
+    대상: 스위치 켜짐, 회차 없는 판(`session_id is None`), 사람 판, 부하 시험 아님, 아직 밴딧 기록 없음.
+    튜토리얼 판은 이 시작 경로를 쓰지 않는다(출처 SCRIPTED). 고르기 실패는 경고 로그만 남기고 기록 없이 시작한다.
+    """
+
+    def __init__(self, inner: Optional[Callable[[GameMeta], GameMeta]], chooser: BanditChooser,
+                 enabled: Callable[[], bool] = lambda: True, load_test: Callable[[], bool] = lambda: False):
+        self.inner = inner
+        self.chooser = chooser
+        self.enabled = enabled
+        self.load_test = load_test
+
+    def eligible(self, meta: GameMeta) -> bool:
+        """밴딧 팔을 고를 판인지."""
+        return (bool(self.enabled()) and not self.load_test() and meta.session_id is None
+                and meta.source is DataSource.HUMAN and BANDIT_KEY not in meta.model_versions)
+
+    def __call__(self, meta: GameMeta) -> GameMeta:
+        """기존 버전 고정 뒤, 대상 판이면 밴딧 버전·팔을 더한다."""
+        if self.inner is not None:
+            meta = self.inner(meta)
+        if not self.eligible(meta):
+            return meta
+        try:
+            version, arm = self.chooser.choose(meta.game_id)
+        except Exception as exc:  # 밴딧 상태를 못 읽어도 판 시작은 막지 않는다(균등 비율)
+            LOGGER.warning("possessed_bandit_unavailable",
+                           extra={"component": "model_versions", "fields": {"error_type": type(exc).__name__}})
+            return meta
+        return replace(meta, model_versions={**meta.model_versions, BANDIT_KEY: version, BANDIT_ARM_KEY: arm})
