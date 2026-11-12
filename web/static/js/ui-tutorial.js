@@ -118,7 +118,7 @@
     }
     function lockAllExcept(allowed) {
       const keep = el => el.matches(ALWAYS) || allowed.some(a => a === el || a.contains(el) || el.contains(a));
-      const scope = [...root.querySelectorAll(CONTROLS), ...document.querySelectorAll('.app-header [data-records-open], .app-header [data-notebook-open]')];
+      const scope = [...root.querySelectorAll(CONTROLS), ...document.querySelectorAll('.app-header [data-records-open], .app-header [data-notebook-open], .app-header [data-alibi-grid-open]')];
       for (const el of scope) {
         if (el.closest('.vn-script, [hidden]') && !visible(el)) continue;
         if (keep(el) || el.inert) continue;

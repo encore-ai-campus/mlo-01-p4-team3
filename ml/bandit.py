@@ -16,6 +16,7 @@ from collections import Counter
 from dataclasses import asdict
 from datetime import datetime
 from itertools import product
+from pathlib import Path
 
 from engine.domain.npc.policy_possessed import StrategyMix, LIE_TYPES, FRAME_TARGETS, ANSWER_INTENTS
 
@@ -235,6 +236,23 @@ def games_from_events(events, consented_users):
     return result
 
 
+ARMS_PATH = Path(__file__).with_name('bandit_arms.json')
+
+
+def load_arms(path=ARMS_PATH):
+    """Fixed initial arm file (11/12 production wiring). Arms must not change after first publication."""
+    arms = json.loads(Path(path).read_text(encoding='utf-8'))
+    if not isinstance(arms, dict) or not arms:
+        raise ValueError('bandit arms file must be a non-empty object')
+    initial_state(arms)  # validates every arm as a StrategyMix
+    return arms
+
+
+def latest_version(state):
+    """Version new games should pin: newest published snapshot, else uniform bandit-0."""
+    return state['versions'][-1]['version'] if state['versions'] else 'bandit-0'
+
+
 class VersionedMixSource:
     """Read one pinned snapshot, choose a profile deterministically per game ID."""
     def __init__(self, state, version):
@@ -245,9 +263,12 @@ class VersionedMixSource:
         self.version, self.ratios = version, copy.deepcopy(ratios)
         self.arms = copy.deepcopy(state['arms'])
 
+    def arm_for(self, game_id):
+        """Arm ID for this game under the pinned version (same game ID -> same arm)."""
+        digest = hashlib.sha256(f'{self.version}:{game_id}'.encode()).digest()
+        return random.Random(digest).choices(sorted(self.ratios),
+                  weights=[self.ratios[a] for a in sorted(self.ratios)])[0]
+
     def mix_for(self, game_id):
         """Return a fresh StrategyMix; policy caches it for the duration of the game."""
-        digest = hashlib.sha256(f'{self.version}:{game_id}'.encode()).digest()
-        arm = random.Random(digest).choices(sorted(self.ratios),
-                  weights=[self.ratios[a] for a in sorted(self.ratios)])[0]
-        return StrategyMix(**copy.deepcopy(self.arms[arm]))
+        return StrategyMix(**copy.deepcopy(self.arms[self.arm_for(game_id)]))

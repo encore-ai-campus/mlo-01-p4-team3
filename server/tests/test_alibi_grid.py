@@ -4,6 +4,7 @@ import json
 import re
 import uuid
 from dataclasses import replace
+from pathlib import Path
 
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
@@ -388,6 +389,18 @@ class GridStagePanel(TestCase):
         html = response.content.decode()
         self.assertIn('<section id="meeting-alibi-grid"', html)
         self.assertIn('data-stage-open="meeting-alibi-grid"', html)
+
+    @override_settings(GAME_UI="vn")
+    def test_header_button_after_records_opens_stage_panel(self):
+        """오른쪽 위 머리글에 '진술표' 바로 뒤 '행적표' 버튼(같은 툴팁 키, 처음엔 숨김). 누르면 무대 버튼을 대신 누르고 튜토리얼 잠금 대상이다."""
+        html = self.client.get(self.base, HTTP_ACCEPT="text/html").content.decode()
+        header = html[html.index('class="site-links"'):html.index("</nav>", html.index('class="site-links"'))]
+        self.assertRegex(header, r'>진술표</button><button type="button" data-alibi-grid-open hidden title="진술을 밤·시간대·장소별로 모아 봅니다"[^>]*>행적표</button>')
+        root = Path(__file__).resolve().parents[2] / "web/static/js"
+        vn = (root / "ui-vn.js").read_text(encoding="utf-8")
+        self.assertIn("alibiButton.hidden=!root?.querySelector('[data-stage-open=\"meeting-alibi-grid\"]')", vn)
+        self.assertIn("if(event.target.closest('[data-alibi-grid-open]'))document.querySelector('[data-stage-open=\"meeting-alibi-grid\"]')?.click();", vn)
+        self.assertIn(".app-header [data-alibi-grid-open]", (root / "ui-tutorial.js").read_text(encoding="utf-8"))
 
     @override_settings(GAME_UI="classic")
     def test_classic_has_no_stage_button(self):

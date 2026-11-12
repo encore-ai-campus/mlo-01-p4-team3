@@ -58,12 +58,16 @@ class ContentPolicyEngine:
     rule-0.7 이하로 시작한 판(`home_alibi` 거짓)은 무당 의심 상한을 `params.LEGACY_DECISION.q_max`로 고정한
     정책을 따로 만들어, rule-0.8 배포 뒤에도 판 메타 버전의 수치로 이어 간다(A-10-01 1번).
     기권 규칙 판(rule-0.9~, `abstain_margin_of`)은 마을 주민 기권 문턱을 준 정책을 따로 만든다.
+    `mix_source`(씐 자 전략 밴딧, `possessed_bandit.PinnedMixSource`)가 있으면 정책에 끼우고, 엔진 호출 직전마다
+    판 메타를 알려 판에 고정된 팔을 쓰게 한다. 없으면 기존처럼 균등 혼합이다.
     """
 
-    def __init__(self, make_policy: Callable[[ContentBundle], object] = RuleV0Policy, model_version='unknown'):
+    def __init__(self, make_policy: Callable[[ContentBundle], object] = RuleV0Policy, model_version='unknown',
+                 mix_source=None):
         """콘텐츠별 엔진 캐시와 관측용 모델 버전을 보관한다."""
         self.make_policy = make_policy
         self.model_version = model_version
+        self.mix_source = mix_source
         self._engines: dict[tuple, PaldoEngine] = {}
         self._lock = threading.Lock()
 
@@ -73,6 +77,8 @@ class ContentPolicyEngine:
             kw["q_max"] = params.LEGACY_DECISION.q_max
         if abstain_margin is not None:
             kw["abstain_margin"] = abstain_margin
+        if self.mix_source is not None:
+            kw["mix_source"] = self.mix_source
         if not kw:
             return self.make_policy(content)
         try:
@@ -90,28 +96,35 @@ class ContentPolicyEngine:
                 engine = self._engines[key] = PaldoEngine(self._policy(content, legacy, margin))
             return engine
 
+    def _note(self, meta):
+        if self.mix_source is not None:
+            self.mix_source.note(meta)
+
     def new_game(self, meta, deps):
         """판 콘텐츠 버전(과 규칙 버전)의 엔진으로 판을 만든다."""
+        self._note(meta)
         return self._for(deps.content, meta.rule_version).new_game(meta, deps)
 
     def apply(self, state, truth, env, deps):
         """판 콘텐츠 버전(과 규칙 버전)의 엔진으로 명령을 적용한다."""
         from server.infra.observed_models import observe_decisions
+        self._note(state.meta)
         transition=self._for(deps.content, state.meta.rule_version).apply(state, truth, env, deps)
         observe_decisions(transition,self.model_version)
         return transition
 
     def player_view(self, state, content):
         """판 콘텐츠 버전의 엔진으로 플레이어 화면 정보를 만든다."""
+        self._note(state.meta)
         return self._for(content, state.meta.rule_version).player_view(state, content)
 
 
-def engine_parts():
-    """운영 조립이 B 실행 자원에 넘기는 엔진과 의심 모델."""
+def engine_parts(mix_source=None):
+    """운영 조립이 B 실행 자원에 넘기는 엔진과 의심 모델. `mix_source`는 씐 자 전략 밴딧(없으면 균등)."""
     from engine.testing.fakes import FakeSuspicionModel
     from server.infra.observed_models import ObservedSuspicionModel
     model=ObservedSuspicionModel(FakeSuspicionModel())
-    return ContentPolicyEngine(model_version=model.model_version), model
+    return ContentPolicyEngine(model_version=model.model_version, mix_source=mix_source), model
 
 
 def attach_interactions(service, store, parser, renderer=None):
@@ -251,7 +264,11 @@ def build_game_service():
     from server.app.model_versions import INTENT_KEY, SUSPICION_KEY
     from server.infra.model_registry import StaticModelRegistry
     from server.paldo_web.mongo import open_mongo_runtime
-    engine, fake = engine_parts()
+    from server.infra.possessed_bandit import PinnedMixSource, attach_possessed_bandit
+    from ml.bandit import load_arms
+    # 스위치를 꺼 되돌려도 이미 팔을 고정한 판은 그 팔을 계속 쓰도록 혼합 공급자는 늘 끼운다(새 판 고정만 스위치).
+    arms = load_arms()
+    engine, fake = engine_parts(PinnedMixSource(arms))
     store, production = suspicion_models(fake, getattr(settings, "SUSPICION_MODEL_VERSION", ""),
                                          getattr(settings, "SUSPICION_MODEL_ROOT", "mlruns"))
     atexit.register(store.close)
@@ -290,5 +307,6 @@ def build_game_service():
         atexit.register(store.close)
         service.interactions.parser = PinnedIntentParser(service.repository, artifacts, parser)
     service.release_game = store.release
-    return attach_model_versions(service, registry, store,
-                                 lambda: getattr(settings, "MODEL_CANARY_RATIO", 0.0))
+    attach_model_versions(service, registry, store, lambda: getattr(settings, "MODEL_CANARY_RATIO", 0.0))
+    return attach_possessed_bandit(service, runtime.database, runtime_prefix(runtime), arms,
+                                   lambda: getattr(settings, "POSSESSED_BANDIT", False))
