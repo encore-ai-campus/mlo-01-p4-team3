@@ -54,6 +54,7 @@ class TutorialMeetingScreen(RecordedGameLines):
     test_every_public_record_reaches_the_dialogue = None
 
     def page(self):
+        """판 화면 HTML을 읽는다."""
         return self.client.get(f"/games/{self.game_id}", HTTP_ACCEPT="text/html").content.decode()
 
     def test_normal_game_has_no_tutorial_parts_but_has_command_hooks(self):
@@ -123,6 +124,7 @@ class TutorialHomeCard(TestCase):
     """홈 튜토리얼 카드."""
 
     def setUp(self):
+        """튜토리얼을 시작하지 않은 시험 계정으로 로그인한다."""
         self.user = User.objects.create_user(username="tutorial-home")
         install_test_profiles(self)(self.user)
         self.client.force_login(self.user)

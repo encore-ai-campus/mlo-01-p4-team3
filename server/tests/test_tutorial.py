@@ -40,6 +40,7 @@ class CountingModels:
         self.model, self.calls = model, []
 
     def for_game(self, game_id, version):
+        """판마다 대여한 기록을 남기고 같은 모델을 돌려준다."""
         self.calls.append((game_id, version))
         return self.model
 
@@ -57,19 +58,24 @@ class CountingRenderer:
         self.calls = []
 
     def submit(self, req):
+        """제출 기록만 남긴다."""
         self.calls.append(("submit", req.job_id))
 
     def poll(self, job_id):
+        """조회 기록을 남기고 완료 결과를 돌려준다."""
         self.calls.append(("poll", job_id))
         from engine.ports import RenderResult, RenderStatus
         return RenderResult(job_id, RenderStatus.DONE, "생성 문장", latency_ms=1, queue_ms=0, model_version="llm")
 
     def cancel(self, job_id):
+        """취소 기록만 남긴다."""
         self.calls.append(("cancel", job_id))
 
 
 class TutorialWeb(TestCase):
+    """튜토리얼 시작·진행·강제·화면 컨텍스트를 HTTP로 확인한다."""
     def setUp(self):
+        """로그인한 시험 계정과 튜토리얼 정책이 붙은 게임 서비스를 준비한다."""
         self.user, self.player = make_player("tutorial-player")
         self.client.force_login(self.user)
         engine, fake = engine_parts()
@@ -94,6 +100,7 @@ class TutorialWeb(TestCase):
 
     # ---- 요청 도우미
     def post(self, path, data, status=None):
+        """JSON 요청을 보내고, 상태 코드를 주면 그 값인지 확인한다."""
         response = self.client.post(path, data=json.dumps(data), content_type="application/json",
                                     HTTP_ACCEPT="application/json")
         if status is not None:
@@ -101,22 +108,27 @@ class TutorialWeb(TestCase):
         return response
 
     def start(self, token=None):
+        """튜토리얼 판을 시작하고 화면 상태를 돌려준다."""
         response = self.post("/tutorial", {"start_token": token or str(uuid.uuid4()), "mudang_variant": "f"}, 201)
         return response.json()["view"]
 
     def view(self, gid):
+        """판 화면 상태(JSON)를 읽는다."""
         return self.client.get(f"/games/{gid}", HTTP_ACCEPT="application/json").json()["view"]
 
     def command(self, gid, version, cmd, status=None):
+        """명령을 보낸다."""
         return self.post(f"/games/{gid}/commands", {"game_id": gid, "command_id": str(uuid.uuid4()),
                                                     "expected_state_version": version,
                                                     "command": to_jsonable(cmd)}, status)
 
     def utter(self, gid, version, text=tutorial.UTTERANCE_TEXT):
+        """자유 입력 문장을 보내 카드 해석 결과를 받는다."""
         return self.post(f"/games/{gid}/utterances", {"game_id": gid, "expected_state_version": version,
                                                       "text": text}, 200).json()
 
     def confirm(self, gid, version, attempt, status=None, reaction="confirm", edited=None):
+        """카드 확인·수정·취소 반응을 보낸다."""
         body = {"game_id": gid, "attempt_id": attempt, "reaction": reaction, "command_id": str(uuid.uuid4()),
                 "expected_state_version": version}
         if reaction == "confirm":
@@ -155,6 +167,7 @@ class TutorialWeb(TestCase):
 
     # ---- 시험
     def test_full_script_wins_with_free_text_on_and_off(self):
+        """직접 입력창 켬·끔 두 경로 모두 대본대로 끝까지 진행하면 마을이 이긴다."""
         with override_settings(FREE_TEXT_INPUT=True):
             on = self.play(free_text=True)
         with override_settings(FREE_TEXT_INPUT=False):
@@ -212,10 +225,12 @@ class TutorialWeb(TestCase):
         self.assertEqual(ok.context["tutorial"]["step"], i + 1)
 
     def test_wrong_commands_are_rejected_without_consuming(self):
+        """단계 밖 명령은 거부되고 소비되지 않아 대본대로 끝까지 갈 수 있다."""
         view = self.play(check_wrong=True)
         self.assertEqual((view["result"]["winner"], view["result"]["day"]), ("village", 2))
 
     def test_no_model_no_llm_no_progress_and_anonymous_events(self):
+        """튜토리얼 판은 판단 모델·대사 LLM·계정 진척을 쓰지 않고 이벤트 가명을 비운다."""
         view = self.play()
         gid = view["game_id"]
         self.assertEqual(self.models.calls, [])                     # 의심 모델 보관소 대여 0회
@@ -257,6 +272,7 @@ class TutorialWeb(TestCase):
 
     # ---- 튜토리얼 강제(11/11 사용자 결정): 튜토리얼을 시작하지 않은 계정의 일반 판 새로 시작은 튜토리얼 판
     def use_open_policy(self):
+        """일반 판 시작을 실제 시작 정책으로 바꿔 끼운다(회차 판 준비는 고정 시드 대역, 튜토리얼 강제 시험용)."""
         from dataclasses import replace
         from server.app.open_start import StartPolicy, StartVersions
 
@@ -267,6 +283,7 @@ class TutorialWeb(TestCase):
             tutorial.rule_version(), "paldo-engine", BUNDLE.content_version), self.service.repository.load)
 
     def open_start(self, token=None, status=200, **extra):
+        """일반 판 새로 시작(JSON `POST /games`)을 보낸다."""
         return self.post("/games", {"preset_id": "base6", "session_id": None, "mudang_variant": "f",
                                     "start_token": token or str(uuid.uuid4()), **extra}, status)
 
@@ -284,6 +301,7 @@ class TutorialWeb(TestCase):
         self.assertEqual(self.service.progress.load(self.player).game_ids, [normal["view"]["game_id"]])
 
     def test_html_open_start_redirects_to_tutorial_game(self):
+        """HTML 일반 판 시작도 튜토리얼 판 화면으로 보낸다."""
         self.use_open_policy()
         response = self.client.post("/games", urlencode({"preset_id": "base6", "mudang_variant": "f",
                                                          "start_token": str(uuid.uuid4())}),
@@ -383,6 +401,7 @@ class TutorialWeb(TestCase):
         self.assertNotIn("data-tutorial-first", self.client.get(reverse("home")).content.decode())
 
     def test_start_validation_and_replay(self):
+        """같은 시작 UUID 재요청은 같은 판이고, 시드·프리셋 등 허용하지 않은 입력은 400이다."""
         token = str(uuid.uuid4())
         first = self.start(token)
         again = self.start(token)
@@ -400,6 +419,7 @@ class TutorialWeb(TestCase):
         self.assertTrue(form["Location"].startswith("/games/"))
 
     def test_unverified_content_version_blocks_start(self):
+        """운영 콘텐츠 버전이 튜토리얼 확인 버전이 아니면 시작을 막는다(503)."""
         self.service.prepare_tutorial = TutorialStartPolicy(lambda: "content-9.9")
         self.post("/tutorial", {"start_token": str(uuid.uuid4()), "mudang_variant": "f"}, 503)
 
@@ -412,6 +432,7 @@ class TutorialWeb(TestCase):
         self.assertEqual(again["game_id"], first["game_id"])
 
     def test_meeting_context_has_tutorial_step(self):
+        """회의 화면 컨텍스트에 튜토리얼 단계 정보가 실리고, 마지막 하위 단계는 제출이다."""
         view = self.start()
         response = self.client.get(f"/games/{view['game_id']}", HTTP_ACCEPT="text/html")
         ctx = response.context
@@ -434,6 +455,7 @@ class TutorialWeb(TestCase):
 
     # ---- 1회차 시운전 반영 시험(화면 단)
     def html(self, gid, **extra):
+        """판 화면 HTML을 읽는다."""
         return self.client.get(f"/games/{gid}", HTTP_ACCEPT="text/html", **extra)
 
     def assert_selector_in_html(self, html, sub, where):
@@ -516,6 +538,7 @@ class TutorialWeb(TestCase):
         self.assertIn("tutorial_off_script", logs.output[0])
 
     def test_tutorial_review_hides_clues_and_ad(self):
+        """튜토리얼 복기에는 원한 단서 묶음과 광고 칸이 없다."""
         view = self.play()
         panel = self.client.get(f"/games/{view['game_id']}/review", HTTP_ACCEPT="text/html", HTTP_HX_REQUEST="true")
         self.assertEqual(panel.status_code, 200)
@@ -528,6 +551,7 @@ class TutorialWeb(TestCase):
 
 
 class TutorialScriptShape(TestCase):
+    """대본 모양 검사."""
     def test_every_say_key_is_a_real_substep(self):
         """대본 말풍선 키가 화면 하위 단계 키와 맞는다(오타면 말풍선이 엉뚱한 기본 문장으로 나온다)."""
         from server.api import tutorial_view
@@ -539,7 +563,9 @@ class TutorialScriptShape(TestCase):
                 self.assertTrue(script["lines"], (free_text, i))
 
 class ReplayProgressSkipsTutorial(TestCase):
+    """진척 재생이 튜토리얼 판을 건너뛴다."""
     def test_query_and_loop_skip_scenario_games(self):
+        """판 조회와 반복 처리 모두 시나리오 판(튜토리얼)을 빼고 진척을 계산한다."""
         from server.infra.replay_progress import replay_games
         seen = {}
 
@@ -565,7 +591,9 @@ class ReplayProgressSkipsTutorial(TestCase):
 
 
 class SerdeCompat(TestCase):
+    """직렬화 하위 호환."""
     def test_old_meta_without_scenario_id_loads(self):
+        """시나리오 ID 칸이 없는 예전 판 메타도 읽힌다."""
         from engine.domain.model import GameMeta, PRESETS, DataSource
         from engine.domain.serde import from_jsonable
         meta = to_jsonable(GameMeta("g", PRESETS["base6"], 1, DataSource.HUMAN, "r", "e", "c"))

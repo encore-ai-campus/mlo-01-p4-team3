@@ -55,6 +55,7 @@ class Expected:
 
 @dataclass(frozen=True)
 class Step:
+    """튜토리얼 한 단계: 그 단계의 날·국면과 허용 명령 하나."""
     day: int
     phase: Phase
     expected: Expected
@@ -86,6 +87,7 @@ STEPS: tuple[Step, ...] = (
 
 
 def is_tutorial(scenario_id: Optional[str]) -> bool:
+    """튜토리얼 판의 시나리오 ID인지."""
     return scenario_id == SCENARIO_ID
 
 
@@ -96,6 +98,7 @@ def step_index(state_version: int) -> Optional[int]:
 
 
 def expected(state_version: int) -> Optional[Expected]:
+    """이 상태 버전에서 허용하는 명령. 각본 밖 버전이면 None."""
     index = step_index(state_version)
     return STEPS[index].expected if index is not None else None
 

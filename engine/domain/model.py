@@ -420,6 +420,7 @@ def is_legal_kind(phase: Phase, kind: CommandKind, is_player: bool) -> bool:
 
 # ---------------------------------------------------------------- 엔진 거부 코드
 class RejectCode(str, enum.Enum):
+    """명령 거부 사유 코드. 화면·API가 그대로 받는 값이다."""
     STATE_VERSION_CONFLICT = "state_version_conflict"
     ILLEGAL_PHASE = "illegal_phase"
     NOT_YOUR_TURN = "not_your_turn"
@@ -684,6 +685,7 @@ class GameTruth:
 # ---------------------------------------------------------------- 판 메타와 상태
 @dataclass
 class GameMeta:
+    """판 하나의 고정 정보(프리셋·시드·출처·버전·튜토리얼 시나리오 ID 등)."""
     game_id: str
     preset: Preset
     seed: int

@@ -44,10 +44,11 @@ def make_engine(content, rule_version):
 
 
 class Fail(Exception):
-    pass
+    """후보 시드가 조건을 못 맞췄을 때 쓰는 예외."""
 
 
 def possessed_of(truth):
+    """씐 자 이름(여럿이면 이름순 첫째)."""
     return sorted(n for n, r in truth.roles.items() if r is Role.POSSESSED)[0]
 
 
@@ -157,6 +158,7 @@ def flags(log, truth, state):
 
 
 def main(argv=None):
+    """시드 범위를 훑어 튜토리얼 조건을 맞추는 시드를 찾는다."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--seeds", type=int, default=2000)
     ap.add_argument("--start", type=int, default=1)

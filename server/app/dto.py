@@ -42,6 +42,7 @@ class StartTutorialInput:
 
 @dataclass
 class GameOutput:
+    """판 화면 응답: 플레이어 시점 상태와 아직 끝나지 않은 대사 생성 작업 ID."""
     view: PlayerView
     pending_render_jobs: list[str] = field(default_factory=list)
     mudang_variant: Optional[str] = None    # 판 메타 값. None(녹화 판·시뮬레이터)이면 화면은 기본 이미지

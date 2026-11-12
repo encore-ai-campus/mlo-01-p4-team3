@@ -30,6 +30,7 @@ OMIT_IF_NONE = "omit_if_none"
 
 
 def to_jsonable(obj: Any) -> Any:
+    """데이터클래스·열거형을 JSON으로 쓸 수 있는 값으로 바꾼다(`omit_if_none` 칸은 None이면 뺀다)."""
     if isinstance(obj, enum.Enum):
         return obj.value
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
