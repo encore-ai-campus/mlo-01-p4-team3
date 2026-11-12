@@ -28,7 +28,7 @@ python ads/manage.py runserver 127.0.0.1:8001 --noreload
 - API: POST `/ads/v1/serve`, POST `/ads/v1/impression`, GET `/ads/v1/click?t=`, GET `/ads/landing/<creative_id>`. 경로·JSON은 광고 계약 3절을 따른다.
 - 내부 POST API는 토큰 중계와 서버 간 호출용으로 CSRF에서 제외한다. admin CSRF는 유지한다. 비콘은 Content-Type과 무관하게 JSON을 읽는다. 클라이언트 발생 시각은 수신하지만 판정에는 쓰지 않는다.
 - 클릭은 항상 상대 랜딩 경로로 302를 반환한다. 읽을 수 없는 토큰은 `/ads/landing/unavailable`로 이동한다. 외부 랜딩 URL을 저장하거나 사용하지 않는다.
-- 이미지 기본 경로는 MySQL 소재 데이터에서 읽고 `slot_image_path`로 규격을 붙인다. 실제 파일·정적 URL 연결은 B-05-03이 담당한다(`content/images/ad/` → `/static/ads/`).
+- 이미지 기본 경로는 MySQL 소재 데이터에서 읽고 `slot_image_path`로 규격을 붙인다(예 `/static/promo/bujeok.png` → `review_side`는 `/static/promo/bujeok__box.png`, 728×90 지면은 `__wide`). 실제 파일·정적 URL 연결은 B-05-03이 담당한다(`content/images/ad/` → `/static/promo/`, 옛 `/static/ads/<이름>__728x90.png`도 같은 파일).
 - `/metrics`: `paldo_ad_serve_total{filled}`, `paldo_ad_serve_duration_seconds{stage,status}`, `paldo_ad_impression_total{status}`, `paldo_ad_click_total{status}`.
 - JSON 로그는 표준 출력과 `out/logs/ads.jsonl`에 남기고 7일 보존한다. 전달받은 X-Request-ID, serve_id, charge_id, 판정·과금·지연을 기록한다. 토큰·본문·참가자 접속 헤더는 기록하지 않는다.
 
@@ -140,6 +140,18 @@ python ads/manage.py ad_update rollback-ctr --expected-version <활성-CTR-버�
 - `ctrml`을 실행하는 운영자 프로세스는 MLflow 접속 설정과 ML 패키지를 사용해 후보 보고서를 레지스트리의 원본과 대조한다. 광고 요청 처리와 `rollback-ctr`은 MySQL만 읽는다.
 - 5분 페이싱은 시간대별 소진 오차를 줄이기 위해 이득 8.0을 쓴다. 하루 소진 오차·카나리아·실현 CPC 실측은 [D-10-02 증빙](../evidence/D-10-02.md)을 참조한다.
 
+### 관리자 화면과 운영 조회 (D-12-04, 구현 예정)
+
+11/12 사용자 결정(코드 동결 예외)으로 추가할 화면의 기준이다. 구현 전이며, 구현 PR이 파일 위치와 실제 동작으로 이 절을 고친다. 범위는 로컬 구현·검증이고 운영 광고 서버 적용은 별도로 정한다.
+
+- 관리 화면: 기존 `/admin/`의 `Campaign`·`Creative`를 게임 화면의 색·글꼴·문장 톤에 맞게 꾸미고 입력 안내를 붙인다. 인증·관리 권한·CSRF·모델 검증(`validate_campaign_budget`, 이미지 경로 형식)은 그대로다.
+- 입력 안내: 금액은 밀리원(1원 = 1000밀리원, 예 최대 CPC 100원 = `max_bid_mw` 100000). 지면 규격은 `lobby_banner`·`result_banner` 728×90(`__wide`), `review_side` 300×250(`__box`). 이미지는 기본 경로(예 `/static/promo/bujeok.png`)만 넣고 지면별 파일은 `slot_image_path`가 정한다.
+- 운영 조회(읽기 전용, 캠페인 × 귀속일): 일 예산, 대기 예약액(원장 `reserved` 합), 확정 과금액(`kind=charge`·`confirmed` 합), 환입액(`kind=refund` 합, 음수), 확정 순사용액(확정 과금액 + 환입액), 가용 예산, 유효 노출 수, 유효 클릭 수, CTR. 기존 원장(`AdDailyBudget`·`AdLedgerEntry`)과 저장된 판정만 읽고 과금 규칙을 새로 만들지 않는다.
+- 가용 예산 = 일 예산 − 대기 예약액 − 확정 순사용액. 계약 5절 불변식의 `일 예산 − committed`와 같다.
+- 실시간 조회와 확정 집계의 차이: 실시간 조회는 원장의 현재 값이라 대기 예약을 포함하고, 확정 배치 집계(매일 00:40 서울, 확정 마감 00:32 뒤)는 확정 순액만 쓴다. 화면에 조회 기간·기준 시각·어느 기준인지 표시한다.
+- 고아 예약: 응답 기록이 예약 뒤에 실패하면 그 예약이 해제 시각(serve + 32분)까지 대기 예약액에 남는다(11/11 예산 예약 분리). 화면 안내에 적는다.
+- 사람/합성 구분: 원장 `source`와 합성 캠페인 복제본(`syn:` 접두어)으로 나눠 보인다(계약 8절).
+
 ## 설정값
 | 이름 | 값·의미 |
 |---|---|
@@ -195,3 +207,4 @@ python ads/manage.py ad_update rollback-ctr --expected-version <활성-CTR-버�
 | B-08-03 | 11/11 | 캠페인 시간 조건(`targeting.hours`)을 서울 시각 기준으로 통일. 게임 웹이 서버 시간대(UTC)와 무관하게 서울 시각을 보냄. 운영 갓 캠페인 값도 같은 배포에서 서울 홀수 시로 바꿈(E 보완) |
 | B-08-03 | 11/11 | 광고 소재 실제 그림(Gemini, 사용자 생성)으로 교체. 그림 주소를 `/static/promo/<id>__wide.png`(728×90)·`__box.png`(300×250)로 바꿈(브라우저 광고 차단이 `/static/ads/`·`_728x90` 표기를 막음). 옛 기본 경로·옛 주소는 전환 동안 호환, 마이그레이션 0006(검증식만, DB 변경 없음)(E 보완) |
 | B-08-03 | 11/11 | serve의 예산 예약을 별도 DB 연결의 짧은 트랜잭션으로 분리(사용자 결정). 운영 측정에서 예산 행 잠금 대기가 최대 467ms였고, 잠금이 응답 트랜잭션 커밋(46~210ms)까지 이어졌다. 응답 트랜잭션이 실패하면 남은 예약은 32분 뒤 기존 만료 작업이 해제. 확정은 예산 합계를 바꾸지 않아 원장 행만 잠금. 마이그레이션 없음(E 보완) |
+| D-12-04 | 11/12 | 관리자 화면·운영 조회 기준 절 추가(문서만, 구현 예정, 사용자 결정·코드 동결 예외). 이미지 정적 경로 설명을 `/static/promo/`로 바로잡음 |
