@@ -6,6 +6,8 @@ metadata:
 spec:
   schedule: "0 2 * * *"
   timeZone: Asia/Seoul
+  # 운영 매일 밤 재학습은 이 CronJob이 아니라 게임 웹 서버(app-01)의 systemd 타이머가 실행한다(관문 통과 시 자동 승격, docs/modules/ml.md 한계 절).
+  # 이 파일은 k3s로 옮길 때 쓰는 대안 정의라 꺼진 채로 둔다.
   suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 1800
