@@ -14,6 +14,7 @@
         {% if participant_forms_available %}<button type="button" data-stage-open="stage-notebook"{% tip "stage_notebook" %}>수첩</button>{% endif %}
         {% if vm.phase != 'night' %}<button type="button" data-stage-open="stage-map"{% tip "stage_map" %}>지도</button>{% endif %}
       </div>
+      {% if tutorial_mode and tutorial %}{% include "meeting_parts/tutorial_bar.html" %}{% endif %}
     </nav>
     <div class="vn-dialogue"><strong data-vn-speaker>무당</strong><p data-vn-text aria-hidden="true">{% if vm.phase == 'night' %}점칠 대상을 골라 주세요. 점괘는 나에게만 표시됩니다.{% else %}공개된 기록을 읽고 행동을 선택하세요.{% endif %}</p><span data-vn-attribution hidden></span></div>
     <button class="vn-guide-skip" data-vn-guide-skip type="button"{% tip "vn_guide_skip" %} hidden>안내 건너뛰기</button>

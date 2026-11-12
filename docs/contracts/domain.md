@@ -117,6 +117,7 @@
 - 원한 단서는 비밀 고백과 같은 해금 조건이 충족될 때 `add_clue`로 얻는다. 같은 단서를 다시 얻으면 무시한다(False). 처음 얻은 판과 날만 기록한다.
 - 같은 `hypothesis_id`의 단서 세 부분(identity, death, target)이 모두 모이면 `endings_unlocked`에 `"haewon:<hypothesis_id>"`를 추가한다. 서로 다른 가설의 부분은 합치지 않는다. `"exorcism"`은 처음부터 열려 있다(기본값).
 - 결말은 판 시작 때 고른다(`StartGameInput.ending_choice` → `GameMeta.ending_choice`). 열리지 않은 결말을 고르면 400을 반환한다. 결말은 승패에 영향이 없고, 종료 연출과 복기 해설만 바뀐다.
+- `tutorial_completed`(11/11): 튜토리얼 판을 시작한 적이 있으면 `True`, 아니면 `None`(이 칸 이전 기록 포함). `None`이면 직렬화에서 뺀다(`omit_if_none`)라 기존 진척 문서 바이트가 그대로다. `ProgressRepository.mark_tutorial_completed`(멱등, 이 칸만 원자적으로 켬)로 저장하고, 재처리 도구는 단서·결말 칸만 바꾸므로 이 칸을 지우지 않는다. 튜토리얼 판 ID는 `game_ids`에 넣지 않는다.
 - 저장은 `ProgressRepository`의 원자 연산(`add_clue`, `unlock_ending`)으로 한다. 원천 이벤트 ID로 멱등성을 보장한다. 진척 저장 전에 장애가 나면 아웃박스의 `confession`과 `game_ended` 이벤트를 재처리해 복구한다.
 - 규칙은 `engine/domain/progress.py`, 반영 순서는 `server/app/progress.py` `apply_progress`(E-09-08)다. 게임 서비스는 명령 저장 직후 같은 함수로 반영하고, 진척 저장이 실패해도 명령 응답은 바꾸지 않는다(복구는 재처리). 재처리 도구(C-09-04)도 같은 함수를 쓴다.
   - 멱등 키: 고백 단서는 `<game_id>:confess:<npc_id>`(판마다 NPC 고백은 한 번), 결말 해금은 `unlock:<ending>`. 저장소가 매기는 이벤트 ID는 저장 뒤에야 정해지므로, 실시간 반영과 재처리가 같은 키를 쓰도록 이벤트 내용으로 만든다.
@@ -144,3 +145,11 @@
 - **2명 판 알리바이**: `alibi_by_non_possessed`, `executor_alibi_is_truth`
 
 예시는 `fixtures/assignment/`에 있다. 정상 배정 2개와, 충돌 사례 7개(각각 기대 위반 코드 포함)다.
+
+## 11. 튜토리얼 판 (`engine/domain/tutorial.py`, 11/11)
+- `GameMeta.scenario_id`: 정해진 대본으로 도는 판의 식별자. 튜토리얼 판은 `"tutorial-v1"`, 그 밖은 `None`(이전 저장 판도 `None`으로 읽힌다). `None`이면 직렬화에서 키를 뺀다(필드 메타데이터 `omit_if_none`, `serde.OMIT_IF_NONE`). 그래서 일반 판의 저장 문서·결정성 해시(`test_vote_abstain` 골든 등)는 이 필드를 더하기 전과 같다.
+- 단계표 `STEPS`: 상태 버전(`state_version - START_VERSION`)마다 허용 명령 하나. `allows(state_version, command, via_utterance, free_text)`가 비교 칸만 본다(advance·abstain=종류, 대상 명령=target, 모순 지적=근거 진술 집합, 캐묻기=상대·질문·밤·시간(+근거), 점괘 공개=대상·밤·결과).
+- 튜토리얼 판의 엔진 의존성은 의심도 모델 없음(`suspicion=None`)으로 고정한다(인프라 `scenario_dependencies`). 같은 시드·콘텐츠·규칙·명령이면 같은 이벤트가 나온다. 규칙은 `RULE_BASE`(rule-0.9) 상수로 고정해 운영 규칙 설정과 무관하다.
+- 각본 이탈 판정 `on_script(state_version, day, phase, ended, village_won)`: 진행 중이면 그 버전의 단계가 있고 날·국면이 단계표와 같아야 참, 끝났으면 마지막 단계 다음 버전에서 마을이 이겼을 때만 참. 거짓이면 화면이 단계 안내를 멈추고 다시 하기를 권한다(로그는 응용 `tutorial_start.report_off_script`).
+- 튜토리얼 강제 판단 `routes_to_tutorial(tutorial_completed, session_id)`: 회차 없는 시작이고 미완료면 참. 첫 판 안내 `first_game_guide(is_first_game, tutorial_completed)`: 완료 계정은 거짓.
+- `RejectCode.TUTORIAL_STEP`은 엔진이 내지 않는다. 응용 계층(`GameService.command_from_owned`, 자유 입력 확인)이 엔진 앞에서 낸다.

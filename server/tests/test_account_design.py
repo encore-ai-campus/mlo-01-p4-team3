@@ -78,14 +78,21 @@ class AccountDesign(TestCase):
         configure_session_service(sessions)
         self.addCleanup(configure_game_service, None)
         self.addCleanup(configure_session_service, None)
+        def start_modes(response):
+            # 튜토리얼 카드는 같은 묶음에 늘 닫힌 채로 있고, 배정 우선 순서와 무관하다.
+            found = re.findall(r'<details[^>]*data-start-mode[^>]*>', response.content.decode())
+            tutorial = [mode for mode in found if 'data-tutorial-card' in mode]
+            self.assertEqual(len(tutorial), 1)
+            self.assertNotIn(' open', tutorial[0])
+            return [mode for mode in found if 'data-tutorial-card' not in mode]
         ordinary = self.client.get('/')
-        modes = re.findall(r'<details[^>]*data-start-mode[^>]*>', ordinary.content.decode())
+        modes = start_modes(ordinary)
         self.assertEqual(len(modes), 1)
         self.assertIn(' open', modes[0])
         sessions.create('assigned-review', [{'preset_id': 'base6', 'seed': 7}],
             [str(profile.player_pseudonym)], {'rule_version': 'rule', 'engine_version': 'engine', 'content_version': 'content'})
         assigned = self.client.get('/')
-        modes = re.findall(r'<details[^>]*data-start-mode[^>]*>', assigned.content.decode())
+        modes = start_modes(assigned)
         self.assertEqual(len(modes), 2)
         self.assertNotIn(' open', modes[0])
         self.assertIn(' open', modes[1])

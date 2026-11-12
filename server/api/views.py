@@ -10,9 +10,10 @@ from django.shortcuts import redirect, render
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_GET, require_http_methods
 
+from engine.domain import tutorial
 from engine.domain.model import CommandKind, EvidenceType, RejectCode
 from engine.domain.serde import SchemaError, to_jsonable
-from server.app.dto import StartGameInput, SubmitCommandInput
+from server.app.dto import StartGameInput, StartTutorialInput, SubmitCommandInput
 from server.app.interactions import InteractionConflict, InteractionUnavailable
 from server.app.usecases import ConsentRequired, OpenGameInProgress, ResourceNotFound, ReviewNotReady, StartUnavailable
 from server.paldo_web.composition import GameServiceUnavailable, get_game_service
@@ -96,8 +97,9 @@ def _wants_meeting(request):
     ) == "text/html"
 
 
-def _meeting_response(request, view, variant, status=200, previous_interrogation=None):
+def _meeting_response(request, view, variant, status=200, previous_interrogation=None, reject=None, scenario_id=None):
     from .participant_forms import participant_context
+    from .tutorial_view import tutorial_context
 
     template = "meeting.html" if request.headers.get("HX-Request") == "true" else "game.html"
     service = get_game_service()
@@ -109,8 +111,10 @@ def _meeting_response(request, view, variant, status=200, previous_interrogation
         context.update(result_context(view, state.meta.ending_choice, state.meta.content_version))
     rendered = service.interactions.render_snapshot(view.game_id, request.player_pseudonym) if service.interactions else {}
     jobs = {speech.speech_id: speech.render_job_id for speech in view.public.speeches}
-    # NPC 대사 LLM(E-11-13). 꺼져 있으면 아무 속성도 더하지 않아 지금 화면 그대로다.
-    npc = _npc_flags(service, view, request.player_pseudonym)
+    # 튜토리얼 판(scenario_id)이면 단계 정보·족제비 대사·자유 입력 미리 채움을 더한다(형식: tutorial_step_format.md).
+    context.update(tutorial_context(view, scenario_id, variant, settings.FREE_TEXT_INPUT))
+    # NPC 대사 LLM(E-11-13). 꺼져 있으면 아무 속성도 더하지 않아 지금 화면 그대로다. 튜토리얼 판은 늘 끈다.
+    npc = _npc_flags(service, view, request.player_pseudonym) if not context["tutorial_mode"]         else {"npc_polish": False, "npc_live": False}
     # 저장된 작업의 발언 ID까지 일치할 때만 문장을 연결한다.
     for speech in context["vm"].speeches:
         result = rendered.get(jobs.get(speech.speech_id))
@@ -119,6 +123,7 @@ def _meeting_response(request, view, variant, status=200, previous_interrogation
             speech.pending_job_id = None if result.final else result.job_id
     context.update(npc)
     return render(request, template, {**context, **participant_context(service, view), "rejected": status >= 400,
+                                     "reject_code": reject.value if reject is not None else "",
                                      "previous_interrogation": previous_interrogation or {},
                                      "mudang_portrait_id": f"portrait:mudang_{variant or 'f'}"}, status=status)
 
@@ -201,8 +206,35 @@ def start_game(request):
     if from_form and request.headers.get("HX-Request") != "true":
         return redirect("game-detail", game_id=output.view.game_id)
     if _wants_meeting(request):
-        return _meeting_response(request, output.view, output.mudang_variant)
+        return _meeting_response(request, output.view, output.mudang_variant, scenario_id=output.scenario_id)
     return JsonResponse(to_jsonable(output))
+
+
+@game_request
+@require_http_methods(["POST"])
+def start_tutorial(request):
+    """튜토리얼 판 시작(`POST /tutorial`). 입력은 시작 UUID·무당 모습만 받고, 시드·프리셋·회차는 서버 상수다."""
+    from_form = request.content_type == "application/x-www-form-urlencoded"
+    if from_form:
+        form = request.POST
+        if set(form) - {"csrfmiddlewaretoken", "start_token", "mudang_variant"} or any(
+                len(form.getlist(key)) != 1 for key in form):
+            raise ValueError("unknown_field")
+        body = {key: form[key] for key in ("start_token", "mudang_variant") if key in form}
+    else:
+        body = _body(request)
+        if set(body) - {"start_token", "mudang_variant"}:
+            raise ValueError("unknown_field")
+    body["player_pseudonym"] = request.player_pseudonym
+    data = parse_game_input(StartTutorialInput, body)
+    UUID(data.start_token)
+    output = get_game_service().start_tutorial(data, request.player_pseudonym, request.consented)
+    request.game_id = output.view.game_id
+    if from_form and request.headers.get("HX-Request") != "true":
+        return redirect("game-detail", game_id=output.view.game_id)
+    if _wants_meeting(request):
+        return _meeting_response(request, output.view, output.mudang_variant, scenario_id=output.scenario_id)
+    return JsonResponse(to_jsonable(output), status=201)
 
 
 @game_request
@@ -212,7 +244,7 @@ def game_detail(request, game_id):
     output = get_game_service().detail(game_id, request.player_pseudonym)
     request.game_id = output.view.game_id
     if _wants_meeting(request):
-        return _meeting_response(request, output.view, output.mudang_variant)
+        return _meeting_response(request, output.view, output.mudang_variant, scenario_id=output.scenario_id)
     return JsonResponse(to_jsonable(output))
 
 
@@ -245,9 +277,10 @@ def submit_command(request, game_id):
     if output.replayed:
         # HTML만 최신 상태로 다시 그린다. JSON은 계약대로 저장 응답을 재생한다.
         current = service.detail(game_id, request.player_pseudonym)
-        return _meeting_response(request, current.view, current.mudang_variant)
+        return _meeting_response(request, current.view, current.mudang_variant, scenario_id=current.scenario_id)
     return _meeting_response(request, output.view, state.meta.mudang_variant, _command_status(output),
-                             _previous_interrogation(data.command, state, output.view))
+                             _previous_interrogation(data.command, state, output.view),
+                             None if output.accepted else output.reject, state.meta.scenario_id)
 
 
 @game_request
@@ -279,6 +312,8 @@ def review(request, game_id):
         template = "review_panel.html" if request.headers.get("HX-Request") == "true" else "review.html"
         content = service.dependencies(state.meta).content
         context = review_context(output, content, state.public)
+        # 튜토리얼 판 복기는 원한 단서 칸과 복기 광고를 뺀다(진척·광고 제외 결정).
+        context["tutorial_mode"] = tutorial.is_tutorial(state.meta.scenario_id)
         from .story_view import narration_context
         context.update(narration_context(service.review_narration(game_id, request.player_pseudonym), content,
                                          output.game_id))

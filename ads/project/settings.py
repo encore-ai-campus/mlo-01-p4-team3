@@ -58,7 +58,7 @@ if _db_ca := os.environ.get("PALDO_ADS_DB_SSL_CA"):
 DATABASES["ads_reserve"] = copy.deepcopy(DATABASES["default"]) | {"TEST": {"MIRROR": "default"}}
 ADS_RESERVE_DB = "ads_reserve"
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
-    "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": [
+    "DIRS": [BASE_DIR / "ads" / "web" / "templates"], "APP_DIRS": True, "OPTIONS": {"context_processors": [
         "django.template.context_processors.request", "django.contrib.auth.context_processors.auth",
         "django.contrib.messages.context_processors.messages"]}}]
 AUTH_PASSWORD_VALIDATORS = [
@@ -70,6 +70,10 @@ SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = _internal.scheme == "https"
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "out" / "ads_static"
+STATICFILES_DIRS = [
+    ("paldo-branding", BASE_DIR / "content" / "images" / "branding"),
+    ("fonts", BASE_DIR / "web" / "static" / "fonts"),
+]
 LANGUAGE_CODE = "ko-kr"
 TIME_ZONE = "UTC"
 USE_TZ = True

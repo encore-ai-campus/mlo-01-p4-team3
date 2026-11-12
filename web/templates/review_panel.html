@@ -22,7 +22,7 @@
       <li class="review-reason review-empty">{{ review.empty_text }}</li>
     {% endfor %}
   </ol>
-  <h3>이번 판에서 얻은 원한 단서</h3>
-  <ul class="review-clues">{% for text in review.clues %}<li>{{ text }}</li>{% empty %}<li>이번 판에서 새로 얻은 단서는 없습니다.</li>{% endfor %}</ul>
+  {% if not tutorial_mode %}<h3>이번 판에서 얻은 원한 단서</h3>
+  <ul class="review-clues">{% for text in review.clues %}<li>{{ text }}</li>{% empty %}<li>이번 판에서 새로 얻은 단서는 없습니다.</li>{% endfor %}</ul>{% endif %}
 </section>
-{% ad_slot 'review_side' %}
+{% if not tutorial_mode %}{% ad_slot 'review_side' %}{% endif %}

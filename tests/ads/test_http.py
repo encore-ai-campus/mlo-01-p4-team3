@@ -249,7 +249,7 @@ class AdHTTPTests(TestCase):
         out = self.serve(source="synthetic")
         self.assertTrue(out["creative"]["creative_id"].startswith("syn:"))
         capped = {k: replace(v, frequency_cap=3) for k, v in load_policies().items()}
-        with patch("ads.project.composition._policies", lambda: capped):
+        with patch.dict(self.service.policies, capped):
             for _ in range(3):
                 self.assertTrue(self.serve(session="capped")["filled"])
             self.assertFalse(self.serve(session="capped")["filled"])

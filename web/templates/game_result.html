@@ -6,11 +6,12 @@
   {% else %}
     <h2 id="game-result-title">중단된 판입니다.</h2>
   {% endif %}
-  {% if game_result.lines %}
+  {# 튜토리얼 판은 일반 결말 이야기와 복기 안내를 빼고 결과 한 줄만 둔다(족제비 말풍선이 마무리, 2회차 시운전·추천안). #}
+  {% if game_result.lines and not tutorial_mode %}
     <section class="end-ending" aria-labelledby="game-ending-title">
       <h3 id="game-ending-title">{{ game_result.ending_title }}</h3>
       {% for line in game_result.lines %}<p>{{ line }}</p>{% endfor %}
     </section>
   {% endif %}
-  <p class="end-hint">위의 '복기'에서 마을 사람들의 정체를, '원한 단서'에서 모은 단서를 볼 수 있습니다.</p>
+  {% if not tutorial_mode %}<p class="end-hint">위의 '복기'에서 마을 사람들의 정체를, '원한 단서'에서 모은 단서를 볼 수 있습니다.</p>{% endif %}
 </section>

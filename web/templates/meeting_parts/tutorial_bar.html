@@ -1,0 +1,6 @@
+{# 튜토리얼 머리 막대: 끝내기(홈 이동)와 처음부터 다시(새 판). 막(ui-tutorial.js)이 이 두 버튼은 잠그지 않는다. #}
+<div class="tutorial-bar" data-tutorial-bar role="group" aria-label="튜토리얼">
+  <span class="tutorial-progress">튜토리얼{% if tutorial.step is not None %} {{ tutorial.step|add:1 }}/{{ tutorial.total }}{% endif %}</span>
+  <a href="{{ tutorial.exit_url }}" data-tutorial-exit title="튜토리얼을 그만두고 홈으로 갑니다">튜토리얼 끝내기</a>
+  <form method="post" action="{{ tutorial.restart.url }}" data-tutorial-restart>{% csrf_token %}<input type="hidden" name="start_token" value="{{ tutorial.restart.start_token }}">{% if tutorial.restart.mudang_variant %}<input type="hidden" name="mudang_variant" value="{{ tutorial.restart.mudang_variant }}">{% endif %}<button type="submit" title="튜토리얼을 새 판으로 처음부터 다시 합니다">처음부터 다시</button></form>
+</div>

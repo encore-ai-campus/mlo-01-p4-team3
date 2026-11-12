@@ -1,0 +1,297 @@
+{
+  "mysql_version": "8.4.11",
+  "compose_project": "paldo-dev",
+  "assets": 8,
+  "traces": [
+    {
+      "serve_id": "4b0a415a-d4bf-4d7e-8f20-416c924756c7",
+      "request_id": "1ec27f74-9164-422d-a7ab-8dd8766ad1cc",
+      "slot": "review_side",
+      "impressed": true,
+      "clicked": false,
+      "charge_id": "4b0a415a-d4bf-4d7e-8f20-416c924756c7:impression",
+      "amount_mw": 400,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/gukbap_a__box.png"
+    },
+    {
+      "serve_id": "e34b6326-d5d4-4871-8a5a-9630260a9d6f",
+      "request_id": "27d135f5-d6d7-45e2-aca5-2c428dfffe64",
+      "slot": "lobby_banner",
+      "impressed": true,
+      "clicked": false,
+      "charge_id": "e34b6326-d5d4-4871-8a5a-9630260a9d6f:impression",
+      "amount_mw": 500,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/gukbap_b__wide.png"
+    },
+    {
+      "serve_id": "7c5bbe47-f602-4989-83ed-21f937a94ac9",
+      "request_id": "3ded9155-7b1b-4577-87e0-ed908af6459b",
+      "slot": "lobby_banner",
+      "impressed": true,
+      "clicked": false,
+      "charge_id": "7c5bbe47-f602-4989-83ed-21f937a94ac9:impression",
+      "amount_mw": 500,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/yakcho__wide.png"
+    },
+    {
+      "serve_id": "48e2ee70-460d-4c84-932e-6caafdea7ed7",
+      "request_id": "48d8072f-7ca4-45ca-9dea-97c909c6725d",
+      "slot": "review_side",
+      "impressed": true,
+      "clicked": false,
+      "charge_id": "48e2ee70-460d-4c84-932e-6caafdea7ed7:impression",
+      "amount_mw": 400,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/bujeok__box.png"
+    },
+    {
+      "serve_id": "05d7c71c-b641-4aee-9fe6-d09d206e93e5",
+      "request_id": "497e487e-d7be-482d-92ec-fc871c445593",
+      "slot": "lobby_banner",
+      "impressed": true,
+      "clicked": false,
+      "charge_id": "05d7c71c-b641-4aee-9fe6-d09d206e93e5:impression",
+      "amount_mw": 500,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/gukbap_a__wide.png"
+    },
+    {
+      "serve_id": "32cb11cb-56e7-45db-b31e-e798a79fd550",
+      "request_id": "7982952d-33e1-4f52-93e6-e7ffd58bd250",
+      "slot": "lobby_banner",
+      "impressed": true,
+      "clicked": false,
+      "charge_id": "32cb11cb-56e7-45db-b31e-e798a79fd550:impression",
+      "amount_mw": 500,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/bujeok__wide.png"
+    },
+    {
+      "serve_id": "073af5c2-ae00-450d-a7ea-a559862eda90",
+      "request_id": "93a73244-8a8a-4ec4-8353-a88253ec1c1c",
+      "slot": "review_side",
+      "impressed": true,
+      "clicked": false,
+      "charge_id": "073af5c2-ae00-450d-a7ea-a559862eda90:impression",
+      "amount_mw": 400,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/gukbap_b__box.png"
+    },
+    {
+      "serve_id": "7c1a0494-52cf-4506-b94a-454686087d92",
+      "request_id": "9b262df5-7475-4c3b-b332-07c84043b12b",
+      "slot": "lobby_banner",
+      "impressed": true,
+      "clicked": false,
+      "charge_id": "7c1a0494-52cf-4506-b94a-454686087d92:impression",
+      "amount_mw": 500,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/bujeok__wide.png"
+    },
+    {
+      "serve_id": "2f0c1582-f929-42d0-b2f8-1556758b0c7c",
+      "request_id": "d9a3380b-5a2c-4425-b391-37c46ab646bf",
+      "slot": "review_side",
+      "impressed": true,
+      "clicked": false,
+      "charge_id": "2f0c1582-f929-42d0-b2f8-1556758b0c7c:impression",
+      "amount_mw": 400,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/gat__box.png"
+    },
+    {
+      "serve_id": "ae0b5216-28ad-436c-89ce-cebba58a30f7",
+      "request_id": "e1a6299a-d2bf-4cc2-93ed-264bd909c049",
+      "slot": "result_banner",
+      "impressed": true,
+      "clicked": true,
+      "charge_id": "ae0b5216-28ad-436c-89ce-cebba58a30f7:impression",
+      "amount_mw": 600,
+      "state": "confirmed",
+      "attribution_day": "2026-11-12",
+      "game_log_match": true,
+      "ads_log_match": true,
+      "image_path": "/static/promo/bujeok__wide.png"
+    }
+  ],
+  "browser": {
+    "rendered": [
+      {
+        "slot": "lobby_banner",
+        "file": "bujeok__wide.png",
+        "width": 728,
+        "height": 90,
+        "visible_ms": 1009
+      },
+      {
+        "slot": "result_banner",
+        "file": "bujeok__wide.png",
+        "width": 728,
+        "height": 90,
+        "visible_ms": 1014
+      },
+      {
+        "slot": "review_side",
+        "file": "bujeok__box.png",
+        "width": 300,
+        "height": 250,
+        "visible_ms": 1010
+      },
+      {
+        "slot": "lobby_banner",
+        "file": "gukbap_a__wide.png",
+        "width": 728,
+        "height": 90,
+        "visible_ms": 1009
+      },
+      {
+        "slot": "review_side",
+        "file": "gukbap_a__box.png",
+        "width": 300,
+        "height": 250,
+        "visible_ms": 1012
+      },
+      {
+        "slot": "lobby_banner",
+        "file": "gukbap_b__wide.png",
+        "width": 728,
+        "height": 90,
+        "visible_ms": 1009
+      },
+      {
+        "slot": "review_side",
+        "file": "gukbap_b__box.png",
+        "width": 300,
+        "height": 250,
+        "visible_ms": 1004
+      },
+      {
+        "slot": "lobby_banner",
+        "file": "yakcho__wide.png",
+        "width": 728,
+        "height": 90,
+        "visible_ms": 1002
+      },
+      {
+        "slot": "review_side",
+        "file": "gat__box.png",
+        "width": 300,
+        "height": 250,
+        "visible_ms": 1007
+      },
+      {
+        "slot": "lobby_banner",
+        "file": "bujeok__wide.png",
+        "width": 728,
+        "height": 90,
+        "visible_ms": 1002
+      }
+    ],
+    "screenshots": [
+      "asset-bujeok-wide.png",
+      "game-result.png",
+      "asset-bujeok-box.png",
+      "asset-gukbap_a-wide.png",
+      "asset-gukbap_a-box.png",
+      "asset-gukbap_b-wide.png",
+      "asset-gukbap_b-box.png",
+      "asset-yakcho-wide.png",
+      "asset-gat-box.png",
+      "game-lobby-mobile.png",
+      "operations-desktop-light.png",
+      "operations-desktop-dark.png",
+      "operations-mobile-light.png",
+      "operations-mobile-dark.png"
+    ],
+    "image_404s": 0,
+    "acknowledged_beacons": 10
+  },
+  "report": {
+    "reserved_mw": 3600,
+    "charged_mw": 9400,
+    "refunded_mw": 0,
+    "committed_mw": 13000,
+    "impressions": 20,
+    "clicks": 2,
+    "source": "human",
+    "campaign_id": "browser_cpm",
+    "name": "마을 부적 사람",
+    "advertiser_id": "d1204_preview",
+    "daily_budget_mw": 100000000,
+    "attribution_day": "2026-11-12",
+    "net_mw": 9400,
+    "available_mw": 99987000,
+    "ctr_percent": 10.0,
+    "balanced": true
+  },
+  "game_runtime": "Recorded game engine, in-memory game/session stores, isolated SQLite auth",
+  "ad_runtime": "Actual HTTP AdService, MySQL ledger/store, actual game WebSocket relay",
+  "valid_beacons": 10,
+  "trace_count": 10,
+  "screenshot_count": 14,
+  "image_errors": 0,
+  "source_sha256": {
+    "ads/domain/reporting.py": "829b260334e3820c732f5c2a867863c6e8d296f447571a22fe1e790f96267d59",
+    "ads/app/reporting.py": "d5bdaca242c27913d24812fbf2459312c3349bc4c4576aef2693b59d11e5226e",
+    "ads/infra/reporting.py": "773e5818a15555ea041b8487e2127c8661d4a96449843400acd714cf523050e6",
+    "ads/infra/mysql_store.py": "c9d201b6fcb8bfc3bb42d39d91c56e932e9d9d443c6decfef16a0f9acdcf2922",
+    "ads/web/admin.py": "863411a81da67ff6670c10ab1ca07e56d2d7d4d2a656f42fbba904090d555e7e",
+    "ads/project/settings.py": "e2a9a181f842d850833d3f5a21d4532e98fb13cd4dcae9eaf9b686f094aef041",
+    "ads/web/templates/admin/base_site.html": "8955fe6c8d31252030b8c707bf485f1e07724f24ae1d6fbaed57b2b78762ffda",
+    "ads/web/templates/admin/ads_web/operations.html": "da9b99138d98b11778154f09c7d63a519383c6f9c7d27e9750f9e3bce8f27f28",
+    "ads/web/static/paldo-admin/theme.css": "a096ac537665501ce7e89982441f439db51a1f4403bc1f379b9651ccb8cd69e6",
+    "tests/ads/test_reporting.py": "508ecf2490fc17885f6bf4c9a6ca549c3b97e8b2fbf9a4db9fafc9e7fe36f551",
+    "tests/ads/test_admin_flow.py": "cc4c9406bbe9cc8d041fba4e91914a683228d593fcfa11f4f1cd6ad163dcf10b",
+    "tests/ads/test_http.py": "99ef0cbd2a34b2b9483320d4df3cbcd39e5ae8ad7cc7cac232c884b3eae9ac8f"
+  },
+  "task": "D-12-04",
+  "commit": "6a1a18a2a4ba7eb98ae28fb547f1452d9afff9ab",
+  "metrics": {
+    "assets": {
+      "value": 8,
+      "unit": "장"
+    },
+    "valid_beacons": {
+      "value": 10,
+      "unit": "건"
+    },
+    "trace_count": {
+      "value": 10,
+      "unit": "건"
+    },
+    "theme_combinations": {
+      "value": 4,
+      "unit": "조합"
+    }
+  }
+}
