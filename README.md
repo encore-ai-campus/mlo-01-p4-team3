@@ -155,7 +155,7 @@ README에는 각 영역의 문서로 가는 링크를 모아 둔다. 세부 파�
 
 - **코드 위치** — 아래 [영역 안내](#영역-안내) → `docs/routing/<흐름>.md`.\
   B의 URL·API는 [서버 라우팅](server/ROUTING.md), 화면·템플릿·스크립트는 [웹 라우팅](web/ROUTING.md)으로 이어진다.
-- **기획과 설계** — [기획서](docs/paldo_design_v1.md) · [결정 기록](docs/design_notes.md) · [제품 요구](docs/prd.md) · [업무 요구](docs/brd.md)
+- **기획과 설계** — [프로젝트 제안서](docs/proposal.md) · [기획서](docs/paldo_design_v1.md) · [결정 기록](docs/design_notes.md) · [제품 요구](docs/prd.md) · [업무 요구](docs/brd.md)
 - **공통 계약** — [계약 색인](docs/contracts/README.md) → [폴더 구조](docs/contracts/structure.md) · [영역 간 통합](docs/contracts/integration.md)
 - **실행과 검증** — [모듈 문서](docs/modules/README.md) · [태스크·완료 기준](docs/tasks/README.md) · [증빙](docs/evidence/) · [트러블 기록](docs/troubles/)
 - **팀 일정과 리포트** — [팀 일정과 역할](docs/team_plan.md) · [리포트](docs/reports/)
