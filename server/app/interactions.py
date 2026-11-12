@@ -11,7 +11,8 @@ from dataclasses import dataclass, field, replace
 from typing import ContextManager, Protocol
 
 from engine.domain.events import DomainEvent, EventType
-from engine.domain.model import Command, CommandKind, PLAYER_ID, Phase, is_legal_kind
+from engine.domain import tutorial
+from engine.domain.model import Command, CommandKind, PLAYER_ID, Phase, RejectCode, is_legal_kind
 from engine.domain.serde import to_jsonable
 from engine.ports import CommandCandidate, ParseContext, ParseFailure, RenderStatus
 from .dto import (CommandOutput, ParseUtteranceInput, ParseUtteranceOutput, RenderOutput, ResolveUtteranceInput,
@@ -102,6 +103,19 @@ class InteractionService:
 
     def __init__(self, game, store, parser=None, renderer=None):
         self.game, self.store, self.parser, self.renderer = game, store, parser, renderer
+        # 시나리오(튜토리얼) 판 렌더러. 운영 실시간 생성 설정과 무관하게 템플릿 문장으로 바로 끝내야 대본과 화면 문장이
+        # 어긋나지 않는다. None이면 일반 렌더러를 쓴다(조립이 `TemplateLineRenderer`를 넣는다).
+        self.tutorial_renderer = None
+
+    def _renderer(self, state):
+        """판에 맞는 렌더러. 시나리오 판이면 튜토리얼 렌더러, 아니면 일반 렌더러."""
+        if state.meta.scenario_id and self.tutorial_renderer is not None:
+            return self.tutorial_renderer
+        return self.renderer
+
+    def _tutorial_reject(self, state):
+        """튜토리얼 단계 위반 응답. 아무것도 소비하지 않고 현재 화면을 돌려준다."""
+        return CommandOutput(False, state.state_version, self.game._player_view(state), RejectCode.TUTORIAL_STEP)
 
     def _event(self, state, kind, payload, key):
         event = DomainEvent(kind, state.day, state.phase, payload)
@@ -188,6 +202,13 @@ class InteractionService:
         warn_parse_version_mismatch(state.meta, result.versions)
         # 화면 카드만 현재 단계로 거른다. 시도 기록(payload)에는 해석기 원래 후보·실패를 남긴다.
         cards = phase_cards(result.candidates, state.phase, state.runoff_candidates)
+        tutorial_ok = None
+        if state.meta.scenario_id:
+            # 튜토리얼 판: 자유 입력 단계에서 대본 예시 문장일 때만, 그 단계 허용 명령과 같은 카드만 보인다.
+            exp = tutorial.expected(state.state_version)
+            tutorial_ok = (tutorial.utterance_step(exp, self.game.free_text_input())
+                           and data.text.strip() == tutorial.UTTERANCE_TEXT)
+            cards = [c for c in cards if tutorial_ok and tutorial.matches(exp, c.command)]
         failure, suggestions = result.failure, []
         if not cards and result.candidates:
             failure = result.failure or ParseFailure.UNSUPPORTED_INTENT
@@ -203,7 +224,7 @@ class InteractionService:
                                                   "selection": {"selected_npc": data.selected_npc,
                                                       "selected_cards": copy.deepcopy(data.selected_cards),
                                                       "last_addressee": last_addressee},
-                                                  "signature_salt": secrets.token_hex(32)}
+                                                  "signature_salt": secrets.token_hex(32), "tutorial_ok": tutorial_ok}
             self._event(state, EventType.INTENT_ATTEMPT, payload, "intent:" + output.attempt_id)
         return output
 
@@ -238,6 +259,10 @@ class InteractionService:
             state, _ = self.game.owned(data.game_id, player)
             command = None
             if reaction in (UtteranceReaction.CONFIRM, UtteranceReaction.EDIT):
+                if state.meta.scenario_id and saved is None and (
+                        reaction != UtteranceReaction.CONFIRM or not attempt.get("tutorial_ok")):
+                    # 튜토리얼 판은 대본 문장으로 해석한 카드의 확인만 받는다. 카드 수정·다른 문장은 시도를 열어 둔 채 거부한다.
+                    return self._tutorial_reject(state)
                 if original.state_version != state.state_version and saved is None:
                     return self.game._conflict(state)
                 if data.expected_state_version != original.state_version and saved is None:
@@ -307,6 +332,8 @@ class InteractionService:
     def survey(self, data, player, comment_digest):
         """종료된 판의 설문을 한 번 저장하고 최초 저장 여부를 반환한다."""
         state, _ = self.game.owned(data.game_id, player)
+        if state.meta.scenario_id:
+            raise ResourceNotFound   # 시나리오(튜토리얼) 판에는 설문이 없다(탭 숨김과 별도로 직접 요청도 막음)
         if state.result is None:
             raise InteractionConflict
         payload = {"skipped": data.skipped, "fun": data.fun, "unfair": data.unfair,
@@ -338,7 +365,7 @@ class InteractionService:
         """
         if state is None:
             state, _ = self.game.owned(game_id, player)
-        if state.result is None or state.meta.player_pseudonym != player:
+        if state.result is None or state.meta.player_pseudonym != player or state.meta.scenario_id:
             return False
         payload = {"skipped": True, "fun": None, "unfair": None, "npc_plausible": None,
                    "comment": "", "mask_version": "b-mask-1", "reason": reason}
@@ -378,6 +405,7 @@ class InteractionService:
         """수락·저장된 전이의 렌더 요청만 등록한다. 외부 실패는 폴백으로 닫는다."""
         if not requests:
             return
+        renderer = self._renderer(state)
         with self.store.edit(state.meta.game_id) as records:
             for req in requests:
                 if req.game_id != state.meta.game_id or req.state_version != state.state_version:
@@ -385,13 +413,13 @@ class InteractionService:
                 if req.job_id in records.renders:
                     continue
                 # 실시간 생성(E-11-13)이 켜진 렌더러는 운영 설정의 마감을 준다. 그 밖에는 요청 값.
-                deadline_ms = getattr(self.renderer, "deadline_ms", lambda r: r.deadline_ms)(req)
+                deadline_ms = getattr(renderer, "deadline_ms", lambda r: r.deadline_ms)(req)
                 records.renders[req.job_id] = {"request": req, "final": None,
                     "day": state.day, "phase": state.phase,
                     "deadline_at": time.time() + deadline_ms / 1000, "submit_failed": False}
-                if self.renderer is not None:
+                if renderer is not None:
                     try:
-                        self.renderer.submit(req)
+                        renderer.submit(req)
                     except (ConnectionError, TimeoutError):
                         records.renders[req.job_id]["submit_failed"] = True
 
@@ -405,7 +433,8 @@ class InteractionService:
             if record["final"] is not None:
                 return record["final"]
             req = record["request"]
-            if self.renderer is None:
+            renderer = self._renderer(state)
+            if renderer is None:
                 raise InteractionUnavailable
             from engine.ports import RenderResult
             try:
@@ -415,13 +444,13 @@ class InteractionService:
                     # 마감 판정은 결과의 완료 시각으로 한다(E-11-13). 마감 안에 끝난 결과는 늦게 폴링해도 인정하고,
                     # 마감이 지나도 아직 대기·처리 중일 때만 시간 초과로 닫는다.
                     # 완료 시각으로 마감을 지키는 렌더러(`enforces_deadline`)만 그렇고, 그 밖의 렌더러는 기존대로 마감 뒤면 시간 초과다.
-                    result = self.renderer.poll(job_id, **self._scope(game_id))
+                    result = renderer.poll(job_id, **self._scope(game_id, renderer))
                     late = time.time() >= record["deadline_at"]
                     pending = result.status in (RenderStatus.QUEUED, RenderStatus.RUNNING)
-                    if late and (pending or not getattr(self.renderer, "enforces_deadline", False)):
+                    if late and (pending or not getattr(renderer, "enforces_deadline", False)):
                         result = RenderResult(job_id, RenderStatus.TIMEOUT, None, fallback=True)
                         try:
-                            self.renderer.cancel(job_id, **self._scope(game_id))
+                            renderer.cancel(job_id, **self._scope(game_id, renderer))
                         except (ConnectionError, TimeoutError, KeyError):
                             pass
             except (ConnectionError, TimeoutError, KeyError):
@@ -437,9 +466,10 @@ class InteractionService:
                 record["final"] = output
             return output
 
-    def _scope(self, game_id) -> dict:
+    def _scope(self, game_id, renderer=None) -> dict:
         """판마다 작업 번호가 겹치므로, 판 ID로 묶는 렌더러(E-11-13 실시간 생성)에는 판 ID를 함께 넘긴다."""
-        return {"game_id": game_id} if getattr(self.renderer, "scoped_by_game", False) else {}
+        renderer = self.renderer if renderer is None else renderer
+        return {"game_id": game_id} if getattr(renderer, "scoped_by_game", False) else {}
 
     def render_snapshot(self, game_id, player):
         """화면에 붙일 공개 폴백/완료 문장만 읽는다. 외부 폴링은 실행하지 않는다."""
@@ -464,9 +494,10 @@ class InteractionService:
                 if req.state_version >= current.state_version:
                     # 같은 전이의 재처리나 늦은 요청이 새 단계의 작업을 취소하지 않게 한다.
                     continue
-                if self.renderer is not None:
+                renderer = self._renderer(current)
+                if renderer is not None:
                     try:
-                        self.renderer.cancel(job_id, **self._scope(current.meta.game_id))
+                        renderer.cancel(job_id, **self._scope(current.meta.game_id, renderer))
                     except (ConnectionError, TimeoutError, KeyError):
                         pass
                 output = RenderOutput(job_id, req.speech_id, RenderStatus.CANCELLED, req.fallback_text, True)

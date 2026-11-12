@@ -39,6 +39,8 @@ function decorate(root=document) {
 // 안내 상태: 첫 판은 건너뛰기 표시가 없으면 켬, 다른 판은 켠 시점({day, phase, at})이 저장돼 있으면 켬. 저장이 막히면 탭 메모리.
 // 첫 판도 1일째가 지난 뒤 다시 켜면(켠 시점 day > 1) 서버 안내 줄 대신 숨은 목록으로 판 시작 안내부터 만든다(pool 방식).
 function guideState(root) {
+  // 튜토리얼 판(data-tutorial): 족제비 줄은 단계 대본이라 끄거나 건너뛸 수 없다. 첫 판 안내·숨은 목록은 쓰지 않는다.
+  if(root.dataset.tutorial!==undefined) return {first:false, skipped:false, on:null, usePool:false, active:false};
   const gid=root.dataset.gameId, pool=root.querySelector('[data-guide-pool]');
   const first=!pool || pool.dataset.guideFirst!==undefined, skipped=readStore(`changgui:guide-skip:${gid}`)===true;
   const stored=pool ? readStore(`changgui:guide-on:${gid}`) : null, on=stored && !skipped ? stored : null;
@@ -146,6 +148,8 @@ function mountScene(root) {
       const i=Number(n.dataset.slotIndex)/100;
       nodes.push(n); order.set(n,n.dataset.slot==='start' ? -1000+i : n.dataset.slot==='lead' ? leadAt-0.4+i : restAt+i);
     }
+    // data-vn-after="줄ID"인 줄은 그 줄 바로 뒤에 읽힌다(튜토리얼 신뢰 해설, 2회차 시운전). 그 줄이 없으면 제자리.
+    for(const n of nodes) { const ref=n.dataset.vnAfter && nodes.find(m=>m.dataset.lineId===n.dataset.vnAfter); if(ref && order.has(ref)) order.set(n,order.get(ref)+0.01); }
     // 한 박자 컷(실종 발표 뒤 피해자 전신 컷)은 그림만 보여 주는 줄이라 밤 화면(인물 금지)에서는 뺀다.
     return nodes.filter(n=>n.dataset.day===root.dataset.day && rank(n.dataset.phase)>=0 && rank(n.dataset.phase)<=current && !(root.dataset.phase==='night' && n.dataset.beat==='true'))
       .sort((a,b)=>rank(a.dataset.phase)-rank(b.dataset.phase)||order.get(a)-order.get(b));
@@ -192,7 +196,8 @@ function mountScene(root) {
     });
   }
   // 줄은 문장이 끝까지 보였을 때만 '본 줄'이 된다. 글자 출력 중에 화면을 다시 그리면 그 줄에서 다시 시작한다.
-  function persist(done=false) { const id=sources[index]?.dataset.lineId; if(id&&done&&!isPending(sources[index]))seen.add(id); saveStore(key,{line:id,closed:[...closed],seen:[...seen]}); updateResultLock(); }
+  // 읽은 줄이 바뀔 때마다 vn:read를 낸다(튜토리얼 강조는 그 단계 족제비 줄을 다 읽은 뒤 켠다, ui-tutorial.js).
+  function persist(done=false) { const id=sources[index]?.dataset.lineId; if(id&&done&&!isPending(sources[index]))seen.add(id); saveStore(key,{line:id,closed:[...closed],seen:[...seen]}); updateResultLock(); root.vnSeen=seen; root.dispatchEvent(new CustomEvent('vn:read',{bubbles:true,detail:{seen:[...seen]}})); }
   // 투표 결과 발표 줄을 다 읽기 전에는 그 단계 행동(결선 투표·밤 점치기)을 잠근다. 서버 명령은 바꾸지 않는다.
   function updateResultLock() {
     const pending=sources.some(n=>n.dataset.result==='true' && !seen.has(n.dataset.lineId));
@@ -244,7 +249,7 @@ function mountScene(root) {
       if(!guideArt){guideArt=new Image(256,256);guideArt.className='vn-mascot';guideArt.dataset.vnGuideMascot='';stage.append(guideArt);}
       if(guideArt.getAttribute('src')!==sprite)guideArt.src=sprite; guideArt.alt=name; guideArt.hidden=false;
     } else if(guideArt) guideArt.hidden=true;
-    player.querySelector('[data-vn-guide-skip]')?.toggleAttribute('hidden',!guide);
+    player.querySelector('[data-vn-guide-skip]')?.toggleAttribute('hidden',!guide || root.dataset.tutorial!==undefined);
     player.querySelector('[data-vn-speaker]').textContent=full ? (source?.dataset.actorName || name) : name;
     player.querySelector('[data-vn-mobile-text]').textContent=line;
     player.querySelector('[data-vn-full-close]').hidden=!full;
@@ -362,12 +367,16 @@ document.addEventListener('submit',event=>{
   event.preventDefault();event.stopImmediatePropagation();
   confirmationForm=form;
   const dialog=document.querySelector('#ui-confirm');
-  const labels=[form.querySelector('button[type=submit]')?.textContent.trim()||'선택한 행동'];
+  // 자유 입력 카드 실행은 버튼 이름 대신 카드 내용(종류·대상)을 요약한다(11/11 튜토리얼 시운전).
+  const card=form.matches('[data-card-confirm]') ? form.closest('.speech-card') : null;
+  const labels=[card ? [...card.querySelectorAll(':scope > h3, :scope > h3 + p')].map(n=>n.textContent.trim()).filter(Boolean).join(' · ') : form.querySelector('button[type=submit]')?.textContent.trim()||'선택한 행동'];
   for(const select of form.querySelectorAll('select')) if(!select.disabled&&select.value)labels.push(select.selectedOptions[0]?.textContent.trim());
+  // 근거는 내부 ID(claim:cl04) 대신 고른 진술 문장(라벨)으로 보인다.
   const evidence=[...form.querySelectorAll('input[name=evidence]:checked')]
-    .map(input=>input.labels?.[0]?.textContent.trim())
+    .map(input=>input.labels?.[0]?.textContent.replace(/\s+/g,' ').trim().replace(/[.。]+$/,''))
     .filter(Boolean);
-  if(evidence.length)labels.push('근거 '+evidence.join(', '));
+  // 진술 문장은 마침표를 떼고 ' / '로 잇는다("있었소., 훈장"처럼 부호가 겹치지 않게, 튜토리얼 2회차 시운전).
+  if(evidence.length)labels.push('근거 '+evidence.join(' / '));
   dialog.querySelector('[data-confirm-description]').textContent=labels.filter(Boolean).join(' · ');
   dialog.showModal();
 },true);

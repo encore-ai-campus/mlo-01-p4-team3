@@ -159,6 +159,8 @@ class NpcLineService:
         if not cfg.polish_on:
             return False
         state, _ = self.game.owned(game_id, player)
+        if state.meta.scenario_id:
+            return False   # 시나리오(튜토리얼) 판은 운영 모드와 상관없이 다듬기를 등록하지 않고 템플릿 문장을 쓴다
         content = self.game.dependencies(state.meta).content
         styles = {c.npc_id: c.speech_style for c in content.characters}
         lexicon = self._lexicon(content)

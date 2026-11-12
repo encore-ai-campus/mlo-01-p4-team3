@@ -112,10 +112,10 @@ class ClueRules(unittest.TestCase):
         self.assertTrue(ending_available(p, "haewon:h1"))
 
     def test_progress_keeps_only_out_of_game_fields(self):
-        """판 밖 상태는 단서·결말·판 ID뿐이다. NPC 믿음·기억·공개 기록 필드가 없다."""
+        """판 밖 상태는 단서·결말·판 ID·튜토리얼 시작 여부(11/11)뿐이다. NPC 믿음·기억·공개 기록 필드가 없다."""
         self.assertEqual(set(PlayerProgress.__dataclass_fields__),
                          {"player_pseudonym", "game_ids", "clues", "confessed_secrets_seen",
-                          "endings_unlocked", "content_version"})
+                          "endings_unlocked", "content_version", "tutorial_completed"})
 
     def test_progress_events_filter(self):
         es = [confession("jumo", "clue_famine", seq=1), event(EventType.SPEECH_MADE, {}, seq=2),

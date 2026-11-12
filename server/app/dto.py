@@ -32,10 +32,21 @@ class StartGameInput:
 
 
 @dataclass
+class StartTutorialInput:
+    """튜토리얼 판 시작 입력(`POST /tutorial`). 시드·프리셋·회차는 받지 않는다(서버 상수, engine/domain/tutorial.py)."""
+
+    player_pseudonym: str               # 서버가 로그인 계정의 가명 ID로 채운다
+    start_token: str                    # 시작 요청 UUID. 같은 값을 다시 보내면 같은 판
+    mudang_variant: str = "f"           # 주인공 초상 "f" | "m"(표시 전용)
+
+
+@dataclass
 class GameOutput:
+    """판 화면 응답: 플레이어 시점 상태와 아직 끝나지 않은 대사 생성 작업 ID."""
     view: PlayerView
     pending_render_jobs: list[str] = field(default_factory=list)
     mudang_variant: Optional[str] = None    # 판 메타 값. None(녹화 판·시뮬레이터)이면 화면은 기본 이미지
+    scenario_id: Optional[str] = None       # 판 메타 값. 튜토리얼 판이면 "tutorial-v1", 일반·회차 판은 None
 
 
 # ---------------------------------------------------------------- 명령 실행
