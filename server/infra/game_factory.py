@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import threading
+import re
 from typing import Callable
 
 from engine.domain import params
@@ -257,8 +258,37 @@ def build_game_service():
     runtime = open_mongo_runtime(engine=engine, suspicion=fake)
     parser = BaselineIntentParser()
     service = build_from_runtime(runtime, parser)
+    if path := getattr(settings, "WIN_PROBABILITY_MODEL", ""):
+        from server.infra.win_probability import WinProbabilityModel
+        service.win_probability = WinProbabilityModel.from_path(path)
     intent_version = getattr(getattr(parser, "model", None), "model_version", "")
     registry = StaticModelRegistry({INTENT_KEY: intent_version, SUSPICION_KEY: production})
+    if configured := getattr(settings, "MLFLOW_MODELS", ""):
+        import json
+        from mlflow import MlflowClient
+        from ml.suspicion.features import FEATURE_VERSION
+        from server.infra.mlflow_artifacts import MlflowArtifacts, PinnedIntentParser
+        from server.infra.mlflow_registry import MlflowModelRegistry
+        from server.infra.model_selector import ProcessSuspicionModels
+        from server.infra.observed_models import ObservedSuspicionModel
+        models = json.loads(configured)
+        if set(models) != {INTENT_KEY, SUSPICION_KEY} or any(
+                not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9_.-]+', name)
+                for name in models.values()):
+            raise ValueError('configured_mlflow_model_pair_required')
+        artifacts = MlflowArtifacts(MlflowClient(), models, settings.MLFLOW_MODEL_CACHE, FEATURE_VERSION)
+        registry = MlflowModelRegistry(artifacts.client, models, artifacts.prepare)
+        previous_store = store
+        store = ProcessSuspicionModels(lambda v: fake if v == fake.model_version else
+                                       ObservedSuspicionModel(artifacts.suspicion_model(v)),
+                                       registry.cached_versions, feature_version=FEATURE_VERSION)
+        initial = registry.production_versions()  # 시작할 때 실제 가중치와 출처를 확인한다.
+        if not store.preload(initial[SUSPICION_KEY]):
+            raise ValueError('production_suspicion_weights_unavailable')
+        artifacts.intent_parser(initial[INTENT_KEY])
+        previous_store.close()
+        atexit.register(store.close)
+        service.interactions.parser = PinnedIntentParser(service.repository, artifacts, parser)
     service.release_game = store.release
     return attach_model_versions(service, registry, store,
                                  lambda: getattr(settings, "MODEL_CANARY_RATIO", 0.0))

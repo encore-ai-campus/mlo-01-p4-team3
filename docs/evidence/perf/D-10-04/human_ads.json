@@ -1,0 +1,128 @@
+{
+  "task": "D-10-04",
+  "commit": "098b0777c1a7a1b8e0284e8c9b6a50f6d28b5a82",
+  "generated_at": "2026-11-11T07:46:24Z",
+  "source": "User executed sudo python3 /tmp/d1004-human-ads-readonly-v245.py on Spark Master; fixed official Bronze v245; source=human, load_test=false; serve and receipt cutoff 2026-11-10 18:00 KST; installed silver_rows judgments with explicit event counters",
+  "metrics": {
+    "impressions": {
+      "value": 5,
+      "unit": "건"
+    },
+    "clicks": {
+      "value": 4,
+      "unit": "건"
+    },
+    "invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "invalid_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "pending_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "serves": {
+      "value": 73,
+      "unit": "건"
+    },
+    "filled": {
+      "value": 47,
+      "unit": "건"
+    },
+    "fill_rate": {
+      "value": 0.6438356164383562,
+      "unit": ""
+    },
+    "bronze_version": {
+      "value": 245,
+      "unit": ""
+    },
+    "lobby_banner_serves": {
+      "value": 52,
+      "unit": "건"
+    },
+    "lobby_banner_filled": {
+      "value": 31,
+      "unit": "건"
+    },
+    "lobby_banner_impressions": {
+      "value": 4,
+      "unit": "건"
+    },
+    "lobby_banner_clicks": {
+      "value": 4,
+      "unit": "건"
+    },
+    "lobby_banner_invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "lobby_banner_invalid_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "lobby_banner_pending_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "result_banner_serves": {
+      "value": 11,
+      "unit": "건"
+    },
+    "result_banner_filled": {
+      "value": 8,
+      "unit": "건"
+    },
+    "result_banner_impressions": {
+      "value": 1,
+      "unit": "건"
+    },
+    "result_banner_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "result_banner_invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "result_banner_invalid_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "result_banner_pending_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "review_side_serves": {
+      "value": 10,
+      "unit": "건"
+    },
+    "review_side_filled": {
+      "value": 8,
+      "unit": "건"
+    },
+    "review_side_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "review_side_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "review_side_invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "review_side_invalid_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "review_side_pending_events": {
+      "value": 0,
+      "unit": "건"
+    }
+  }
+}

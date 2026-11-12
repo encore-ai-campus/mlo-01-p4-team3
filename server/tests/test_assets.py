@@ -57,8 +57,26 @@ class Assets(SimpleTestCase):
                     self.assertEqual(b"".join(response.streaming_content), (settings.BASE_DIR / item["path"]).read_bytes())
                 finally:
                     response.close()
-        ads = sum(item["url"].startswith("/static/ads/") for item in manifest)
+        ads = sum(item["url"].startswith("/static/promo/") for item in manifest)
         print(f"Manifest images verified: {len(manifest)} ({ads} ads)", flush=True)
+
+    def test_legacy_ad_image_urls_serve_new_files(self):
+        """배포 전환 동안 옛 광고 서버가 내보내는 옛 소재 주소도 새 파일을 준다."""
+        manifest = json.loads(settings.ASSET_MANIFEST.read_text(encoding="utf-8"))
+        promo = [item for item in manifest if item["kind"] == "ad"]
+        self.assertTrue(promo)
+        for item in promo:
+            w, h = item["size"]
+            old = item["url"].replace("/static/promo/", "/static/ads/").replace(
+                "__wide.png" if (w, h) == (728, 90) else "__box.png", f"__{w}x{h}.png")
+            with self.subTest(url=old):
+                response = self.client.get(old)
+                try:
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(b"".join(response.streaming_content), (settings.BASE_DIR / item["path"]).read_bytes())
+                finally:
+                    response.close()
+        self.assertEqual(self.client.get("/static/ads/missing__728x90.png").status_code, 404)
 
     def test_unknown_id_has_fallback_and_no_path_escape(self):
         """누락은 대체하고 정적 경로 밖 파일은 차단한다."""
@@ -100,6 +118,9 @@ class AssetReplacement(TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(first_png)
 
+            # 화면 템플릿 로더는 BASE_DIR 아래에서 템플릿을 찾으므로, 에셋 루트를 바꾸기 전에 한 번 읽어 캐시에 올린다.
+            # 이 테스트를 단독으로 돌려도 저장소의 실제 템플릿을 쓰게 하려는 것이다.
+            self.assertEqual(self.client.get(game_url, HTTP_ACCEPT="text/html").status_code, 200)
             # TEMPLATES는 저장소의 실제 경로를 유지하고 제공할 에셋 루트만 바꾼다.
             with self.settings(BASE_DIR=root, ASSET_MANIFEST=manifest_path):
                 first_page = self.client.get(game_url, HTTP_ACCEPT="text/html")

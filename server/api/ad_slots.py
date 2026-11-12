@@ -1,4 +1,5 @@
 """광고 지면을 별도 GET으로 읽어 게임 서버 출처의 HTML만 반환한다."""
+from datetime import timedelta, timezone as dt_timezone
 from urllib.parse import urlencode, urlsplit
 from uuid import uuid4
 
@@ -15,6 +16,9 @@ from server.app.usecases import StartUnavailable
 from server.paldo_web import composition
 from server.paldo_web.middleware import LOGGER
 from .views import game_request
+
+# 광고 시간 조건(캠페인 targeting.hours)은 서울 시각 기준이다. 서버 TIME_ZONE(UTC)과 무관하게 변환해 보낸다.
+SEOUL = dt_timezone(timedelta(hours=9), "Asia/Seoul")
 
 FETCH_TOTAL = Counter("paldo_ad_fetch_total", "광고 지면 요청 결과", ["result"])
 
@@ -51,7 +55,7 @@ def slot(request, slot):
         return render(request, "ad_slot.html", context)
     request_id = getattr(request, "request_id", str(uuid4()))
     response, result = gateway.fetch(AdRequest(
-        request_id, ad_slot, session_id, AdContext(hour=timezone.localtime().hour)))
+        request_id, ad_slot, session_id, AdContext(hour=timezone.now().astimezone(SEOUL).hour)))
     if result == "ok" and not _local_image(response.creative.image_path):
         result = "error"
     FETCH_TOTAL.labels(result).inc()

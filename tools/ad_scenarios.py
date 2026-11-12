@@ -10,6 +10,7 @@ import heapq
 import json
 import math
 from collections import Counter, defaultdict
+from dataclasses import asdict
 from pathlib import Path
 
 from ads.app.beacon import handle_impression
@@ -43,7 +44,7 @@ def _uniform(seed, *parts):
 def _world(scenario):
     def campaign(name, billing, bid, budget, rates):
         cid = "syn:" + name
-        creatives = [Creative(cid + f":cr{i}", cid, "evaluation", "evaluation", "/static/ads/eval.png",
+        creatives = [Creative(cid + f":cr{i}", cid, "evaluation", "evaluation", "/static/promo/eval.png",
                               "/ads/landing/" + cid + f":cr{i}") for i in range(len(rates))]
         c = Campaign(cid, "syn:advertiser", name, list(AdSlot), billing, bid, budget, Targeting(),
                      DAY, DAY, CampaignStatus.ACTIVE, creatives)
@@ -97,12 +98,13 @@ class _OracleService(AdService):
         return self.evaluation_probabilities[creative.creative_id]
 
 
-def run_policy(scenario, seed, requests, policy_name, *, pacing_gain=None):
+def run_policy(scenario, seed, requests, policy_name, *, pacing_gain=None, replay_out=None):
     """Run one simulated day through the actual service, judges and BudgetBook.
 
     random is independent Uniform(0,1) CTR ranking/creative selection; fixed
     uses the unchanging slot prior. All retain identical bids, budgets, cap,
-    exploration floor and pacing controller. No training generator is used.
+    exploration floor and pacing controller. If requested, export observations
+    and the online ledger separately for the Delta replay.
     """
     campaigns, rates = _world(scenario)
     now = [BASE_MS]
@@ -122,14 +124,46 @@ def run_policy(scenario, seed, requests, policy_name, *, pacing_gain=None):
     before, after = [], []
     last_bucket = None
     curve_error = []
+    replay = [] if replay_out is not None else None
+    run_id = f"syn:e{scenario}:s{seed}"
+
+    def emit(topic, event_id, record, **fields):
+        event = dict(event_id=event_id, source="synthetic", load_test=False,
+                     occurred_at_ms=now[0], received_at_ms=now[0])
+        if record:
+            event.update({k: getattr(record, k) for k in (
+                "serve_id", "request_id", "campaign_id", "creative_id", "slot", "billing", "price_mw")})
+        replay.append(dict(topic="ad." + topic, envelope_json=json.dumps(event | fields)))
+
+    def observed_judgement(kind, token, result):
+        if replay is None:
+            return
+        record, judgement = result.record, result.judgement
+        first, claims, _ = service.pending.get((kind, token), (now[0], None, None))
+        event_id = (f"{record.request_id}:{kind}" if judgement.status.value == "valid"
+                    else f"{run_id}:attempt:{len(replay)}")
+        fields = dict(status=judgement.status, invalid_reason=judgement.reason,
+                      received_at_ms=first, charge_id=result.charge_id, charge_mw=result.charge_mw)
+        if record is None and claims:
+            fields.update(serve_id=claims.serve_id, slot=claims.slot)
+        if kind == "impression":
+            fields.update(visible_ratio=1., visible_ms=1200)
+        uncharged = dict(charge_id=None, charge_mw=0)
+        implied_cpm = judgement.implied_impression and record.billing is BillingType.CPM
+        emit(kind, event_id, record, **(fields | uncharged if implied_cpm else fields))
+        if judgement.implied_impression:
+            impression = fields if implied_cpm else fields | uncharged
+            emit("impression", event_id + ":implied", record, **impression, implied_by_click=True)
 
     def click(token):
         result = handle_click(service, token)
+        observed_judgement("click", token, result)
         metrics["invalid_charges"] += int(result.judgement.status.value != "valid" and result.charge_mw != 0)
         if result.judgement.status.value == "valid":
             click_tokens.append(token)
             if scenario == 5 and len(click_tokens) % 4 == 0:
                 attack = handle_click(service, token)
+                observed_judgement("click", token, attack)
                 invalid_types["duplicate"] += int(attack.judgement.reason.value == "duplicate")
                 metrics["invalid_charges"] += int(attack.charge_mw != 0)
         return result
@@ -172,13 +206,16 @@ def run_policy(scenario, seed, requests, policy_name, *, pacing_gain=None):
                     views[session, cr.creative_id], ctx) for c in campaigns for cr in c.creatives}
         if policy_name == "oracle":
             service.evaluation_probabilities = probs
-        req = AdRequest(f"syn:e{scenario}:s{seed}:r{i}", slot, session, ctx, "synthetic")
+        req = AdRequest(f"{run_id}:r{i}", slot, session, ctx, "synthetic")
         response = service.serve(req)
         events.append(dict(request_id=req.request_id, filled=response.filled,
                            ctr_version=response.ctr_version, policy_version=response.policy_version))
+        rec = next(reversed(service.state.serves.values())) if response.filled else None
+        if replay is not None:
+            emit("serve", req.request_id + ":serve", rec, request_id=req.request_id, slot=slot,
+                 filled=response.filled, context=asdict(ctx))
         if not response.filled:
             continue
-        rec = next(reversed(service.state.serves.values()))
         p = probs[rec.creative_id]
         winner_counts[rec.campaign_id] += int(i >= requests // 3)
         if scenario == 4:
@@ -194,7 +231,8 @@ def run_policy(scenario, seed, requests, policy_name, *, pacing_gain=None):
             metrics["fatigued_views"] += int(views[session, rec.creative_id] > 0)
             views[session, rec.creative_id] += 1
         if seen and not lost:
-            handle_impression(service, response.serve_token, 1., 1200)
+            result = handle_impression(service, response.serve_token, 1., 1200)
+            observed_judgement("impression", response.serve_token, result)
         metrics["lost_beacons"] += int(seen and lost)
         delay = 1000 + int(_uniform(seed, i, "delay") * 89_000)
         if clicked:
@@ -225,6 +263,15 @@ def run_policy(scenario, seed, requests, policy_name, *, pacing_gain=None):
         now[0] += TOKEN_TTL_MS + 1
         invalid_types["expired"] += int(click(token).judgement.reason.value == "expired")
     service.book.release_expired(now[0])
+    if replay is not None:
+        replay_out.mkdir(parents=True)
+        with (replay_out / "bronze.jsonl").open("w", encoding="utf-8") as stream:
+            for row in replay:
+                stream.write(json.dumps(row) + "\n")
+        ledger = [asdict(row) | {"source": "synthetic"} for row in service.book.rows.values()]
+        (replay_out / "ledger.json").write_text(json.dumps(ledger), encoding="utf-8")
+        cutoff = max(now[0], BASE_MS + 86_400_000 + TOKEN_TTL_MS) + GRACE_MS + 1
+        (replay_out / "cutoff.json").write_text(json.dumps(cutoff), encoding="utf-8")
     final = build_ctr(_final_snapshot(service, now[0], "final"), policies)
     estimates = {(r["creative_id"], AdSlot(r["slot"])): r["alpha"] / (r["alpha"] + r["beta"]) for r in final}
     if policy_name != "thompson":
@@ -270,7 +317,7 @@ def run_policy(scenario, seed, requests, policy_name, *, pacing_gain=None):
                 truth=truth, events=events, predictions=predictions)
 
 
-def evaluate(scenarios, seeds, requests, root=ROOT):
+def evaluate(scenarios, seeds, requests, root=ROOT, *, capture_replay=False):
     """Write separate truth/observations and a three-seed acceptance report, preserving failures."""
     if len(set(seeds)) < 3 or len(set(seeds)) != len(seeds):
         raise ValueError("at least three distinct seeds required")
@@ -283,8 +330,9 @@ def evaluate(scenarios, seeds, requests, root=ROOT):
     for scenario in scenarios:
         for seed in seeds:
             for policy in ("thompson", "random", "fixed", "oracle"):
-                result = run_policy(scenario, seed, requests, policy)
                 name = f"s{scenario}-seed{seed}-{policy}"
+                replay_out = out / "replay" / name if capture_replay and policy == "thompson" else None
+                result = run_policy(scenario, seed, requests, policy, replay_out=replay_out)
                 (out / (name + "-truth.json")).write_text(json.dumps(result.pop("truth")), encoding="utf-8")
                 (out / (name + "-observed.json")).write_text(json.dumps(dict(
                     events=result.pop("events"), predictions=result.pop("predictions"))), encoding="utf-8")
@@ -311,8 +359,10 @@ def evaluate(scenarios, seeds, requests, root=ROOT):
         if flag:
             metrics[f"s{scenario}_expected_behavior_passes"] = dict(value=sum(r[flag] for r in runs), unit="건")
     metrics["distinct_seeds"] = dict(value=len(seeds), unit="개")
+    capture_flag = " --capture-replay" if capture_replay else ""
     write_result("D-08-02", "scenarios", metrics, "python -m tools.ad_scenarios --scenario " +
-                 ",".join(map(str, scenarios)) + " --seeds " + ",".join(map(str, seeds)) + f" --requests {requests}", root=root)
+                 ",".join(map(str, scenarios)) + " --seeds " + ",".join(map(str, seeds)) +
+                 f" --requests {requests}{capture_flag}", root=root)
     lines = ["# D-08-02 local scenarios", "", CONCLUSION, "", report["scope"], "",
              "CTR is final posterior vs latent marginal; online prequential error is also reported.",
              "CTR error columns for random/fixed/oracle are stored-prior diagnostics, not their ranking-score accuracy. Only Thompson CTR errors are acceptance gates.",
@@ -336,10 +386,12 @@ def main(argv=None):
     parser.add_argument("--scenario", default="1..5")
     parser.add_argument("--seeds", default="17,29,43")
     parser.add_argument("--requests", type=int, default=12000)
+    parser.add_argument("--capture-replay", action="store_true", help="save Thompson events and ledger for Delta")
     args = parser.parse_args(argv)
     try:
         scenarios = list(range(1, 6)) if args.scenario == "1..5" else [int(s) for s in args.scenario.split(",")]
-        report = evaluate(scenarios, [int(s) for s in args.seeds.split(",")], args.requests)
+        report = evaluate(scenarios, [int(s) for s in args.seeds.split(",")], args.requests,
+                          capture_replay=args.capture_replay)
     except (ValueError, OSError) as exc:
         log("ad_scenarios", "error", "evaluation failed", error_type=type(exc).__name__)
         return 1

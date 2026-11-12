@@ -7,6 +7,9 @@ let currentScene = null;
 const iconFor = {suspect:'search', defend:'shield', interrogate:'message-circle', point_contradiction:'shuffle', explain:'message-circle', silence:'eye', reveal_divination:'moon', vote:'vote', divine:'moon'};
 
 const PHASE_ORDER=['morning','round1','interrogation','round2','vote','runoff','night'];
+// 생성 중인 줄(캐묻기 답 "…", 폴링 속성 hx-get이 붙은 span)은 문장이 확정될 때까지 넘기지 않는다(11/11 고백 답이 대사창에서 빠진 문제).
+// 폴링이 끊겨도 갇히지 않게 이 시간이 지나면 넘길 수 있다. 실시간 생성 마감(3초)보다 넉넉하게 둔다.
+const PENDING_HOLD_MS=10000;
 const readingMemory = new Map();
 function readStore(key) { try { return JSON.parse(sessionStorage.getItem(key) || 'null') ?? readingMemory.get(key); } catch { return readingMemory.get(key); } }
 function saveStore(key, value) { readingMemory.set(key,value); try { sessionStorage.setItem(key, JSON.stringify(value)); } catch { /* Keep tab memory across fragment swaps. */ } }
@@ -164,18 +167,48 @@ function mountScene(root) {
   player.querySelector('[data-vn-instant]').checked=instant;
   let lastText='';
   const text=player.querySelector('[data-vn-text]');
+  const pendingSince=new Map();
+  const isPending=n=>!!n?.querySelector('.vn-source-text[hx-get]');
+  // 생성 중이고 기다린 시간이 PENDING_HOLD_MS 안이면 붙잡는다. 처음 본 순간부터 재고, 다 기다리면 한 번 다시 그려 넘김을 푼다.
+  function held(n) {
+    if(!isPending(n))return false;
+    const id=n.dataset.lineId;
+    if(!pendingSince.has(id)) { pendingSince.set(id,Date.now()); setTimeout(()=>{ if(root.isConnected && sources[index]===n) render(false,true); },PENDING_HOLD_MS+50); }
+    return Date.now()-pendingSince.get(id)<PENDING_HOLD_MS;
+  }
+  const divinationSubmit=root.querySelector('[data-divination-submit]');
+  let divinationChoice=null;
+  if(divinationSubmit) {
+    for(const choice of root.querySelectorAll('[data-divination-choice]')) {
+      choice.setAttribute('aria-pressed','false');
+      choice.addEventListener('click',event=>{
+        event.preventDefault();
+        if(choice.disabled)return;
+        divinationChoice?.setAttribute('aria-pressed','false');
+        divinationChoice=choice;
+        choice.setAttribute('aria-pressed','true');
+        divinationSubmit.disabled=false;
+      });
+    }
+    divinationSubmit.hidden=false;
+    divinationSubmit.addEventListener('click',()=>{
+      if(divinationChoice && !divinationChoice.disabled) divinationChoice.form.requestSubmit(divinationChoice);
+    });
+  }
   // 줄은 문장이 끝까지 보였을 때만 '본 줄'이 된다. 글자 출력 중에 화면을 다시 그리면 그 줄에서 다시 시작한다.
   // 읽은 줄이 바뀔 때마다 vn:read를 낸다(튜토리얼 강조는 그 단계 족제비 줄을 다 읽은 뒤 켠다, ui-tutorial.js).
-  function persist(done=false) { const id=sources[index]?.dataset.lineId; if(id&&done)seen.add(id); saveStore(key,{line:id,closed:[...closed],seen:[...seen]}); updateResultLock(); root.vnSeen=seen; root.dispatchEvent(new CustomEvent('vn:read',{bubbles:true,detail:{seen:[...seen]}})); }
+  function persist(done=false) { const id=sources[index]?.dataset.lineId; if(id&&done&&!isPending(sources[index]))seen.add(id); saveStore(key,{line:id,closed:[...closed],seen:[...seen]}); updateResultLock(); root.vnSeen=seen; root.dispatchEvent(new CustomEvent('vn:read',{bubbles:true,detail:{seen:[...seen]}})); }
   // 투표 결과 발표 줄을 다 읽기 전에는 그 단계 행동(결선 투표·밤 점치기)을 잠근다. 서버 명령은 바꾸지 않는다.
   function updateResultLock() {
     const pending=sources.some(n=>n.dataset.result==='true' && !seen.has(n.dataset.lineId));
     const panel=root.querySelector('#stage-actions'); if(!panel)return;
     root.querySelector('[data-result-lock-notice]')?.toggleAttribute('hidden',!pending);
     for(const control of panel.querySelectorAll('.command-bar button, .command-bar input, .command-bar select, .command-bar textarea')) {
+      if(control===divinationSubmit)continue;
       if(pending && !control.disabled) { control.disabled=true; control.dataset.resultLocked=''; }
       else if(!pending && control.dataset.resultLocked!==undefined) { control.disabled=false; delete control.dataset.resultLocked; }
     }
+    if(divinationSubmit)divinationSubmit.disabled=pending || !divinationChoice || divinationChoice.disabled;
   }
   function markAllSeen() { for(const n of sources)seen.add(n.dataset.lineId); persist(); }
   function render(announce=true, force=false) {
@@ -190,12 +223,14 @@ function mountScene(root) {
     const tell=source?.querySelector('[data-vn-tell]')?.textContent.trim();
     const line=tell ? body + ' ' + tell : body;
     if(!announce && !force && line===lastText)return;
+    if(line!==lastText) text.closest('.vn-dialogue').scrollTop=0;
     lastText=line;
     clearTimeout(timer);
     // 해설 줄(화자 없음, data-speaker="")은 이름표를 비운다. 화자 칸이 아예 없는 줄만 무당으로 읽는다.
     const name=source ? (source.dataset.speaker ?? '무당') : '무당';
     const sprite=source?.dataset.sprite || (!source ? player.dataset.defaultSprite : '') || '';
     const guide=source?.dataset.guide==='true';
+    player.toggleAttribute('data-guide',guide);
     // 마스코트 줄: 족제비 안내·단서 알림, 까치 실종 발표. 인물 자리 대신 무대 왼쪽 마스코트 자리에 세운다.
     const mascot=guide || source?.dataset.mascot==='true';
     // 밤 화면은 인물을 세우지 않는다. 예외: 그날 밤 감금 결과 전신 컷(추방 결과, spec 7절).
@@ -228,7 +263,7 @@ function mountScene(root) {
     player.toggleAttribute('data-long',line.length>160);
     player.querySelector('[data-vn-position]').textContent=`${sources.length?index+1:1} / ${sources.length||1}`;
     player.querySelector('[data-vn-prev]').disabled=index===0;
-    player.querySelector('[data-vn-next]').disabled=index>=sources.length-1 && !full && instant;
+    player.querySelector('[data-vn-next]').disabled=(index>=sources.length-1 && !full && instant) || (!full && held(source));
     player.querySelector('[data-vn-announcement]').textContent=`${name}. ${line}`;
     if(npcChoice) npc.shown(source.dataset.lineId,npcChoice);
     if(instant || full || !announce) { text.textContent=line; persist(!full); return; }
@@ -243,15 +278,20 @@ function mountScene(root) {
       else if(source) closed.add(source.dataset.lineId);
     }
     else if(text.textContent!==lastText) {clearTimeout(timer);text.textContent=lastText;persist(true);return;}
+    else if(held(source)) return;
     else index=Math.min(sources.length-1,index+1);
     index=Math.max(0,index); render();
   }
   player.querySelector('[data-vn-next]').addEventListener('click',next);
   player.querySelector('[data-vn-prev]').addEventListener('click',()=>{index=Math.max(0,index-1);render();});
-  player.querySelector('[data-vn-full-close]').addEventListener('click',next);
+  player.querySelector('[data-vn-full-close]').addEventListener('click',()=>{
+    next();
+    (player.querySelector('[data-vn-next]:not(:disabled)') || player).focus({preventScroll:true});
+  });
   // 무대(대사창 포함)를 한 번 누르면 한 줄만 넘긴다. 버튼·입력·열린 패널 안의 클릭은 제 일만 한다.
   // 인물 그림도 넘김이다(11/10 사용자 결정). 인물 행동 메뉴는 주민 창·행동하기에서 연다.
-  player.querySelector('[data-vn-stage]').addEventListener('click',e=>{
+  player.addEventListener('click',e=>{
+    if(!e.target.closest('[data-vn-stage],.vn-dialogue'))return;
     if(!e.target.closest('[data-vn-actor]') && e.target.closest('button,a,input,select,textarea,label,summary,details,dialog,form,[data-stage-panel],[data-person],.speech-card'))return;
     next();
   });
@@ -293,8 +333,11 @@ function mount() {
 }
 document.addEventListener('DOMContentLoaded',mount);
 document.addEventListener('htmx:afterSwap',mount);
-document.addEventListener('htmx:beforeSwap',e=>{
-  if(e.detail.target?.id==='meeting') { const old=document.querySelector('#meeting'); scenes.get(old)?.dispose(); currentScene=null; }
+document.addEventListener('htmx:beforeCleanupElement',e=>{
+  const scene=scenes.get(e.detail.elt);
+  if(!scene)return;
+  scene.dispose();
+  if(currentScene===scene)currentScene=null;
 });
 document.addEventListener('keydown',e=>{
   if(e.defaultPrevented || e.isComposing || e.repeat || ![' ','Enter'].includes(e.key) || document.querySelector('dialog[open]'))return;
@@ -329,8 +372,10 @@ document.addEventListener('submit',event=>{
   const labels=[card ? [...card.querySelectorAll(':scope > h3, :scope > h3 + p')].map(n=>n.textContent.trim()).filter(Boolean).join(' · ') : form.querySelector('button[type=submit]')?.textContent.trim()||'선택한 행동'];
   for(const select of form.querySelectorAll('select')) if(!select.disabled&&select.value)labels.push(select.selectedOptions[0]?.textContent.trim());
   // 근거는 내부 ID(claim:cl04) 대신 고른 진술 문장(라벨)으로 보인다.
-  const evidence=[...form.querySelectorAll('input[name=evidence]:checked')].map(x=>x.closest('label')?.textContent.replace(/\s+/g,' ').trim().replace(/[.。]+$/,'')||x.value);
-  // 진술 문장은 마침표를 떼고 ' / '로 잇는다("있었소., 훈장"처럼 부호가 겹치지 않게, 2회차 시운전).
+  const evidence=[...form.querySelectorAll('input[name=evidence]:checked')]
+    .map(input=>input.labels?.[0]?.textContent.replace(/\s+/g,' ').trim().replace(/[.。]+$/,''))
+    .filter(Boolean);
+  // 진술 문장은 마침표를 떼고 ' / '로 잇는다("있었소., 훈장"처럼 부호가 겹치지 않게, 튜토리얼 2회차 시운전).
   if(evidence.length)labels.push('근거 '+evidence.join(' / '));
   dialog.querySelector('[data-confirm-description]').textContent=labels.filter(Boolean).join(' · ');
   dialog.showModal();
@@ -348,7 +393,7 @@ document.addEventListener('click',event=>{
 /* Button hover tips: the text comes from each button's title (UI_TIPS). Draw it in-page so it shows the same on every OS. */
 let tipBox=null,tipOwner=null;
 function hideTip(){ if(tipOwner?.dataset.tipTitle!==undefined){tipOwner.title=tipOwner.dataset.tipTitle;delete tipOwner.dataset.tipTitle;} tipOwner=null; tipBox?.setAttribute('hidden',''); }
-function showTip(owner){
+function showTip(owner,pointer){
   if(tipOwner===owner)return; hideTip();
   // Modal dialogs sit in the top layer above an in-page box, so they keep the native title tooltip.
   const textValue=owner.getAttribute('title'); if(!textValue || owner.closest('dialog'))return;
@@ -356,15 +401,26 @@ function showTip(owner){
   tipOwner=owner; owner.dataset.tipTitle=textValue; owner.removeAttribute('title');
   tipBox.textContent=textValue; tipBox.hidden=false;
   const box=owner.getBoundingClientRect(), width=tipBox.offsetWidth, height=tipBox.offsetHeight;
-  const top=box.top-height-8>=4 ? box.top-height-8 : box.bottom+8;
-  tipBox.style.left=`${Math.max(4,Math.min(innerWidth-width-4,box.left+box.width/2-width/2))+scrollX}px`;
-  tipBox.style.top=`${top+scrollY}px`;
+  const actor=owner.matches('[data-vn-actor]');
+  const x=actor && pointer ? pointer.clientX : box.left+box.width/2;
+  const above=actor ? (pointer?.clientY ?? box.bottom) : box.top;
+  const below=actor && pointer ? pointer.clientY : box.bottom;
+  const top=above-height-8>=4 ? above-height-8 : below+8;
+  tipBox.style.left=`${Math.max(4,Math.min(document.documentElement.clientWidth-width-4,x-width/2))}px`;
+  tipBox.style.top=`${Math.max(4,Math.min(innerHeight-height-4,top))}px`;
 }
 const tipTarget=e=>e.target.closest?.('button[title],label[title],button[data-tip-title],label[data-tip-title]');
-document.addEventListener('pointerover',e=>{const owner=tipTarget(e); if(owner)showTip(owner); else if(tipOwner && !tipOwner.contains(e.target))hideTip();});
+document.addEventListener('pointerover',e=>{const owner=tipTarget(e); if(owner && e.pointerType!=='touch')showTip(owner,e);});
+document.addEventListener('pointerout',e=>{
+  if(tipOwner?.contains(e.target) && !tipOwner.contains(e.relatedTarget))hideTip();
+});
+document.addEventListener('pointercancel',hideTip);
+window.addEventListener('blur',hideTip);
 document.addEventListener('focusin',e=>{const owner=tipTarget(e); if(owner && owner.matches(':focus-visible'))showTip(owner); else hideTip();});
 document.addEventListener('focusout',hideTip);
 document.addEventListener('pointerdown',hideTip);
+document.addEventListener('scroll',hideTip,true);
+window.addEventListener('resize',hideTip);
 document.addEventListener('htmx:beforeSwap',hideTip);
 
 /* Notebook marks: one press saves through the existing notebook form (all entries, same PUT path).

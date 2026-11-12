@@ -31,6 +31,8 @@ from tests.contract.test_ads import _camp, _serve
 class WorkerStackTests(TransactionTestCase):
     """웹과 별도 실행 경로에서 MySQL·Kafka 상태를 직접 확인한다."""
 
+    databases = {"default", "ads_reserve"}   # 운영 조립(get_service)은 예산 예약을 별도 연결에서 커밋한다.
+
     def test_expiry_process_catches_up_after_restart(self):
         schema = connection.settings_dict["NAME"]
         self.assertTrue(schema.startswith("test_"), "use an isolated test schema")
@@ -94,7 +96,7 @@ class WorkerStackTests(TransactionTestCase):
             slots=["lobby_banner"], billing="cpm", max_bid_mw=10_000_000, daily_budget_mw=10_000_000,
             start_date="2026-11-01", end_date="2026-12-01")
         Creative.objects.create(creative_id="stack-cr", campaign=campaign, title="ad", body="ad",
-                                image_path="/static/ads/example.png")
+                                image_path="/static/promo/example.png")
         service = get_service()
         service.clock = lambda: BASE_MS
         out = service.serve(AdRequest(rid, AdSlot.LOBBY_BANNER, "stack", AdContext()))

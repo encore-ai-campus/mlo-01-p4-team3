@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily ad aggregation after final close (00:40 Asia/Seoul)
+
+[Timer]
+OnCalendar=*-*-* 00:40:00 Asia/Seoul
+Persistent=true
+RandomizedDelaySec=60
+Unit=paldo-ads-aggregate.service
+
+[Install]
+WantedBy=timers.target

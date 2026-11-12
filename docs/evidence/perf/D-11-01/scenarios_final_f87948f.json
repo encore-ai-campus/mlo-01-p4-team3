@@ -1,0 +1,116 @@
+{
+  "task": "D-11-01",
+  "commit": "f87948f829be78af0b16575341edc6314fde3c2c",
+  "generated_at": "2026-11-11T12:07:26Z",
+  "source": "tools.ad_scenarios.run_policy (15 Thompson runs) + pipeline.spark.ads_silver + pipeline.spark.ads_reconcile",
+  "metrics": {
+    "local_pass_runs": {
+      "value": 15,
+      "unit": "건"
+    },
+    "requests": {
+      "value": 180000,
+      "unit": "건"
+    },
+    "reconciliation_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "bronze_events": {
+      "value": 332386,
+      "unit": "건"
+    },
+    "s1_budget_error_max": {
+      "value": 0.0034999999999999476,
+      "unit": ""
+    },
+    "ctr_error_max": {
+      "value": 0.1232067727954606,
+      "unit": ""
+    },
+    "s1_ctr_error_max": {
+      "value": 0.11990346580161025,
+      "unit": ""
+    },
+    "s1_reconciliation_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s1_ledger_net_mw": {
+      "value": 1196900,
+      "unit": "밀리원"
+    },
+    "s1_delta_silver_version": {
+      "value": 0,
+      "unit": ""
+    },
+    "s2_ctr_error_max": {
+      "value": 0.1232067727954606,
+      "unit": ""
+    },
+    "s2_reconciliation_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s2_ledger_net_mw": {
+      "value": 268509225,
+      "unit": "밀리원"
+    },
+    "s2_delta_silver_version": {
+      "value": 0,
+      "unit": ""
+    },
+    "s3_ctr_error_max": {
+      "value": 0.09284790708835819,
+      "unit": ""
+    },
+    "s3_reconciliation_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s3_ledger_net_mw": {
+      "value": 3001700,
+      "unit": "밀리원"
+    },
+    "s3_delta_silver_version": {
+      "value": 0,
+      "unit": ""
+    },
+    "s4_ctr_error_max": {
+      "value": 0.0796761862207392,
+      "unit": ""
+    },
+    "s4_reconciliation_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s4_ledger_net_mw": {
+      "value": 2787200,
+      "unit": "밀리원"
+    },
+    "s4_delta_silver_version": {
+      "value": 0,
+      "unit": ""
+    },
+    "s5_ctr_error_max": {
+      "value": 0.08187667418980944,
+      "unit": ""
+    },
+    "s5_reconciliation_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s5_ledger_net_mw": {
+      "value": 138932969,
+      "unit": "밀리원"
+    },
+    "s5_delta_silver_version": {
+      "value": 0,
+      "unit": ""
+    }
+  }
+}

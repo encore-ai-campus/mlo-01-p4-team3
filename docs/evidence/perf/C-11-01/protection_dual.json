@@ -1,0 +1,76 @@
+{
+  "task": "C-11-01",
+  "commit": "79da6f13f1e096b80d52c5a674f5cd8533f46f9c",
+  "generated_at": "2026-11-11T00:04:57Z",
+  "source": "11/11 source 38abc0d; 4 users x 180s, two isolated Daphne + loopback Caddy round-robin, real engine/Mongo/MySQL/HTTP ads; same actors reused: history-confounded diagnostic; never use as causal protection comparison",
+  "metrics": {
+    "normal_p95_ms": {
+      "value": 1368.694,
+      "unit": "ms"
+    },
+    "normal_requests": {
+      "value": 687,
+      "unit": "건"
+    },
+    "normal_errors": {
+      "value": 0,
+      "unit": "건"
+    },
+    "normal_ads_requests": {
+      "value": 174,
+      "unit": "건"
+    },
+    "normal_engine_player_view_stage_p95_ms": {
+      "value": 0.454,
+      "unit": "ms"
+    },
+    "normal_engine_apply_stage_p95_ms": {
+      "value": 11.904,
+      "unit": "ms"
+    },
+    "normal_progress_add_game_stage_p95_ms": {
+      "value": 8.532,
+      "unit": "ms"
+    },
+    "normal_content_stage_p95_ms": {
+      "value": 0.031,
+      "unit": "ms"
+    },
+    "normal_server_total_stage_p95_ms": {
+      "value": 1364.622,
+      "unit": "ms"
+    },
+    "normal_load_stage_p95_ms": {
+      "value": 1202.336,
+      "unit": "ms"
+    },
+    "normal_engine_new_game_stage_p95_ms": {
+      "value": 0.269,
+      "unit": "ms"
+    },
+    "normal_progress_load_stage_p95_ms": {
+      "value": 8.124,
+      "unit": "ms"
+    },
+    "normal_create_stage_p95_ms": {
+      "value": 5.788,
+      "unit": "ms"
+    },
+    "normal_account_sql_stage_p95_ms": {
+      "value": 147.805,
+      "unit": "ms"
+    },
+    "normal_find_command_stage_p95_ms": {
+      "value": 13.004,
+      "unit": "ms"
+    },
+    "normal_commit_stage_p95_ms": {
+      "value": 22.415,
+      "unit": "ms"
+    },
+    "normal_client_minus_server_p95_ms": {
+      "value": 13.926,
+      "unit": "ms"
+    }
+  }
+}

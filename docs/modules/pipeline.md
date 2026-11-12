@@ -50,5 +50,8 @@ malformed 입력은 스트림을 멈춘다. 조용히 skip하거나 정답을 �
 | C-07-04 | 11/7 | pipeline/ops 모듈 일괄 갱신, HTTPS 브라우저·실제 프록시 지연·운영 인계 연결. 실측 11/8 |
 | C-08-01 | 11/8 | 지표 중계·읽기 수집·6대시보드·6경보·부하 실측 |
 | C-08-02 | 11/8 | 광고 귀속·마감·멱등 집계·실제 환입 재대사 |
+| C-08-02 | 11/11 | `ads_contract.ctr_cells`·`ctr_snapshot`, gold 내보내기에 `ctr_cells.json` 추가, `ops/ads_aggregate.sh`·systemd timer로 하루 1회 자동 실행(E 보강) |
 | C-08-03 | 11/8 | k3s Job·Kafka sink·5호스트 자원 재측정 |
 | C-08-04 | 11/8 | E 태그 archive·4th_private 전용 조회 계정 guard |
+| C-08-02 | 11/11 | 운영 집계 연결7개 공란·검증 Bronze 확인, 공식 경로/별도 lock/전용 SSH 사전 검증 및 적용·되돌림 절차 |
+| C-08-02 | 11/11 | 실제 하루 집계8단계·공식 Bronze245·원장 대사0·CTR 저장·timer 활성 확인, D 실행 인계 대기 정정 |

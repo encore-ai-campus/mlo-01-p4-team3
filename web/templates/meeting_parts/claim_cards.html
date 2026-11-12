@@ -1,16 +1,29 @@
 {% load meeting %}
 {% if claims %}
   <section{% if not classic_mode %} class="record-panel"{% endif %} aria-labelledby="claim-list-title">
+    {% if stage_records %}<div class="record-paper">{% endif %}
     <h2 id="claim-list-title">진술표</h2>
-    <p class="section-guide">공개된 진술입니다. 서로의 말을 비교하며 판단하세요.</p>
-    <div class="record-filters"><label>인물<select data-record-filter="speaker"><option value="">전체</option>{% for person in vm.people %}<option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>{% endfor %}</select></label><label>가리키는 밤<select data-record-filter="night"><option value="">전체</option>{% for night in claim_nights %}<option value="{{ night }}">{{ night }}일째 밤</option>{% endfor %}</select></label><label>시간대<select data-record-filter="slot"><option value="">전체</option><option value="evening">초저녁</option><option value="midnight">한밤</option></select></label></div>
+    {% if not stage_records %}<p class="section-guide">공개된 진술입니다. 서로의 말을 비교하며 판단하세요.</p>{% endif %}
+    <div class="record-filters">
+      <label><span{% if stage_records %} class="sr-only"{% endif %}>인물</span>
+        <select data-record-filter="speaker"><option value="">{% if stage_records %}인물{% else %}전체{% endif %}</option>{% for person in vm.people %}<option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>{% endfor %}</select>
+      </label>
+      <label><span{% if stage_records %} class="sr-only"{% endif %}>가리키는 밤</span>
+        <select data-record-filter="night"><option value="">{% if stage_records %}밤{% else %}전체{% endif %}</option>{% for night in claim_nights %}<option value="{{ night }}">{{ night }}일째 밤</option>{% endfor %}</select>
+      </label>
+      <label><span{% if stage_records %} class="sr-only"{% endif %}>시간대</span>
+        <select data-record-filter="slot"><option value="">{% if stage_records %}시간대{% else %}전체{% endif %}</option><option value="evening">초저녁</option><option value="midnight">한밤</option></select>
+      </label>
+    </div>
+    {% if stage_records %}<p class="section-guide record-claim-guide">비교할 진술 두 개를 선택해 주세요.</p>{% endif %}
     <p class="record-count" data-record-count></p>
+    {% if stage_records %}{% include "meeting_parts/record_comparison.html" %}{% endif %}
     {% if end_records %}
       <p data-record-empty role="status" hidden>조건에 맞는 진술이 없습니다.</p>
       <p data-record-hidden-selection role="status" hidden></p>
       <button type="button" data-record-reset{% tip "record_filter_reset" %} hidden>필터 초기화</button>
     {% endif %}
-    <ul class="claim-cards">
+    <ul class="claim-cards"{% if stage_records %} tabindex="0" aria-label="진술 목록"{% endif %}>
       {% for claim in claims %}
         <li data-record-speaker="{{ claim.card.speaker_id }}" data-record-night="{{ claim.card.night }}" data-record-slot="{{ claim.card.slot }}" data-record-id="{{ claim.card.claim_id }}">
           <div class="claim-speaker">
@@ -23,7 +36,6 @@
         </li>
       {% endfor %}
     </ul>
-    <div class="record-compare-tools"><span data-record-selection-count>선택한 진술 0개</span>{% if end_records %}<p data-record-selection-guide role="status">비교할 진술 2개를 선택해 주세요.</p>{% endif %}<button type="button" data-record-compare{% tip "record_compare" %} disabled>{% if end_records %}선택한 진술 비교{% else %}두 진술 비교{% endif %}</button><button type="button" data-record-clear{% tip "record_clear" %}>선택 해제</button></div>
-    <div class="record-comparison" data-record-comparison hidden><h3>선택한 두 진술</h3><div data-record-comparison-lines></div><p class="section-guide">공개된 문장을 나란히 보여 줍니다. 진위나 모순 여부는 직접 판단하세요.</p></div>
+    {% if stage_records %}</div>{% else %}{% include "meeting_parts/record_comparison.html" %}{% endif %}
   </section>
 {% endif %}

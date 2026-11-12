@@ -115,7 +115,9 @@ class KkachiInRecordedGame(RecordedGameLines):
         html = self.client.get(f"/games/{self.game_id}", HTTP_ACCEPT="text/html").content.decode()
         self.assertNotIn('class="vn-mascot"', html)   # 까치는 발표 줄이 나올 때만 JS가 세운다
         self.assertIn("1일째 아침:", html)
-        cards = re.search(r'<ul class="claim-cards">(.*?)</ul>', html, re.S).group(1)
+        cards_match = re.search(r'<ul\b[^>]*\bclass="claim-cards"[^>]*>(.*?)</ul>', html, re.S)
+        self.assertIsNotNone(cards_match, "공개 진술 목록이 있어야 한다")
+        cards = cards_match.group(1)
         self.assertNotRegex(cards, r"· (있었다|없었다)</p>")
         self.assertRegex(cards, r"<p>\d+일째 밤 (초저녁|한밤)에")
 

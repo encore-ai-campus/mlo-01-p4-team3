@@ -1,0 +1,96 @@
+{
+  "task": "D-10-01",
+  "commit": "2a79c3f1a8789e5da02e179d9c8b40f23974f48c",
+  "generated_at": "2026-11-11T08:27:38Z",
+  "source": "C official request-current.json SHA256 7af5a3c1aa5c5430eff10c3e3dffc84806fd18f113780d33e15589fb28de6688; unchanged E freeze; player_calibration -> intent.retrain --report-only -> suspicion.retrain, latest-dev C recorder in memory on real MLflow/Garage; two decision artifacts downloaded and compared; authoritative Bronze union rechecked 2026-11-11T08:26:53.426565+00:00",
+  "metrics": {
+    "current_request_files": {
+      "value": 0,
+      "unit": "건"
+    },
+    "handoff_hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "deleted_training_rows_remaining": {
+      "value": 0,
+      "unit": "건"
+    },
+    "deleted_calibration_users_remaining": {
+      "value": 0,
+      "unit": "건"
+    },
+    "auto_executed_remaining": {
+      "value": 0,
+      "unit": "건"
+    },
+    "intent_training_rows": {
+      "value": 9,
+      "unit": "문장"
+    },
+    "intent_eval_rows": {
+      "value": 7,
+      "unit": "문장"
+    },
+    "intent_candidate_exact_match": {
+      "value": 0.0,
+      "unit": ""
+    },
+    "intent_reference_exact_match": {
+      "value": 0.8571428571428571,
+      "unit": ""
+    },
+    "intent_rejected_runs": {
+      "value": 1,
+      "unit": "회"
+    },
+    "intent_seconds": {
+      "value": 174.489,
+      "unit": "s"
+    },
+    "calibration_seconds": {
+      "value": 0.429,
+      "unit": "s"
+    },
+    "calibration_baseline_hits": {
+      "value": 1,
+      "unit": "건"
+    },
+    "calibration_hits": {
+      "value": 1,
+      "unit": "건"
+    },
+    "calibration_test_votes": {
+      "value": 2,
+      "unit": "건"
+    },
+    "suspicion_training_games": {
+      "value": 316,
+      "unit": "판"
+    },
+    "suspicion_candidate_village_win": {
+      "value": 0.62,
+      "unit": ""
+    },
+    "suspicion_reference_village_win": {
+      "value": 0.54,
+      "unit": ""
+    },
+    "suspicion_rejected_runs": {
+      "value": 1,
+      "unit": "회"
+    },
+    "suspicion_seconds": {
+      "value": 78.703,
+      "unit": "s"
+    },
+    "registered_versions_for_runs": {
+      "value": 0,
+      "unit": "개"
+    },
+    "decision_artifact_roundtrips": {
+      "value": 2,
+      "unit": "회"
+    }
+  }
+}

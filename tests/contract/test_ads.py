@@ -8,7 +8,7 @@ from ads.domain import rules
 from ads.domain.events import TOPIC_REJUDGE, AdClickEvent, AdImpressionEvent, AdRejudgeEvent, AdServeEvent
 from ads.domain.model import (
     SLOT_SIZES, AdContext, AdRequest, AdSlot, Bidder, BillingType, Campaign, CampaignStatus, ChargeState, InvalidReason, JudgeStatus,
-    ServeClaims, ServeRecord, SlotPolicy, Targeting, slot_image_path, won,
+    ServeClaims, ServeRecord, SlotPolicy, Targeting, legacy_slot_image_url, slot_image_path, won,
 )
 from ads.testing.fakes import FakeAdProvider
 from engine.domain import serde
@@ -52,8 +52,14 @@ class SlotSizes(unittest.TestCase):
                          {s.value: wh for s, wh in SLOT_SIZES.items()})
 
     def test_slot_image_path(self):
-        self.assertEqual(slot_image_path("/static/ads/gat.png", AdSlot.LOBBY_BANNER), "/static/ads/gat__728x90.png")
-        self.assertEqual(slot_image_path("/static/ads/gat.png", "review_side"), "/static/ads/gat__300x250.png")
+        self.assertEqual(slot_image_path("/static/promo/gat.png", AdSlot.LOBBY_BANNER), "/static/promo/gat__wide.png")
+        self.assertEqual(slot_image_path("/static/promo/gat.png", "review_side"), "/static/promo/gat__box.png")
+        # 옛 기본 경로(운영 DB 갱신 전)도 새 주소로 바꾼다. 브라우저 광고 차단이 /static/ads/·규격 표기를 막는다.
+        self.assertEqual(slot_image_path("/static/ads/gat.png", "review_side"), "/static/promo/gat__box.png")
+        self.assertEqual(legacy_slot_image_url("/static/ads/gat__300x250.png"), "/static/promo/gat__box.png")
+        self.assertEqual(legacy_slot_image_url("/static/ads/gukbap_a__728x90.png"), "/static/promo/gukbap_a__wide.png")
+        self.assertIsNone(legacy_slot_image_url("/static/promo/gat__box.png"))
+        self.assertIsNone(legacy_slot_image_url("/static/ads/gat.png"))
 
     def test_one_file_per_creative_and_size(self):
         d = load_json("fixtures/ads/campaigns.json")
@@ -65,7 +71,7 @@ class SlotSizes(unittest.TestCase):
     def test_fake_returns_slot_sized_path(self):
         req = AdRequest("r1", AdSlot.REVIEW_SIDE, "p1", AdContext("base6", None, False, 12))
         resp = FakeAdProvider().request_ad(req, 50, 120)
-        self.assertTrue(resp.creative.image_path.endswith("__300x250.png"))
+        self.assertTrue(resp.creative.image_path.endswith("__box.png"))
 
 
 class Auction(unittest.TestCase):

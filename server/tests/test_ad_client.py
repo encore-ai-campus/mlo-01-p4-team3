@@ -90,13 +90,13 @@ class HTTPAdWire(SimpleTestCase):
         self.assertFalse(self.gateway.breaker.is_open)
 
     def test_total_deadline_includes_delayed_and_trickling_bodies(self):
-        """무응답·3초 지연·조금씩 오는 본문도 전체 300ms로 제한한다."""
+        """무응답·3초 지연·조금씩 오는 본문도 전체 800ms로 제한한다."""
         for mode in ('delay', 'unresponsive', 'trickle'):
             self.gateway.breaker = CircuitBreaker()
             self.host.mode = mode
             started = time.monotonic()
             self.assertEqual(self.gateway.fetch(self.req)[1], 'timeout')
-            self.assertLess(time.monotonic() - started, .8)
+            self.assertLess(time.monotonic() - started, 1.3)
 
     def test_connect_deadline_and_no_retry(self):
         """연결 설정은 100ms이며 연결 시간 초과를 재시도하지 않는다."""

@@ -1,0 +1,64 @@
+{
+  "task": "C-08-02",
+  "commit": "4780db2cedb84a056897b13be8aa8ecec1a401c7",
+  "generated_at": "2026-11-11T11:02:25Z",
+  "source": "2026-11-11 read-only verification of actual 17:19:38-17:25:30 aggregate run-1794385178000; journal stages + exported ctr_cells SHA + current MySQL optimization + fixed Spark audit; 00:40 Asia/Seoul timer enabled; did not rerun aggregation",
+  "metrics": {
+    "input_ad_events": {
+      "value": 38989,
+      "unit": "건"
+    },
+    "bronze_version": {
+      "value": 245,
+      "unit": "버전"
+    },
+    "silver_rows": {
+      "value": 22371,
+      "unit": "행"
+    },
+    "silver_version": {
+      "value": 1,
+      "unit": "버전"
+    },
+    "gold_rows": {
+      "value": 54,
+      "unit": "행"
+    },
+    "gold_version": {
+      "value": 1,
+      "unit": "버전"
+    },
+    "training_rows": {
+      "value": 21,
+      "unit": "행"
+    },
+    "training_version": {
+      "value": 1,
+      "unit": "버전"
+    },
+    "reconciliation_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "export_ctr_cells": {
+      "value": 12,
+      "unit": "칸"
+    },
+    "saved_ctr_rows": {
+      "value": 10,
+      "unit": "행"
+    },
+    "timer_enabled": {
+      "value": 1,
+      "unit": "개"
+    },
+    "stages_succeeded": {
+      "value": 8,
+      "unit": "단계"
+    },
+    "elapsed_seconds": {
+      "value": 352.371,
+      "unit": "초"
+    }
+  }
+}

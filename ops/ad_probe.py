@@ -51,7 +51,7 @@ def run_probe(config,run,count):
         campaign=Campaign(campaign_id=run+'_'+billing,advertiser_id='syn:c08',name='C08 synthetic '+billing,slots=[slot],billing=billing,max_bid_mw=bid,
             daily_budget_mw=budget,targeting={'preset_ids':['base6']},start_date='2026-11-05',end_date='2026-11-12',status='active')
         campaign.full_clean();campaign.save(force_insert=True)
-        creative=Creative(creative_id=run+'_cr_'+billing,campaign=campaign,title='Synthetic validation',body='Virtual advertisement only',image_path='/static/ads/'+image+'.png')
+        creative=Creative(creative_id=run+'_cr_'+billing,campaign=campaign,title='Synthetic validation',body='Virtual advertisement only',image_path='/static/promo/'+image+'.png')
         creative.full_clean();creative.save(force_insert=True)
     class NoRedirect(urllib.request.HTTPRedirectHandler):
         """내부 클릭의 상대 랜딩만 확인하고 다른 서버로 이동하지 않는다."""

@@ -111,6 +111,35 @@ python -m ml.adapters.reproduce_model_games --mlruns mlruns --suspicion-version 
 
 `select`는 고정 설정의 모델을 실제로 열어 검증한 뒤 버전 두 개와 `False`를 반환한다. 파일·로더·모델 ID 오류는 `ModelUnavailable`, 의심 특징 불일치는 `FeatureVersionMismatch`다. 조회는 로컬 경로와 버전만 사용한다. 판별 인스턴스 수명·버전 고정과 카나리아는 B-09-01, 원격 레지스트리는 C-09-01에서 연결한다. BERT 해석기 연결은 D-09-02 4번, 동결 사람 평가는 D-09-01 범위다.
 
+### 의심 점수 섞기 α (D-10-01, 11/11)
+
+관문(`ml/gate.py`)은 그대로 두고 재학습(`python -m ml.suspicion.retrain`)이 섞는 비율 α를 고른다. 후보 하나의 최종 로짓은 `α × 모델 로짓/온도 + (1−α) × rule_score`다. α=1은 기존 모델, α=0은 규칙 의심도와 같은 확률이다.
+
+- 규칙(도메인): `ml/suspicion/blend.py`. α 후보는 0.0~1.0의 0.1 간격 11개다. 관문 benchmark 사유가 없는 α 중 log_loss가 가장 낮은 것을 고르고, 같으면 큰 α를 고른다. 고른 α가 0.3 미만이면 `alpha_too_small`, 규칙 점수 대비 log_loss 개선이 0.01 미만이면 `no_meaningful_gain`이다. 이 경우 관문을 통과해도 `accepted=false`라 승격하지 않는다.
+- 흐름(응용): `ml/suspicion/retrain.py`. α마다 같은 시드로 benchmark 봇 판을 다시 돌려 마을 승률을 재고, 기준선 판의 관측으로 예측 지표를 잰다. 고른 산출물이 `trained/models.pkl`이고, 원래 모델은 `trained/models.base.pkl`이다. `decision.json`의 `accepted`는 관문 통과이면서 유효 후보일 때만 참이다. 관문 결과는 `gate_accepted`, α 탐색 표는 `blend_search`, 고른 α는 `blend_alpha`, 규칙 대비 개선폭은 `log_loss_gain_vs_rule`에 기록된다. 같은 값이 MLflow 태그 `paldo.blend_alpha`·`paldo.blend_search`·`paldo.promotable`에도 들어간다.
+- 서빙(인프라 어댑터): `ml/adapters/suspicion_model.py`가 산출물의 `blend_alpha`를 읽는다. 값이 없는 기존 산출물(운영 `suspicion-logistic-9bbee626f29b` 등)은 α=1로 읽어 기존 계산 그대로이고, 0~1 밖이면 불러오지 않는다.
+- 관문 기준(reference): `--production-model <운영 models.pkl>`을 주면 지금 운영 모델이 기준이다. benchmark는 같은 행·같은 seed로 채점하고 마을 승률은 운영 모델로 같은 seed 대전을 다시 돌려 잰다. 운영 모델이 없을 때만 규칙 점수(rule-v0)가 기준이다. α의 유효 후보 조건(규칙 대비 0.01 개선)은 기준과 별개로 규칙 점수와 비교한다. `decision.json`의 `reference_model`.
+
+### 사람 판 학습·시험 (D-10-01, 11/11)
+
+매일 밤 재학습이 운영의 사람 판을 자동으로 꺼내 학습과 시험 세트에 쓴다. 관문(`ml/gate.py`)은 그대로라 사람 판 시험 세트가 없으면 `human:invalid_or_missing_measurement`로 거부한다.
+
+- 내보내기(인프라): `python -m server.infra.ut_export training --out training.json`. 사람 판(`source=human`)이면서 부하 시험이 아니고 종료·진실 이벤트가 있는 판만, 아래 필드만 읽는다.
+- 변환(도메인): `ml/suspicion/features.py` `human_rows(games, consent, deleted)`. 동의한 가명만 쓰고 삭제 요청 가명은 뺀다. 봇 판과 같은 검사·특징 추출이고 출처 `human`, 분할 키 `user`=가명만 다르다. 검사에 걸린 판은 밤 실행을 멈추지 않고 사유별로 빼서 센다(`invalid:<예외>[:<검사 문구>]`, 검사 문구는 코드에 고정된 문구일 때만 붙여 입력값이 남지 않게 함·`incomplete`·`no_consent`·`deletion_request`·`load_test` 등). 정책 버전은 판마다 하나여야 하고 판끼리는 달라도 된다. 웹 판은 봉투 `npc_policy_versions`가 비어 있어(게임 메타에 기록하지 않음) 결정의 정책 버전(`-fallback` 제외)과 진실 이벤트의 역할 명단으로 채운다(`policy_versions_inferred`). 판 안 결정 버전이 둘 이상이면 거부한다.
+- 분할(도메인): `ml/suspicion/evaluate.py` `human_side`. 사람(가명) 단위로 `sha256("suspicion-human-split-v1"||가명)` 앞 8바이트가 0.3 미만이면 시험, 아니면 학습이다(`docs/contracts/events.md` 3절). 결과가 가명과 고정 문자열에만 달려 있어 새 사람이 늘어도 기존 사람은 옮겨지지 않고, 상태 파일이 없어 삭제 요청 때 지울 명단도 없다. 비율을 바꾸면 고정 문자열 버전을 올린다.
+- 흐름(응용): `python -m ml.suspicion.retrain ... --human-games training.json --consented-users consent.json --tombstones <삭제 요청 폴더> [--production-model <운영 models.pkl>]`. 학습 쪽 사람 행은 봇 학습 행과 합쳐 `dataset_train/`으로 학습한다. 시험 쪽은 후보(고른 α)와 기준을 같은 행·같은 seed로 채점해 관문 `human` 지표를 만든다. 사람 판은 이미 끝난 판이라 마을 승률은 양쪽 모두 그 판들의 실제 결과다. `decision.json`의 `human`에 학습/시험 판·사람·행 수와 제외 사유별 수, `human_evaluation`에 `provided`·`no_human_test_games`·`no_human_input`이 남는다.
+- 판 수가 적을 때: 시험 세트가 50판 미만이면 관문이 무작위 재표본 95% 구간(bootstrap)이 기준보다 확실히 낮을 때만 통과시킨다. 사람 판이 쌓일수록 통과 가능성이 생긴다. 시험 쪽이 0판이면 human 지표를 만들지 않고 관문이 거부한다.
+
+#### 학습용 내보내기 필드(개인정보 검토용)
+
+| 수준 | 내보내는 것 | 빼는 것 |
+|---|---|---|
+| 판 | 판 ID, 가명(`player_pseudonym`) | 세션 ID, 시드·생성 시각 등 판 메타, 명령 응답 |
+| 이벤트 종류 | NPC 관측(`observation`), NPC 결정(`decision`), 종료(`game_ended`), 진실(`truth_revealed`) | 그 밖의 모든 이벤트(플레이어 발화·명령 등 입력 문장이 담기는 종류) |
+| 이벤트 봉투 | 이벤트 ID·순번·시각·국면·프리셋·규칙/콘텐츠/정책/모델 버전·본문·가명·부하 시험 표시 | `session_id`, `command_id` |
+
+관측 본문은 NPC ID·장소·수치·이유 코드로 된 구조화 기록이고 자유 입력 문장·계정·IP는 없다. 가명은 동의 확인, 삭제 요청 반영, 사람 단위 분할에만 쓰고 `decision.json`·로그에는 가명을 쓰지 않고 수만 남긴다.
+
 ### 광고 CTR (D-10-02)
 
 ```powershell
@@ -135,7 +164,7 @@ python -m tools.ad_ctr_scenario score --out out/d1002/scenario --report out/ctr-
 어댑터의 추론 응답 대기 마감은 90ms, native 초기화·워밍업을 포함한 로드 마감은 30초다. 고정 주민 수의 로컬 순차 IPC에서 검증했으며 웹 동시성·큰 메시지의 절대 wall-clock 상한은 별도 검증이 필요하다. 특징 버전·열 순서·보정 온도는 D-07-02 산출물과 기존 특징 모듈로 검증한다.
 
 ## 한계
-관문 통과는 별도 candidate 등록·카나리아·승격을 자동 실행하지 않는다. 실제 사람 성능은 미측정이다.
+운영에서는 게임 웹 서버의 매일 01:31(서울) 재학습 실행이 관문을 통과한 의심 모델 후보를 MLflow에 등록한 뒤 자동으로 설치·승격한다(사람 승인 없음). 승격은 운영 설정의 모델 버전을 바꾸고 웹 프로세스를 재시작한 뒤 healthz와 실제 추론으로 확인하며, 실패하면 직전 모델로 복원한다. 관문에서 떨어지면 기존 모델을 그대로 쓴다. 이 흐름에는 카나리아 단계가 없다(계약 [ml_lifecycle.md](../contracts/ml_lifecycle.md) 3~4절의 카나리아 승격은 이 야간 흐름에 적용하지 않는다). 승격 스크립트는 팀 비공개 운영 폴더에 있고 저장소에는 없다. `ops/k3s/cronjobs/retrain.yaml`은 k3s 대안 정의라 꺼진 채로 둔다. 사람 판 관문 측정은 시험 세트 판 수가 적어(11/12 기준 10판) 개선 판정이 보수적이다.
 밴딧은 클래스룸 파일럿용 단일 Mongo 문서(16 MiB 한계)다. B의 실제 판 시작 주입과 종료 이벤트 연결은 수신 검증 대기다.
 삭제 필터를 등록한 C가 `MongoBanditStore.forget_games`를 호출해야 후속 전체 이력 갱신이 정상 동작한다.
 
@@ -166,5 +195,15 @@ python -m tools.ad_ctr_scenario score --out out/d1002/scenario --report out/ctr-
 | D-08-04 | 11/9 | 사용자 변경 기준 적용, 실제 로컬 모델 인계와 A CLI·B 조립 50판 비교 완료 |
 | D-10-02 | 11/9 | 확정 Delta 맥락 CTR 학습, 동일 베타 평가, LightGBM 관문·MLflow 후보·시나리오 6 채점 |
 | D-09-01 | 11/11 | 공식 동결 평가의 기준선 유지 판정과 D-07-03 체크포인트 NAS 인계 |
+| D-10-03 | 11/10 | 11/11 dev 반영, 버전 제한 JSON 승률 추론·복기 API·holdout 지표·패널, 표 기반 자기 대전 1,000판 비교, 프리셋·미학습 비밀 조합 및 무감금 상한 검증 |
+| D-10-01 | 11/11 | 관문은 그대로 두고 재학습이 의심 점수 섞기 α를 고름(유효 후보 α≥0.3·규칙 대비 0.01 개선), 서빙 `blend_alpha` 하위 호환, 사람 판 평가 입력 |
+| D-10-01 | 11/11 | 매일 밤 재학습이 동의한 사람 판을 학습용 내보내기로 꺼내 사람 단위 30%를 시험 세트, 나머지를 학습에 섞음. 관문 기준을 지금 운영 모델로(없으면 규칙 점수). 관문 규칙은 그대로(E 보완) |
+| D-11-01 | 11/11 | 광고 시나리오 톰슨 관측·원장 내보내기와 Delta 건별 대사, 공식 의도 재학습과 광고 1~6 최종 재실행 |
+| D-10-01 | 11/11 | 사람 판 변환: 웹 판의 빈 봉투 정책 버전을 결정 버전으로 채움(운영 23판이 전부 `invalid`로 빠지던 원인), 제외 사유를 검사 문구별로 세분(E 보완) |
+| D-10-01 | 11/12 | 운영 매일 밤 재학습의 관문 통과 시 자동 승격·실패 시 직전 모델 복원(카나리아 없음)을 한계 절에 반영. 이전 "자동 승격 안 함" 문구를 운영 동작에 맞춤 |
 
 모델 판 실행은 현재 씐 자 1명 logistic 모델을 연결한다. 학습 산출물의 근거별 기여값이 없어 빈 매핑을 반환한다. 실측과 완료 조건은 [D-08-01 증빙](../evidence/D-08-01.md)을 참조한다.
+
+승리 확률은 `python -m ml.win_probability`로 학습한다. `model.json`은 유한 계수·특징·규칙·콘텐츠·프리셋과 holdout 지표를 포함한다. `server/infra/win_probability.py`가 표준 라이브러리로 복기 `win_prob`를 계산하고 offline_holdout Prometheus gauge를 제공한다. `PALDO_WIN_PROBABILITY_MODEL`은 신뢰된 로컬 JSON 경로이며 기본은 빈 값이다. 종료된 자기 판만 API가 반환하고, D3 결정의 화면 그래프 숨김을 적용한다. Grafana `model.json`의 비교 패널과 운영 설정·배포는 별도 수신 검증이 남아 있다.
+
+`python -m ml.selfplay --out <new directory> --record`는 양 진영의 표 기반 투표 정책을 1,000판 학습하고, 표를 고정해 A 규칙과 동일 시드 1,000판씩 비교한다. 추정 모델은 양쪽 FakeSuspicionModel, 플레이어는 LogicBot이다. `python -m ml.preset_report --out <new directory> --model <trusted models.pkl> --training-events <official events.jsonl> --record`는 현재 콘텐츠 배정 검사와 각 500판 개발 측정, fit·온도 보정 조합을 뺀 비밀 조합 평가를 수행한다. content-1.1에서 short5·base6·base7·large8을 측정했다. CLI는 새 출력 디렉터리를 요구한다.

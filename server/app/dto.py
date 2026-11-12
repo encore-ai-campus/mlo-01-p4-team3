@@ -170,6 +170,7 @@ class ReviewItem:
 
 @dataclass
 class ReviewOutput:
+    """종료된 자기 판의 복기와 선택 날짜별 마을 승리 확률."""
     game_id: str
     result: GameResult
     roles: dict[str, Role]                    # 판 종료 후에만 공개
@@ -177,6 +178,7 @@ class ReviewOutput:
     timeline: list[ReviewItem]
     explanation_job_id: Optional[str] = None  # LLM 복기 해설(확장)
     clues_gained: list[str] = field(default_factory=list)
+    win_prob: Optional[list[dict]] = None  # D-10-03, 그래프는 D3 결정에 따라 숨김
 
 
 @dataclass

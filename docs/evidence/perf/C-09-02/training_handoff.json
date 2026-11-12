@@ -1,0 +1,36 @@
+{
+  "task": "C-09-02",
+  "commit": "388105d192ab8803f0a300fc77419608b95f097c",
+  "generated_at": "2026-11-11T08:01:40Z",
+  "source": "2026-11-11T07:57:31Z current official Bronze privacy_tombstone_dir union; protected export and transfer to nifi-01; training-service-user read and SHA verification; not D receipt or rerun proof",
+  "metrics": {
+    "source_request_files": {
+      "value": 0,
+      "unit": "건"
+    },
+    "players": {
+      "value": 0,
+      "unit": "건"
+    },
+    "ad_sessions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "ad_event_ids": {
+      "value": 0,
+      "unit": "건"
+    },
+    "ad_charge_ids": {
+      "value": 0,
+      "unit": "건"
+    },
+    "hash_mismatches": {
+      "value": 0,
+      "unit": "건"
+    },
+    "training_user_readable": {
+      "value": 1,
+      "unit": "회"
+    }
+  }
+}

@@ -60,6 +60,8 @@ ACTIVE_CONTENT_VERSION = os.environ.get("PALDO_CONTENT_VERSION", "")
 ACTIVE_RULE_BASE = os.environ.get("PALDO_RULE_BASE", "").strip()
 # 일반 판 카나리아 배정 비율(B-09-01, ml_lifecycle.md 4절). 0이면 끔. 사용자 테스트 회차 판은 비율과 무관하게 끈다.
 MODEL_CANARY_RATIO = float(os.environ.get("PALDO_MODEL_CANARY_RATIO", "0") or 0)
+MLFLOW_MODELS = os.environ.get("PALDO_MLFLOW_MODELS", "").strip()
+MLFLOW_MODEL_CACHE = os.environ.get("PALDO_MLFLOW_MODEL_CACHE", "mlruns")
 # 실제 의심 모델 사용(B-09-01). 비어 있으면 끔(규칙 의심도 `FakeSuspicionModel`). 값은 `<mlruns>/suspicion-v0/<버전>/`의
 # 버전 이름. 시작 때 못 띄우면 끔과 같게 동작하고, 판 진행 중 장애는 그 결정만 규칙 v0로 대신한다.
 SUSPICION_MODEL_VERSION = os.environ.get("PALDO_SUSPICION_MODEL_VERSION", "").strip()
@@ -76,6 +78,8 @@ NPC_LLM_URL = os.environ.get("PALDO_NPC_LLM_URL", "").strip()
 # 운영 설정 문서(`<접두어>ops_settings`의 `npc_llm`)가 없을 때 쓰는 모드: off | polish | live. 코드 기본값 off.
 # 재배포 없이 바꿀 때는 관리 명령 `npc_llm_mode`를 쓴다.
 NPC_LLM_MODE = os.environ.get("PALDO_NPC_LLM_MODE", "off").strip()
+# D-10-03의 공개 특징 전용 로지스틱 JSON. 비어 있으면 복기 승률 예측을 생략한다.
+WIN_PROBABILITY_MODEL = os.environ.get("PALDO_WIN_PROBABILITY_MODEL", "").strip()
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",

@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.utils import timezone
 
-from ads.domain.model import AdCreativeView, AdSlot, SLOT_SIZES
+from ads.domain.model import AdCreativeView, AdSlot, SIZE_SHAPES, SLOT_SIZES
 from ads.testing.fakes import FakeAdProvider
 from server.api.ad_slots import FETCH_TOTAL
 from server.accounts.models import AccountProfile
@@ -46,7 +46,7 @@ class AdSlots(TestCase):
             self.assertContains(response, "광고")
             width, height = SLOT_SIZES[slot]
             self.assertContains(response, f'width="{width}" height="{height}"')
-            self.assertContains(response, f'/static/ads/fake__{width}x{height}.png')
+            self.assertContains(response, f'/static/promo/fake__{SIZE_SHAPES[(width, height)]}.png')
             self.assertContains(response, '/ads/click?t=fake.')
             self.assertNotContains(response, '/ads/v1/')
             self.assertNotContains(response, self.user.username)

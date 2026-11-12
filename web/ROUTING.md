@@ -1,5 +1,49 @@
 # 웹 라우팅
 
+## 좁은 가용 폭·확대 표시
+
+`game.css`의 `vn-reading` 컨테이너 쿼리는 이전·다음·위치 표시의 배치를 조절하고, `record-paper` 쿼리는 판 중 진술표 필터와 레이블을 배치한다. 동작은 기존 `ui-vn.js`·`record_tools.js`로 연결된다. `server/tests/test_vn_lines_4th.py`는 진술 목록의 추가 HTML 속성을 허용하면서 기존 발표·진술 문장을 검사한다. [웹 디자인](DESIGN.md#좁은-가용-폭확대-표시-보완).
+
+같은 CSS의 `.record-count`·`.record-compare-tools`는 진술 건수와 선택 수 안내의 간격·서체를 정한다. 건수·선택값 계산과 비교 동작은 기존 `record_tools.js`가 담당한다.
+
+`ui-vn.js`는 현재 줄이 안내인지 `.vn-player[data-guide]`에 반영한다. `game.css`가 안내 중 PC 대사창 높이를 조절하며 안내 문구·순서·읽기 키는 기존 경로를 따른다.
+
+## PR #422 후속 화면 보완
+
+`meeting.html`의 `command-feedback`은 기존 명령 거부 응답과 `game.js`의 전송 실패 안내를 표시한다. `vn-stage-slot`·`game.css`는 머리글·안내·무대·출처 높이를 분리한다. PC 게임 메뉴 버튼은 머리글에 두며, `ui-stage.js`는 화면 교체 때 이전 버튼과 이벤트를 정리한다. 모바일은 무대 → 대사 → 읽기 조작 → 행동판 순서다.
+
+`claim_cards.html`은 `record_comparison.html`을 공유한다. 판 중 진술표는 필터 다음, 목록 위에 비교·선택 해제를 두고 창 안에서 고정한다. 종료 공개 기록·classic은 기존 목록 아래 위치를 유지한다. `record_tools.js`가 비교 결과를 같은 창 안으로 스크롤한다. 선택값과 기존 명령 요청은 바뀌지 않는다.
+
+`ui_help.html`의 `help-body`만 스크롤하며 제목·닫기는 별도 행이다. `theme.css`가 기본 화면과 확대 화면의 최대 높이를 제한한다. `ui-vn.js`는 포인터 이탈·창 초점 이탈·스크롤 때 설명 상자를 닫고, 실제 화면 제거 때만 읽기 상태를 정리한다. 버튼 설명은 `server/api/template_tags.py`의 기존 사전을 사용한다.
+
+계정 화면은 `accounts.css`, VN 무대·정보 창은 `game.css`, 종료 탭·조회 상태·설문 완료 및 단독 복기는 `result.css`의 금색·한지 표현을 사용한다. 복기·단서 조회 상태는 `end_lookup.html`에서 기존 상태와 재시도 컨트롤을 함께 표시한다. 검토 브랜치는 같은 게임 URL의 기본 PC 화면에 하단 전체 너비 대사창과 오른쪽 위 행동판을 표시한다.
+
+대사창과 행동판의 맞닿는 위치는 `game.css`의 무대 안 행동판 시작 위치에서 계산한다. 같은 파일의 `#stage-actions #utterance-input` 스타일이 ON 입력과 해석 카드에 적용된다.
+
+행동 확인창은 `ui-vn.js`에서 체크된 근거의 표시 문장을 읽는다. 근거 전송에는 기존 폼 값을 사용한다. 말로 행동하기는 `PALDO_FREE_TEXT_INPUT`과 기존 `utterance_input.html`·`speech_cards.html`로 연결된다.
+
+`vn_scene.html`의 행동 진입과 정보 보기 그룹은 기존 `data-stage-open`을 사용한다. `ui-stage.js`가 행동판의 첫 조작 요소에 포커스를 옮기고 기존 정보 창을 연다. `meeting_actions.html`의 양식 제출과 확인은 기존 `POST /games/<id>/commands`와 `ui-vn.js`를 사용한다.
+
+VN의 금색 외곽·한지 행동판·대사창·무대 위 정보 창은 `game.css`에서 적용한다. `theme.css`의 한지와 모서리 스타일은 계정·도움말·VN·종료에서 공유한다. 종료 5탭과 `/games/<id>/review`·`/players/me/progress`의 단독 조회는 `result.css`의 한지 카드 스타일을 사용한다.
+
+`site_header.html`에서 로고가 `GET /`로 이동한다. 인증 후 같은 주소로 이어지던 `시작` 링크는 제거했다. 실제 새 판과 이어 하기는 홈의 시작 폼·기존 판 링크를 사용한다.
+
+VN의 무대와 기록 창은 `vn_scene.html`·`ui-stage.js`·`game.css`에서 표시한다. 밤의 대상 버튼과 하단 `점치기`는 `ui-vn.js`에서 기존 대상 명령 폼과 확인창을 호출한다. `game_end.html`의 VN 전용 클래스에는 `result.css`가 한지·금색 스타일을 적용한다. `game_end.js`가 `survey.html`의 문항 이동을 처리하며 제출·건너뛰기는 기존 htmx 요청과 서버 경로를 사용한다.
+
+`accounts/home.html`은 진행 중인 일반 판이 없으면 시작 폼에 `open-start-form--new`를 붙여 설정을 바로 표시한다. 진행 판이 있으면 `details.start-preferences` 안에서 같은 `start-preferences-fields`를 펼친다. 두 경우 모두 `accounts.css`가 PC 두 열·모바일 한 열을 적용하며, 시작은 기존 `POST /games`를 사용한다.
+
+홈 새 판 설정은 `accounts/home.html`의 `start-preferences`와 기존 `portrait_choice.html`·`ending_choice.html`을 사용한다. 홈의 모은 원한 단서는 `GET /players/me/progress` → `progress.html` → `progress_panel.html`로 연결한다. 홈에서 온 전체 화면만 안내 문구와 홈 복귀 링크를 표시한다. 판 종료 탭은 같은 GET의 htmx 조각을 사용한다. `ui_help.html`의 직접 입력 안내는 서버가 넘기는 `free_text_input`으로 표시한다.
+
+VN의 `지도`는 `vn_scene.html`의 지도 버튼 → `meeting.html`의 `stage-map` → `village_assets.html`로 연결된다. `server/api/village_assets.py`가 manifest의 지도·장소 정보를 읽고 `ui-stage.js`가 기존 지도 창을 연다. 지도 여백은 `game.css`에서 창 안에만 적용한다.
+
+PC 한 화면 배치: `accounts/base.html`의 화면별 body 클래스 → `accounts.css`의 900px 이상 높이 제한 → `accounts/home.html`의 `home-start-content`(일반·배정 시작과 설정, 내부 스크롤)·`home-account-footer`(가명 ID·단서·로그아웃, 유지되는 하단)다. 로그인·가입의 긴 양식은 기존 `auth-content` 안에서 스크롤한다. 900px 미만은 문서 흐름을 유지한다. 폼·명령·광고 경로는 동일하며 새 JS가 없다.
+
+진행 판 홈 정렬: `accounts/home.html`이 이어 하기 링크를 먼저 그리고 기존 시작 폼의 설정은 `details.start-preferences`로 접는다. 같은 `accounts/open_start_actions.html`에 `resume_above`를 전달해 링크 중복만 생략한다. 중단 후 새 시작 버튼·경고와 기존 `POST /games`·필드는 유지한다. 기존 classic 호출은 이 인자를 주지 않아 원래 위치의 링크를 표시한다.
+
+인증 후 홈 광고 배치는 `accounts/home.html`의 `home-ad-placement` → 기존 `{% ad_slot 'lobby_banner' %}`·`ad_placeholder.html` → `GET /ads/slot/lobby_banner`·`ad_slot.html`이다. `accounts.css`가 PC에서는 왼쪽 소개 아래, 모바일에서는 시작 창 뒤에 배치한다. 슬롯이 빈 응답이면 감싸개를 숨긴다. 새 지면·요청·광고 대역·비콘 변경은 없다. 소개의 정식 부제와 가입·로그인 안내는 계정 템플릿에서 관리한다.
+
+금색·한지 UI 1차(검토 브랜치): 기존 `/`·`/accounts/login`·`/accounts/signup` → `accounts/base.html`의 `account_page_type`와 전체 화면 `account-backdrop` → `home.html`·`login.html`·`signup.html`과 공통 `scene_intro.html`(큰 로고·제목·소개) → `game.css`가 불러오는 공통 `css/theme.css`·계정 전용 `css/accounts.css`(배경·한지·금색 SVG 장식). 새 URL·JS·명령 경로는 없다. 공식 밤 배경·호랑이 로고는 기존 manifest 조회를 사용한다. `classic` 계정 템플릿은 변경하지 않는다. 현재 적용 범위·PM 확인 대기는 [UI_APPLY.md](UI_APPLY.md#금색한지-ui-1차-계정홈)에 기록한다.
+
 B-09-02 D 어댑터 수신은 서버의 해석기 팩토리 조립만 추가한다. 기존 자유 입력·카드·폴링 URL과 템플릿 연결은 그대로이며 화면 계약 회귀 결과와 실물 모델 대기는 [증빙](../docs/evidence/B-09-02.md)에 기록한다.
 
 B-10-07: 설정 PALDO_GAME_UI(vn 기본/classic) → paldo_web/ui_templates.py → meeting.html 또는 meeting_classic.html. meeting_parts/records.html은 공개 기록, meeting_actions.html·utterance_input.html은 기존 명령 전송을 유지한다. ui-stage.js는 폭 900px 기준 배치와 정보 창, ui-vn.js는 읽기·확인과 버튼 설명 상자를, record_tools.js는 진술표 비교와 선택을 맡는다. 행동 결과·아침 진술 대사 줄은 `server/api/vn_script.py` → `meeting_view.py`의 `vn_lines` → records.html의 숨은 `.vn-script`로 들어온다(문장 틀은 vn_script.py 맨 위). 투표 결과 발표 장면도 vn_script.py, 화면 잠금은 ui-vn.js. 첫 판 안내 대사는 `server/api/tutorial_script.py`(도메인성 순수 함수) → 첫 판 판단은 `server/app/usecases.py` `guide_info`(응용) → `meeting_view.py`가 줄을 끼움 → `meeting_parts/vn_line.html`. 아침 실종 발표(까치)는 `vn_script.announcement_lines`, 진술표 카드 문장은 `vn_script.claim_card_text`. 판 도중 원한 단서 알림은 판정 `server/app/clue_notice.py`(응용, 순수 함수) → `guide_info`가 함께 돌려줌 → `meeting_view._clue_vn_lines`가 고백 발언 뒤에 줄을 붙임(족제비 문장은 `tutorial_script.CLUE_*`). 의심·모순 지적 즉시 반응은 `vn_script.reaction_lines`(문장 `REACTION_*`, 성향은 응용 `usecases.temperaments`가 판 콘텐츠에서 읽음) → `meeting_view`의 `reaction_lines` → records.html이 플레이어 발언 뒤에 줄을 붙임. 무당 회의 발언 문장(`vn_script.MUDANG_LINES`)과 발언 문장의 괄호 조사 표시는 `vn_script.speech_display_text` → `ui_viewmodels.build_ui_vm`(발언 기록·대사창 원본)과 `interaction_view.line_context`(폴링 조각)에서 보일 때만 적용한다. 수첩 한 번 누름 표시는 `notebook_marks.html`(주민 창·수첩 창) → ui-vn.js가 기존 수첩 저장 경로로 보낸다. 버튼 설명 문구는 `server/api/template_tags.py`의 `UI_TIPS`를 `{% tip %}`로 붙인다. 의존 방향: 템플릿·JS(표현) → meeting_view·vn_script(viewmodel) → 엔진 공개 기록. CSS 공통 토큰은 web/static/css/theme.css다.
@@ -84,6 +128,7 @@ B-06-03의 `/admin/sessions` → 고정 회차 등록 → 홈의 배정/이어 �
 - 홈의 일반 판·고정 회차 시작 폼은 `ending_choice.html`을 포함한다. 퇴마는 항상, 한풀이는 해금된 것만 고를 수 있다. 판 구성 목록은 `presets_enabled.json`에 공개된 선택형 도전이 있을 때만 `선택형 도전` 묶음으로 보인다(`story_view.preset_choices`).
 - 판이 끝나면 기존 `GET /games/{id}` 전체 화면·회의 조각의 `#meeting` 안에 VN·classic 공통 `game_end.html`(탭 5개)을 넣는다. `game_end.js`가 탭을 켜기 전에는 기록과 설문을 본문에서 읽을 수 있다. 스타일은 `css/result.css`다.
 - 결과: `game_result.html`과 `result_banner`. 복기·원한 단서: `end_lookup.html` → 기존 `GET /games/{id}/review`와 `GET /players/me/progress`(htmx) → `review_panel.html`(`review_side` 포함), `progress_panel.html`. 실패 시 버튼으로 같은 GET을 다시 보낸다.
+- 복기 탭의 `review_side`는 `result.css`에서 PC 900px 이상일 때 소재가 있는 광고를 본문 오른쪽에 배치한다. 모바일은 본문 뒤에 표시한다. 지면 조각은 기존 `GET /ads/slot/review_side`를 사용한다.
 - 공개 기록: 행적표와 `meeting_parts/records.html` → `claim_cards.html`. `record_tools.js`가 기존 진술 비교·선택을 맡고 종료 화면에서만 안내와 필터 초기화를 더한다. 설문: 기존 `survey.html` → 기존 POST → `survey_done.html`. 스크립트 없이 제출하면 같은 판의 설문 위치로 돌아온다.
 - 일반 요청은 그대로다: 복기는 `ReviewOutput` JSON, 진척은 로비용 전체 화면 `progress.html`. 복기 행동 목록은 `ReviewOutput.timeline`(E-10-10 `review_trace`, NPC 결정 단위)을 `story_view.review_context`가 화면 행으로 바꾼 것이다. 기록이 없는 옛 판은 빈 목록 안내 한 줄.
 - 고칠 곳: 문구·배치 → 위 템플릿, 복기·진척 화면 값 → `server/api/story_view.py`(표현 보조), 요청 분기 → `server/api/views.py`.
@@ -132,7 +177,7 @@ A-10-06·A-11-04의 확정 그림을 공개 사건에 연결했다. 앞 절의 �
 | `meeting_parts/records.html` | 공개 발언 ID → `vn_expressions` → `vn_sprite`로 그림 URL, 기색 문구는 폴링 본문 밖에 보존 |
 | `meeting_parts/vn_line.html` | 진술·즉시 반응·감금·피해자 컷 ID → 같은 표정 조회. 마스코트는 기존 경로 |
 | `js/ui-vn.js` | 지금 줄의 그림만 표시하고 공개 기색 문구를 대사·낭독에 포함. 읽기 ID/seen 저장 방식 유지 |
-| `game.css .vn-guide-skip` | PC 행동 패널 안에 가려지던 안내 버튼을 대사창 쪽으로 배치. 1.95 이상 화면은 기존 오른쪽 배치 |
+| `game.css .vn-guide-skip` | PC 검토 화면의 안내 건너뛰기를 행동판 왼쪽, 대사창 위에 배치 |
 
 ### B-11-01 캐릭터·도움말 표시 보완 (2026-11-11)
 

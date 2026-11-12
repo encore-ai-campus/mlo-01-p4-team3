@@ -6,6 +6,8 @@ metadata:
 spec:
   schedule: "0 2 * * *"
   timeZone: Asia/Seoul
+  # 운영 매일 밤 재학습은 이 CronJob이 아니라 게임 웹 서버(app-01)의 systemd 타이머가 실행한다(관문 통과 시 자동 승격, docs/modules/ml.md 한계 절).
+  # 이 파일은 k3s로 옮길 때 쓰는 대안 정의라 꺼진 채로 둔다.
   suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 1800
@@ -31,10 +33,10 @@ spec:
           containers:
             - name: retrain
               image: "${RETRAIN_IMAGE}"
-              imagePullPolicy: IfNotPresent
-              command: ["python", "-m", "ops.mlflow.retrain"]
+              imagePullPolicy: Never
+              command: ["python", "-m", "ops.mlflow.job"]
               workingDir: /inputs/repository
-              args: ["--config", "/run/retrain/config.json", "--out", "/work/run"]
+              args: ["--config", "/run/retrain/config.json", "--out", "/work"]
               env:
                 - name: PYTHONDONTWRITEBYTECODE
                   value: "1"
@@ -64,6 +66,6 @@ spec:
             - name: inputs
               persistentVolumeClaim: {claimName: paldo-reviewed-training}
             - name: output
-              emptyDir: {}
+              persistentVolumeClaim: {claimName: paldo-retrain-runs}
             - name: temporary
               emptyDir: {}

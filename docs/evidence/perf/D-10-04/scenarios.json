@@ -1,0 +1,884 @@
+{
+  "task": "D-10-04",
+  "commit": "098b0777c1a7a1b8e0284e8c9b6a50f6d28b5a82",
+  "generated_at": "2026-11-11T05:16:02Z",
+  "source": "python -B -X utf8 measure_d1004.py <D-08-02 report.json> <D-10-02 out/d1002/scenario>; run_policy with gain 5.0 and prepare with 12000 requests/day; checked against saved synthetic audits",
+  "metrics": {
+    "s1_lobby_banner_filled": {
+      "value": 4201,
+      "unit": "건"
+    },
+    "s1_lobby_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s1_lobby_banner_fill_rate": {
+      "value": 0.35008333333333336,
+      "unit": ""
+    },
+    "s1_result_banner_filled": {
+      "value": 4202,
+      "unit": "건"
+    },
+    "s1_result_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s1_result_banner_fill_rate": {
+      "value": 0.3501666666666667,
+      "unit": ""
+    },
+    "s1_review_side_filled": {
+      "value": 4148,
+      "unit": "건"
+    },
+    "s1_review_side_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s1_review_side_fill_rate": {
+      "value": 0.3456666666666667,
+      "unit": ""
+    },
+    "s1_paced_seed17_confirmed_net_mw": {
+      "value": 399100,
+      "unit": "밀리원"
+    },
+    "s1_paced_seed17_budget_mw": {
+      "value": 400000,
+      "unit": "밀리원"
+    },
+    "s1_paced_seed17_burn_rate": {
+      "value": 0.99775,
+      "unit": ""
+    },
+    "s1_paced_seed29_confirmed_net_mw": {
+      "value": 399500,
+      "unit": "밀리원"
+    },
+    "s1_paced_seed29_budget_mw": {
+      "value": 400000,
+      "unit": "밀리원"
+    },
+    "s1_paced_seed29_burn_rate": {
+      "value": 0.99875,
+      "unit": ""
+    },
+    "s1_paced_seed43_confirmed_net_mw": {
+      "value": 398700,
+      "unit": "밀리원"
+    },
+    "s1_paced_seed43_budget_mw": {
+      "value": 400000,
+      "unit": "밀리원"
+    },
+    "s1_paced_seed43_burn_rate": {
+      "value": 0.99675,
+      "unit": ""
+    },
+    "s1_serves": {
+      "value": 36000,
+      "unit": "건"
+    },
+    "s1_filled": {
+      "value": 12551,
+      "unit": "건"
+    },
+    "s1_valid_impressions": {
+      "value": 11973,
+      "unit": "건"
+    },
+    "s1_valid_clicks": {
+      "value": 1489,
+      "unit": "건"
+    },
+    "s1_invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s1_invalid_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s1_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s1_load_test_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s1_fill_rate": {
+      "value": 0.3486388888888889,
+      "unit": ""
+    },
+    "s1_invalid_impression_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s1_invalid_click_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s1_confirmed_net_mw": {
+      "value": 1197300,
+      "unit": "밀리원"
+    },
+    "s1_realized_ecpm_mw": {
+      "value": 100000,
+      "unit": "밀리원"
+    },
+    "s2_lobby_banner_filled": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s2_lobby_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s2_lobby_banner_fill_rate": {
+      "value": 1,
+      "unit": ""
+    },
+    "s2_result_banner_filled": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s2_result_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s2_result_banner_fill_rate": {
+      "value": 1,
+      "unit": ""
+    },
+    "s2_review_side_filled": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s2_review_side_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s2_review_side_fill_rate": {
+      "value": 1,
+      "unit": ""
+    },
+    "s2_bidder_seed17_confirmed_net_mw": {
+      "value": 12849175,
+      "unit": "밀리원"
+    },
+    "s2_bidder_seed17_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s2_bidder_seed17_burn_rate": {
+      "value": 1.2849175e-05,
+      "unit": ""
+    },
+    "s2_quality_seed17_confirmed_net_mw": {
+      "value": 78983169,
+      "unit": "밀리원"
+    },
+    "s2_quality_seed17_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s2_quality_seed17_burn_rate": {
+      "value": 7.8983169e-05,
+      "unit": ""
+    },
+    "s2_bidder_seed29_confirmed_net_mw": {
+      "value": 13027939,
+      "unit": "밀리원"
+    },
+    "s2_bidder_seed29_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s2_bidder_seed29_burn_rate": {
+      "value": 1.3027939e-05,
+      "unit": ""
+    },
+    "s2_quality_seed29_confirmed_net_mw": {
+      "value": 78609400,
+      "unit": "밀리원"
+    },
+    "s2_quality_seed29_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s2_quality_seed29_burn_rate": {
+      "value": 7.86094e-05,
+      "unit": ""
+    },
+    "s2_bidder_seed43_confirmed_net_mw": {
+      "value": 8977140,
+      "unit": "밀리원"
+    },
+    "s2_bidder_seed43_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s2_bidder_seed43_burn_rate": {
+      "value": 8.97714e-06,
+      "unit": ""
+    },
+    "s2_quality_seed43_confirmed_net_mw": {
+      "value": 76062402,
+      "unit": "밀리원"
+    },
+    "s2_quality_seed43_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s2_quality_seed43_burn_rate": {
+      "value": 7.6062402e-05,
+      "unit": ""
+    },
+    "s2_serves": {
+      "value": 36000,
+      "unit": "건"
+    },
+    "s2_filled": {
+      "value": 36000,
+      "unit": "건"
+    },
+    "s2_valid_impressions": {
+      "value": 34309,
+      "unit": "건"
+    },
+    "s2_valid_clicks": {
+      "value": 3875,
+      "unit": "건"
+    },
+    "s2_invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s2_invalid_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s2_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s2_load_test_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s2_fill_rate": {
+      "value": 1,
+      "unit": ""
+    },
+    "s2_invalid_impression_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s2_invalid_click_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s2_confirmed_net_mw": {
+      "value": 268509225,
+      "unit": "밀리원"
+    },
+    "s2_realized_ecpm_mw": {
+      "value": 7826203.765775744,
+      "unit": "밀리원"
+    },
+    "s3_lobby_banner_filled": {
+      "value": 10500,
+      "unit": "건"
+    },
+    "s3_lobby_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s3_lobby_banner_fill_rate": {
+      "value": 0.875,
+      "unit": ""
+    },
+    "s3_result_banner_filled": {
+      "value": 10500,
+      "unit": "건"
+    },
+    "s3_result_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s3_result_banner_fill_rate": {
+      "value": 0.875,
+      "unit": ""
+    },
+    "s3_review_side_filled": {
+      "value": 10500,
+      "unit": "건"
+    },
+    "s3_review_side_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s3_review_side_fill_rate": {
+      "value": 0.875,
+      "unit": ""
+    },
+    "s3_new_seed17_confirmed_net_mw": {
+      "value": 1001200,
+      "unit": "밀리원"
+    },
+    "s3_new_seed17_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s3_new_seed17_burn_rate": {
+      "value": 1.0012e-06,
+      "unit": ""
+    },
+    "s3_new_seed29_confirmed_net_mw": {
+      "value": 1001200,
+      "unit": "밀리원"
+    },
+    "s3_new_seed29_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s3_new_seed29_burn_rate": {
+      "value": 1.0012e-06,
+      "unit": ""
+    },
+    "s3_new_seed43_confirmed_net_mw": {
+      "value": 999300,
+      "unit": "밀리원"
+    },
+    "s3_new_seed43_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s3_new_seed43_burn_rate": {
+      "value": 9.993e-07,
+      "unit": ""
+    },
+    "s3_serves": {
+      "value": 36000,
+      "unit": "건"
+    },
+    "s3_filled": {
+      "value": 31500,
+      "unit": "건"
+    },
+    "s3_valid_impressions": {
+      "value": 30017,
+      "unit": "건"
+    },
+    "s3_valid_clicks": {
+      "value": 2755,
+      "unit": "건"
+    },
+    "s3_invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s3_invalid_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s3_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s3_load_test_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s3_fill_rate": {
+      "value": 0.875,
+      "unit": ""
+    },
+    "s3_invalid_impression_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s3_invalid_click_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s3_confirmed_net_mw": {
+      "value": 3001700,
+      "unit": "밀리원"
+    },
+    "s3_realized_ecpm_mw": {
+      "value": 100000,
+      "unit": "밀리원"
+    },
+    "s4_lobby_banner_filled": {
+      "value": 9364,
+      "unit": "건"
+    },
+    "s4_lobby_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s4_lobby_banner_fill_rate": {
+      "value": 0.7803333333333333,
+      "unit": ""
+    },
+    "s4_result_banner_filled": {
+      "value": 9351,
+      "unit": "건"
+    },
+    "s4_result_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s4_result_banner_fill_rate": {
+      "value": 0.77925,
+      "unit": ""
+    },
+    "s4_review_side_filled": {
+      "value": 9368,
+      "unit": "건"
+    },
+    "s4_review_side_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s4_review_side_fill_rate": {
+      "value": 0.7806666666666666,
+      "unit": ""
+    },
+    "s4_exhaust_seed17_confirmed_net_mw": {
+      "value": 79800,
+      "unit": "밀리원"
+    },
+    "s4_exhaust_seed17_budget_mw": {
+      "value": 80000,
+      "unit": "밀리원"
+    },
+    "s4_exhaust_seed17_burn_rate": {
+      "value": 0.9975,
+      "unit": ""
+    },
+    "s4_fallback_seed17_confirmed_net_mw": {
+      "value": 850600,
+      "unit": "밀리원"
+    },
+    "s4_fallback_seed17_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s4_fallback_seed17_burn_rate": {
+      "value": 8.506e-07,
+      "unit": ""
+    },
+    "s4_exhaust_seed29_confirmed_net_mw": {
+      "value": 79900,
+      "unit": "밀리원"
+    },
+    "s4_exhaust_seed29_budget_mw": {
+      "value": 80000,
+      "unit": "밀리원"
+    },
+    "s4_exhaust_seed29_burn_rate": {
+      "value": 0.99875,
+      "unit": ""
+    },
+    "s4_fallback_seed29_confirmed_net_mw": {
+      "value": 851300,
+      "unit": "밀리원"
+    },
+    "s4_fallback_seed29_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s4_fallback_seed29_burn_rate": {
+      "value": 8.513e-07,
+      "unit": ""
+    },
+    "s4_exhaust_seed43_confirmed_net_mw": {
+      "value": 79900,
+      "unit": "밀리원"
+    },
+    "s4_exhaust_seed43_budget_mw": {
+      "value": 80000,
+      "unit": "밀리원"
+    },
+    "s4_exhaust_seed43_burn_rate": {
+      "value": 0.99875,
+      "unit": ""
+    },
+    "s4_fallback_seed43_confirmed_net_mw": {
+      "value": 845700,
+      "unit": "밀리원"
+    },
+    "s4_fallback_seed43_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s4_fallback_seed43_burn_rate": {
+      "value": 8.457e-07,
+      "unit": ""
+    },
+    "s4_serves": {
+      "value": 36000,
+      "unit": "건"
+    },
+    "s4_filled": {
+      "value": 28083,
+      "unit": "건"
+    },
+    "s4_valid_impressions": {
+      "value": 26768,
+      "unit": "건"
+    },
+    "s4_valid_clicks": {
+      "value": 2429,
+      "unit": "건"
+    },
+    "s4_invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s4_invalid_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s4_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s4_load_test_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s4_fill_rate": {
+      "value": 0.7800833333333334,
+      "unit": ""
+    },
+    "s4_invalid_impression_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s4_invalid_click_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s4_confirmed_net_mw": {
+      "value": 2787200,
+      "unit": "밀리원"
+    },
+    "s4_realized_ecpm_mw": {
+      "value": 104124.3275552899,
+      "unit": "밀리원"
+    },
+    "s5_lobby_banner_filled": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s5_lobby_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s5_lobby_banner_fill_rate": {
+      "value": 1,
+      "unit": ""
+    },
+    "s5_result_banner_filled": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s5_result_banner_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s5_result_banner_fill_rate": {
+      "value": 1,
+      "unit": ""
+    },
+    "s5_review_side_filled": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s5_review_side_serves": {
+      "value": 12000,
+      "unit": "건"
+    },
+    "s5_review_side_fill_rate": {
+      "value": 1,
+      "unit": ""
+    },
+    "s5_click_seed17_confirmed_net_mw": {
+      "value": 47924853,
+      "unit": "밀리원"
+    },
+    "s5_click_seed17_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s5_click_seed17_burn_rate": {
+      "value": 4.7924853e-05,
+      "unit": ""
+    },
+    "s5_view_seed17_confirmed_net_mw": {
+      "value": 109564,
+      "unit": "밀리원"
+    },
+    "s5_view_seed17_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s5_view_seed17_burn_rate": {
+      "value": 1.09564e-07,
+      "unit": ""
+    },
+    "s5_click_seed29_confirmed_net_mw": {
+      "value": 45280433,
+      "unit": "밀리원"
+    },
+    "s5_click_seed29_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s5_click_seed29_burn_rate": {
+      "value": 4.5280433e-05,
+      "unit": ""
+    },
+    "s5_view_seed29_confirmed_net_mw": {
+      "value": 114936,
+      "unit": "밀리원"
+    },
+    "s5_view_seed29_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s5_view_seed29_burn_rate": {
+      "value": 1.14936e-07,
+      "unit": ""
+    },
+    "s5_click_seed43_confirmed_net_mw": {
+      "value": 45424287,
+      "unit": "밀리원"
+    },
+    "s5_click_seed43_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s5_click_seed43_burn_rate": {
+      "value": 4.5424287e-05,
+      "unit": ""
+    },
+    "s5_view_seed43_confirmed_net_mw": {
+      "value": 78896,
+      "unit": "밀리원"
+    },
+    "s5_view_seed43_budget_mw": {
+      "value": 1000000000000,
+      "unit": "밀리원"
+    },
+    "s5_view_seed43_burn_rate": {
+      "value": 7.8896e-08,
+      "unit": ""
+    },
+    "s5_serves": {
+      "value": 36000,
+      "unit": "건"
+    },
+    "s5_filled": {
+      "value": 36000,
+      "unit": "건"
+    },
+    "s5_valid_impressions": {
+      "value": 34295,
+      "unit": "건"
+    },
+    "s5_valid_clicks": {
+      "value": 3570,
+      "unit": "건"
+    },
+    "s5_invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s5_invalid_clicks": {
+      "value": 900,
+      "unit": "건"
+    },
+    "s5_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s5_load_test_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s5_fill_rate": {
+      "value": 1,
+      "unit": ""
+    },
+    "s5_invalid_impression_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s5_invalid_click_rate": {
+      "value": 0.20134228187919462,
+      "unit": ""
+    },
+    "s5_confirmed_net_mw": {
+      "value": 138932969,
+      "unit": "밀리원"
+    },
+    "s5_realized_ecpm_mw": {
+      "value": 4051114.419011518,
+      "unit": "밀리원"
+    },
+    "s6_result_banner_filled": {
+      "value": 71788,
+      "unit": "건"
+    },
+    "s6_result_banner_serves": {
+      "value": 72000,
+      "unit": "건"
+    },
+    "s6_result_banner_fill_rate": {
+      "value": 0.9970555555555556,
+      "unit": ""
+    },
+    "s6_result_ctr_20261101_confirmed_net_mw": {
+      "value": 50612840,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261101_budget_mw": {
+      "value": 10000000000,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261101_burn_rate": {
+      "value": 0.005061284,
+      "unit": ""
+    },
+    "s6_result_ctr_20261102_confirmed_net_mw": {
+      "value": 52241025,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261102_budget_mw": {
+      "value": 10000000000,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261102_burn_rate": {
+      "value": 0.0052241025,
+      "unit": ""
+    },
+    "s6_result_ctr_20261103_confirmed_net_mw": {
+      "value": 50748952,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261103_budget_mw": {
+      "value": 10000000000,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261103_burn_rate": {
+      "value": 0.0050748952,
+      "unit": ""
+    },
+    "s6_result_ctr_20261104_confirmed_net_mw": {
+      "value": 50757510,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261104_budget_mw": {
+      "value": 10000000000,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261104_burn_rate": {
+      "value": 0.005075751,
+      "unit": ""
+    },
+    "s6_result_ctr_20261105_confirmed_net_mw": {
+      "value": 52236822,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261105_budget_mw": {
+      "value": 10000000000,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261105_burn_rate": {
+      "value": 0.0052236822,
+      "unit": ""
+    },
+    "s6_result_ctr_20261106_confirmed_net_mw": {
+      "value": 51067346,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261106_budget_mw": {
+      "value": 10000000000,
+      "unit": "밀리원"
+    },
+    "s6_result_ctr_20261106_burn_rate": {
+      "value": 0.0051067346,
+      "unit": ""
+    },
+    "s6_serves": {
+      "value": 72000,
+      "unit": "건"
+    },
+    "s6_filled": {
+      "value": 71788,
+      "unit": "건"
+    },
+    "s6_valid_impressions": {
+      "value": 71788,
+      "unit": "건"
+    },
+    "s6_valid_clicks": {
+      "value": 10424,
+      "unit": "건"
+    },
+    "s6_invalid_impressions": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s6_invalid_clicks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s6_invalid_charges": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s6_load_test_events": {
+      "value": 0,
+      "unit": "건"
+    },
+    "s6_fill_rate": {
+      "value": 0.9970555555555556,
+      "unit": ""
+    },
+    "s6_invalid_impression_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s6_invalid_click_rate": {
+      "value": 0,
+      "unit": ""
+    },
+    "s6_confirmed_net_mw": {
+      "value": 307664495,
+      "unit": "밀리원"
+    },
+    "s6_realized_ecpm_mw": {
+      "value": 4285737.10090823,
+      "unit": "밀리원"
+    },
+    "scenarios_with_revenue_metrics": {
+      "value": 6,
+      "unit": "개"
+    },
+    "invalid_charges_total": {
+      "value": 0,
+      "unit": "건"
+    },
+    "matched_local_thompson_runs": {
+      "value": 15,
+      "unit": "건"
+    }
+  }
+}

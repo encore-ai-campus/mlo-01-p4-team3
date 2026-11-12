@@ -1,4 +1,5 @@
 """게임 웹과 분리된 광고 서버의 MySQL·로깅 설정."""
+import copy
 import os
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -43,10 +44,19 @@ DATABASES = {"default": {
     "PORT": os.environ.get("PALDO_ADS_DB_PORT", "3306"),
     "OPTIONS": {"charset": "utf8mb4", "isolation_level": "read committed"},
     "TEST": {"NAME": os.environ.get("PALDO_ADS_DB_TEST_NAME", "test_paldo_ads")},
+    # 11/11: 원격 MySQL TLS 연결을 요청마다 새로 맺으면 첫 조회에 약 230ms가 든다. gunicorn gthread(고정 스레드)에서
+    # 스레드별 연결을 60초 재사용하고, 재사용 전에 끊긴 연결을 확인한다. 0이면 요청마다 닫는다(이전 동작).
+    "CONN_MAX_AGE": int(os.environ.get("PALDO_ADS_DB_CONN_MAX_AGE", "60")),
+    "CONN_HEALTH_CHECKS": True,
 }}
 if _db_ca := os.environ.get("PALDO_ADS_DB_SSL_CA"):
     DATABASES["default"]["OPTIONS"].update(
         ssl_ca=_db_ca, ssl_verify_cert=True, ssl_verify_identity=True)
+# 11/11 사용자 결정: serve의 예산 예약은 같은 DB의 별도 연결에서 짧은 트랜잭션으로 먼저 커밋한다.
+# 응답·serve 기록·아웃박스 트랜잭션이 끝날 때까지 (캠페인, 귀속일) 예산 행 잠금을 쥐지 않기 위해서다.
+# 시험에서는 같은 시험 DB를 가리킨다(MIRROR).
+DATABASES["ads_reserve"] = copy.deepcopy(DATABASES["default"]) | {"TEST": {"MIRROR": "default"}}
+ADS_RESERVE_DB = "ads_reserve"
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates",
     "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": [
         "django.template.context_processors.request", "django.contrib.auth.context_processors.auth",

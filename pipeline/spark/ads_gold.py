@@ -4,7 +4,7 @@ import hashlib
 import json
 from collections import defaultdict
 from pathlib import Path
-from pipeline.spark.ads_contract import campaign_daily_rows,closing_times,gold_rows,reconcile_rows
+from pipeline.spark.ads_contract import campaign_daily_rows,closing_times,ctr_snapshot,final_closed_scope,gold_rows,reconcile_rows
 from pipeline.spark.ads_job import session,merge_rows,CAMPAIGN_DAILY_SCHEMA,GOLD_SCHEMA,TRAINING_SCHEMA
 from pipeline.spark.ingest_bronze import write_audit
 from tools.jsonlog import log
@@ -23,8 +23,12 @@ def cpc_bid_days(silver, as_of_ms):
     return {(*key, day) for key, day in latest.items() if billings[(*key, day)] == {'cpc'}}
 
 
-def export_optimization(spark, directory, as_of_ms, training_path, training_version, gold_path, gold_version, bid_days):
-    """Export finalized rows from the committed Delta versions for CTR training and CPC bids."""
+def export_optimization(spark, directory, as_of_ms, training_path, training_version, gold_path, gold_version, bid_days,
+                        silver_rows=(), silver_path='', silver_version=None):
+    """Export finalized rows from the committed Delta versions for CTR training, CPC bids and Beta CTR cells.
+
+    `ctr.json`(맥락 학습 행, `ml.ad_ctr` 입력)·`bid.json`은 그대로 두고, `ad_update ctr`가 받는 칸 형식은
+    같은 silver snapshot에서 `ctr_cells.json`으로 따로 쓴다."""
     for name, path, version in (("ctr", training_path, training_version), ("bid", gold_path, gold_version)):
         table = spark.read.format("delta").option("versionAsOf", version).load(path)
         rows = [row.asDict() for row in table.toLocalIterator() if row.attribution_day
@@ -35,6 +39,10 @@ def export_optimization(spark, directory, as_of_ms, training_path, training_vers
         revision = hashlib.sha256(str(path).encode()).hexdigest()[:16]
         write_audit(directory / f"{name}.json", dict(finalized=True, as_of_ms=as_of_ms, rows=rows,
             source_version=f"delta:ads-{name}:{revision}:{version}"))
+    if silver_version is not None:
+        revision = hashlib.sha256(str(silver_path).encode()).hexdigest()[:16]
+        write_audit(directory / "ctr_cells.json",
+                    ctr_snapshot(silver_rows, as_of_ms, f"delta:ads-silver:{revision}:{silver_version}"))
 
 
 def main(argv=None):
@@ -44,6 +52,8 @@ def main(argv=None):
     parser.add_argument('--ledger',type=Path,required=True)
     parser.add_argument('--budgets',type=Path,required=True,help='귀속일 → 캠페인 → 일 예산(밀리원) JSON')
     parser.add_argument('--export-optimization', type=Path, help='확정 Delta에서 CTR·CPC 입력 내보내기')
+    parser.add_argument('--reconcile-closed-days', action='store_true',
+                        help='원장 대조를 확정 마감이 지난 귀속일로 좁힘(운영 중 하루 집계용)')
     args=parser.parse_args(argv)
     if args.export_optimization and args.phase != 'final':
         parser.error('--export-optimization requires --phase final')
@@ -59,7 +69,8 @@ def main(argv=None):
         silver_audit=json.loads((audit/'silver.json').read_text(encoding='utf-8'))
         if (silver_audit['silver_version'],silver_audit['observation_cutoff_ms'])!=(silver_version,args.as_of_ms):
             raise ValueError('silver_audit_mismatch')
-        reconciliation=reconcile_rows(ledger,rows)
+        scope_ledger,scope_rows=final_closed_scope(ledger,rows,args.as_of_ms) if args.reconcile_closed_days else (ledger,rows)
+        reconciliation=reconcile_rows(scope_ledger,scope_rows)
         if reconciliation['mismatches']:
             raise ValueError('gold_requires_reconciled_ledger')
         gold,training=gold_rows(rows,args.as_of_ms)
@@ -92,7 +103,8 @@ def main(argv=None):
             'fill':silver_audit['fill'],'campaign_daily':daily,'by_source':by_source})
         if args.export_optimization:
             export_optimization(spark, args.export_optimization, args.as_of_ms,
-                                training_path, training_version, path, version, cpc_bid_days(rows, args.as_of_ms))
+                                training_path, training_version, path, version, cpc_bid_days(rows, args.as_of_ms),
+                                rows, config['ads_silver_path'], silver_version)
         log('ads_gold','info','ads_gold_committed',**result)
 
 

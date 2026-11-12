@@ -67,9 +67,10 @@
       const target=root.querySelector('[data-record-comparison-lines]'); if(!target || chosen.length!==2)return;
       target.replaceChildren();
       for(const card of chosen) { const p=document.createElement('p'); p.textContent=`${card.querySelector('strong').textContent} · ${card.querySelector('.claim-meta')?.textContent.trim() || ''} — ${card.querySelector('.claim-meta + p').textContent}`; target.append(p); }
-      const comparison=root.querySelector('[data-record-comparison]'); comparison.hidden=false;
+      const comparison=target.closest('[data-record-comparison]');
+      comparison.hidden=false;
       // 비교 결과는 목록 아래에 생기므로 보이는 곳으로 끌어온다(11/11 튜토리얼 시운전: 눌러도 변화가 안 보임).
-      comparison.scrollIntoView?.({block:'nearest'});
+      comparison.scrollIntoView?.({block:comparison.closest('dialog')?'start':'nearest'});
     });
     filter();
     if (selectionGuide) updateSelection();

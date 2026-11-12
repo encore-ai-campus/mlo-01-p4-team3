@@ -43,8 +43,57 @@
     select(list.querySelector(initial) || list.querySelector("#end-tab-result"), false);
     list.hidden = false;
   }
+  function mountSurvey(section) {
+    if (section.dataset.surveyCurrent) return;
+    const answer = section.querySelector("#survey-answer-form");
+    const steps = [...answer.querySelectorAll("[data-survey-step]")];
+    const progress = section.querySelector("[data-survey-progress]");
+    const count = progress.querySelector("[data-survey-count]");
+    const previous = section.querySelector("[data-survey-previous]");
+    const next = section.querySelector("[data-survey-next]");
+    const note = section.querySelector("[data-survey-note]");
+    const submit = section.querySelector("button[form=survey-answer-form]");
+    const last = steps.length - 1;
+    let current = 0;
+
+    function show(index, focus = false) {
+      current = index;
+      steps.forEach((step, position) => { step.hidden = index !== position; });
+      section.dataset.surveyCurrent = String(index + 1);
+      count.textContent = `${index + 1} / ${steps.length}`;
+      progress.hidden = false;
+      previous.hidden = index === 0;
+      next.hidden = index === last;
+      note.hidden = index === last;
+      submit.hidden = index !== last;
+      submit.disabled = index !== last;
+      if (focus) steps[index].querySelector("legend").focus();
+    }
+
+    previous.addEventListener("click", () => show(current - 1, true));
+    next.addEventListener("click", () => {
+      const choice = steps[current].querySelector("input[required]");
+      if (!choice || choice.reportValidity()) show(current + 1, true);
+    });
+    answer.addEventListener("submit", event => {
+      if (current === last) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
+    answer.addEventListener("invalid", event => {
+      const firstInvalid = answer.querySelector("input:invalid");
+      if (event.target !== firstInvalid) return;
+      const index = steps.indexOf(firstInvalid.closest("[data-survey-step]"));
+      if (index !== current) show(index);
+    }, true);
+    show(0);
+  }
   function mountAll() {
-    for (const root of document.querySelectorAll("#game-end")) mount(root);
+    for (const root of document.querySelectorAll("#game-end")) {
+      const survey = root.querySelector("[data-survey-wizard]");
+      if (survey) mountSurvey(survey);
+      mount(root);
+    }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mountAll);
   else mountAll();

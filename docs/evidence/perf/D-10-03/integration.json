@@ -1,0 +1,28 @@
+{
+  "task": "D-10-03",
+  "commit": "098b0777c1a7a1b8e0284e8c9b6a50f6d28b5a82",
+  "generated_at": "2026-11-11T05:10:49Z",
+  "source": "Replay all current-model held-out game events through WinProbabilityModel and review_trace; compare portable JSON to sklearn exports and verify original Prometheus exposition.",
+  "metrics": {
+    "replayed_games": {
+      "value": 400,
+      "unit": "count"
+    },
+    "replayed_days": {
+      "value": 672,
+      "unit": "count"
+    },
+    "max_absolute_error": {
+      "value": 1.1102230246251565e-16,
+      "unit": "ratio"
+    },
+    "predicted_mean": {
+      "value": 0.4272743238428216,
+      "unit": "ratio"
+    },
+    "actual_rate": {
+      "value": 0.38839285714285715,
+      "unit": "ratio"
+    }
+  }
+}

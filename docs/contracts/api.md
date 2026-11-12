@@ -32,7 +32,8 @@
 
 ### 2-0. 복기 `ReviewOutput.timeline` (11/10, E-10-10)
 - `timeline`은 NPC 결정 단위 `ReviewItem` 목록이다(엔진 `review_trace`, 아웃박스 `decision` 이벤트를 seq 순으로). 플레이어 결정은 넣지 않는다.
-- `ReviewItem` 필드: `item_id`("d<seq>"), `actor`, `day`, `phase`, `kind`(`suspect`·`defend`·`point_contradiction`·`explain`·`silence`·`vote`·`night_plan`·`react`), `reason_codes`, `evidence`, `phrase_id`(`rv_<대표 이유 코드>`), `text`(템플릿 해설, 문구가 없으면 ""), `speech_id`(회의 말·캐묻기 답만, 없으면 null), `target_npc`, `reaction`(react만), `executor`·`victim`(night_plan만), `policy_version`, `vote_explain`(선택, 지금은 null).
+- `ReviewItem` 필드: `item_id`("d<seq>"), `actor`, `day`, `phase`, `kind`(`suspect`·`defend`·`point_contradiction`·`explain`·`silence`·`vote`·`night_plan`·`react`), `reason_codes`, `evidence`, `phrase_id`(`rv_<대표 이유 코드>`), `text`(템플릿 해설, 문구가 없으면 "". 마을 사람 의심은 근거 풀이 문장을 이어 붙일 수 있다, 11/11), `speech_id`(회의 말·캐묻기 답만, 없으면 null), `target_npc`, `reaction`(react만), `executor`·`victim`(night_plan만), `policy_version`, `vote_explain`(선택, 지금은 null).
+- `ReviewOutput.win_prob`는 D-10-03의 선택 날짜별 마을 승리 확률 `[{"day": 1, "probability": 0.65}]`다. 각 날짜 최초 공개 관측을 사용한다. 모델 미설정·버전 불일치·중단 판이면 null이다. 모델 JSON의 규칙·콘텐츠·프리셋 경계를 검사하며, 화면 그래프는 D3 결정에 따라 숨긴다.
 - 이전 형식(발언마다 한 항목, 이유 코드는 빈 목록)은 11/10에 이 형식으로 바뀌었다. `explanation_job_id`는 쓰지 않고 남겨 둔다.
 
 ### 2-0-1. 복기 해설 LLM 요약 `ReviewNarrationOutput` (11/11, E-10-01)

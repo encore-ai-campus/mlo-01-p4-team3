@@ -26,7 +26,7 @@
           "campaign_id": "cp_gukbap",
           "title": "뜨끈한 국밥",
           "body": "주막에서 쉬어 가시오",
-          "image_path": "/static/ads/gukbap_a.png",
+          "image_path": "/static/promo/gukbap_a.png",
           "landing_path": "/ads/landing/gukbap"
         },
         {
@@ -34,7 +34,7 @@
           "campaign_id": "cp_gukbap",
           "title": "국밥 한 그릇",
           "body": "기다리는 동안 한 술",
-          "image_path": "/static/ads/gukbap_b.png",
+          "image_path": "/static/promo/gukbap_b.png",
           "landing_path": "/ads/landing/gukbap"
         }
       ],
@@ -69,7 +69,7 @@
           "campaign_id": "cp_bujeok",
           "title": "액막이 부적",
           "body": "다음 판엔 창귀를 막으시오",
-          "image_path": "/static/ads/bujeok.png",
+          "image_path": "/static/promo/bujeok.png",
           "landing_path": "/ads/landing/bujeok"
         }
       ],
@@ -102,7 +102,7 @@
           "campaign_id": "cp_yakcho",
           "title": "산삼 한 뿌리",
           "body": "기운이 탁할 땐 약초방",
-          "image_path": "/static/ads/yakcho.png",
+          "image_path": "/static/promo/yakcho.png",
           "landing_path": "/ads/landing/yakcho"
         }
       ],
@@ -141,7 +141,7 @@
           "campaign_id": "cp_gat",
           "title": "새 갓",
           "body": "무당 어른도 갓 하나",
-          "image_path": "/static/ads/gat.png",
+          "image_path": "/static/promo/gat.png",
           "landing_path": "/ads/landing/gat"
         }
       ],
@@ -155,21 +155,21 @@
       "reserve_ecpm_mw": 500000,
       "prior_ctr": 0.02,
       "prior_strength": 200.0,
-      "frequency_cap": 3
+      "frequency_cap": 1000
     },
     {
       "slot": "result_banner",
       "reserve_ecpm_mw": 600000,
       "prior_ctr": 0.025,
       "prior_strength": 200.0,
-      "frequency_cap": 3
+      "frequency_cap": 1000
     },
     {
       "slot": "review_side",
       "reserve_ecpm_mw": 400000,
       "prior_ctr": 0.015,
       "prior_strength": 200.0,
-      "frequency_cap": 3
+      "frequency_cap": 1000
     }
   ],
   "slot_sizes": {

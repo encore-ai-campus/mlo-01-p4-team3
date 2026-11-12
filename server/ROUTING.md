@@ -1,5 +1,15 @@
 # 서버 라우팅
 
+PR #422 후속은 기존 게임·종료·계정 URL을 사용한다. `template_tags.UI_TIPS`에 게임 메뉴·점치기·설문 이전/다음 설명을 보완했다. 명령 실패 안내는 기존 응답과 `game.js`의 htmx 오류 처리로 표시하며, 별도 API나 재전송 경로를 만들지 않는다. 진술 비교 공통 partial과 도움말 본문 구획은 [웹 라우팅](../web/ROUTING.md#pr-422-후속-화면-보완)에 기록한다.
+
+PC 한 화면 후속은 기존 `/`·로그인·가입의 계정 템플릿에서 처리한다. `home-start-content`와 `home-account-footer`는 표시 구획이며 새 URL·저장 경로가 아니다. 기존 가입·동의·일반/배정 판·중단·로그아웃의 폼 요청은 그대로다. [웹 라우팅](../web/ROUTING.md)의 높이·스크롤 적용 범위를 따른다.
+
+홈 이어 하기 우선 배치에서 링크는 기존 `GET /games/{id}`, 접힌 새 판 설정과 중단 버튼은 기존 `POST /games`를 사용한다. `replace_open`·시작 토큰·무당 모습·결말 필드와 서버 처리 순서는 동일하다. 화면 접기·배치 변경은 [웹 라우팅](../web/ROUTING.md)을 따른다.
+
+홈 광고 위치 보완은 같은 `GET /ads/slot/lobby_banner`를 사용하며, `accounts/home.html`의 기존 지면 호출을 표현 격자 안으로 옮긴다. 계정·광고 API·DTO·토큰·비콘·로그인 경로는 변경하지 않는다. 실제 배치와 빈 응답 처리는 [웹 디자인](../web/DESIGN.md)을 따른다.
+
+금색·한지 UI 1차(사용자 검토 브랜치)는 기존 계정 `GET /`·가입·로그인·로그아웃과 `POST /games`를 그대로 사용한다. 계정 뷰·요청 값·리디렉션·인증·시작 정책은 바꾸지 않고 `web/templates/accounts/`와 계정 CSS만 표시를 조정한다. 공통 토큰의 기존 게임 색상값도 유지한다. 상세 화면 연결은 [웹 라우팅](../web/ROUTING.md), 검토 상태는 [UI 적용 기록](../web/UI_APPLY.md#금색한지-ui-1차-계정홈)에 둔다.
+
 B-09-02 어댑터 수신: `composition._configure_parser` → 설정 `INTENT_PARSER_FACTORY` → `paldo_web.intent.make_bert_parser()` → D의 `intent.bert.BertIntentParser(run_dir)` → 기존 `ObservedIntentParser` → `InteractionService`다. 로컬 아티팩트 경로는 `INTENT_BERT_RUN_DIR`(환경 `PALDO_INTENT_BERT_RUN_DIR`)로 받는다. 기본 팩토리는 빈 문자열로 유지한다. 운영 URL·DTO 변경은 없으며 인수 범위와 실제 가중치 미검증은 [증빙](../docs/evidence/B-09-02.md)에 구분한다.
 
 B-09-02 사전 부하: `tools/perf/api_bench.py --web-processes 2 --actual-baseline --intent-every 1` → `tests/multiproc_bench.py` → 시험 전용 `asgi_bench_app.py` 및 `asgi_bench.py`·`intent_load.py`다. 분리 부하는 `--serve-dir`의 `client.json`으로 간격을 넘기고 `--load-dir`에서 실제 엔진용 `drive_load`를 호출해 `load.json`을 반환한다. 시험 해석기는 서버의 `--intent-factory`로 고른다. 공개 화면 버전으로 기존 `POST /games/<id>/utterances` 해석 후 같은 시도를 `cancel`하며 해석 후보를 명령으로 실행하지 않는다. 보조 기록은 시험 접두어의 Mongo `b_interactions`에 저장하고 종료 때 삭제한다. 운영 URL·DTO·화면·설정 기본값은 유지한다. [증빙](../docs/evidence/B-09-02.md)
