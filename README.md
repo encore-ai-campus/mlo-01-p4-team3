@@ -1,15 +1,112 @@
-# 팔도 (paldo)
+# 창귀: 귀신이 숨어든 마을
 
-무당이 되어 마을에 숨은 씐 자를 찾는 추리 게임이다.
+한국의 창귀 전승을 소재로 한 싱글플레이 웹 추리 게임이다. 플레이어는 무당이 되어 주민의 행적을 대조하고, 점괘와 추궁으로 얻은 단서로 마을 회의에서 주민들을 설득한다.
 
-- 기획서: [`docs/paldo_design_v1.md`](docs/paldo_design_v1.md) · 기획서 보조 기록(설계 결정 기록·미확정 사항·서버 배치 요약·이전 판 절 번호 대응표): [`docs/design_notes.md`](docs/design_notes.md)
-- 팀 일정과 역할: [`docs/team_plan.md`](docs/team_plan.md)
-- BRD(업무 요구): [`docs/brd.md`](docs/brd.md) · PRD(제품 요구·합격 기준, 요구사항 기준 문서): [`docs/prd.md`](docs/prd.md)
-- 계약 문서: [`docs/contracts/`](docs/contracts/)(색인·DB 스키마 위치: [`README.md`](docs/contracts/README.md)) · 디렉터리 트리(새 파일 위치): [`structure.md`](docs/contracts/structure.md) · 영역 간 호출 지도: [`integration.md`](docs/contracts/integration.md)
-- **일자별·담당자별 태스크와 완료 조건**: [`docs/tasks/`](docs/tasks/README.md) (공통 완료 정의, 증빙 양식, 로그·계측 규칙, 결정 대기, 통합 판정 표)
-- 태스크 증빙: `docs/evidence/<태스크ID>.md`, 발표 기록: `docs/presentation/`, 리포트: `docs/reports/`
-- 모듈 문서(무엇을·왜·사용법·설정값·한계): [`docs/modules/`](docs/modules/README.md), 트러블 기록: `docs/troubles/<흐름>.md`(발표 트랙은 `S.md`). 기준은 `docs/tasks/README.md` 10절
-- 진행 관리: GitHub Issues(태스크 마크다운에서 생성, `docs/tasks/README.md` 11절). 저장소 배정 전에는 NAS 번들 제출·PM 병합·원장(`docs/tasks/README.md` 10-1절)
+[게임 소개와 플레이 화면](products.md) · [아키텍처](#시스템-아키텍처) · [실행](#실행) · [코드와 문서 찾기](#코드와-문서-찾기) · [변경 제출과 병합](#변경-제출과-병합)
+
+## 구현 현황
+
+| 영역 | 저장소에서 확인할 수 있는 기능 | 문서 |
+|---|---|---|
+| 플레이 | 가입·로그인, 족제비 튜토리얼, 일반 판과 배정 회차, 진행 중인 판 이어 하기 | [웹 모듈](docs/modules/web.md), [튜토리얼 증빙](docs/evidence/E-11-14.md) |
+| 추리 | 회의·진술표·행적표·수첩·투표·밤 점치기, 주민 대사와 표정 연출 | [웹 라우팅](web/ROUTING.md), [웹 디자인](web/DESIGN.md) |
+| 결과와 진척 | 결과·복기·원한 단서·공개 기록·설문 5개 탭, 단서 수집과 퇴마·한풀이 결말 | [웹·게임 검증](docs/evidence/B-11-01.md) |
+| 모델과 데이터 | NPC의 의심 판단과 의도 해석, 이벤트 수집·집계, 모델 평가·승격·롤백 경로 | [ML](docs/modules/ml.md), [데이터 파이프라인](docs/modules/pipeline.md), [모델 운영](docs/modules/ml_ops.md) |
+| 광고와 운영 | 홈·결과·복기 광고 지면, 별도 광고 관리자, Prometheus·Grafana 대시보드 | [광고 연동 검증](docs/evidence/D-12-04.md), [운영 모듈](docs/modules/ops.md) |
+
+일반 로비의 공개 프리셋은 6인 기본 판(`base6`)이다. 8인 판 완주와 한풀이 결말은 별도의 로컬 검증 기록이 있다. 직접 입력은 기본 꺼짐이며, 복기 해설 생성과 NPC 대사 LLM도 환경과 모드 설정에 따라 동작한다. 배포·부하·운영 연동 결과는 각 증빙에 기록된 환경과 커밋을 기준으로 읽는다. [공개 프리셋](server/app/presets_enabled.json) · [서버 라우팅](server/ROUTING.md)
+
+## 시스템 아키텍처
+
+운영 검증은 내부망 VM 환경에서 진행했다. 아래 운영 구성은 11/11 VM 인벤토리와 11/12 운영 증빙을 기준으로 작성했다. AWS 확장은 보류했다. [인프라 발표 기록](docs/presentation/C.md) · [설치 인벤토리](ops/inventory_check.md)
+
+[![게임 요청·광고 요청·운영 관측의 세 흐름과 서버별 역할](docs/presentation/changgui-infrastructure.svg)](docs/presentation/changgui-infrastructure.svg)
+
+- **게임 요청**은 Caddy가 HTTPS·WSS로 받아 웹에 전달한다. Django는 소유권과 입력을 확인한 뒤 엔진을 호출한다. 판 상태·명령 결과·발행할 게임 이벤트는 MongoDB 문서에 원자적으로 기록한다. [VM 역할](ops/runbook/vm_roles.md) · [통합 계약](docs/contracts/integration.md) · [서버 디자인](server/DESIGN.md)
+- **운영 관측**은 웹·광고·발행·처리 작업과 VM 지표를 Prometheus로 수집하고 Grafana에서 본다. 운영 광고 관리 화면과 Grafana의 광고 지표는 별도 기능이다. [운영 모듈](docs/modules/ops.md) · [관측 구성](ops/prometheus/README.md)
+
+### 온프레미스 인프라 구성
+
+[![상단의 접속·운영과 웹·광고, 중단의 아웃박스·Kafka·Spark, 하단의 Garage·MySQL·MongoDB를 연결한 온프레미스 구성도](docs/presentation/changgui-vm-layout.svg)](docs/presentation/changgui-vm-layout.svg)
+
+창귀는 4차 프로젝트(PJ4)다. 3차 프로젝트(PJ3)에서 사용한 물리 호스트 5대의 VM 20대를 창귀의 운영 역할에 맞춰 재배치했다. 그림은 주요 서비스의 연결을 보여주며, 호스트별 배치는 11/11 인벤토리에서 확인할 수 있다. [VM 역할](ops/runbook/vm_roles.md) · [설치 인벤토리](ops/inventory_check.md) · [인프라 검증](docs/presentation/C.md)
+
+구성도의 배치와 공통 아이콘은 PJ3 자료에서 가져왔다. [PJ3 온프레미스 인프라 아키텍처](https://github.com/encore-ai-campus/mlo-01-p3-team3/blob/main/assets/PJ3%20%EC%98%A8%ED%94%84%EB%A0%88%EB%AF%B8%EC%8A%A4%20%EC%9D%B8%ED%94%84%EB%9D%BC%20%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.png)
+
+## 기술 스택
+
+[![주요 기술 스택. 웹과 게임, 저장과 이벤트, 판단과 생성, 실행과 배치, 모델 기록과 객체 저장, 운영 관측의 여섯 영역에 사용 기술을 배치했다.](docs/presentation/changgui-technology-stack.svg)](docs/presentation/changgui-technology-stack.svg)
+
+| 영역 | 기술 | 사용처 |
+|---|---|---|
+| 게임 엔진 | Python 3.14, 표준 라이브러리 | 규칙·상태 전이·NPC 관측과 판단·시드 기반 재현 |
+| 웹과 통신 | Django 6.1.2, Django 템플릿, htmx, Alpine.js, Channels 4.3.2·Daphne 4.2.3, Caddy | 계정·게임 API, PC/모바일 비주얼 노벨 UI, HTTPS·광고 신호 웹소켓. Django·Channels·Daphne 버전은 저장소 잠금값이다. |
+| 광고 서비스 | Django, Gunicorn | 내부 광고 선정·비콘·클릭 처리와 관리자 화면. 게임 웹이 브라우저 요청을 중계한다. |
+| 데이터 저장 | MongoDB Replica Set, MySQL 8.4.11 | 판·진척·콘텐츠와 계정·광고 원장. 계정과 광고는 별도 스키마·계정 |
+| 이벤트와 배치 | Kafka, Spark, Delta Lake, Garage | 이벤트 수집, 데이터 정제·집계, 학습 데이터와 아티팩트 저장. Garage는 S3 호환 객체 저장소 |
+| 모델과 평가 | scikit-learn, LightGBM, 한국어 BERT, MLflow | 로지스틱 의심 모델·비교 모델, 의도 해석, 광고 CTR 학습, 평가·모델 기록 |
+| 대사·복기 | Kanana, llama.cpp, Django 작업 프로세스 | 코드의 NPC 생성 기본값은 `off`다. 운영 런북의 설정은 `polish`이며, 캐묻기 답 실시간 생성(`live`)은 별도 설정이다. 지연·실패 때 템플릿을 사용한다. [생성 서버 운영 절차](ops/runbook/llm_gen.md) |
+| 개발·운영 | Docker Compose, Ansible, systemd, k3s, Prometheus·Grafana, node_exporter | 로컬 개발 환경, VM 배포·관측, 운영 야간 재학습, k3s 시뮬레이션 Job |
+
+| 기술 | 운영 VM 설치 기록·운영 구성 | 로컬 개발 Compose |
+|---|---|---|
+| MongoDB | 9.0.4, Replica Set 3노드 | 8.0.34, Replica Set 1노드 |
+| Kafka | 4.1.2, 브로커 3대 | 4.3.2, KRaft 브로커 1대 |
+| Garage | 2.4.1, 객체 저장소 2노드 | 2.5.0, 개발 컨테이너 1대 |
+| MySQL | 8.4.11, PJ4 Primary·Replica 2대 | 8.4.11, 개발 컨테이너 1대 |
+| 관측 | Prometheus 3.15.0, Grafana 13.2.4 | Prometheus 3.15.0, Grafana 13.2.4 |
+
+그림의 웹 패키지 버전은 저장소 잠금값이다. 데이터·관측 버전은 11/11 VM 설치 기록을 따르며, 로컬 값은 Compose 이미지 태그다. Spark 4.1.3과 Delta Spark 4.4.1 조합은 실제 VM에서 쓰기·읽기와 재처리를 검증했다. [설치 인벤토리](ops/inventory_check.md) · [Compose 설정](ops/compose/dev.yml) · [웹 의존성](requirements/web.txt) · [Spark·Delta 검증](docs/evidence/C-07-01.md)
+
+## MLOps 구현과 검증 범위
+
+[![데이터와 MLOps 흐름도. 게임·광고 이벤트를 Kafka에서 받아 Spark와 Delta로 처리한다. 게임 학습 데이터는 Silver에서 내보내고 광고 Gold는 성과를 집계한다. MLflow는 평가 실행과 모델 등록을 관리한다.](docs/presentation/changgui-data-flow.svg)](docs/presentation/changgui-data-flow.svg)
+
+게임과 광고 서비스는 아웃박스에 이벤트를 기록한 뒤 Kafka로 발행한다. Spark는 Delta Bronze에 원본을 보존하고, 게임 Silver에 종료 라벨을 붙여 마을 관찰자의 학습 행을 JSON으로 내보낸다. 광고 Gold는 성과와 CTR을 집계하고 MySQL 원장과 대조한다. [파이프라인](docs/modules/pipeline.md) · [학습 내보내기와 광고 집계](pipeline/README.md)
+
+| 단계 | 구현 및 확인 내용 |
+|---|---|
+| 데이터와 재현 | 게임·선택·설문 이벤트를 적재한다. 학습용 사람 판과 시뮬레이션을 구분하고, 시드·데이터 버전·특징 버전을 기록한다. [데이터 흐름](docs/modules/pipeline.md) |
+| 학습과 관문 | 규칙 기준선·후보 모델을 비교한다. 의심 모델은 로그 손실·보정·게임 결과 등의 관문을 거치며, 실행과 아티팩트는 MLflow와 Garage에 남긴다. [모델 모듈](docs/modules/ml.md) · [수명주기 계약](docs/contracts/ml_lifecycle.md) |
+| 적용과 복구 | 로지스틱 의심 모델을 활성화한 웹 프로세스에서 직접 추론한다. 판 시작 시 모델 버전을 고정하고, 응답 지연이나 실패 때 규칙 판단으로 돌아간다. 판 단위 카나리아 배정과 롤백 경로를 갖추고 있다. [추론 검증](docs/evidence/D-08-01.md) · [롤백 런북](ops/runbook/rollback.md) |
+| 운영 야간 재학습 | `app-01`의 systemd 타이머로 동의한 사람 판을 학습한다. 관문을 통과한 후보를 등록한 뒤 설치·전환·상태 확인을 수행하고, 실패하면 직전 모델로 복원한다. 11/12 정상 실행에서 품질 관문이 후보를 거부했고, 별도 진단 시험에서 전환 후 복원을 확인했다. 카나리아·대조 각 30판의 운영 증빙은 후속 범위다. [야간 실측](docs/evidence/D-10-01.md#1112-운영-야간-경로-반영) |
+| 추가 모델과 관측 | 씐 자 전략 밴딧의 판 단위 버전 고정과 일일 갱신을 로컬에서 검증했다. 운영 실행 증빙은 후속 범위다. LLM 작업자의 대기·생성·처리량 지표를 내보내는 기능도 로컬에서 검증했다. [밴딧](docs/evidence/D-12-05.md) · [LLM 작업자 지표](docs/evidence/E-12-01.md) |
+
+## 부하 측정 결과
+
+아래 값은 해당 실행의 증빙에서 가져왔다. p95는 요청의 95%가 이 시간 안에 응답했다는 뜻이다. 클라이언트 전체 응답과 Django 내부 처리 시간을 구분했다.
+
+| 시험·조건 | 측정 결과 | 근거 |
+|---|---|---|
+| 11/11 모델 직접 추론, 동시 30명·회차별 약 3분, Caddy·Daphne 2프로세스·격리 Mongo | 모델 켬 2회에서 클라이언트 API p95 **423.290 / 425.066ms**, Django p95 **392.956 / 381.988ms**. 추론 p95 버킷 상한 **50ms**, 엔진 폴백 **0.112% / 0.262%**, HTTP 오류 각 **0건**. 해당 시험 기준 2회 모두 충족 | [D-08-01 결과](docs/evidence/D-08-01.md#1111-직접-추론-공식-묶음-04-결과) |
+| 11/10 웹 프로세스 비교, 격리 Daphne·Caddy와 스크립트 엔진, 30명·3분 | 1개 프로세스 API p95 **400.064ms**, 2개 **218.762ms**. 각 HTTP **5,400건**, HTTP·웹소켓 비콘 오류 **0건** | [C-08-04 결과](docs/evidence/C-08-04.md) |
+| 활성 게임 30판 관측, 테스트 VM, HTTP 동시 실행 상한 12 | **30판 완료**, HTTP **303건 중 오류 0건**. 클라이언트 p95 **4,048.847ms**, Django 내부 p95 **1,152.402ms**. 이 실행의 서버 p95는 1초 기준 초과 | [C-08-01 결과](docs/evidence/C-08-01.md) |
+
+각 시험의 부하 발생 방식·엔진·저장소·측정 위치가 다르다. 결과는 해당 구성의 측정치이며 현재 배포 환경 전체의 성능 보증으로 합산하지 않는다. [발표용 웹 검증 정리](docs/presentation/B.md) · [인프라 검증 정리](docs/presentation/C.md)
+
+## 실행
+
+화면을 확인하려면 Python 3.14 가상환경에서 [웹 의존성](requirements/web.txt)을 설치하고, 저장소 루트에서 아래 명령을 실행한다.
+
+```powershell
+python -B -m server.preview --port 8766
+```
+
+브라우저에서 터미널에 출력된 로그인 주소를 열고 미리보기 계정으로 들어간다. 이 실행기는 임시 SQLite와 녹화 판을 사용한다. 실제 저장소를 연결한 개발 환경은 [로컬 Compose 안내](ops/compose/README.md), 운영 기동과 복구는 [운영 런북](ops/runbook/README.md), 세부 웹 시험은 [서버 시험 안내](server/tests/README.md)를 따른다.
+
+## 코드와 문서 찾기
+
+### 라우팅을 두 단계로 둔 이유
+
+팀이 같은 파일에 기능별 경로를 반복해서 적으면 실제 코드와 문서가 어긋나고 여러 PR이 같은 위치에서 충돌하기 쉽다. 루트 README에는 공용 진입점을 두고, 담당별 파일 위치는 해당 흐름의 라우팅 문서에서 관리한다. [문서화 기준 10절](docs/tasks/README.md)
+
+| 찾는 내용 | 읽는 순서 |
+|---|---|
+| 수정할 코드가 어디 있는가 | 아래 [영역 안내](#영역-안내) → `docs/routing/<흐름>.md`. B의 URL·API는 [서버 라우팅](server/ROUTING.md), 화면·템플릿·스크립트는 [웹 라우팅](web/ROUTING.md)으로 이어진다. |
+| 동작과 구조를 왜 이렇게 정했는가 | [기획서](docs/paldo_design_v1.md) · [결정 기록](docs/design_notes.md) · [제품 요구](docs/prd.md) · [업무 요구](docs/brd.md) |
+| 여러 영역이 지켜야 할 약속은 무엇인가 | [계약 색인](docs/contracts/README.md) → [폴더 구조](docs/contracts/structure.md) · [영역 간 통합](docs/contracts/integration.md) |
+| 기능을 어떻게 실행하고 무엇을 확인했는가 | [모듈 문서](docs/modules/README.md) · [태스크·완료 기준](docs/tasks/README.md) · [증빙](docs/evidence/) · [트러블 기록](docs/troubles/) |
+| 담당과 발표 자료는 어디 있는가 | [팀 일정과 역할](docs/team_plan.md) · [웹 발표 자료](docs/presentation/B.md) · [인프라 발표 자료](docs/presentation/C.md) · [리포트](docs/reports/) |
 
 ## 계층과 의존 방향
 
@@ -19,13 +116,15 @@ server/infra (인프라) → engine (포트 구현)
 ```
 
 - `engine/`은 표준 라이브러리만 쓴다. Django, Mongo, Kafka, ML, LLM 라이브러리를 import하지 않는다.
-- `server/app`은 `engine`과 광고 요청·응답 DTO(`ads.domain.model`)만 import한다. Django는 import하지 않는다.
+- `server/app`은 게임 유스케이스와 입출력 모델을 관리한다. Django 요청과 화면은 표현 계층이, 저장소와 외부 서비스 연결은 인프라 계층이 담당한다. [구조 계약](docs/contracts/structure.md)
 - `contracts/`(데이터셋 계약)는 `engine/`이 import하지 않는다.
 - 광고: `ads/web → ads/app → ads/domain`, `ads/infra → ads/domain`. `ads/domain`은 표준 라이브러리만 쓴다. `engine/`과 `ads/`는 서로 import하지 않는다. 게임 서버는 `server/app/ads_port.py`(AdProvider)로만 광고를 부른다.
 
+이 의존 방향 덕분에 Django·DB 없이 같은 시드로 규칙을 재현할 수 있다. 웹과 인프라는 계약에 정의된 입출력과 가짜 저장소로 각자 구현·검증한 뒤 실제 서비스에 연결한다. [구조 계약](docs/contracts/structure.md) · [병렬 개발 계약](docs/contracts/parallel_dev.md)
+
 ## 영역 안내
 
-영역 안의 폴더와 작업 위치는 흐름별 문서에 있다. 이 README에는 영역 진입점과 공용 항목만 둔다(P-27). 새 최상위 폴더나 공용 항목이 아니면 이 파일 대신 해당 영역 문서를 고친다.
+저장소의 라우팅 기준(P-27)에 따라 공용 경로와 영역별 진입점은 이 README에서, 영역 안의 폴더와 작업 위치는 해당 흐름의 라우팅 문서에서 관리한다. [문서화 기준](docs/tasks/README.md)
 
 | 흐름 | 영역 | 주요 폴더 | 안내 문서 |
 |---|---|---|---|
@@ -67,7 +166,7 @@ server/infra (인프라) → engine (포트 구현)
 | 모델 추적과 등록 관문 | `ops/mlflow/`, `tools/ml_gate.py`, `docs/modules/ml_ops.md` |
 | 다른 흐름 없이 개발 시작 | `docs/contracts/parallel_dev.md` |
 | 새 파일·폴더를 어디에 만들지 | `docs/contracts/structure.md`(1절 트리, 6절 허용 폴더 목록) |
-| 새 폴더 만들기(허용 목록 밖) | PM 승인 → `docs/contracts/structure.md` 6절·1절 먼저 고침 → 검사 `python -m tools.check_structure --diff <base>`(로컬 CI `core`, GitHub CI `core`는 `--all`) |
+| 새 폴더 만들기(허용 목록 밖) | PM 승인 → `docs/contracts/structure.md` 6절·1절 먼저 고침 → 로컬 검사 `python -m tools.check_structure --diff <base>` |
 | 다른 영역을 어떻게 부르는지(포트·HTTP·토픽·주소 변수·가짜·통합 시점) | `docs/contracts/integration.md` |
 | 오늘 내가 할 일과 완료 조건 | `docs/tasks/<흐름>.md`(A_engine, B_web, C_infra, D_ml_ads, E_pm), 발표 작업은 발표 트랙 `docs/tasks/P_presentation.md`(S-xx, 담당 P-24) |
 | 태스크 완료 증빙 쓰기 | `docs/tasks/README.md` 4절 양식 → `docs/evidence/` |
@@ -80,23 +179,39 @@ server/infra (인프라) → engine (포트 구현)
 | 로그·지표 이름 정하기 | `docs/tasks/README.md` 5절 |
 | 사용자 테스트 지표·회차 등록 가명 ID·`test_human` 동결 | 인프라(읽기 전용 내보내기) `server/infra/ut_export.py` → 도메인·CLI `tools/ut_metrics.py`·`tools/ut_freeze.py`, 지표 정의 변경은 `tools/ut_metrics.py` `DEFINITIONS`, 설명 `docs/modules/user_test.md` |
 
-## 명령
+## 변경 제출과 병합
 
-```
-git config core.hooksPath .githooks                       # 처음 한 번: push 때 precheck 자동 실행
-python -m tools.precheck --quick                          # 작업 중 확인(기본과 같은 대상, 기록 없음, PR에는 못 붙임)
-python -m tools.precheck                                  # 로컬 검사(구조·비밀·바뀐 파일과 이어진 테스트(assets 제외)·문서·증빙). PR 직전 1회, 본문에 마지막 줄
-python -m tools.precheck --full-tests                     # 테스트 폴더 전체. PM이 배포 후보 전 dev에서 1회(--all-slow면 무거운 테스트까지)
-git fetch origin && git merge origin/dev                  # PR 직전에 dev 받기(시작 때는 fetch 후 origin/dev에서 브랜치). 리베이스·강제 푸시 금지
-python -m tools.precheck --pr-body pr.md                  # PR 본문(Task·Closes/Refs)까지. 에셋을 바꿨으면 --with-assets
+### 작업 브랜치에서 PR까지
+
+1. **작업 시작** — 처음 받은 저장소에서 `git config core.hooksPath .githooks`를 한 번 실행한다. `git fetch origin`으로 최신 통합 브랜치를 받고 `origin/dev`에서 `task/<ID>`를 만든다.
+2. **변경과 검증** — 관련 코드·문서·증빙을 함께 준비한다. 작업 중에는 `python -m tools.precheck --quick`으로 확인한다. PR을 올리기 직전에 `git fetch origin` 후 `git merge origin/dev`로 통합 변경을 받아 검증 기준을 맞춘다.
+3. **PR 본문 검사** — [저장소 템플릿](.github/pull_request_template.md)에 태스크 ID, 이슈 연결, 변경 내용과 증빙을 적고 본문을 파일로 저장한다. `python -m tools.precheck --pr-body pr.md`를 실행해 마지막 통과 줄을 본문에 붙인다. 에셋 변경에 해당하면 `--with-assets`를 추가한다.
+4. **푸시와 리뷰** — 작업 브랜치를 푸시하고 `dev` 대상 PR을 연다. 작성자 외 1명의 승인과 `precheck: 통과`를 확인한 뒤 PM이 merge commit으로 병합한다. 배포용 `main`은 PM이 별도 승격 PR로 갱신한다. [브랜치와 공통 완료 정의](docs/tasks/README.md#3-공통-완료-정의-모든-태스크) · [이슈 연결 규칙](docs/tasks/README.md#11-github-issues로-관리하기)
+
+### 이 규칙을 사용하는 이유
+
+| 규칙 | 프로젝트에서 필요한 이유 |
+|---|---|
+| 로컬 검사와 pre-push 훅 | 조직 공용 GitHub Actions 사용량을 아끼면서 구조·비밀정보·관련 테스트·문서·증빙을 푸시 전에 검사한다. 훅은 코드와 파일을 검사하고, PR 본문 검사는 작성자가 별도로 실행한다. |
+| PR 하나에 태스크 하나 | 이슈 완료 조건을 해당 변경과 증빙에 연결한다. 모두 충족했으면 본문의 `Closes #<번호>`, 일부 검증이 남아 있으면 `Refs #<번호>`로 상태를 전달한다. |
+| 리뷰 후 merge commit | 변경 책임과 검증 시점을 확인하고, 증빙이 참조하는 커밋 SHA를 통합 브랜치 이력에 보존한다. |
+| 통합과 배포 브랜치 | `dev`에서 여러 영역의 변경을 먼저 검증한다. `main`은 PM이 검증을 마친 배포 후보를 승격할 때 갱신한다. |
+
+### 공용 도구
+
+```powershell
+python -m tools.precheck --full-tests                     # PM이 배포 후보 전 dev에서 전체 검사
 python -m unittest discover -s tests -t .                 # 계약 테스트
 python -m tools.build_fixtures                            # 픽스처 재생성(계약 변경 후)
 python -m tools.gen_synthetic --games 50 --seed 7 --ads 20000 --out out/synthetic
 python -m tools.tasks_to_issues --dry-run                 # 태스크 → 이슈 계획(실제 생성은 --apply --repo)
 python -m tools.tasks_to_issues --hours                   # 흐름별 일별 시간(문서화·일괄 갱신 포함, 흐름별 한도, 발표 트랙은 별도 줄)
-# 브랜치: 통합 dev(모든 PR 대상, 기본 브랜치) / 배포 main(최종 배포 전 승격만, 11/10 사용자 테스트는 리허설 태그). docs/tasks/README.md 3절
 ```
 
 텍스트 파일은 UTF-8(BOM 없음), 줄바꿈 LF다(`.gitattributes`가 고정, Windows 스크립트 `.ps1`·`.bat`·`.cmd`만 CRLF).
 
 접속 정보(IP, 계정, 비밀번호)는 이 저장소에 넣지 않는다.
+
+<!-- 구성도 머리글 일러스트 · Codex 내장 이미지 생성 도구
+Use case: productivity-visual. Create a premium editorial technical illustration atlas for a Korean mystery game’s engineering README. Square canvas, precisely four equal rectangular image tiles as a 2×2 contact sheet without gutters, exact separation at the vertical and horizontal midpoints. All tiles use the same clean midnight navy background (#10263a), antique brass accents and restrained icy teal light. Top left: a small Korean hanok village eave and warm lantern integrated with a precise architectural section of a modern server rack. Top right: five compact abstract server rack units arranged in a clean, orthogonal isometric composition. Bottom left: an organized stack of glass-and-metal modules and a processor on a dark workbench. Bottom right: a set of data layers beneath a few restrained, smooth teal signal traces, with a single amber highlight. Focus each motif in the middle of its own quadrant, with comfortable dark negative space around its edges. High quality refined isometric editorial rendering, sharp geometry, softly lit materials, cohesive restrained palette, legible silhouettes even at small sizes. Decorative only: absolutely no text, numbers, letters, emblems, labels, arrows, connectors between tiles, pseudo UI or legending. This artwork will sit beside real diagram headings; keep it clean and understated.
+-->
