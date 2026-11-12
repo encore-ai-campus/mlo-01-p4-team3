@@ -17,8 +17,10 @@ function updateChrome(root) {
   const night = root?.dataset.phase === 'night';
   const recordsButton=document.querySelector('[data-records-open]');
   const notebookButton=document.querySelector('[data-notebook-open]');
+  const alibiButton=document.querySelector('[data-alibi-grid-open]');
   if(recordsButton)recordsButton.hidden=!root?.querySelector('[data-stage-open="meeting-records"]');
   if(notebookButton)notebookButton.hidden=!root?.querySelector('#notebook');
+  if(alibiButton)alibiButton.hidden=!root?.querySelector('[data-stage-open="meeting-alibi-grid"]');
   const header = document.querySelector('.app-header');
   const slot = document.querySelector('[data-help-mascot-slot]');
   if (night) { slot?.replaceChildren(); }
@@ -388,6 +390,7 @@ document.addEventListener('click',event=>{
   }
   if(event.target.closest('[data-records-open]'))document.querySelector('[data-stage-open="meeting-records"]')?.click();
   if(event.target.closest('[data-notebook-open]'))document.querySelector('[data-stage-open="stage-notebook"]')?.click();
+  if(event.target.closest('[data-alibi-grid-open]'))document.querySelector('[data-stage-open="meeting-alibi-grid"]')?.click();
 });
 
 /* Button hover tips: the text comes from each button's title (UI_TIPS). Draw it in-page so it shows the same on every OS. */
