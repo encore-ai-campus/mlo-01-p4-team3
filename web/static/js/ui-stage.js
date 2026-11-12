@@ -8,6 +8,8 @@ function mountStage(){
  const toolbar=stage.querySelector('.stage-toolbar');
  const menuToggle=root.querySelector('[data-stage-menu-toggle]');
  const rail=root.querySelector('.vn-rail');
+ // 튜토리얼 판: 강조할 기록·행적표·수첩 버튼이 '게임 메뉴' 안에 숨지 않도록 도구 막대는 무대에 둔다(ui-tutorial.js).
+ const keepToolbar=root.hasAttribute('data-tutorial');
  const history=document.querySelector('#update-history');
  const historyAnchor=document.createComment('update-history position');
  history?.before(historyAnchor);
@@ -39,7 +41,7 @@ function mountStage(){
  menuToggle.before(toggleAnchor);
  function layout(){
   if(innerWidth<900){
-   if(toolbar.parentElement===menu){
+   if(rail.parentElement===menu){
     closeMenu();
     stage.before(toolbar);
     root.querySelector('.vn-player').before(rail);
@@ -52,8 +54,10 @@ function mountStage(){
     stage.parentElement.append(actions);
    }
   } else {
-   if(toolbar.parentElement!==menu){
-    menu.append(toolbar,rail);
+   if(keepToolbar&&toolbar.parentElement!==stage)stage.querySelector('[data-vn-actor]').after(toolbar);
+   if(rail.parentElement!==menu){
+    if(!keepToolbar)menu.append(toolbar);
+    menu.append(rail);
     if(history)menu.append(history);
     document.querySelector('.app-header .wordmark')?.after(menuToggle);
    }

@@ -1080,7 +1080,7 @@ label[data-tutorial-locked] { opacity:.5; }
 /* 12단계 미리 채운 문장(읽기 전용)은 안내 문구처럼 흐리게 보이지 않게 진한 글자로 둔다(1회차 시운전). */
 #meeting[data-tutorial] label[data-tutorial-locked]:has(> textarea[readonly]), #meeting[data-tutorial] textarea[readonly][data-tutorial-locked] { opacity:1; }
 #meeting[data-tutorial] textarea[readonly] { color:#f6ead0; font-weight:700; border:2px dashed #b8913f; background:#1d2a2f; cursor:default; }
-#meeting[data-tutorial] .vn-guide-skip, #meeting[data-tutorial] [data-vn-show-all] { display:none; }  /* 튜토리얼: 안내 건너뛰기·모두 보기(연출 끝내기, #404) 숨김 — 족제비 대사를 건너뛰지 못하게 */
+#meeting[data-tutorial] .vn-guide-skip, #meeting[data-tutorial] [data-vn-show-all] { display:none !important; }  /* 튜토리얼: 안내 건너뛰기·모두 보기(연출 끝내기, #404) 숨김 — 족제비 대사를 건너뛰지 못하게 */
 .tutorial-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 8px; font-size:14px; }
 .tutorial-bar form { margin:0; }
 .tutorial-bar a, .tutorial-bar button { min-height:36px; padding:4px 12px; display:inline-flex; align-items:center; }
@@ -2414,3 +2414,7 @@ label[data-tutorial-locked] { opacity:.5; }
  background:var(--speech-sheet);
 }
 #stage-actions #speech-cards > form > label { grid-column:1 / -1; }
+/* 튜토리얼 판(11/12, 무대 안 행동 패널 배치 뒤): 도구 막대는 무대에 남기고(ui-stage.js keepToolbar) 오른쪽 행동 패널을 덮지 않게 그 앞에서 끝낸다. */
+@media(min-width:900px) { #meeting[data-tutorial] .vn-stage > .stage-toolbar { right:calc(100% - var(--vn-action-start,67.1875%) + 12px); } }
+/* 밤에는 날·국면 표지가 무대 왼쪽 위에 겹쳐 놓이므로 튜토리얼 도구 막대를 그 아래로 내린다. */
+@media(min-width:900px) { #meeting[data-tutorial][data-phase=night] .vn-stage > .stage-toolbar { top:calc(clamp(28px,3vw,42px) + 24px); } }

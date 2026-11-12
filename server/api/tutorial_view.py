@@ -62,8 +62,13 @@ def _command_substeps(exp, say, free_text: bool) -> list[dict]:
         return [_submit(ADVANCE, say("submit"))]
     if k is CommandKind.ABSTAIN:
         return [_submit(_form("abstain") + " button[type=submit]", say("submit"))]
-    if k in (CommandKind.VOTE, CommandKind.DIVINE):
+    if k is CommandKind.VOTE:
         return [_submit(_form(k.value, exp.target) + " button[type=submit]", say("submit"))]
+    if k is CommandKind.DIVINE:
+        # 밤 점치기는 사람을 먼저 고르고(누름 표시) 아래 [점치기] 버튼으로 낸다(ui-vn.js, meeting_actions.html).
+        return [{"key": "pick", "action": "mark", "target": _form(k.value, exp.target) + " button[type=submit]",
+                 "say": say("pick")},
+                _submit("[data-divination-submit]", say("submit"))]
     if k is CommandKind.SUSPECT and tutorial.utterance_step(exp, free_text):
         return [_submit("form[data-utterance-form] button[type=submit]", say("send_text"), "send_text"),
                 _submit("#speech-cards form[data-card-confirm] button[type=submit]", say("confirm_card"), "confirm_card")]

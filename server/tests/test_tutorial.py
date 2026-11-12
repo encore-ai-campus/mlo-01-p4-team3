@@ -486,6 +486,9 @@ class TutorialWeb(TestCase):
                         if step.expected.via_utterance:
                             self.assertNotIn("data-utterance-form", html)   # 직접 입력창 끔: 입력 칸 없이 버튼으로
                             self.assertEqual([s["key"] for s in info["substeps"]], ["open_sheet", "select_target", "submit"])
+                        if step.expected.kind.value == "divine":   # 밤 점치기: 사람 고르기 → [점치기] 두 번 누름
+                            self.assertEqual([(s["key"], s["action"]) for s in info["substeps"]],
+                                             [("pick", "mark"), ("submit", "submit")])
                         view = self.command(gid, view["state_version"], cmd, 200).json()["view"]
                 self.assertEqual(view["result"]["winner"], "village")
 
