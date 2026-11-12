@@ -24,11 +24,18 @@ class SchemaError(ValueError):
         self.path = path
 
 
+# 필드 메타데이터에 이 키가 참이면 값이 None일 때 JSON에서 뺀다. 나중에 더한 선택 필드가 기존 판의 직렬화 바이트
+# (저장 문서·결정성 해시)를 바꾸지 않게 한다. 읽을 때 빠진 필드는 기본값(None)이 된다.
+OMIT_IF_NONE = "omit_if_none"
+
+
 def to_jsonable(obj: Any) -> Any:
+    """데이터클래스·열거형을 JSON으로 쓸 수 있는 값으로 바꾼다(`omit_if_none` 칸은 None이면 뺀다)."""
     if isinstance(obj, enum.Enum):
         return obj.value
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
-        return {f.name: to_jsonable(getattr(obj, f.name)) for f in dataclasses.fields(obj)}
+        return {f.name: to_jsonable(value) for f in dataclasses.fields(obj)
+                if (value := getattr(obj, f.name)) is not None or not f.metadata.get(OMIT_IF_NONE)}
     if isinstance(obj, dict):
         return {_key_to_str(k): to_jsonable(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):

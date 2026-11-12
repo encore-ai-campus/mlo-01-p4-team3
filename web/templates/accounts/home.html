@@ -12,6 +12,21 @@
   <p class="account-instructions">{% if test_round_pending and not open_blocked %}배정된 판을 아래에서 확인해 주세요.{% elif open_games %}이어 하거나 새 판을 시작할 수 있습니다.{% elif open_presets and not open_unavailable %}무당의 모습과 이번 판의 결말을 고른 뒤 시작하세요.{% else %}시작할 수 있는 판을 아래에서 확인해 주세요.{% endif %}</p>
   {% if request.user.is_staff %}<p><a href="{% url 'admin:index' %}">운영자 화면</a> · <a href="{% url 'test-sessions' %}">테스트 세션 관리</a></p>{% endif %}
   <div class="home-start-content">
+  {% if tutorial_start_token %}
+    <details class="start-mode" name="account-start" data-start-mode data-tutorial-card>
+    <summary>튜토리얼<span>처음이라면 족제비와 함께 정해진 판을 따라 해 보기</span></summary>
+    <section id="tutorial-start" class="session-card">
+      <h2>튜토리얼</h2>
+      <p>족제비가 반짝이게 표시한 버튼을 차례로 누르며 진술 비교, 캐묻기, 점치기, 투표를 익힙니다. 언제든 그만두거나 처음부터 다시 할 수 있고, 기록과 원한 단서에는 남지 않습니다.</p>
+      <form method="post" action="{{ tutorial_start_url }}">
+        {% csrf_token %}
+        <input type="hidden" name="start_token" value="{{ tutorial_start_token }}">
+        {% include 'accounts/portrait_choice.html' %}
+        <button class="start-round" title="족제비 안내를 따라 하는 연습 판을 시작합니다">튜토리얼 시작</button>
+      </form>
+    </section>
+    </details>
+  {% endif %}
   {% if open_presets or open_games or open_unavailable %}
     <details class="start-mode" name="account-start" data-start-mode{% if not test_round_pending or open_blocked %} open{% endif %}>
     <summary>일반 게임<span>자유롭게 새 판을 시작하거나 진행하던 판을 이어 하세요.</span></summary>
@@ -20,6 +35,7 @@
         {% if open_games %}<p class="open-notice"{% if open_blocked %} role="status"{% endif %}>{{ open_game_text.notice }}</p>{% endif %}
         {% if open_games and not open_presets %}<p><a href="{% url 'game-detail' game_id=open_games.0 %}">{{ open_game_text.resume }}</a></p>{% endif %}
         {% if open_presets %}
+        {% if tutorial_pending %}<p class="open-notice" data-tutorial-first>처음 한 번은 족제비 안내를 따라 하는 연습 판(튜토리얼)이 먼저 시작됩니다.{% if open_games %} 진행 중인 판은 중단되지 않습니다.{% endif %}</p>{% endif %}
         {% if open_games %}<p class="resume-first"><a class="open-resume" href="{% url 'game-detail' game_id=open_games.0 %}"{% tip "open_resume" %}>{{ open_game_text.resume }}</a></p>{% endif %}
         <form{% if not open_games %} class="open-start-form--new"{% endif %} method="post" action="{% url 'game-start' %}">
           {% csrf_token %}

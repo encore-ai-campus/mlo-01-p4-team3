@@ -48,7 +48,9 @@ def _response(request, game_id, output):
         current = game.detail(game_id, request.player_pseudonym)
         if isinstance(output, CommandOutput):
             response = _meeting_response(request, current.view if output.replayed else output.view,
-                                         current.mudang_variant, _command_status(output))
+                                         current.mudang_variant, _command_status(output),
+                                         reject=None if output.accepted or output.replayed else output.reject,
+                                         scenario_id=current.scenario_id)
             response["HX-Retarget"] = "#meeting"
             response["HX-Reswap"] = "outerHTML"
             return response

@@ -15,7 +15,8 @@ from server.infra.progress_store import MongoProgressRepository
 
 def replay_games(collection, progress, content_source, query):
     """선택된 판을 생성 순서로 읽고 각 판에 고정된 콘텐츠 버전을 사용한다."""
-    query = query | {"outbox.envelope.event_type": {"$in": sorted(PROGRESS_EVENT_TYPES)}}
+    query = query | {"outbox.envelope.event_type": {"$in": sorted(PROGRESS_EVENT_TYPES)},
+                     "state.meta.scenario_id": None}   # 칸이 없는 옛 판도 None과 일치한다
     counts = {"games": 0, "events": 0, "clues_added": 0, "endings_unlocked": 0}
     bundles = {}
     projection = {"state.meta": 1, "outbox.envelope": 1}
@@ -23,8 +24,8 @@ def replay_games(collection, progress, content_source, query):
         for game in cursor:
             meta = game["state"]["meta"]
             player = meta["player_pseudonym"]
-            if not player:
-                continue
+            if not player or meta.get("scenario_id"):
+                continue   # 시나리오(튜토리얼) 판은 진척에 반영하지 않는다(튜토리얼 설계 8절)
             version = meta["content_version"]
             if version not in bundles:
                 bundles[version] = content_source.load(version)

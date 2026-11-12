@@ -161,6 +161,15 @@ class MongoContractTests(unittest.TestCase):
         self.assertEqual(result.clues['clue.$a'].first_game_id,'first-game')
         self.assertEqual(len(result.game_ids),20)
         self.assertEqual(result.endings_unlocked,['exorcism','grudge'])
+        self.assertIsNone(result.tutorial_completed)
+        self.progress.mark_tutorial_completed(player)
+        self.progress.mark_tutorial_completed(player)
+        self.progress.add_game(player,'after-tutorial')
+        self.assertTrue(self.progress.add_clue(player,'clue.b','g',1,'event3'))   # 진척 재처리와 같은 원자 연산이 칸을 지우지 않는다
+        self.assertTrue(self.progress.unlock_ending(player,'haewon:h1','ending3'))
+        after=self.progress.load(player)
+        self.assertTrue(after.tutorial_completed)
+        self.assertEqual(len(after.game_ids),21)
 
     def test_content_versions_remain_available_and_immutable(self):
         version=uuid.uuid4().hex
