@@ -34,7 +34,11 @@
 python -B -m server.preview --port 8766
 ```
 
-브라우저에서 터미널에 출력된 로그인 주소를 열고 미리보기 계정으로 들어간다. 이 실행기는 임시 SQLite와 녹화 판을 사용한다. 실제 저장소를 연결한 개발 환경은 [로컬 Compose 안내](ops/compose/README.md), 운영 기동과 복구는 [운영 런북](ops/runbook/README.md), 세부 웹 시험은 [서버 시험 안내](server/tests/README.md)를 따른다.
+터미널에 출력된 주소를 브라우저에서 열고 미리보기 계정으로 로그인한다. 미리보기는 임시 SQLite와 녹화 판을 사용한다.
+
+- 실제 저장소를 연결하는 개발 환경은 [로컬 Compose 안내](ops/compose/README.md)를 따른다.
+- 서비스 시작과 복구는 [운영 런북](ops/runbook/README.md)을 따른다.
+- 웹 기능 검증은 [서버 시험 안내](server/tests/README.md)를 따른다.
 
 ## 시스템 아키텍처
 
@@ -49,9 +53,10 @@ python -B -m server.preview --port 8766
 
 [![상단의 접속·운영과 웹·광고, 중단의 아웃박스·Kafka·Spark, 하단의 Garage·MySQL·MongoDB를 연결한 온프레미스 구성도](docs/presentation/changgui-vm-layout.svg)](docs/presentation/changgui-vm-layout.svg)
 
-창귀는 4차 프로젝트(PJ4)다. 3차 프로젝트(PJ3)에서 사용한 물리 호스트 5대의 VM 20대를 창귀의 운영 역할에 맞춰 재배치했다. 물리 서버별 가상 서버 배치와 설치 버전을 확인할 수 있다. [가상 서버 역할](ops/runbook/vm_roles.md) · [서버별 설치 목록](ops/inventory_check.md)
+창귀는 물리 서버 5대에 가상 서버 20대를 배치했다.
 
-구성도의 배치와 공통 아이콘은 PJ3 자료에서 가져왔다. [PJ3 온프레미스 인프라 아키텍처](https://github.com/encore-ai-campus/mlo-01-p3-team3/blob/main/assets/PJ3%20%EC%98%A8%ED%94%84%EB%A0%88%EB%AF%B8%EC%8A%A4%20%EC%9D%B8%ED%94%84%EB%9D%BC%20%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.png)
+- [가상 서버별 역할과 배치](ops/runbook/vm_roles.md)
+- [서버별 설치 목록과 버전](ops/inventory_check.md)
 
 ## 기술 스택
 
@@ -102,7 +107,11 @@ p95는 요청의 95%가 이 시간 안에 응답했다는 뜻이다.
 
 ### 라우팅을 두 단계로 둔 이유
 
-팀이 같은 파일에 기능별 경로를 반복해서 적으면 실제 코드와 문서가 어긋나고 여러 PR이 같은 위치에서 충돌하기 쉽다. 루트 README에는 공용 진입점을 두고, 담당별 파일 위치는 해당 흐름의 라우팅 문서에서 관리한다. [문서화 기준 10절](docs/tasks/README.md)
+README에는 각 영역의 문서로 가는 링크를 모아 둔다. 세부 파일 위치는 영역별 라우팅 문서에서 관리한다.
+
+같은 경로를 여러 문서에 반복해서 적으면 코드가 바뀔 때 설명이 어긋나기 쉽다. 영역별로 경로를 관리하면 여러 PR이 같은 문서에서 충돌하는 일도 줄일 수 있다.
+
+[문서화 기준 10절](docs/tasks/README.md)
 
 - **코드 위치** — 아래 [영역 안내](#영역-안내) → `docs/routing/<흐름>.md`. B의 URL·API는 [서버 라우팅](server/ROUTING.md), 화면·템플릿·스크립트는 [웹 라우팅](web/ROUTING.md)으로 이어진다.
 - **기획과 설계** — [기획서](docs/paldo_design_v1.md) · [결정 기록](docs/design_notes.md) · [제품 요구](docs/prd.md) · [업무 요구](docs/brd.md)
