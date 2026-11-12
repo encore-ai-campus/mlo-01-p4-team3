@@ -574,8 +574,9 @@
 ## 11/12(목) (예외: E-12-01 LLM 작업 프로세스 지표, 11/12 사용자 결정으로 코드 동결 예외)
 
 ### E-12-01 LLM 작업 프로세스 지표 내보내기
-- 1.5h(11/12 사용자 결정으로 신설, README 7절 "확정된 결정 (11/12 사용자, 대시보드 정비)". 코드 동결 예외) · 담당 E · ⑧ 대체 검토자 C · 공동 확인: C(C-12-03 LLM 대시보드가 이 지표를 그린다) · 선행: E-10-01(복기 작업 프로세스), E-11-13(NPC 대사 작업 프로세스) · 시간 내역: 응용·인프라·작업 프로세스 연결 1h, 시험·문서 0.5h(추정, 상한 아님)
+- 1h(11/12 사용자 결정으로 신설, README 7절 "확정된 결정 (11/12 사용자, 대시보드 정비)". 코드 동결 예외) · 담당 E · ⑧ 대체 검토자 C · 공동 확인: C(C-12-03 LLM 대시보드가 이 지표를 그린다) · 선행: E-10-01(복기 작업 프로세스), E-11-13(NPC 대사 작업 프로세스) · 시간 내역: 응용·인프라·작업 프로세스 연결 0.75h, 시험 0.25h, 아래 모듈 문서 일괄 갱신 0.5h(추정, 상한 아님)
 - 문서화(+0h, 공통 ⑦, 트러블만): 문서 시간은 위 시간 안. [트러블 E](../troubles/E.md)에 `### E-12-01` 항목(없으면 "없음") · 공개 함수·클래스 docstring · 모듈 문서 [`llm`](../modules/llm.md) `설정값`·`변경 이력` 행
+- 모듈 문서 일괄 갱신(+0.5h, 공통 ⑦) · 대상: E-12-01 · 모듈: [`llm`](../modules/llm.md) · 할 일: 그날 마지막에 필수 절을 확인하고 `변경 이력`에 `| E-12-01 | 11/12 | 바뀐 점 |` 행(README 10절 검사 규칙 2)
 - 산출물: 응용 `server/app/llm_metrics.py`(결과 분류·누적·텍스트 렌더), 인프라 `server/infra/metric_file.py`(원자 교체 쓰기), 관리 명령 `npc_line_worker`·`review_worker`의 기록 호출, 설정 `PALDO_LLM_METRIC_FILE`
 - 완료 조건:
   1. 두 작업 프로세스가 Prometheus 텍스트 형식 파일을 쓴다. 지표: `paldo_llm_jobs_total{worker,outcome}`(outcome은 ok·late·rejected·error), 대기 시간·생성 시간 히스토그램 `paldo_llm_queue_wait_seconds`·`paldo_llm_generate_seconds`(버킷 1·2·5·10·20·30·60·120초), `paldo_llm_queue_depth{worker}`, `paldo_llm_worker_last_update_seconds{worker}`, 출처별 결과 단위 `paldo_llm_lines_total{worker,source}`(llm·template). 이름·라벨은 C-12-03 대시보드와의 계약이다.
