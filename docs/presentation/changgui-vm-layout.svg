@@ -26,7 +26,7 @@
 <rect x="544" y="90" width="584" height="34" rx="11" fill="url(#pill)" stroke="none" stroke-width="1.6"/>
 <text x="836" y="115" fill="#0b1945" font-size="20" font-weight="700" text-anchor="middle">VMware · 호스트 5대 · VM 20대 · AWS 확장 보류</text>
 <rect x="1453" y="63" width="199" height="34" rx="5" fill="#f8fafc" stroke="#65799a" stroke-width="1.1"/>
-<text x="1553" y="86" fill="#0b1945" font-size="14" font-weight="700" text-anchor="middle">11/11 VM 인벤토리 기준</text>
+<text x="1553" y="86" fill="#0b1945" font-size="14" font-weight="700" text-anchor="middle">내부망 가상 서버</text>
 <rect x="157" y="125" width="391" height="278" rx="9" fill="#e4f3ff" stroke="#1687ed" stroke-width="1.7"/>
 <path d="M157 162V134Q157 125 166 125H539Q548 125 548 134V162Z" fill="url(#blue)"/>
 <text x="174" y="150" fill="#ffffff" font-size="21" font-weight="700" text-anchor="start">접속·운영  (접근 관리 / 서버 관측)</text>
