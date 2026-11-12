@@ -1,0 +1,156 @@
+{
+  "task": "B-06-03",
+  "commit": "1bd953232a2de939606d023e1fc155422ad51e16",
+  "generated_at": "2026-11-12T02:44:34Z",
+  "source": "python -B out/handoff/measure_restart.py --out out/handoff/restart-measurement-final --commit 1bd953232a2de939606d023e1fc155422ad51e16",
+  "environment": {
+    "os": "win32",
+    "python": "3.14.6",
+    "django": "6.1.2",
+    "daphne": "4.2.3",
+    "mongodb": "8.3.7",
+    "account_db": "temporary SQLite file",
+    "mongo_replica_members": 1,
+    "web_processes": 1,
+    "health_poll_ms": 50,
+    "content_version": "content-1.1",
+    "rule_version": "rule-0.8.decision-2",
+    "external_models": false
+  },
+  "metrics": {
+    "rounds": {
+      "value": 5,
+      "unit": "회"
+    },
+    "same_view_successes": {
+      "value": 5,
+      "unit": "회"
+    },
+    "next_command_successes": {
+      "value": 5,
+      "unit": "회"
+    },
+    "http_5xx": {
+      "value": 0,
+      "unit": "건"
+    },
+    "stop_to_health_min_ms": {
+      "value": 2499.905,
+      "unit": "ms"
+    },
+    "stop_to_health_median_ms": {
+      "value": 2506.973,
+      "unit": "ms"
+    },
+    "stop_to_health_max_ms": {
+      "value": 2991.199,
+      "unit": "ms"
+    },
+    "stop_to_same_game_min_ms": {
+      "value": 4684.301,
+      "unit": "ms"
+    },
+    "stop_to_same_game_median_ms": {
+      "value": 4743.232,
+      "unit": "ms"
+    },
+    "stop_to_same_game_max_ms": {
+      "value": 5071.181,
+      "unit": "ms"
+    },
+    "stop_to_next_command_min_ms": {
+      "value": 4737.051,
+      "unit": "ms"
+    },
+    "stop_to_next_command_median_ms": {
+      "value": 4806.64,
+      "unit": "ms"
+    },
+    "stop_to_next_command_max_ms": {
+      "value": 5124.303,
+      "unit": "ms"
+    }
+  },
+  "trials": [
+    {
+      "round": 1,
+      "stop_requested_at_utc": "2026-11-12T02:44:05.856+00:00",
+      "stop_to_process_exit_ms": 20.571,
+      "process_exit_to_launch_ms": 257.262,
+      "launch_to_health_ms": 2713.367,
+      "stop_to_health_ms": 2991.199,
+      "stop_to_same_game_ms": 5071.181,
+      "stop_to_next_command_ms": 5124.303,
+      "health_http_status": 200,
+      "game_http_status": 200,
+      "same_view": true,
+      "next_command_persisted": true,
+      "state_version_before": 1,
+      "state_version_after": 2
+    },
+    {
+      "round": 2,
+      "stop_requested_at_utc": "2026-11-12T02:44:11.400+00:00",
+      "stop_to_process_exit_ms": 23.069,
+      "process_exit_to_launch_ms": 265.212,
+      "launch_to_health_ms": 2211.624,
+      "stop_to_health_ms": 2499.905,
+      "stop_to_same_game_ms": 4743.232,
+      "stop_to_next_command_ms": 4806.64,
+      "health_http_status": 200,
+      "game_http_status": 200,
+      "same_view": true,
+      "next_command_persisted": true,
+      "state_version_before": 1,
+      "state_version_after": 2
+    },
+    {
+      "round": 3,
+      "stop_requested_at_utc": "2026-11-12T02:44:17.215+00:00",
+      "stop_to_process_exit_ms": 23.702,
+      "process_exit_to_launch_ms": 261.058,
+      "launch_to_health_ms": 2220.301,
+      "stop_to_health_ms": 2505.061,
+      "stop_to_same_game_ms": 4692.415,
+      "stop_to_next_command_ms": 4766.939,
+      "health_http_status": 200,
+      "game_http_status": 200,
+      "same_view": true,
+      "next_command_persisted": true,
+      "state_version_before": 1,
+      "state_version_after": 2
+    },
+    {
+      "round": 4,
+      "stop_requested_at_utc": "2026-11-12T02:44:22.989+00:00",
+      "stop_to_process_exit_ms": 20.946,
+      "process_exit_to_launch_ms": 262.813,
+      "launch_to_health_ms": 2223.214,
+      "stop_to_health_ms": 2506.973,
+      "stop_to_same_game_ms": 4803.547,
+      "stop_to_next_command_ms": 4877.602,
+      "health_http_status": 200,
+      "game_http_status": 200,
+      "same_view": true,
+      "next_command_persisted": true,
+      "state_version_before": 1,
+      "state_version_after": 2
+    },
+    {
+      "round": 5,
+      "stop_requested_at_utc": "2026-11-12T02:44:28.939+00:00",
+      "stop_to_process_exit_ms": 21.604,
+      "process_exit_to_launch_ms": 259.113,
+      "launch_to_health_ms": 2237.476,
+      "stop_to_health_ms": 2518.193,
+      "stop_to_same_game_ms": 4684.301,
+      "stop_to_next_command_ms": 4737.051,
+      "health_http_status": 200,
+      "game_http_status": 200,
+      "same_view": true,
+      "next_command_persisted": true,
+      "state_version_before": 1,
+      "state_version_after": 2
+    }
+  ]
+}
