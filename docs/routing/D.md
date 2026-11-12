@@ -27,6 +27,7 @@
 | 모델 교체·승격·롤백 | `docs/contracts/ml_lifecycle.md` |
 | 사람 의도 재학습·대역 봇 보정·격리 롤백 | `tools/demo_retrain.sh`, `ml/suspicion/player_calibration.py`, `ml/lifecycle_demo.py`, [D-10-01 증빙](../evidence/D-10-01.md) |
 | 평가 관문·전략 밴딧 배치·B/C 연결 | `ml/gate.py`, `ml/bandit.py`, `ml/mongo_bandit.py`, `docs/reports/D-09-02-handoff.md`, 증빙 `docs/evidence/D-09-02.md` |
+| 씐 자 전략 밴딧 운영 연결(판 시작 팔 고정·하루 갱신·삭제 연결) | 확정 팔 `ml/bandit_arms.json`(데이터) · 규칙 `ml/bandit.py`(도메인) · 판 시작 고정 `server/app/model_versions.py` `BanditPinning`(응용) · Mongo 읽기·혼합 공급자·갱신 조립 `server/infra/possessed_bandit.py`(인프라) · 엔진 연결 `server/infra/game_factory.py` · 하루 갱신 명령 `server/accounts/management/commands/possessed_bandit_update.py`(표현) · 시험 `server/tests/test_possessed_bandit.py`, `tests/test_bandit_arms.py` · 증빙 `docs/evidence/D-12-05.md` |
 | 로컬 BERT IntentParser 주입 | `intent/bert.py`, `intent/README.md`, `docs/reports/D-09-02-handoff.md` |
 | 씐 자 모델 로컬 첫 학습·평가 | `ml/suspicion/features.py`(실제 엔진→TrainingRow), `train.py`(게임 분할·학습·MLflow), `evaluate.py`(softmax·지표), `tests/test_suspicion.py`, `docs/evidence/D-07-02.md` |
 | 학습 미사용 씐 자 전략 평가 | `ml/suspicion/strategies.py`(거짓 행적 유형 고정), `train.py --heldout-rows`(판·seed 분리 및 별도 지표) |

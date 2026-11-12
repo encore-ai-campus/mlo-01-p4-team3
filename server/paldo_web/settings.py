@@ -67,6 +67,9 @@ MLFLOW_MODEL_CACHE = os.environ.get("PALDO_MLFLOW_MODEL_CACHE", "mlruns")
 SUSPICION_MODEL_VERSION = os.environ.get("PALDO_SUSPICION_MODEL_VERSION", "").strip()
 # 신뢰된 로컬 모델 산출물 폴더(`models.pkl`·`report.json`, D-08-04 인계 형식). 상대 경로는 웹 작업 폴더 기준.
 SUSPICION_MODEL_ROOT = os.environ.get("PALDO_MLRUNS_ROOT", "mlruns")
+# 씐 자 전략 밴딧(D-09-02, 11/12 운영 연결). "on"·"1"·"true"면 새 일반 사람 판에 게시된 밴딧 버전과 팔을 고정한다.
+# 비어 있거나 다른 값이면 끔(기존 균등 혼합). 끄더라도 이미 팔을 고정한 판은 그 팔로 끝까지 간다.
+POSSESSED_BANDIT = os.environ.get("PALDO_POSSESSED_BANDIT", "").strip().lower() in {"on", "1", "true"}
 # 복기 해설 LLM 요약(E-10-01). 생성 서버(OpenAI 호환) 주소, 예: 게임 서버에서 생성 기기로 가는 터널의 로컬 끝
 # `http://127.0.0.1:<port>`. 비어 있으면 기능 꺼짐(작업 미등록·템플릿 해설만·Kanana 표기 숨김). 실제 값은 저장소 밖.
 REVIEW_LLM_URL = os.environ.get("PALDO_REVIEW_LLM_URL", "").strip()
@@ -78,6 +81,9 @@ NPC_LLM_URL = os.environ.get("PALDO_NPC_LLM_URL", "").strip()
 # 운영 설정 문서(`<접두어>ops_settings`의 `npc_llm`)가 없을 때 쓰는 모드: off | polish | live. 코드 기본값 off.
 # 재배포 없이 바꿀 때는 관리 명령 `npc_llm_mode`를 쓴다.
 NPC_LLM_MODE = os.environ.get("PALDO_NPC_LLM_MODE", "off").strip()
+# LLM 작업 프로세스 지표 파일(E-12-01, Prometheus 텍스트 형식). 비면 쓰지 않는다. `{worker}`는 npc_line·review로
+# 바뀌고, 없으면 파일 이름 앞에 `<worker>_`를 붙인다. 수집 폴더는 운영(C-12-03)이 정한다.
+LLM_METRIC_FILE = os.environ.get("PALDO_LLM_METRIC_FILE", "").strip()
 # D-10-03의 공개 특징 전용 로지스틱 JSON. 비어 있으면 복기 승률 예측을 생략한다.
 WIN_PROBABILITY_MODEL = os.environ.get("PALDO_WIN_PROBABILITY_MODEL", "").strip()
 INSTALLED_APPS = [

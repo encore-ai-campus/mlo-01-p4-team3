@@ -124,6 +124,7 @@
   - 해금 확인은 단서를 새로 얻지 않은 호출에서도 한다. 단서 저장 뒤 해금 전에 멈춘 경우도 재처리로 열린다.
 - 프리셋별 최소 콘텐츠는 `required_counts(preset)`로 정한다. 주민 풀은 `n_active` 이상이어야 한다. 비밀은 `n_secret` 이상이어야 하며, 배정 검증기를 통과하는 조합이 있어야 한다.
 - 콘텐츠 버전: 판은 시작할 때 `content_version`을 고정한다(`GameMeta`). 진행 중인 판은 끝날 때까지 그 버전으로 진행한다. 따라서 `ContentSource`는 진행 중인 판이 쓰는 이전 버전을 계속 제공해야 한다. 판 밖 상태는 `clue_id`로 쌓이므로, 단서 ID는 버전이 바뀌어도 유지한다(삭제 금지, 폐기 표시만 허용).
+- 모델 버전: 판은 시작할 때 `GameMeta.model_versions`(문자열 → 문자열)를 고정하고 끝날 때까지 바꾸지 않는다([ml_lifecycle.md](ml_lifecycle.md) 4절). 키는 `intent`·`suspicion`(의도 해석·의심 모델 버전), `bandit`·`bandit_arm`(씐 자 전략 밴딧 버전과 그 판의 팔, 11/12 D-12-05)이다. 밴딧 키가 없으면 씐 자는 기존 균등 혼합으로 둔다. 이벤트 봉투의 `model_versions`는 이 값을 그대로 싣는다([events.md](events.md)).
 
 ## 10. 배정 검증기 (`validate_assignment`)
 판 시작 시 엔진이 시드로 만든 배정(`Assignment`)을 검사한다. 위반이 나오면 다른 시드로 다시 뽑는다. 위반 코드는 다음과 같다.

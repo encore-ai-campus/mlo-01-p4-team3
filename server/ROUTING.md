@@ -44,7 +44,7 @@ B-06-04 비노출 검증: 가입·로그인 → 기존 `/games`·명령 → `GET
 
 B-06-02 시험 진입점은 `tools/perf/api_bench.py` → `server/tests/api_bench.py` → 기존 `/games`·`/games/{id}/commands` → 실제 Mongo 조립이다. URL·운영 핸들러는 바꾸지 않는다. `server/tests/mongo_commands.py`는 같은 API의 실제 저장·20개 경합을 검사한다.
 
-운영 팩토리는 `server.infra.game_factory.build_game_service` → `paldo_web/mongo.py` 실행 자원 → `infra/interaction_store.py` 보조 저장을 연결한다. B-09-01: 판 시작 모델 버전 고정·카나리아 규칙은 응용 `app/model_versions.py`, 레지스트리 조회는 인프라 `infra/model_registry.py`(C-09-01 전 임시 `StaticModelRegistry`), 폴백 지표는 `paldo_web/engine_metrics.py`, 업데이트 내역 패널은 `game.html`의 `update_history.html`(태그 `update_history`). B-06-02 시험 조립과 분리되며 설정·실행 순서는 [웹 모듈](../docs/modules/web.md#사용법)에 있다.
+운영 팩토리는 `server.infra.game_factory.build_game_service` → `paldo_web/mongo.py` 실행 자원 → `infra/interaction_store.py` 보조 저장을 연결한다. B-09-01: 판 시작 모델 버전 고정·카나리아 규칙은 응용 `app/model_versions.py`, 씐 자 전략 밴딧(D-12-05) 팔 고정은 같은 파일의 `BanditPinning` → 인프라 `infra/possessed_bandit.py`(Mongo 상태 읽기·판 기록 팔 복원·하루 갱신 조립, 명령 `manage.py possessed_bandit_update`, 스위치 `PALDO_POSSESSED_BANDIT`), 레지스트리 조회는 인프라 `infra/model_registry.py`(C-09-01 전 임시 `StaticModelRegistry`), 폴백 지표는 `paldo_web/engine_metrics.py`, 업데이트 내역 패널은 `game.html`의 `update_history.html`(태그 `update_history`). B-06-02 시험 조립과 분리되며 설정·실행 순서는 [웹 모듈](../docs/modules/web.md#사용법)에 있다.
 
 `POST /admin/sessions` → `app/test_sessions.py`는 최신 엔진의 합성 규칙 버전(`rule-0.8.decision-2`, 11/10 A-10-01 rule-0.8)을 회차와 판 메타에 그대로 전달한다. `tests/test_sessions.py`가 등록·시작과 잘못된 버전 거부를 확인한다.
 

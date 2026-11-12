@@ -4,7 +4,7 @@ import json
 import time
 from dataclasses import asdict
 
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Count
 
 from ads.app.beacon import EventResult, _process_event
@@ -63,7 +63,13 @@ def _event_fields(eid, rid, record, snapshot, received, occurred):
 
 
 def _lock_session(session_id, synthetic):
-    return AdSession.objects.select_for_update().get_or_create(pk=_digest(session_id, synthetic))[0]
+    key = _digest(session_id, synthetic)
+    # 중복 INSERT의 공유 잠금 승격 대신 생성·기존 행 모두 처음부터 배타 잠금을 잡는다.
+    table = connection.ops.quote_name(AdSession._meta.db_table)
+    with connection.cursor() as cursor:
+        cursor.execute(f"INSERT INTO {table} (session_id, last_click_ms) VALUES (%s, NULL) "
+                       "ON DUPLICATE KEY UPDATE session_id = session_id", [key])
+    return AdSession.objects.get(pk=key)
 
 
 class MySQLAdStore:

@@ -99,6 +99,9 @@ class Command(BaseCommand):
                 raise CommandError("privacy_plan_player_mismatch")
             if stage == "purge-games":
                 result = purge_games(database, player, plan["game_ids"])
+                # 씐 자 전략 밴딧 상태에 반영된 판도 같은 단계에서 뺀다(11/12 운영 연결, 다시 실행해도 같음).
+                from server.infra.possessed_bandit import forget_bandit_games
+                result["bandit_games_forgotten"] = forget_bandit_games(database, plan["game_ids"])
             elif stage == "purge-ad-mapping":
                 if not options["external_deletions_verified"]:
                     raise CommandError("privacy_external_verification_required")
