@@ -14,16 +14,15 @@
 6. [부하 측정 결과](#부하-측정-결과)
 7. [코드와 문서 찾기](#코드와-문서-찾기)
 8. [변경 제출과 병합](#변경-제출과-병합)
+9. [한 줄 회고](#한-줄-회고)
 
 ## 구현 현황
 
-| 영역 | 저장소에서 확인할 수 있는 기능 | 문서 |
-|---|---|---|
-| 플레이 | 가입·로그인, 족제비 튜토리얼, 일반 판과 배정 회차, 진행 중인 판 이어 하기 | [웹 모듈](docs/modules/web.md), [튜토리얼 증빙](docs/evidence/E-11-14.md) |
-| 추리 | 회의·진술표·행적표·수첩·투표·밤 점치기, 주민 대사와 표정 연출 | [웹 라우팅](web/ROUTING.md), [웹 디자인](web/DESIGN.md) |
-| 결과와 진척 | 결과·복기·원한 단서·공개 기록·설문 5개 탭, 단서 수집과 퇴마·한풀이 결말 | [웹·게임 검증](docs/evidence/B-11-01.md) |
-| 모델과 데이터 | NPC의 의심 판단과 의도 해석, 이벤트 수집·집계, 모델 평가·승격·롤백 경로 | [ML](docs/modules/ml.md), [데이터 파이프라인](docs/modules/pipeline.md), [모델 운영](docs/modules/ml_ops.md) |
-| 광고와 운영 | 홈·결과·복기 광고 지면, 별도 광고 관리자, Prometheus·Grafana 대시보드 | [광고 연동 검증](docs/evidence/D-12-04.md), [운영 모듈](docs/modules/ops.md) |
+- **플레이** — 가입·로그인, 족제비 튜토리얼, 일반 판과 배정 회차, 진행 중인 판 이어 하기. [웹 모듈](docs/modules/web.md), [튜토리얼 증빙](docs/evidence/E-11-14.md)
+- **추리** — 회의·진술표·행적표·수첩·투표·밤 점치기, 주민 대사와 표정 연출. [웹 라우팅](web/ROUTING.md), [웹 디자인](web/DESIGN.md)
+- **결과와 진척** — 결과·복기·원한 단서·공개 기록·설문 5개 탭, 단서 수집과 퇴마·한풀이 결말. [웹·게임 검증](docs/evidence/B-11-01.md)
+- **모델과 데이터** — NPC의 의심 판단과 의도 해석, 이벤트 수집·집계, 모델 평가·승격·롤백 경로. [ML](docs/modules/ml.md), [데이터 파이프라인](docs/modules/pipeline.md), [모델 운영](docs/modules/ml_ops.md)
+- **광고와 운영** — 홈·결과·복기 광고 지면, 별도 광고 관리자, Prometheus·Grafana 대시보드. [광고 연동 검증](docs/evidence/D-12-04.md), [운영 모듈](docs/modules/ops.md)
 
 일반 로비의 공개 프리셋은 6인 기본 판(`base6`)이다. 8인 판 완주와 한풀이 결말은 별도의 로컬 검증 기록이 있다. 직접 입력은 기본 꺼짐이며, 복기 해설 생성과 NPC 대사 LLM도 환경과 모드 설정에 따라 동작한다. [공개 프리셋](server/app/presets_enabled.json) · [서버 라우팅](server/ROUTING.md)
 
@@ -83,13 +82,11 @@ python -B -m server.preview --port 8766
 
 게임과 광고 서비스는 아웃박스에 이벤트를 기록한 뒤 Kafka로 발행한다. Spark는 Delta Bronze에 원본을 보존하고, 게임 Silver에 종료 라벨을 붙여 마을 관찰자의 학습 행을 JSON으로 내보낸다. 광고 Gold는 성과와 CTR을 집계하고 MySQL 원장과 대조한다. [파이프라인](docs/modules/pipeline.md) · [학습 내보내기와 광고 집계](pipeline/README.md)
 
-| 단계 | 구현 및 확인 내용 |
-|---|---|
-| 데이터와 재현 | 게임·선택·설문 이벤트를 적재한다. 학습용 사람 판과 시뮬레이션을 구분하고, 시드·데이터 버전·특징 버전을 기록한다. [데이터 흐름](docs/modules/pipeline.md) |
-| 학습과 관문 | 규칙 기준선·후보 모델을 비교한다. 의심 모델은 로그 손실·보정·게임 결과 등의 관문을 거치며, 실행과 아티팩트는 MLflow와 Garage에 남긴다. [모델 모듈](docs/modules/ml.md) · [수명주기 계약](docs/contracts/ml_lifecycle.md) |
-| 적용과 복구 | 로지스틱 의심 모델을 활성화한 웹 프로세스에서 직접 추론한다. 판 시작 시 모델 버전을 고정하고, 응답 지연이나 실패 때 규칙 판단으로 돌아간다. 판 단위 카나리아 배정과 롤백 경로를 갖추고 있다. [추론 검증](docs/evidence/D-08-01.md) · [롤백 런북](ops/runbook/rollback.md) |
-| 운영 야간 재학습 | `app-01`의 systemd 타이머로 동의한 사람 판을 학습한다. 관문을 통과한 후보를 등록한 뒤 설치·전환·상태 확인을 수행하고, 실패하면 직전 모델로 복원한다. 정기 재학습에서는 품질 기준에 못 미친 후보를 적용하지 않았다. 별도 진단 시험에서는 전환 뒤 직전 모델로 복원했다. 카나리아·대조 각 30판의 운영 증빙은 후속 범위다. [야간 실측](docs/evidence/D-10-01.md#1112-운영-야간-경로-반영) |
-| 추가 모델과 관측 | 씐 자 전략 밴딧의 판 단위 버전 고정과 일일 갱신을 로컬에서 검증했다. 운영 실행 증빙은 후속 범위다. LLM 작업자의 대기·생성·처리량 지표를 내보내는 기능도 로컬에서 검증했다. [밴딧](docs/evidence/D-12-05.md) · [LLM 작업자 지표](docs/evidence/E-12-01.md) |
+- **데이터와 재현** — 게임·선택·설문 이벤트를 적재한다. 학습용 사람 판과 시뮬레이션을 구분하고, 시드·데이터 버전·특징 버전을 기록한다. [데이터 흐름](docs/modules/pipeline.md)
+- **학습과 관문** — 규칙 기준선·후보 모델을 비교한다. 의심 모델은 로그 손실·보정·게임 결과 등의 관문을 거치며, 실행과 아티팩트는 MLflow와 Garage에 남긴다. [모델 모듈](docs/modules/ml.md) · [수명주기 계약](docs/contracts/ml_lifecycle.md)
+- **적용과 복구** — 로지스틱 의심 모델을 활성화한 웹 프로세스에서 직접 추론한다. 판 시작 시 모델 버전을 고정하고, 응답 지연이나 실패 때 규칙 판단으로 돌아간다. 판 단위 카나리아 배정과 롤백 경로를 갖추고 있다. [추론 검증](docs/evidence/D-08-01.md) · [롤백 런북](ops/runbook/rollback.md)
+- **운영 야간 재학습** — `app-01`의 systemd 타이머로 동의한 사람 판을 학습한다. 관문을 통과한 후보를 등록한 뒤 설치·전환·상태 확인을 수행하고, 실패하면 직전 모델로 복원한다. 정기 재학습에서는 품질 기준에 못 미친 후보를 적용하지 않았다. 별도 진단 시험에서는 전환 뒤 직전 모델로 복원했다. 카나리아·대조 각 30판의 운영 증빙은 후속 범위다. [야간 실측](docs/evidence/D-10-01.md#1112-운영-야간-경로-반영)
+- **추가 모델과 관측** — 씐 자 전략 밴딧의 판 단위 버전 고정과 일일 갱신을 로컬에서 검증했다. 운영 실행 증빙은 후속 범위다. LLM 작업자의 대기·생성·처리량 지표를 내보내는 기능도 로컬에서 검증했다. [밴딧](docs/evidence/D-12-05.md) · [LLM 작업자 지표](docs/evidence/E-12-01.md)
 
 ## 부하 측정 결과
 
@@ -107,13 +104,11 @@ p95는 요청의 95%가 이 시간 안에 응답했다는 뜻이다.
 
 팀이 같은 파일에 기능별 경로를 반복해서 적으면 실제 코드와 문서가 어긋나고 여러 PR이 같은 위치에서 충돌하기 쉽다. 루트 README에는 공용 진입점을 두고, 담당별 파일 위치는 해당 흐름의 라우팅 문서에서 관리한다. [문서화 기준 10절](docs/tasks/README.md)
 
-| 찾는 내용 | 읽는 순서 |
-|---|---|
-| 수정할 코드가 어디 있는가 | 아래 [영역 안내](#영역-안내) → `docs/routing/<흐름>.md`. B의 URL·API는 [서버 라우팅](server/ROUTING.md), 화면·템플릿·스크립트는 [웹 라우팅](web/ROUTING.md)으로 이어진다. |
-| 동작과 구조를 왜 이렇게 정했는가 | [기획서](docs/paldo_design_v1.md) · [결정 기록](docs/design_notes.md) · [제품 요구](docs/prd.md) · [업무 요구](docs/brd.md) |
-| 여러 영역이 지켜야 할 약속은 무엇인가 | [계약 색인](docs/contracts/README.md) → [폴더 구조](docs/contracts/structure.md) · [영역 간 통합](docs/contracts/integration.md) |
-| 기능을 어떻게 실행하고 무엇을 확인했는가 | [모듈 문서](docs/modules/README.md) · [태스크·완료 기준](docs/tasks/README.md) · [증빙](docs/evidence/) · [트러블 기록](docs/troubles/) |
-| 담당과 발표 자료는 어디 있는가 | [팀 일정과 역할](docs/team_plan.md) · [웹 발표 자료](docs/presentation/B.md) · [인프라 발표 자료](docs/presentation/C.md) · [리포트](docs/reports/) |
+- **코드 위치** — 아래 [영역 안내](#영역-안내) → `docs/routing/<흐름>.md`. B의 URL·API는 [서버 라우팅](server/ROUTING.md), 화면·템플릿·스크립트는 [웹 라우팅](web/ROUTING.md)으로 이어진다.
+- **기획과 설계** — [기획서](docs/paldo_design_v1.md) · [결정 기록](docs/design_notes.md) · [제품 요구](docs/prd.md) · [업무 요구](docs/brd.md)
+- **공통 계약** — [계약 색인](docs/contracts/README.md) → [폴더 구조](docs/contracts/structure.md) · [영역 간 통합](docs/contracts/integration.md)
+- **실행과 검증** — [모듈 문서](docs/modules/README.md) · [태스크·완료 기준](docs/tasks/README.md) · [증빙](docs/evidence/) · [트러블 기록](docs/troubles/)
+- **담당과 발표 자료** — [팀 일정과 역할](docs/team_plan.md) · [웹 발표 자료](docs/presentation/B.md) · [인프라 발표 자료](docs/presentation/C.md) · [리포트](docs/reports/)
 
 ## 계층과 의존 방향
 
@@ -191,12 +186,10 @@ server/infra (인프라) → engine (포트 구현)
 
 ### 이 규칙을 사용하는 이유
 
-| 규칙 | 프로젝트에서 필요한 이유 |
-|---|---|
-| 로컬 검사와 pre-push 훅 | 조직 공용 GitHub Actions 사용량을 아끼면서 구조·비밀정보·관련 테스트·문서·증빙을 푸시 전에 검사한다. 훅은 코드와 파일을 검사하고, PR 본문 검사는 작성자가 별도로 실행한다. |
-| PR 하나에 태스크 하나 | 이슈 완료 조건을 해당 변경과 증빙에 연결한다. 모두 충족했으면 본문의 `Closes #<번호>`, 일부 검증이 남아 있으면 `Refs #<번호>`로 상태를 전달한다. |
-| 리뷰 후 merge commit | 변경 책임과 검증 시점을 확인하고, 증빙이 참조하는 커밋 SHA를 통합 브랜치 이력에 보존한다. |
-| 통합과 배포 브랜치 | `dev`에서 여러 영역의 변경을 먼저 검증한다. `main`은 PM이 검증을 마친 배포 후보를 승격할 때 갱신한다. |
+- **로컬 검사와 pre-push 훅** — 조직 공용 GitHub Actions 사용량을 아끼면서 구조·비밀정보·관련 테스트·문서·증빙을 푸시 전에 검사한다. 훅은 코드와 파일을 검사하고, PR 본문 검사는 작성자가 별도로 실행한다.
+- **PR 하나에 태스크 하나** — 이슈 완료 조건을 해당 변경과 증빙에 연결한다. 모두 충족했으면 본문의 `Closes #<번호>`, 일부 검증이 남아 있으면 `Refs #<번호>`로 상태를 전달한다.
+- **리뷰 후 merge commit** — 변경 책임과 검증 시점을 확인하고, 증빙이 참조하는 커밋 SHA를 통합 브랜치 이력에 보존한다.
+- **통합과 배포 브랜치** — `dev`에서 여러 영역의 변경을 먼저 검증한다. `main`은 PM이 검증을 마친 배포 후보를 승격할 때 갱신한다.
 
 ### 공용 도구
 
@@ -216,3 +209,21 @@ python -m tools.tasks_to_issues --hours                   # 흐름별 일별 시
 <!-- 구성도 머리글 일러스트 · Codex 내장 이미지 생성 도구
 Use case: productivity-visual. Create a premium editorial technical illustration atlas for a Korean mystery game’s engineering README. Square canvas, precisely four equal rectangular image tiles as a 2×2 contact sheet without gutters, exact separation at the vertical and horizontal midpoints. All tiles use the same clean midnight navy background (#10263a), antique brass accents and restrained icy teal light. Top left: a small Korean hanok village eave and warm lantern integrated with a precise architectural section of a modern server rack. Top right: five compact abstract server rack units arranged in a clean, orthogonal isometric composition. Bottom left: an organized stack of glass-and-metal modules and a processor on a dark workbench. Bottom right: a set of data layers beneath a few restrained, smooth teal signal traces, with a single amber highlight. Focus each motif in the middle of its own quadrant, with comfortable dark negative space around its edges. High quality refined isometric editorial rendering, sharp geometry, softly lit materials, cohesive restrained palette, legible silhouettes even at small sizes. Decorative only: absolutely no text, numbers, letters, emblems, labels, arrows, connectors between tiles, pseudo UI or legending. This artwork will sit beside real diagram headings; keep it clean and understated.
 -->
+
+## 한 줄 회고
+
+**신성민** · C 인프라
+
+> 작성 예정
+
+**김영주** · B 웹·API
+
+> 작성 예정
+
+**이여찬** · A·E 게임 엔진·PM
+
+> 작성 예정
+
+**이형인** · D ML·광고
+
+> 작성 예정
