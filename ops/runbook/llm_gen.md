@@ -86,5 +86,6 @@ E-10-13(템플릿 변형 사전 생성)에서 캐묻기 반응·복기 해설 �
 | 요청 | 줄마다 `/v1/chat/completions` 1회. 다듬기 최대 64토큰·요청 제한 10초, 실시간은 마감(기본 3000ms, 11/11 실측으로 확정)까지. 프롬프트 캐시(`cache_prompt`) 켬 |
 | 저장 | Mongo `<접두어>npc_line_jobs`(줄당 문서 1개). 판 삭제(`privacy_game_cleanup`)가 같이 지운다. 본문은 이 문서에만 있고 로그·이벤트에 없다 |
 | 확인 | `npc_llm_mode show`, 작업 프로세스 로그 `npc_line_worker`의 `status`(done·rejected·failed·closed). 회의 대사창에서 NPC 발언 앞에 말투 감탄사가 붙으면 다듬기가 도는 것이다 |
+| 지표 | `PALDO_LLM_METRIC_FILE`(예 `<수집 폴더>/paldo_llm_{worker}.prom`)을 두 작업 프로세스에 주면 작업마다·대기 중 60초마다 `paldo_llm_*` 지표 파일을 쓴다(E-12-01). 결과 대응: NPC done→ok, discarded·failed(timeout)→late, rejected→rejected, failed(그 밖)→error, closed(모드 off)는 세지 않음. 복기 done 저장→ok, done 저장 못 함·timeout→late, failed→error. `paldo_llm_lines_total{source}`는 화면에 나간 출처(NPC 대사는 줄: ok만 llm, late·rejected·error는 template / 복기는 저장된 해설의 NPC별 LLM·템플릿 수)라 문장 단위 대체 비율을 본다. 작업 꺼내기·처리 중 예외(저장소 장애 포함)는 작업 건수가 아닌 `paldo_llm_worker_loop_errors_total`로 센다. 수집 폴더는 C-12-03 |
 | 켜기 순서 | 배포(코드 기본 off) → `npc_line_worker` 상시 실행 → 웹·작업 프로세스에 `PALDO_NPC_LLM_URL` 설정 → `npc_llm_mode polish`(표본 30개는 11/11 승인됨) → `npc_llm_mode show`로 polish 확인 → 운영 비밀 파일 `PALDO_NPC_LLM_MODE=polish`(설정 문서가 없어져도 polish). live는 켜지 않는다 |
 

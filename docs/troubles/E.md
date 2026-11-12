@@ -237,3 +237,6 @@
 - 원인: ① gold `--ledger`·`--budgets` 입력을 만드는 명령이 시험 코드(`ops/ad_probe.py`, 합성 실행 범위) 안에만 있었다. ② `--export-optimization`의 `ctr.json`은 맥락 학습 행(`campaign_id`·`valid_impressions` 없음, 프리셋·승패로 칸이 쪼개짐)이라 `build_ctr`가 "invalid aggregate cell"로 거부한다. 이 경로를 잇는 시험이 없었다. ③ 단계를 순서대로 부르는 예약 작업이 없었다.
 - 대응: `ad_export_ledger` 명령(원장 전체·날짜별 일 예산), 같은 silver snapshot에서 `ctr_cells.json`을 쓰는 `ads_contract.ctr_cells`(확정 마감 지난 날·유효·부하 시험 제외, serve 하나 한 번), ad-01에서 단계를 부르는 `ops/ads_aggregate.sh`와 매일 00:40 timer. 운영 중 원장 내보내기 시점과 silver 관찰 시각이 어긋나거나 재판정 환입이 늦게 붙어 대조가 깨지지 않도록, silver(재판정 발행)를 먼저 돌리고 기다린 뒤 원장을 내보내며 gold 대조는 확정 마감이 지난 날만 본다(`--reconcile-closed-days`, Codex 지적 반영). 실패하면 CTR 갱신을 하지 않는다. `ctr.json`은 `ml.ad_ctr`가 쓰므로 그대로 뒀다.
 - 결과: `tests.contract.test_ads_aggregate` 10개(학습 행이 `build_ctr`에 거부되는 이전 결함 재현 포함) 통과, 작업 스크립트 드라이런으로 ①~⑤ 명령 순서와 실패 시 ⑤ 생략 확인. 운영 첫 실행은 Spark 서버 전달 수단(C) 확인 뒤.
+
+### E-12-01
+- 없음

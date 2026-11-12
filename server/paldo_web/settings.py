@@ -78,6 +78,9 @@ NPC_LLM_URL = os.environ.get("PALDO_NPC_LLM_URL", "").strip()
 # 운영 설정 문서(`<접두어>ops_settings`의 `npc_llm`)가 없을 때 쓰는 모드: off | polish | live. 코드 기본값 off.
 # 재배포 없이 바꿀 때는 관리 명령 `npc_llm_mode`를 쓴다.
 NPC_LLM_MODE = os.environ.get("PALDO_NPC_LLM_MODE", "off").strip()
+# LLM 작업 프로세스 지표 파일(E-12-01, Prometheus 텍스트 형식). 비면 쓰지 않는다. `{worker}`는 npc_line·review로
+# 바뀌고, 없으면 파일 이름 앞에 `<worker>_`를 붙인다. 수집 폴더는 운영(C-12-03)이 정한다.
+LLM_METRIC_FILE = os.environ.get("PALDO_LLM_METRIC_FILE", "").strip()
 # D-10-03의 공개 특징 전용 로지스틱 JSON. 비어 있으면 복기 승률 예측을 생략한다.
 WIN_PROBABILITY_MODEL = os.environ.get("PALDO_WIN_PROBABILITY_MODEL", "").strip()
 INSTALLED_APPS = [
