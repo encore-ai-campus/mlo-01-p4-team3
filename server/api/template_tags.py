@@ -17,7 +17,7 @@ def village_guide():
     return village_assets()
 
 
-MODEL_LABELS = {"intent": "의도 해석", "suspicion": "의심 판단", "bandit": "광고 배치"}
+MODEL_LABELS = {"intent": "의도 해석", "suspicion": "의심 판단", "bandit": "씐 자 전략"}
 STAGE_LABELS = {"canary": "시험 적용", "previous": "이전 버전"}
 
 

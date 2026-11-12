@@ -1,0 +1,290 @@
+{
+ "routine:contradicted:counter": {
+  "answer_intent": {
+   "counter": 1.0
+  },
+  "frame_target": {
+   "contradicted": 1.0
+  },
+  "lie_type": {
+   "routine": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "routine:contradicted:evade": {
+  "answer_intent": {
+   "evade": 1.0
+  },
+  "frame_target": {
+   "contradicted": 1.0
+  },
+  "lie_type": {
+   "routine": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "routine:contradicted:explain": {
+  "answer_intent": {
+   "explain": 1.0
+  },
+  "frame_target": {
+   "contradicted": 1.0
+  },
+  "lie_type": {
+   "routine": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "routine:mudang:counter": {
+  "answer_intent": {
+   "counter": 1.0
+  },
+  "frame_target": {
+   "mudang": 1.0
+  },
+  "lie_type": {
+   "routine": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "routine:mudang:evade": {
+  "answer_intent": {
+   "evade": 1.0
+  },
+  "frame_target": {
+   "mudang": 1.0
+  },
+  "lie_type": {
+   "routine": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "routine:mudang:explain": {
+  "answer_intent": {
+   "explain": 1.0
+  },
+  "frame_target": {
+   "mudang": 1.0
+  },
+  "lie_type": {
+   "routine": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "routine:suspected:counter": {
+  "answer_intent": {
+   "counter": 1.0
+  },
+  "frame_target": {
+   "suspected": 1.0
+  },
+  "lie_type": {
+   "routine": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "routine:suspected:evade": {
+  "answer_intent": {
+   "evade": 1.0
+  },
+  "frame_target": {
+   "suspected": 1.0
+  },
+  "lie_type": {
+   "routine": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "routine:suspected:explain": {
+  "answer_intent": {
+   "explain": 1.0
+  },
+  "frame_target": {
+   "suspected": 1.0
+  },
+  "lie_type": {
+   "routine": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "unrefuted:contradicted:counter": {
+  "answer_intent": {
+   "counter": 1.0
+  },
+  "frame_target": {
+   "contradicted": 1.0
+  },
+  "lie_type": {
+   "unrefuted": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "unrefuted:contradicted:evade": {
+  "answer_intent": {
+   "evade": 1.0
+  },
+  "frame_target": {
+   "contradicted": 1.0
+  },
+  "lie_type": {
+   "unrefuted": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "unrefuted:contradicted:explain": {
+  "answer_intent": {
+   "explain": 1.0
+  },
+  "frame_target": {
+   "contradicted": 1.0
+  },
+  "lie_type": {
+   "unrefuted": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "unrefuted:mudang:counter": {
+  "answer_intent": {
+   "counter": 1.0
+  },
+  "frame_target": {
+   "mudang": 1.0
+  },
+  "lie_type": {
+   "unrefuted": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "unrefuted:mudang:evade": {
+  "answer_intent": {
+   "evade": 1.0
+  },
+  "frame_target": {
+   "mudang": 1.0
+  },
+  "lie_type": {
+   "unrefuted": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "unrefuted:mudang:explain": {
+  "answer_intent": {
+   "explain": 1.0
+  },
+  "frame_target": {
+   "mudang": 1.0
+  },
+  "lie_type": {
+   "unrefuted": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "unrefuted:suspected:counter": {
+  "answer_intent": {
+   "counter": 1.0
+  },
+  "frame_target": {
+   "suspected": 1.0
+  },
+  "lie_type": {
+   "unrefuted": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "unrefuted:suspected:evade": {
+  "answer_intent": {
+   "evade": 1.0
+  },
+  "frame_target": {
+   "suspected": 1.0
+  },
+  "lie_type": {
+   "unrefuted": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ },
+ "unrefuted:suspected:explain": {
+  "answer_intent": {
+   "explain": 1.0
+  },
+  "frame_target": {
+   "suspected": 1.0
+  },
+  "lie_type": {
+   "unrefuted": 1.0
+  },
+  "night_target": {
+   "accuser": 1.0,
+   "trusts_mudang": 1.0,
+   "witness": 1.0
+  }
+ }
+}

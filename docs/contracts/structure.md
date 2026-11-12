@@ -45,6 +45,7 @@ paldo/
 │  │  ├─ llm_renderer.py           LineRenderer 구현 [E-08-09, 11/7 P-31 (나)로 취소]
 │  │  ├─ ops_query.py              운영 지표 조회(읽기 전용) [C-10-03, 11/7 취소]
 │  │  ├─ ad_client.py              AdProvider HTTP 구현(serve·비콘·클릭·랜딩 중계) [B-08-03] 결정 #2·#6
+│  │  ├─ possessed_bandit.py       씐 자 전략 밴딧 Mongo 상태 읽기·판 기록 팔 복원·하루 갱신 조립 [D-12-05]
 │  │  └─ model_selector.py         ModelSelector 최소 구현 [D-08-04] → 카나리아·고정 [B-09-01], 레지스트리 [C-09-01] 결정 #5
 │  └─ tests/                       Django 테스트: test_api.py [B-05-02], test_idempotency.py [B-06-02], test_accounts.py [B-06-04], test_ws.py [B-07-05]
 ├─ web/
@@ -72,6 +73,7 @@ paldo/
 │  ├─ adapters/reproduce_model_games.py  같은 모델·시드 두 실행 재현 비교 [D-08-04]
 │  ├─ gate.py, bandit.py           평가 관문·P-16 보상·버전 고정 공급자 [D-09-02]
 │  ├─ mongo_bandit.py              전체 이벤트 export 배치·Mongo CAS·C 삭제 인계 [D-09-02]
+│  ├─ bandit_arms.json             운영 확정 팔 목록(첫 게시 뒤 바꾸지 않음) [D-12-05]
 │  └─ ad_ctr.py                    광고 CTR LightGBM [D-10-02]
 ├─ llm/                            LLM · E
 │  ├─ bench/run_bench.py           [E-06-07]
