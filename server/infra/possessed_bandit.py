@@ -115,7 +115,8 @@ def run_update(games_collection, store, consented, *, seed: int = 7):
     `store`는 `ml.mongo_bandit.MongoBanditStore`, `consented`는 동의 가명 집합 또는 그 집합을 돌려주는 함수.
     이미 반영된 판 중 지금 입력에 없는 판(삭제·동의 철회)은 먼저 `forget_games`로 빼야 `propose_update`의
     "과거 판 누락" 거부에 걸리지 않는다. 게시한 뒤에는 판 저장소와 동의 목록을 다시 읽어, 읽은 뒤 게시 전에
-    삭제·철회된 판이 다시 들어갔으면 바로 뺀다(개인정보 삭제와 겹친 실행).
+    삭제·철회된 판이 다시 들어갔으면 바로 뺀다(개인정보 삭제와 겹친 실행). 이 재확인이 실패해 다시 돌리면
+    첫 단계의 "지금 입력에 없는 판 빼기"가 같은 판을 뺀다.
     """
     from ml.bandit import games_from_events
     allow = consented() if callable(consented) else consented
@@ -127,7 +128,8 @@ def run_update(games_collection, store, consented, *, seed: int = 7):
     version = store.update(games, seed=seed)
     if version is not None:
         again = _eligible_ids(games_collection, consented)
-        late = set(store.load()["game_fingerprints"]) - again
+        # 이번 실행이 읽은 판만 대조한다(동시에 다른 실행이 게시한 새 판은 건드리지 않는다).
+        late = (set(store.load()["game_fingerprints"]) & present) - again
         if late:
             store.forget_games(late)
             gone |= late

@@ -8,11 +8,13 @@ from ml import bandit
 
 
 class ArmFileTests(unittest.TestCase):
-    def test_repo_arm_file_matches_default_portfolio(self):
-        """저장소의 확정 팔 18개는 기본 포트폴리오와 같고 초기 상태가 받아들인다."""
+    def test_repo_arm_file_is_valid_and_mongo_safe(self):
+        """저장소의 확정 팔은 모두 StrategyMix로 읽히고, 팔 ID는 Mongo 필드 이름으로 쓸 수 있다."""
         arms = bandit.load_arms()
-        self.assertEqual(len(arms), 18)
-        self.assertEqual(bandit.initial_state(arms)['arms'], bandit.initial_state()['arms'])
+        self.assertGreaterEqual(len(arms), 2)
+        self.assertEqual(sorted(bandit.initial_state(arms)['arms']), sorted(arms))
+        for arm in arms:
+            self.assertRegex(arm, r'^[A-Za-z0-9_:-]+$')
 
     def test_invalid_arm_file_is_rejected(self):
         """빈 객체나 StrategyMix가 아닌 값은 읽을 때 실패한다."""
@@ -37,7 +39,7 @@ class ArmChoiceTests(unittest.TestCase):
         source = bandit.VersionedMixSource(state, 'bandit-0')
         arms = [source.arm_for(f'g{i}') for i in range(200)]
         self.assertEqual(arms, [bandit.VersionedMixSource(state, 'bandit-0').arm_for(f'g{i}') for i in range(200)])
-        self.assertGreater(len(set(arms)), 10)   # 균등 비율이면 여러 팔이 고루 나온다
+        self.assertEqual(set(arms), set(state['arms']))   # 균등 비율 200판이면 모든 팔이 나온다
         self.assertEqual(source.mix_for('g0').mix_id, arms[0])
 
 

@@ -30,7 +30,7 @@ from tools.check_content import load_bundle
 ROOT = Path(__file__).resolve().parents[2]
 BUNDLE = load_bundle(ROOT / "content/bundle_v1.json")
 ARMS = bandit.load_arms()
-ARM = sorted(ARMS)[3]
+ARM = sorted(ARMS)[0]
 
 
 def meta(game_id="g-1", source=DataSource.HUMAN, session_id=None, **values):
@@ -111,8 +111,7 @@ class Chooser(TestCase):
         self.assertEqual(collection.reads, 2)
 
     def test_different_arms_in_state_fail_so_game_starts_uniform(self):
-        other = bandit.initial_state()
-        other["arms"] = {ARM: other["arms"][ARM]}
+        other = bandit.initial_state({ARM: ARMS[ARM]})   # 파일과 팔 구성이 다른 상태
         with self.assertRaises(ValueError):
             MongoBanditChooser(FakeStateCollection(other), ARMS).choose("g-1")
 
