@@ -1,8 +1,22 @@
 # 재학습·카나리아·롤백
 
-학습은 승인된 입력과 삭제 목록을 준비한 뒤 수동 Job으로 먼저 실행한다. C는 경보를 확인하고 D가 관측과 모델을 대조해 전환한다. 정식 사용자 테스트 시간에는 E 승인과 카나리아 비율 0을 적용한다.
+운영 야간 의심 모델은 아래 systemd 경로로 실행하며, k3s 대안은 승인 입력·삭제 목록을 준비한 뒤 수동 Job으로 먼저 검증한다. C는 경보를 확인하고 D가 관측과 모델을 대조해 전환한다. 정식 사용자 테스트 시간에는 E 승인과 카나리아 비율 0을 적용한다.
 
-## 실행
+## 운영 야간 실행 확인
+
+운영 의심 모델 재학습은 게임 웹 서버의 systemd 타이머가 실행한다. 타이머는 01:30 서울 예약에 2분 무작위 지연과 1분 정밀도를 적용하며 11/12에는 01:31에 실행됐다. 관문을 통과한 후보는 MLflow 등록 후 자동 설치·운영 설정 전환·웹 재시작·healthz/실제 추론 확인을 수행하고, 실패하면 직전 모델로 복원한다. 거부된 정상 후보는 승격하지 않는다. 실행 스크립트와 보호 설정은 팀 비공개 운영 폴더에서 관리한다.
+
+운영 기록은 정상 재학습과 동일 가중치 승격 진단 시험을 각각 표시한다. 진단의 drill_pass=true를 실제 품질 관문 통과로 집계하지 않는다. 운영자는 정상 관문의 사유, 진단 후 복원, 마지막 ensure 및 두 웹 프로세스의 모델 버전을 확인한다.
+
+```sh
+systemctl status paldo-retrain.timer paldo-retrain-daily.service
+systemctl show paldo-retrain.timer -p LastTriggerUSec -p NextElapseUSecRealtime -p RandomizedDelayUSec
+journalctl -u paldo-retrain-daily.service --since today --no-pager
+```
+
+이 야간 흐름은 카나리아를 사용하지 않는다. 아래 카나리아 절은 D-10-01 4번·ml_lifecycle 계약의 별도 검증에 사용한다. k3s 정의는 대안 실행 경로이며 중지 상태를 유지한다. 실행 이력과 수치는 [D-10-01 증빙](../../docs/evidence/D-10-01.md)의 11/12 절을 따른다.
+
+## k3s 대안 실행
 
 `ops/k3s/cronjobs/retrain.yaml`은 02:00 KST 야간 일정과 `suspend: true`를 갖는다. `ops/k3s/images/retrain/Dockerfile`로 ML 의존성 이미지를 빌드하고 검증한 digest를 `RETRAIN_IMAGE`에 넣는다. `paldo-ml` namespace에 승인 입력 PVC, 보호된 `paldo-retrain-config` Secret, MLflow 인증용 `paldo-mlflow-client` Secret을 준비한다. PVC의 `/inputs/repository`에는 `.git`을 포함한 검증된 checkout을 둔다. runner는 실제 HEAD와 설정 SHA를 대조한다. 설정은 세 모델 `intent`·`suspicion`·`ad_ctr`를 모두 포함한다.
 
