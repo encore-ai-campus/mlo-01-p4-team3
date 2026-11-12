@@ -1,0 +1,68 @@
+{
+  "task": "D-10-01",
+  "commit": "9bfbd90b1d97189a8b11c6f9603db7016b2e4865",
+  "generated_at": "2026-11-11T12:16:08Z",
+  "source": "Current web model composition with isolated SQLite MLflow and archived production and previous weights; production suspension unchanged. Read-only Delta history snapshots at each 11/10 14:00–18:00 KST boundary and before midnight, query SHA-256 cd6d8f8ec817f655951acb228c568be0b0c56eda9d48edb85ad67f5c3f3b705f. No historical operator check inferred.",
+  "metrics": {
+    "canary_games": {
+      "value": 30,
+      "unit": "판"
+    },
+    "control_games": {
+      "value": 30,
+      "unit": "판"
+    },
+    "canary_inferences": {
+      "value": 169,
+      "unit": "건"
+    },
+    "canary_fallbacks": {
+      "value": 10,
+      "unit": "건"
+    },
+    "control_fallbacks": {
+      "value": 0,
+      "unit": "건"
+    },
+    "canary_fallback_rate": {
+      "value": 0.05917159763313609,
+      "unit": ""
+    },
+    "canary_p95_ms": {
+      "value": 0.9759999811649323,
+      "unit": "ms"
+    },
+    "canary_village_win": {
+      "value": 0.7,
+      "unit": ""
+    },
+    "control_village_win": {
+      "value": 0.7,
+      "unit": ""
+    },
+    "injected_fallback_rate": {
+      "value": 1.0,
+      "unit": ""
+    },
+    "rollback_version_pin_verified": {
+      "value": 1,
+      "unit": "회"
+    },
+    "historical_snapshots_checked": {
+      "value": 5,
+      "unit": "구간"
+    },
+    "events_visible_at_hour_end": {
+      "value": 0,
+      "unit": "건"
+    },
+    "last_delta_version_on_test_day": {
+      "value": 129,
+      "unit": ""
+    },
+    "first_delta_version_after_test": {
+      "value": 130,
+      "unit": ""
+    }
+  }
+}

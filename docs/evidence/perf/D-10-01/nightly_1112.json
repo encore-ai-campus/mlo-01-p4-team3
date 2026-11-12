@@ -1,0 +1,52 @@
+{
+  "task": "D-10-01",
+  "commit": "3b25dc9a4c8d00f9fa1d6148395ddce7cfbc3f35",
+  "generated_at": "2026-11-12T00:36:18Z",
+  "source": "Read-only app-01 systemd and journal for 2026-11-12 01:31:12–01:33:39 KST; daily summary SHA256 83df499de782937a0147c75060e6a7c8799751fede179da6ca4ea3d8ff11570a; script SHA256 daily.sh=9bb2e34e812a051afa864af92f8c1f2e1596ae21e15d6967f541542491e46e11,infer_check.py=26d9f8e2f0ae993e2dd945c55e15e6d0c367830d4e9549e1e525550bd3c036ac,model_install.sh=19f8442c5bc9b9e9abb1b1872dcc119f0ae5ffeab2843dfb04772b6697965792,nightly.sh=339c26fc51ff824c5801db7a0fc36d1512c3f29826bf763bf5cb49f8d7de2c7c,retrain_drill.py=6c988b21782e0013d82695530c11cb7e5043d5a7f4b2a54264290784f3a68f18,retrain_mlflow.py=6f847b15dbb6d4812db4529a41afd58f8f605ad4630d602a36fa10149f888aa7; ordinary candidate rejected, same-weight diagnostic drill separately promoted and restored; no training or deployment triggered by this verification",
+  "metrics": {
+    "nightly_service_exit_code": {
+      "value": 0,
+      "unit": ""
+    },
+    "nightly_service_success": {
+      "value": 1,
+      "unit": "회"
+    },
+    "human_games_used": {
+      "value": 25,
+      "unit": "판"
+    },
+    "human_train_games": {
+      "value": 15,
+      "unit": "판"
+    },
+    "human_test_games": {
+      "value": 10,
+      "unit": "판"
+    },
+    "normal_candidate_rejected": {
+      "value": 1,
+      "unit": "회"
+    },
+    "normal_candidate_production_changes": {
+      "value": 0,
+      "unit": "회"
+    },
+    "drill_promotions": {
+      "value": 1,
+      "unit": "회"
+    },
+    "drill_restores": {
+      "value": 1,
+      "unit": "회"
+    },
+    "final_process_version_matches": {
+      "value": 2,
+      "unit": "개"
+    },
+    "canary_ratio": {
+      "value": 0,
+      "unit": ""
+    }
+  }
+}
