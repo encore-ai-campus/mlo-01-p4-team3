@@ -1,0 +1,58 @@
+[
+  {
+    "path": "content/images/ad/bujeok__box.png",
+    "url": "/static/promo/bujeok__box.png",
+    "width": 300,
+    "height": 250,
+    "sha256": "858019c011097f91103ef3b894b9d8820f5d4f39cbeae6a861fe72ccb3f07dfb"
+  },
+  {
+    "path": "content/images/ad/bujeok__wide.png",
+    "url": "/static/promo/bujeok__wide.png",
+    "width": 728,
+    "height": 90,
+    "sha256": "167ba7368e1f42badefd6f47172bf345ad6c6276a90074f078b58ae0a53432ea"
+  },
+  {
+    "path": "content/images/ad/gat__box.png",
+    "url": "/static/promo/gat__box.png",
+    "width": 300,
+    "height": 250,
+    "sha256": "9035f21dea6dd83e41b0479590b9d178bfbdebe4d2d6cdeb341c8d8c4be02ce8"
+  },
+  {
+    "path": "content/images/ad/gukbap_a__box.png",
+    "url": "/static/promo/gukbap_a__box.png",
+    "width": 300,
+    "height": 250,
+    "sha256": "87c208aada41cfdd812151f9a373f8e79ebcef25cde651ee098c90459e12a467"
+  },
+  {
+    "path": "content/images/ad/gukbap_a__wide.png",
+    "url": "/static/promo/gukbap_a__wide.png",
+    "width": 728,
+    "height": 90,
+    "sha256": "405deb49cb12b4220ebb0de16124dc4661bba493fd4558055e39359338ae270a"
+  },
+  {
+    "path": "content/images/ad/gukbap_b__box.png",
+    "url": "/static/promo/gukbap_b__box.png",
+    "width": 300,
+    "height": 250,
+    "sha256": "18bfad30ec9a3c283c67dd39bcd2cb6f779cabdd9fd70991456db93337cd977b"
+  },
+  {
+    "path": "content/images/ad/gukbap_b__wide.png",
+    "url": "/static/promo/gukbap_b__wide.png",
+    "width": 728,
+    "height": 90,
+    "sha256": "9d72c8db9c4c5a44c1f67c28699527cadd7df5c37617e1f730f4238f1b5d4db0"
+  },
+  {
+    "path": "content/images/ad/yakcho__wide.png",
+    "url": "/static/promo/yakcho__wide.png",
+    "width": 728,
+    "height": 90,
+    "sha256": "c4d84fa1f035dd9c169aa2f7ab45984124705eeba4ea320606d81188f4771407"
+  }
+]

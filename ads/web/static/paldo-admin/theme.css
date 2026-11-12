@@ -1,0 +1,112 @@
+@import url("/static/fonts/fonts.css");
+
+.paldo-admin {
+  --ink: #152422;
+  --gold: #c6a76c;
+  --paper: #eee3ca;
+  --panel: light-dark(#fff8e8, #1b2926);
+  --primary: #314137;
+  --secondary: var(--ink);
+  --accent: #f3e3bb;
+  --body-bg: light-dark(var(--paper), #111b1a);
+  --body-fg: light-dark(#30291e, #eee3ca);
+  --body-loud-color: light-dark(#241d13, #fff1d0);
+  --body-medium-color: light-dark(#493d29, #e5d8ba);
+  --body-quiet-color: light-dark(#665a45, #c6bca5);
+  --darkened-bg: light-dark(#e5d8bb, #202e29);
+  --selected-bg: light-dark(#e9dcc2, #26352e);
+  --selected-row: light-dark(#eee0b7, #3b4030);
+  --hairline-color: light-dark(#d4c39f, #3e4d41);
+  --border-color: light-dark(#a6936e, #69654e);
+  --link-fg: light-dark(#61451c, #f0d49b);
+  --link-hover-color: light-dark(#4d3011, #fff0c7);
+  --link-selected-fg: var(--link-fg);
+  --header-bg: var(--ink);
+  --header-color: var(--accent);
+  --header-link-color: #f5ead2;
+  --breadcrumbs-bg: #314137;
+  --breadcrumbs-fg: #ded5c0;
+  --breadcrumbs-link-fg: #fff1d0;
+  --button-bg: #344c40;
+  --button-hover-bg: #465e50;
+  --default-button-bg: #702f2b;
+  --default-button-hover-bg: #873e32;
+  --object-tools-bg: #344c40;
+  --object-tools-hover-bg: #465e50;
+  --font-family-primary: var(--pd-sans);
+  --heading-font: var(--pd-serif);
+  accent-color: light-dark(#42594c, var(--gold));
+}
+
+.paldo-admin #header {
+  border-bottom: 2px solid var(--gold);
+  background: linear-gradient(105deg, #25372c, var(--ink) 62%);
+}
+
+.paldo-admin #branding { align-items: center; }
+
+.paldo-admin #site-name a {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font: 700 clamp(1.1rem, 4vw, 1.6rem)/1.2 var(--heading-font);
+}
+
+.paldo-admin #site-name img { object-fit: contain; }
+.paldo-admin h1 { font-family: var(--heading-font); font-weight: 700; }
+
+.paldo-admin :is(.app-list .module, #content-related, fieldset.module, #changelist .results) {
+  background: var(--panel);
+  border: 1px solid var(--hairline-color);
+}
+
+.paldo-admin :is(.module caption, .module h2, .inline-group h2) {
+  border-bottom: 1px solid var(--gold);
+  font-weight: 700;
+}
+
+.paldo-admin .object-tools a:focus-visible,
+.paldo-admin :focus-visible {
+  outline: 2px solid light-dark(#77551e, #efc983);
+  outline-offset: 2px;
+}
+
+.paldo-admin #header :focus-visible { outline-color: #efc983; }
+
+.paldo-admin.login {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at top, #344437, #101918 76%);
+}
+
+.paldo-admin.login #container {
+  width: min(28rem, calc(100% - 32px));
+  min-width: 0;
+  margin: clamp(48px, 13vh, 136px) auto 24px;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  background: var(--panel);
+  box-shadow: 0 0 0 5px #c6a76c22, 0 20px 52px #0007;
+}
+
+.paldo-admin.login #header { padding: 22px 16px; }
+.paldo-admin.login #content { padding: clamp(20px, 6vw, 34px); }
+.paldo-admin.login .form-row input { min-height: 42px; }
+
+.paldo-admin.login .submit-row input {
+  width: 100%;
+  min-height: 44px;
+  background: var(--default-button-bg);
+  font-weight: 700;
+}
+
+.paldo-admin.login .submit-row input:hover { background: var(--default-button-hover-bg); }
+
+.paldo-admin #header nav a { color: var(--header-link-color); }
+.paldo-admin .report-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; margin-block: 24px; }
+.paldo-admin .report-filters p { display: grid; gap: 6px; margin: 0; }
+.paldo-admin .report-filters button { min-height: 38px; }
+.paldo-admin .report-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--border-color); }
+.paldo-admin .report-table { width: 100%; background: var(--panel); }
+.paldo-admin .report-table caption { padding: 12px; text-align: left; font-weight: 700; }
+.paldo-admin .report-table :is(td,th) { white-space: nowrap; padding: 12px; }
+.paldo-admin .report-notes { max-width: 80em; margin-top: 24px; }
