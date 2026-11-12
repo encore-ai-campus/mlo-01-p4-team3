@@ -16,6 +16,12 @@ class ArmFileTests(unittest.TestCase):
         for arm in arms:
             self.assertRegex(arm, r'^[A-Za-z0-9_:-]+$')
 
+    def test_one_sided_frame_arms_are_excluded(self):
+        """모의 판에서 마을 승률이 0.9를 넘은 '모순·의심 주민만 겨누는' 팔은 확정 목록에 없다(11/12 사용자 결정)."""
+        for arm, mix in bandit.load_arms().items():
+            targets = {k for k, v in mix['frame_target'].items() if v > 0}
+            self.assertIn('mudang', targets, arm)
+
     def test_invalid_arm_file_is_rejected(self):
         """빈 객체나 StrategyMix가 아닌 값은 읽을 때 실패한다."""
         with tempfile.TemporaryDirectory() as tmp:
