@@ -179,9 +179,11 @@
       spot.style.width = `${(r.width + pad * 2) / o.sx}px`; spot.style.height = `${(r.height + pad * 2) / o.sy}px`;
       const ob = origin(host, bubble);
       const bw = bubble.offsetWidth * ob.sx, bh = bubble.offsetHeight * ob.sy;
-      const below = r.bottom + 12 + bh <= innerHeight - 8;
-      const top = below ? r.bottom + 12 : Math.max(8, r.top - 12 - bh);
-      const left = Math.max(8, Math.min(innerWidth - bw - 8, r.left + r.width / 2 - bw / 2));
+      // 모달 안 말풍선은 그 창 안에 둔다(창 밖은 잘린다).
+      const box = host === document.body ? {left: 0, top: 0, right: innerWidth, bottom: innerHeight} : host.getBoundingClientRect();
+      const below = r.bottom + 12 + bh <= box.bottom - 8;
+      const top = below ? r.bottom + 12 : Math.max(box.top + 8, r.top - 12 - bh);
+      const left = Math.max(box.left + 8, Math.min(box.right - bw - 8, r.left + r.width / 2 - bw / 2));
       bubble.style.left = `${(left - ob.x) / ob.sx}px`; bubble.style.top = `${(top - ob.y) / ob.sy}px`;
       bubble.dataset.side = below ? 'below' : 'above';
     }
@@ -191,12 +193,15 @@
       unlock();
       if (!linesRead()) { clearMarks(); shownTarget = null; lockAllExcept([]); root.dataset.tutorialState = 'reading'; return; }
       const i = pointer(), sub = subs[i];
+      // 지나간 순간 동작(open·close·click)은 기록해 둔다. 창을 닫은 뒤에도 '이미 열었음'으로 남아야 뒤로 돌아가지 않는다.
+      for (let j = 0; j < i; j++) if (['open', 'close', 'click'].includes(subs[j].action)) flag(subs[j]);
       const {targets, host, confirm} = effective(sub);
       const live = targets.filter(Boolean);
       root.dataset.tutorialState = confirm ? 'confirm' : 'active';
       root.dataset.tutorialSub = sub.key;
       if (!confirm) { lockAllExcept(live); restrictOptions(sub, live); }
-      const target = live.find(visible);
+      // 여러 개를 고르는 단계는 아직 안 고른 것부터 강조한다.
+      const target = (sub.action === 'check' && !confirm ? live.find(t => visible(t) && !t.checked) : null) || live.find(visible);
       if (target) place(target, host, sub.say); else clearMarks();
     }
     let queued = false;

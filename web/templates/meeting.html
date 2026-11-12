@@ -2,7 +2,7 @@
 <section id="meeting" data-phase="{{ vm.phase }}" data-state-version="{{ vm.state_version }}" data-game-id="{{ vm.game_id }}" data-day="{{ vm.day }}"{% if tutorial_mode %} data-tutorial{% endif %}{% if npc_polish %} data-npc-lines="/games/{{ vm.game_id }}/lines" data-npc-csrf="{{ csrf_token }}"{% endif %}>
   <h1 tabindex="-1">{{ vm.day }}일째 · {{ vm.phase|phase_label }}</h1>
   {% if rejected %}<p role="alert">{% if reject_code == 'tutorial_step' %}지금은 반짝이는 곳만 누를 수 있어요. 족제비 안내를 따라 해 주세요.{% else %}행동을 적용하지 못했습니다. 현재 화면을 확인해 주세요.{% endif %}</p>{% endif %}
-  {% if tutorial_mode and tutorial %}{% include "meeting_parts/tutorial_bar.html" %}{{ tutorial|json_script:"tutorial-step" }}{% endif %}
+  {% if tutorial_mode and tutorial %}{{ tutorial|json_script:"tutorial-step" }}{% endif %}
   {% if vm.ended %}
     {% include "game_end.html" %}
   {% else %}

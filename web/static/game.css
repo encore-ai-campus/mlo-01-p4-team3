@@ -767,8 +767,9 @@ label[data-tutorial-locked] { opacity:.5; }
 .tutorial-bar form { margin:0; }
 .tutorial-bar a, .tutorial-bar button { min-height:36px; padding:4px 12px; display:inline-flex; align-items:center; }
 .tutorial-progress { color:#f2c96b; font-weight:700; }
-@media(min-width:1200px) {
- .game-page #meeting:has(.vn-player) > .tutorial-bar { position:absolute; top:0; left:calc(50% + 150px); height:52px; margin:0; flex-wrap:nowrap; white-space:nowrap; z-index:5; }
-}
+/* 무대 도구 막대 오른쪽 끝(게임 화면 안). 900px 미만에서는 도구 막대와 함께 무대 위 줄로 나간다(ui-stage.js). */
+.stage-toolbar .tutorial-bar { margin:0 0 0 auto; padding:2px 8px; flex-wrap:nowrap; white-space:nowrap; background:#101e25ed; border:1px solid #b8913f; border-radius:6px; box-shadow:0 2px 8px #0007; }
+.stage-toolbar .tutorial-bar a, .stage-toolbar .tutorial-bar button { min-height:34px; padding:2px 10px; font-size:13px; }
+.stage-toolbar .tutorial-bar a { color:#f0e6d0; }
 .tutorial-end-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
 .tutorial-end-actions form { margin:0; }

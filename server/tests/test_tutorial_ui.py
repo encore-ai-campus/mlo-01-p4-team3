@@ -5,6 +5,7 @@
 import json
 import re
 from unittest.mock import patch
+from urllib.parse import urlencode
 from uuid import uuid4
 
 from django.contrib.auth.models import User
@@ -42,7 +43,7 @@ def with_tutorial(extra=None, ended=False):
         context = original(view, *args, **kwargs)
         info, vn = tutorial_info(view.state_version, view.day, str(getattr(view.phase, "value", view.phase)),
                                  ended=ended or view.result is not None)
-        context.update(tutorial_mode=True, tutorial=info, tutorial_lines=vn, utterance_prefill="", **(extra or {}))
+        context.update({"tutorial_mode": True, "tutorial": info, "tutorial_lines": vn, "utterance_prefill": "", **(extra or {})})
         return context
     return patch.object(api_views, "meeting_context", wrapped)
 
@@ -89,8 +90,12 @@ class TutorialMeetingScreen(RecordedGameLines):
 
     def test_tutorial_reject_notice(self):
         """튜토리얼 단계 위반 거부 재렌더는 튜토리얼 안내 문장을 쓴다."""
-        with with_tutorial({"rejected": True, "reject_code": "tutorial_step"}):
-            html = self.page()
+        with with_tutorial({"reject_code": "tutorial_step"}):
+            response = self.client.post(f"/games/{self.game_id}/commands",
+                                        urlencode({"game_id": self.game_id, "state_version": 0, "command_id": str(uuid4()), "kind": "explain"}),
+                                        content_type="application/x-www-form-urlencoded", HTTP_HX_REQUEST="true")
+        self.assertEqual(response.status_code, 422, response.content[:300])
+        html = response.content.decode()
         self.assertIn("반짝이는 곳만 누를 수 있어요", html)
         self.assertNotIn("행동을 적용하지 못했습니다", html)
 
