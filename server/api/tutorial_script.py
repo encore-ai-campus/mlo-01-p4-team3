@@ -285,8 +285,7 @@ TUTORIAL_CONFIRM = '창에 적힌 내용이 맞는지 보고 [확인하고 실�
 # 판 흐름이 대본과 어긋났을 때(각본 이탈) 화면 안내. 사용자 확인 전 초안.
 TUTORIAL_OFF_SCRIPT = '어, 안내가 어긋났어요. 처음부터 다시 해 주세요.'
 
-# 튜토리얼 단계 밖 조작을 서버가 거부했을 때 화면 안내(사용자 확인 전 초안).
-TUTORIAL_REJECT = "지금은 제가 반짝이게 해 둔 것만 누를 수 있어요!"
+# 튜토리얼 단계 밖 조작을 서버가 거부했을 때 화면 안내는 web/templates/meeting.html `tutorial_step` 분기(사용자 확인 전 초안).
 
 
 def tutorial_display(text: str) -> str:

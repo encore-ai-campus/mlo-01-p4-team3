@@ -132,9 +132,7 @@ class GameService:
             return replay
         if meta.session_id is not None:
             return self._create(meta, data, fixed_id, player_pseudonym, ())
-        from .tutorial_start import tutorial_instead   # 튜토리얼을 시작하지 않은 계정의 새로 시작은 튜토리얼 판(11/11)
-        if (routed := tutorial_instead(self, data, player_pseudonym)) is not None:
-            return routed
+        from .tutorial_start import tutorial_instead
         # 일반 판: 진행 중인 일반 판이 있으면 이어 하기 / 중단하고 새로 시작 중 하나만(11/10 사용자 결정).
         # 확인·중단·생성을 계정별로 줄 세워 같은 프로세스 안의 동시 시작이 진행 판을 둘 만들지 않게 한다.
         with self._start_lock(player_pseudonym):
@@ -143,6 +141,10 @@ class GameService:
                 if data.replace_open:
                     self._abandon_older(fixed_id, player_pseudonym)
                 return replay
+            # 튜토리얼을 시작하지 않은 계정의 새로 시작은 튜토리얼 판(11/11). 같은 잠금 안에서 판단해야
+            # 같은 시작 UUID의 동시 재요청이 앞 요청의 완료 표시를 보고 일반 판을 따로 만들지 않는다(재요청은 같은 튜토리얼 판).
+            if (routed := tutorial_instead(self, data, player_pseudonym)) is not None:
+                return routed
             others = [gid for gid in self.unfinished_open_games(player_pseudonym) if gid != fixed_id]
             if others and not data.replace_open:
                 raise OpenGameInProgress(others[-1])
