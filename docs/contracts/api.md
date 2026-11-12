@@ -16,6 +16,7 @@
 | 메서드·경로 | 입력 DTO | 출력 DTO | htmx 조각 |
 |---|---|---|---|
 | POST `/games` | `StartGameInput` | `GameOutput` | `meeting` 전체 |
+| POST `/tutorial` | `StartTutorialInput` | `GameOutput`(2-4절) | 일반 양식은 302 → `/games/{id}` |
 | GET `/games/{id}` | - | `GameOutput` | `meeting` |
 | POST `/games/{id}/commands` | `SubmitCommandInput` | `CommandOutput` | `meeting` 또는 `reject_toast` |
 | POST `/games/{id}/utterances` | `ParseUtteranceInput` | `ParseUtteranceOutput` | `speech_cards` |
@@ -91,12 +92,22 @@
   - 같은 `start_token` 재전송은 이 검사보다 먼저 같은 판을 돌려준다. 회차 판(`session_id` 있음)은 이 규칙 밖이다.
   - 순서: 확인·생성·중단은 계정별로 줄 세운다(웹 프로세스 하나 안). 기존 판은 새 판이 저장된 뒤에 중단한다(준비·저장이 실패하면 기존 판을 그대로 이어 할 수 있음). 중단이 버전 충돌로 끝나지 않은 판은 진행 중으로 남고(경고 로그), 다음 새로 시작 때 다시 중단한다. 같은 `start_token`·`replace_open` 재요청은 그 판보다 먼저 시작한 진행 판의 중단을 마저 한다.
 
+### 2-4. 튜토리얼 판 (11/11 사용자 결정)
+- `POST /tutorial`: 입력은 `start_token`(UUID, 필수)·`mudang_variant`(`f`/`m`, 생략하면 `f`)만 받는다. 그 밖의 칸(`seed`·`preset_id`·`session_id` 등)이 있으면 400. JSON은 201 `GameOutput`, 일반 HTML 양식은 302로 판 화면에 보낸다. 같은 계정의 같은 `start_token`은 같은 판이다.
+- 시드·프리셋·규칙 버전은 서버 상수다(`engine/domain/tutorial.py`: 시드 185, base6, `rule-0.9`). 콘텐츠 버전은 운영 활성 버전이 검증 목록(`CONTENT_VERSIONS`) 안일 때만 쓰고, 밖이면 503 `start_policy_unavailable`.
+- 판 메타 `scenario_id="tutorial-v1"`, `source=scripted`. `GameOutput.scenario_id`로 화면에 알린다(일반·회차 판은 `null`).
+- 진행 중인 일반 판이 있어도 시작할 수 있고(2-3절 409 규칙 밖), 판 진척(`add_game`·단서)에 반영하지 않는다. 시작(재요청 포함) 때 계정 진척에 `tutorial_completed=true`만 켠다(시작만 해도 완료). 설문은 404, NPC 판단 모델·대사 LLM은 쓰지 않는다. 이벤트 봉투의 `player_pseudonym`·`session_id`는 `null`이다.
+- 명령 강제: 판의 `state_version`으로 단계를 정하고, 단계표와 다른 명령은 엔진에 넘기기 전에 422 `reject=tutorial_step`(소비 없음). 자유 입력 단계는 `PALDO_FREE_TEXT_INPUT`을 따른다(켬: 대본 문장 카드 확인만, 끔: 버튼 명령만). 카드 수정(`edit`)도 422 `tutorial_step`.
+- 튜토리얼 강제(11/11 사용자 결정): `POST /games`의 회차 없는 일반 판 시작은 JSON·HTML 모두, 계정 진척의 `tutorial_completed`가 참이 아니면 튜토리얼 판을 시작해 돌려준다(JSON 200 `GameOutput`, `scenario_id="tutorial-v1"`로 알림. HTML 양식은 302로 그 판 화면). 튜토리얼 판 ID는 `POST /tutorial`과 같은 이름공간(같은 `start_token` → 같은 판)이고, 재요청은 완료 표시가 켜진 뒤에도 같은 튜토리얼 판이다. 이 분기는 진행 판 409 검사보다 앞이라 진행 중인 일반 판이 있어도(`replace_open` 여부와 무관) 튜토리얼 판이 시작되고 진행 판은 중단하지 않는다. 이어 하기(`GET /games/{id}`)는 그대로다. 회차 판(`session_id`)은 가로채지 않는다. 운영 콘텐츠 버전이 튜토리얼 검증 목록 밖이면 가로채지 않고 일반 판을 시작한다. 판단은 도메인 `tutorial.routes_to_tutorial`.
+- 첫 판 안내: `tutorial_completed`가 참인 계정은 첫 실제 판의 족제비 첫 판 안내가 기본 꺼짐이다(도움말 "이번 판에서 안내 보기" 스위치는 그대로, `tutorial.first_game_guide`).
+- 회의 화면 컨텍스트(`tutorial`, `tutorial_lines`, `tutorial_lead_lines`, `utterance_prefill`, `reject_code`)의 형식은 서버 `server/api/tutorial_view.py`가 기준이다.
+
 ## 3. 명령과 충돌
 - 모든 명령에는 클라이언트가 만든 `command_id`(UUID)와 `expected_state_version`이 있다. 화면의 각 폼은 현재 `state_version`을 hidden 필드로 갖는다.
 - HTTP 상태 코드는 다음과 같다.
   - 수락: 200, `accepted=true`
   - 같은 `command_id` 재요청: 200, `replayed=true`(저장된 응답 그대로)
-  - 엔진 거부(`illegal_phase`, `missing_slot`, `limit_exceeded` 등): 422. `reject`와 현재 화면을 함께 보내며, 소비는 없다.
+  - 엔진 거부(`illegal_phase`, `missing_slot`, `limit_exceeded` 등): 422. `reject`와 현재 화면을 함께 보내며, 소비는 없다. 튜토리얼 판의 단계 위반 `tutorial_step`도 같다(2-4절, 응용 계층이 낸다).
   - 버전 충돌: 409, `reject=state_version_conflict`. 현재 화면을 함께 보내며, 클라이언트는 화면을 바꿔 끼운다. 서버는 명령을 자동으로 재적용하지 않는다(ports.md 2절).
 
 ## 4. 자유 입력 수명주기

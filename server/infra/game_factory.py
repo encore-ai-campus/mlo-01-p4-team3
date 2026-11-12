@@ -114,10 +114,30 @@ def engine_parts():
 
 
 def attach_interactions(service, store, parser, renderer=None):
-    """게임 서비스에 자유 입력·수첩·설문 서비스를 끼운다. 운영과 시험이 같은 함수를 쓴다."""
+    """게임 서비스에 자유 입력·수첩·설문 서비스를 끼운다. 운영과 시험이 같은 함수를 쓴다.
+    시나리오(튜토리얼) 판은 실시간 생성 설정과 무관하게 늘 템플릿 렌더러를 쓴다(튜토리얼 설계 5절)."""
     service.interactions = InteractionService(service, store, parser=parser,
                                               renderer=renderer if renderer is not None else TemplateLineRenderer())
+    service.interactions.tutorial_renderer = TemplateLineRenderer()
     return service
+
+
+def scenario_dependencies(base: Callable, resolve: Callable) -> Callable:
+    """시나리오(튜토리얼) 판은 NPC 판단 모델 없이 규칙대로만 두게 하는 엔진 의존성 조립(튜토리얼 설계 4절, 사용자 결정).
+
+    `meta.scenario_id`가 있으면 버전별 모델 해석(`resolve`, 의심 모델 보관소 대여 포함)을 부르기 전에 갈라져
+    기본 의존성(콘텐츠)에 `suspicion=None`을 넣어 돌려준다. 메타의 모델 버전을 비우는 것만으로는 운영 조립의
+    규칙 의심도 가짜 모델이 남으므로 여기서 명시한다. 그 밖의 판은 `resolve` 그대로다.
+    """
+    from dataclasses import replace
+
+    def dependencies(meta):
+        if meta.scenario_id:
+            return replace(base(meta), suspicion=None)
+        return resolve(meta)
+    dependencies.__doc__ = "시나리오 판은 모델 없는 의존성, 그 밖은 원래 해석."
+    dependencies.scenario_base = base
+    return dependencies
 
 
 def runtime_prefix(runtime) -> str:
@@ -175,6 +195,7 @@ def build_from_runtime(runtime, parser):
     store = MongoInteractionStore(runtime.database[prefix + INTERACTIONS])
     attach_narration(service, *narration_parts(runtime.database, prefix))
     renderer = attach_npc_lines(service, *npc_line_parts(runtime.database, prefix))
+    service.dependencies = scenario_dependencies(service.dependencies, service.dependencies)
     return attach_interactions(service, store, parser, renderer)
 
 
@@ -182,7 +203,9 @@ def attach_model_versions(service, registry, suspicion_models=None, canary_ratio
     """게임 서비스에 판 시작 버전 고정(B-09-01)과 판 버전별 의심 모델 선택을 끼운다. 운영과 시험이 같은 함수를 쓴다."""
     from server.app.model_versions import VersionPinning, pinned_dependencies
     service.pin_versions = VersionPinning(registry, canary_ratio)
-    service.dependencies = pinned_dependencies(service.dependencies, suspicion_models)
+    base = getattr(service.dependencies, "scenario_base", service.dependencies)
+    # 시나리오 판 분기를 맨 바깥에 둬 모델 버전 해석·보관소 대여가 시작되기 전에 모델 없는 의존성으로 갈라지게 한다.
+    service.dependencies = scenario_dependencies(base, pinned_dependencies(service.dependencies, suspicion_models))
     service.model_registry = registry
     return service
 

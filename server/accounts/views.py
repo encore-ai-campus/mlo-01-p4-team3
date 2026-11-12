@@ -43,6 +43,8 @@ def home(request):
                 loaded[game_id] = get_game_service().repository.load(game_id)
             return loaded[game_id]
         context.update(_open_game_context(player[0], load_game))
+        # 튜토리얼 카드(표현만): 시작 주소와 새 시작 UUID. 판 생성·시드는 서버 튜토리얼 시작 경로(POST /tutorial)가 정한다.
+        context.update(tutorial_start_url="/tutorial", tutorial_start_token=str(uuid.uuid4()))
         try:
             service = get_session_service()
             context["assignments"] = service.assigned(player[0], load_game)
@@ -77,6 +79,9 @@ def _open_game_context(player, load_game=None):
         backfill_surveys(service, player, progress.game_ids, load_game or service.repository.load)
         if not isinstance(service.prepare_start, StartPolicy):
             context["open_presets"] = []
+        # 튜토리얼 강제(11/11): 아직 튜토리얼을 시작하지 않았으면 새로 시작이 튜토리얼 판이 된다는 안내 한 줄(판단은 도메인).
+        from engine.domain.tutorial import routes_to_tutorial
+        context["tutorial_pending"] = service.prepare_tutorial is not None and routes_to_tutorial(progress.tutorial_completed, None)
         unfinished = unfinished_open_games(progress.game_ids, load_game or service.repository.load)
         # 진행 판은 가장 최근 것 하나만 이어 하기로 보인다. 나머지는 새로 시작할 때 함께 중단된다.
         context["open_games"] = unfinished[-1:]

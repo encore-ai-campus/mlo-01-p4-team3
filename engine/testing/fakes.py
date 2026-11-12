@@ -248,6 +248,9 @@ class InMemoryProgressRepository:
         if game_id not in p.game_ids:
             p.game_ids.append(game_id)
 
+    def mark_tutorial_completed(self, player_pseudonym: str) -> None:
+        self._get(player_pseudonym).tutorial_completed = True
+
 
 class FixtureContentSource:
     def __init__(self, root: Path = FIXTURES / "content_min"):

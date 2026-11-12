@@ -428,6 +428,7 @@ class RejectCode(str, enum.Enum):
     LIMIT_EXCEEDED = "limit_exceeded"
     GAME_ENDED = "game_ended"
     UNKNOWN_EVIDENCE = "unknown_evidence"
+    TUTORIAL_STEP = "tutorial_step"   # 응용 전용(튜토리얼 단계 검사, engine/domain/tutorial.py). 엔진은 내지 않는다
 
 
 # 행동 소비 규칙: 거부된 명령은 어떤 횟수도 소비하지 않는다. 수락되어 상태가 바뀐 순간에만 소비한다.
@@ -698,6 +699,9 @@ class GameMeta:
     created_at: str = ""
     ending_choice: str = "exorcism"     # 판 시작 시 고른 결말("exorcism" | "haewon:<hypothesis_id>")
     mudang_variant: Optional[str] = None  # 주인공 초상 "f" | "m"(표시 전용, 엔진 규칙은 읽지 않는다). None = 선택 없음(녹화 판·시뮬레이터)
+    # 정해진 시나리오 판(튜토리얼 "tutorial-v1", engine/domain/tutorial.py). None = 일반·회차 판.
+    # None이면 직렬화에서 뺀다(serde.OMIT_IF_NONE). 이 필드를 더하기 전 판의 저장 바이트·결정성 해시를 그대로 둔다.
+    scenario_id: Optional[str] = field(default=None, metadata={"omit_if_none": True})
 
 
 @dataclass
@@ -764,6 +768,9 @@ class PlayerProgress:
     confessed_secrets_seen: list[str] = field(default_factory=list)
     endings_unlocked: list[str] = field(default_factory=lambda: ["exorcism"])   # 퇴마는 처음부터 열림
     content_version: str = ""
+    # 튜토리얼 판을 시작한 적이 있으면 True(시작만 해도 완료, 11/11 사용자 결정). None = 아직(이 칸 이전 기록 포함).
+    # None이면 직렬화에서 뺀다(serde.OMIT_IF_NONE). 튜토리얼 판 ID는 game_ids에 넣지 않는다.
+    tutorial_completed: Optional[bool] = field(default=None, metadata={"omit_if_none": True})
 
     def add_clue(self, clue_id: str, game_id: str, day: int) -> bool:
         """처음이면 기록하고 True. 이미 있으면 False(중복 무시)."""

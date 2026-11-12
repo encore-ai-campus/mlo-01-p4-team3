@@ -752,3 +752,30 @@ button { border-radius:2px; }
 .end-guide-bubble p { margin:2px 0; }
 .end-guide[hidden] { display:none; }
 .guide-toggle { display:flex; align-items:center; gap:8px; margin-top:12px; min-height:36px; font-weight:600; }
+
+/* 튜토리얼 판(11/11): 강조(가운데가 뚫린 막)·말풍선·잠금 표시·머리 막대. 막은 pointer-events:none이고 실제 잠금은 inert다(ui-tutorial.js). */
+.tutorial-spot { position:fixed; z-index:900; pointer-events:none; border-radius:8px; box-shadow:0 0 0 200vmax #02080bad; outline:3px solid #f2c96b; outline-offset:0; animation:tutorial-pulse 1.4s ease-in-out infinite; }
+@keyframes tutorial-pulse { 50% { outline-color:#fff3c4; outline-offset:3px; } }
+@media (prefers-reduced-motion:reduce) { .tutorial-spot { animation:none; } }
+.tutorial-bubble { position:fixed; z-index:901; max-width:min(340px, calc(100vw - 16px)); padding:10px 14px; color:#1c1710; background:#f6ead0; border:2px solid #b8913f; border-radius:10px; box-shadow:0 4px 14px #0009; font-size:15px; line-height:1.5; }
+.tutorial-bubble p { margin:0; }
+.tutorial-bubble-exit { display:inline-block; margin-top:6px; color:#6b2a1f; font-size:13px; }
+/* 말풍선이 다른 조작을 덮을 수밖에 없을 때: 반투명, 클릭은 아래 조작으로 지나간다(끝내기 링크만 받음, 2회차 시운전). */
+.tutorial-bubble.tutorial-bubble-faint { opacity:.8; pointer-events:none; }
+.tutorial-bubble.tutorial-bubble-faint .tutorial-bubble-exit { pointer-events:auto; }
+[data-tutorial-locked] { opacity:.55; cursor:not-allowed; }
+label[data-tutorial-locked] { opacity:.5; }
+/* 12단계 미리 채운 문장(읽기 전용)은 안내 문구처럼 흐리게 보이지 않게 진한 글자로 둔다(1회차 시운전). */
+#meeting[data-tutorial] label[data-tutorial-locked]:has(> textarea[readonly]), #meeting[data-tutorial] textarea[readonly][data-tutorial-locked] { opacity:1; }
+#meeting[data-tutorial] textarea[readonly] { color:#f6ead0; font-weight:700; border:2px dashed #b8913f; background:#1d2a2f; cursor:default; }
+#meeting[data-tutorial] .vn-guide-skip, #meeting[data-tutorial] [data-vn-show-all] { display:none; }  /* 튜토리얼: 안내 건너뛰기·모두 보기(연출 끝내기, #404) 숨김 — 족제비 대사를 건너뛰지 못하게 */
+.tutorial-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 8px; font-size:14px; }
+.tutorial-bar form { margin:0; }
+.tutorial-bar a, .tutorial-bar button { min-height:36px; padding:4px 12px; display:inline-flex; align-items:center; }
+.tutorial-progress { color:#f2c96b; font-weight:700; }
+/* 무대 도구 막대 오른쪽 끝(게임 화면 안). 900px 미만에서는 도구 막대와 함께 무대 위 줄로 나간다(ui-stage.js). */
+.stage-toolbar .tutorial-bar { margin:0 0 0 auto; padding:2px 8px; flex-wrap:nowrap; white-space:nowrap; background:#101e25ed; border:1px solid #b8913f; border-radius:6px; box-shadow:0 2px 8px #0007; }
+.stage-toolbar .tutorial-bar a, .stage-toolbar .tutorial-bar button { min-height:34px; padding:2px 10px; font-size:13px; }
+.stage-toolbar .tutorial-bar a { color:#f0e6d0; }
+.tutorial-end-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+.tutorial-end-actions form { margin:0; }

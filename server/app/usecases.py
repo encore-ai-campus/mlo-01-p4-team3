@@ -11,6 +11,7 @@ from engine.domain.model import CONTRACT_VERSION, CommandEnvelope, DataSource, R
 from engine.domain.serde import dumps, from_jsonable
 from engine.ports import StoredCommand, VersionConflict
 from engine.domain.abandon import AlreadyEnded, abandon
+from engine.domain import tutorial
 from engine.domain.progress import ending_available
 from engine.domain.review import TraceEvent, TraceInput, review_text, review_trace
 from .dto import CommandOutput, GameOutput, ProgressOutput, ReviewItem, ReviewNarrationOutput, ReviewOutput
@@ -74,6 +75,10 @@ class GameService:
         self.narration = None
         # NPC 대사 LLM(E-11-13, `npc_lines.NpcLineService`). None이면 기능 꺼짐(템플릿 대사만).
         self.npc_lines = None
+        # 튜토리얼 판 메타 정책(`tutorial_start.TutorialStartPolicy`). None이면 튜토리얼 시작을 막는다.
+        self.prepare_tutorial = None
+        # 직접 입력창 설정(`PALDO_FREE_TEXT_INPUT`)을 읽는 함수. 튜토리얼 자유 입력 단계를 카드 확인/버튼 중 무엇으로 받을지 정한다.
+        self.free_text_input = lambda: True
 
     def owned(self, game_id, player_pseudonym):
         """멱등 응답·버전 확인보다 먼저 판 소유권을 확인한다."""
@@ -95,7 +100,7 @@ class GameService:
         if deps is not None and deps.content.content_version != state.meta.content_version:
             deps = None
         view = self._player_view(state, deps)
-        return GameOutput(view, list(view.pending_render_jobs), state.meta.mudang_variant)
+        return GameOutput(view, list(view.pending_render_jobs), state.meta.mudang_variant, state.meta.scenario_id)
 
     def _player_view(self, state, deps=None):
         view = self.engine.player_view(state, (deps if deps is not None else self.dependencies(state.meta)).content)
@@ -126,6 +131,9 @@ class GameService:
             return replay
         if meta.session_id is not None:
             return self._create(meta, data, fixed_id, player_pseudonym, ())
+        from .tutorial_start import tutorial_instead   # 튜토리얼을 시작하지 않은 계정의 새로 시작은 튜토리얼 판(11/11)
+        if (routed := tutorial_instead(self, data, player_pseudonym)) is not None:
+            return routed
         # 일반 판: 진행 중인 일반 판이 있으면 이어 하기 / 중단하고 새로 시작 중 하나만(11/10 사용자 결정).
         # 확인·중단·생성을 계정별로 줄 세워 같은 프로세스 안의 동시 시작이 진행 판을 둘 만들지 않게 한다.
         with self._start_lock(player_pseudonym):
@@ -138,6 +146,41 @@ class GameService:
             if others and not data.replace_open:
                 raise OpenGameInProgress(others[-1])
             return self._create(meta, data, fixed_id, player_pseudonym, others)
+
+    def start_tutorial(self, data, player_pseudonym, consented):
+        """튜토리얼 판을 시작한다(튜토리얼 설계 3·8절). 진척 판 목록에 넣지 않고, 일반 판의 진행 판 규칙과 무관하다.
+
+        출처 SCRIPTED·시나리오 ID·고정 시드는 정책이 정한 값 그대로 둔다(`_create`의 HUMAN 덮어쓰기·모델 버전 고정을 거치지 않음).
+        같은 시작 UUID 재요청은 같은 판 화면을 돌려주며, 이때도 진척을 건드리지 않는다.
+        """
+        if not consented:
+            raise ConsentRequired
+        if data.player_pseudonym != player_pseudonym or data.mudang_variant not in ("f", "m"):
+            raise ValueError("invalid_start")
+        if self.prepare_tutorial is None:
+            raise StartUnavailable
+        from .tutorial_start import tutorial_game_id   # tutorial_start가 이 모듈을 import하므로 실행 시점에 읽는다
+        try:
+            # 재요청은 시작 정책(운영 콘텐츠 버전 검사)보다 먼저 찾는다. 판을 만든 뒤 활성 버전이 바뀌어도 같은 판을 돌려준다.
+            replay = self.detail(tutorial_game_id(player_pseudonym, data.start_token), player_pseudonym)
+        except ResourceNotFound:
+            pass
+        else:
+            self.progress.mark_tutorial_completed(player_pseudonym)   # 앞 요청이 판 저장 뒤 표시 전에 실패했으면 메운다
+            return replay
+        meta = self.prepare_tutorial(data, player_pseudonym)
+        deps = self.dependencies(meta)
+        result = self.engine.new_game(meta, deps)
+        if not result.accepted or result.state is None or result.truth is None:
+            raise ValueError("start_rejected")
+        try:
+            self.repository.create(result.state, result.truth, self._events(result.state, result.events))
+        except ValueError:
+            self.owned(meta.game_id, player_pseudonym)   # 같은 시작 UUID의 동시 요청: 먼저 저장된 판을 돌려준다
+        else:
+            self._observe(result.events)
+        self.progress.mark_tutorial_completed(player_pseudonym)   # 시작만 해도 완료(11/11 사용자 결정)
+        return self._detail(meta.game_id, player_pseudonym, deps)
 
     def _replay_start(self, fixed_id, player_pseudonym):
         """같은 시작 UUID·회차 순번의 판이 이미 있으면 그 판 화면, 없으면 None."""
@@ -243,6 +286,10 @@ class GameService:
         씐 자 수는 프리셋 공개 값이다. 단서 알림은 판의 공개 고백과 판 밖 진척으로 고른다(`clue_notice`).
         """
         state, _ = self.owned(game_id, player_pseudonym)
+        if state.meta.scenario_id:
+            # 튜토리얼 판: 첫 판 안내·안내 다시 켜기·단서 알림 대신 튜토리얼 대본 줄을 쓴다(진척과 무관). 씐 자 수 None은
+            # 화면이 첫 판 안내 목록·도움말 스위치를 만들지 않게 한다.
+            return False, None, []
         progress = self.progress.load(player_pseudonym)
         game_ids = progress.game_ids
         notices = []
@@ -250,7 +297,8 @@ class GameService:
             content = self.dependencies(state.meta).content
             notices = clue_notices(state.meta.game_id, state.public.confessions, content.secrets,
                                    content.grudge_clues, progress.clues, game_ids)
-        return bool(game_ids) and game_ids[0] == state.meta.game_id, state.meta.preset.n_possessed, notices
+        first = tutorial.first_game_guide(bool(game_ids) and game_ids[0] == state.meta.game_id, progress.tutorial_completed)
+        return first, state.meta.preset.n_possessed, notices
 
     def temperaments(self, game_id, player_pseudonym):
         """판 콘텐츠의 주민 ID → 성향 ID. 대사창 반응 줄의 말투를 고를 때만 쓴다(공개 콘텐츠 값)."""
@@ -275,8 +323,8 @@ class GameService:
 
     def _ensure_narration(self, output, state):
         """복기를 처음 연 판의 해설 작업을 멱등 등록한다(E-10-01, 설계 D5). 실패해도 복기는 템플릿으로 보인다."""
-        if self.narration is None or not self.narration.enabled:
-            return
+        if self.narration is None or not self.narration.enabled or state.meta.scenario_id:
+            return   # 시나리오(튜토리얼) 판은 해설 LLM 작업을 등록하지 않는다
         try:
             content = self.dependencies(state.meta).content
             self.narration.ensure(output, content, state.public, state.meta.seed)
@@ -331,6 +379,10 @@ class GameService:
             return self._conflict(state)
         if data.command.actor != "mudang":
             raise ValueError("invalid_actor")
+        if tutorial.is_tutorial(state.meta.scenario_id) and not tutorial.allows(
+                state.state_version, data.command, data.intent_attempt_id is not None, self.free_text_input()):
+            # 튜토리얼 판은 단계마다 정한 명령 하나만 받는다. 아무것도 소비하지 않고 현재 화면을 돌려준다.
+            return CommandOutput(False, state.state_version, self._player_view(state), RejectCode.TUTORIAL_STEP)
         env = CommandEnvelope(data.game_id, data.command_id, data.expected_state_version,
                               data.command, data.intent_attempt_id)
         deps = self.dependencies(state.meta)
@@ -372,9 +424,10 @@ class GameService:
             self._observe(result.events)
         if result.state.result is not None:
             # 판 종료: 이 판의 모든 고백을 다시 맞춘다(앞 명령에서 실패한 반영 복구 포함, 이번 전이 고백도 포함).
-            self._progress_guard(sweep_game, player_pseudonym, result.state, deps.content)
+            if not state.meta.scenario_id:
+                self._progress_guard(sweep_game, player_pseudonym, result.state, deps.content)
             self._release(data.game_id)
-        else:
+        elif not state.meta.scenario_id:   # 시나리오(튜토리얼) 판은 진척(단서·결말)에 반영하지 않는다
             self._progress_guard(apply_progress, player_pseudonym, args[4], deps.content.grudge_clues)
         if self.interactions is not None:
             self.interactions.complete_command_effects(data.game_id, args[-1], player_pseudonym)
@@ -407,7 +460,10 @@ class GameService:
             LOGGER.exception("progress apply failed; will retry on game end, command retry, review or outbox replay")
 
     def _sweep_saved(self, player_pseudonym, state):
-        """저장된 판으로 진척을 따라잡는다. 콘텐츠 조회 실패도 가드 안에서 처리해 재요청·복기를 막지 않는다."""
+        """저장된 판으로 진척을 따라잡는다. 콘텐츠 조회 실패도 가드 안에서 처리해 재요청·복기를 막지 않는다.
+        시나리오(튜토리얼) 판은 진척에 반영하지 않는다."""
+        if state.meta.scenario_id:
+            return
         self._progress_guard(lambda repo, player: sweep_game(repo, player, state, self.dependencies(state.meta).content),
                              player_pseudonym)
 
@@ -431,7 +487,10 @@ class GameService:
         return replace(from_jsonable(CommandOutput, json.loads(saved.response_json)), replayed=True)
 
     def _events(self, state, events, command_id=None):
+        """엔진 이벤트를 저장 봉투로 감싼다. 시나리오(튜토리얼) 판은 비사람 이벤트라 봉투에 가명·회차 ID를 넣지 않는다
+        (이벤트 계약·Bronze `nonhuman_identity`). 판 메타의 가명은 소유권·삭제용으로 그대로 둔다."""
         meta = state.meta
+        identity = (None, None) if meta.scenario_id else (meta.player_pseudonym, meta.session_id)
         return [EventEnvelope(
             event_id="", game_id=meta.game_id, seq=0, state_version=state.state_version,
             event_type=e.event_type.value, topic=topic_of(e.event_type),
@@ -440,6 +499,6 @@ class GameService:
             seed=meta.seed, rule_version=meta.rule_version, engine_version=meta.engine_version,
             content_version=meta.content_version, npc_policy_versions=meta.npc_policy_versions,
             model_versions=meta.model_versions, payload=e.payload,
-            player_pseudonym=meta.player_pseudonym, session_id=meta.session_id, command_id=command_id,
+            player_pseudonym=identity[0], session_id=identity[1], command_id=command_id,
             load_test=self.load_test,
         ) for e in events]
