@@ -24,9 +24,11 @@ class Command(BaseCommand):
     help = "씐 자 전략 밴딧: --init 은 초기 상태만 만들고, 인자 없이는 하루 갱신을 1회 실행합니다."
 
     def add_arguments(self, parser):
+        """--init(초기 상태만 만들기) 인자를 등록한다."""
         parser.add_argument("--init", action="store_true")
 
     def handle(self, *args, **options):
+        """Mongo에 연결해 씐 자 밴딧 하루 갱신(또는 초기 상태 생성)을 실행한다."""
         from pymongo import MongoClient
         from pymongo.errors import PyMongoError
         from pymongo.read_concern import ReadConcern

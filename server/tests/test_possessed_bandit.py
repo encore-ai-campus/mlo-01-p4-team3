@@ -46,6 +46,7 @@ class FixedChooser:
         self.result, self.error, self.calls = result, error, []
 
     def choose(self, game_id):
+        """고른 판 ID를 기록하고 정해 둔 팔을 돌려준다."""
         self.calls.append(game_id)
         if self.error:
             raise self.error
@@ -56,6 +57,7 @@ class Pinning(TestCase):
     """판 시작 고정 규칙(응용 계층)."""
 
     def test_open_human_game_gets_version_and_arm_after_inner_pinning(self):
+        """열린 사람 판은 안쪽 고정 뒤 밴딧 버전과 팔을 받는다."""
         inner = lambda m: replace(m, model_versions={"suspicion": "s1"})
         pinned = BanditPinning(inner, FixedChooser())(meta())
         self.assertEqual(pinned.model_versions, {"suspicion": "s1", BANDIT_KEY: "bandit-2", BANDIT_ARM_KEY: ARM})
@@ -74,6 +76,7 @@ class Pinning(TestCase):
                 self.assertEqual(pinning.chooser.calls, [])
 
     def test_chooser_failure_starts_uniform_and_logs(self):
+        """팔 고르기가 실패하면 균등으로 시작하고 경고를 남긴다."""
         m = meta()
         with self.assertLogs("paldo.web.model_versions", "WARNING") as logs:
             self.assertIs(BanditPinning(None, FixedChooser(error=RuntimeError("down")))(m), m)
@@ -87,6 +90,7 @@ class FakeStateCollection:
         self.doc, self.reads = doc, 0
 
     def find_one(self, query, *args):
+        """읽은 횟수를 세고 저장된 상태를 돌려준다."""
         self.reads += 1
         return copy.deepcopy(self.doc)
 
@@ -95,10 +99,12 @@ class Chooser(TestCase):
     """게시 상태 읽기(인프라)."""
 
     def test_missing_state_uses_bandit_zero_uniform_over_fixed_arms(self):
+        """상태가 없으면 bandit-0, 고정 팔 균등을 쓴다."""
         expected = bandit.VersionedMixSource(bandit.initial_state(ARMS), "bandit-0").arm_for("g-1")
         self.assertEqual(MongoBanditChooser(FakeStateCollection(), ARMS).choose("g-1"), ("bandit-0", expected))
 
     def test_latest_published_ratios_and_ttl_cache(self):
+        """최신 게시 비율을 읽고 60초 캐시를 지킨다."""
         state = bandit.initial_state(ARMS)
         state["versions"].append(dict(version="bandit-1", ratios={a: float(a == ARM) for a in ARMS}))
         now = [0.0]
@@ -111,6 +117,7 @@ class Chooser(TestCase):
         self.assertEqual(collection.reads, 2)
 
     def test_different_arms_in_state_fail_so_game_starts_uniform(self):
+        """상태의 팔 목록이 다르면 실패해 판은 균등으로 시작한다."""
         other = bandit.initial_state({ARM: ARMS[ARM]})   # 파일과 팔 구성이 다른 상태
         with self.assertRaises(ValueError):
             MongoBanditChooser(FakeStateCollection(other), ARMS).choose("g-1")
@@ -120,6 +127,7 @@ class PinnedMix(TestCase):
     """판 기록에서 팔 복원(인프라 혼합 공급자)."""
 
     def test_recorded_arm_is_used_and_unknown_or_missing_is_uniform(self):
+        """기록된 팔을 쓰고, 모르는 팔이나 없는 팔은 균등이다."""
         source = PinnedMixSource(ARMS)
         source.note(meta("a", model_versions={BANDIT_KEY: "bandit-1", BANDIT_ARM_KEY: ARM}))
         source.note(meta("b", model_versions={BANDIT_KEY: "bandit-1", BANDIT_ARM_KEY: "nope"}))
@@ -129,6 +137,7 @@ class PinnedMix(TestCase):
         self.assertEqual(source.mix_for("c"), StrategyMix())
 
     def test_table_is_bounded(self):
+        """판별 팔 표 크기에 상한이 있다."""
         source = PinnedMixSource(ARMS, limit=2)
         for gid in ("a", "b", "c"):
             source.note(meta(gid, model_versions={BANDIT_KEY: "bandit-1", BANDIT_ARM_KEY: ARM}))
@@ -141,12 +150,14 @@ class ServiceWiring(TestCase):
 
     @staticmethod
     def service():
+        """시험용 게임 서비스를 조립한다."""
         engine = ContentPolicyEngine(mix_source=PinnedMixSource(ARMS))
         return GameService(engine, InMemoryGameRepository(), InMemoryProgressRepository(),
                            lambda m: EngineDeps(BUNDLE, FakeSuspicionModel()),
                            lambda data, player: meta("", player_pseudonym=player))
 
     def test_start_records_arm_and_events_carry_it_and_other_process_restores(self):
+        """시작 때 팔을 기록하고 이벤트에 실으며 다른 프로세스도 같은 팔을 복원한다."""
         service = self.service()
         service.pin_versions = BanditPinning(service.pin_versions, FixedChooser())
         out = service.start(StartGameInput("p1", "base6", None, "f"), "p1", True)
@@ -166,6 +177,7 @@ class ServiceWiring(TestCase):
         self.assertEqual(other._for(BUNDLE, state.meta.rule_version).policy.possessed.mix(gid).mix_id, ARM)
 
     def test_attach_reads_missing_state_as_bandit_zero(self):
+        """상태가 없으면 bandit-0으로 읽는다."""
         service = attach_possessed_bandit(self.service(), {"possessed_bandit": FakeStateCollection()}, "", ARMS,
                                           lambda: True)
         out = service.start(StartGameInput("p1", "base6", None, "f"), "p1", True)
@@ -174,6 +186,7 @@ class ServiceWiring(TestCase):
         self.assertIn(state.meta.model_versions[BANDIT_ARM_KEY], ARMS)
 
     def test_engine_without_mix_source_is_uniform(self):
+        """혼합 공급자가 없는 엔진은 균등이다."""
         policy = ContentPolicyEngine()._for(BUNDLE, RULE_BASE_VERSION).policy
         self.assertEqual(policy.possessed.mix("x"), StrategyMix())
 
@@ -203,6 +216,7 @@ class FakeGames:
         self.docs, self.queries = docs, []
 
     def find(self, query, projection):
+        """질의를 기록하고 조건에 맞는 판을 돌려준다."""
         self.queries.append(query)
         return iter(copy.deepcopy(self.docs))
 
@@ -214,12 +228,15 @@ class MemoryStore:
         self.state = bandit.initial_state(arms)
 
     def load(self):
+        """저장된 상태의 복사본을 돌려준다."""
         return copy.deepcopy(self.state)
 
     def forget_games(self, ids):
+        """지정한 판을 상태에서 뺀다."""
         self.state = bandit.forget_games(self.state, ids)
 
     def update(self, games, *, seed=7):
+        """판 결과로 갱신안을 만들어 상태에 반영한다."""
         updated = bandit.propose_update(self.state, games, seed=seed)
         if updated is None:
             return None
@@ -231,6 +248,7 @@ class DailyUpdate(TestCase):
     """하루 갱신 배치(인프라 조립): 동의 판만, 삭제·동의 철회 판은 먼저 뺀다."""
 
     def test_publishes_from_consented_games_only_and_filters_query(self):
+        """동의한 판만으로 게시하고 질의를 거른다."""
         docs = [game_doc(i, f"u{i}") for i in range(22)] + [game_doc(99, "stranger")]
         games, store = FakeGames(docs), MemoryStore(ARMS)
         self.assertEqual(run_update(games, store, {f"u{i}" for i in range(22)}), (True, 0, 22))
@@ -239,12 +257,14 @@ class DailyUpdate(TestCase):
         self.assertEqual(games.queries[0]["state.meta.source"], "human")
 
     def test_below_twenty_responses_does_not_publish(self):
+        """새 응답이 20개 미만이면 게시하지 않는다."""
         store = MemoryStore(ARMS)
         result = run_update(FakeGames([game_doc(i, f"u{i}") for i in range(5)]), store, {f"u{i}" for i in range(5)})
         self.assertEqual(result, (False, 0, 5))
         self.assertEqual(store.state["versions"], [])
 
     def test_deleted_or_revoked_games_are_forgotten_before_next_update(self):
+        """지워졌거나 동의가 빠진 판은 다음 갱신 전에 뺀다."""
         store = MemoryStore(ARMS)
         users = {f"u{i}" for i in range(22)}
         run_update(FakeGames([game_doc(i, f"u{i}") for i in range(22)]), store, users)
@@ -274,6 +294,7 @@ class PrivacyForget(TestCase):
     """개인정보 삭제 단계에서 밴딧 상태의 판도 바로 뺀다."""
 
     def test_missing_state_is_noop_and_known_ids_are_forgotten(self):
+        """상태가 없으면 아무것도 안 하고, 아는 판 ID는 뺀다."""
         empty = MagicMock()
         empty.__getitem__.return_value.find_one.return_value = None
         self.assertEqual(forget_bandit_games(empty, ["g1"]), 0)
@@ -290,6 +311,7 @@ class Composition(TestCase):
     """운영 조립: 스위치와 관계없이 혼합 공급자를 끼우고, 새 판 고정만 스위치를 따른다."""
 
     def build(self):
+        """설정에 맞춰 게임 서비스를 조립한다."""
         from server.infra.game_factory import build_game_service
         runtime = MagicMock(collection_names=["games", "progress", "content", "b_test_sessions", "b_ad_identities"])
         runtime.factory_service.return_value.interactions = None
@@ -299,6 +321,7 @@ class Composition(TestCase):
         return built, opened.call_args.kwargs["engine"]
 
     def test_switch_controls_new_pinning_only(self):
+        """스위치는 새 판의 팔 고정만 켜고 끈다."""
         for flag in (False, True):
             with self.subTest(flag=flag), override_settings(POSSESSED_BANDIT=flag):
                 built, engine = self.build()
