@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1130" viewBox="0 0 1600 1130" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <title>팔도무록 한 장 요약</title>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a5260"/>
+    </marker>
+  </defs>
+  <style>
+    .t { fill: #1f2328; }
+    .m { fill: #5c6370; }
+    .h1 { font-size: 34px; font-weight: 700; }
+    .h2 { font-size: 22px; font-weight: 700; }
+    .h3 { font-size: 16px; font-weight: 700; }
+    .b15 { font-size: 15px; }
+    .b14 { font-size: 14px; }
+    .b13 { font-size: 13.5px; }
+    .bold { font-weight: 700; }
+    .c { text-anchor: middle; }
+    .box { fill: #ffffff; stroke: #cfccc4; stroke-width: 1.5; }
+    .play { fill: #f5e6d0; stroke: #b5793a; stroke-width: 2.5; }
+    .ai { fill: #dfe7f0; stroke: #2f4f7a; stroke-width: 2; }
+    .ops { fill: #e8e6df; stroke: #a9a59b; stroke-width: 1.5; }
+    .pill { fill: #fffaf2; stroke: #b5793a; stroke-width: 2; }
+    .line { stroke: #4a5260; stroke-width: 2; fill: none; }
+  </style>
+
+  <!-- 배경 -->
+  <rect width="1600" height="1130" fill="#f3f1ec"/>
+
+  <!-- 제목 -->
+  <text x="64" y="78" class="t h1">팔도무록 — 혼자서 10분 안팎, 거짓말 속 창귀를 찾는 무당</text>
+  <text x="64" y="114" class="m b15">싱글플레이 사회적 추론 웹게임 · 파일럿 2026-11-05 ~ 11-12 · 4명</text>
+
+  <!-- 범례 -->
+  <rect x="1150" y="52" width="16" height="16" rx="3" fill="#f5e6d0" stroke="#b5793a" stroke-width="2"/>
+  <text x="1174" y="66" class="m b14">플레이어가 하는 일</text>
+  <rect x="1310" y="52" width="16" height="16" rx="3" fill="#dfe7f0" stroke="#2f4f7a" stroke-width="2"/>
+  <text x="1334" y="66" class="m b14">AI가 맡는 일</text>
+  <rect x="1440" y="52" width="16" height="16" rx="3" fill="#e8e6df" stroke="#a9a59b" stroke-width="2"/>
+  <text x="1464" y="66" class="m b14">운영</text>
+  <rect x="1150" y="86" width="64" height="26" rx="13" fill="#dcefe2"/>
+  <text x="1182" y="104" class="b13 bold c" fill="#2e6b3f">켜짐</text>
+  <rect x="1224" y="86" width="80" height="26" rx="13" fill="#f5e6d0" stroke="#b5793a" stroke-width="1.5"/>
+  <text x="1264" y="104" class="b13 bold c" fill="#7a4f1f">준비 중</text>
+
+  <!-- ① 풀려는 문제 -->
+  <rect x="64" y="150" width="300" height="410" rx="14" class="box"/>
+  <text x="88" y="190" class="t h2">해결하려는 불편</text>
+  <text x="88" y="240" class="t h3">사람이 모여야 한 판이 열린다</text>
+  <text x="88" y="266" class="m b14">→ 혼자서 NPC 주민들과 한 판</text>
+  <text x="88" y="330" class="t h3">한 판이 길고 규칙이 어렵다</text>
+  <text x="88" y="356" class="m b14">→ 10분 안팎 목표, 첫 판 단계별 안내</text>
+  <text x="88" y="420" class="t h3">지고 나면 이유를 모른다</text>
+  <text x="88" y="446" class="m b14">→ 복기에서 근거를 보여 준다</text>
+  <line x1="88" y1="490" x2="340" y2="490" stroke="#e2dfd8" stroke-width="1.5"/>
+  <text x="88" y="522" class="m b13">설치 없이 브라우저로, ID만 만들고 시작</text>
+
+  <line x1="366" y1="355" x2="396" y2="355" class="line" marker-end="url(#arr)"/>
+
+  <!-- ② 한 판의 경험 -->
+  <rect x="400" y="150" width="820" height="410" rx="16" class="play"/>
+  <text x="424" y="190" class="h2" fill="#7a4f1f">한 판의 경험</text>
+  <text x="572" y="190" class="m b15">화면 순서대로 · 기본 6인 판(무당 + 주민 5)</text>
+
+  <line x1="540" y1="242" x2="555" y2="242" stroke="#b5793a" stroke-width="2"/>
+  <line x1="671" y1="242" x2="686" y2="242" stroke="#b5793a" stroke-width="2"/>
+  <line x1="802" y1="242" x2="817" y2="242" stroke="#b5793a" stroke-width="2"/>
+  <line x1="933" y1="242" x2="948" y2="242" stroke="#b5793a" stroke-width="2"/>
+  <line x1="1064" y1="242" x2="1079" y2="242" stroke="#b5793a" stroke-width="2"/>
+  <rect x="424" y="220" width="116" height="44" rx="22" class="pill"/>
+  <text x="482" y="249" class="t h3 c">아침</text>
+  <rect x="555" y="220" width="116" height="44" rx="22" class="pill"/>
+  <text x="613" y="249" class="t h3 c">회의 1</text>
+  <rect x="686" y="220" width="116" height="44" rx="22" class="pill"/>
+  <text x="744" y="249" class="t h3 c">추궁</text>
+  <rect x="817" y="220" width="116" height="44" rx="22" class="pill"/>
+  <text x="875" y="249" class="t h3 c">회의 2</text>
+  <rect x="948" y="220" width="116" height="44" rx="22" class="pill"/>
+  <text x="1006" y="249" class="t h3 c">투표</text>
+  <rect x="1079" y="220" width="116" height="44" rx="22" fill="#1f2733"/>
+  <text x="1137" y="249" class="h3 c" fill="#ffffff">밤</text>
+
+  <text x="482" y="298" class="t b14 c">실종 발표,</text>
+  <text x="482" y="320" class="t b14 c">피해 장소 공개</text>
+  <text x="482" y="342" class="t b14 c">주민 진술 읽기</text>
+  <text x="613" y="298" class="t b14 c">의심 · 감싸기</text>
+  <text x="613" y="320" class="t b14 c">모순 지적</text>
+  <text x="744" y="298" class="t b14 c">낮마다 2번</text>
+  <text x="744" y="320" class="t b14 c">캐묻기</text>
+  <text x="744" y="342" class="t b14 c">고백 또는 역공</text>
+  <text x="875" y="298" class="t b14 c">추궁 결과로</text>
+  <text x="875" y="320" class="t b14 c">다시 설득</text>
+  <text x="1006" y="298" class="t b14 c">동시 비공개 투표</text>
+  <text x="1006" y="320" class="t b14 c">무당도</text>
+  <text x="1006" y="342" class="t b14 c">갇힐 수 있다</text>
+  <text x="1137" y="298" class="t b14 c">1명 점치기</text>
+  <text x="1137" y="320" class="t b14 c">탁함 = 씐 자</text>
+  <text x="1137" y="342" class="t b14 c">또는 숨긴 비밀</text>
+
+  <path d="M1137,358 C1137,384 1111,388 1071,388 L522,388 C496,388 482,384 482,362" class="line" marker-end="url(#arr)"/>
+  <text x="810" y="414" class="m b14 c">승패가 날 때까지 반복 · 씐 자가 갇히면 투표 직후 끝난다</text>
+
+  <rect x="424" y="440" width="378" height="96" rx="10" fill="#fffaf2" stroke="#d9b98f" stroke-width="1.5"/>
+  <text x="444" y="470" class="t h3">말하는 방법</text>
+  <text x="444" y="496" class="t b14">버튼으로 고르거나 문장으로 말한다</text>
+  <text x="444" y="518" class="m b14">문장은 발언 카드로 미리 보고 확인하면 실행</text>
+  <rect x="818" y="440" width="378" height="96" rx="10" fill="#fffaf2" stroke="#d9b98f" stroke-width="1.5"/>
+  <text x="838" y="470" class="t h3">보는 화면</text>
+  <text x="838" y="496" class="t b14">비주얼 노벨형 회의 화면, 진술표 · 수첩</text>
+  <text x="838" y="518" class="m b14">첫 판은 족제비가 단계마다 안내</text>
+
+  <line x1="1222" y1="355" x2="1252" y2="355" class="line" marker-end="url(#arr)"/>
+
+  <!-- ③ 판이 끝나도 남는 것 -->
+  <rect x="1256" y="150" width="280" height="410" rx="14" class="box"/>
+  <text x="1280" y="190" class="t h2">판이 끝나도</text>
+  <text x="1280" y="218" class="t h2">남는 것</text>
+  <text x="1280" y="268" class="t h3">복기</text>
+  <text x="1280" y="294" class="m b14">누가 씐 자였고</text>
+  <text x="1280" y="316" class="m b14">누가 무엇을 숨겼는지</text>
+  <text x="1280" y="368" class="t h3">원한의 단서</text>
+  <text x="1280" y="394" class="m b14">고백 · 추궁에서 나온 물증이</text>
+  <text x="1280" y="416" class="m b14">판을 넘어 쌓인다</text>
+  <text x="1280" y="468" class="t h3">한풀이 결말</text>
+  <text x="1280" y="494" class="m b14">같은 원한의 단서 세 조각이</text>
+  <text x="1280" y="516" class="m b14">모이면 다음 판부터 선택</text>
+
+  <!-- ④ 이 게임만의 점 -->
+  <rect x="64" y="590" width="1472" height="110" rx="14" class="box"/>
+  <text x="88" y="636" class="t h2">차별화 방향</text>
+  <text x="88" y="664" class="m b13">판마다 숙주 · 비밀 · 행적이 바뀐다</text>
+  <text x="380" y="626" class="t h3">거짓말이 두 종류</text>
+  <text x="380" y="652" class="m b14">씐 자도, 비밀 있는 주민도</text>
+  <text x="380" y="674" class="m b14">거짓말을 한다</text>
+  <text x="672" y="626" class="t h3">추리만으로는 못 이긴다</text>
+  <text x="672" y="652" class="m b14">답을 알아도 주민이</text>
+  <text x="672" y="674" class="m b14">투표해 줘야 한다</text>
+  <text x="964" y="626" class="t h3">능력치 대결 없음</text>
+  <text x="964" y="652" class="m b14">행적 진술과 공개된</text>
+  <text x="964" y="674" class="m b14">피해 장소를 맞춰 본다</text>
+  <text x="1256" y="626" class="t h3">한국 민속 창작 설정</text>
+  <text x="1256" y="652" class="m b14">강원도 산골 솔뫼골,</text>
+  <text x="1256" y="674" class="m b14">창귀 전승을 바탕으로</text>
+  <line x1="356" y1="612" x2="356" y2="680" stroke="#e2dfd8" stroke-width="1.5"/>
+  <line x1="648" y1="612" x2="648" y2="680" stroke="#e2dfd8" stroke-width="1.5"/>
+  <line x1="940" y1="612" x2="940" y2="680" stroke="#e2dfd8" stroke-width="1.5"/>
+  <line x1="1232" y1="612" x2="1232" y2="680" stroke="#e2dfd8" stroke-width="1.5"/>
+
+  <!-- ⑤ AI가 맡는 일 -->
+  <rect x="64" y="730" width="1036" height="230" rx="14" class="box"/>
+  <text x="88" y="770" class="t h2">AI가 맡는 일</text>
+  <text x="240" y="770" class="m b15">플레이어가 느끼는 것으로</text>
+
+  <rect x="88" y="790" width="236" height="150" rx="10" class="ai"/>
+  <text x="104" y="820" class="h3" fill="#2f4f7a">내 문장을 알아듣는다</text>
+  <text x="104" y="848" class="t b13">"대장장이가 수상해"</text>
+  <text x="104" y="870" class="t b13">→ 의심하기 카드로 바꿔</text>
+  <text x="104" y="892" class="t b13">확인받고 실행</text>
+  <rect x="104" y="906" width="56" height="24" rx="12" fill="#dcefe2"/>
+  <text x="132" y="923" class="b13 bold c" fill="#2e6b3f">켜짐</text>
+
+  <rect x="340" y="790" width="236" height="150" rx="10" class="ai"/>
+  <text x="356" y="820" class="h3" fill="#2f4f7a">주민이 증거로 판단한다</text>
+  <text x="356" y="848" class="t b13">모순 · 목격 · 점괘를 모아</text>
+  <text x="356" y="870" class="t b13">누구를 의심할지 정한다</text>
+  <text x="356" y="892" class="t b13">지금은 규칙, 학습 모델은 관문 뒤</text>
+  <rect x="356" y="906" width="56" height="24" rx="12" fill="#dcefe2"/>
+  <text x="384" y="923" class="b13 bold c" fill="#2e6b3f">켜짐</text>
+
+  <rect x="592" y="790" width="236" height="150" rx="10" class="ai"/>
+  <text x="608" y="820" class="h3" fill="#2f4f7a">주민마다 말투가 다르다</text>
+  <text x="608" y="848" class="t b13">성향별로 미리 쓰고</text>
+  <text x="608" y="870" class="t b13">검수한 대사를 쓴다</text>
+  <text x="608" y="892" class="t b13">게임 중 생성 AI 호출 없음</text>
+
+  <rect x="844" y="790" width="236" height="150" rx="10" class="ai"/>
+  <text x="860" y="820" class="h3" fill="#2f4f7a">기록으로 다듬어 간다</text>
+  <text x="860" y="848" class="t b13">플레이 기록으로 다시 학습</text>
+  <text x="860" y="870" class="t b13">평가 관문을 넘을 때만 교체</text>
+  <text x="860" y="892" class="t b13">못 넘으면 기존 판단 유지</text>
+  <rect x="860" y="906" width="72" height="24" rx="12" fill="#f5e6d0" stroke="#b5793a" stroke-width="1.5"/>
+  <text x="896" y="923" class="b13 bold c" fill="#7a4f1f">준비 중</text>
+
+  <!-- ⑥ 운영 -->
+  <rect x="1136" y="730" width="400" height="230" rx="14" class="ops"/>
+  <text x="1160" y="770" class="t h2">운영</text>
+  <text x="1160" y="806" class="t b15">· 무료 플레이, 수익 모델은 광고</text>
+  <text x="1160" y="834" class="t b15">· 광고는 로비 · 결과 · 복기 3곳만</text>
+  <text x="1160" y="862" class="t b15">· 회의 · 투표 · 밤 화면엔 광고 없음</text>
+  <text x="1160" y="890" class="t b15">· 파일럿 광고는 가상 광고로 검증</text>
+  <text x="1160" y="918" class="t b15">· 게임 기록은 가명 ID, 12/12 일괄 삭제</text>
+  <text x="1160" y="946" class="t b15">· 고가 장비 · 유료 외부 서비스 없이 운영</text>
+
+  <!-- 바닥글 -->
+  <text x="64" y="1006" class="t b15"><tspan class="bold">이번 파일럿에서 확인하는 것</tspan><tspan dx="12">완주 · 한 판 시간 · 자유 입력 사용성 · 광고 계측</tspan><tspan dx="12" class="m">수요와 수익성은 출시 후 검증</tspan></text>
+  <text x="64" y="1042" class="t b15"><tspan class="bold">항상 지키는 것</tspan><tspan dx="12">숨은 진실은 엔진만 안다 · 판단 모델이나 광고가 멈춰도 규칙으로 게임은 계속된다 · 같은 조건과 선택이면 같은 판이 재현된다</tspan></text>
+  <text x="64" y="1078" class="m b14">상태 표시는 2026-11-10 기준</text>
+</svg>
