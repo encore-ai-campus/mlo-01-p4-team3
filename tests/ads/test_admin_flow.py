@@ -21,7 +21,7 @@ class AdminBillingFlow(TestCase):
     def setUp(self):
         self.now = int(datetime(2026, 11, 12, tzinfo=timezone.utc).timestamp() * 1000)
         self.serial = 0
-        self.client.force_login(get_user_model().objects.create_superuser("billing_operator", password="local-check-strong"))
+        self.client.force_login(get_user_model().objects.create_superuser("billing_operator"))
         provider = patch.object(views, "get_service", side_effect=self.service)
         provider.start()
         self.addCleanup(provider.stop)

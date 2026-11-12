@@ -56,7 +56,7 @@ class OperationsReport(TestCase):
             request="request-digest", impressed=True, clicked=True,
             serve_data={"load_test": False, "record": {
                 "campaign_id": "report", "source": "human", "served_at_ms": 1794409200000}})
-        self.operator = get_user_model().objects.create_superuser("report_operator", password="local-check-strong")
+        self.operator = get_user_model().objects.create_superuser("report_operator")
         self.client.force_login(self.operator)
         self.url = reverse("admin:ads_web_campaign_operations")
         self.filters = {"start_day": "2026-11-12", "end_day": "2026-11-12", "source": "human"}
