@@ -44,7 +44,7 @@ class Command(BaseCommand):
                 if options["init"]:
                     result = {"version": latest_version(store.load()), "initialized": True}
                 else:
-                    published, forgotten, games = run_update(database["games"], store, consented_pseudonyms())
+                    published, forgotten, games = run_update(database["games"], store, consented_pseudonyms)
                     result = {"published": published, "forgotten": forgotten, "games": games,
                               "version": latest_version(store.load())}
         except (PyMongoError, ValueError, KeyError) as error:

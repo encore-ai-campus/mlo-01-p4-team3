@@ -256,6 +256,21 @@ class DailyUpdate(TestCase):
         self.assertFalse({"g000", "g001"} & set(store.state["versions"][0]["game_ids"]))
 
 
+    def test_deletion_during_update_is_removed_after_publication(self):
+        """읽은 뒤 게시 전에 지워진 판(개인정보 삭제와 겹친 실행)은 게시 직후 다시 읽어 뺀다."""
+        docs = [game_doc(i, f"u{i}") for i in range(22)]
+        games, store = FakeGames(docs), MemoryStore(ARMS)
+        reads = []
+
+        def consent():
+            reads.append(1)
+            return {f"u{i}" for i in range(22)} - ({"u5"} if len(reads) > 1 else set())
+        published, forgotten, count = run_update(games, store, consent)
+        self.assertEqual((published, forgotten, count), (True, 1, 22))
+        self.assertNotIn("g005", store.state["game_fingerprints"])
+        self.assertNotIn("g005", store.state["reward_values"])
+
+
 class PrivacyForget(TestCase):
     """개인정보 삭제 단계에서 밴딧 상태의 판도 바로 뺀다."""
 

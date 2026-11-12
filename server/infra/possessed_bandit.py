@@ -102,22 +102,36 @@ def bandit_envelopes(games_collection):
                 yield envelope
 
 
-def run_update(games_collection, store, consented: set, *, seed: int = 7):
-    """하루 갱신 1회. (게시 여부, 지운 판 수, 대상 판 수)를 돌려준다.
+def _eligible_ids(games_collection, consented) -> set[str]:
+    """지금 판 저장소·동의 목록 기준 대상 판 ID."""
+    from ml.bandit import games_from_events
+    allow = consented() if callable(consented) else consented
+    return {g["game_id"] for g in games_from_events(list(bandit_envelopes(games_collection)), allow)}
 
-    `store`는 `ml.mongo_bandit.MongoBanditStore`. 이미 반영된 판 중 지금 입력에 없는 판(삭제·동의 철회)은
-    먼저 `forget_games`로 빼야 `propose_update`의 "과거 판 누락" 거부에 걸리지 않는다.
+
+def run_update(games_collection, store, consented, *, seed: int = 7):
+    """하루 갱신 1회. (게시 여부, 뺀 판 수, 대상 판 수)를 돌려준다.
+
+    `store`는 `ml.mongo_bandit.MongoBanditStore`, `consented`는 동의 가명 집합 또는 그 집합을 돌려주는 함수.
+    이미 반영된 판 중 지금 입력에 없는 판(삭제·동의 철회)은 먼저 `forget_games`로 빼야 `propose_update`의
+    "과거 판 누락" 거부에 걸리지 않는다. 게시한 뒤에는 판 저장소와 동의 목록을 다시 읽어, 읽은 뒤 게시 전에
+    삭제·철회된 판이 다시 들어갔으면 바로 뺀다(개인정보 삭제와 겹친 실행).
     """
     from ml.bandit import games_from_events
-    games = games_from_events(list(bandit_envelopes(games_collection)), consented)
+    allow = consented() if callable(consented) else consented
+    games = games_from_events(list(bandit_envelopes(games_collection)), allow)
     present = {g["game_id"] for g in games}
-    known = set(store.load()["game_fingerprints"])
-    gone = known - present
+    gone = set(store.load()["game_fingerprints"]) - present
     if gone:
         store.forget_games(gone)
     version = store.update(games, seed=seed)
+    if version is not None:
+        again = _eligible_ids(games_collection, consented)
+        late = set(store.load()["game_fingerprints"]) - again
+        if late:
+            store.forget_games(late)
+            gone |= late
     return version is not None, len(gone), len(games)
-
 
 COLLECTION = "possessed_bandit"
 
