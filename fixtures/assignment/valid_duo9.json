@@ -1,0 +1,78 @@
+{
+  "game_id": "g_duo9_001",
+  "preset_id": "duo9",
+  "residents": [
+    "hunjang",
+    "jumo",
+    "blacksmith",
+    "meosum",
+    "yakcho",
+    "gwabu",
+    "ferryman",
+    "gisaeng",
+    "hunter"
+  ],
+  "night0_victim": "gwabu",
+  "roles": {
+    "hunjang": "villager",
+    "jumo": "villager",
+    "blacksmith": "possessed",
+    "meosum": "villager",
+    "yakcho": "villager",
+    "gwabu": "villager",
+    "ferryman": "villager",
+    "gisaeng": "possessed",
+    "hunter": "villager"
+  },
+  "secrets": {
+    "yakcho": "gambling",
+    "jumo": "tryst",
+    "meosum": "grain"
+  },
+  "night0_whereabouts": {
+    "hunjang": {
+      "evening": "home",
+      "midnight": "home"
+    },
+    "jumo": {
+      "evening": "tavern",
+      "midnight": "shrine"
+    },
+    "blacksmith": {
+      "evening": "home",
+      "midnight": "well"
+    },
+    "meosum": {
+      "evening": "gate",
+      "midnight": "home"
+    },
+    "yakcho": {
+      "evening": "home",
+      "midnight": "tavern"
+    },
+    "gwabu": {
+      "evening": "home",
+      "midnight": "well"
+    },
+    "ferryman": {
+      "evening": "home",
+      "midnight": "home"
+    },
+    "gisaeng": {
+      "evening": "tavern",
+      "midnight": "tavern"
+    },
+    "hunter": {
+      "evening": "home",
+      "midnight": "home"
+    }
+  },
+  "night0_plan": {
+    "executor": "blacksmith",
+    "victim": "gwabu",
+    "agreed_alibis": {
+      "blacksmith": "tavern",
+      "gisaeng": "tavern"
+    }
+  }
+}

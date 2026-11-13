@@ -1,0 +1,6 @@
+"""광고 서버 WSGI 진입점."""
+import os
+from django.core.wsgi import get_wsgi_application
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ads.project.settings")
+application = get_wsgi_application()

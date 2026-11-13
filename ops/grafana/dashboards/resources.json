@@ -1,0 +1,151 @@
+{
+  "id": null,
+  "uid": "paldo-c08-resources",
+  "title": "PJ4 resources",
+  "schemaVersion": 41,
+  "version": 1,
+  "tags": [
+    "pj4",
+    "C-08-01"
+  ],
+  "refresh": "15s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "VM CPU by notebook",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (1-avg by(notebook,vm)(rate(node_cpu_seconds_total{job=\"paldo-nodes\",mode=\"idle\"}[5m])))",
+          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "VM RAM by notebook",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100*(1-node_memory_MemAvailable_bytes{job=\"paldo-nodes\"}/node_memory_MemTotal_bytes{job=\"paldo-nodes\"})",
+          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "VM disk by notebook",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100*(1-node_filesystem_avail_bytes{job=\"paldo-nodes\",fstype!~\"tmpfs|overlay|squashfs\"}/node_filesystem_size_bytes{job=\"paldo-nodes\",fstype!~\"tmpfs|overlay|squashfs\"})",
+          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "VM target availability",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=\"paldo-nodes\"}",
+          "legendFormat": "{{notebook}} {{vm}} {{model_version}} {{campaign}}"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 11,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line"
+          }
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "text": "Prometheus",
+          "value": "prometheus"
+        }
+      }
+    ]
+  }
+}

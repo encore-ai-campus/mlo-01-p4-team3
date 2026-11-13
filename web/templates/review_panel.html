@@ -1,0 +1,28 @@
+{% load ad_slots %}
+<section class="end-card end-review" aria-labelledby="review-title">
+  <h2 id="review-title">그날의 선택을 돌아봅니다.</h2>
+  <h3>마을 사람들의 정체</h3>
+  <ul class="review-residents">
+    {% for row in review.residents %}
+      <li{% if row.possessed %} class="is-possessed"{% endif %}>
+        <strong>{{ row.name }}</strong> · {{ row.role }}{% if row.secret %} <small>숨긴 비밀: {{ row.secret }}</small>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% include "review_narration.html" %}
+  <h3>{{ review.timeline_title }}</h3>
+  <ol class="review-reasons" data-review-timeline>
+    {% for row in review.reasons %}
+      <li class="review-reason" data-review-item="{{ row.item_id }}">
+        <p class="review-reason-head"><span class="review-when">{{ row.when }}</span> <strong>{{ row.actor }}</strong> · {{ row.action }}{% if row.target %} → {{ row.target }}{% endif %}</p>
+        {% if row.text %}<p class="review-reason-text">{{ row.text }}</p>{% endif %}
+        <p class="review-reason-meta">{% for code in row.reason_codes %}<code class="review-code">{{ code }}</code>{% endfor %}{% if row.evidence %} <span class="review-evidence">근거: {{ row.evidence|join:", " }}</span>{% endif %}</p>
+      </li>
+    {% empty %}
+      <li class="review-reason review-empty">{{ review.empty_text }}</li>
+    {% endfor %}
+  </ol>
+  {% if not tutorial_mode %}<h3>이번 판에서 얻은 원한 단서</h3>
+  <ul class="review-clues">{% for text in review.clues %}<li>{{ text }}</li>{% empty %}<li>이번 판에서 새로 얻은 단서는 없습니다.</li>{% endfor %}</ul>{% endif %}
+</section>
+{% if not tutorial_mode %}{% ad_slot 'review_side' %}{% endif %}

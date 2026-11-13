@@ -1,0 +1,53 @@
+[
+  {
+    "job_id": "job_001",
+    "game_id": "g_base6_001",
+    "state_version": 3,
+    "speech_id": "sp05",
+    "npc_id": "jumo",
+    "persona": "주모. 말투: 시원시원한 반말 섞인 하게체",
+    "reaction": "evade",
+    "fact_sentence": "그날 한밤엔 우물가에 있었소.",
+    "allowed_names": [
+      "주모",
+      "무당"
+    ],
+    "fallback_text": "그날 한밤엔 우물가에 있었소. …더 묻지 마시오.",
+    "priority": 0,
+    "deadline_ms": 15000
+  },
+  {
+    "job_id": "job_002",
+    "game_id": "g_base6_001",
+    "state_version": 3,
+    "speech_id": "sp_x1",
+    "npc_id": "yakcho",
+    "persona": "약초꾼. 말투: 느릿한 노인 말투",
+    "reaction": "confess",
+    "fact_sentence": "그날 한밤엔 주막 뒷방에 있었소. 투전판에 끼었소.",
+    "allowed_names": [
+      "약초꾼",
+      "무당"
+    ],
+    "fallback_text": "그날 한밤엔 주막 뒷방에 있었소. 투전판에 끼었소.",
+    "priority": 0,
+    "deadline_ms": 15000
+  },
+  {
+    "job_id": "job_003",
+    "game_id": "g_base6_001",
+    "state_version": 9,
+    "speech_id": "sp_x2",
+    "npc_id": "blacksmith",
+    "persona": "대장장이. 말투: 거친 말투, 짧은 문장",
+    "reaction": "counter",
+    "fact_sentence": "그날 한밤엔 집에 있었소.",
+    "allowed_names": [
+      "대장장이",
+      "무당"
+    ],
+    "fallback_text": "그날 한밤엔 집에 있었소. 그러는 무당 양반은 어디 있었소?",
+    "priority": 0,
+    "deadline_ms": 15000
+  }
+]

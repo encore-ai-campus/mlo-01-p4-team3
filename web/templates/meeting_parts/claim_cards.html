@@ -1,0 +1,41 @@
+{% load meeting %}
+{% if claims %}
+  <section{% if not classic_mode %} class="record-panel"{% endif %} aria-labelledby="claim-list-title">
+    {% if stage_records %}<div class="record-paper">{% endif %}
+    <h2 id="claim-list-title">진술표</h2>
+    {% if not stage_records %}<p class="section-guide">공개된 진술입니다. 서로의 말을 비교하며 판단하세요.</p>{% endif %}
+    <div class="record-filters">
+      <label><span{% if stage_records %} class="sr-only"{% endif %}>인물</span>
+        <select data-record-filter="speaker"><option value="">{% if stage_records %}인물{% else %}전체{% endif %}</option>{% for person in vm.people %}<option value="{{ person.npc_id }}">{{ person.name|display_name }}</option>{% endfor %}</select>
+      </label>
+      <label><span{% if stage_records %} class="sr-only"{% endif %}>가리키는 밤</span>
+        <select data-record-filter="night"><option value="">{% if stage_records %}밤{% else %}전체{% endif %}</option>{% for night in claim_nights %}<option value="{{ night }}">{{ night }}일째 밤</option>{% endfor %}</select>
+      </label>
+      <label><span{% if stage_records %} class="sr-only"{% endif %}>시간대</span>
+        <select data-record-filter="slot"><option value="">{% if stage_records %}시간대{% else %}전체{% endif %}</option><option value="evening">초저녁</option><option value="midnight">한밤</option></select>
+      </label>
+    </div>
+    {% if stage_records %}<p class="section-guide record-claim-guide">비교할 진술 두 개를 선택해 주세요.</p>{% endif %}
+    <p class="record-count" data-record-count></p>
+    {% if stage_records %}{% include "meeting_parts/record_comparison.html" %}{% endif %}
+    {% if end_records %}
+      <p data-record-empty role="status" hidden>조건에 맞는 진술이 없습니다.</p>
+      <p data-record-hidden-selection role="status" hidden></p>
+      <button type="button" data-record-reset{% tip "record_filter_reset" %} hidden>필터 초기화</button>
+    {% endif %}
+    <ul class="claim-cards"{% if stage_records %} tabindex="0" aria-label="진술 목록"{% endif %}>
+      {% for claim in claims %}
+        <li data-record-speaker="{{ claim.card.speaker_id }}" data-record-night="{{ claim.card.night }}" data-record-slot="{{ claim.card.slot }}" data-record-id="{{ claim.card.claim_id }}">
+          <div class="claim-speaker">
+            <label class="record-selection"><input type="checkbox" data-record-select value="{{ claim.evidence_value }}" aria-label="{{ claim.card.speaker_name|display_name }} 진술 선택"></label>
+            {% if classic_mode %}{% if claim.place_asset_id %}<img src="{% asset_url claim.place_asset_id %}" alt="" width="20" height="20">{% endif %}{% elif vm.phase != 'night' %}{% if claim.card.speaker_id == 'mudang' %}<img class="review-portrait" src="{% review_asset mudang_portrait_id|default:'portrait:mudang_f' %}" alt="" width="32" height="32">{% else %}{% with key='portrait:'|add:claim.card.speaker_id %}<img class="review-portrait" src="{% review_asset key %}" alt="" width="32" height="32">{% endwith %}{% endif %}{% endif %}
+            <strong>{{ claim.card.speaker_name|display_name }}</strong>
+            {% if claim.card.corrects %}<span class="claim-corrected"{% if claim.corrected_text %} title="고치기 전: {{ claim.corrected_text }}"{% endif %}>정정한 진술</span>{% endif %}
+          </div>
+          <span class="claim-meta">{{ claim.card.night }}일째 밤 · {% if claim.card.slot == 'evening' %}초저녁{% elif claim.card.slot == 'midnight' %}한밤{% endif %} · {{ claim.card.place }}</span><p>{{ claim.card.text }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+    {% if stage_records %}</div>{% else %}{% include "meeting_parts/record_comparison.html" %}{% endif %}
+  </section>
+{% endif %}

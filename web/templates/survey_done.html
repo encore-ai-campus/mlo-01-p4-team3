@@ -1,0 +1,4 @@
+<section id="survey" data-survey-done>
+  <p role="status">{% if survey_skipped %}설문을 건너뛰었습니다.{% else %}응답을 저장했습니다.{% endif %}</p>
+  <p class="survey-done-actions"><a href="#game-result" data-end-result>결과로 돌아가기</a><span class="survey-done-separator" aria-hidden="true"> · </span><a href="{% url 'home' %}">홈으로</a></p>
+</section>

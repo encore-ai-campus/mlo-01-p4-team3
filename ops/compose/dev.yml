@@ -1,0 +1,209 @@
+# 로컬 개발용 축소 구성(기획서 6.1 "배포", C-05-03).
+# 실행(저장소 루트에서):  docker compose -p paldo-dev -f ops/compose/dev.yml up -d
+# 종료(이 프로젝트만):    docker compose -p paldo-dev -f ops/compose/dev.yml down
+# - 프로젝트 이름은 paldo-dev 고정. 고정 container_name은 쓰지 않는다(다른 Compose 프로젝트와 충돌 방지).
+# - 비밀값은 저장소 루트의 .env(Git 추적 안 함)에서 읽는다. 양식은 .env.example.
+# - 포트는 모두 127.0.0.1에만 연다. MySQL 호스트 포트는 루트 .env의 PALDO_ADS_DB_PORT(make-env가 ops/compose/.env로 옮김),
+#   나머지는 셸 환경 변수 PALDO_*_PORT로 바꿀 수 있다(README 6절).
+# - mem_limit 합계 3.0GB(기준 PC 실사용 약 1.0GB, 선택 profile redis 128MB 별도). 32GB 노트북에서 VM 4대와 함께 띄우는 것을 전제로 작게 잡았다.
+name: paldo-dev
+
+services:
+  mongo:
+    image: mongo:8.0.34
+    env_file: ../../.env
+    # 레플리카셋은 키 파일이 있어야 인증과 함께 켤 수 있다. 첫 기동 때 볼륨 안에 만든다.
+    # 멤버 주소를 localhost:27117로 두어 호스트에서 replicaSet=rs0 URI로 바로 붙는다(안팎 포트를 같게 고정).
+    entrypoint:
+      - bash
+      - -c
+      - |
+        set -e
+        if [ ! -f /data/configdb/keyfile ]; then head -c 756 /dev/urandom | base64 -w0 > /data/configdb/keyfile; fi
+        chmod 400 /data/configdb/keyfile
+        chown mongodb:mongodb /data/configdb/keyfile
+        exec docker-entrypoint.sh mongod --replSet rs0 --port 27117 --bind_ip_all --keyFile /data/configdb/keyfile --wiredTigerCacheSizeGB 0.25
+    ports:
+      - "127.0.0.1:27117:27117"
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    # 상태 확인이 레플리카셋 초기화도 맡는다(이미 초기화돼 있으면 건너뜀). Primary가 되어야 healthy.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --port 27117 --quiet -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD"
+          --authenticationDatabase admin --eval
+          "try { rs.status() } catch (e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27117'}]}) }
+          quit(db.hello().isWritablePrimary ? 0 : 1)"
+      interval: 10s
+      timeout: 15s
+      retries: 12
+      start_period: 20s
+    mem_limit: 640m
+    restart: unless-stopped
+
+  kafka:
+    image: apache/kafka:4.3.2
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:19092,CONTROLLER://:9093,HOST://:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,HOST://localhost:${PALDO_KAFKA_PORT:-9092}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_RETENTION_HOURS: 24          # tech_stack.md 2절: 보존 1일
+      KAFKA_HEAP_OPTS: "-Xms384m -Xmx384m"
+    ports:
+      - "127.0.0.1:${PALDO_KAFKA_PORT:-9092}:9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    # 컨테이너 안 확인은 내부 리스너로 한다. HOST 리스너는 localhost:<호스트 포트>를 광고하므로
+    # PALDO_KAFKA_PORT를 바꾸면 컨테이너 안에서는 따라갈 수 없다.
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server kafka:19092 > /dev/null"]
+      interval: 30s
+      timeout: 20s
+      retries: 6
+      start_period: 30s
+    mem_limit: 1g
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4.11
+    env_file: ../../.env
+    environment:
+      MYSQL_DATABASE: paldo_ads   # 광고 스키마. MYSQL_USER(= PALDO_ADS_DB_USER)는 이 스키마 권한만 받는다
+    # 계정 저장소(C-06-03 4번과 같은 모양): 전용 스키마 PALDO_AUTH_DB_NAME과 그 스키마 권한만 가진 전용 계정을 만든다.
+    # initdb 스크립트는 볼륨이 비어 있는 첫 기동 때만 돈다(이미 있는 볼륨이면 down -v 뒤 다시 띄운다, README 6절).
+    # 저장소에 .sh 파일로 두지 않는 이유: Windows 체크아웃(core.autocrlf)이 줄 끝을 CRLF로 바꿔 bash가 깨진다.
+    entrypoint:
+      - bash
+      - -c
+      - |
+        set -e
+        cat > /docker-entrypoint-initdb.d/10-auth.sh <<'EOS'
+        for v in PALDO_AUTH_DB_NAME PALDO_AUTH_DB_USER PALDO_AUTH_DB_PASSWORD; do
+          if [ -z "$${!v}" ]; then echo "initdb: .env에 $$v 값이 없다" >&2; exit 1; fi
+          if [[ ! "$${!v}" =~ ^[A-Za-z0-9_-]+$ ]]; then echo "initdb: $$v는 영문·숫자·_·-만 쓴다(SQL에 그대로 들어간다)" >&2; exit 1; fi
+        done
+        db_grant=$$(printf '%s' "$$PALDO_AUTH_DB_NAME" | sed 's/_/\\_/g')   # GRANT의 스키마 이름에서 _는 와일드카드라 이스케이프
+        docker_process_sql <<SQL
+        CREATE DATABASE IF NOT EXISTS \`$${PALDO_AUTH_DB_NAME}\` CHARACTER SET utf8mb4;
+        CREATE USER IF NOT EXISTS '$${PALDO_AUTH_DB_USER}'@'%' IDENTIFIED BY '$${PALDO_AUTH_DB_PASSWORD}';
+        GRANT ALL PRIVILEGES ON \`$${db_grant}\`.* TO '$${PALDO_AUTH_DB_USER}'@'%';
+        SQL
+        EOS
+        exec docker-entrypoint.sh mysqld "$$@"
+      - mysqld   # bash -c의 $$0. 아래 command가 $$@로 넘어간다
+    command: ["--innodb-buffer-pool-size=64M", "--performance-schema=OFF", "--skip-name-resolve"]
+    ports:
+      - "127.0.0.1:${PALDO_ADS_DB_PORT:-3316}:3306"   # 값은 make-env가 루트 .env에서 ops/compose/.env로 옮긴다
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    mem_limit: 512m
+    restart: unless-stopped
+
+  garage:
+    image: dxflrs/garage:v2.5.0
+    env_file: ../../.env    # GARAGE_RPC_SECRET, GARAGE_ADMIN_TOKEN을 설정 파일 대신 환경 변수로 받는다
+    volumes:
+      - ./garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    ports:
+      - "127.0.0.1:${PALDO_S3_PORT:-3900}:3900"     # S3 API
+      - "127.0.0.1:${PALDO_GARAGE_ADMIN_PORT:-3903}:3903"   # 관리 API·/metrics
+    # 이미지에 셸이 없어 garage 바이너리로 확인한다. 레이아웃·키·버킷은 python -m ops.compose.run garage-init
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    mem_limit: 256m
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # 호스트에서 띄운 게임 웹 /metrics 수집(E-09-10). Windows·macOS는 기본 제공
+    ports:
+      - "127.0.0.1:${PALDO_PROMETHEUS_PORT:-9090}:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    mem_limit: 256m
+    restart: unless-stopped
+
+  # Redis 채널 레이어(E-09-10, 선택). 기본 구성(InMemory)에서는 띄우지 않는다.
+  # 켤 때: docker compose -p paldo-dev -f ops/compose/dev.yml --profile redis up -d redis
+  #        그리고 웹에 PALDO_CHANNEL_LAYER=redis, PALDO_REDIS_URL=redis://127.0.0.1:6379/0
+  redis:
+    image: redis:7.4.12
+    profiles: ["redis"]
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb"]
+    ports:
+      - "127.0.0.1:${PALDO_REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    mem_limit: 128m
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    env_file: ../../.env
+    environment:
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${PALDO_GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    mem_limit: 384m
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+  mongo-config:
+  kafka-data:
+  mysql-data:
+  garage-meta:
+  garage-data:
+  prometheus-data:
+  grafana-data:

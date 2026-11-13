@@ -1,0 +1,9 @@
+{% load meeting %}
+<div id="end-panel-{{ panel }}" class="end-panel" data-end-lookup>
+  <p data-end-fallback><a href="{{ lookup_url }}">{{ label }} 보기</a></p>
+  <div class="end-lookup-feedback">
+    <p class="end-loading" data-end-status role="status" hidden></p>
+    <button type="button" data-end-retry{% tip "end_lookup_retry" %} hidden>다시 불러오기</button>
+  </div>
+  <div data-end-content hx-get="{{ lookup_url }}" hx-trigger="paldo:end-open" hx-swap="innerHTML"></div>
+</div>

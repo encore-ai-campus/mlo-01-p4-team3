@@ -1,0 +1,189 @@
+{
+  "campaigns": [
+    {
+      "campaign_id": "cp_gukbap",
+      "advertiser_id": "adv_jumak",
+      "name": "주막 국밥",
+      "slots": [
+        "lobby_banner",
+        "review_side"
+      ],
+      "billing": "cpc",
+      "max_bid_mw": 300000,
+      "daily_budget_mw": 30000000,
+      "targeting": {
+        "preset_ids": [],
+        "outcomes": [],
+        "returning": null,
+        "hours": []
+      },
+      "start_date": "2026-11-05",
+      "end_date": "2026-11-30",
+      "status": "active",
+      "creatives": [
+        {
+          "creative_id": "cr_gukbap_a",
+          "campaign_id": "cp_gukbap",
+          "title": "뜨끈한 국밥",
+          "body": "주막에서 쉬어 가시오",
+          "image_path": "/static/promo/gukbap_a.png",
+          "landing_path": "/ads/landing/gukbap"
+        },
+        {
+          "creative_id": "cr_gukbap_b",
+          "campaign_id": "cp_gukbap",
+          "title": "국밥 한 그릇",
+          "body": "기다리는 동안 한 술",
+          "image_path": "/static/promo/gukbap_b.png",
+          "landing_path": "/ads/landing/gukbap"
+        }
+      ],
+      "target_cpc_mw": null,
+      "min_bid_mw": 1
+    },
+    {
+      "campaign_id": "cp_bujeok",
+      "advertiser_id": "adv_shrine",
+      "name": "서낭당 부적",
+      "slots": [
+        "result_banner",
+        "review_side"
+      ],
+      "billing": "cpm",
+      "max_bid_mw": 4000000,
+      "daily_budget_mw": 20000000,
+      "targeting": {
+        "preset_ids": [],
+        "outcomes": [
+          "lose"
+        ],
+        "returning": null,
+        "hours": []
+      },
+      "start_date": "2026-11-05",
+      "end_date": "2026-11-30",
+      "status": "active",
+      "creatives": [
+        {
+          "creative_id": "cr_bujeok",
+          "campaign_id": "cp_bujeok",
+          "title": "액막이 부적",
+          "body": "다음 판엔 창귀를 막으시오",
+          "image_path": "/static/promo/bujeok.png",
+          "landing_path": "/ads/landing/bujeok"
+        }
+      ],
+      "target_cpc_mw": null,
+      "min_bid_mw": 1
+    },
+    {
+      "campaign_id": "cp_yakcho",
+      "advertiser_id": "adv_herb",
+      "name": "약초방",
+      "slots": [
+        "lobby_banner",
+        "result_banner"
+      ],
+      "billing": "cpc",
+      "max_bid_mw": 150000,
+      "daily_budget_mw": 10000000,
+      "targeting": {
+        "preset_ids": [],
+        "outcomes": [],
+        "returning": true,
+        "hours": []
+      },
+      "start_date": "2026-11-05",
+      "end_date": "2026-11-30",
+      "status": "active",
+      "creatives": [
+        {
+          "creative_id": "cr_yakcho",
+          "campaign_id": "cp_yakcho",
+          "title": "산삼 한 뿌리",
+          "body": "기운이 탁할 땐 약초방",
+          "image_path": "/static/promo/yakcho.png",
+          "landing_path": "/ads/landing/yakcho"
+        }
+      ],
+      "target_cpc_mw": null,
+      "min_bid_mw": 1
+    },
+    {
+      "campaign_id": "cp_gat",
+      "advertiser_id": "adv_gat",
+      "name": "갓 공방",
+      "slots": [
+        "review_side"
+      ],
+      "billing": "cpm",
+      "max_bid_mw": 2500000,
+      "daily_budget_mw": 5000000,
+      "targeting": {
+        "preset_ids": [],
+        "outcomes": [],
+        "returning": null,
+        "hours": [
+          18,
+          19,
+          20,
+          21,
+          22,
+          23
+        ]
+      },
+      "start_date": "2026-11-05",
+      "end_date": "2026-11-30",
+      "status": "paused",
+      "creatives": [
+        {
+          "creative_id": "cr_gat",
+          "campaign_id": "cp_gat",
+          "title": "새 갓",
+          "body": "무당 어른도 갓 하나",
+          "image_path": "/static/promo/gat.png",
+          "landing_path": "/ads/landing/gat"
+        }
+      ],
+      "target_cpc_mw": null,
+      "min_bid_mw": 1
+    }
+  ],
+  "slot_policies": [
+    {
+      "slot": "lobby_banner",
+      "reserve_ecpm_mw": 500000,
+      "prior_ctr": 0.02,
+      "prior_strength": 200.0,
+      "frequency_cap": 1000
+    },
+    {
+      "slot": "result_banner",
+      "reserve_ecpm_mw": 600000,
+      "prior_ctr": 0.025,
+      "prior_strength": 200.0,
+      "frequency_cap": 1000
+    },
+    {
+      "slot": "review_side",
+      "reserve_ecpm_mw": 400000,
+      "prior_ctr": 0.015,
+      "prior_strength": 200.0,
+      "frequency_cap": 1000
+    }
+  ],
+  "slot_sizes": {
+    "lobby_banner": [
+      728,
+      90
+    ],
+    "result_banner": [
+      728,
+      90
+    ],
+    "review_side": [
+      300,
+      250
+    ]
+  }
+}

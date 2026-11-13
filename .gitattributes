@@ -1,0 +1,33 @@
+# 줄바꿈·바이너리 규칙(docs/tasks/README.md 10-1절, 11/5 PM 결정). Windows 노트북과 NAS 번들 교환에서
+# CRLF 변환 차이로 "바뀌지 않은 파일이 바뀐 것처럼" 보이는 일을 막는다. 저장소 안 텍스트는 LF, UTF-8(BOM 없음).
+* text=auto eol=lf
+
+# Windows 전용 스크립트만 CRLF
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 바이너리(줄바꿈 변환·diff 안 함)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.bundle binary
+*.zip binary
+*.gz binary
+*.7z binary
+*.pdf binary
+*.pkl binary
+*.joblib binary
+*.onnx binary
+*.sqlite3 binary
+*.db binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.mp3 binary
+*.ogg binary
+*.wav binary

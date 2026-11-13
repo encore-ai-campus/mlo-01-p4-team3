@@ -1,0 +1,18 @@
+{% load meeting %}<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>창귀</title>
+  <link rel="stylesheet" href="/static/game.css">
+  <link rel="stylesheet" href="/static/css/accounts.css">
+  <link rel="icon" href="{% asset_url 'ui:notebook' %}">
+  {% if request.user.is_authenticated %}<script src="/static/js/vendor/htmx.min.js" defer></script><script src="/static/js/paldo_ws.js" defer></script><script src="/static/js/ad_slots.js" defer></script>{% endif %}
+<script type="module" src="/static/js/ui-vn.js"></script><script src="/static/js/account-start.js" defer></script></head>
+<body class="account-page {% block account_page_type %}{% endblock %}">
+  <img class="account-backdrop" src="{% asset_url 'background:night' %}" alt="" width="1280" height="720" fetchpriority="high">
+  <a class="skip-link" href="#main-content">본문으로 이동</a>
+  {% include "site_header.html" with show_branding=True %}
+  <main id="main-content" tabindex="-1">{% block content %}{% endblock %}</main>
+{% include "ui_help.html" %}{% include "ui_review_footer.html" %}</body>
+</html>

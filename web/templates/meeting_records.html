@@ -1,0 +1,7 @@
+{% load meeting %}
+{% if classic_mode or end_records %}
+  {% include "meeting_parts/records.html" %}
+{% else %}
+  <span hidden data-record-backdrop="{% review_asset 'background:night' %}"></span>
+  {% include "meeting_parts/records.html" with stage_records=True %}
+{% endif %}

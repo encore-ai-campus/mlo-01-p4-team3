@@ -1,0 +1,129 @@
+"""공통 API의 자유 입력·렌더·수첩·설문 HTTP 경계."""
+from django.conf import settings
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
+from django.urls import reverse
+from django.utils.crypto import salted_hmac
+from django.views.decorators.http import require_GET, require_http_methods
+from engine.domain.serde import to_jsonable
+from server.app.dto import (CommandOutput, ParseUtteranceInput, ResolveUtteranceInput,
+                            SaveNotebookInput, SubmitSurveyInput)
+from server.app.interactions import InteractionUnavailable
+from server.paldo_web.composition import get_game_service
+from .input_validation import parse_game_input
+from .views import game_request, command_response, _body, _meeting_response, _command_status
+from .interaction_forms import utterance_form
+from .interaction_view import cards_context, line_context
+from .participant_forms import participant_input
+from .viewmodels import is_interrogation_answer
+
+
+def _service(request, game_id):
+    service = get_game_service()
+    state, _ = service.owned(game_id, request.player_pseudonym)
+    request.game_id = state.meta.game_id
+    if service.interactions is None:
+        raise InteractionUnavailable
+    return service.interactions
+
+
+def _free_text_disabled():
+    """직접 입력창을 끈 서버(`PALDO_FREE_TEXT_INPUT=off`)는 해석·카드 반응 요청을 받지 않는다(11/11 사용자 결정)."""
+    return None if settings.FREE_TEXT_INPUT else JsonResponse({"error": "free_text_disabled"}, status=403)
+
+
+def _input(request, dto, game_id, attempt_id=None):
+    body = (utterance_form(request.POST, attempt_id is not None)
+            if dto in (ParseUtteranceInput, ResolveUtteranceInput)
+            and request.content_type == "application/x-www-form-urlencoded" else _body(request))
+    data = parse_game_input(dto, body)
+    if data.game_id != game_id or (attempt_id is not None and data.attempt_id != attempt_id):
+        raise ValueError("path_body_mismatch")
+    return data
+
+
+def _response(request, game_id, output):
+    if request.headers.get("HX-Request") == "true":
+        game = get_game_service()
+        current = game.detail(game_id, request.player_pseudonym)
+        if isinstance(output, CommandOutput):
+            response = _meeting_response(request, current.view if output.replayed else output.view,
+                                         current.mudang_variant, _command_status(output),
+                                         reject=None if output.accepted or output.replayed else output.reject,
+                                         scenario_id=current.scenario_id)
+            response["HX-Retarget"] = "#meeting"
+            response["HX-Reswap"] = "outerHTML"
+            return response
+        if output.failure and output.failure.value == "empty_input":
+            return HttpResponse(status=204)
+        response = render(request, "speech_cards.html", cards_context(output, current.view))
+        response["HX-Retarget"] = "#speech-cards"
+        response["HX-Reswap"] = "outerHTML"
+        return response
+    if isinstance(output, CommandOutput):
+        return command_response(output)
+    return JsonResponse(to_jsonable(output))
+
+
+@game_request
+@require_http_methods(["POST"])
+def parse_utterance(request, game_id):
+    """자기 판의 엄격한 JSON 해석 요청을 처리한다."""
+    if (disabled := _free_text_disabled()) is not None:
+        return disabled
+    service = _service(request, game_id)
+    return _response(request, game_id, service.parse(_input(request, ParseUtteranceInput, game_id), request.player_pseudonym))
+
+
+@game_request
+@require_http_methods(["POST"])
+def resolve_utterance(request, game_id, attempt_id):
+    """판·시도 소유권을 확인한 카드 반응을 처리한다."""
+    if (disabled := _free_text_disabled()) is not None:
+        return disabled
+    service = _service(request, game_id)
+    return _response(request, game_id, service.resolve(_input(request, ResolveUtteranceInput, game_id, attempt_id), request.player_pseudonym))
+
+
+@game_request
+@require_GET
+def poll_render(request, game_id, job_id):
+    """공개 문장 JSON 또는 완료 시 폴링 속성이 없는 htmx 조각을 반환한다."""
+    output = _service(request, game_id).poll(game_id, job_id, request.player_pseudonym)
+    if request.headers.get("HX-Request") == "true":
+        view = get_game_service().detail(game_id, request.player_pseudonym).view
+        answer = any(s.speech_id == output.speech_id and s.render_job_id == output.job_id
+                     and is_interrogation_answer(s) for s in view.public.speeches)
+        lines = getattr(get_game_service(), "npc_lines", None)
+        live = bool(lines is not None and lines.live_on())
+        return render(request, "speech_line.html", line_context(game_id, output, is_interrogation_answer=answer, live=live))
+    return JsonResponse(to_jsonable(output))
+
+
+@game_request
+@require_http_methods(["PUT"])
+def save_notebook(request, game_id):
+    """의심도·확신도를 검증하고 성공 시 본문 없는 204를 반환한다."""
+    service = _service(request, game_id)
+    service.notebook(participant_input(request, SaveNotebookInput, game_id), request.player_pseudonym)
+    return HttpResponse(status=204)
+
+
+@game_request
+@require_http_methods(["POST"])
+def submit_survey(request, game_id):
+    """종료 후 설문을 저장하고 같은 입력의 재전송에는 204로 답한다."""
+    service = _service(request, game_id)
+    data = participant_input(request, SubmitSurveyInput, game_id)
+    comment_digest = salted_hmac(f"paldo.survey-comment:{game_id}", data.comment,
+                                 algorithm="sha256").hexdigest()
+    created = service.survey(data, request.player_pseudonym, comment_digest)
+    if request.headers.get("HX-Request") == "true":
+        if created:
+            return render(request, "survey_done.html", {"survey_skipped": data.skipped})
+        return HttpResponse(status=204, headers={"HX-Refresh": "true"})
+    if (request.content_type == "application/x-www-form-urlencoded"
+            and request.get_preferred_type(["application/json", "text/html"]) == "text/html"):
+        # 브라우저 기본 폼도 저장을 확인한 뒤 같은 판을 GET으로 읽는다.
+        return HttpResponse(status=303, headers={"Location": reverse("game-detail", args=[game_id]) + "#survey"})
+    return HttpResponse(status=204)

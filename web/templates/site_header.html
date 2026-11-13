@@ -1,0 +1,9 @@
+{% load meeting %}
+<header class="app-header" data-help-art="{% review_asset 'mascot:jokjebi' %}">
+<a class="wordmark" href="{% url 'home' %}" aria-label="창귀 홈">{% if show_branding %}<img class="brand-emblem" src="{% asset_url 'branding:tiger_emblem' %}" width="44" height="44" alt="">{% endif %}창귀</a>
+<span class="header-rule" aria-hidden="true"></span>
+<nav class="site-links" aria-label="사이트 메뉴">
+{% if vm and not vm.ended %}<button type="button" data-records-open{% tip "records_open" %}>진술표</button><button type="button" data-alibi-grid-open hidden{% tip "stage_alibi_grid" %}>행적표</button>{% if participant_forms_available %}<button type="button" data-notebook-open{% tip "notebook_open" %}>수첩</button>{% endif %}{% endif %}
+<button type="button" data-help-open{% tip "help_open" %}>도움말</button>
+{% if not request.user.is_authenticated %}<a href="{% url 'accounts:login' %}">로그인</a><a href="{% url 'accounts:signup' %}">가입</a>{% endif %}
+</nav></header>

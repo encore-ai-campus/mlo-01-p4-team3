@@ -1,0 +1,5 @@
+{% if creative %}<section aria-label="광고" data-ad-slot="{{ slot }}" data-ad-token="{{ token }}">
+  <small>광고</small>
+    <a href="{{ click_path }}"><img src="{{ creative.image_path }}" width="{{ width }}" height="{{ height }}" alt="{{ creative.title }}" style="max-width:100%;height:auto"></a>
+    <p>{{ creative.title }} · {{ creative.body }}</p>
+</section>{% endif %}

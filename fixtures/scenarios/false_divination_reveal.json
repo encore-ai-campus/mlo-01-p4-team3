@@ -1,0 +1,78 @@
+{
+  "scenario_id": "false_divination_reveal",
+  "description": "무당이 탁함을 맑음으로 거짓 공개. 합법이며, 공개 기록과 실제 결과가 따로 저장된다.",
+  "preset_id": "base6",
+  "source": "scripted",
+  "setup": {
+    "actual": {
+      "night": 1,
+      "target": "blacksmith",
+      "result": "murky"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "kind": "reveal_divination",
+        "actor": "mudang",
+        "divination": {
+          "target": "blacksmith",
+          "night": 1,
+          "result": "clear"
+        }
+      }
+    }
+  ],
+  "checks": [
+    {
+      "type": "reveal_record",
+      "input": {
+        "actual": "murky",
+        "revealed": "clear"
+      },
+      "expect": {
+        "legal": true,
+        "public_result": "clear",
+        "private_result": "murky"
+      },
+      "note": ""
+    },
+    {
+      "type": "phase_legal",
+      "input": {
+        "phase": "round1",
+        "kind": "reveal_divination",
+        "is_player": true
+      },
+      "expect": {
+        "legal": true
+      },
+      "note": ""
+    },
+    {
+      "type": "limit",
+      "input": {
+        "player": {
+          "reveals_left_today": 0
+        },
+        "kind": "reveal_divination"
+      },
+      "expect": {
+        "reject": "limit_exceeded"
+      },
+      "note": "하루 1회 초과"
+    },
+    {
+      "type": "phase_legal",
+      "input": {
+        "phase": "round1",
+        "kind": "reveal_divination",
+        "is_player": false
+      },
+      "expect": {
+        "legal": false
+      },
+      "note": ""
+    }
+  ]
+}

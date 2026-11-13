@@ -1,0 +1,98 @@
+{
+  "scenario_id": "normal_game",
+  "description": "기본 6인 판 정상 진행(녹화 판과 같은 판). 1일째 오답 감금, 2일째 씐 자 감금으로 마을 승리.",
+  "preset_id": "base6",
+  "source": "scripted",
+  "setup": {
+    "assignment": "fixtures/assignment/valid_base6.json"
+  },
+  "steps": [
+    {
+      "recording": "fixtures/api/recorded_game_base6.json"
+    }
+  ],
+  "checks": [
+    {
+      "type": "vote",
+      "input": {
+        "main": {
+          "mudang": "yakcho",
+          "hunjang": "yakcho",
+          "jumo": "yakcho",
+          "blacksmith": "yakcho",
+          "meosum": "yakcho",
+          "yakcho": "jumo"
+        }
+      },
+      "expect": {
+        "locked": "yakcho",
+        "runoff_candidates": []
+      },
+      "note": ""
+    },
+    {
+      "type": "end_check",
+      "input": {
+        "g": 1,
+        "v": 3,
+        "mudang_active": true,
+        "mudang_locked": false
+      },
+      "expect": {
+        "reason": null,
+        "night_runs": true
+      },
+      "note": "1일째 감금 후: 씐 자 1, 마을 주민 3(훈장·주모·머슴)"
+    },
+    {
+      "type": "end_check",
+      "input": {
+        "g": 0,
+        "v": 2,
+        "mudang_active": true,
+        "mudang_locked": false
+      },
+      "expect": {
+        "reason": "all_possessed_locked",
+        "winner": "village",
+        "night_runs": false
+      },
+      "note": ""
+    },
+    {
+      "type": "assignment",
+      "input": {
+        "preset_id": "base6",
+        "assignment": "fixtures/assignment/valid_base6.json"
+      },
+      "expect": {
+        "violations": []
+      },
+      "note": ""
+    },
+    {
+      "type": "phase_legal",
+      "input": {
+        "phase": "interrogation",
+        "kind": "suspect",
+        "is_player": true
+      },
+      "expect": {
+        "legal": false
+      },
+      "note": ""
+    },
+    {
+      "type": "phase_legal",
+      "input": {
+        "phase": "night",
+        "kind": "night_plan",
+        "is_player": false
+      },
+      "expect": {
+        "legal": true
+      },
+      "note": ""
+    }
+  ]
+}

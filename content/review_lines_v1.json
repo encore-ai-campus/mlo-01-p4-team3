@@ -1,0 +1,149 @@
+{
+  "version": "review_lines_v1",
+  "status": "승인(11/11 사용자, review_text_draft.md 초안 그대로). rv_abstain_uncertain도 승인(11/11 사용자, 투표 기권 rule-0.9)",
+  "note": "이유 코드별 템플릿 해설(E-10-10). 키는 rv_<이유 코드>, 값은 변형 목록. 자리표시자는 {actor} {target} {victim} {executor}만 쓴다. 괄호 조사는 화면에서 받침에 맞춰 고른다.",
+  "lines": {
+    "rv_baseline_silence": [
+      "{actor}은(는) 이번 차례에 말을 아꼈습니다."
+    ],
+    "rv_baseline_explain": [
+      "{actor}은(는) 캐묻기에 담담하게 해명했습니다."
+    ],
+    "rv_max_suspicion": [
+      "{actor}은(는) 가장 수상해 보이던 {target}을(를) 골랐습니다."
+    ],
+    "rv_tie_seeded": [
+      "{actor}은(는) 똑같이 수상해 보이는 사람들 가운데 {target}을(를) 골랐습니다."
+    ],
+    "rv_skip_confessed": [
+      "{actor}은(는) 비밀을 털어놓은 사람을 후보에서 빼고 {target}을(를) 골랐습니다."
+    ],
+    "rv_avoid_partner": [
+      "{actor}은(는) 같은 편인 창귀를 피해 {target}을(를) 골랐습니다."
+    ],
+    "rv_fallback_all_legal": [
+      "{actor}은(는) 뺄 사람을 빼고 나니 남는 후보가 없어 모두 가운데서 {target}을(를) 골랐습니다."
+    ],
+    "rv_seeded_executor": [
+      "그날 밤 창귀는 {executor}을(를) 움직이기로 했습니다."
+    ],
+    "rv_seeded_victim": [
+      "그날 밤 창귀는 {victim}을(를) 노렸습니다."
+    ],
+    "rv_scripted": [
+      "{actor}의 행동은 미리 정해 둔 순서를 따랐습니다."
+    ],
+    "rv_witness_others_claim": [
+      "{actor}은(는) 다른 사람이 봤다는 말을 근거로 {target}을(를) 판단했습니다."
+    ],
+    "rv_witness_mutual_vouch": [
+      "{actor}은(는) 서로 봤다는 두 사람의 말을 근거로 {target}을(를) 판단했습니다."
+    ],
+    "rv_rule_point_contradiction": [
+      "{actor}은(는) {target}의 말이 앞뒤가 맞지 않는 것을 짚었습니다."
+    ],
+    "rv_rule_suspect": [
+      "{actor}은(는) 근거를 들어 {target}을(를) 의심했습니다."
+    ],
+    "rv_rule_defend": [
+      "{actor}은(는) {target}을(를) 직접 본 적이 있어 감쌌습니다."
+    ],
+    "rv_rule_explain": [
+      "{actor}은(는) 자기를 향한 의심에 해명했습니다."
+    ],
+    "rv_rule_silence": [
+      "{actor}은(는) 할 말이 없어 지켜보기만 했습니다."
+    ],
+    "rv_exclude_proposition": [
+      "{actor}은(는) 씐 자가 아니라고 밝혀진 사람을 후보에서 빼고 {target}을(를) 골랐습니다."
+    ],
+    "rv_pressure_confess": [
+      "{actor}은(는) 캐묻기에 몰려 숨긴 비밀을 털어놓았습니다."
+    ],
+    "rv_react_explain": [
+      "{actor}은(는) 캐묻기에 해명으로 답했습니다."
+    ],
+    "rv_react_evade": [
+      "{actor}은(는) 캐묻기에 말을 돌리며 피했습니다."
+    ],
+    "rv_react_counter": [
+      "{actor}은(는) 캐묻기에 오히려 되물으며 맞섰습니다."
+    ],
+    "rv_frame_contradicted": [
+      "{actor}은(는) 말이 어긋난 {target}에게 누명을 씌우려 했습니다."
+    ],
+    "rv_frame_suspected": [
+      "{actor}은(는) 이미 의심받던 {target}에게 누명을 씌우려 했습니다."
+    ],
+    "rv_frame_mudang": [
+      "{actor}은(는) 무당에게 의심이 쏠리도록 했습니다."
+    ],
+    "rv_lie_unrefuted": [
+      "{actor}은(는) 아무도 반박할 수 없는 곳에 있었다고 거짓말했습니다."
+    ],
+    "rv_lie_routine": [
+      "{actor}은(는) 평소 다니던 곳에 있었다고 거짓말했습니다."
+    ],
+    "rv_night_accuser": [
+      "창귀는 자기를 지목한 {victim}을(를) 그날 밤 노렸습니다."
+    ],
+    "rv_night_witness": [
+      "창귀는 거짓말을 들킬 수 있는 {victim}을(를) 그날 밤 노렸습니다."
+    ],
+    "rv_night_trusts_mudang": [
+      "창귀는 무당을 믿고 따르는 {victim}을(를) 그날 밤 노렸습니다."
+    ],
+    "rv_night_any": [
+      "창귀는 마땅한 사람이 없어 {victim}을(를) 그날 밤 노렸습니다."
+    ],
+    "rv_model_estimate": [
+      "{actor}은(는) 지금까지 나온 말과 표를 따져 {target}에게 표를 던졌습니다."
+    ],
+    "rv_vote_conform": [
+      "{actor}은(는) 다른 사람들이 찍을 것 같은 {target}에게 따라 표를 던졌습니다."
+    ],
+    "rv_fallback_max_suspicion": [
+      "{actor}은(는) 후보가 모두 빠져 가장 수상한 {target}에게 표를 던졌습니다."
+    ],
+    "rv_model_fallback_unavailable": [
+      "{actor}은(는) 평소 판단 기준대로 {target}에게 표를 던졌습니다."
+    ],
+    "rv_model_fallback_version": [
+      "{actor}은(는) 평소 판단 기준대로 {target}에게 표를 던졌습니다."
+    ],
+    "rv_model_fallback_timeout": [
+      "{actor}은(는) 평소 판단 기준대로 {target}에게 표를 던졌습니다."
+    ],
+    "rv_model_fallback_invalid": [
+      "{actor}은(는) 평소 판단 기준대로 {target}에게 표를 던졌습니다."
+    ],
+    "rv_skip_trusted_mudang": [
+      "{actor}은(는) 믿을 만한 무당을 후보에서 빼고 {target}에게 표를 던졌습니다."
+    ],
+    "rv_abstain_uncertain": [
+      "{actor}은(는) 누가 더 수상한지 가리기 어려워 표를 던지지 않았습니다."
+    ]
+  },
+  "basis_status": "승인됨(11/11 사용자). 회의 의심 근거 풀이 6종(1~3 먼저 승인, 4~6 추가 승인)",
+  "basis_note": "의심(kind=suspect) 근거 주장이 왜 수상했는지(engine/domain/review.py suspect_basis). 키는 rv_basis_<규칙>. 자리표시자 {actor}=의심한 NPC, {target}=의심받은 사람, {victim}=실종자(at_crime_scene만).",
+  "basis_lines": {
+    "rv_basis_at_crime_scene": [
+      "{target}은(는) {victim}이(가) 사라진 그때 그 자리에 자기도 있었다고 말했습니다."
+    ],
+    "rv_basis_own_witness_lie": [
+      "{actor}은(는) 그날 {target}을(를) 다른 곳에서 봤기 때문에 그 말을 믿지 않았습니다."
+    ],
+    "rv_basis_claimed_seeing_me_falsely": [
+      "{target}은(는) {actor}을(를) 봤다고 했지만, {actor}은(는) 그때 거기 없었습니다."
+    ],
+    "rv_basis_tell": [
+      "{target}은(는) 그 말을 할 때 기색이 수상했습니다."
+    ],
+    "rv_basis_contradiction": [
+      "{target}의 말이 다른 사람의 진술과 어긋났습니다."
+    ],
+    "rv_basis_others_suspect": [
+      "다른 사람들도 {target}을(를) 수상하게 여기고 있었습니다."
+    ]
+  }
+}

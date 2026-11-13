@@ -1,0 +1,507 @@
+"""자유 입력·수첩·설문·렌더의 B 응용. 저장 구현은 조립 시 주입한다."""
+import copy
+import hashlib
+import json
+import re
+import secrets
+import uuid
+import time
+from contextlib import contextmanager
+from dataclasses import dataclass, field, replace
+from typing import ContextManager, Protocol
+
+from engine.domain.events import DomainEvent, EventType
+from engine.domain import tutorial
+from engine.domain.model import Command, CommandKind, PLAYER_ID, Phase, RejectCode, is_legal_kind
+from engine.domain.serde import to_jsonable
+from engine.ports import CommandCandidate, ParseContext, ParseFailure, RenderStatus
+from .dto import (CommandOutput, ParseUtteranceInput, ParseUtteranceOutput, RenderOutput, ResolveUtteranceInput,
+                  SubmitCommandInput, UtteranceReaction)
+from .model_versions import warn_parse_version_mismatch
+from .usecases import ResourceNotFound
+
+
+class InteractionUnavailable(Exception):
+    """시도·렌더·수첩 저장 또는 외부 포트가 연결되지 않았다."""
+
+
+class InteractionConflict(Exception):
+    """닫힌 시도나 이미 제출한 설문은 다른 값으로 덮어쓸 수 없다."""
+
+
+@dataclass
+class InteractionState:
+    """판별 보조 기록. 게임 상태와 별도이며 계정 식별 정보는 넣지 않는다."""
+    attempts: dict = field(default_factory=dict)
+    renders: dict = field(default_factory=dict)
+    notebook: dict = field(default_factory=dict)
+    survey: dict | None = None
+
+
+class InteractionStore(Protocol):
+    """판별 직렬화·성공 시 보존을 제공할 B 보조 저장 경계(C 인수 대상)."""
+
+    def edit(self, game_id: str) -> ContextManager[InteractionState]:
+        """같은 판의 호출을 직렬화하고 예외 시 보조 변경을 되돌린다."""
+        ...
+
+    def edit_effects(self, game_id: str) -> ContextManager[dict]:
+        """명령 후속 처리 계획을 별도 보존한다. edit의 롤백에 포함하지 않는다.
+
+        호출 사이에 보존하며 성공 시 반영·예외 시 해당 변경만 되돌린다.
+        판 삭제 시 함께 지운다. 실제 저장 구현은 C 인수 대상이다.
+        """
+        ...
+
+
+def mask_text(text):
+    """privacy.md의 이메일·전화·주민번호·긴 숫자를 저장 전에 가린다."""
+    patterns = (r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", r"\d{13,}", r"\d{6}[-\s]?[1-8]\d{6}",
+                r"(?<!\d)(?:\+82[- .]?)?0?\d{1,2}[- .]?\d{3,4}[- .]?\d{4}(?!\d)")
+    for pattern in patterns:
+        text = re.sub(pattern, "<MASK>", text)
+    return text
+
+
+def phase_cards(candidates, phase, runoff_candidates=()):
+    """해석기 후보 중 현재 단계에서 플레이어가 낼 수 있는 카드만 남긴다.
+
+    투표·결선 단계의 의심(`suspect`)은 같은 대상의 투표 카드로 바꾸고(결선이면 결선 후보만, 대상이 빠진 후보는 그대로 남김),
+    변호처럼 투표로 바꾸면 뜻이 뒤집히는 후보와 단계에 맞지 않는 후보는 버린다.
+    같은 명령 종류·대상 카드는 한 장만 남긴다. 해석기 원래 후보는 바꾸지 않는다.
+    """
+    voting = phase in (Phase.VOTE, Phase.RUNOFF)
+    cards, seen = [], set()
+    for candidate in candidates:
+        command = candidate.command
+        if voting and command.kind is CommandKind.SUSPECT:
+            # 대상이 빠진 후보는 남겨 카드 수정에서 고르게 한다(결선이면 대상 목록이 결선 후보뿐).
+            if phase is Phase.RUNOFF and command.target is not None and command.target not in runoff_candidates:
+                continue
+            candidate = CommandCandidate(Command(CommandKind.VOTE, command.actor, target=command.target),
+                                         candidate.intent_score, candidate.form,
+                                         [slot for slot in candidate.missing_slots if slot == "target"],
+                                         {k: v for k, v in candidate.slot_scores.items() if k == "target"})
+        elif not is_legal_kind(phase, command.kind, True):
+            continue
+        key = (candidate.command.kind, candidate.command.target, candidate.command.addressee,
+               candidate.command.interrogation_kind)
+        if candidate.command.kind in (CommandKind.VOTE, CommandKind.SUSPECT, CommandKind.DEFEND) and key in seen:
+            continue
+        seen.add(key)
+        cards.append(candidate)
+    return cards
+
+
+def player_kinds(phase):
+    """실패 안내에 보일 현재 단계의 플레이어 행동 종류(자동 진행 제외)."""
+    return [kind.value for kind in CommandKind if kind is not CommandKind.ADVANCE and is_legal_kind(phase, kind, True)]
+
+
+class InteractionService:
+    """공통 DTO와 append_events로 상태 버전을 소비하지 않는 API를 처리한다."""
+
+    def __init__(self, game, store, parser=None, renderer=None):
+        self.game, self.store, self.parser, self.renderer = game, store, parser, renderer
+        # 시나리오(튜토리얼) 판 렌더러. 운영 실시간 생성 설정과 무관하게 템플릿 문장으로 바로 끝내야 대본과 화면 문장이
+        # 어긋나지 않는다. None이면 일반 렌더러를 쓴다(조립이 `TemplateLineRenderer`를 넣는다).
+        self.tutorial_renderer = None
+
+    def _renderer(self, state):
+        """판에 맞는 렌더러. 시나리오 판이면 튜토리얼 렌더러, 아니면 일반 렌더러."""
+        if state.meta.scenario_id and self.tutorial_renderer is not None:
+            return self.tutorial_renderer
+        return self.renderer
+
+    def _tutorial_reject(self, state):
+        """튜토리얼 단계 위반 응답. 아무것도 소비하지 않고 현재 화면을 돌려준다."""
+        return CommandOutput(False, state.state_version, self.game._player_view(state), RejectCode.TUTORIAL_STEP)
+
+    def _event(self, state, kind, payload, key):
+        event = DomainEvent(kind, state.day, state.phase, payload)
+        self.game.repository.append_events(state.meta.game_id, self.game._events(state, [event]), key)
+
+    def _restore_participant(self, game_id, name, records):
+        with self.store.edit_effects(game_id) as effects:
+            plan = copy.deepcopy(effects.get('participant:' + name))
+        if plan is None or getattr(records, name) == plan['value']:
+            return
+        try:
+            self.game.repository.append_events(game_id, plan['events'], plan['key'])
+        except (ConnectionError, TimeoutError):
+            raise InteractionUnavailable('participant_append_unavailable') from None
+        setattr(records, name, copy.deepcopy(plan['value']))
+
+    @contextmanager
+    def participant_records(self, game_id):
+        """판별 잠금 안에서 수첩·설문의 미완료 저장을 동일 이벤트 키로 복구한다."""
+        with self.store.edit(game_id) as records:
+            for name in ('notebook', 'survey'):
+                self._restore_participant(game_id, name, records)
+            yield records
+
+    def _save_participant(self, state, name, kind, payload, value, records):
+        # 보조 상태의 롤백과 독립된 계획을 먼저 저장한다. 성공한 계획도 마지막 값 복구용으로 유지한다.
+        event = DomainEvent(kind, state.day, state.phase, payload)
+        with self.store.edit_effects(state.meta.game_id) as effects:
+            effects['participant:' + name] = dict(value=copy.deepcopy(value),
+                events=self.game._events(state, [event]), key=name + ':' + str(uuid.uuid4()))
+        self._restore_participant(state.meta.game_id, name, records)
+
+    def prepare_command_effects(self, command_id, response_json, previous, current, requests):
+        """게임 commit 전에 복구 재료만 보존한다. 렌더 실행은 저장 확인 뒤다."""
+        key = hashlib.sha256(response_json.encode("utf-8")).hexdigest()
+        with self.store.edit_effects(current.meta.game_id) as plans:
+            plans.setdefault(command_id, {}).setdefault(key, {
+                "previous": (previous.day, previous.phase, previous.state_version),
+                "current": (current.day, current.phase, current.state_version),
+                "requests": copy.deepcopy(requests),
+            })
+
+    def complete_command_effects(self, game_id, saved, player):
+        """실제 저장 응답에 대응하는 계획만 복구한다. 엔진은 다시 호출하지 않는다."""
+        key = hashlib.sha256(saved.response_json.encode("utf-8")).hexdigest()
+        with self.store.edit_effects(game_id) as plans:
+            plan = copy.deepcopy(plans.get(saved.command_id, {}).get(key))
+        if plan is None:
+            return
+        current, _ = self.game.owned(game_id, player)
+        def context(point):
+            day, phase, version = point
+            return replace(current, day=day, phase=phase, state_version=version)
+        previous, accepted = context(plan["previous"]), context(plan["current"])
+        self.cancel_previous(previous, accepted)
+        self.register_renders(accepted, plan["requests"])
+        latest, _ = self.game.owned(game_id, player)
+        self.cancel_previous(accepted, latest)
+        # 카드 반응 등 바깥 edit가 나중에 롤백돼도 다음 재전송에서 복구할 수
+        # 있도록 계획을 유지한다. 등록·취소는 작업 ID로 중복 처리하지 않는다.
+
+    def parse(self, data, player):
+        """공개 맥락만 해석기에 전달하고 마스킹한 시도를 보존한다."""
+        state, _ = self.game.owned(data.game_id, player)
+        if state.state_version != data.expected_state_version:
+            return self.game._conflict(state)
+        if self.parser is None:
+            raise InteractionUnavailable
+        if len(data.text) > 4000 or data.expected_state_version < 0:
+            raise ValueError("invalid_utterance")
+        view = self.game.detail(data.game_id, player).view
+        if any(npc is not None and npc not in view.active for npc in (data.selected_npc, data.last_addressee)):
+            raise ValueError("unknown_npc")
+        content = self.game.dependencies(state.meta).content
+        aliases = {c.npc_id: [c.name_ko, *c.aliases] for c in content.characters if c.npc_id in view.active}
+        last_addressee = data.last_addressee or next((
+            speech.addressee if speech.speaker == PLAYER_ID else speech.speaker
+            for speech in reversed(view.public.speeches) if speech.kind is CommandKind.INTERROGATE
+            and ((speech.speaker == PLAYER_ID and speech.addressee in aliases)
+                 or (speech.addressee == PLAYER_ID and speech.speaker in aliases))), None)
+        ctx = ParseContext(data.game_id, state.state_version, state.phase, copy.deepcopy(view.public), aliases,
+                           data.selected_npc, data.selected_cards, last_addressee)
+        result = self.parser.parse(data.text, ctx)
+        warn_parse_version_mismatch(state.meta, result.versions)
+        # 화면 카드만 현재 단계로 거른다. 시도 기록(payload)에는 해석기 원래 후보·실패를 남긴다.
+        cards = phase_cards(result.candidates, state.phase, state.runoff_candidates)
+        tutorial_ok = None
+        if state.meta.scenario_id:
+            # 튜토리얼 판: 자유 입력 단계에서 대본 예시 문장일 때만, 그 단계 허용 명령과 같은 카드만 보인다.
+            exp = tutorial.expected(state.state_version)
+            tutorial_ok = (tutorial.utterance_step(exp, self.game.free_text_input())
+                           and data.text.strip() == tutorial.UTTERANCE_TEXT)
+            cards = [c for c in cards if tutorial_ok and tutorial.matches(exp, c.command)]
+        failure, suggestions = result.failure, []
+        if not cards and result.candidates:
+            failure = result.failure or ParseFailure.UNSUPPORTED_INTENT
+        if not cards and failure is ParseFailure.UNSUPPORTED_INTENT:
+            suggestions = player_kinds(state.phase)
+        output = ParseUtteranceOutput(str(uuid.uuid4()), state.state_version, cards, failure, True, suggestions)
+        payload = {"attempt_id": output.attempt_id, "superseded_by": None, "text": mask_text(data.text),
+                   "mask_version": "b-mask-1", "state_version": state.state_version, "phase": state.phase.value,
+                   "candidates": to_jsonable(result.candidates), "failure": to_jsonable(result.failure),
+                   "versions": result.versions, "reaction": None, "final_command": None, "label_source": None}
+        with self.store.edit(data.game_id) as records:
+            records.attempts[output.attempt_id] = {"output": output, "payload": payload, "closed": False,
+                                                  "selection": {"selected_npc": data.selected_npc,
+                                                      "selected_cards": copy.deepcopy(data.selected_cards),
+                                                      "last_addressee": last_addressee},
+                                                  "signature_salt": secrets.token_hex(32), "tutorial_ok": tutorial_ok}
+            self._event(state, EventType.INTENT_ATTEMPT, payload, "intent:" + output.attempt_id)
+        return output
+
+    def resolve(self, data, player):
+        """소유권·시도·재전송·버전을 검사하고 confirm/edit만 명령으로 전달한다."""
+        state, _ = self.game.owned(data.game_id, player)
+        with self.store.edit(data.game_id) as records:
+            attempt = records.attempts.get(data.attempt_id)
+            if attempt is None:
+                raise ResourceNotFound
+            reaction = data.reaction
+            if not attempt["closed"] and reaction == UtteranceReaction.RETRY and not data.retry_text.strip():
+                # 빈 재입력은 화면을 유지하므로 현재 시도를 닫거나 새 시도를 만들지 않는다.
+                return ParseUtteranceOutput(data.attempt_id, state.state_version, [], ParseFailure.EMPTY_INPUT, True)
+            saved = self.game.repository.find_command(data.game_id, data.command_id) if data.command_id and reaction in (
+                UtteranceReaction.CONFIRM, UtteranceReaction.EDIT) else None
+            if attempt["closed"] and saved is not None:
+                # 같은 명령은 경로가 edit/confirm으로 달라져도 원래 응답을 반환한다.
+                # 기존 반응 라벨·시도 기록은 덮어쓰지 않는다.
+                return self.game.replay_command(data.game_id, saved, player)
+            # 재전송 비교에 원문을 보관하지 않는다. 마스킹 후 같은 문장이 되는 서로 다른
+            # 입력도 구분하도록 원문은 임시 직렬화에만 사용하고 시도별 salt와 요약값만 저장한다.
+            serialized = json.dumps(to_jsonable(data), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            signature = hashlib.sha256((attempt["signature_salt"] + serialized).encode("utf-8")).hexdigest()
+            if attempt["closed"]:
+                if attempt.get("signature") != signature:
+                    raise InteractionConflict
+                response = attempt["response"]
+                return replace(response, replayed=True) if isinstance(response, CommandOutput) and response.accepted else response
+            original = attempt["output"]
+            # 잠금을 기다리는 동안 판이 진행됐을 수 있으므로 새 해석에는 현재 버전을 쓴다.
+            state, _ = self.game.owned(data.game_id, player)
+            command = None
+            if reaction in (UtteranceReaction.CONFIRM, UtteranceReaction.EDIT):
+                if state.meta.scenario_id and saved is None and (
+                        reaction != UtteranceReaction.CONFIRM or not attempt.get("tutorial_ok")):
+                    # 튜토리얼 판은 대본 문장으로 해석한 카드의 확인만 받는다. 카드 수정·다른 문장은 시도를 열어 둔 채 거부한다.
+                    return self._tutorial_reject(state)
+                if original.state_version != state.state_version and saved is None:
+                    return self.game._conflict(state)
+                if data.expected_state_version != original.state_version and saved is None:
+                    return self.game._conflict(state)
+                if reaction == UtteranceReaction.CONFIRM:
+                    if data.chosen_index >= len(original.cards):
+                        raise ValueError("unknown_card")
+                    candidate = original.cards[data.chosen_index]
+                    if candidate.missing_slots or candidate.evidence_alternatives:
+                        raise ValueError("missing_slots")
+                    command = candidate.command
+                else:
+                    command = data.edited_command
+                response = self.game.command(SubmitCommandInput(data.game_id, data.command_id,
+                    data.expected_state_version, command, data.attempt_id), player)
+                if not response.accepted:
+                    return response
+            elif reaction == UtteranceReaction.RETRY:
+                selection = attempt.get("selection", {})
+                selected_npc = selection.get("selected_npc")
+                last_addressee = selection.get("last_addressee")
+                response = self.parse(ParseUtteranceInput(data.game_id, state.state_version, data.retry_text,
+                    selected_npc=selected_npc if selected_npc in state.active else None,
+                    selected_cards=copy.deepcopy(selection.get("selected_cards", [])),
+                    last_addressee=last_addressee if last_addressee in state.active else None), player)
+                if isinstance(response, CommandOutput):
+                    # 재조회와 해석 사이의 추가 경합은 409로 돌려주고 원래 시도는 열어 둔다.
+                    return response
+            else:
+                response = ParseUtteranceOutput(data.attempt_id, state.state_version, [], None, False)
+            payload = dict(attempt["payload"], reaction=reaction.value, final_command=to_jsonable(command),
+                           label_source="player_edited" if reaction == UtteranceReaction.EDIT else
+                           "player_confirmed" if reaction == UtteranceReaction.CONFIRM else None,
+                           superseded_by=response.attempt_id if reaction == UtteranceReaction.RETRY else None)
+            self._event(state, EventType.INTENT_ATTEMPT, payload, f"intent:{data.attempt_id}:reaction")
+            attempt.update(closed=True, signature=signature, response=response, payload=payload)
+            return response
+
+    def submit_linked(self, data, player):
+        """commands 경로의 intent_attempt_id도 같은 카드 수명주기로 검증한다."""
+        self.game.owned(data.game_id, player)
+        with self.store.edit(data.game_id) as records:
+            attempt = records.attempts.get(data.intent_attempt_id)
+            if attempt is None:
+                raise ResourceNotFound
+            index = next((i for i, card in enumerate(attempt["output"].cards) if card.command == data.command), None)
+            resolved = ResolveUtteranceInput(data.game_id, data.intent_attempt_id,
+                UtteranceReaction.CONFIRM if index is not None else UtteranceReaction.EDIT,
+                command_id=data.command_id, expected_state_version=data.expected_state_version,
+                chosen_index=index, edited_command=None if index is not None else data.command)
+            return self.resolve(resolved, player)
+
+    def notebook(self, data, player):
+        """같은 날짜·단계의 동일 저장만 생략하고 버전 소비 없이 기록한다."""
+        state, _ = self.game.owned(data.game_id, player)
+        view = self.game.detail(data.game_id, player).view
+        if set(data.entries) - set(view.names) or "mudang" in data.entries:
+            raise ValueError("unknown_npc")
+        payload = {"entries": dict(data.entries), "vote_confidence": data.vote_confidence}
+        with self.participant_records(data.game_id) as records:
+            state, _ = self.game.owned(data.game_id, player)
+            stored = {**payload, "_saved_context": {"day": state.day, "phase": state.phase.value}}
+            if records.notebook == stored:
+                return
+            self._save_participant(state, 'notebook', EventType.NOTEBOOK_UPDATED, payload, stored, records)
+
+    def survey(self, data, player, comment_digest):
+        """종료된 판의 설문을 한 번 저장하고 최초 저장 여부를 반환한다."""
+        state, _ = self.game.owned(data.game_id, player)
+        if state.meta.scenario_id:
+            raise ResourceNotFound   # 시나리오(튜토리얼) 판에는 설문이 없다(탭 숨김과 별도로 직접 요청도 막음)
+        if state.result is None:
+            raise InteractionConflict
+        payload = {"skipped": data.skipped, "fun": data.fun, "unfair": data.unfair,
+                   "npc_plausible": data.npc_plausible,
+                   "comment": mask_text(data.comment), "mask_version": "b-mask-1"}
+        with self.participant_records(data.game_id) as records:
+            if records.survey is not None and records.survey.get("reason"):
+                # 서버가 자동으로 채운 건너뜀(홈·일괄 보완) 뒤에는 같은 건너뜀만 재전송으로 받고 응답은 받지 않는다(판당 1건).
+                if data.skipped:
+                    return False
+                raise InteractionConflict
+            if records.survey is not None:
+                previous = dict(records.survey)
+                previous.setdefault("skipped", False)
+                previous_digest = previous.pop("comment_digest", comment_digest)
+                if previous != payload or not secrets.compare_digest(previous_digest, comment_digest):
+                    raise InteractionConflict
+                return False
+            self._save_participant(state, 'survey', EventType.SURVEY_SUBMITTED, payload,
+                                   {**payload, 'comment_digest': comment_digest}, records)
+            return True
+
+    def skip_survey(self, game_id, player, reason, state=None):
+        """끝난 판에 설문 이벤트(응답·건너뜀)가 없으면 건너뜀 1건을 남긴다(B-09-07 9번).
+
+        reason은 채운 경로(`backfill`: 같은 참가자의 다음 홈 요청 또는 18:00 마감 직후 일괄 보완).
+        이미 설문 이벤트가 있거나 판이 끝나지 않았으면 아무것도 남기지 않고 False.
+        state는 같은 요청에서 이미 읽은 판 상태(소유권 확인 끝난 것)를 넘길 때만 쓴다.
+        """
+        if state is None:
+            state, _ = self.game.owned(game_id, player)
+        if state.result is None or state.meta.player_pseudonym != player or state.meta.scenario_id:
+            return False
+        payload = {"skipped": True, "fun": None, "unfair": None, "npc_plausible": None,
+                   "comment": "", "mask_version": "b-mask-1", "reason": reason}
+        with self.participant_records(game_id) as records:
+            if records.survey is not None:
+                return False
+            self._save_participant(state, 'survey', EventType.SURVEY_SUBMITTED, payload,
+                                   {**payload, 'comment_digest': ""}, records)
+            return True
+
+    def backfill_skipped_surveys(self, player, game_ids, load_game):
+        """참가자의 끝난 판 중 설문 이벤트가 없는 판을 건너뜀(`backfill`)으로 채우고 채운 수를 반환한다.
+
+        game_ids·load_game은 호출한 요청이 이미 읽은 진척의 판 목록과 같은 요청 안 판 조회(중복 조회를 늘리지 않음).
+        """
+        filled = 0
+        for game_id in list(game_ids):
+            try:
+                state, _ = load_game(game_id)
+            except KeyError:
+                continue
+            filled += self.skip_survey(game_id, player, "backfill", state)
+        return filled
+
+    def backfill_all_skipped_surveys(self, players):
+        """마감 직후 일괄 보완: 참가자마다 진척의 판 목록으로 `backfill_skipped_surveys`를 부르고 채운 판 수를 반환한다.
+
+        다시 오지 않은 참가자의 끝난 판도 설문 이벤트 1건을 갖게 한다. 이미 설문 이벤트가 있는 판은 건너뛴다.
+        """
+        filled = 0
+        for player in players:
+            game_ids = self.game.progress.load(player).game_ids
+            filled += self.backfill_skipped_surveys(player, game_ids, self.game.repository.load)
+        return filled
+
+    def register_renders(self, state, requests):
+        """수락·저장된 전이의 렌더 요청만 등록한다. 외부 실패는 폴백으로 닫는다."""
+        if not requests:
+            return
+        renderer = self._renderer(state)
+        with self.store.edit(state.meta.game_id) as records:
+            for req in requests:
+                if req.game_id != state.meta.game_id or req.state_version != state.state_version:
+                    raise ValueError("invalid_render_request")
+                if req.job_id in records.renders:
+                    continue
+                # 실시간 생성(E-11-13)이 켜진 렌더러는 운영 설정의 마감을 준다. 그 밖에는 요청 값.
+                deadline_ms = getattr(renderer, "deadline_ms", lambda r: r.deadline_ms)(req)
+                records.renders[req.job_id] = {"request": req, "final": None,
+                    "day": state.day, "phase": state.phase,
+                    "deadline_at": time.time() + deadline_ms / 1000, "submit_failed": False}
+                if renderer is not None:
+                    try:
+                        renderer.submit(req)
+                    except (ConnectionError, TimeoutError):
+                        records.renders[req.job_id]["submit_failed"] = True
+
+    def poll(self, game_id, job_id, player):
+        """판에 속한 작업만 조회하고 완료 결과·폴백을 고정해 늦은 응답을 막는다."""
+        state, _ = self.game.owned(game_id, player)
+        with self.store.edit(game_id) as records:
+            record = records.renders.get(job_id)
+            if record is None:
+                raise ResourceNotFound
+            if record["final"] is not None:
+                return record["final"]
+            req = record["request"]
+            renderer = self._renderer(state)
+            if renderer is None:
+                raise InteractionUnavailable
+            from engine.ports import RenderResult
+            try:
+                if record.get("submit_failed"):
+                    result = RenderResult(job_id, RenderStatus.FAILED, None, fallback=True)
+                else:
+                    # 마감 판정은 결과의 완료 시각으로 한다(E-11-13). 마감 안에 끝난 결과는 늦게 폴링해도 인정하고,
+                    # 마감이 지나도 아직 대기·처리 중일 때만 시간 초과로 닫는다.
+                    # 완료 시각으로 마감을 지키는 렌더러(`enforces_deadline`)만 그렇고, 그 밖의 렌더러는 기존대로 마감 뒤면 시간 초과다.
+                    result = renderer.poll(job_id, **self._scope(game_id, renderer))
+                    late = time.time() >= record["deadline_at"]
+                    pending = result.status in (RenderStatus.QUEUED, RenderStatus.RUNNING)
+                    if late and (pending or not getattr(renderer, "enforces_deadline", False)):
+                        result = RenderResult(job_id, RenderStatus.TIMEOUT, None, fallback=True)
+                        try:
+                            renderer.cancel(job_id, **self._scope(game_id, renderer))
+                        except (ConnectionError, TimeoutError, KeyError):
+                            pass
+            except (ConnectionError, TimeoutError, KeyError):
+                result = RenderResult(job_id, RenderStatus.FAILED, None, fallback=True)
+            final = result.status not in (RenderStatus.QUEUED, RenderStatus.RUNNING)
+            output = RenderOutput(job_id, req.speech_id, result.status,
+                                  result.text if result.status == RenderStatus.DONE and result.text else req.fallback_text, final)
+            # 생성 본문은 이벤트에 넣지 않는다(E-11-13). 상태·지연·사유·버전만 남기고 본문은 보조 기록·작업 문서에만 둔다.
+            payload = {k: v for k, v in to_jsonable(result).items() if k != "text"}
+            self._event(state, EventType.RENDER_JOB, {**payload, "fallback": result.fallback or not result.text or result.status != RenderStatus.DONE},
+                        f"render:{job_id}:{result.status.value}")
+            if final:
+                record["final"] = output
+            return output
+
+    def _scope(self, game_id, renderer=None) -> dict:
+        """판마다 작업 번호가 겹치므로, 판 ID로 묶는 렌더러(E-11-13 실시간 생성)에는 판 ID를 함께 넘긴다."""
+        renderer = self.renderer if renderer is None else renderer
+        return {"game_id": game_id} if getattr(renderer, "scoped_by_game", False) else {}
+
+    def render_snapshot(self, game_id, player):
+        """화면에 붙일 공개 폴백/완료 문장만 읽는다. 외부 폴링은 실행하지 않는다."""
+        self.game.owned(game_id, player)
+        with self.store.edit(game_id) as records:
+            return {job_id: record["final"] or RenderOutput(job_id, record["request"].speech_id,
+                    RenderStatus.QUEUED, record["request"].fallback_text, False)
+                    for job_id, record in records.renders.items()}
+
+    def cancel_previous(self, previous, current):
+        """날짜·단계가 바뀌면 이전 단계의 미완료 렌더를 폴백으로 확정한다."""
+        if (previous.day, previous.phase) == (current.day, current.phase):
+            return
+        with self.store.edit(current.meta.game_id) as records:
+            for job_id, record in records.renders.items():
+                if record["final"] is not None:
+                    continue
+                req = record["request"]
+                if (record["day"], record["phase"]) == (current.day, current.phase):
+                    # 같은 단계의 추가 행동은 버전을 올리지만 기존 렌더는 유효하다.
+                    continue
+                if req.state_version >= current.state_version:
+                    # 같은 전이의 재처리나 늦은 요청이 새 단계의 작업을 취소하지 않게 한다.
+                    continue
+                renderer = self._renderer(current)
+                if renderer is not None:
+                    try:
+                        renderer.cancel(job_id, **self._scope(current.meta.game_id, renderer))
+                    except (ConnectionError, TimeoutError, KeyError):
+                        pass
+                output = RenderOutput(job_id, req.speech_id, RenderStatus.CANCELLED, req.fallback_text, True)
+                self._event(current, EventType.RENDER_JOB, {"job_id": job_id, "status": "cancelled", "fallback": True,
+                    "quantization": "", "model_version": "", "prompt_version": "", "latency_ms": None, "queue_ms": None},
+                    f"render:{job_id}:cancelled")
+                record["final"] = output

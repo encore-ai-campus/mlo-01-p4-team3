@@ -1,0 +1,56 @@
+{
+  "game_id": "g_base6_001",
+  "preset_id": "base6",
+  "residents": [
+    "hunjang",
+    "jumo",
+    "blacksmith",
+    "meosum",
+    "yakcho",
+    "gwabu"
+  ],
+  "night0_victim": "gwabu",
+  "roles": {
+    "hunjang": "villager",
+    "jumo": "villager",
+    "blacksmith": "possessed",
+    "meosum": "villager",
+    "yakcho": "villager",
+    "gwabu": "villager"
+  },
+  "secrets": {
+    "yakcho": "gambling",
+    "jumo": "tryst"
+  },
+  "night0_whereabouts": {
+    "hunjang": {
+      "evening": "tavern",
+      "midnight": "home"
+    },
+    "jumo": {
+      "evening": "tavern",
+      "midnight": "shrine"
+    },
+    "blacksmith": {
+      "evening": "home",
+      "midnight": "well"
+    },
+    "meosum": {
+      "evening": "tavern",
+      "midnight": "home"
+    },
+    "yakcho": {
+      "evening": "home",
+      "midnight": "tavern"
+    },
+    "gwabu": {
+      "evening": "home",
+      "midnight": "well"
+    }
+  },
+  "night0_plan": {
+    "executor": "blacksmith",
+    "victim": "gwabu",
+    "agreed_alibis": {}
+  }
+}

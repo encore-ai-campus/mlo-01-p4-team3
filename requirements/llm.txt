@@ -1,0 +1,7 @@
+# LLM(E): llama.cpp 파이썬 바인딩 + LangGraph. Python 3.14, CPU 전용
+# 설치: .venv\Scripts\python -m pip install --only-binary=:all: -r requirements/llm.txt
+#   --only-binary: 빌드 도구(VS Build Tools·CMake) 없이 미리 빌드된 CPU 휠만 받는다. 휠이 없으면 소스 빌드를 시도하지 않고 실패한다
+# C-05-03(11/4 사전 작업): llama-cpp-python은 Windows 3.14에서 설치·import 실측(py3-none-win_amd64 휠). langgraph는 휠 존재만 확인
+--extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+llama-cpp-python==0.3.36
+langgraph==1.2.19

@@ -1,0 +1,19 @@
+[Unit]
+Description=Prepare the PJ4 user-test retention deletion scope
+ConditionPathExists=/var/lib/paldo-privacy/accounts.json
+ConditionPathExists=/var/lib/paldo-privacy/games.json
+ConditionPathExists=!/var/lib/paldo-privacy/retention-subjects.json
+
+[Service]
+Type=oneshot
+User=paldo-privacy
+Group=paldo-privacy
+StateDirectory=paldo-privacy
+StateDirectoryMode=0700
+WorkingDirectory=/opt/pj4/privacy
+ExecStart=/usr/bin/python3 -B -m tools.privacy_retention --accounts /var/lib/paldo-privacy/accounts.json --games /var/lib/paldo-privacy/games.json --out /var/lib/paldo-privacy/retention-subjects.json
+UMask=0077
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
